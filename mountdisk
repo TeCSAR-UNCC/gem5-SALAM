@@ -1,0 +1,7 @@
+#!/bin/bash
+[ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
+mount -o loop,offset=32256 $M5_PATH/disks/aarch64-ubuntu-trusty-headless.img /mnt
+cd /mnt
+mount --bind /proc /mnt/proc
+mount --bind /dev /mnt/dev
+chroot .

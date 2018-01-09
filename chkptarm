@@ -1,0 +1,12 @@
+#!/bin/bash
+# Script to start up full system simulation
+
+rm -r ./FS_ARM_OUT/checkpoint/cpt.*
+
+CKPT_DIR=./FS_ARM_OUT/checkpoint/
+
+build/ARM/gem5.opt --debug-flags=IOAcc,DebugPrintf --outdir=FS_ARM_OUT configs/example/fs.py \
+--checkpoint-dir=${CKPT_DIR} --cpu-type=AtomicSimpleCPU -n 1 --mem-size=4GB \
+--kernel=$M5_PATH/linux-arm-gem5/vmlinux --disk-image=$M5_PATH/disks/aarch64-ubuntu-trusty-headless.img \
+--machine-type=VExpress_GEM5_V1 --dtb-file=$M5_PATH/system/arm/dt/armv8_gem5_v1_1cpu.dtb \
+--script=configs/boot/hack_back_ckpt.rcS

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+GEM5=./build/ARM/gem5.opt
+OUT_DIR=./FS_ARM_OUT/
+BOOT_DIR=./configs/boot/
+START_CKPT_DIR=./FS_ARM_OUT/checkpoint/
+COMMON_CONFIG="configs/example/fs.py --checkpoint-dir=${START_CKPT_DIR} \
+    --restore-with-cpu=TimingSimpleCPU --checkpoint-restore 1 --mem-size=4GB --kernel=$M5_PATH/linux-arm-gem5/vmlinux \
+    --disk-image=$M5_PATH/disks/aarch64-ubuntu-trusty-headless.img --machine-type=VExpress_GEM5_V1 \
+    --dtb-file=$M5_PATH/system/arm/dt/armv8_gem5_v1_1cpu.dtb"
+    
+${GEM5} --debug-flags=DebugPrintf,IOAcc --outdir=${OUT_DIR} ${COMMON_CONFIG}

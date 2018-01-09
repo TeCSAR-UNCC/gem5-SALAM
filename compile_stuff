@@ -1,0 +1,10 @@
+#!/bin/bash
+cd $M5_PATH/tests/test-progs
+echo "Rebuilding test file"
+make clean
+make
+cd $M5_PATH/kernel_modules/sam_dev
+echo "Rebuilding device kernel module"
+make clean
+make
+

@@ -1,0 +1,3 @@
+#!/bin/bash
+# Connect to full system sim via m5term
+m5term localhost 3456

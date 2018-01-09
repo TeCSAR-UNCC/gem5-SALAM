@@ -1,0 +1,4 @@
+common/*.o
+Interrupt/*.o
+Simple/*.o
+Simple/*.elf

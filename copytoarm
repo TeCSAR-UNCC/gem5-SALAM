@@ -1,0 +1,19 @@
+#!/bin/bash
+[ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
+mount -o loop,offset=32256 $M5_PATH/disks/aarch64-ubuntu-trusty-headless.img $M5_PATH/mnt
+cd $M5_PATH/tests/test-progs
+echo "Copying file: test to /home of image"
+cp test $M5_PATH/mnt/home/
+cd $M5_PATH/mnt/lib
+if [ ! -d modules/4.3.0+/kernel/driver/ ]; then
+    mkdir -p modules/4.3.0+/kernel/driver/;
+    cd $M5_PATH/linux-arm-gem5;
+    cp Module.symvers $M5_PATH/mnt/lib/modules/4.3.0+/;
+    cp modules.builtin $M5_PATH/mnt/lib/modules/4.3.0+/;
+    cp modules.order $M5_PATH/mnt/lib/modules/4.3.0+/;
+fi;
+cd $M5_PATH/kernel_modules
+echo "Copying module: sam_dev to /lib/modules/4.3.0+/kernel/driver/ of image"
+cp -r sam_dev $M5_PATH/mnt/lib/modules/4.3.0+/kernel/driver/
+sleep 1
+umount $M5_PATH/mnt

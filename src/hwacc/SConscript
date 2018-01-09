@@ -1,0 +1,16 @@
+Import('*')
+
+if env['TARGET_ISA'] == 'arm':
+    SimObject('IOAcc.py')
+    SimObject('CompInterface.py')
+    SimObject('LLVMInterface.py')
+    Source('io_acc.cc')
+    Source('comp_interface.cc')
+    Source('llvm_interface.cc')
+    Source('LLVMRead/src/basic_block.cc')
+    Source('LLVMRead/src/compute_node.cc')
+    Source('LLVMRead/src/operations.cc')
+    Source('LLVMRead/src/register.cc')
+    DebugFlag('IOAcc')
+    DebugFlag('CompInterface')
+    DebugFlag('LLVMInterface')

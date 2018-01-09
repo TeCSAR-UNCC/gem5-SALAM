@@ -1,0 +1,6 @@
+echo "Beginning driver test!\n"
+echo "Running depmod\n" | depmod -a
+echo "Loading driver module\n" | modprobe -v sam_dev
+cd home
+echo "Running test program\n" | ./test 18
+m5 exit

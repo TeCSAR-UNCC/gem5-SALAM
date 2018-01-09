@@ -1,0 +1,1 @@
+cmd_/home/samerogers/gem5/kernel_modules/sam_dev/sam_dev.ko := aarch64-linux-gnu-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /home/samerogers/gem5/kernel_modules/sam_dev/sam_dev.ko /home/samerogers/gem5/kernel_modules/sam_dev/sam_dev.o /home/samerogers/gem5/kernel_modules/sam_dev/sam_dev.mod.o
