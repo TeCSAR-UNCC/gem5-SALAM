@@ -1,0 +1,3 @@
+[submodule "src/hwacc/LLVMRead"]
+	path = src/hwacc/LLVMRead
+	url = https://10.16.26.181:7443/sroger48/LLVMRead.git
