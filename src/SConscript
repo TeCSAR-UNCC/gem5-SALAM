@@ -659,7 +659,7 @@ def makeInfoPyFile(target, source, env):
 
 # Generate a file that wraps the basic top level files
 env.Command('python/m5/info.py',
-            [ '#/COPYING', '#/LICENSE', '#/README.md', ],
+            [ '#/COPYING', '#/LICENSE', '#/README', ],
             MakeAction(makeInfoPyFile, Transform("INFO")))
 PySource('m5', 'python/m5/info.py')
 

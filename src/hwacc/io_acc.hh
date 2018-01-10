@@ -78,6 +78,7 @@ class IOAcc : public BasicPioDevice
     uint8_t *curData;
     bool *readsDone;
     bool running;
+    bool computationNeeded;
 
     void tryRead();
     void tryWrite();
@@ -117,6 +118,7 @@ class IOAcc : public BasicPioDevice
     uint8_t* getCurData() { return curData; }
 
     bool isRunning() { return running; }
+    bool isCompNeeded() { return computationNeeded; }
 
   protected:
     static const int DEV_CONFIG = 0x00;

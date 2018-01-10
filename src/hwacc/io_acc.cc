@@ -29,6 +29,7 @@ IOAcc::IOAcc(Params *p) :
     needToWrite = false;
     running = false;
     processingDone = false;
+    computationNeeded = false;
 
     dataPort = &memPort;
     mmreg = new uint8_t[io_size];
@@ -118,6 +119,7 @@ IOAcc::tick() {
         DPRINTF(IOAcc, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
             *mmreg &= 0xfe;
+            computationNeeded = true;
             prepRead(mmrval, 0x04);
         }
 
