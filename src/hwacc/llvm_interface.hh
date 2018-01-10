@@ -15,6 +15,7 @@ class LLVMInterface : public SimObject {
     bool finished;
     BasicBlockList *bbList;
     BasicBlock *currBB;
+    BasicBlock *prevBB;
     ComputeNode *currCompNode;
 
     class TickEvent : public Event
@@ -27,6 +28,8 @@ class LLVMInterface : public SimObject {
         void process() { llvm_int->tick(); }
         virtual const char *description() const { return "LLVMInterface tick"; }
     };
+
+    TickEvent tickEvent;
 
   protected:
 
