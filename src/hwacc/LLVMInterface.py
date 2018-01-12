@@ -8,3 +8,4 @@ class LLVMInterface(SimObject):
     cxx_header = "hwacc/llvm_interface.hh"
     
     dummy_acc = Param.IOAcc(Parent.any, "Accelerator dummy to interface to")
+    in_file = Param.String("LLVM Trace File")

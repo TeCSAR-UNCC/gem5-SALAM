@@ -120,6 +120,8 @@ class IOAcc : public BasicPioDevice
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }
 
+    uint64_t getMMRData(unsigned index) { return *(uint64_t *)(mmreg + DEV_MEM_LOC + index * 8); }
+
   protected:
     static const int DEV_CONFIG = 0x00;
     static const int DEV_MEM_LOC = 0x04;

@@ -11,9 +11,11 @@
 class LLVMInterface : public SimObject {
   private:
     IOAcc *acc;
+    std::string filename;
     bool running;
     bool finished;
     BasicBlockList *bbList;
+    RegisterList *regList;
     BasicBlock *currBB;
     BasicBlock *prevBB;
     ComputeNode *currCompNode;
@@ -36,7 +38,7 @@ class LLVMInterface : public SimObject {
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
-
+    void constructBBList();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
