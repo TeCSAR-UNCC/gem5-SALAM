@@ -18,13 +18,31 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
 void
 LLVMInterface::tick() {
     if (acc->isCompNeeded() && !running) {
-        //Build BBList and start running
+        LLVMInterface::constructBBList();
+        currBB = bbList->findBasicBlock("0");
+        prevBB = NULL;
+        currCompNode = currBB->getStart();
+        if(currCompNode->isBranch()) {
+            prevBB = currBB;
+            BasicBlock *branchTarget = bbList->findBasicBlock(currCompNode->computeBranch());
+            assert(branchTarget);
+            currBB = branchTarget;
+            currCompNode = currBB->getStart();
+        }
     } else if (running) {
         if (!acc->isRunning()) { //If acc isn't running we aren't in a memory op
-            if (currCompNode != currBB->getEnd()) {
+            if(currCompNode->isBranch()) {
+                prevBB = currBB;
+                BasicBlock *branchTarget = bbList->findBasicBlock(currCompNode->computeBranch());
+                assert(branchTarget);
+                currBB = branchTarget;
+                currCompNode = currBB->getStart();
+            }else if (currCompNode != currBB->getEnd()) {
+                currCompNode->compute();
                 currCompNode = currBB->step();
             } else {
-                //
+                currCompNode->compute();
+                //We are finished execution. Raise interrupts!
             }
         }
     }
