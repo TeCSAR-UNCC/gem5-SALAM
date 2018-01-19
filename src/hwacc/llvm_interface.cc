@@ -13,6 +13,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     prevBB = NULL;
     currCompNode = NULL;
     running = false;
+    clock_delay = acc->getProcessDelay(); //Clock period
+    process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
 void
@@ -48,7 +50,7 @@ LLVMInterface::tick() {
     }
     if (!tickEvent.scheduled())
     {
-        schedule(tickEvent, acc->nextCycle());
+        schedule(tickEvent, curTick() + clock_delay * process_delay);
     }
 }
 
@@ -105,6 +107,11 @@ LLVMInterface::constructBBList() {
         }
     }
 
+}
+
+void
+LLVMInterface::startup() {
+    schedule(tickEvent, acc->nextCycle());
 }
 
 LLVMInterface*

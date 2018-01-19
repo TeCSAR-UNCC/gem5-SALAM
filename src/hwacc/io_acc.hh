@@ -90,6 +90,7 @@ class IOAcc : public BasicPioDevice
 
     bool processingDone;
     int processDelay;
+    int clock_period;
 
   public:
     typedef IOAccParams Params;
@@ -121,6 +122,7 @@ class IOAcc : public BasicPioDevice
     bool isCompNeeded() { return computationNeeded; }
 
     uint64_t getMMRData(unsigned index) { return *(uint64_t *)(mmreg + DEV_MEM_LOC + index * 8); }
+    int getProcessDelay() { return processDelay; }
 
   protected:
     static const int DEV_CONFIG = 0x00;

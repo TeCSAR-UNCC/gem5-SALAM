@@ -23,8 +23,8 @@ IOAcc::IOAcc(Params *p) :
     masterId(p->system->getMasterId(name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
-    processDelay(p->process_delay) {
-
+    clock_period(p->clock_period) {
+    processDelay = 100 * clock_period;
     needToRead = false;
     needToWrite = false;
     running = false;
@@ -105,7 +105,7 @@ IOAcc::recvPacket(PacketPtr pkt) {
         } else {
             if (!tickEvent.scheduled())
             {
-                schedule(tickEvent, nextCycle());
+                schedule(tickEvent, curTick() + processDelay);
             }
         }
     }
@@ -125,7 +125,7 @@ IOAcc::tick() {
 
         if (processingDone && !tickEvent.scheduled()) {
             processingDone = false;
-            schedule(tickEvent, nextCycle() + processDelay * clockPeriod());
+            schedule(tickEvent, curTick() + processDelay);
         }
 
         return;
@@ -180,12 +180,12 @@ IOAcc::tryRead() {
     if (!(readLeft > 0)) {
         needToRead = false;
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
         }
     } else {
         if (!dataPort->isStalled() && !tickEvent.scheduled())
         {
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
         }
     }
 }
@@ -226,7 +226,7 @@ IOAcc::tryWrite() {
     writeLeft -= size;
 
     if (!(writeLeft > 0) && !tickEvent.scheduled()) {
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
     }
 }
 
@@ -261,7 +261,7 @@ IOAcc::prepRead(Addr src, size_t length) {
     }
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, nextCycle() + clockPeriod());
+        schedule(tickEvent, curTick() + processDelay);
     }
 
     return 0;
@@ -300,7 +300,7 @@ IOAcc::prepWrite(Addr dst, int value, size_t length) {
     }
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, nextCycle() + clockPeriod());
+        schedule(tickEvent, curTick() + processDelay);
     }
 
     return 0;
@@ -356,7 +356,7 @@ IOAcc::write(PacketPtr pkt) {
     pkt->makeAtomicResponse();
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
     }
 
     return pioDelay;

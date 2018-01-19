@@ -19,6 +19,8 @@ class LLVMInterface : public SimObject {
     BasicBlock *currBB;
     BasicBlock *prevBB;
     ComputeNode *currCompNode;
+    int clock_delay;
+    int process_delay;
 
     class TickEvent : public Event
     {
@@ -39,6 +41,7 @@ class LLVMInterface : public SimObject {
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
     void constructBBList();
+    void startup();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
