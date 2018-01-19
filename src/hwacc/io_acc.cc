@@ -24,7 +24,7 @@ IOAcc::IOAcc(Params *p) :
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period) {
-    processDelay = 100 * clock_period;
+    processDelay = 1000 * clock_period;
     needToRead = false;
     needToWrite = false;
     running = false;
@@ -52,7 +52,7 @@ IOAcc::MemSidePort::recvReqRetry() {
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
         if (!owner->tickEvent.scheduled()) {
-            owner->schedule(owner->tickEvent, owner->nextCycle());
+            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
         }
     }
 }
@@ -356,7 +356,7 @@ IOAcc::write(PacketPtr pkt) {
     pkt->makeAtomicResponse();
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 
     return pioDelay;

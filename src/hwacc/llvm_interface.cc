@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "hwacc/llvm_interface.hh"
+#include "debug/LLVMInterface.hh"
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     SimObject(p),
@@ -31,6 +32,10 @@ LLVMInterface::tick() {
             currBB = branchTarget;
             currCompNode = currBB->getStart();
         }
+        if (!tickEvent.scheduled())
+        {
+            schedule(tickEvent, curTick() + clock_delay * process_delay);
+        }
     } else if (running) {
         if (!acc->isRunning()) { //If acc isn't running we aren't in a memory op
             if(currCompNode->isBranch()) {
@@ -47,10 +52,14 @@ LLVMInterface::tick() {
                 //We are finished execution. Raise interrupts!
             }
         }
+        if (!tickEvent.scheduled())
+        {
+            schedule(tickEvent, curTick() + clock_delay * process_delay);
+        }
     }
     if (!tickEvent.scheduled())
     {
-        schedule(tickEvent, curTick() + clock_delay * process_delay);
+        schedule(tickEvent, acc->nextCycle());
     }
 }
 
@@ -112,6 +121,7 @@ LLVMInterface::constructBBList() {
 void
 LLVMInterface::startup() {
     schedule(tickEvent, acc->nextCycle());
+    DPRINTF(LLVMInterface, "Clock period: %d\nAcc Clock Period: %d\n", acc->clockPeriod(), acc->getProcessDelay());
 }
 
 LLVMInterface*

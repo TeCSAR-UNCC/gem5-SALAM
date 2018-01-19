@@ -234,10 +234,11 @@ def build_test_system(np):
         MemConfig.config_mem(options, test_sys)
     
     if buildEnv['TARGET_ISA'] == "arm":    
-        test_sys.acc = IOAcc(pio_addr=0x2f000000, pio_size=8, gic=test_sys.realview.gic);
-        test_sys.acc.pio = test_sys.iobus.master;
-        test_sys.acc.mem_side = test_sys.iobus.slave;
-        test_sys.acc.comp_interface = CompInterface();
+        test_sys.acc = IOAcc(pio_addr=0x2f000000, pio_size=8, gic=test_sys.realview.gic)
+        test_sys.acc.pio = test_sys.iobus.master
+        test_sys.acc.mem_side = test_sys.iobus.slave
+        test_sys.acc.llvm_interface = LLVMInterface()
+        test_sys.acc.llvm_interface.in_file = "hwacc/LLVMRead/Benchmarks/bfs/bulk/bfs.ll"
 
     return test_sys
 
