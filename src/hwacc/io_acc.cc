@@ -268,7 +268,7 @@ IOAcc::prepRead(Addr src, size_t length) {
 }
 
 int
-IOAcc::prepWrite(Addr dst, int value, size_t length) {
+IOAcc::prepWrite(Addr dst, uint8_t* value, size_t length) {
     assert(!running);
     assert(length > 0);
     running = true;
@@ -295,7 +295,7 @@ IOAcc::prepWrite(Addr dst, int value, size_t length) {
     curData = new uint8_t[length];
     readsDone = new bool[length];
     for (int i = 0; i < length; i++) {
-        curData[i] = (uint8_t)(value >> (i*8));
+        curData[i] = *(value + i);
         readsDone[i] = true;
     }
 
@@ -365,10 +365,11 @@ IOAcc::write(PacketPtr pkt) {
 void
 IOAcc::processData() {
     DPRINTF(IOAcc, "BEGIN: Processing Data\n");
-    int data = *(int *)curData;
+    uint8_t data[4];
+    for (int i = 0; i<4; i++) data[i] = *(curData + i);
     DPRINTF(IOAcc, "Data: 0x%08x\n", data);
 
-    data = data / 2;
+    *data = (*(int *)data / 2);
     DPRINTF(IOAcc, "Data: 0x%08x\n", data);
     processingDone = true;
 

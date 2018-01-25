@@ -112,7 +112,7 @@ class IOAcc : public BasicPioDevice
     void recvPacket(PacketPtr pkt);
 
     int prepRead(Addr src, size_t length);
-    int prepWrite(Addr dst, int value, size_t length);
+    int prepWrite(Addr dst, uint8_t* value, size_t length);
 
     void processData();
 
