@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class Register {
   friend class RegisterList;
@@ -15,7 +16,7 @@ class Register {
     Register(std::string id);
     Register(std::string id, uint64_t val);
     ~Register();
-
+    
     uint64_t getValue() {
       return value;
     }
@@ -29,7 +30,7 @@ class Register {
       value = val;
     }
   protected:
-
+  
 };
 
 class RegisterList {
@@ -42,7 +43,7 @@ class RegisterList {
     void addRegister(Register *reg);
     Register *findRegister(std::string name);
   protected:
-
+  
 };
 
 #endif //__REGISTER_HH__
