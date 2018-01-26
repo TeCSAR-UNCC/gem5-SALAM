@@ -3,14 +3,12 @@
 #define __HWACC_LLVM_INTERFACE_HH__
 
 #include "params/LLVMInterface.hh"
-#include "sim/sim_object.hh"
-#include "hwacc/io_acc.hh"
+#include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/operations.hh"
 
-class LLVMInterface : public SimObject {
+class LLVMInterface : public ComputeUnit {
   private:
-    IOAcc *acc;
     std::string filename;
     bool running;
     bool finished;

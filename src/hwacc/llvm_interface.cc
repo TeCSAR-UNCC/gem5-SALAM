@@ -4,8 +4,7 @@
 #include "debug/LLVMInterface.hh"
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
-    SimObject(p),
-    acc(p->dummy_acc),
+    ComputeUnit(p),
     filename(p->in_file),
     tickEvent(this) {
     bbList = NULL;
@@ -14,13 +13,13 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     prevBB = NULL;
     currCompNode = NULL;
     running = false;
-    clock_delay = acc->getProcessDelay(); //Clock period
+    clock_delay = comm->getProcessDelay(); //Clock period
     process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
 void
 LLVMInterface::tick() {
-    if (acc->isCompNeeded() && !running) {
+    if (comm->isCompNeeded() && !running) {
         LLVMInterface::constructBBList();
         currBB = bbList->findBasicBlock("0");
         prevBB = NULL;
@@ -37,7 +36,7 @@ LLVMInterface::tick() {
             schedule(tickEvent, curTick() + clock_delay * process_delay);
         }
     } else if (running) {
-        if (!acc->isRunning()) { //If acc isn't running we aren't in a memory op
+        if (!comm->isRunning()) { //If comm isn't running we aren't in a memory op
             if(currCompNode->isBranch()) {
                 prevBB = currBB;
                 BasicBlock *branchTarget = bbList->findBasicBlock(currCompNode->computeBranch());
@@ -59,7 +58,7 @@ LLVMInterface::tick() {
     }
     if (!tickEvent.scheduled())
     {
-        schedule(tickEvent, acc->nextCycle());
+        schedule(tickEvent, comm->nextCycle());
     }
 }
 
@@ -86,7 +85,7 @@ LLVMInterface::constructBBList() {
                         commaPos = line.find(",", percPos);
                         if (commaPos < 0) commaPos = line.find(")");
                         std::string regName = line.substr(percPos, (commaPos-percPos));
-                        regList->addRegister(new Register(regName, acc->getMMRData(paramNum)));
+                        regList->addRegister(new Register(regName, comm->getMMRData(paramNum)));
                         paramNum++;
                     }
                     linePos = percPos + 1;
@@ -120,8 +119,7 @@ LLVMInterface::constructBBList() {
 
 void
 LLVMInterface::startup() {
-    schedule(tickEvent, acc->nextCycle());
-    DPRINTF(LLVMInterface, "Clock period: %d\nAcc Clock Period: %d\n", acc->clockPeriod(), acc->getProcessDelay());
+    comm->registerCompUnit(this);
 }
 
 LLVMInterface*
