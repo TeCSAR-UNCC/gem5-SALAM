@@ -1,14 +1,15 @@
-#ifndef __HWACC_IO_ACC_HH__
+#ifndef __HWACC_COMM_INTERFACE_HH__
 
-#define __HWACC_IO_ACC_HH__
+#define __HWACC_COMM_INTERFACE_HH__
 
-#include "params/IOAcc.hh"
+#include "params/CommInterface.hh"
 #include "dev/io_device.hh"
 #include "dev/arm/base_gic.hh"
+#include "hwacc/compute_unit.hh"
 
 #include <queue>
 
-class IOAcc : public BasicPioDevice
+class CommInterface : public BasicPioDevice
 {
   private:
     Addr io_addr;
@@ -19,14 +20,14 @@ class IOAcc : public BasicPioDevice
 
     class MemSidePort : public MasterPort
     {
-      friend class IOAcc;
+      friend class CommInterface;
 
       private:
-        IOAcc *owner;
+        CommInterface *owner;
         std::queue<PacketPtr> outstandingPkts;
 
       public:
-        MemSidePort(const std::string& name, IOAcc *owner) :
+        MemSidePort(const std::string& name, CommInterface *owner) :
           MasterPort(name, owner), owner(owner)
         { }
 
@@ -47,17 +48,17 @@ class IOAcc : public BasicPioDevice
     class TickEvent : public Event
     {
       private:
-        IOAcc *acc;
+        CommInterface *comm;
 
       public:
-        TickEvent(IOAcc *_acc) : Event(CPU_Tick_Pri), acc(_acc) {}
-        void process() { acc->tick(); }
-        virtual const char *description() const { return "IOAcc tick"; }
+        TickEvent(CommInterface *_comm) : Event(CPU_Tick_Pri), comm(_comm) {}
+        void process() { comm->tick(); }
+        virtual const char *description() const { return "CommInterface tick"; }
     };
 
     MemSidePort memPort;
     MemSidePort* dataPort;
-    IOAcc *acc;
+    CommInterface *comm;
     MasterID masterId;
     TickEvent tickEvent;
     unsigned cacheLineSize;
@@ -92,15 +93,17 @@ class IOAcc : public BasicPioDevice
     int processDelay;
     int clock_period;
 
+    ComputeUnit *cu;
+
   public:
-    typedef IOAccParams Params;
+    typedef CommInterfaceParams Params;
     const Params *
     params() const
     {
       return dynamic_cast<const Params *>(_params);
     }
 
-    IOAcc(Params *p);
+    CommInterface(Params *p);
 
     virtual Tick read(PacketPtr pkt);
 
@@ -124,12 +127,14 @@ class IOAcc : public BasicPioDevice
     uint64_t getMMRData(unsigned index) { return *(uint64_t *)(mmreg + DEV_MEM_LOC + index * 8); }
     int getProcessDelay() { return processDelay; }
 
+    void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
+
   protected:
     static const int DEV_CONFIG = 0x00;
     static const int DEV_MEM_LOC = 0x04;
 };
 
-#endif //__HWACC_IO_ACC_HH__
+#endif //__HWACC_COMM_INTERFACE_HH__
 
 /*
 * MM Register Layout
