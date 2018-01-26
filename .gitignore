@@ -28,3 +28,4 @@ chisel/.idea
 chisel/target/
 chisel/*.iml
 chisel
+build.sh
