@@ -9,4 +9,4 @@ COMMON_CONFIG="configs/example/fs.py --checkpoint-dir=${START_CKPT_DIR} \
     --disk-image=$M5_PATH/disks/aarch64-ubuntu-trusty-headless.img --machine-type=VExpress_GEM5_V1 \
     --dtb-file=$M5_PATH/system/arm/dt/armv8_gem5_v1_1cpu.dtb --script=./configs/boot/testscript.rcS"
     
-${GEM5} --debug-flags=DebugPrintf,IOAcc --outdir=${OUT_DIR} ${COMMON_CONFIG}
+${GEM5} --debug-flags=DebugPrintf,IOAcc,CommInterface,LLVMInterface --outdir=${OUT_DIR} ${COMMON_CONFIG}
