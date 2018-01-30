@@ -17,22 +17,9 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock *currBB;
     BasicBlock *prevBB;
     ComputeNode *currCompNode;
-    int clock_delay;
+//    int clock_period;
     int process_delay;
-
-    class TickEvent : public Event
-    {
-      private:
-        LLVMInterface *llvm_int;
-
-      public:
-        TickEvent(LLVMInterface *_llvm_int) : Event(CPU_Tick_Pri), llvm_int(_llvm_int) {}
-        void process() { llvm_int->tick(); }
-        virtual const char *description() const { return "LLVMInterface tick"; }
-    };
-
-    TickEvent tickEvent;
-
+    uint8_t *dataBuffer;
   protected:
 
   public:
@@ -40,6 +27,8 @@ class LLVMInterface : public ComputeUnit {
     void tick();
     void constructBBList();
     void startup();
+    void copyToBuffer(uint8_t *data, unsigned size);
+    void initialize();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
