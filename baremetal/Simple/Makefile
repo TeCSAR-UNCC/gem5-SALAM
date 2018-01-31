@@ -35,7 +35,7 @@ include ../common/Makefile
 
 OBJS         = boot.o ../common/syscalls.o main.o
 
-all: main.elf
+all: clean main.elf
 
 main.elf: $(OBJS) $(LNK_SCRIPT) Makefile
 	$(CC) $(LNK_FILE_OPT) -o $@ $(OBJS) $(LNK_OPT)
