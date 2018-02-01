@@ -5,15 +5,14 @@
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
-    filename(p->in_file),
-    tickEvent(this) {
+    filename(p->in_file) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
     prevBB = NULL;
     currCompNode = NULL;
     running = false;
-    clock_delay = comm->getProcessDelay(); //Clock period
+    clock_period = comm->getProcessDelay(); //Clock period
     process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
@@ -33,7 +32,7 @@ LLVMInterface::tick() {
         }
         if (!tickEvent.scheduled())
         {
-            schedule(tickEvent, curTick() + clock_delay * process_delay);
+            schedule(tickEvent, curTick() + clock_period * process_delay);
         }
     } else if (running) {
         if (!comm->isRunning()) { //If comm isn't running we aren't in a memory op
@@ -53,7 +52,7 @@ LLVMInterface::tick() {
         }
         if (!tickEvent.scheduled())
         {
-            schedule(tickEvent, curTick() + clock_delay * process_delay);
+            schedule(tickEvent, curTick() + clock_period * process_delay);
         }
     }
     if (!tickEvent.scheduled())
@@ -114,7 +113,21 @@ LLVMInterface::constructBBList() {
             }
         }
     }
+}
 
+void
+LLVMInterface::copyToBuffer(uint8_t *data, unsigned size) {
+    assert(size > 0);
+    dataBuffer = new uint8_t[size];
+    for (int i = 0; i < size; i++) {
+        dataBuffer[i] = *(data + i);
+    }
+}
+
+void
+LLVMInterface::initialize() {
+    constructBBList();
+    tick();
 }
 
 void

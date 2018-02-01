@@ -2,7 +2,8 @@
 
 ComputeUnit::ComputeUnit(ComputeUnitParams *p) :
     SimObject(p),
-    comm(p->comm_int) {}
+    comm(p->comm_int),
+    tickEvent(this) {}
 
 ComputeUnit*
 ComputeUnitParams::create() {
