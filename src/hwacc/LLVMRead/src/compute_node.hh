@@ -6,6 +6,7 @@
 #include "operations.hh"
 #include "hwacc/comm_interface.hh"
 #include "base/types.hh"
+#include <vector>
 
 class ComputeNode {
   friend class BasicBlock;
