@@ -4,6 +4,7 @@
 
 #include "register.hh"
 #include "operations.hh"
+#include "hwacc/comm_interface.hh"
 #include "base/types.hh"
 
 class ComputeNode {
@@ -147,30 +148,30 @@ class ComputeNode {
   		       {"cosine", IR_Cosine}
   		     };
    
-  	bool finish;
-  	int cycleCount, maxCycles;
     ComputeNode * next;
     std::string llvm_inst;
-    Register * returnRegister;
     std::string opCode;
-	std::string operand1, operand2;
-	std::string dataType;
     std::string prevBB;
+
+    bool memoryFlag = false;
+
     std::vector<std::string> decode;
-    char finished;
     struct Attributes {
     		struct Clock{
     			bool finished;
     			Tick cycleCount;
     			Tick maxCycles;
     		};
+    		struct Branch{
+    			Register * taken;
+    			Register * notTaken;
+    			
+    		};
     		struct Params{
-    		    std::string opCode;
     			std::string operand1;
     			std::string operand2;
     			std::string dataType;
-    		    std::string prevBB;
-    			
+    		    Register * returnRegister;
     		};
     		struct Keywords {
     			bool nuw = false,
@@ -216,7 +217,8 @@ class ComputeNode {
     		Flags flags;
     		Condition condition;
     		Params params;
-    		
+    		Clock clock;
+    		Branch branch;
     	};
     	Attributes attributes;
     	
@@ -228,6 +230,8 @@ class ComputeNode {
     bool isBranch() { return (opCode.compare("br") == 0); }
     void checkState();
     void reset();
+    void flagSet();
+    bool flagRead();
   
   protected:
   

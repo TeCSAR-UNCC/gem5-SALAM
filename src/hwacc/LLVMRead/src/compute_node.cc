@@ -5,25 +5,19 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     int returnChk = line.find(" = ");
 
     if (returnChk > 0) {
-        returnRegister = new Register(line.substr((line.find("%")+1), returnChk));
-        list->addRegister(returnRegister);
+        attributes.params.returnRegister = new Register(line.substr((line.find("%")+1), returnChk));
+        list->addRegister(attributes.params.returnRegister);
     } else {
-        returnRegister = NULL;
+    	attributes.params.returnRegister = NULL;
     }
-    finished = 0x0;
+    attributes.clock.finished = false;
     prevBB = prev;
     std::string temp = line.substr(returnChk+3);
 	std::string buffer;
 	std::stringstream buffer_stream(temp.substr(temp.find(" ") + 1));
     opCode = temp.substr(0,temp.find(" "));
-    
-    //Logic to look for arrays and/or non-conforming instructions to skip the
-    //while loop below
-    
-	while (buffer_stream >> buffer) {
-		if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
-		decode.push_back(buffer);
-	}
+
+
 
 	switch (s_opMap[opCode]) {
 		case IR_Move: {
@@ -59,9 +53,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_Add: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nuw") attributes.keywords.nuw = true;
 				else if (decode.at(i) == "nsw") attributes.keywords.nuw = true;
@@ -69,9 +74,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_FAdd: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nnan") attributes.flags.nnan = true;
 				else if (decode.at(i) == "ninf") attributes.flags.ninf = true;
@@ -85,9 +101,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_Sub: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nuw") attributes.keywords.nuw = true;
 				else if (decode.at(i) == "nsw") attributes.keywords.nuw = true;
@@ -95,9 +122,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_FSub: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nnan") attributes.flags.nnan = true;
 				else if (decode.at(i) == "ninf") attributes.flags.ninf = true;
@@ -111,9 +149,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_Mul: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nuw") attributes.keywords.nuw = true;
 				else if (decode.at(i) == "nsw") attributes.keywords.nuw = true;
@@ -121,9 +170,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_FMul: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nnan") attributes.flags.nnan = true;
 				else if (decode.at(i) == "ninf") attributes.flags.ninf = true;
@@ -137,27 +197,60 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_UDiv: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "exact") attributes.keywords.exact = true;
 			}
 			break;
 		}
 		case IR_SDiv: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "exact") attributes.keywords.exact = true;
 			}
 			break;
 		}
 		case IR_FDiv: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nnan") attributes.flags.nnan = true;
 				else if (decode.at(i) == "ninf") attributes.flags.ninf = true;
@@ -171,21 +264,54 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_URem: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			break;
 		}
 		case IR_SRem: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			break;
 		}
 		case IR_FRem: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nnan") attributes.flags.nnan = true;
 				else if (decode.at(i) == "ninf") attributes.flags.ninf = true;
@@ -199,9 +325,20 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_Shl: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nuw") attributes.keywords.nuw = true;
 				else if (decode.at(i) == "nsw") attributes.keywords.nuw = true;
@@ -209,39 +346,94 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_LShr: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nuw") attributes.keywords.exact = true;
 			}
 			break;
 		}
 		case IR_AShr: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			for (int i = 0; i < decode.size() - 3; i++) {
 				if (decode.at(i) == "nuw") attributes.keywords.exact = true;
 			}
 			break;
 		}
 		case IR_And: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			break;
 		}
 		case IR_Or: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			break;
 		}
 		case IR_Xor: {
-			dataType = decode.at(decode.size() - 3);
-			operand1 = decode.at(decode.size() - 2);
-			operand2 = decode.at(decode.size() - 1);
+			returnChk = line.find("<");
+			if(returnChk > 0){
+				while (buffer_stream >> buffer) {
+					if (buffer[(buffer.length() - 2)] == ',') buffer = buffer.substr(0, (buffer.length() - 3));
+					decode.push_back(buffer);
+				}
+			}
+			else{
+				
+				
+			}
+			attributes.params.dataType = decode.at(decode.size() - 3);
+			attributes.params.operand1 = decode.at(decode.size() - 2);
+			attributes.params.operand2 = decode.at(decode.size() - 1);
 			break;
 		}
 		case IR_Alloca: {
@@ -249,10 +441,13 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 		case IR_Load: {
-
+//		    uint8_t* getCurData() { return curData; }
 			break;
 		}
 		case IR_Store: {
+//			comm_interface.hh
+//		    int prepRead(Addr src, size_t length);
+//		    int prepWrite(Addr dst, uint8_t* value, size_t length);
 
 			break;
 		}
@@ -406,10 +601,14 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			break;
 		}
 	}
+
+
 }
 
 void
 ComputeNode::compute() {
+
+
 
 }
 
