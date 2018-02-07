@@ -18,6 +18,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     std::vector<std::string> parameters;
     //
 
+
     // Find the return register. If it exists, it is always the first component of the line
     if (returnChk > 0) {
     	// Create new pointer to the return register
@@ -71,6 +72,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// the entire encapsulated component and its sub components if they exist
     			// as one entry in the struct
 
+
     			if (line[i] == '(') {
     				lastInLine = 0; //Returned as -1 when no character found in string
     				leftDelimeter = i + 1 + line.substr(i + 1).find('(');
@@ -84,6 +86,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
     				i += (rightDelimeter - i);
     			}
+
     			else if (line[i] == '[') {
     				lastInLine = 0;
     				leftDelimeter = i + 1 + line.substr(i + 1).find('[');
@@ -97,6 +100,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
     				i += (rightDelimeter - i);
     			}
+
     			else if (line[i] == '{') {
     				lastInLine = 0;
     				leftDelimeter = i + 1 + line.substr(i + 1).find('{');
@@ -180,7 +184,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_Ret: {
     			// ret <type> <value>; Return a value from a non - void function
     			// ret void; Return from void function
-    			if (parameters[i].find("void") {
+    			if (parameters[i].find("void")) {
     				// If void is found then it must not have a return value
     				attributes.params.dataType = "void";
     				attributes.params.returnValue = "void";
@@ -189,7 +193,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     				// If void is not found then the last parameters must be the return value,
     				// and preceding it the return type
     				attributes.params.returnValue = parameters[i];
-    				attributes.params.dataDype = parameters[i - 1];
+    				attributes.params.dataType = parameters[i - 1];
     				i = RESET;
     			}
     			break;
@@ -202,11 +206,11 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     				// Check if register already exists and create new one if not
     				attributes.branch.uncond = parameters[i];
     				if (list->findRegister(attributes.branch.uncond) == NULL) {
-    					attributes.branch.taken = new Register(attributes.branch.uncond);
-    					list->addRegister(attributes.branch.taken);
+    					attributes.branch.labelTrue = new Register(attributes.branch.uncond);
+    					list->addRegister(attributes.branch.labelTrue);
     				}
     				else {
-    					attributes.branch.taken = list->findRegister(attributes.branch.uncond);
+    					attributes.branch.labelTrue = list->findRegister(attributes.branch.uncond);
     				}
     				i = RESET;
     			}
@@ -223,7 +227,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     				}
     				// Check if register already exists and create new one if not
     				attributes.branch.iftrue = parameters[i - 2];
-    				if (list->findRegister(attributes.branch.iftrue)) == NULL) {
+    				if (list->findRegister(attributes.branch.iftrue) == NULL) {
     				attributes.branch.labelTrue = new Register(attributes.branch.iftrue);
     				list->addRegister(attributes.branch.labelTrue);
     				}
@@ -272,7 +276,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
     			// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -287,7 +291,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_FAdd: {
     			// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -311,7 +315,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
     			// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -326,7 +330,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_FSub: {
     			// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -350,7 +354,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
     			// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -365,7 +369,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_FMul: {
     			// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -386,7 +390,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_UDiv: {
     			// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
     			// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -401,7 +405,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
     			// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -415,7 +419,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_FDiv: {
     			// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -455,7 +459,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     		case IR_FRem: {
     			// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -479,7 +483,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
     			// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -495,7 +499,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
     			// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -510,7 +514,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
     			// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result
 
-    			if (i = parameters.size() - 1) {
+    			if (i == parameters.size() - 1) {
     				attributes.params.operand2 = parameters[i];
     				attributes.params.operand1 = parameters[i - 1];
     				attributes.params.dataType = parameters[i - 2];
@@ -687,7 +691,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			//Improvement Opportunity - Dynamically allocated string to eliminate PHIPATHMAX
     			attributes.params.dataType = parameters[0];
     			for (int i = 1; i <= PHIPATHMAX; i++) {
-    				if (!(parameters[i].empty)) {
+    				if (!(parameters[i].empty())) {
     					attributes.phi.paths[i - 1] = parameters[i];
     				}
     			}
@@ -1030,7 +1034,7 @@ ComputeNode::compute() {
 
 		break;
 	}
-	case IR_SilentStore: {gitk
+	case IR_SilentStore: {
 
 		break;
 	}

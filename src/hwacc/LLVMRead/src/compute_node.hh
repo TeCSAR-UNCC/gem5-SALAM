@@ -8,6 +8,9 @@
 #include "base/types.hh"
 #include <vector>
 
+#define RESET -1
+#define PHIPATHMAX 5
+
 class ComputeNode {
   friend class BasicBlock;
   private:  
@@ -191,9 +194,9 @@ class ComputeNode {
         				contract = false,
         				afn = false,
         				reassoc = false,
-        				fast = false;
-    					nsw = false;
-    					nuw = false;
+        				fast = false,
+    					nsw = false,
+    					nuw = false,
     					exact = false;
         		};
         		struct Condition {
