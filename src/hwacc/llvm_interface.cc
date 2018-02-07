@@ -70,6 +70,7 @@ LLVMInterface::constructBBList() {
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
     bool inFunction = false;
+    unsigned bbnum = 0;
 
     while (llvmFile) {
         getline(llvmFile, line);
@@ -92,7 +93,8 @@ LLVMInterface::constructBBList() {
                     linePos = percPos + 1;
                     percPos = line.find("%", linePos);
                 }
-                currBB = new BasicBlock("0");
+                currBB = new BasicBlock("0", bbnum);
+                bbnum++;
                 bbList->addBasicBlock(currBB);
             }
         } else {
@@ -100,12 +102,14 @@ LLVMInterface::constructBBList() {
                 if (line.find("; <label>:") == 0) {
                     int labelEnd = line.find(" ", 10);
                     prevBB = currBB;
-                    currBB = new BasicBlock(line.substr(10,(labelEnd - 10)));
+                    currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum);
+                    bbnum++;
                     bbList->addBasicBlock(currBB);
                 } else if (line.find(".") == 0) {
                     int labelEnd = line.find(" ");
                     prevBB = currBB;
-                    currBB = new BasicBlock(line.substr(1,(labelEnd - 1)));
+                    currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
+                    bbnum++;
                     bbList->addBasicBlock(currBB);
                 } else if (line.find("}") == 0) {
                     inFunction = false;

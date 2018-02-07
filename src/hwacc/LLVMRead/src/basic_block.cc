@@ -31,12 +31,13 @@ BasicBlockList::findBasicBlock(std::string name) {
     return currBB;
 }
 
-BasicBlock::BasicBlock(std::string id) {
+BasicBlock::BasicBlock(std::string id, unsigned bbnum) {
     start = NULL;
     end = NULL;
     currNode = NULL;
     numNodes = 0;
     name = id;
+    bbID = bbnum;
     next = NULL;
 }
 

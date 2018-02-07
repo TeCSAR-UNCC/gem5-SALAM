@@ -12,9 +12,10 @@ class BasicBlock {
     ComputeNode * currNode;
     unsigned numNodes;
     std::string name;
+    unsigned bbID;
     BasicBlock * next; //The next basic block in the list
   public:
-    BasicBlock(std::string id);
+    BasicBlock(std::string id, unsigned bbnum);
     ~BasicBlock();
     void addNode(ComputeNode * cn);
     ComputeNode * step();
