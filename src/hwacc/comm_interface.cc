@@ -16,6 +16,8 @@ CommInterface::CommInterface(Params *p) :
     BasicPioDevice(p, p->pio_size),
     io_addr(p->pio_addr),
     io_size(p->pio_size),
+    flag_size(p->flags_size),
+    config_size(p->config_size),
     devname(p->devicename),
     gic(p->gic),
     int_num(p->int_num),
@@ -24,7 +26,11 @@ CommInterface::CommInterface(Params *p) :
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period) {
+
     processDelay = 1000 * clock_period;
+    FLAG_OFFSET = 0;
+    CONFIG_OFFSET = flag_size;
+    VAR_OFFSET = CONFIG_OFFSET + config_size;
     needToRead = false;
     needToWrite = false;
     running = false;
@@ -88,7 +94,6 @@ CommInterface::recvPacket(PacketPtr pkt) {
             DPRINTF(CommInterface, "done reading!!\n");
             needToRead = false;
             running = false;
-            processData();
         }
     } else {
         DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
@@ -120,7 +125,7 @@ CommInterface::tick() {
         if (*mmreg & 0x01) {
             *mmreg &= 0xfe;
             computationNeeded = true;
-            prepRead(mmrval, 0x04);
+            cu->initialize();
         }
 
         if (processingDone && !tickEvent.scheduled()) {
@@ -310,18 +315,11 @@ Tick
 CommInterface::read(PacketPtr pkt) {
     DPRINTF(CommInterface, "The address range associated with this ACC was read!\n");
 
-    Addr daddr = pkt->req->getPaddr() - io_addr;
+    Addr offset = pkt->req->getPaddr() - io_addr;
 
     uint32_t data;
 
-    switch(daddr) {
-        case DEV_CONFIG:
-            data = *(uint32_t *)mmreg;
-            break;
-        default:
-            data = *(uint32_t *)(mmreg + 4);
-            break;
-    }
+    data = *(uint32_t *)(mmreg+offset);
 
     switch(pkt->getSize()) {
       case 1:
@@ -349,8 +347,6 @@ CommInterface::write(PacketPtr pkt) {
 
     pkt->writeData(mmreg + (pkt->req->getPaddr() - io_addr));
 
-    mmrval = *(uint32_t *)(mmreg + 4);
-
     DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
 
     pkt->makeAtomicResponse();
@@ -362,18 +358,9 @@ CommInterface::write(PacketPtr pkt) {
     return pioDelay;
 }
 
-void
-CommInterface::processData() {
-    DPRINTF(CommInterface, "BEGIN: Processing Data\n");
-    uint8_t data[4];
-    for (int i = 0; i<4; i++) data[i] = *(curData + i);
-    DPRINTF(CommInterface, "Data: 0x%08x\n", data);
-
-    *data = (*(int *)data / 2);
-    DPRINTF(CommInterface, "Data: 0x%08x\n", data);
-    processingDone = true;
-
-    prepWrite(mmrval, data, 4);
+uint64_t
+CommInterface::getGlobalVar(unsigned index) {
+    return *(uint64_t *)(mmreg + VAR_OFFSET + index*8);
 }
 
 CommInterface *

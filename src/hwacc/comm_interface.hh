@@ -14,6 +14,11 @@ class CommInterface : public BasicPioDevice
   private:
     Addr io_addr;
     Addr io_size;
+    Addr flag_size;
+    Addr config_size;
+    Addr FLAG_OFFSET;
+    Addr CONFIG_OFFSET;
+    Addr VAR_OFFSET;
     std::string devname;
     BaseGic *gic;
     uint32_t int_num;
@@ -87,7 +92,6 @@ class CommInterface : public BasicPioDevice
     Addr dataAddr;
 
     uint8_t *mmreg;
-    uint32_t mmrval;
 
     bool processingDone;
     int processDelay;
@@ -117,21 +121,17 @@ class CommInterface : public BasicPioDevice
     int prepRead(Addr src, size_t length);
     int prepWrite(Addr dst, uint8_t* value, size_t length);
 
-    void processData();
-
     uint8_t* getCurData() { return curData; }
 
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }
 
-    uint64_t getMMRData(unsigned index) { return *(uint64_t *)(mmreg + DEV_MEM_LOC + index * 8); }
+    uint64_t getGlobalVar(unsigned index);
     int getProcessDelay() { return processDelay; }
 
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
 
   protected:
-    static const int DEV_CONFIG = 0x00;
-    static const int DEV_MEM_LOC = 0x04;
 };
 
 #endif //__HWACC_COMM_INTERFACE_HH__
