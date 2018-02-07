@@ -158,70 +158,77 @@ class ComputeNode {
 
     std::vector<std::string> decode;
     struct Attributes {
-    		struct Clock{
-    			bool finished;
-    			Tick cycleCount;
-    			Tick maxCycles;
-    		};
-    		struct Branch{
-    			Register * taken;
-    			Register * notTaken;
-    			
-    		};
-    		struct Params{
-    			std::string operand1;
-    			std::string operand2;
-    			std::string dataType;
-    		    Register * returnRegister;
-    		};
-    		struct Keywords {
-    			bool nuw = false,
-    				nsw = false,
-    				exact = false,
-    				inbounds = false;
-    		};
-    		struct Flags {
-    			bool nnan = false,
-    				ninf = false,
-    				nsz = false,
-    				arcp = false,
-    				contract = false,
-    				afn = false,
-    				reassoc = false,
-    				fast = false;
-    		};
-    		struct Condition {
-    			bool eq = false,
-    				ne = false,
-    				ugt = false,
-    				uge = false,
-    				ult = false,
-    				ule = false,
-    				sgt = false,
-    				sge = false,
-    				slt = false,
-    				sle = false,
-    				condFalse = false,
-    				condTrue = false,
-    				oeq = false,
-    				ogt = false,
-    				oge = false,
-    				olt = false,
-    				ole = false,
-    				one = false,
-    				ord = false,
-    				ueq = false,
-    				une = false,
-    				uno = false;
-    		};
-    		Keywords keywords;
-    		Flags flags;
-    		Condition condition;
-    		Params params;
-    		Clock clock;
-    		Branch branch;
-    	};
-    	Attributes attributes;
+        		struct Clock{
+        			bool finished;
+        			Tick cycleCount;
+        			Tick maxCycles;
+        		};
+        		struct Branch{
+        			Register * labelTrue;
+        			Register * labelFalse;
+    				Register * conditionCheck;
+    				std::string uncond;
+    				std::string iftrue;
+    				std::string iffalse;
+    				std::string cond;
+        		};
+        		struct Params{
+        			std::string operand1;
+        			std::string operand2;
+        			std::string dataType;
+    				std::string returnValue;
+        		    Register * returnRegister;
+
+        		};
+        		struct Phi {
+    				std::string paths[PHIPATHMAX];
+        		};
+        		struct Flags {
+        			bool nnan = false,
+        				ninf = false,
+        				nsz = false,
+        				arcp = false,
+        				contract = false,
+        				afn = false,
+        				reassoc = false,
+        				fast = false;
+    					nsw = false;
+    					nuw = false;
+    					exact = false;
+        		};
+        		struct Condition {
+    				std::string cond;
+        			bool eq = false,
+        				ne = false,
+        				ugt = false,
+        				uge = false,
+        				ult = false,
+        				ule = false,
+        				sgt = false,
+        				sge = false,
+        				slt = false,
+        				sle = false,
+        				condFalse = false,
+        				condTrue = false,
+        				oeq = false,
+        				ogt = false,
+        				oge = false,
+        				olt = false,
+        				ole = false,
+        				one = false,
+        				ord = false,
+        				ueq = false,
+        				une = false,
+        				uno = false;
+        		};
+        		Phi phi;
+        		Flags flags;
+        		Condition condition;
+        		Params params;
+        		Clock clock;
+        		Branch branch;
+        	};
+        	Attributes attributes;
     	
   public:
     ComputeNode(std::string line, RegisterList *list, std::string prev);
