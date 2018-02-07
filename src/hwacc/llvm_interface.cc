@@ -5,7 +5,8 @@
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
-    filename(p->in_file) {
+    filename(p->in_file),
+    numPE(p->proc_elem) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -48,6 +49,7 @@ LLVMInterface::tick() {
             } else {
                 currCompNode->compute();
                 //We are finished execution. Raise interrupts!
+                //There is no need to schedule another event
             }
         }
         if (!tickEvent.scheduled())
@@ -84,7 +86,7 @@ LLVMInterface::constructBBList() {
                         commaPos = line.find(",", percPos);
                         if (commaPos < 0) commaPos = line.find(")");
                         std::string regName = line.substr(percPos, (commaPos-percPos));
-                        regList->addRegister(new Register(regName, comm->getMMRData(paramNum)));
+                        regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum)));
                         paramNum++;
                     }
                     linePos = percPos + 1;
