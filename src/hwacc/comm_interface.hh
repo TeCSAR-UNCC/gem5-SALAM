@@ -61,6 +61,61 @@ class CommInterface : public BasicPioDevice
         virtual const char *description() const { return "CommInterface tick"; }
     };
 
+    class memRequest {
+      public:
+        Addr address;
+        size_t length;
+        memRequest *next;
+        uint8_t *data;
+
+        memRequest(Addr add, size_t len) {
+            address = add;
+            length = len;
+            next = NULL;
+            data = NULL;
+        }
+        memRequest(Addr add, uint8_t *dat, size_t len) {
+            address = add;
+            length = len;
+            next = NULL;
+            data = dat;
+        }
+    };
+
+    class requestQueue {
+      private:
+        memRequest *head;
+        memRequest *tail;
+      public:
+        requestQueue() {
+          head = NULL;
+          tail = NULL;
+        }
+        void enqueue(memRequest *req) {
+          if (head) {
+            tail->next = req;
+          } else {
+            head = req;
+          }
+          tail = req;
+        }
+        memRequest * dequeue() {
+          assert(head);
+          memRequest *temp = head;
+          if(head != tail) {
+            head = head->next;
+          } else {
+            head = NULL;
+            tail = NULL;
+          }
+
+          return temp;
+        }
+    };
+
+    requestQueue *readQueue, *writeQueue;
+    int readQueueSize, writeQueueSize;
+
     MemSidePort memPort;
     MemSidePort* dataPort;
     CommInterface *comm;
@@ -81,9 +136,12 @@ class CommInterface : public BasicPioDevice
     Tick readDone;
     Tick totalLength;
 
-    uint8_t *curData;
+    uint8_t *readBuffer;
+    uint8_t *writeBuffer;
     bool *readsDone;
     bool running;
+    bool reading;
+    bool writing;
     bool computationNeeded;
 
     void tryRead();
@@ -118,10 +176,15 @@ class CommInterface : public BasicPioDevice
 
     void recvPacket(PacketPtr pkt);
 
-    int prepRead(Addr src, size_t length);
-    int prepWrite(Addr dst, uint8_t* value, size_t length);
+    int prepRead(memRequest *readReq);
+    int prepWrite(memRequest *writeReq);
+    //int prepRead(Addr src, size_t length);
+    //int prepWrite(Addr dst, uint8_t* value, size_t length);
 
-    uint8_t* getCurData() { return curData; }
+    void enqueueRead(Addr src, size_t length);
+    void enqueueWrite(Addr dst, uint8_t* value, size_t length);
+
+    uint8_t* getReadBuffer() { return readBuffer; }
 
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }

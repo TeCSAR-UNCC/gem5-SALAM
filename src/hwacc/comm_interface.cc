@@ -34,11 +34,17 @@ CommInterface::CommInterface(Params *p) :
     needToRead = false;
     needToWrite = false;
     running = false;
+    reading = false;
+    writing = false;
     processingDone = false;
     computationNeeded = false;
     dataPort = &memPort;
     mmreg = new uint8_t[io_size];
     cu = NULL;
+    readQueue = new requestQueue();
+    writeQueue = new requestQueue();
+    readQueueSize = 0;
+    writeQueueSize = 0;
 }
 
 bool
@@ -75,7 +81,7 @@ void
 CommInterface::recvPacket(PacketPtr pkt) {
     if (pkt->isRead()) {
         DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
-        pkt->writeData(curData + (pkt->req->getPaddr() - beginAddr));
+        pkt->writeData(readBuffer + (pkt->req->getPaddr() - beginAddr));
 
         for (int i = pkt->req->getPaddr() - beginAddr;
              i < pkt->req->getPaddr() - beginAddr + pkt->getSize(); i++)
@@ -104,9 +110,9 @@ CommInterface::recvPacket(PacketPtr pkt) {
             *(uint32_t *)mmreg |= 0x80000000;
             DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
             needToWrite = false;
-            delete[] curData;
+            delete[] writeBuffer;
             delete[] readsDone;
-            running = false;
+            writing = false;
         } else {
             if (!tickEvent.scheduled())
             {
@@ -114,12 +120,21 @@ CommInterface::recvPacket(PacketPtr pkt) {
             }
         }
     }
+    if(!reading && (readQueueSize > 0)) {
+        prepRead(readQueue->dequeue());
+        readQueueSize--;
+    }
+    if(!writing && (writeQueueSize > 0)) {
+        prepWrite(writeQueue->dequeue());
+        writeQueueSize--;
+    }
     if (pkt->req) delete pkt->req;
     delete pkt;
 }
 
 void
 CommInterface::tick() {
+    running = writing || reading;
     if (!running) {
         DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
@@ -213,14 +228,14 @@ CommInterface::tryWrite() {
 
     Request::Flags flags;
     uint8_t *data = new uint8_t[size];
-    std::memcpy(data, &curData[totalLength-writeLeft], size);
+    std::memcpy(data, &writeBuffer[totalLength-writeLeft], size);
     RequestPtr req = new Request(currentWriteAddr, size, flags, masterId);
     req->setExtraData((uint64_t)data);
 
 
     DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", totalLength, writeLeft);
     DPRINTF(CommInterface, "Trying to write to addr: 0x%x, %d bytes, data 0x%08x\n",
-        currentWriteAddr, size, *((int*)(&curData[totalLength-writeLeft])));
+        currentWriteAddr, size, *((int*)(&writeBuffer[totalLength-writeLeft])));
 
     PacketPtr pkt = new Packet(req, MemCmd::WriteReq);
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
@@ -236,9 +251,11 @@ CommInterface::tryWrite() {
 }
 
 int
-CommInterface::prepRead(Addr src, size_t length) {
+CommInterface::prepRead(memRequest *readReq) {
+    Addr src = readReq->address;
+    size_t length = readReq->length;
     assert(length > 0);
-    assert(!running);
+    assert(!reading);
     running = true;
     gic->clearInt(int_num);
 
@@ -258,10 +275,10 @@ CommInterface::prepRead(Addr src, size_t length) {
 
     readDone = 0;
 
-    curData = new uint8_t[length];
+    readBuffer = new uint8_t[length];
     readsDone = new bool[length];
     for (int i = 0; i < length; i++) {
-        curData[i] = 0;
+        readBuffer[i] = 0;
         readsDone[i] = false;
     }
 
@@ -273,10 +290,13 @@ CommInterface::prepRead(Addr src, size_t length) {
 }
 
 int
-CommInterface::prepWrite(Addr dst, uint8_t* value, size_t length) {
-    assert(!running);
+CommInterface::prepWrite(memRequest *writeReq) {
+    assert(!writing);
+    Addr dst = writeReq->address;
+    uint8_t *value = writeReq->data;
+    size_t length = writeReq->length;
     assert(length > 0);
-    running = true;
+    writing = true;
     gic->clearInt(int_num);
     *(uint32_t *)mmreg &= 0xefffffff;
 
@@ -297,10 +317,10 @@ CommInterface::prepWrite(Addr dst, uint8_t* value, size_t length) {
     readDone = length;
     writeDone = 0;
 
-    curData = new uint8_t[length];
+    writeBuffer = new uint8_t[length];
     readsDone = new bool[length];
     for (int i = 0; i < length; i++) {
-        curData[i] = *(value + i);
+        writeBuffer[i] = *(value + i);
         readsDone[i] = true;
     }
 
@@ -309,6 +329,18 @@ CommInterface::prepWrite(Addr dst, uint8_t* value, size_t length) {
     }
 
     return 0;
+}
+
+void
+CommInterface::enqueueRead(Addr src, size_t length) {
+    readQueue->enqueue(new memRequest(src, length));
+    readQueueSize++;
+}
+
+void
+CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
+    writeQueue->enqueue(new memRequest(dst, value, length));
+    writeQueueSize++;
 }
 
 Tick
