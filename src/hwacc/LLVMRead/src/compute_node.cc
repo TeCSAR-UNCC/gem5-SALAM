@@ -1,5 +1,6 @@
 #include "compute_node.hh"
 
+
 ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev) {	
 
 	// Components to be moved into the attributes struct in the future
@@ -18,7 +19,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     std::vector<std::string> parameters;
     //
 
-
+	
     // Find the return register. If it exists, it is always the first component of the line
     if (returnChk > 0) {
     	// Create new pointer to the return register
@@ -876,270 +877,267 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 void
 ComputeNode::compute() {
-
+	
 	switch (s_opMap[opCode]) {
 	case IR_Move: {
-
+	
 		break;
 	}
 	case IR_Ret: {
-
+		Operations::llvm_ret(attributes);
 		break;
 	}
 	case IR_Br: {
-
+		Operations::llvm_br(attributes);
 		break;
 	}
 	case IR_Switch: {
-
+		Operations::llvm_switch(attributes);
 		break;
 	}
 	case IR_IndirectBr: {
-
+		Operations::llvm_indirectbr(attributes);
 		break;
 	}
 	case IR_Invoke: {
-
+		Operations::llvm_invoke(attributes);
 		break;
 	}
 	case IR_Resume: {
-
+		Operations::llvm_resume(attributes);
 		break;
 	}
 	case IR_Unreachable: {
-
+		Operations::llvm_unreachable(attributes);
 		break;
 	}
 	case IR_Add: {
-
+		Operations::llvm_add(attributes);
 		break;
 	}
 	case IR_FAdd: {
-
+		Operations::llvm_fadd(attributes);
 		break;
 	}
 	case IR_Sub: {
-
+		Operations::llvm_sub(attributes);
 		break;
 	}
 	case IR_FSub: {
-
+		Operations::llvm_fsub(attributes);
 		break;
 	}
 	case IR_Mul: {
-
+		Operations::llvm_mul(attributes);
 		break;
 	}
 	case IR_FMul: {
-
+		Operations::llvm_fmul(attributes);
 		break;
 	}
 	case IR_UDiv: {
-
+		Operations::llvm_udiv(attributes);
 		break;
 	}
 	case IR_SDiv: {
-
+		Operations::llvm_sdiv(attributes);
 		break;
 	}
 	case IR_FDiv: {
-
+		Operations::llvm_fdiv(attributes);
 		break;
 	}
 	case IR_URem: {
-
+		Operations::llvm_urem(attributes);
 		break;
 	}
 	case IR_SRem: {
-
+		Operations::llvm_srem(attributes);
 		break;
 	}
 	case IR_FRem: {
-
+		Operations::llvm_frem(attributes);
 		break;
 	}
 	case IR_Shl: {
-
+		Operations::llvm_shl(attributes);
 		break;
 	}
 	case IR_LShr: {
-
+		Operations::llvm_lshr(attributes);
 		break;
 	}
 	case IR_AShr: {
-
+		Operations::llvm_ashr(attributes);
 		break;
 	}
 	case IR_And: {
-
+		Operations::llvm_and(attributes);
 		break;
 	}
 	case IR_Or: {
-
+		Operations::llvm_or(attributes);
 		break;
 	}
 	case IR_Xor: {
-
+		Operations::llvm_xor(attributes);
 		break;
 	}
 
 	case IR_Alloca: {
-
+		Operations::llvm_alloca(attributes);
 		break;
 	}
 	case IR_Load: {
-		//		    uint8_t* getCurData() { return curData; }
+		Operations::llvm_load(attributes);
 		break;
 	}
 	case IR_Store: {
-		//			comm_interface.hh
-		//		    int prepRead(Addr src, size_t length);
-		//		    int prepWrite(Addr dst, uint8_t* value, size_t length);
-
+		Operations::llvm_store(attributes);
 		break;
 	}
 	case IR_GetElementPtr: {
-
+		Operations::llvm_getelementptr(attributes);
 		break;
 	}
 	case IR_Fence: {
-
+		Operations::llvm_fence(attributes);
 		break;
 	}
 	case IR_AtomicCmpXchg: {
-
+		Operations::llvm_cmpxchg(attributes);
 		break;
 	}
 	case IR_AtomicRMW: {
-
+		Operations::llvm_atomicrmw(attributes);
 		break;
 	}
 	case IR_Trunc: {
-
+		Operations::llvm_trunc(attributes);
 		break;
 	}
 	case IR_ZExt: {
-
+		Operations::llvm_zext(attributes);
 		break;
 	}
 	case IR_SExt: {
-
+		Operations::llvm_sext(attributes);
 		break;
 	}
 	case IR_FPToUI: {
-
+		Operations::llvm_fptoui(attributes);
 		break;
 	}
 	case IR_FPToSI: {
-
+		Operations::llvm_fptosi(attributes);
 		break;
 	}
 	case IR_UIToFP: {
-
+		Operations::llvm_uitofp(attributes);
 		break;
 	}
 	case IR_SIToFP: {
-
+		Operations::llvm_sitofp(attributes);
 		break;
 	}
 	case IR_FPTrunc: {
-
+		Operations::llvm_fptrunc(attributes);
 		break;
 	}
 	case IR_FPExt: {
-
+		Operations::llvm_fpext(attributes);
 		break;
 	}
 	case IR_PtrToInt: {
-
+		Operations::llvm_ptrtoint(attributes);
 		break;
 	}
 	case IR_IntToPtr: {
-
+		Operations::llvm_inttoptr(attributes);
 		break;
 	}
 	case IR_BitCast: {
-
+		Operations::llvm_bitcast(attributes);
 		break;
 	}
 	case IR_AddrSpaceCast: {
-
+		Operations::llvm_addrspacecast(attributes);
 		break;
 	}
 	case IR_ICmp: {
-
+		Operations::llvm_icmp(attributes);
 		break;
 	}
 	case IR_FCmp: {
-
+		Operations::llvm_fcmp(attributes);
 		break;
 	}
 	case IR_PHI: {
-
+		Operations::llvm_phi(attributes, prevBB);
 		break;
 	}
 	case IR_Call: {
-
+		Operations::llvm_call(attributes);
 		break;
 	}
 	case IR_Select: {
-
+		Operations::llvm_select(attributes);
 		break;
 	}
 	case IR_VAArg: {
-
+		Operations::llvm_vaarg(attributes);
 		break;
 	}
 	case IR_ExtractElement: {
-
+		Operations::llvm_extractelement(attributes);
 		break;
 	}
 	case IR_InsertElement: {
-
+		Operations::llvm_insertelement(attributes);
 		break;
 	}
 	case IR_ShuffleVector: {
-
+		Operations::llvm_shufflevector (attributes);
 		break;
 	}
 	case IR_ExtractValue: {
-
+		Operations::llvm_extractvalue(attributes);
 		break;
 	}
 	case IR_InsertValue: {
-
+		Operations::llvm_insertvalue(attributes);
 		break;
 	}
 	case IR_LandingPad: {
-
+		Operations::llvm_landingpad(attributes);
 		break;
 	}
 	case IR_DMAFence: {
-
+		Operations::llvm_dmafence(attributes);
 		break;
 	}
 	case IR_DMAStore: {
-
+		Operations::llvm_dmastore(attributes);
 		break;
 	}
 	case IR_DMALoad: {
-
+		Operations::llvm_dmaload(attributes);
 		break;
 	}
 	case IR_IndexAdd: {
-
+		Operations::llvm_indexadd(attributes);
 		break;
 	}
 	case IR_SilentStore: {
-
+		Operations::llvm_silentstore(attributes);
 		break;
 	}
 	case IR_Sine: {
-
+		Operations::llvm_sine(attributes);
 		break;
 	}
 	case IR_Cosine: {
-
+		Operations::llvm_cosine(attributes);
 		break;
 	}
 
@@ -1151,7 +1149,6 @@ ComputeNode::compute() {
 
 
 }
-
 std::string
 ComputeNode::computeBranch() {
     return "";

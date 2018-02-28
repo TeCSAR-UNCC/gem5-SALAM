@@ -1,37 +1,39 @@
 #include "operations.hh"
 
+
+
 /* Operations::llvm Terminator Instructions */
-void Operations::llvm_move(Parameters &&parameters){
+void Operations::llvm_move(const struct Attributes& attributes){
     //Not in current Operations::llvm reference. memmove perhaps?
 }
-void Operations::llvm_ret(Parameters &parameters){
+void Operations::llvm_ret(const struct Attributes& attributes){
     //Operation of device is finished
 }
-std::string Operations::llvm_br(Parameters &parameters){
+std::string Operations::llvm_br(const struct Attributes& attributes){
     //Store currentBB as prevBB
     //Target of branch becomes currentBB
     return "";
 }
-void Operations::llvm_switch(Parameters &parameters){
+void Operations::llvm_switch(const struct Attributes&  attributes){
 	
 }
-void Operations::llvm_indirectbr(Parameters &parameters){
+void Operations::llvm_indirectbr(const struct Attributes&  attributes){
 	
 }
-void Operations::llvm_invoke(Parameters &parameters){
+void Operations::llvm_invoke(const struct Attributes&  attributes){
 	
 }
-void Operations::llvm_resume(Parameters &parameters){
+void Operations::llvm_resume(const struct Attributes&  attributes){
 	
 }
-void Operations::llvm_unreachable(Parameters &parameters){
+void Operations::llvm_unreachable(const struct Attributes&  attributes){
 	
 }
 ///////////////////////////////////////////////////////////////////////////////
 /* LLVM Binary Operations*/
 	/* Integer Operations*/
 
-void Operations::llvm_add(Parameters &parameters){
+void Operations::llvm_add(const struct Attributes&  attributes){
     // Integer Addition
 	// <result> = add <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw <ty> <op1>, <op2>; yields ty : result
@@ -40,7 +42,7 @@ void Operations::llvm_add(Parameters &parameters){
 
 
 }
-void Operations::llvm_sub(Parameters &parameters) {
+void Operations::llvm_sub(const struct Attributes&  attributes) {
 
 	// Subtract Instruction
 	// <result> = sub <ty> <op1>, <op2>; yields ty : result
@@ -50,7 +52,7 @@ void Operations::llvm_sub(Parameters &parameters) {
 
 
 }
-void Operations::llvm_mul(Parameters &parameters) {
+void Operations::llvm_mul(const struct Attributes&  attributes) {
 	// Multiply Instruction
 	// <result> = mul <ty> <op1>, <op2>          ; yields ty:result
 	// <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
@@ -59,22 +61,22 @@ void Operations::llvm_mul(Parameters &parameters) {
 
 
 }
-void Operations::llvm_udiv(Parameters &parameters) {
+void Operations::llvm_udiv(const struct Attributes&  attributes) {
 	// Unsigned Division
 
 
 }
-void Operations::llvm_sdiv(Parameters &parameters) {
+void Operations::llvm_sdiv(const struct Attributes&  attributes) {
 	// Signed Division
 
 
 }
-void Operations::llvm_urem(Parameters &parameters) {
+void Operations::llvm_urem(const struct Attributes&  attributes) {
 	//Unsigned modulo division
 
 
 }
-void Operations::llvm_srem(Parameters &parameters) {
+void Operations::llvm_srem(const struct Attributes&  attributes) {
 	//Signed modulo division
 
 
@@ -84,34 +86,34 @@ void Operations::llvm_srem(Parameters &parameters) {
 	/* Floating Point Operations*/
 	/* Data Types: half, float, double, fp128, x86_fp80, ppc_fp128*/
 
-void Operations::llvm_fadd(Parameters &parameters){
+void Operations::llvm_fadd(const struct Attributes&  attributes){
     // Floating point Addition
 	// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
 
 }
-void Operations::llvm_fsub(Parameters &parameters){
+void Operations::llvm_fsub(const struct Attributes&  attributes){
 	// Floating point Subtraction
 	// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
 	
 
 }
-void Operations::llvm_fmul(Parameters &parameters){
+void Operations::llvm_fmul(const struct Attributes&  attributes){
 	// Floating point Multiplication
 	// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
 	
 
 }
-void Operations::llvm_fdiv(Parameters &parameters){
+void Operations::llvm_fdiv(const struct Attributes&  attributes){
 	// Floating point Division
 	// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
 
 
 }
-void Operations::llvm_frem(Parameters &parameters){
+void Operations::llvm_frem(const struct Attributes&  attributes){
     // Floating point modulo division
 	// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
@@ -121,7 +123,7 @@ void Operations::llvm_frem(Parameters &parameters){
 ///////////////////////////////////////////////////////////////////////////////
 /* LLVM Bitwise Binary Operations */
 
-void Operations::llvm_shl(Parameters &parameters){
+void Operations::llvm_shl(const struct Attributes&  attributes){
 	// Shift Left Operation
 	// <result> = shl <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
@@ -130,7 +132,7 @@ void Operations::llvm_shl(Parameters &parameters){
 
 
 }
-void Operations::llvm_lshr(Parameters &parameters){
+void Operations::llvm_lshr(const struct Attributes&  attributes){
 	// Logical Shift Right Operation
 	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
@@ -138,7 +140,7 @@ void Operations::llvm_lshr(Parameters &parameters){
 
 
 }
-void Operations::llvm_ashr(Parameters &parameters){
+void Operations::llvm_ashr(const struct Attributes&  attributes){
 	// Arithmatic Shift Right Operation
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
@@ -146,19 +148,19 @@ void Operations::llvm_ashr(Parameters &parameters){
 
 
 }
-void Operations::llvm_and(Parameters &parameters){
+void Operations::llvm_and(const struct Attributes&  attributes){
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
 
 	
 }
-void Operations::llvm_or(Parameters &parameters){
+void Operations::llvm_or(const struct Attributes&  attributes){
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
 
 
 }
-void Operations::llvm_xor(Parameters &parameters){
+void Operations::llvm_xor(const struct Attributes&  attributes){
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 
@@ -167,23 +169,23 @@ void Operations::llvm_xor(Parameters &parameters){
 ///////////////////////////////////////////////////////////////////////////////
 /* LLVM Memory Access Operations */
 
-void Operations::llvm_alloca(Parameters &parameters){
+void Operations::llvm_alloca(const struct Attributes&  attributes){
 	// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
 	// C++ Code - <type>* result = new <ty>[NumElements]
 	// Unsure how align will be used here if not == sizeOf(<type>)/8
 
 	
 }
-void Operations::llvm_load(Parameters &parameters){
+void Operations::llvm_load(const struct Attributes&  attributes){
 	// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
 	// address from which to load
 	
 }
-void Operations::llvm_store(Parameters &parameters){
+void Operations::llvm_store(const struct Attributes&  attributes){
 	// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void Operations::}
 	// Value to store, address at which to store it
 }
-void Operations:: Operations::llvm_getelementptr(Parameters &parameters){
+void Operations::llvm_getelementptr(const struct Attributes&  attributes){
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
@@ -202,28 +204,28 @@ void Operations:: Operations::llvm_getelementptr(Parameters &parameters){
 	// More Detailed Example:
 	/*
 	// C - Code
-	Parameters RT {
+	const struct Attributes&  RT {
 	char A;
 	int B[10][20];
 	char C;
 	};
-	Parameters ST {
+	const struct Attributes&  ST {
 	int X;
 	double Y;
-	Parameters RT Z;
+	const struct Attributes&  RT Z;
 	};
 
-	int *foo(Parameters ST *s) {
+	int *foo(const struct Attributes&  ST *s) {
 	return &s[1].Z.B[5][13];
 	}
 
 	LLVM - Code
-	%Parameters.RT = type { i8, [10 x [20 x i32]], i8 }
-	%Parameters.ST = type { i32, double, %Parameters.RT }
+	%const struct Attributes& .RT = type { i8, [10 x [20 x i32]], i8 }
+	%const struct Attributes& .ST = type { i32, double, %const struct Attributes& .RT }
 
-	define i32* @foo(%Parameters.ST* %s) nounwind uwtable readnone optsize ssp {
+	define i32* @foo(%const struct Attributes& .ST* %s) nounwind uwtable readnone optsize ssp {
 	entry:
-	%arrayidx = getelementptr inbounds %Parameters.ST* %s, i64 1, i32 2, i32 1, i64 5, i64 13
+	%arrayidx = getelementptr inbounds %const struct Attributes& .ST* %s, i64 1, i32 2, i32 1, i64 5, i64 13
 	ret i32* %arrayidx
 	}
 	
@@ -231,39 +233,47 @@ void Operations:: Operations::llvm_getelementptr(Parameters &parameters){
 
 	
 }
-void Operations::llvm_fence(Parameters &parameters){ }
-void Operations::llvm_cmpxchg(Parameters &parameters){ }
-void Operations::llvm_atomicrmw(Parameters &parameters){ }
+void Operations::llvm_fence(const struct Attributes&  attributes){ }
+void Operations::llvm_cmpxchg(const struct Attributes&  attributes){ }
+void Operations::llvm_atomicrmw(const struct Attributes&  attributes){ }
 
 /* Operations::llvm Conversion Operations */
-void Operations::llvm_trunc(Parameters &parameters){ }
-void Operations::llvm_zext(Parameters &parameters){ }
-void Operations::llvm_sext(Parameters &parameters){ }
-void Operations::llvm_fptoui(Parameters &parameters){ }
-void Operations::llvm_fptosi(Parameters &parameters){ }
-void Operations::llvm_uitofp(Parameters &parameters){ }
-void Operations::llvm_sitofp(Parameters &parameters){ }
-void Operations::llvm_fptrunc(Parameters &parameters){ }
-void Operations::llvm_fpext(Parameters &parameters){ }
-void Operations::llvm_ptrtoint(Parameters &parameters){ }
-void Operations::llvm_inttoptr(Parameters &parameters){ }
-void Operations::llvm_bitcast(Parameters &parameters){ }
-void Operations::llvm_addrspacecast(Parameters &parameters){ }
+void Operations::llvm_trunc(const struct Attributes&  attributes){ }
+void Operations::llvm_zext(const struct Attributes&  attributes){ }
+void Operations::llvm_sext(const struct Attributes&  attributes){ }
+void Operations::llvm_fptoui(const struct Attributes&  attributes){ }
+void Operations::llvm_fptosi(const struct Attributes&  attributes){ }
+void Operations::llvm_uitofp(const struct Attributes&  attributes){ }
+void Operations::llvm_sitofp(const struct Attributes&  attributes){ }
+void Operations::llvm_fptrunc(const struct Attributes&  attributes){ }
+void Operations::llvm_fpext(const struct Attributes&  attributes){ }
+void Operations::llvm_ptrtoint(const struct Attributes&  attributes){ }
+void Operations::llvm_inttoptr(const struct Attributes&  attributes){ }
+void Operations::llvm_bitcast(const struct Attributes&  attributes){ }
+void Operations::llvm_addrspacecast(const struct Attributes&  attributes){ }
 
 /* Operations::llvm Control Operations */
-void Operations::llvm_icmp(Parameters &parameters){ }
-void Operations::llvm_fcmp(Parameters &parameters){ }
-void Operations::llvm_phi(Parameters &parameters, std::string prevBB){ }
-void Operations::llvm_call(Parameters &parameters){ }
-void Operations::llvm_select(Parameters &parameters){ }
-void Operations::llvm_vaarg(Parameters &parameters){ }
-void Operations::llvm_landingpad(Parameters &parameters){ }
+void Operations::llvm_icmp(const struct Attributes&  attributes){ }
+void Operations::llvm_fcmp(const struct Attributes&  attributes){ }
+void Operations::llvm_phi(const struct Attributes&  attributes, std::string prevBB){ }
+void Operations::llvm_call(const struct Attributes&  attributes){ }
+void Operations::llvm_select(const struct Attributes&  attributes){ }
+void Operations::llvm_vaarg(const struct Attributes&  attributes){ }
+void Operations::llvm_landingpad(const struct Attributes&  attributes){ }
 
 /* Operations::llvm Vector Operations*/
-void Operations::llvm_extractelement(Parameters &parameters){ }
-void Operations::llvm_insertelement(Parameters &parameters){ }
-void Operations::llvm_shufflevector(Parameters &parameters){ }
+void Operations::llvm_extractelement(const struct Attributes&  attributes){ }
+void Operations::llvm_insertelement(const struct Attributes&  attributes){ }
+void Operations::llvm_shufflevector(const struct Attributes&  attributes){ }
 
 /* Operations::llvm Aggregate Operations */
-void Operations::llvm_extractvalue(Parameters &parameters){ }
-void Operations::llvm_insertvalue(Parameters &parameters){ }
+void Operations::llvm_extractvalue(const struct Attributes&  attributes){ }
+void Operations::llvm_insertvalue(const struct Attributes&  attributes){ }
+
+void Operations::llvm_dmafence(const struct Attributes& attributes) { }
+void Operations::llvm_dmastore(const struct Attributes& attributes) { }
+void Operations::llvm_dmaload(const struct Attributes& attributes) { }
+void Operations::llvm_indexadd(const struct Attributes& attributes){ }
+void Operations::llvm_silentstore(const struct Attributes& attributes) { }
+void Operations::llvm_sine(const struct Attributes& attributes) { }
+void Operations::llvm_cosine(const struct Attributes& attributes) { }

@@ -8,100 +8,97 @@
 #include <sstream>
 #include <vector>
 #include <cmath>
+#include "compute_node.hh"
 //#include "base/types.hh"
 
 #define DEFAULT -1
-
-struct Parameters{
-	std::string returnReg, operand1, operand2, dataType;
-	
-	
-};
+#define PHIPATHMAX 5
 
 class Operations {
   public:  
+	 
     /* LLVM Terminator Instructions */
-     void llvm_move(Parameters &&parameters);
-     void llvm_ret(Parameters &parameters);
-     std::string llvm_br(Parameters &parameters);
-     void llvm_switch(Parameters &parameters);
-     void llvm_indirectbr(Parameters &parameters);
-     void llvm_invoke(Parameters &parameters);
-     void llvm_resume(Parameters &parameters);
-     void llvm_unreachable(Parameters &parameters);
+      static void llvm_move(const struct Attributes& attributes);
+      static void llvm_ret(const struct Attributes& attributes);
+      static std::string llvm_br(const struct Attributes& attributes);
+      static void llvm_switch(const struct Attributes& attributes);
+      static void llvm_indirectbr(const struct Attributes& attributes);
+      static void llvm_invoke(const struct Attributes& attributes);
+      static void llvm_resume(const struct Attributes& attributes);
+      static void llvm_unreachable(const struct Attributes& attributes);
 
     /* LLVM Binary Operations*/
-     void llvm_add(Parameters &parameters);
-     void llvm_fadd(Parameters &parameters);
-     void llvm_sub(Parameters &parameters);
-     void llvm_fsub(Parameters &parameters);
-     void llvm_mul(Parameters &parameters);
-     void llvm_fmul(Parameters &parameters);
-     void llvm_udiv(Parameters &parameters);
-     void llvm_sdiv(Parameters &parameters);
-     void llvm_fdiv(Parameters &parameters);
-     void llvm_urem(Parameters &parameters);
-     void llvm_srem(Parameters &parameters);
-     void llvm_frem(Parameters &parameters);
+      static void llvm_add(const struct Attributes& attributes);
+      static void llvm_fadd(const struct Attributes& attributes);
+      static void llvm_sub(const struct Attributes& attributes);
+      static void llvm_fsub(const struct Attributes& attributes);
+      static void llvm_mul(const struct Attributes& attributes);
+      static void llvm_fmul(const struct Attributes& attributes);
+      static void llvm_udiv(const struct Attributes& attributes);
+      static void llvm_sdiv(const struct Attributes& attributes);
+      static void llvm_fdiv(const struct Attributes& attributes);
+      static void llvm_urem(const struct Attributes& attributes);
+      static void llvm_srem(const struct Attributes& attributes);
+      static void llvm_frem(const struct Attributes& attributes);
 
     /* LLVM Bitwise Binary Operations */
-     void llvm_shl(Parameters &parameters);
-     void llvm_lshr(Parameters &parameters);
-     void llvm_ashr(Parameters &parameters);
-     void llvm_and(Parameters &parameters);
-     void llvm_or(Parameters &parameters);
-     void llvm_xor(Parameters &parameters);
+      static void llvm_shl(const struct Attributes& attributes);
+      static void llvm_lshr(const struct Attributes& attributes);
+      static void llvm_ashr(const struct Attributes& attributes);
+      static void llvm_and(const struct Attributes& attributes);
+      static void llvm_or(const struct Attributes& attributes);
+      static void llvm_xor(const struct Attributes& attributes);
 
     /* LLVM Memory Access Operations */
-     void llvm_alloca(Parameters &parameters);
-     void llvm_load(Parameters &parameters);
-     void llvm_store(Parameters &parameters);
-     void llvm_getelementptr(Parameters &parameters);
-     void llvm_fence(Parameters &parameters);
-     void llvm_cmpxchg(Parameters &parameters);
-     void llvm_atomicrmw(Parameters &parameters);
+      static void llvm_alloca(const struct Attributes& attributes);
+      static void llvm_load(const struct Attributes& attributes);
+      static void llvm_store(const struct Attributes& attributes);
+      static void llvm_getelementptr(const struct Attributes& attributes);
+      static void llvm_fence(const struct Attributes& attributes);
+      static void llvm_cmpxchg(const struct Attributes& attributes);
+      static void llvm_atomicrmw(const struct Attributes& attributes);
 
     /* LLVM Conversion Operations */
-     void llvm_trunc(Parameters &parameters);
-     void llvm_zext(Parameters &parameters);
-     void llvm_sext(Parameters &parameters);
-     void llvm_fptoui(Parameters &parameters);
-     void llvm_fptosi(Parameters &parameters);
-     void llvm_uitofp(Parameters &parameters);
-     void llvm_sitofp(Parameters &parameters);
-     void llvm_fptrunc(Parameters &parameters);
-     void llvm_fpext(Parameters &parameters);
-     void llvm_ptrtoint(Parameters &parameters);
-     void llvm_inttoptr(Parameters &parameters);
-     void llvm_bitcast(Parameters &parameters);
-     void llvm_addrspacecast(Parameters &parameters);
+      static void llvm_trunc(const struct Attributes& attributes);
+      static void llvm_zext(const struct Attributes& attributes);
+      static void llvm_sext(const struct Attributes& attributes);
+      static void llvm_fptoui(const struct Attributes& attributes);
+      static void llvm_fptosi(const struct Attributes& attributes);
+      static void llvm_uitofp(const struct Attributes& attributes);
+      static void llvm_sitofp(const struct Attributes& attributes);
+      static void llvm_fptrunc(const struct Attributes& attributes);
+      static void llvm_fpext(const struct Attributes& attributes);
+      static void llvm_ptrtoint(const struct Attributes& attributes);
+      static void llvm_inttoptr(const struct Attributes& attributes);
+      static void llvm_bitcast(const struct Attributes& attributes);
+      static void llvm_addrspacecast(const struct Attributes& attributes);
 
     /* LLVM Control Operations */
-     void llvm_icmp(Parameters &parameters);
-     void llvm_fcmp(Parameters &parameters);
-     void llvm_phi(Parameters &parameters, std::string prevBB);
-     void llvm_call(Parameters &parameters);
-     void llvm_select(Parameters &parameters);
-     void llvm_vaarg(Parameters &parameters);
-     void llvm_landingpad(Parameters &parameters);
+      static void llvm_icmp(const struct Attributes& attributes);
+      static void llvm_fcmp(const struct Attributes& attributes);
+      static void llvm_phi(const struct Attributes& attributes, std::string prevBB);
+      static void llvm_call(const struct Attributes& attributes);
+      static void llvm_select(const struct Attributes& attributes);
+      static void llvm_vaarg(const struct Attributes& attributes);
+      static void llvm_landingpad(const struct Attributes& attributes);
 
     /* LLVM Vector Operations*/
-     void llvm_extractelement(Parameters &parameters);
-     void llvm_insertelement(Parameters &parameters);
-     void llvm_shufflevector(Parameters &parameters);
+      static void llvm_extractelement(const struct Attributes& attributes);
+      static void llvm_insertelement(const struct Attributes& attributes);
+      static void llvm_shufflevector(const struct Attributes& attributes);
 
     /* LLVM Aggregate Operations */
-     void llvm_extractvalue(Parameters &parameters);
-     void llvm_insertvalue(Parameters &parameters);
+      static void llvm_extractvalue(const struct Attributes& attributes);
+      static void llvm_insertvalue(const struct Attributes& attributes);
 
     /* Custome Operations (Not implemented yet) */
-     void llvm_dmafence(Parameters &parameters);
-     void llvm_dmastore(Parameters &parameters);
-     void llvm_dmaload(Parameters &parameters);
-     void llvm_indexadd(Parameters &parameters);
-     void llvm_silentstore(Parameters &parameters);
-     void llvm_sine(Parameters &parameters);
-     void llvm_cosine(Parameters &parameters);
+      static void llvm_dmafence(const struct Attributes& attributes);
+      static void llvm_dmastore(const struct Attributes& attributes);
+      static void llvm_dmaload(const struct Attributes& attributes);
+      static void llvm_indexadd(const struct Attributes& attributes);
+      static void llvm_silentstore(const struct Attributes& attributes);
+      static void llvm_sine(const struct Attributes& attributes);
+      static void llvm_cosine(const struct Attributes& attributes);
 };
 
 #endif //__OPERATIONS_HH__
