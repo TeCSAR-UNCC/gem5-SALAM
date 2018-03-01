@@ -97,7 +97,8 @@ CommInterface::recvPacket(PacketPtr pkt) {
 
         if (readDone >= totalLength)
         {
-            DPRINTF(CommInterface, "done reading!!\n");
+            DPRINTF(CommInterface, "Done reading\n");
+            cu->readCommit(readBuffer);
             needToRead = false;
             running = false;
         }
@@ -105,10 +106,11 @@ CommInterface::recvPacket(PacketPtr pkt) {
         DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         writeDone += pkt->getSize();
         if (!(writeDone < totalLength)) {
-            DPRINTF(CommInterface, "Done writing, completely done\n");
-            gic->sendInt(int_num);
-            *(uint32_t *)mmreg |= 0x80000000;
-            DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
+            DPRINTF(CommInterface, "Done writing\n");
+            //gic->sendInt(int_num);
+            //*(uint32_t *)mmreg |= 0x80000000;
+            //DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
+            cu->writeCommit();
             needToWrite = false;
             delete[] writeBuffer;
             delete[] readsDone;
@@ -286,6 +288,7 @@ CommInterface::prepRead(memRequest *readReq) {
         schedule(tickEvent, curTick() + processDelay);
     }
 
+    delete readReq;
     return 0;
 }
 
@@ -328,6 +331,7 @@ CommInterface::prepWrite(memRequest *writeReq) {
         schedule(tickEvent, curTick() + processDelay);
     }
 
+    delete writeReq;
     return 0;
 }
 

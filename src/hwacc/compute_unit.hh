@@ -29,7 +29,9 @@ class ComputeUnit : public SimObject {
   public:
     virtual void tick() {}
     ComputeUnit(ComputeUnitParams *p);
-    virtual void initialize() {};
+    virtual void initialize() {}
+    virtual void readCommit(uint8_t * data) {}
+    virtual void writeCommit() {}
 };
 
 #endif //__HWACC_COMPUTE_UNIT_HH__

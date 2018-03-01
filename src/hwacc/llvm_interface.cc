@@ -19,47 +19,32 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
 
 void
 LLVMInterface::tick() {
-    if (comm->isCompNeeded() && !running) {
-        LLVMInterface::constructBBList();
-        currBB = bbList->findBasicBlock("0");
-        prevBB = NULL;
-        currCompNode = currBB->getStart();
-        if(currCompNode->isBranch()) {
-            prevBB = currBB;
-            BasicBlock *branchTarget = bbList->findBasicBlock(currCompNode->computeBranch());
-            assert(branchTarget);
-            currBB = branchTarget;
-            currCompNode = currBB->getStart();
-        }
-        if (!tickEvent.scheduled())
-        {
-            schedule(tickEvent, curTick() + clock_period * process_delay);
-        }
-    } else if (running) {
-        if (!comm->isRunning()) { //If comm isn't running we aren't in a memory op
-            if(currCompNode->isBranch()) {
-                prevBB = currBB;
-                BasicBlock *branchTarget = bbList->findBasicBlock(currCompNode->computeBranch());
-                assert(branchTarget);
-                currBB = branchTarget;
-                currCompNode = currBB->getStart();
-            }else if (currCompNode != currBB->getEnd()) {
-                currCompNode->compute();
-                currCompNode = currBB->step();
-            } else {
-                currCompNode->compute();
-                //We are finished execution. Raise interrupts!
-                //There is no need to schedule another event
-            }
-        }
-        if (!tickEvent.scheduled())
-        {
-            schedule(tickEvent, curTick() + clock_period * process_delay);
-        }
-    }
+/*********************************************************************************************
+ CN Scheduling
+
+ Reservation Table:
+ | CN* | ReturnReg | DepList | In-Flight (T/F) |
+
+ As CNs are scheduled they are added to an in-flight queue depending on operation type.
+ Loads and Stores are maintained in separate queues, and are committed by the comm_interface.
+ Branch and phi instructions evaluate and commit immediately. All other CN types are added to
+ an in-flight compute queue.
+
+ Each tick we must first check our in-flight compute queue. Each node should have its cycle
+ count incremented, and should commit if max cycle is reached.
+
+ After queues are evaluated we must check our reservation table. If all dependencies of a CN
+ are satisfied we mark it as in-flight, evaluate it, and add it to its respective queue if
+ applicable. Upon commit the CN will be removed both from its queue and the reservation table.
+
+ New CNs are added to the reservation table whenever a new BB is encountered. This may occur
+ during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
+ if it is a phi or uncond br, and add it to our reservation table otherwise.
+*********************************************************************************************/
+
     if (!tickEvent.scheduled())
     {
-        schedule(tickEvent, comm->nextCycle());
+        schedule(tickEvent, curTick() + clock_period * process_delay);
     }
 }
 

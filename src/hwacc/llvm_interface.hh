@@ -30,6 +30,9 @@ class LLVMInterface : public ComputeUnit {
     void startup();
     void copyToBuffer(uint8_t *data, unsigned size);
     void initialize();
+
+    void readCommit(uint8_t * data) { }
+    void writeCommit() { }
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
