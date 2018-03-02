@@ -50,7 +50,8 @@ LLVMInterface::tick() {
 
 void
 LLVMInterface::constructBBList() {
-    bbList = new BasicBlockList();
+    bbList = new std::list<BasicBlock*>();
+    //bbList = new BasicBlockList();
     regList = new RegisterList();
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
@@ -80,7 +81,8 @@ LLVMInterface::constructBBList() {
                 }
                 currBB = new BasicBlock("0", bbnum);
                 bbnum++;
-                bbList->addBasicBlock(currBB);
+                bbList->push_back(currBB);
+                //bbList->addBasicBlock(currBB);
             }
         } else {
             if (line.find("\n") > 0) {
@@ -89,13 +91,15 @@ LLVMInterface::constructBBList() {
                     prevBB = currBB;
                     currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum);
                     bbnum++;
-                    bbList->addBasicBlock(currBB);
+                    bbList->push_back(currBB);
+                    //bbList->addBasicBlock(currBB);
                 } else if (line.find(".") == 0) {
                     int labelEnd = line.find(" ");
                     prevBB = currBB;
                     currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
                     bbnum++;
-                    bbList->addBasicBlock(currBB);
+                    bbList->push_back(currBB);
+                    //bbList->addBasicBlock(currBB);
                 } else if (line.find("}") == 0) {
                     inFunction = false;
                 } else {
@@ -117,7 +121,8 @@ LLVMInterface::copyToBuffer(uint8_t *data, unsigned size) {
 
 void
 LLVMInterface::initialize() {
-    constructBBList();
+    if(!bbList)
+        constructBBList();
     tick();
 }
 

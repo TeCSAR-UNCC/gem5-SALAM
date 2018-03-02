@@ -7,13 +7,15 @@
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/operations.hh"
 
+#include <list>
+
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
     uint32_t numPE;
     bool running;
     bool finished;
-    BasicBlockList *bbList;
+    std::list<BasicBlock*> *bbList;
     RegisterList *regList;
     BasicBlock *currBB;
     BasicBlock *prevBB;

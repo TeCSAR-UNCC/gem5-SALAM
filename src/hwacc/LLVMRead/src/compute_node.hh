@@ -296,7 +296,7 @@ class ComputeNode {
    
    
    
-    ComputeNode * next;
+    //ComputeNode * next;
     std::string llvm_inst;
     std::string opCode;
     std::string prevBB;
