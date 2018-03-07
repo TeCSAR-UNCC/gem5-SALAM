@@ -939,3 +939,8 @@ Interrupts:
         #  loader, but this is the only place we can configure the
         #  system.
         cur_sys.m5ops_base = 0x10010000
+
+    def setupBareMetalBoot(self, mem_bus, cur_sys):
+        self.nvmem = SimpleMemory(range=AddrRange(0, size='64MB'),
+                                  conf_table_reported=False)
+        self.nvmem.port = mem_bus.master

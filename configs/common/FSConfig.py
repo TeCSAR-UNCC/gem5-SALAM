@@ -304,6 +304,7 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
             self.realview.uart0.end_on_eot = True
         else:
             self.realview.uart.end_on_eot = True
+        self.realview.setupBareMetalBoot(self.membus, self)
     else:
         if machine_type in default_kernels:
             self.kernel = binary(default_kernels[machine_type])
