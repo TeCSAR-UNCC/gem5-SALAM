@@ -37,16 +37,17 @@
 ENTRY(_Reset)
 SECTIONS
 {
- . = 0x0;
- .text : {
- boot.o (INTERRUPT_VECTOR)
- *(.text)
- }
- .data : { *(.data) }
- .bss : { *(.bss COMMON) }
- . = ALIGN(8);
- stack_base = .;
- . = . + 0x1000; /* 4kB of stack memory*/
- . = . + 0x1000; /* 4kB of stack memory for IRQ*/
- PROVIDE (end = .)   ;
+	. = 0x80000000;
+	.text : {
+		boot.o (INTERRUPT_VECTOR)
+		*(.text)
+	}
+
+	.data : { *(.data) }
+	.bss : { *(.bss COMMON) }
+	. = ALIGN(8);
+	stack_base = .;
+	. = . + 0x1000; /* 4kB of stack memory*/
+	. = . + 0x1000; /* 4kB of stack memory for IRQ*/
+	PROVIDE (end = .)   ;
 }

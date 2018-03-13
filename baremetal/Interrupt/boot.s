@@ -51,17 +51,23 @@ _Reset:
 //.equ stack_base,      0x18000   // stack_base defined in Linker Script
 
 //GIC_Distributor
-.equ GIC_Dist_Base,     0x1f001000
+//.equ GIC_Dist_Base,     0x1f001000
+.equ GIC_Dist_Base,		0x2c001000
 
 //Register offsets
 .equ set_enable1,       0x104
 .equ set_enable2,       0x108
 
 //Example definitions
-.equ timer_irq_id,      36   // 36 <64 => set_enable1 Reg
+//.equ timer_irq_id,      36   // 36 <64 => set_enable1 Reg
+.equ timer_irq_id,      131   // 36 <64 => set_enable1 Reg
+.equ kmio_irq_id,      44
+.equ uart0_irq_id,      37
+.equ rtc_irq_id,      36
 
 //GIC_CPU_INTERFACE
-.equ GIC_CPU_BASE,                  0x1f000100
+//.equ GIC_CPU_BASE,                  0x1f000100
+.equ GIC_CPU_BASE,                  0x2c002000
 .equ GIC_CPU_mask_reg_offset,       0x04
 .equ GIC_CPU_Int_Ack_reg_offset,    0x0C
 .equ GIC_CPU_End_of_int_offset,     0x10
@@ -155,7 +161,10 @@ irq_handler:
     ldr r2, [r1]
 
 irq_unexpected:
-    cmp r2, #timer_irq_id
+//    cmp r2, #timer_irq_id
+//	cmp r2, #kmio_irq_id
+//	cmp r2, #uart0_irq_id
+	cmp r2, #rtc_irq_id
     bne irq_unexpected  // if irq is not from timer0
 
     // Jump to C - must clear the timer interrupt!
@@ -163,7 +172,10 @@ irq_unexpected:
 
     // write the IRQ ID to the END_OF_INTERRUPT Register of GIC_CPU_INTERFACE
     ldr r1, =GIC_CPU_BASE + GIC_CPU_End_of_int_offset
-    ldr r2, =timer_irq_id
+//    ldr r2, =timer_irq_id
+//	ldr r2, = uart0_irq_id
+	ldr r2, = rtc_irq_id
+//	ldr r2, = kmio_irq_id
     str r2, [r1]
 
     pop {r0-r7,lr}
