@@ -43,28 +43,17 @@ int main(void)
      * file.
      */
 
-    unsigned int delay = 0;
-    unsigned int counter = 0;
+	uint32_t counter = 0, reg_Val;
+	uint32_t *rtc = (uint32_t *)0x1c170000; // Base Address
 
-    int *timer1 = (int*)0x10011000; // Timer Base Address
-    *timer1 = 0x1000; // Timer StartValue
+	rtc[3] = 0x01;			//RTC Enable
+	rtc[4] = 0x01;			//RTC INT Enable
 
-    printf("##################################################\n");
-    printf("#################      Boot     ##################\n");
-    printf("##################################################\n");
-    printf("                                                  \n");
+	reg_Val = rtc[5];
+	printf("Counter Value is %d\r\n", reg_Val);
 
-    while (1) {
-        if (counter > 300000) {
-            counter = 0;
-            delay++;
-            if (delay == 5) {
-                printf("Start Timer Interrupts\n");
-                timer1[2] = 0xE0;   // Timer Start
-            }
-            printf("Delay: %u\n",delay);
-        } else {
-            counter++;
-        }
-    }
+	while(1) {
+		rtc[0] = 321;
+		printf("Masked ISR value: %d\r\n", rtc[6]);
+	}
 }
