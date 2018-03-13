@@ -61,7 +61,7 @@ _Reset:
 //Example definitions
 //.equ timer_irq_id,      36   // 36 <64 => set_enable1 Reg
 .equ timer_irq_id,      131   // 36 <64 => set_enable1 Reg
-.equ kmio_irq_id,      44   
+.equ kmio_irq_id,      44
 .equ uart0_irq_id,      37
 .equ rtc_irq_id,      36
 

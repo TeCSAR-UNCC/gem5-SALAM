@@ -54,6 +54,6 @@ int main(void)
 
 	while(1) {
 		rtc[0] = 321;
-		printf("Masked ISR value: %d\r\n", rtc[6]);
+		printf("Data Register: %d\r\n", rtc[6]);
 	}
 }
