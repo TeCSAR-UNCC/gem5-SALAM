@@ -2,7 +2,6 @@
 
 ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev) {	
 
-std::string opcode;
 	std::vector<std::string> parameters;
 	int leftDelimeter, rightDelimeter, lastInLine;
     int returnChk = line.find(" = ");
@@ -11,6 +10,7 @@ std::string opcode;
 	int n = 1; 
 	int dependencies = 0;
 	int i = 10;
+	prevBB = prev;
     // ////////////////////////////////////////////////////////////////////
    
 
@@ -169,7 +169,7 @@ std::string opcode;
 			// Other Operations
 			// Custom Operations
 
-    		switch (s_opMap[opCode]) {
+    		switch (s_opMap[instruction.general.opCode]) {
 
 			// Terminator Instructions 
 
@@ -215,6 +215,7 @@ std::string opcode;
 				instruction.general.flowControl = true;
 				if (parameters.size() == 2) {
 					//Unconditional branch
+					instruction.terminator.unconditional = true;
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[last]) == NULL) {
 						instruction.terminator.dest = new Register(parameters[last]);
@@ -225,6 +226,7 @@ std::string opcode;
 						instruction.terminator.dest = list->findRegister(parameters[last]);
 						instruction.dependencies.registers[0] = instruction.terminator.dest;
 					}
+					instruction.general.returnRegister = instruction.terminator.dest;
 				}
 				else {
 					// Conditional Branch
@@ -1420,7 +1422,6 @@ std::string opcode;
 					attributes.params.type2 = parameters[1];
 					attributes.params.numElements = parameters[2];
 				}
-				i = RESET;
 				break;
 			}
 			case IR_Load: {
@@ -1579,13 +1580,13 @@ std::string opcode;
 			case IR_PHI: {
 				// <result> = phi <ty> [ <val0>, <label0>], ...
 
-				//Improvement Opportunity - Dynamically allocated string to eliminate PHIPATHMAX
-				attributes.params.dataType = parameters[0];
-				for (int i = 1; i <= PHIPATHMAX; i++) {
-					if (!(parameters[i].empty())) {
-						attributes.phi.paths[i - 1] = parameters[i];
-					}
-				}
+				// //Improvement Opportunity - Dynamically allocated string to eliminate PHIPATHMAX
+				// attributes.params.dataType = parameters[0];
+				// for (int i = 1; i <= PHIPATHMAX; i++) {
+				// 	if (!(parameters[i].empty())) {
+				// 		attributes.phi.paths[i - 1] = parameters[i];
+				// 	}
+				// }
 				break;
 			}
 			case IR_Call: {
@@ -1682,266 +1683,266 @@ std::string opcode;
 void
 ComputeNode::compute() {
 	
-	switch (s_opMap[opCode]) {
+	switch (s_opMap[instruction.general.opCode]) {
 	case IR_Move: {
 	
 		break;
 	}
 	case IR_Ret: {
-		Operations::llvm_ret(attributes);
+		Operations::llvm_ret(instruction);
 		break;
 	}
 	case IR_Br: {
-		Operations::llvm_br(attributes);
+		Operations::llvm_br(instruction);
 		break;
 	}
 	case IR_Switch: {
-		Operations::llvm_switch(attributes);
+		Operations::llvm_switch(instruction);
 		break;
 	}
 	case IR_IndirectBr: {
-		Operations::llvm_indirectbr(attributes);
+		Operations::llvm_indirectbr(instruction);
 		break;
 	}
 	case IR_Invoke: {
-		Operations::llvm_invoke(attributes);
+		Operations::llvm_invoke(instruction);
 		break;
 	}
 	case IR_Resume: {
-		Operations::llvm_resume(attributes);
+		Operations::llvm_resume(instruction);
 		break;
 	}
 	case IR_Unreachable: {
-		Operations::llvm_unreachable(attributes);
+		Operations::llvm_unreachable(instruction);
 		break;
 	}
 	case IR_Add: {
-		Operations::llvm_add(attributes);
+		Operations::llvm_add(instruction);
 		break;
 	}
 	case IR_FAdd: {
-		Operations::llvm_fadd(attributes);
+		Operations::llvm_fadd(instruction);
 		break;
 	}
 	case IR_Sub: {
-		Operations::llvm_sub(attributes);
+		Operations::llvm_sub(instruction);
 		break;
 	}
 	case IR_FSub: {
-		Operations::llvm_fsub(attributes);
+		Operations::llvm_fsub(instruction);
 		break;
 	}
 	case IR_Mul: {
-		Operations::llvm_mul(attributes);
+		Operations::llvm_mul(instruction);
 		break;
 	}
 	case IR_FMul: {
-		Operations::llvm_fmul(attributes);
+		Operations::llvm_fmul(instruction);
 		break;
 	}
 	case IR_UDiv: {
-		Operations::llvm_udiv(attributes);
+		Operations::llvm_udiv(instruction);
 		break;
 	}
 	case IR_SDiv: {
-		Operations::llvm_sdiv(attributes);
+		Operations::llvm_sdiv(instruction);
 		break;
 	}
 	case IR_FDiv: {
-		Operations::llvm_fdiv(attributes);
+		Operations::llvm_fdiv(instruction);
 		break;
 	}
 	case IR_URem: {
-		Operations::llvm_urem(attributes);
+		Operations::llvm_urem(instruction);
 		break;
 	}
 	case IR_SRem: {
-		Operations::llvm_srem(attributes);
+		Operations::llvm_srem(instruction);
 		break;
 	}
 	case IR_FRem: {
-		Operations::llvm_frem(attributes);
+		Operations::llvm_frem(instruction);
 		break;
 	}
 	case IR_Shl: {
-		Operations::llvm_shl(attributes);
+		Operations::llvm_shl(instruction);
 		break;
 	}
 	case IR_LShr: {
-		Operations::llvm_lshr(attributes);
+		Operations::llvm_lshr(instruction);
 		break;
 	}
 	case IR_AShr: {
-		Operations::llvm_ashr(attributes);
+		Operations::llvm_ashr(instruction);
 		break;
 	}
 	case IR_And: {
-		Operations::llvm_and(attributes);
+		Operations::llvm_and(instruction);
 		break;
 	}
 	case IR_Or: {
-		Operations::llvm_or(attributes);
+		Operations::llvm_or(instruction);
 		break;
 	}
 	case IR_Xor: {
-		Operations::llvm_xor(attributes);
+		Operations::llvm_xor(instruction);
 		break;
 	}
 
 	case IR_Alloca: {
-		Operations::llvm_alloca(attributes);
+		Operations::llvm_alloca(instruction);
 		break;
 	}
 	case IR_Load: {
-		Operations::llvm_load(attributes);
+		Operations::llvm_load(instruction);
 		break;
 	}
 	case IR_Store: {
-		Operations::llvm_store(attributes);
+		Operations::llvm_store(instruction);
 		break;
 	}
 	case IR_GetElementPtr: {
-		Operations::llvm_getelementptr(attributes);
+		Operations::llvm_getelementptr(instruction);
 		break;
 	}
 	case IR_Fence: {
-		Operations::llvm_fence(attributes);
+		Operations::llvm_fence(instruction);
 		break;
 	}
 	case IR_AtomicCmpXchg: {
-		Operations::llvm_cmpxchg(attributes);
+		Operations::llvm_cmpxchg(instruction);
 		break;
 	}
 	case IR_AtomicRMW: {
-		Operations::llvm_atomicrmw(attributes);
+		Operations::llvm_atomicrmw(instruction);
 		break;
 	}
 	case IR_Trunc: {
-		Operations::llvm_trunc(attributes);
+		Operations::llvm_trunc(instruction);
 		break;
 	}
 	case IR_ZExt: {
-		Operations::llvm_zext(attributes);
+		Operations::llvm_zext(instruction);
 		break;
 	}
 	case IR_SExt: {
-		Operations::llvm_sext(attributes);
+		Operations::llvm_sext(instruction);
 		break;
 	}
 	case IR_FPToUI: {
-		Operations::llvm_fptoui(attributes);
+		Operations::llvm_fptoui(instruction);
 		break;
 	}
 	case IR_FPToSI: {
-		Operations::llvm_fptosi(attributes);
+		Operations::llvm_fptosi(instruction);
 		break;
 	}
 	case IR_UIToFP: {
-		Operations::llvm_uitofp(attributes);
+		Operations::llvm_uitofp(instruction);
 		break;
 	}
 	case IR_SIToFP: {
-		Operations::llvm_sitofp(attributes);
+		Operations::llvm_sitofp(instruction);
 		break;
 	}
 	case IR_FPTrunc: {
-		Operations::llvm_fptrunc(attributes);
+		Operations::llvm_fptrunc(instruction);
 		break;
 	}
 	case IR_FPExt: {
-		Operations::llvm_fpext(attributes);
+		Operations::llvm_fpext(instruction);
 		break;
 	}
 	case IR_PtrToInt: {
-		Operations::llvm_ptrtoint(attributes);
+		Operations::llvm_ptrtoint(instruction);
 		break;
 	}
 	case IR_IntToPtr: {
-		Operations::llvm_inttoptr(attributes);
+		Operations::llvm_inttoptr(instruction);
 		break;
 	}
 	case IR_BitCast: {
-		Operations::llvm_bitcast(attributes);
+		Operations::llvm_bitcast(instruction);
 		break;
 	}
 	case IR_AddrSpaceCast: {
-		Operations::llvm_addrspacecast(attributes);
+		Operations::llvm_addrspacecast(instruction);
 		break;
 	}
 	case IR_ICmp: {
-		Operations::llvm_icmp(attributes);
+		Operations::llvm_icmp(instruction);
 		break;
 	}
 	case IR_FCmp: {
-		Operations::llvm_fcmp(attributes);
+		Operations::llvm_fcmp(instruction);
 		break;
 	}
 	case IR_PHI: {
-		Operations::llvm_phi(attributes, prevBB);
+		Operations::llvm_phi(instruction, prevBB);
 		break;
 	}
 	case IR_Call: {
-		Operations::llvm_call(attributes);
+		Operations::llvm_call(instruction);
 		break;
 	}
 	case IR_Select: {
-		Operations::llvm_select(attributes);
+		Operations::llvm_select(instruction);
 		break;
 	}
 	case IR_VAArg: {
-		Operations::llvm_vaarg(attributes);
+		Operations::llvm_vaarg(instruction);
 		break;
 	}
 	case IR_ExtractElement: {
-		Operations::llvm_extractelement(attributes);
+		Operations::llvm_extractelement(instruction);
 		break;
 	}
 	case IR_InsertElement: {
-		Operations::llvm_insertelement(attributes);
+		Operations::llvm_insertelement(instruction);
 		break;
 	}
 	case IR_ShuffleVector: {
-		Operations::llvm_shufflevector (attributes);
+		Operations::llvm_shufflevector (instruction);
 		break;
 	}
 	case IR_ExtractValue: {
-		Operations::llvm_extractvalue(attributes);
+		Operations::llvm_extractvalue(instruction);
 		break;
 	}
 	case IR_InsertValue: {
-		Operations::llvm_insertvalue(attributes);
+		Operations::llvm_insertvalue(instruction);
 		break;
 	}
 	case IR_LandingPad: {
-		Operations::llvm_landingpad(attributes);
+		Operations::llvm_landingpad(instruction);
 		break;
 	}
 	case IR_DMAFence: {
-		Operations::llvm_dmafence(attributes);
+		Operations::llvm_dmafence(instruction);
 		break;
 	}
 	case IR_DMAStore: {
-		Operations::llvm_dmastore(attributes);
+		Operations::llvm_dmastore(instruction);
 		break;
 	}
 	case IR_DMALoad: {
-		Operations::llvm_dmaload(attributes);
+		Operations::llvm_dmaload(instruction);
 		break;
 	}
 	case IR_IndexAdd: {
-		Operations::llvm_indexadd(attributes);
+		Operations::llvm_indexadd(instruction);
 		break;
 	}
 	case IR_SilentStore: {
-		Operations::llvm_silentstore(attributes);
+		Operations::llvm_silentstore(instruction);
 		break;
 	}
 	case IR_Sine: {
-		Operations::llvm_sine(attributes);
+		Operations::llvm_sine(instruction);
 		break;
 	}
 	case IR_Cosine: {
-		Operations::llvm_cosine(attributes);
+		Operations::llvm_cosine(instruction);
 		break;
 	}
 
@@ -1967,11 +1968,10 @@ bool ComputeNode::commit(){
 }
 
 bool ComputeNode::checkDependency(){
-	int size = instruction.dependencies.registers.size();
 	bool hot = true;
-	for(int i = 0; i < size; i++){
+	for(int i = 0; i < MAXDEPENDENTS; i++){
 		if(instruction.dependencies.registers[i] != NULL){
-			if(instruction.dependencies.registers[i].hot == false) hot = false;
+			if(instruction.dependencies.registers[i]->getStatus() == false) hot = false;
 			else hot = true;
 		}
 	}

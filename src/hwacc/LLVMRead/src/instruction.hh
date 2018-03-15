@@ -5,6 +5,7 @@
 #include "register.hh"
 
 #define MAXCASES 4
+#define MAXDEPENDENTS 5
 
 struct Attributes {
 	struct Clock {
@@ -168,7 +169,7 @@ struct Instruction {
 
 	};
 	struct Dependencies {
-		Register* registers[5];
+		Register* registers[MAXDEPENDENTS];
 	};
 	struct Cycle {
 		int current;
@@ -271,6 +272,7 @@ struct Instruction {
 		std::string intty; //int type
 		std::string somety;
 		bool intermediate = false;
+		bool unconditional = false;
 		Register* value; 
 		Register* iftrue;
 		Register* iffalse;

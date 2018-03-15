@@ -6,23 +6,24 @@
 #include <string>
 #include <vector>
 #include <list>
-template <typename T>
 
 class Register {
   friend class RegisterList;
   private:
-    T value;
+    int value;
     std::string name;
     bool hot = true;
     //Register * next;
   public:
-    Resigers() {value = 0;}
     Register(std::string id);
-    Register(std::string id, T val);
+    Register(std::string id, int val);
     ~Register();
     
-    T getValue() {
+    int getValue() {
       return value;
+    }
+    bool getStatus(){
+      return hot;
     }
 //    Register *getNext() {
 //      return next;
@@ -30,7 +31,7 @@ class Register {
     std::string getName() {
       return name;
     }
-    void setValue(T val) {
+    void setValue(int val) {
       value = val;
     }
     void commit(){
@@ -43,7 +44,6 @@ class Register {
   
 };
 
-template <typename T>
 class RegisterList {
   private:
 //    Register *head, *tail;

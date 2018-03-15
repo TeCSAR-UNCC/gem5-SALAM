@@ -151,8 +151,10 @@ class ComputeNode {
 		{"cosine", IR_Cosine}
 	};
  
-    Attributes attributes;
+  Attributes attributes;
 	Instruction instruction;
+
+  std::string prevBB;
   
   public:
     ComputeNode(std::string line, RegisterList *list, std::string prev);

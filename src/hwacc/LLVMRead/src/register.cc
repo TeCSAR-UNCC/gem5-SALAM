@@ -1,14 +1,12 @@
 #include "register.hh"
 
-template <typename T>
 Register::Register(std::string id) {
     name = id;
     value = 0;
     //next = NULL;
 }
 
-template <typename T>
-Register::Register(std::string id, T val) {
+Register::Register(std::string id, int val) {
     name = id;
     value = val;
     //next = NULL;
@@ -41,7 +39,6 @@ Register::Register(std::string id, T val) {
 //    return test;
 //}
 
-template <typename T>
 Register *
 RegisterList::findRegister(std::string name) {
     for(auto it=regList->begin(); it!=regList->end(); ++it) {
