@@ -3,16 +3,9 @@
 #define __OPERATIONS_HH__
 
 #include <string>
-#include <map>
-//#include <cstdint>
-#include <sstream>
-#include <vector>
-#include <cmath>
 #include "compute_node.hh"
-//#include "base/types.hh"
+#include "instruction.hh"
 
-#define DEFAULT -1
-#define PHIPATHMAX 5
 
 class Operations {
   public:  
