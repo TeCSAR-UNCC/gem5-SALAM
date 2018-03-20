@@ -193,10 +193,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 						if (list->findRegister(parameters[last]) == NULL) {
 							instruction.terminator.value = new Register(parameters[last]);
 							list->addRegister(instruction.terminator.value);
+							instruction.terminator.value->setSize(instruction.terminator.type);
 							instruction.dependencies.registers[0] = instruction.terminator.value;
 						}
 						else {
 							instruction.terminator.value = list->findRegister(parameters[last]);
+							instruction.terminator.value->setSize(instruction.terminator.type);
 							instruction.dependencies.registers[0] = instruction.terminator.value;
 						}
 					}
@@ -216,14 +218,17 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters.size() == 2) {
 					//Unconditional branch
 					instruction.terminator.unconditional = true;
+					instruction.terminator.type = "void";
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[last]) == NULL) {
 						instruction.terminator.dest = new Register(parameters[last]);
 						list->addRegister(instruction.terminator.dest);
+						instruction.terminator.dest->setType(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.dest;
 					}
 					else {
 						instruction.terminator.dest = list->findRegister(parameters[last]);
+						instruction.terminator.dest->setType(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.dest;
 					}
 					instruction.general.returnRegister = instruction.terminator.dest;
@@ -235,37 +240,45 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					if (list->findRegister(parameters[last-2]) == NULL) {
 						instruction.terminator.iftrue = new Register(parameters[last-2]);
 						list->addRegister(instruction.terminator.iftrue);
+						instruction.terminator.iftrue->setType("label");
 						instruction.dependencies.registers[1] = instruction.terminator.iftrue;
 					}
 					else {
 						instruction.terminator.iftrue = list->findRegister(parameters[last - 2]);
 						instruction.dependencies.registers[1] = instruction.terminator.iftrue;
+						instruction.terminator.iftrue->setType("label");
 					}
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[last]) == NULL) {
 						instruction.terminator.iffalse = new Register(parameters[last]);
 						list->addRegister(instruction.terminator.iffalse);
+						instruction.terminator.iffalse->setType("label");
 						instruction.dependencies.registers[2] = instruction.terminator.iffalse;
 					}
 					else {
 						instruction.terminator.iffalse = list->findRegister(parameters[last]);
 						instruction.dependencies.registers[2] = instruction.terminator.iffalse;
+						instruction.terminator.iffalse->setType("label");
 					}
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[1]) == NULL) {
 						instruction.terminator.cond = new Register(parameters[1]);
 						list->addRegister(instruction.terminator.cond);
+						instruction.terminator.cond->setType(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.cond;
 					}
 					else {
 						instruction.terminator.cond = list->findRegister(parameters[1]);
 						instruction.dependencies.registers[0] = instruction.terminator.cond;
+						instruction.terminator.cond->setType(instruction.terminator.type);
 					}
 				}
 				break;
 			}
 
 			case IR_Switch: {
+				// Not up to date with setting register datatypes
+
 				// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
 				// When using a switch statement the default case is within instruction.terminator
 				// while each case statement exists within instruction.terminator.cases
@@ -330,6 +343,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			}
 
 			case IR_IndirectBr: {
+				// Not up to date with setting register datatypes
+
 				// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
@@ -371,6 +386,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			}
 
 			case IR_Invoke: {
+				// Not up to date with setting register datatypes
+
 				// <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
 				//   to label <normal label> unwind label <exception label>
 				instruction.general.terminator = true;
@@ -410,6 +427,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			}
 
 			case IR_Resume: {
+				// Not up to date with setting register datatypes
+
 				// resume <type> <value>
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
@@ -430,6 +449,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			}
 
 			case IR_Unreachable: {
+				// Not up to date with setting register datatypes
+
 				// The unreachable instruction has no defined semantics.
 				break;
 			}
@@ -450,6 +471,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -511,6 +533,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
+
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -567,6 +591,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 					// Check if adding from register or immediate value
 					if (parameters[last][0] == '%') {
@@ -629,6 +654,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -685,6 +711,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -746,6 +773,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -796,6 +824,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;				
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -848,6 +877,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -908,6 +938,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -956,6 +987,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1005,6 +1037,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1063,6 +1096,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1120,6 +1154,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.bitwise.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1171,6 +1206,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;
 
 				instruction.bitwise.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1222,6 +1258,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;
 
 				instruction.bitwise.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1268,6 +1305,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1315,6 +1353,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1362,6 +1401,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
+				instruction.general.returnRegister->setType(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1406,6 +1446,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			// Vector Operations 
 
 			case IR_Alloca: {
+				// Not up to date with setting register datatypes
+				
 				// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
 
 				attributes.params.dataType = parameters[0];
