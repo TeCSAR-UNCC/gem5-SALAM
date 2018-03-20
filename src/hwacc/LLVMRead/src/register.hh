@@ -10,20 +10,18 @@
 class Register {
   friend class RegisterList;
   private:
-    uint64_t value;
-    uint64_t size; // byte
     std::string dataType;
     std::string name;
     bool hot = true;
     //Register * next;
   public:
+    uint64_t value;
+    uint64_t size; // byte
+
     Register(std::string id);
     Register(std::string id, uint64_t val);
     ~Register();
     
-    uint64_t getValue() {
-      return value;
-    }
     bool getStatus(){
       return hot;
     }
@@ -33,9 +31,7 @@ class Register {
     std::string getName() {
       return name;
     }
-    void setValue(uint64_t val) {
-      value = val;
-    }
+ 
     void commit(){
       hot = false;
     }
@@ -47,7 +43,12 @@ class Register {
     }
 
     void setSize();
+
     void setSize(std::string type);
+
+    void getValue();
+
+    void setValue();
     
   protected:
   

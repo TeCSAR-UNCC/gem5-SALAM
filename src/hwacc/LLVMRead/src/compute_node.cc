@@ -223,12 +223,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					if (list->findRegister(parameters[last]) == NULL) {
 						instruction.terminator.dest = new Register(parameters[last]);
 						list->addRegister(instruction.terminator.dest);
-						instruction.terminator.dest->setType(instruction.terminator.type);
+						instruction.terminator.dest->setSize(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.dest;
 					}
 					else {
 						instruction.terminator.dest = list->findRegister(parameters[last]);
-						instruction.terminator.dest->setType(instruction.terminator.type);
+						instruction.terminator.dest->setSize(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.dest;
 					}
 					instruction.general.returnRegister = instruction.terminator.dest;
@@ -240,37 +240,37 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					if (list->findRegister(parameters[last-2]) == NULL) {
 						instruction.terminator.iftrue = new Register(parameters[last-2]);
 						list->addRegister(instruction.terminator.iftrue);
-						instruction.terminator.iftrue->setType("label");
+						instruction.terminator.iftrue->setSize("label");
 						instruction.dependencies.registers[1] = instruction.terminator.iftrue;
 					}
 					else {
 						instruction.terminator.iftrue = list->findRegister(parameters[last - 2]);
 						instruction.dependencies.registers[1] = instruction.terminator.iftrue;
-						instruction.terminator.iftrue->setType("label");
+						instruction.terminator.iftrue->setSize("label");
 					}
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[last]) == NULL) {
 						instruction.terminator.iffalse = new Register(parameters[last]);
 						list->addRegister(instruction.terminator.iffalse);
-						instruction.terminator.iffalse->setType("label");
+						instruction.terminator.iffalse->setSize("label");
 						instruction.dependencies.registers[2] = instruction.terminator.iffalse;
 					}
 					else {
 						instruction.terminator.iffalse = list->findRegister(parameters[last]);
 						instruction.dependencies.registers[2] = instruction.terminator.iffalse;
-						instruction.terminator.iffalse->setType("label");
+						instruction.terminator.iffalse->setSize("label");
 					}
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[1]) == NULL) {
 						instruction.terminator.cond = new Register(parameters[1]);
 						list->addRegister(instruction.terminator.cond);
-						instruction.terminator.cond->setType(instruction.terminator.type);
+						instruction.terminator.cond->setSize(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.cond;
 					}
 					else {
 						instruction.terminator.cond = list->findRegister(parameters[1]);
 						instruction.dependencies.registers[0] = instruction.terminator.cond;
-						instruction.terminator.cond->setType(instruction.terminator.type);
+						instruction.terminator.cond->setSize(instruction.terminator.type);
 					}
 				}
 				break;
@@ -471,7 +471,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -533,7 +533,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 
 				// Check if adding from register or immediate value
@@ -591,7 +591,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 					// Check if adding from register or immediate value
 					if (parameters[last][0] == '%') {
@@ -654,7 +654,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -711,7 +711,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -773,7 +773,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -824,7 +824,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;				
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -877,7 +877,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -938,7 +938,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -987,7 +987,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1037,7 +1037,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1096,7 +1096,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.binary.ty);
+				instruction.general.returnRegister->setSize(instruction.binary.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1154,7 +1154,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				}
 
 				instruction.bitwise.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.bitwise.ty);
+				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1206,7 +1206,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;
 
 				instruction.bitwise.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.bitwise.ty);
+				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1258,7 +1258,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if (parameters[0] == "exact") instruction.flags.exact = true;
 
 				instruction.bitwise.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.bitwise.ty);
+				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1305,7 +1305,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.bitwise.ty);
+				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1353,7 +1353,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.bitwise.ty);
+				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1401,7 +1401,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
-				instruction.general.returnRegister->setType(instruction.bitwise.ty);
+				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
 				// Check if adding from register or immediate value
 				if (parameters[last][0] == '%') {
@@ -1447,7 +1447,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_Alloca: {
 				// Not up to date with setting register datatypes
-				
+
 				// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
 
 				attributes.params.dataType = parameters[0];

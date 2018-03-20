@@ -46,7 +46,25 @@ void Operations::llvm_add(const struct Instruction&  instruction){
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
 
+	int op1;
+	int op2;
+	int result;
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 + op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 void Operations::llvm_sub(const struct Instruction&  instruction) {
 
@@ -55,7 +73,25 @@ void Operations::llvm_sub(const struct Instruction&  instruction) {
 	// <result> = sub nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
+	int op1;
+	int op2;
+	int result;
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 - op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_mul(const struct Instruction&  instruction) {
@@ -65,26 +101,117 @@ void Operations::llvm_mul(const struct Instruction&  instruction) {
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
 
+	int op1;
+	int op2;
+	int result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 * op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_udiv(const struct Instruction&  instruction) {
 	// Unsigned Division
+	int op1;
+	int op2;
+	int result;
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 / op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_sdiv(const struct Instruction&  instruction) {
 	// Signed Division
+	int op1;
+	int op2;
+	int result;
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 / op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_urem(const struct Instruction&  instruction) {
 	//Unsigned modulo division
+	int op1;
+	int op2;
+	int result;
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 % op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_srem(const struct Instruction&  instruction) {
 	//Signed modulo division
+	int op1;
+	int op2;
+	int result;
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 % op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,35 +223,195 @@ void Operations::llvm_fadd(const struct Instruction&  instruction){
     // Floating point Addition
 	// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
+	// Currently floating point fast math flags are not implemented, they are based around
+	// how the operation is performed which is not a concern of this function, but are important
+	// variables when calculating the time it takes for the computation to complete
+
+	// if(instruction.binary.ty.find("half")){
+	// 	// No current implementation of half in c++, must implement an outside code for this functionality
+	// }
+	
+	double op1;
+	double op2;
+	double result;
+	float fresult;
+	
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 + op2;
+
+	// Store result back into memory
+	if(instruction.binary.ty.find("float")){
+	fresult = (float) result;
+	memcpy(&instruction.general.returnRegister->value, &fresult, instruction.general.returnRegister->size);
+	}
+	else 	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
+
 
 }
 void Operations::llvm_fsub(const struct Instruction&  instruction){
 	// Floating point Subtraction
 	// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
+	// Currently floating point fast math flags are not implemented, they are based around
+	// how the operation is performed which is not a concern of this function, but are important
+	// variables when calculating the time it takes for the computation to complete
+
+	// if(instruction.binary.ty.find("half")){
+	// 	// No current implementation of half in c++, must implement an outside code for this functionality
+	// }
+	
+	double op1;
+	double op2;
+	double result;
+	float fresult;
 	
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 - op2;
+
+	// Store result back into memory
+	if(instruction.binary.ty.find("float")){
+	fresult = (float) result;
+	memcpy(&instruction.general.returnRegister->value, &fresult, instruction.general.returnRegister->size);
+	}
+	else 	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 void Operations::llvm_fmul(const struct Instruction&  instruction){
 	// Floating point Multiplication
 	// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
+	// Currently floating point fast math flags are not implemented, they are based around
+	// how the operation is performed which is not a concern of this function, but are important
+	// variables when calculating the time it takes for the computation to complete
+
+	// if(instruction.binary.ty.find("half")){
+	// 	// No current implementation of half in c++, must implement an outside code for this functionality
+	// }
+	double op1;
+	double op2;
+	double result;
+	float fresult;
 	
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 * op2;
+
+	// Store result back into memory
+	if(instruction.binary.ty.find("float")){
+	fresult = (float) result;
+	memcpy(&instruction.general.returnRegister->value, &fresult, instruction.general.returnRegister->size);
+	}
+	else 	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 void Operations::llvm_fdiv(const struct Instruction&  instruction){
 	// Floating point Division
 	// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
+	// Currently floating point fast math flags are not implemented, they are based around
+	// how the operation is performed which is not a concern of this function, but are important
+	// variables when calculating the time it takes for the computation to complete
 
+	// if(instruction.binary.ty.find("half")){
+	// 	// No current implementation of half in c++, must implement an outside code for this functionality
+	// }
+	
+	double op1;
+	double op2;
+	double result;
+	float fresult;
+	
 
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 / op2;
+
+	// Store result back into memory
+	if(instruction.binary.ty.find("float")){
+	fresult = (float) result;
+	memcpy(&instruction.general.returnRegister->value, &fresult, instruction.general.returnRegister->size);
+	}
+	else 	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 void Operations::llvm_frem(const struct Instruction&  instruction){
     // Floating point modulo division
 	// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
+	// Currently floating point fast math flags are not implemented, they are based around
+	// how the operation is performed which is not a concern of this function, but are important
+	// variables when calculating the time it takes for the computation to complete
+
+	// For this instruction I need to write an overload of the modulo operator to work for floating
+	// point numbers, not implemented for now
+
+	// if(instruction.binary.ty.find("half")){
+	// 	// No current implementation of half in c++, must implement an outside code for this functionality
+	// }
+	
+	// double op1;
+	// double op2;
+	// double result;
+	// float fresult;
 	
 
+	// // If immediate values convert from string, else load from register
+	// if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	// else{
+	// 	memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	// }
+
+	// if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	// else{
+	// 	memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	// }
+	// // Perform arithmatic
+	// result = op1 % op2;
+
+	// // Store result back into memory
+	// if(instruction.binary.ty.find("float")){
+	// fresult = (float) result;
+	// memcpy(&instruction.general.returnRegister->value, &fresult, instruction.general.returnRegister->size);
+	// }
+	// else 	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 ///////////////////////////////////////////////////////////////////////////////
 /* LLVM Bitwise Binary Operations */
@@ -136,14 +423,56 @@ void Operations::llvm_shl(const struct Instruction&  instruction){
 	// <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
 
+	// Bitwise operations must be performed on integers or a vector of integers
+	// Vectors currently unsupported
 
+	int op1;
+	int op2;
+	int result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 << op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 void Operations::llvm_lshr(const struct Instruction&  instruction){
 	// Logical Shift Right Operation
 	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
 
+		// Bitwise operations must be performed on integers or a vector of integers
+	// Vectors currently unsupported
 
+	uint op1;
+	uint op2;
+	uint result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 >> op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_ashr(const struct Instruction&  instruction){
@@ -151,26 +480,112 @@ void Operations::llvm_ashr(const struct Instruction&  instruction){
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
 
+		// Bitwise operations must be performed on integers or a vector of integers
+	// Vectors currently unsupported
 
+	int op1;
+	int op2;
+	int result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 >> op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_and(const struct Instruction&  instruction){
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
 
+		// Bitwise operations must be performed on integers or a vector of integers
+	// Vectors currently unsupported
+
+	int op1;
+	int op2;
+	int result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 & op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 	
 }
 void Operations::llvm_or(const struct Instruction&  instruction){
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
 
+		// Bitwise operations must be performed on integers or a vector of integers
+	// Vectors currently unsupported
+
+	int op1;
+	int op2;
+	int result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 | op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_xor(const struct Instruction&  instruction){
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 
+		// Bitwise operations must be performed on integers or a vector of integers
+	// Vectors currently unsupported
 
+	int op1;
+	int op2;
+	int result;
+
+	// If immediate values convert from string, else load from register
+	if(instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
+	else{
+		memcpy(&op1, &instruction.bitwise.op1->value, instruction.bitwise.op1->size);
+	}
+
+	if(instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
+	else{
+		memcpy(&op2, &instruction.bitwise.op2->value, instruction.bitwise.op2->size);
+	}
+	// Perform arithmatic
+	result = op1 ^ op2;
+
+	// Store result back into memory
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 ///////////////////////////////////////////////////////////////////////////////
 /* LLVM Memory Access Operations */
@@ -259,9 +674,31 @@ void Operations::llvm_bitcast(const struct Instruction&  instruction){ }
 void Operations::llvm_addrspacecast(const struct Instruction&  instruction){ }
 
 /* Operations::llvm Control Operations */
-void Operations::llvm_icmp(const struct Instruction&  instruction){ }
-void Operations::llvm_fcmp(const struct Instruction&  instruction){ }
-void Operations::llvm_phi(const struct Instruction&  instruction, std::string prevBB){ }
+void Operations::llvm_icmp(const struct Instruction&  instruction){ 
+
+
+
+
+
+
+}
+void Operations::llvm_fcmp(const struct Instruction&  instruction){ 
+
+
+
+
+
+
+	
+}
+void Operations::llvm_phi(const struct Instruction&  instruction, std::string prevBB){ 
+
+
+
+
+
+
+}
 void Operations::llvm_call(const struct Instruction&  instruction){ }
 void Operations::llvm_select(const struct Instruction&  instruction){ }
 void Operations::llvm_vaarg(const struct Instruction&  instruction){ }
@@ -276,6 +713,7 @@ void Operations::llvm_shufflevector(const struct Instruction&  instruction){ }
 void Operations::llvm_extractvalue(const struct Instruction&  instruction){ }
 void Operations::llvm_insertvalue(const struct Instruction&  instruction){ }
 
+/* Custom Operations */
 void Operations::llvm_dmafence(const struct Instruction& instruction) { }
 void Operations::llvm_dmastore(const struct Instruction& instruction) { }
 void Operations::llvm_dmaload(const struct Instruction& instruction) { }
