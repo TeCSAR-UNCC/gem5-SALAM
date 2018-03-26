@@ -12,6 +12,7 @@
 
 using namespace std;
 
+
 CommInterface::CommInterface(Params *p) :
     BasicPioDevice(p, p->pio_size),
     io_addr(p->pio_addr),

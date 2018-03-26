@@ -9,7 +9,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 	instruction.general.llvm_Line = line;
 	int n = 1; 
 	int dependencies = 0;
-	int i = 10;
 	prevBB = prev;
     // ////////////////////////////////////////////////////////////////////
    
@@ -151,6 +150,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     			}
     		}
     	}
+		
 
 		instruction.general.fields = parameters.size();
 		last = (parameters.size() - 1);
@@ -1443,27 +1443,27 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				break;
 			}
 
-			// Vector Operations 
+			// Memory Operations 
 
 			case IR_Alloca: {
 				// Not up to date with setting register datatypes
 
 				// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
 
-				attributes.params.dataType = parameters[0];
+				// attributes.params.dataType = parameters[0];
 
-				if (parameters[1] == "align") {
-					attributes.params.align = parameters[2];
-				}
-				else if (parameters.size() == 5) {
-					attributes.params.type2 = parameters[1];
-					attributes.params.numElements = parameters[2];
-					attributes.params.align = parameters[4];
-				}
-				else {
-					attributes.params.type2 = parameters[1];
-					attributes.params.numElements = parameters[2];
-				}
+				// if (parameters[1] == "align") {
+				// 	attributes.params.align = parameters[2];
+				// }
+				// else if (parameters.size() == 5) {
+				// 	attributes.params.type2 = parameters[1];
+				// 	attributes.params.numElements = parameters[2];
+				// 	attributes.params.align = parameters[4];
+				// }
+				// else {
+				// 	attributes.params.type2 = parameters[1];
+				// 	attributes.params.numElements = parameters[2];
+				// }
 				break;
 			}
 			case IR_Load: {
@@ -1486,7 +1486,26 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = getelementptr <pty>* <ptrval>{, <ty> <idx>}*
 				// <result> = getelementptr inbounds <pty>* <ptrval>{, <ty> <idx>}*
 				// <result> = getelementptr <ptr vector> ptrval, <vector index type> idx
+				int index = 0;
+				instruction.general.memory = true;
+				instruction.general.returnRegister->setSize("pointer");
 
+				if(parameters[0] == "inbounds"){
+				instruction.memory.getptr.inbounds = true;
+				instruction.memory.getptr.pty = parameters[1];
+				instruction.memory.getptr.ptrval = parameters[2];
+				index = 3;
+				}
+				else{
+				instruction.memory.getptr.pty = parameters[0];
+				instruction.memory.getptr.ptrval = parameters[1];
+				index = 2;
+				}
+
+				for(int i = index; i <= last; i+=2){
+					instruction.memory.getptr.ty[i] = parameters[index+i];
+					instruction.memory.getptr.idx[i+1] = parameters[index+i+1];
+				}
 
 				break;
 			}
@@ -1505,6 +1524,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 				break;
 			}
+
+			// Conversion Operations
+
 			case IR_Trunc: {
 				// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
 
@@ -1570,57 +1592,194 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 				break;
 			}
+
+			// Other Operations - Compare
 			case IR_ICmp: {
 				// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
+				dependencies = 0;
+				instruction.general.other = true;
+				instruction.general.compare = true;
+				instruction.other.compare.condition.cond = parameters[0];
+				instruction.other.compare.ty = parameters[1];
+				instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
-				attributes.params.operand2 = parameters[i];
-				attributes.params.operand1 = parameters[i - 1];
-				attributes.params.dataType = parameters[i - 2];
-				attributes.condition.cond = parameters[i - 3];
+				// Check if adding from register or immediate value
+				if (parameters[last][0] == '%') {
+					if (list->findRegister(parameters[last]) == NULL) {
+						instruction.other.compare.op2 = new Register(parameters[last]);
+						list->addRegister(instruction.other.compare.op2);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
+						dependencies++;
+					}
+					else {
+						instruction.other.compare.op2 = list->findRegister(parameters[last]);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
+						dependencies++;
+					}
+				}
+				else {
+					instruction.other.compare.immediate2 = true;
+					instruction.other.compare.iop2 = parameters[last];
+				}
 
-				if (parameters[i - 3] == "eq") attributes.condition.eq = true;
-				else if (parameters[i - 3] == "ne") attributes.condition.ne = true;
-				else if (parameters[i - 3] == "ugt") attributes.condition.ugt = true;
-				else if (parameters[i - 3] == "uge") attributes.condition.uge = true;
-				else if (parameters[i - 3] == "ult") attributes.condition.ult = true;
-				else if (parameters[i - 3] == "ule") attributes.condition.ule = true;
-				else if (parameters[i - 3] == "sgt") attributes.condition.sgt = true;
-				else if (parameters[i - 3] == "sge") attributes.condition.sge = true;
-				else if (parameters[i - 3] == "slt") attributes.condition.slt = true;
-				else if (parameters[i - 3] == "sle") attributes.condition.sle = true;
+				// Check if value is from register or immediate value
+				if (parameters[last-1][0] == '%') {
+					if (list->findRegister(parameters[last-1]) == NULL) {
+						instruction.other.compare.op1 = new Register(parameters[last-1]);
+						list->addRegister(instruction.other.compare.op1);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
+						dependencies++;
+					}
+					else {
+						instruction.other.compare.op1 = list->findRegister(parameters[last-1]);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
+						dependencies++;
+					}
+				}
+				else {
+					instruction.other.compare.immediate1 = true;
+					instruction.other.compare.iop1 = parameters[last-1];
+				}
+
+
+				if (instruction.other.compare.condition.cond == "eq") instruction.other.compare.condition.eq = true;
+				else if (instruction.other.compare.condition.cond == "ne") instruction.other.compare.condition.ne = true;
+				else if (instruction.other.compare.condition.cond == "ugt") instruction.other.compare.condition.ugt = true;
+				else if (instruction.other.compare.condition.cond == "uge") instruction.other.compare.condition.uge = true;
+				else if (instruction.other.compare.condition.cond == "ult") instruction.other.compare.condition.ult = true;
+				else if (instruction.other.compare.condition.cond == "ule") instruction.other.compare.condition.ule = true;
+				else if (instruction.other.compare.condition.cond == "sgt") instruction.other.compare.condition.sgt = true;
+				else if (instruction.other.compare.condition.cond == "sge") instruction.other.compare.condition.sge = true;
+				else if (instruction.other.compare.condition.cond == "slt") instruction.other.compare.condition.slt = true;
+				else if (instruction.other.compare.condition.cond == "sle") instruction.other.compare.condition.sle = true;
 
 				break;
 			}
 			case IR_FCmp: {
 				// <result> = fcmp <cond> <ty> <op1>, <op2>     ; yields {i1} or {<N x i1>}:result
+				dependencies = 0;
+				instruction.general.other = true;
+				instruction.general.compare = true;
+				instruction.other.compare.condition.cond = parameters[0];
+				instruction.other.compare.ty = parameters[1];
+				instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
-				attributes.params.operand2 = parameters[i];
-				attributes.params.operand1 = parameters[i - 1];
-				attributes.params.dataType = parameters[i - 2];
-				attributes.condition.cond = parameters[i - 3];
+				// Check if adding from register or immediate value
+				if (parameters[last][0] == '%') {
+					if (list->findRegister(parameters[last]) == NULL) {
+						instruction.other.compare.op2 = new Register(parameters[last]);
+						list->addRegister(instruction.other.compare.op2);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
+						dependencies++;
+					}
+					else {
+						instruction.other.compare.op2 = list->findRegister(parameters[last]);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
+						dependencies++;
+					}
+				}
+				else {
+					instruction.other.compare.immediate2 = true;
+					instruction.other.compare.iop2 = parameters[last];
+				}
+
+				// Check if value is from register or immediate value
+				if (parameters[last-1][0] == '%') {
+					if (list->findRegister(parameters[last-1]) == NULL) {
+						instruction.other.compare.op1 = new Register(parameters[last-1]);
+						list->addRegister(instruction.other.compare.op1);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
+						dependencies++;
+					}
+					else {
+						instruction.other.compare.op1 = list->findRegister(parameters[last-1]);
+						instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
+						dependencies++;
+					}
+				}
+				else {
+					instruction.other.compare.immediate1 = true;
+					instruction.other.compare.iop1 = parameters[last-1];
+				}
 
 
-				if (parameters[i - 3] == "false") attributes.condition.condFalse = true;
-				else if (parameters[i - 3] == "oeq") attributes.condition.oeq = true;
-				else if (parameters[i - 3] == "ogt") attributes.condition.ogt = true;
-				else if (parameters[i - 3] == "oge") attributes.condition.oge = true;
-				else if (parameters[i - 3] == "olt") attributes.condition.olt = true;
-				else if (parameters[i - 3] == "ole") attributes.condition.ole = true;
-				else if (parameters[i - 3] == "one") attributes.condition.one = true;
-				else if (parameters[i - 3] == "ord") attributes.condition.ord = true;
-				else if (parameters[i - 3] == "ueq") attributes.condition.ueq = true;
-				else if (parameters[i - 3] == "ugt") attributes.condition.ugt = true;
-				else if (parameters[i - 3] == "uge") attributes.condition.uge = true;
-				else if (parameters[i - 3] == "ult") attributes.condition.ult = true;
-				else if (parameters[i - 3] == "ule") attributes.condition.ule = true;
-				else if (parameters[i - 3] == "une") attributes.condition.une = true;
-				else if (parameters[i - 3] == "uno") attributes.condition.uno = true;
-				else if (parameters[i - 3] == "true") attributes.condition.condTrue = true;
+
+				if (instruction.other.compare.condition.cond  == "false")  instruction.other.compare.condition.condFalse = true;
+				else if (instruction.other.compare.condition.cond  == "oeq")  instruction.other.compare.condition.oeq = true;
+				else if (instruction.other.compare.condition.cond  == "ogt")  instruction.other.compare.condition.ogt = true;
+				else if (instruction.other.compare.condition.cond  == "oge")  instruction.other.compare.condition.oge = true;
+				else if (instruction.other.compare.condition.cond  == "olt")  instruction.other.compare.condition.olt = true;
+				else if (instruction.other.compare.condition.cond  == "ole")  instruction.other.compare.condition.ole = true;
+				else if (instruction.other.compare.condition.cond  == "one")  instruction.other.compare.condition.one = true;
+				else if (instruction.other.compare.condition.cond  == "ord")  instruction.other.compare.condition.ord = true;
+				else if (instruction.other.compare.condition.cond  == "ueq")  instruction.other.compare.condition.ueq = true;
+				else if (instruction.other.compare.condition.cond  == "ugt")  instruction.other.compare.condition.ugt = true;
+				else if (instruction.other.compare.condition.cond  == "uge")  instruction.other.compare.condition.uge = true;
+				else if (instruction.other.compare.condition.cond  == "ult")  instruction.other.compare.condition.ult = true;
+				else if (instruction.other.compare.condition.cond  == "ule")  instruction.other.compare.condition.ule = true;
+				else if (instruction.other.compare.condition.cond  == "une")  instruction.other.compare.condition.une = true;
+				else if (instruction.other.compare.condition.cond  == "uno")  instruction.other.compare.condition.uno = true;
+				else if (instruction.other.compare.condition.cond  == "true")  instruction.other.compare.condition.condTrue = true;
 
 				break;
 			}
 			case IR_PHI: {
 				// <result> = phi <ty> [ <val0>, <label0>], ...
+				
+				instruction.general.other = true;
+				instruction.general.phi = true;
+				instruction.general.flowControl = true;
+				instruction.other.phi.ty = parameters[0];
+				instruction.general.returnRegister->setSize(instruction.other.phi.ty);
+
+				std::string val[last-1], label[last-1];
+
+				// Phi instructions grouped in brackets first listed as pairs in ival array
+				for(int i = 1; i <= last; i++){
+					instruction.other.phi.ival[i-1] = parameters[i];
+					val[i-1] = instruction.other.phi.ival[i-1].substr(1, (instruction.other.phi.ival[i-1].find(',')-1));
+					label[i-1] = instruction.other.phi.ival[i-1].substr((instruction.other.phi.ival[i-1].find(',')+2), (instruction.other.phi.ival[i-1].length()-1));
+					if(val[i-1][0] == '%'){
+						instruction.other.phi.ival[i-1].clear();
+						instruction.other.phi.immVal[i-1] = false;
+						if (list->findRegister(val[i-1]) == NULL) {
+						instruction.other.phi.val[i-1] = new Register(val[i-1]);
+						list->addRegister(instruction.other.phi.val[i-1]);
+						instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i-1];
+						dependencies++;
+					}
+					else {
+						instruction.other.phi.val[i-1] = list->findRegister(val[i-1]);
+						instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i-1];
+						dependencies++;
+					}
+					}
+					else{
+						instruction.other.phi.ival[i-1] = val[i-1];
+						instruction.other.phi.immVal[i-1] = true;
+					}
+
+					if(label[i-1][0] == '%'){
+						instruction.other.phi.ilabel[i-1].clear();
+						instruction.other.phi.immLabel[i-1] = false;
+						if (list->findRegister(label[i-1]) == NULL) {
+						instruction.other.phi.label[i-1] = new Register(label[i-1]);
+						list->addRegister(instruction.other.phi.label[i-1]);
+						instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
+						dependencies++;
+					}
+					else {
+						instruction.other.phi.label[i-1] = list->findRegister(label[i-1]);
+						instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
+						dependencies++;
+					}
+					}
+					else{
+						instruction.other.phi.ilabel[i-1] = label[i-1];
+						instruction.other.phi.immLabel[i-1] = true;
+					}
+
+				}
 
 				// //Improvement Opportunity - Dynamically allocated string to eliminate PHIPATHMAX
 				// attributes.params.dataType = parameters[0];

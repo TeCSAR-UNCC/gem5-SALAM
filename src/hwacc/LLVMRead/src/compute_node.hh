@@ -151,7 +151,6 @@ class ComputeNode {
 		{"cosine", IR_Cosine}
 	};
  
-  Attributes attributes;
 	Instruction instruction;
 
   std::string prevBB;

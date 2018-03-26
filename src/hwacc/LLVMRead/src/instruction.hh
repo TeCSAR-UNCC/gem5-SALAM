@@ -6,147 +6,8 @@
 
 #define MAXCASES 4
 #define MAXDEPENDENTS 5
-
-struct Attributes {
-	struct Clock {
-		bool finished;
-		//Tick cycleCount;
-		//Tick maxCycles;
-	};
-	struct Switch {
-		std::string argument;
-		std::string defaultCase;
-		std::string caseStatements;
-	};
-	struct Branch {
-		Register * labelTrue;
-		Register * labelFalse;
-		Register * conditionCheck;
-		std::string uncond;
-		std::string iftrue;
-		std::string iffalse;
-		std::string cond;
-		std::string addr;
-		std::string destinationList;
-	};
-	struct Params {
-		std::string operand1;
-		std::string operand2;
-		std::string dataType;
-		std::string returnValue;
-		Register * returnRegister;
-		std::string align;
-		std::string numElements;
-		std::string type2;
-
-	};
-	struct Phi {
-		std::string paths[5];
-	};
-	struct Flags {
-		bool nnan = false,
-			ninf = false,
-			nsz = false,
-			arcp = false,
-			contract = false,
-			afn = false,
-			reassoc = false,
-			fast = false,
-			nsw = false,
-			nuw = false,
-			exact = false;
-	};
-	struct Condition {
-		std::string cond;
-		bool eq = false,
-			ne = false,
-			ugt = false,
-			uge = false,
-			ult = false,
-			ule = false,
-			sgt = false,
-			sge = false,
-			slt = false,
-			sle = false,
-			condFalse = false,
-			condTrue = false,
-			oeq = false,
-			ogt = false,
-			oge = false,
-			olt = false,
-			ole = false,
-			one = false,
-			ord = false,
-			ueq = false,
-			une = false,
-			uno = false;
-	};
-	struct CConv {
-		bool ccc = false,
-			fastcc = false,
-			coldcc = false,
-			cc10 = false,
-			cc11 = false;
-	};
-	struct ParamAttributes {
-		bool zeroext = false,
-			signext = false,
-			inreg = false,
-			byval = false,
-			sret = false,
-			noalias = false,
-			nocapture = false,
-			nest = false,
-			returned = false;
-	};
-	struct FunctionAttributes {
-		int allign = 0;
-		bool allignstack = false,
-			alwaysinline = false,
-			builtin = false,
-			cold = false,
-			inlineint = false,
-			minsize = false,
-			naked = false,
-			nobuiltin = false,
-			noduplicate = false,
-			noimplicitfloat = false,
-			noinline = false,
-			nonlazybind = false,
-			noredzone = false,
-			noreturn = false,
-			nounwind = false,
-			optnone = false,
-			optsize = false,
-			readnone = false,
-			readonly = false,
-			returns_twice = false,
-			sanitize_address = false,
-			sanitize_memory = false,
-			sanitize_thread = false,
-			ssp = false,
-			sspreq = false,
-			sspstrong = false,
-			uwtable = false;
-	};
-	struct Invoke {
-		std::string unwindlbl;
-		std::string normallbl;
-		std::string prototype;
-	};
-	Invoke invoke;
-	FunctionAttributes fattrs;
-	ParamAttributes pattrs;
-	CConv cconv;
-	Phi phi;
-	Flags flags;
-	Condition condition;
-	Params params;
-	Clock clock;
-	Branch branch;
-	Switch switchStmt;
-};
-
+#define MAXPHI 5
+#define MAXGPE 5
 
 
 struct Instruction {
@@ -164,6 +25,8 @@ struct Instruction {
 		bool memory = false;
 		bool conversion = false;
 		bool other = false;
+		bool compare = false;
+		bool phi = false;
 		bool custom = false;
 		bool flowControl = false;
 
@@ -241,31 +104,7 @@ struct Instruction {
 			nuw = false,
 			exact = false;
 	};
-	struct Condition {
-		std::string cond;
-		bool eq = false,
-			ne = false,
-			ugt = false,
-			uge = false,
-			ult = false,
-			ule = false,
-			sgt = false,
-			sge = false,
-			slt = false,
-			sle = false,
-			condFalse = false,
-			condTrue = false,
-			oeq = false,
-			ogt = false,
-			oge = false,
-			olt = false,
-			ole = false,
-			one = false,
-			ord = false,
-			ueq = false,
-			une = false,
-			uno = false;
-	};
+	
 	struct Terminator {
 		std::string type;
 		std::string ivalue;
@@ -317,13 +156,75 @@ struct Instruction {
 
 	};
 	struct Memory {
+		struct Load{
 
+		};
+		struct Store{
+
+		};
+		struct GetElementPtr{
+			bool inbounds = false;
+			std::string pty;
+			std::string ptrval;
+			std::string ty[MAXGPE];
+			std::string idx[MAXGPE];
+		};
+		Load load;
+		Store store;
+		GetElementPtr getptr;
 	};
-	struct Operations {
+	struct Conversion {
 
 	};
 	struct Other {
 
+		struct Compare {
+			std::string ty;
+			std::string iop1;
+			std::string iop2;
+			Register* op1;
+			Register* op2;
+			bool immediate1 = false;
+			bool immediate2 = false;
+			struct Condition {
+				std::string cond;
+				bool eq = false,
+					ne = false,
+					ugt = false,
+					uge = false,
+					ult = false,
+					ule = false,
+					sgt = false,
+					sge = false,
+					slt = false,
+					sle = false,
+					condFalse = false,
+					condTrue = false,
+					oeq = false,
+					ogt = false,
+					oge = false,
+					olt = false,
+					ole = false,
+					one = false,
+					ord = false,
+					ueq = false,
+					une = false,
+					uno = false;
+				};
+			Condition condition;
+		};
+		Compare compare;
+
+		struct Phi {
+			std::string ty;
+			std::string ival[MAXPHI];
+			std::string ilabel[MAXPHI];
+			bool immVal[MAXPHI];
+			bool immLabel[MAXPHI];
+			Register* val[MAXPHI];
+			Register* label[MAXPHI];
+		};
+		Phi phi;
 	};
 	struct Custom {
 
@@ -333,14 +234,13 @@ struct Instruction {
 	Cycle cycle;
 	Attributes attributes;
 	Flags flags;
-	Condition condition;
 	Terminator terminator;
 	Binary binary;
 	Bitwise bitwise;
 	Vector vector;
 	Aggregate aggregate;
 	Memory memory;
-	Operations operations;
+	Conversion conversion;
 	Other other;
 	Custom custom;
 
