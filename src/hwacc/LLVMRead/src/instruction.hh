@@ -157,10 +157,16 @@ struct Instruction {
 	};
 	struct Memory {
 		struct Load{
-
+			bool volatileVar = false;
+			std::string ty;
+			Register* pointer;
+			int align;
 		};
 		struct Store{
-
+			bool volatileVar = false;
+			std::string ty;
+			Register* pointer;
+			int align;
 		};
 		struct GetElementPtr{
 			bool inbounds = false;

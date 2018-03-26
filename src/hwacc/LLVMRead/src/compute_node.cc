@@ -1471,6 +1471,29 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
 				// <result> = load atomic[volatile] <ty>* <pointer>[singlethread] <ordering>, align <alignment>
 				//	!<index> = !{ i32 1 }
+				instruction.general.memory = true;
+				int index = 0;
+				int dependencies = 0;
+				if(parameters[0] == "volatile"){
+					index = 1; 
+					instruction.memory.load.volatileVar = true;
+				}
+				instruction.memory.load.ty = parameters[index];
+				instruction.general.returnRegister->setSize(instruction.memory.load.ty);
+
+				if (list->findRegister(parameters[index+2]) == NULL) {
+						instruction.memory.load.pointer = new Register(parameters[index+2]);
+						list->addRegister(instruction.memory.load.pointer);
+						instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
+						dependencies++;
+					}
+					else {
+						instruction.memory.load.pointer = list->findRegister(parameters[index+2]);
+						instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
+						dependencies++;
+					}
+				instruction.memory.load.align = stoi(parameters[index+4]);
+
 				break;
 			}
 			case IR_Store: {
@@ -1479,6 +1502,27 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				//		    int prepWrite(Addr dst, uint8_t* value, size_t length);
 				// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 				// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
+				instruction.general.memory = true;
+				int index = 0;
+				int dependencies = 0;
+				if(parameters[0] == "volatile"){
+					index = 1; 
+					instruction.memory.store.volatileVar = true;
+				}
+				instruction.memory.store.ty = parameters[index];
+
+				if (list->findRegister(parameters[index+2]) == NULL) {
+						instruction.memory.store.pointer = new Register(parameters[index+2]);
+						list->addRegister(instruction.memory.store.pointer);
+						instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
+						dependencies++;
+					}
+					else {
+						instruction.memory.store.pointer = list->findRegister(parameters[index+2]);
+						instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
+						dependencies++;
+					}
+				instruction.memory.store.align = stoi(parameters[index+4]);
 
 				break;
 			}
