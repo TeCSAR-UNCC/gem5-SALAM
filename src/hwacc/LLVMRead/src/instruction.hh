@@ -116,7 +116,7 @@ struct Instruction {
 		Register* iftrue;
 		Register* iffalse;
 		Register* cond;
-		Register* dest;
+		mutable Register* dest;
 		Register* defaultdest;
 		Register* Addr;
 		Register* exception_label;
@@ -229,6 +229,7 @@ struct Instruction {
 			bool immLabel[MAXPHI];
 			Register* val[MAXPHI];
 			Register* label[MAXPHI];
+			mutable Register* takenVal;
 		};
 		Phi phi;
 	};

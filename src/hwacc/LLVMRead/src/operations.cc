@@ -10,13 +10,14 @@ void Operations::llvm_ret(const struct Instruction& instruction){
     //Operation of device is finished
 }
 std::string Operations::llvm_br(const struct Instruction& instruction){
-    //Store currentBB as prevBB
-    //Target of branch becomes currentBB
-	//int condition;
-	// if(!(instruction.terminator.unconditional)){
-	// 	//condition = instruction.terminator.cond->getValue();
-		
-	// }
+
+	int condition;
+
+	if(!(instruction.terminator.unconditional)){
+	memcpy(&condition, &instruction.terminator.cond->value, instruction.terminator.cond->size);
+	if(condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
+	else instruction.terminator.dest = instruction.terminator.iffalse;
+	}
 
     return "";
 }
@@ -600,57 +601,26 @@ void Operations::llvm_alloca(const struct Instruction&  instruction){
 void Operations::llvm_load(const struct Instruction&  instruction){
 	// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
 	// address from which to load
-	
+	// uint8_t* getCurData() { return curData; }
+	// Code below is for debugging without using GEM5 for memory managment
+
+
 }
 void Operations::llvm_store(const struct Instruction&  instruction){
 	// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void Operations::}
 	// Value to store, address at which to store it
+	// int prepRead(Addr src, size_t length);
+	// int prepWrite(Addr dst, uint8_t* value, size_t length);
+	// Code below is for debuugging withouut using GEM5 for memory managent
+
+
 }
 void Operations::llvm_getelementptr(const struct Instruction&  instruction){
+	
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-	// The getelementptr instruction is used to get the address of a subelement of an aggregate data structure.
-	// It performs address calculation only and does not access memory.
-	//
-	// Example
-	//  %6 contains a pointer to an array of some type (Call it array[])
-	//  %5 contains some integer value (In this example %5 = 1)
-	// 	%arrayidx = getelementptr inbounds i32* %6, i32 %5
-	//  %arrayidx = &%6[%5] or array[1] 
-	//  
-	// Note:
-	//  Because of the syntax of LLVM even if the first element is not an
-	//  array or vector it is still referenced in this way
-	// More Detailed Example:
-	/*
-	// C - Code
-	const struct Instruction&  RT {
-	char A;
-	int B[10][20];
-	char C;
-	};
-	const struct Instruction&  ST {
-	int X;
-	double Y;
-	const struct Instruction&  RT Z;
-	};
 
-	int *foo(const struct Instruction&  ST *s) {
-	return &s[1].Z.B[5][13];
-	}
-
-	LLVM - Code
-	%const struct Instruction& .RT = type { i8, [10 x [20 x i32]], i8 }
-	%const struct Instruction& .ST = type { i32, double, %const struct Instruction& .RT }
-
-	define i32* @foo(%const struct Instruction& .ST* %s) nounwind uwtable readnone optsize ssp {
-	entry:
-	%arrayidx = getelementptr inbounds %const struct Instruction& .ST* %s, i64 1, i32 2, i32 1, i64 5, i64 13
-	ret i32* %arrayidx
-	}
-	
-	*/
 
 	
 }
@@ -676,27 +646,136 @@ void Operations::llvm_addrspacecast(const struct Instruction&  instruction){ }
 /* Operations::llvm Control Operations */
 void Operations::llvm_icmp(const struct Instruction&  instruction){ 
 
+	int op1;
+	int op2;
+	bool result;
+
+	if(instruction.other.compare.immediate1) op1 = stoi(instruction.other.compare.iop1);
+		else{
+			memcpy(&op1, &instruction.other.compare.op1->value, instruction.other.compare.op1->size);
+		}
+
+		if(instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
+		else{
+			memcpy(&op2, &instruction.other.compare.op2->value, instruction.other.compare.op2->size);
+		}
+
+	if (instruction.other.compare.condition.eq) result = (op1 == op2);
+	else if (instruction.other.compare.condition.ne) result = (op1 != op2);
+	else if (instruction.other.compare.condition.ugt) result = ((uint) op1 > (uint) op2);
+	else if (instruction.other.compare.condition.uge) result = ((uint) op1 >= (uint) op2);
+	else if (instruction.other.compare.condition.ult) result = ((uint) op1 < (uint) op2);
+	else if (instruction.other.compare.condition.ule) result = ((uint) op1 <= (uint) op2); 
+	else if (instruction.other.compare.condition.sgt) result = (op1 > op2);
+	else if (instruction.other.compare.condition.sge) result = (op1 >= op2);
+	else if (instruction.other.compare.condition.slt) result = (op1 < op2);
+	else if (instruction.other.compare.condition.sle) result = (op1 <= op2);
 
 
-
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 
 
 }
 void Operations::llvm_fcmp(const struct Instruction&  instruction){ 
 
 
+	double op1;
+	double op2;
+	bool result;
 
+	if(instruction.other.compare.immediate1) op1 = stoi(instruction.other.compare.iop1);
+		else{
+			memcpy(&op1, &instruction.other.compare.op1->value, instruction.other.compare.op1->size);
+		}
 
+		if(instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
+		else{
+			memcpy(&op2, &instruction.other.compare.op2->value, instruction.other.compare.op2->size);
+		}
 
+	if (instruction.other.compare.condition.condFalse) result = false;
+	else if (instruction.other.compare.condition.condTrue) result = true;
 
-	
+	else if (instruction.other.compare.condition.oeq)  {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = (op1 == op2);
+		}
+		else{
+			result = false;
+		}
+	}
+	else if (instruction.other.compare.condition.ogt) {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = (op1 > op2);
+		}
+		else{
+			result = false;
+		}
+	}
+	else if (instruction.other.compare.condition.oge) {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = (op1 >= op2);
+		}
+		else{
+			result = false;
+		}
+	} 
+	else if (instruction.other.compare.condition.olt) {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = (op1 < op2);
+		}
+		else{
+			result = false;
+		}
+	}
+	else if (instruction.other.compare.condition.ole) {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = (op1 <= op2);
+		}
+		else{
+			result = false;
+		}
+	} 
+	else if (instruction.other.compare.condition.one)  {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = (op1 != op2);
+		}
+		else{
+			result = false;
+		}
+	}
+	else if (instruction.other.compare.condition.ord) {
+		if(!(std::isnan(op1) && std::isnan(op2))){
+			result = true;
+		}
+		else{
+			result = false;
+		}
+	}
+	else if (instruction.other.compare.condition.ueq)  result = (op1 == op2);
+	else if (instruction.other.compare.condition.ugt)  result = (op1 > op2); 
+	else if (instruction.other.compare.condition.uge)  result = (op1 >= op2);  
+	else if (instruction.other.compare.condition.ult)  result = (op1 < op2); 
+	else if (instruction.other.compare.condition.ule)  result = (op1 <= op2); 
+	else if (instruction.other.compare.condition.une)  result = (op1 != op2); 
+	else if (instruction.other.compare.condition.uno)  result = (op1 != op2); 
+
+	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
+
 }
 void Operations::llvm_phi(const struct Instruction&  instruction, std::string prevBB){ 
 
+	int val;
 
+	// <result> = phi <ty> [ <val0>, <label0>], ...
+	for(int i = 0; i < MAXPHI; i++){
+		if(prevBB == instruction.other.phi.label[i]->getName()){
+			if(instruction.other.phi.immVal[i]) val = stoi(instruction.other.phi.ival[i]);
+			else memcpy(&val, &instruction.other.phi.val[i]->value, instruction.other.phi.val[i]->size);
+		}
+	}
 
-
-
+	memcpy(&instruction.general.returnRegister->value, &val, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_call(const struct Instruction&  instruction){ }
