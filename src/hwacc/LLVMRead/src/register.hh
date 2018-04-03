@@ -3,6 +3,7 @@
 #define __REGISTER_HH__
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <list>
@@ -49,7 +50,11 @@ class Register {
     void getValue();
 
     void setValue();
-    
+
+    void setValue(uint8_t *data) {
+        memcpy(&value, data, size);
+    }
+
   protected:
   
 };

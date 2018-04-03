@@ -158,6 +158,7 @@ class ComputeNode {
   public:
     ComputeNode(std::string line, RegisterList *list, std::string prev);
     ~ComputeNode();
+    Instruction getInstruction() { return instruction; }
 	void reset();
     void compute();
 	bool commit();

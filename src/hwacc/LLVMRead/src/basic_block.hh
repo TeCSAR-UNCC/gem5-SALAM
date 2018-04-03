@@ -7,7 +7,7 @@
 #include <list>
 
 class BasicBlock {
-  //friend class BasicBlockList;
+  friend class LLVMInterface;
   private:
     std::list<ComputeNode *> *cnList;
 
