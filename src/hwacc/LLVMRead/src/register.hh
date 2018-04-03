@@ -51,7 +51,7 @@ class Register {
 
     void setValue();
 
-    void setValue(uint8_t *data) {
+    void setValue(void *data) {
         memcpy(&value, data, size);
     }
 
