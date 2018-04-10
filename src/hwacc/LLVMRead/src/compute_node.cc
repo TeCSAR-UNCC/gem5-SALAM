@@ -1788,6 +1788,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					instruction.other.phi.ival[i-1] = parameters[i];
 					val[i-1] = instruction.other.phi.ival[i-1].substr(1, (instruction.other.phi.ival[i-1].find(',')-1));
 					label[i-1] = instruction.other.phi.ival[i-1].substr((instruction.other.phi.ival[i-1].find(',')+2), (instruction.other.phi.ival[i-1].length()-1));
+					
 					if(val[i-1][0] == '%'){
 						instruction.other.phi.ival[i-1].clear();
 						instruction.other.phi.immVal[i-1] = false;
@@ -1803,30 +1804,32 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 						dependencies++;
 					}
 					}
+
 					else{
 						instruction.other.phi.ival[i-1] = val[i-1];
 						instruction.other.phi.immVal[i-1] = true;
 					}
 
-					if(label[i-1][0] == '%'){
+					// if(label[i-1][0] == '%'){
 						instruction.other.phi.ilabel[i-1].clear();
-						instruction.other.phi.immLabel[i-1] = false;
-						if (list->findRegister(label[i-1]) == NULL) {
-						instruction.other.phi.label[i-1] = new Register(label[i-1]);
-						list->addRegister(instruction.other.phi.label[i-1]);
-						instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
-						dependencies++;
-					}
-					else {
-						instruction.other.phi.label[i-1] = list->findRegister(label[i-1]);
-						instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
-						dependencies++;
-					}
-					}
-					else{
-						instruction.other.phi.ilabel[i-1] = label[i-1];
-						instruction.other.phi.immLabel[i-1] = true;
-					}
+						instruction.other.phi.label[i-1] = label[i-1];
+					// instruction.other.phi.immLabel[i-1] = false;
+					// 	if (list->findRegister(label[i-1]) == NULL) {
+					// 	instruction.other.phi.label[i-1] = new Register(label[i-1]);
+					// 	list->addRegister(instruction.other.phi.label[i-1]);
+					// 	instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
+					// 	dependencies++;
+					// }
+					// else {
+					// 	instruction.other.phi.label[i-1] = list->findRegister(label[i-1]);
+					// 	instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
+					// 	dependencies++;
+					// }
+					// }
+					// else{
+					// 	instruction.other.phi.ilabel[i-1] = label[i-1];
+					// 	instruction.other.phi.immLabel[i-1] = true;
+					// }
 
 				}
 

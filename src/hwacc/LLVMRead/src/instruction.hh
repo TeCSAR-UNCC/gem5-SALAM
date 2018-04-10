@@ -230,7 +230,7 @@ struct Instruction {
 			bool immVal[MAXPHI];
 			bool immLabel[MAXPHI];
 			Register* val[MAXPHI];
-			Register* label[MAXPHI];
+			std::string label[MAXPHI];
 			mutable Register* takenVal;
 		};
 		Phi phi;
