@@ -158,6 +158,8 @@ class ComputeNode {
   public:
     ComputeNode(std::string line, RegisterList *list, std::string prev);
     ~ComputeNode();
+    Instruction getInstruction() { return instruction; }
+    void setPrevBB(std::string prev) { prevBB = prev; }
 	void reset();
     void compute();
 	bool commit();

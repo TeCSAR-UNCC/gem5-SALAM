@@ -113,10 +113,10 @@ struct Instruction {
 		bool intermediate = false;
 		bool unconditional = false;
 		Register* value; 
-		Register* iftrue;
-		Register* iffalse;
+		std::string iftrue;
+		std::string iffalse;
 		Register* cond;
-		mutable Register* dest;
+		mutable std::string dest;
 		Register* defaultdest;
 		Register* Addr;
 		Register* exception_label;
@@ -170,6 +170,8 @@ struct Instruction {
 		};
 		struct GetElementPtr{
 			bool inbounds = false;
+			int index;
+			mutable int reference[MAXGPE];
 			std::string pty;
 			std::string ptrval;
 			std::string ty[MAXGPE];

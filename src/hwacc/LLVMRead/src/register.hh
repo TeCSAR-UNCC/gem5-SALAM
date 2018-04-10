@@ -3,6 +3,7 @@
 #define __REGISTER_HH__
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <list>
@@ -46,10 +47,16 @@ class Register {
 
     void setSize(std::string type);
 
-    void getValue();
+    void getValue(void *data) {
+        memcpy(&data, &value, size);
+    }
 
     void setValue();
-    
+
+    void setValue(void *data) {
+        memcpy(&value, data, size);
+    }
+
   protected:
   
 };

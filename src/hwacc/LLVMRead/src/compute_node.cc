@@ -220,46 +220,49 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					instruction.terminator.unconditional = true;
 					instruction.terminator.type = "void";
 					// Check if register already exists and create new one if not
-					if (list->findRegister(parameters[last]) == NULL) {
-						instruction.terminator.dest = new Register(parameters[last]);
-						list->addRegister(instruction.terminator.dest);
-						instruction.terminator.dest->setSize(instruction.terminator.type);
-						instruction.dependencies.registers[0] = instruction.terminator.dest;
-					}
-					else {
-						instruction.terminator.dest = list->findRegister(parameters[last]);
-						instruction.terminator.dest->setSize(instruction.terminator.type);
-						instruction.dependencies.registers[0] = instruction.terminator.dest;
-					}
-					instruction.general.returnRegister = instruction.terminator.dest;
+					instruction.terminator.dest = parameters[last];
+					// if (list->findRegister(parameters[last]) == NULL) {
+					// 	instruction.terminator.dest = new Register(parameters[last]);
+					// 	list->addRegister(instruction.terminator.dest);
+					// 	instruction.terminator.dest->setSize(instruction.terminator.type);
+					// 	instruction.dependencies.registers[0] = instruction.terminator.dest;
+					// }
+					// else {
+					// 	instruction.terminator.dest = list->findRegister(parameters[last]);
+					// 	instruction.terminator.dest->setSize(instruction.terminator.type);
+					// 	instruction.dependencies.registers[0] = instruction.terminator.dest;
+					// }
+					// instruction.general.returnRegister = instruction.terminator.dest;
 				}
 				else {
 					// Conditional Branch
 					// Check if register already exists and create new one if not
 					instruction.terminator.type = parameters[0];
-					if (list->findRegister(parameters[last-2]) == NULL) {
-						instruction.terminator.iftrue = new Register(parameters[last-2]);
-						list->addRegister(instruction.terminator.iftrue);
-						instruction.terminator.iftrue->setSize("label");
-						instruction.dependencies.registers[1] = instruction.terminator.iftrue;
-					}
-					else {
-						instruction.terminator.iftrue = list->findRegister(parameters[last - 2]);
-						instruction.dependencies.registers[1] = instruction.terminator.iftrue;
-						instruction.terminator.iftrue->setSize("label");
-					}
+					instruction.terminator.iftrue = parameters[last-2];
+					// if (list->findRegister(parameters[last-2]) == NULL) {
+					// 	instruction.terminator.iftrue = new Register(parameters[last-2]);
+					// 	list->addRegister(instruction.terminator.iftrue);
+					// 	instruction.terminator.iftrue->setSize("label");
+					// 	instruction.dependencies.registers[1] = instruction.terminator.iftrue;
+					// }
+					// else {
+					// 	instruction.terminator.iftrue = list->findRegister(parameters[last - 2]);
+					// 	instruction.dependencies.registers[1] = instruction.terminator.iftrue;
+					// 	instruction.terminator.iftrue->setSize("label");
+					// }
 					// Check if register already exists and create new one if not
-					if (list->findRegister(parameters[last]) == NULL) {
-						instruction.terminator.iffalse = new Register(parameters[last]);
-						list->addRegister(instruction.terminator.iffalse);
-						instruction.terminator.iffalse->setSize("label");
-						instruction.dependencies.registers[2] = instruction.terminator.iffalse;
-					}
-					else {
-						instruction.terminator.iffalse = list->findRegister(parameters[last]);
-						instruction.dependencies.registers[2] = instruction.terminator.iffalse;
-						instruction.terminator.iffalse->setSize("label");
-					}
+					instruction.terminator.iffalse = parameters[last];
+					// if (list->findRegister(parameters[last]) == NULL) {
+					// 	instruction.terminator.iffalse = new Register(parameters[last]);
+					// 	list->addRegister(instruction.terminator.iffalse);
+					// 	instruction.terminator.iffalse->setSize("label");
+					// 	instruction.dependencies.registers[2] = instruction.terminator.iffalse;
+					// }
+					// else {
+					// 	instruction.terminator.iffalse = list->findRegister(parameters[last]);
+					// 	instruction.dependencies.registers[2] = instruction.terminator.iffalse;
+					// 	instruction.terminator.iffalse->setSize("label");
+					// }
 					// Check if register already exists and create new one if not
 					if (list->findRegister(parameters[1]) == NULL) {
 						instruction.terminator.cond = new Register(parameters[1]);
@@ -1548,8 +1551,10 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 				for(int i = index; i <= last; i+=2){
 					instruction.memory.getptr.ty[i] = parameters[index+i];
-					instruction.memory.getptr.idx[i+1] = parameters[index+i+1];
+					instruction.memory.getptr.idx[i] = parameters[index+i+1];
+					instruction.memory.getptr.index = i;
 				}
+
 
 				break;
 			}
