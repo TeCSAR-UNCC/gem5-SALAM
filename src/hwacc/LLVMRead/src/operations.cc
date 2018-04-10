@@ -621,7 +621,7 @@ void Operations::llvm_getelementptr(const struct Instruction&  instruction){
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 
-
+	
 	
 }
 void Operations::llvm_fence(const struct Instruction&  instruction){ }
