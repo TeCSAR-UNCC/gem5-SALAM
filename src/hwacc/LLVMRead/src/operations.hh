@@ -13,7 +13,7 @@ class Operations {
     /* LLVM Terminator Instructions */
       static void llvm_move(const struct Instruction& instruction);
       static void llvm_ret(const struct Instruction& instruction);
-      static std::string llvm_br(const struct Instruction& instruction);
+      static void llvm_br(const struct Instruction& instruction);
       static void llvm_switch(const struct Instruction& instruction);
       static void llvm_indirectbr(const struct Instruction& instruction);
       static void llvm_invoke(const struct Instruction& instruction);

@@ -143,6 +143,7 @@ class CommInterface : public BasicPioDevice
     bool reading;
     bool writing;
     bool computationNeeded;
+    bool int_flag;
 
     void tryRead();
     void tryWrite();
@@ -194,6 +195,7 @@ class CommInterface : public BasicPioDevice
 
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
 
+    void finish();
   protected:
 };
 

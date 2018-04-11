@@ -9,7 +9,7 @@ void Operations::llvm_move(const struct Instruction& instruction){
 void Operations::llvm_ret(const struct Instruction& instruction){
     //Operation of device is finished
 }
-std::string Operations::llvm_br(const struct Instruction& instruction){
+void Operations::llvm_br(const struct Instruction& instruction){
 
 	int condition;
 
@@ -19,8 +19,6 @@ std::string Operations::llvm_br(const struct Instruction& instruction){
 	if(condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
 	else instruction.terminator.dest = instruction.terminator.iffalse;
 	}
-
-    return instruction.terminator.dest;
 }
 void Operations::llvm_switch(const struct Instruction&  instruction){
 	

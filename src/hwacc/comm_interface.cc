@@ -39,6 +39,7 @@ CommInterface::CommInterface(Params *p) :
     writing = false;
     processingDone = false;
     computationNeeded = false;
+    int_flag = false;
     dataPort = &memPort;
     mmreg = new uint8_t[io_size];
     cu = NULL;
@@ -142,6 +143,7 @@ CommInterface::tick() {
         DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
             *mmreg &= 0xfe;
+            *mmreg |= 0x02;
             computationNeeded = true;
             cu->initialize();
         }
@@ -260,7 +262,7 @@ CommInterface::prepRead(memRequest *readReq) {
     assert(length > 0);
     assert(!reading);
     running = true;
-    gic->clearInt(int_num);
+    //gic->clearInt(int_num);
 
     DPRINTF(CommInterface, "Initiating read of %d bytes from 0x%x\n", length, src);
 
@@ -301,8 +303,8 @@ CommInterface::prepWrite(memRequest *writeReq) {
     size_t length = writeReq->length;
     assert(length > 0);
     writing = true;
-    gic->clearInt(int_num);
-    *(uint32_t *)mmreg &= 0xefffffff;
+    //gic->clearInt(int_num);
+    //*(uint32_t *)mmreg &= 0xefffffff;
 
     DPRINTF(CommInterface, "Initiating write of %d bytes at 0x%x to 0x%x\n",
         length, dst, value);
@@ -348,6 +350,14 @@ CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
     writeQueueSize++;
 }
 
+void
+CommInterface::finish() {
+    *mmreg &= 0xfc;
+    *mmreg |= 0x04;
+    int_flag = true;
+    gic->sendInt(int_num);
+}
+
 Tick
 CommInterface::read(PacketPtr pkt) {
     DPRINTF(CommInterface, "The address range associated with this ACC was read!\n");
@@ -388,6 +398,10 @@ CommInterface::write(PacketPtr pkt) {
 
     pkt->makeAtomicResponse();
 
+    if (((*mmreg & 0x04) == 0x00) && int_flag) {
+        gic->clearInt(int_num);
+        int_flag = false;
+    }
     if (!tickEvent.scheduled()) {
         schedule(tickEvent, nextCycle());
     }

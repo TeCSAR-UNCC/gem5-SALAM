@@ -22,9 +22,6 @@ LLVMInterface::tick() {
 /*********************************************************************************************
  CN Scheduling
 
- Reservation Table:
- | CN* | ReturnReg | DepList | In-Flight (T/F) |
-
  As CNs are scheduled they are added to an in-flight queue depending on operation type.
  Loads and Stores are maintained in separate queues, and are committed by the comm_interface.
  Branch and phi instructions evaluate and commit immediately. All other CN types are added to
@@ -42,16 +39,93 @@ LLVMInterface::tick() {
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
 
-    if (!tickEvent.scheduled())
+    //Check our compute queue to see if any compute nodes are ready to commit
+    for (auto it=computeQueue->begin(); it!=computeQueue->end(); ++it) {
+        while ((*it)->commit()) {
+            computeQueue->erase(it);
+        }
+    }
+
+    //
+    if (reservation->empty()) {
+        scheduleBB(currBB);
+    }
+
+    for (auto it=reservation->begin(); it!=reservation->end(); ++it) {
+        Instruction instr = (*it)->getInstruction();
+        while (!(instr.general.terminator) && ((*it)->checkDependency())) {
+            instr = (*it)->getInstruction();
+            if (instr.general.opCode.compare("load") == 0) {
+                readQueue->push(*it);
+                (*it)->compute();
+            } else if (instr.general.opCode.compare("store") == 0) {
+                writeQueue->push(*it);
+                (*it)->compute();
+            } else if (instr.general.opCode.compare("phi") == 0) {
+                (*it)->compute();
+                (*it)->commit();
+            } else {
+                computeQueue->push_back(*it);
+                (*it)->compute();
+            }
+            reservation->erase(it);
+        }
+        if ((instr.general.opCode.compare("br") == 0) && ((*it)->checkDependency())) {
+            if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
+                //currBB <- Calculate branch
+                prevBB = currBB;
+                (*it)->compute();
+                currBB = findBB(instr.terminator.dest);
+                reservation->erase(it);
+                scheduleBB(currBB);
+            }
+        }
+        if (instr.general.opCode.compare("ret") == 0) {
+            if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
+                running = false;
+                //We are done!!!!
+                comm->finish();
+            }
+        }
+    }
+
+    if (running && !tickEvent.scheduled())
     {
         schedule(tickEvent, curTick() + clock_period * process_delay);
     }
 }
 
 void
+LLVMInterface::scheduleBB(BasicBlock * bb) {
+    for(auto it=bb->cnList->begin(); it!=bb->cnList->end(); ++it) {
+        Instruction instr = (*it)->getInstruction();
+        //if it is a phi and we don't have an unmet dependency -> commit immediately
+        if(instr.general.phi) {
+            (*it)->setPrevBB(prevBB->name);
+            if((*it)->checkDependency()) {
+                (*it)->compute();
+                (*it)->commit();
+            } else {
+                (*it)->reset();
+                reservation->push_back(*it);
+            }
+        //else if it is an unconditional branch -> evaluate immediately
+        } else if (instr.general.terminator && instr.terminator.unconditional) {
+            //currBB <- Calculate branch
+            prevBB = currBB;
+            (*it)->compute();
+            currBB = findBB(instr.terminator.dest);
+            scheduleBB(currBB);
+        } else {
+            (*it)->reset();
+            reservation->push_back(*it);
+        }
+    }
+}
+
+void
 LLVMInterface::constructBBList() {
     bbList = new std::list<BasicBlock*>();
-    //bbList = new BasicBlockList();
     regList = new RegisterList();
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
@@ -82,7 +156,6 @@ LLVMInterface::constructBBList() {
                 currBB = new BasicBlock("0", bbnum);
                 bbnum++;
                 bbList->push_back(currBB);
-                //bbList->addBasicBlock(currBB);
             }
         } else {
             if (line.find("\n") > 0) {
@@ -92,14 +165,12 @@ LLVMInterface::constructBBList() {
                     currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum);
                     bbnum++;
                     bbList->push_back(currBB);
-                    //bbList->addBasicBlock(currBB);
                 } else if (line.find(".") == 0) {
                     int labelEnd = line.find(" ");
                     prevBB = currBB;
                     currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
                     bbnum++;
                     bbList->push_back(currBB);
-                    //bbList->addBasicBlock(currBB);
                 } else if (line.find("}") == 0) {
                     inFunction = false;
                 } else {
@@ -110,19 +181,36 @@ LLVMInterface::constructBBList() {
     }
 }
 
-void
-LLVMInterface::copyToBuffer(uint8_t *data, unsigned size) {
-    assert(size > 0);
-    dataBuffer = new uint8_t[size];
-    for (int i = 0; i < size; i++) {
-        dataBuffer[i] = *(data + i);
+BasicBlock*
+LLVMInterface::findBB(std::string bbname) {
+    for (auto it = bbList->begin(); it != bbList->end(); ++it) {
+        if ((*it)->name.compare(bbname) == 0)
+            return (*it);
     }
+    return NULL;
+}
+
+void
+LLVMInterface::readCommit(uint8_t * data) {
+    Instruction instr = readQueue->front()->getInstruction();
+    instr.general.returnRegister->setValue(data);
+    instr.general.returnRegister->commit();
+    readQueue->pop();
 }
 
 void
 LLVMInterface::initialize() {
-    if(!bbList)
+    running = true;
+    if (!bbList)
         constructBBList();
+    if(!reservation)
+        reservation = new std::list<ComputeNode*>();
+    if (!readQueue)
+        readQueue = new std::queue<ComputeNode*>();
+    if (!writeQueue)
+        writeQueue = new std::queue<ComputeNode*>();
+    if (!computeQueue)
+        computeQueue = new std::list<ComputeNode*>();
     tick();
 }
 
