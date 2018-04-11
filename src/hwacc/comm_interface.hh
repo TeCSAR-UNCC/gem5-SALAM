@@ -2,7 +2,7 @@
 
 #define __HWACC_COMM_INTERFACE_HH__
 
-#include "params/CommInterface.hh"
+//#include "params/CommInterface.hh"
 #include "dev/io_device.hh"
 #include "dev/arm/base_gic.hh"
 #include "hwacc/compute_unit.hh"

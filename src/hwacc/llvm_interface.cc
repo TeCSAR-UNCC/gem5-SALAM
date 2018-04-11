@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "hwacc/llvm_interface.hh"
-#include "debug/LLVMInterface.hh"
+//#include "debug/LLVMInterface.hh"
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),

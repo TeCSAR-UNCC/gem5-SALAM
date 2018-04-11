@@ -46,8 +46,8 @@
 
 #include "mem/mem_object.hh"
 #include "mem/tport.hh"
-#include "params/BasicPioDevice.hh"
-#include "params/PioDevice.hh"
+//#include "params/BasicPioDevice.hh"
+//#include "params/PioDevice.hh"
 
 class PioDevice;
 class System;

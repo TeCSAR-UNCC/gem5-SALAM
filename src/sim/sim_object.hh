@@ -52,7 +52,8 @@
 #include <string>
 #include <vector>
 
-#include "params/SimObject.hh"
+//#include "params/SimObject.hh"
+
 #include "sim/drain.hh"
 #include "sim/eventq.hh"
 #include "sim/eventq_impl.hh"
