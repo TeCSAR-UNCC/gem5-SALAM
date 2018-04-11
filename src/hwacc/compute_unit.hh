@@ -2,7 +2,7 @@
 
 #define __HWACC_COMPUTE_UNIT_HH__
 
-//#include "params/ComputeUnit.hh"
+#include "params/ComputeUnit.hh"
 #include "sim/sim_object.hh"
 #include "hwacc/comm_interface.hh"
 

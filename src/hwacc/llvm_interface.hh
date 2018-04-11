@@ -2,7 +2,7 @@
 
 #define __HWACC_LLVM_INTERFACE_HH__
 
-//#include "params/LLVMInterface.hh"
+#include "params/LLVMInterface.hh"
 #include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/operations.hh"
