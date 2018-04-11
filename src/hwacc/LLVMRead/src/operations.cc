@@ -846,13 +846,14 @@ void Operations::llvm_phi(const struct Instruction&  instruction, std::string pr
 
 	// <result> = phi <ty> [ <val0>, <label0>], ...
 	for(int i = 0; i < MAXPHI; i++){
-		if(prevBB == instruction.other.phi.label[i]->getName()){
+		if(prevBB == instruction.other.phi.label[i]){
 			if(instruction.other.phi.immVal[i]) val = stoi(instruction.other.phi.ival[i]);
-			else memcpy(&val, &instruction.other.phi.val[i]->value, instruction.other.phi.val[i]->size);
+			else instruction.other.phi.val[i]->getValue(&val);
+			// memcpy(&val, &instruction.other.phi.val[i]->value, instruction.other.phi.val[i]->size);
 		}
 	}
-
-	memcpy(&instruction.general.returnRegister->value, &val, instruction.general.returnRegister->size);
+	instruction.general.returnRegister->setValue(&val);
+	//memcpy(&instruction.general.returnRegister->value, &val, instruction.general.returnRegister->size);
 
 }
 void Operations::llvm_call(const struct Instruction&  instruction){ }
