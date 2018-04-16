@@ -16,8 +16,9 @@ BENCHMARKS=\
 	spmv/ellpack \
 	stencil/stencil2d \
 	stencil/stencil3d \
-	viterbi/viterbi
-	
+	viterbi/viterbi \
+	vadd/vadd
+
 CFLAGS=-O1 -Wall -Wno-unused-label
 
 .PHONY: build clean all

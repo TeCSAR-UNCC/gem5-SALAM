@@ -16,3 +16,4 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
     DebugFlag('LLVMInterface')
+    DebugFlag('LLVMParse')

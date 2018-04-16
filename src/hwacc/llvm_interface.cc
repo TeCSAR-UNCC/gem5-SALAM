@@ -125,59 +125,70 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
 
 void
 LLVMInterface::constructBBList() {
+    DPRINTF(LLVMInterface, "Constructing Dependency Graph\n");
     bbList = new std::list<BasicBlock*>();
     regList = new RegisterList();
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
     bool inFunction = false;
     unsigned bbnum = 0;
-
-    while (llvmFile) {
-        getline(llvmFile, line);
-        if (!inFunction) {
-            if (line.find("define")) { //Found a function. Need to parse its header
-                inFunction = true;
-                unsigned paramNum = 0;
-                unsigned linePos = 0;
-                int percPos = line.find("%"); //All registers preceeded by a % in LLVM
-                int commaPos;
-                while (percPos > -1) {
-                    if (line.find("%struct", linePos) != percPos) { //Ensure we didn't just find a struct type
-                        percPos++;
-                        commaPos = line.find(",", percPos);
-                        if (commaPos < 0) commaPos = line.find(")");
-                        std::string regName = line.substr(percPos, (commaPos-percPos));
-                        regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum)));
-                        paramNum++;
+    DPRINTF(LLVMInterface, "Parsing %s\n", filename);
+    if(llvmFile.is_open()) {
+        while (getline(llvmFile, line)) {
+            DPRINTF(LLVMInterface, "Line: %s\n", line);
+            if (!inFunction) {
+                if (!line.find("define")) { //Found a function. Need to parse its header
+                    DPRINTF(LLVMInterface, "Found acc function. Parsing Gloabl Vars\n");
+                    inFunction = true;
+                    unsigned paramNum = 0;
+                    unsigned linePos = 0;
+                    int percPos = line.find("%"); //All registers preceeded by a % in LLVM
+                    int commaPos;
+                    while (percPos > -1) {
+                        if (line.find("%struct", linePos) != percPos) { //Ensure we didn't just find a struct type
+                            percPos++;
+                            commaPos = line.find(",", percPos);
+                            if (commaPos < 0) commaPos = line.find(")");
+                            std::string regName = line.substr(percPos, (commaPos-percPos));
+                            DPRINTF(LLVMInterface, "Creating register for: %s\n", regName);
+                            regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum)));
+                            paramNum++;
+                        }
+                        linePos = percPos + 1;
+                        percPos = line.find("%", linePos);
                     }
-                    linePos = percPos + 1;
-                    percPos = line.find("%", linePos);
+                    currBB = new BasicBlock("0", bbnum);
+                    DPRINTF(LLVMInterface, "Found Basic Block: %s\n", currBB->name);
+                    bbnum++;
+                    bbList->push_back(currBB);
                 }
-                currBB = new BasicBlock("0", bbnum);
-                bbnum++;
-                bbList->push_back(currBB);
-            }
-        } else {
-            if (line.find("\n") > 0) {
-                if (line.find("; <label>:") == 0) {
-                    int labelEnd = line.find(" ", 10);
-                    prevBB = currBB;
-                    currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum);
-                    bbnum++;
-                    bbList->push_back(currBB);
-                } else if (line.find(".") == 0) {
-                    int labelEnd = line.find(" ");
-                    prevBB = currBB;
-                    currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
-                    bbnum++;
-                    bbList->push_back(currBB);
-                } else if (line.find("}") == 0) {
-                    inFunction = false;
-                } else {
-                    currBB->addNode(new ComputeNode(line, regList, prevBB->getName()));
+            } else {
+                if (line.find("\n") > 0) {
+                    if (line.find("; <label>:") == 0) {
+                        int labelEnd = line.find(" ", 10);
+                        prevBB = currBB;
+                        currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum);
+                        DPRINTF(LLVMInterface, "Found Basic Block: %s\n", currBB->name);
+                        bbnum++;
+                        bbList->push_back(currBB);
+                    } else if (line.find(".") == 0) {
+                        int labelEnd = line.find(" ");
+                        prevBB = currBB;
+                        currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
+                        DPRINTF(LLVMInterface, "Found Basic Block: %s\n", currBB->name);
+                        bbnum++;
+                        bbList->push_back(currBB);
+                    } else if (line.find("}") == 0) {
+                        inFunction = false;
+                        DPRINTF(LLVMInterface, "Finished File Parsing\n");
+                    } else {
+                        currBB->addNode(new ComputeNode(line, regList, prevBB->getName()));
+                    }
                 }
             }
         }
+    } else {
+        panic("Unable to open LLVM file\n");
     }
 }
 
@@ -200,6 +211,7 @@ LLVMInterface::readCommit(uint8_t * data) {
 
 void
 LLVMInterface::initialize() {
+    DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine\n");
     running = true;
     if (!bbList)
         constructBBList();
