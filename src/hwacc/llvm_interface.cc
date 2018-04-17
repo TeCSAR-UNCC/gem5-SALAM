@@ -40,6 +40,7 @@ LLVMInterface::tick() {
 *********************************************************************************************/
 
     //Check our compute queue to see if any compute nodes are ready to commit
+    DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
     for (auto it=computeQueue->begin(); it!=computeQueue->end(); ++it) {
         while ((*it)->commit()) {
             computeQueue->erase(it);
@@ -56,15 +57,19 @@ LLVMInterface::tick() {
         while (!(instr.general.terminator) && ((*it)->checkDependency())) {
             instr = (*it)->getInstruction();
             if (instr.general.opCode.compare("load") == 0) {
+                DPRINTF(LLVMInterface, "Queueing Load\n");
                 readQueue->push(*it);
                 (*it)->compute();
             } else if (instr.general.opCode.compare("store") == 0) {
+                DPRINTF(LLVMInterface, "Queueing Store\n");
                 writeQueue->push(*it);
                 (*it)->compute();
             } else if (instr.general.opCode.compare("phi") == 0) {
+                DPRINTF(LLVMInterface, "Queueing PHI\n");
                 (*it)->compute();
                 (*it)->commit();
             } else {
+                DPRINTF(LLVMInterface, "Queueing Compute\n");
                 computeQueue->push_back(*it);
                 (*it)->compute();
             }
@@ -97,6 +102,7 @@ LLVMInterface::tick() {
 
 void
 LLVMInterface::scheduleBB(BasicBlock * bb) {
+    DPRINTF(LLVMInterface, "Adding BB:%s to reservation table\n", bb->getName());
     for(auto it=bb->cnList->begin(); it!=bb->cnList->end(); ++it) {
         Instruction instr = (*it)->getInstruction();
         //if it is a phi and we don't have an unmet dependency -> commit immediately
@@ -181,12 +187,19 @@ LLVMInterface::constructBBList() {
                     } else if (line.find("}") == 0) {
                         inFunction = false;
                         DPRINTF(LLVMInterface, "Finished File Parsing\n");
+                        break;
                     } else {
-                        currBB->addNode(new ComputeNode(line, regList, prevBB->getName()));
+                        DPRINTF(LLVMInterface, "Registering Compute Node for: %s\n", line);
+                        if(prevBB) {
+                            currBB->addNode(new ComputeNode(line, regList, prevBB->getName()));
+                        } else {
+                            currBB->addNode(new ComputeNode(line, regList, "NULL"));
+                        }
                     }
                 }
             }
         }
+        currBB = findBB("0");
     } else {
         panic("Unable to open LLVM file\n");
     }
