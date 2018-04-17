@@ -15,5 +15,5 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/register.cc')
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
+    DebugFlag('ComputeUnit')
     DebugFlag('LLVMInterface')
-    DebugFlag('LLVMParse')
