@@ -228,17 +228,18 @@ def build_test_system(np):
         if options.elastic_trace_en and options.checkpoint_restore == None and \
             not options.fast_forward:
             CpuConfig.config_etrace(TestCPUClass, test_sys.cpu, options)
-        
+
         CacheConfig.config_cache(options, test_sys)
 
         MemConfig.config_mem(options, test_sys)
-    
+
     if buildEnv['TARGET_ISA'] == "arm":    
-        test_sys.comm_int = CommInterface(pio_addr=0x2f000000, pio_size=8, gic=test_sys.realview.gic)
+        test_sys.comm_int = CommInterface(pio_addr=0x2f000000, pio_size=25, gic=test_sys.realview.gic)
         test_sys.comm_int.pio = test_sys.iobus.master
+        test_sys.comm_int.flags_size = 1;
         test_sys.comm_int.mem_side = test_sys.iobus.slave
         test_sys.comm_int.llvm_interface = LLVMInterface()
-        test_sys.comm_int.llvm_interface.in_file = "hwacc/LLVMRead/Benchmarks/bfs/bulk/bfs.ll"
+        test_sys.comm_int.llvm_interface.in_file = "/home/samerogers/gem5/src/hwacc/LLVMRead/Benchmarks/vadd/vadd/vadd.ll"
 
     return test_sys
 
