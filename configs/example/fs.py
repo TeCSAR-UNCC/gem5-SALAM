@@ -239,7 +239,7 @@ def build_test_system(np):
         test_sys.comm_int.flags_size = 1;
         test_sys.comm_int.mem_side = test_sys.iobus.slave
         test_sys.comm_int.llvm_interface = LLVMInterface()
-        test_sys.comm_int.llvm_interface.in_file = "/home/samerogers/gem5/src/hwacc/LLVMRead/Benchmarks/vadd/vadd/vadd.ll"
+        test_sys.comm_int.llvm_interface.in_file = "/home/josh/gem5Work/src/hwacc/LLVMRead/Benchmarks/vadd/vadd/vadd.ll"
 
     return test_sys
 

@@ -171,11 +171,11 @@ struct Instruction {
 		struct GetElementPtr{
 			bool inbounds = false;
 			int index;
-			mutable int reference[MAXGPE];
+			mutable unsigned long long int reference[MAXGPE];
 			std::string pty;
 			std::string ptrval;
 			std::string ty[MAXGPE];
-			std::string idx[MAXGPE];
+			Register* idx[MAXGPE];
 		};
 		Load load;
 		Store store;

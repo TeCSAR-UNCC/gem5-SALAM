@@ -1,4 +1,6 @@
 #include "compute_node.hh"
+#include "debug/LLVMInterface.hh"
+
 
 ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev) {	
 
@@ -16,12 +18,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     // Find the return register. If it exists, it is always the first component of the line
     if (returnChk > 0) {
     	// Create new pointer to the return register
-        instruction.general.returnRegister = new Register(line.substr((line.find("%")+1), returnChk));
+        instruction.general.returnRegister = new Register(line.substr((line.find("%")+1), returnChk-2));
         list->addRegister(instruction.general.returnRegister);
         // In all instances where a return register is the first component, the next component is
         // the opcode, which is parsed and removed from line
         line = line.substr(returnChk+3);
-    	instruction.general.opCode = line.substr(0,line.find(' ')-1);
+    	instruction.general.opCode = line.substr(0,line.find(' '));
     	line = line.substr(line.find(' '));
     }
     // If no return register is found then the first component must instead be the opcode
@@ -30,9 +32,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     	// Search for first none empty space which is were the opcode must begin
     	// Then store the opcode and remove the parsed information from the line
     	for(int i = 0; i < line.length(); i++){
-    		if(line[0] != ' ') {
-				instruction.general.opCode = line.substr(i, line.find(' ')-1);
-    			line = line.substr(line.find(' '));
+    		if(line[i] != ' ') {
+				instruction.general.opCode = line.substr(i, line.find(' ', i)-2);
+    			line = line.substr(line.find(' ')+1);
     			break;
     		}
     	}
@@ -41,7 +43,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
     }
     // //////////////////////////////////////////////////////////////////////////////////
 
-
+	DPRINTF(LLVMInterface, "Opcode Found: %s  \n", instruction.general.opCode );
 	// Loop to break apart each component of the LLVM line
 	// Any brackets or braces that contain data are stored as under the parent set
 	// Components are pushed back into the parameter vector in order they are read
@@ -174,6 +176,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			// Terminator Instructions 
 
     		case IR_Ret: {
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameters[%d]: %s \n", debug, parameters[debug]);
 				// ret <type> <value>; Return a value from a non - void function
 				// ret void; Return from void function
 				instruction.general.terminator = true;
@@ -213,14 +217,17 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			case IR_Br: {
 				// br i1 <cond>, label <iftrue>, label <iffalse>
 				// br label <dest>          ; Unconditional branch
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
+
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
-				if (parameters.size() == 2) {
+				if (parameters.size() == 3) {
 					//Unconditional branch
 					instruction.terminator.unconditional = true;
 					instruction.terminator.type = "void";
 					// Check if register already exists and create new one if not
-					instruction.terminator.dest = parameters[last];
+					instruction.terminator.dest = parameters[2].substr(1);
 					// if (list->findRegister(parameters[last]) == NULL) {
 					// 	instruction.terminator.dest = new Register(parameters[last]);
 					// 	list->addRegister(instruction.terminator.dest);
@@ -237,8 +244,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				else {
 					// Conditional Branch
 					// Check if register already exists and create new one if not
-					instruction.terminator.type = parameters[0];
-					instruction.terminator.iftrue = parameters[last-2];
+					instruction.terminator.type = parameters[1];
+					instruction.terminator.iftrue = parameters[4];
 					// if (list->findRegister(parameters[last-2]) == NULL) {
 					// 	instruction.terminator.iftrue = new Register(parameters[last-2]);
 					// 	list->addRegister(instruction.terminator.iftrue);
@@ -251,7 +258,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					// 	instruction.terminator.iftrue->setSize("label");
 					// }
 					// Check if register already exists and create new one if not
-					instruction.terminator.iffalse = parameters[last];
+					instruction.terminator.iffalse = parameters[6];
 					// if (list->findRegister(parameters[last]) == NULL) {
 					// 	instruction.terminator.iffalse = new Register(parameters[last]);
 					// 	list->addRegister(instruction.terminator.iffalse);
@@ -264,14 +271,15 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					// 	instruction.terminator.iffalse->setSize("label");
 					// }
 					// Check if register already exists and create new one if not
+
 					if (list->findRegister(parameters[1]) == NULL) {
-						instruction.terminator.cond = new Register(parameters[1]);
+						instruction.terminator.cond = new Register(parameters[2]);
 						list->addRegister(instruction.terminator.cond);
 						instruction.terminator.cond->setSize(instruction.terminator.type);
 						instruction.dependencies.registers[0] = instruction.terminator.cond;
 					}
 					else {
-						instruction.terminator.cond = list->findRegister(parameters[1]);
+						instruction.terminator.cond = list->findRegister(parameters[2]);
 						instruction.dependencies.registers[0] = instruction.terminator.cond;
 						instruction.terminator.cond->setSize(instruction.terminator.type);
 					}
@@ -285,6 +293,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
 				// When using a switch statement the default case is within instruction.terminator
 				// while each case statement exists within instruction.terminator.cases
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
 				instruction.terminator.intty = parameters[0];
@@ -347,8 +357,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_IndirectBr: {
 				// Not up to date with setting register datatypes
-
 				// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
 				if (parameters.size() <= 3) {
@@ -390,9 +401,10 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_Invoke: {
 				// Not up to date with setting register datatypes
-
 				// <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
 				//   to label <normal label> unwind label <exception label>
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
 
@@ -431,8 +443,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_Resume: {
 				// Not up to date with setting register datatypes
-
 				// resume <type> <value>
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.terminator = true;
 				instruction.general.flowControl = true;
 
@@ -465,7 +478,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				for (int i = 0; i <= 1; i++) {
@@ -521,8 +535,10 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_FAdd: {
 				// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 
-					for(int i = 0; i < parameters.size() - 3; i++){
+				for(int i = 0; i < parameters.size() - 3; i++){
 					if (parameters.at(i) == "nnan") instruction.flags.nnan = true;
 					else if (parameters.at(i) == "ninf") instruction.flags.ninf = true;
 					else if (parameters.at(i) == "nsz") instruction.flags.nsz = true;
@@ -585,7 +601,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = sub nuw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				for (int i = 0; i <= 1; i++) {
@@ -642,7 +659,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_FSub: {
 				// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				for (int i = 0; i < parameters.size() - 3; i++) {
 					if (parameters.at(i) == "nnan") instruction.flags.nnan = true;
 					else if (parameters.at(i) == "ninf") instruction.flags.ninf = true;
@@ -705,7 +723,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = mul nuw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				for (int i = 0; i <= 1; i++) {
@@ -760,8 +779,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_FMul: {
 				// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				for (int i = 0; i < parameters.size() - 3; i++) {
 					if (parameters.at(i) == "nnan") instruction.flags.nnan = true;
 					else if (parameters.at(i) == "ninf") instruction.flags.ninf = true;
@@ -822,6 +841,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			case IR_UDiv: {
 				// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 				// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);				
 				dependencies = 0;
 			
 				if (parameters[0] == "exact") instruction.flags.exact = true;				
@@ -874,7 +895,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			case IR_SDiv: {
 				// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 				// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				if (parameters[0] == "exact") instruction.flags.exact = true;
@@ -925,7 +947,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_FDiv: {
 				// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 
 				for (int i = 0; i < parameters.size() - 3; i++) {
 					if (parameters.at(i) == "nnan") instruction.flags.nnan = true;
@@ -986,7 +1009,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_URem: {
 				// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
@@ -1036,7 +1060,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_SRem: {
 				// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				instruction.binary.ty = parameters[last - 2];
@@ -1083,7 +1108,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_FRem: {
 				// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 
 				for (int i = 0; i < parameters.size() - 3; i++) {
 					if (parameters.at(i) == "nnan") instruction.flags.nnan = true;
@@ -1149,6 +1175,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = shl nuw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 				// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				for (int i = 0; i <= 1; i++) {
@@ -1203,7 +1231,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			case IR_LShr: {
 				// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 				// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				if (parameters[0] == "exact") instruction.flags.exact = true;
@@ -1255,7 +1284,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			case IR_AShr: {
 				// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
 				// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				if (parameters[0] == "exact") instruction.flags.exact = true;
@@ -1306,7 +1336,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			case IR_And: {
 				// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
 				dependencies = 0;
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.bitwise.ty = parameters[last - 2];
 				instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 
@@ -1352,7 +1383,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_Or: {
 				// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
@@ -1400,7 +1432,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_Xor: {
 				// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
-
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 
 				instruction.bitwise.ty = parameters[last - 2];
@@ -1450,9 +1483,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 
 			case IR_Alloca: {
 				// Not up to date with setting register datatypes
-
 				// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
-
+				// DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				// for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				// attributes.params.dataType = parameters[0];
 
 				// if (parameters[1] == "align") {
@@ -1474,6 +1507,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
 				// <result> = load atomic[volatile] <ty>* <pointer>[singlethread] <ordering>, align <alignment>
 				//	!<index> = !{ i32 1 }
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.memory = true;
 				int index = 0;
 				int dependencies = 0;
@@ -1505,11 +1540,13 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				//		    int prepWrite(Addr dst, uint8_t* value, size_t length);
 				// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 				// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.memory = true;
-				int index = 0;
+				int index = 1;
 				int dependencies = 0;
-				if(parameters[0] == "volatile"){
-					index = 1; 
+				if(parameters[1] == "volatile"){
+					index = 2; 
 					instruction.memory.store.volatileVar = true;
 				}
 				instruction.memory.store.ty = parameters[index];
@@ -1525,7 +1562,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 						instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
 						dependencies++;
 					}
-				instruction.memory.store.align = stoi(parameters[index+4]);
+				
+				instruction.memory.store.align = std::stoi(parameters[index+5]);
 
 				break;
 			}
@@ -1533,6 +1571,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				// <result> = getelementptr <pty>* <ptrval>{, <ty> <idx>}*
 				// <result> = getelementptr inbounds <pty>* <ptrval>{, <ty> <idx>}*
 				// <result> = getelementptr <ptr vector> ptrval, <vector index type> idx
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);				
+				
 				int index = 0;
 				instruction.general.memory = true;
 				instruction.general.returnRegister->setSize("pointer");
@@ -1540,19 +1581,31 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 				if(parameters[0] == "inbounds"){
 				instruction.memory.getptr.inbounds = true;
 				instruction.memory.getptr.pty = parameters[1];
-				instruction.memory.getptr.ptrval = parameters[2];
+				instruction.memory.getptr.ptrval = parameters[1];
 				index = 3;
 				}
 				else{
 				instruction.memory.getptr.pty = parameters[0];
-				instruction.memory.getptr.ptrval = parameters[1];
+				instruction.memory.getptr.ptrval = parameters[0];
 				index = 2;
 				}
+				int j = 0;
+				for(int i = 0; i + index <= last; i+=2){
+					instruction.memory.getptr.ty[j] = parameters[index+i-1];
 
-				for(int i = index; i <= last; i+=2){
-					instruction.memory.getptr.ty[i] = parameters[index+i];
-					instruction.memory.getptr.idx[i] = parameters[index+i+1];
-					instruction.memory.getptr.index = i;
+					if (list->findRegister(parameters[index+i]) == NULL) {
+						instruction.memory.getptr.idx[j] = new Register(parameters[index+2]);
+						list->addRegister(instruction.memory.getptr.idx[j]);
+						instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
+						dependencies++;
+					}
+					else {
+						instruction.memory.getptr.idx[j] = list->findRegister(parameters[index+i]);
+						instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
+						dependencies++;
+					}
+					j++;
+					instruction.memory.getptr.index = j;
 				}
 
 
@@ -1645,6 +1698,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			// Other Operations - Compare
 			case IR_ICmp: {
 				// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				dependencies = 0;
 				instruction.general.other = true;
 				instruction.general.compare = true;
@@ -1706,6 +1761,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			}
 			case IR_FCmp: {
 				// <result> = fcmp <cond> <ty> <op1>, <op2>     ; yields {i1} or {<N x i1>}:result
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);				
 				dependencies = 0;
 				instruction.general.other = true;
 				instruction.general.compare = true;
@@ -1774,72 +1831,52 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 			}
 			case IR_PHI: {
 				// <result> = phi <ty> [ <val0>, <label0>], ...
-				
+				DPRINTF(LLVMInterface, "Creating %s Compute Node\n", instruction.general.opCode);
+				for(int debug = 0; debug <= last; debug++) DPRINTF(LLVMInterface, "Parameter[%d]: %s \n", debug, parameters[debug]);
 				instruction.general.other = true;
 				instruction.general.phi = true;
 				instruction.general.flowControl = true;
 				instruction.other.phi.ty = parameters[0];
 				instruction.general.returnRegister->setSize(instruction.other.phi.ty);
 
-				std::string val[last-1], label[last-1];
+				std::string *val = new std::string[last];
+				std::string *label = new std::string[last];
+				int labelLength = 0;
 
 				// Phi instructions grouped in brackets first listed as pairs in ival array
 				for(int i = 1; i <= last; i++){
 					instruction.other.phi.ival[i-1] = parameters[i];
-					val[i-1] = instruction.other.phi.ival[i-1].substr(1, (instruction.other.phi.ival[i-1].find(',')-1));
-					label[i-1] = instruction.other.phi.ival[i-1].substr((instruction.other.phi.ival[i-1].find(',')+2), (instruction.other.phi.ival[i-1].length()-1));
+					labelLength = instruction.other.phi.ival[i-1].find(',');
+					labelLength = labelLength - instruction.other.phi.ival[i-1].find('['); 
+					val[i-1] = instruction.other.phi.ival[i-1].substr(2, (instruction.other.phi.ival[i-1].find(','))-2);
+					labelLength = instruction.other.phi.ival[i-1].find(',');
+					labelLength = instruction.other.phi.ival[i-1].find(']') - labelLength;
+					label[i-1] = instruction.other.phi.ival[i-1].substr((instruction.other.phi.ival[i-1].find(','))+3, labelLength-4);
 					
 					if(val[i-1][0] == '%'){
 						instruction.other.phi.ival[i-1].clear();
 						instruction.other.phi.immVal[i-1] = false;
 						if (list->findRegister(val[i-1]) == NULL) {
-						instruction.other.phi.val[i-1] = new Register(val[i-1]);
-						list->addRegister(instruction.other.phi.val[i-1]);
-						instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i-1];
-						dependencies++;
-					}
-					else {
-						instruction.other.phi.val[i-1] = list->findRegister(val[i-1]);
-						instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i-1];
-						dependencies++;
-					}
+							instruction.other.phi.val[i-1] = new Register(val[i-1]);
+							list->addRegister(instruction.other.phi.val[i-1]);
+							instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i-1];
+							dependencies++;
+						}
+						else {
+							instruction.other.phi.val[i-1] = list->findRegister(val[i-1]);
+							instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i-1];
+							dependencies++;
+						}
+					DPRINTF(LLVMInterface, "Loading value stored in %s if called from BB %s. \n", val[i-1], label[i-1]);
 					}
 
 					else{
 						instruction.other.phi.ival[i-1] = val[i-1];
 						instruction.other.phi.immVal[i-1] = true;
+						DPRINTF(LLVMInterface, "Loading immediate value %s if called from BB %s. \n", val[i-1], label[i-1]);
+
 					}
-
-					// if(label[i-1][0] == '%'){
-						instruction.other.phi.ilabel[i-1].clear();
-						instruction.other.phi.label[i-1] = label[i-1];
-					// instruction.other.phi.immLabel[i-1] = false;
-					// 	if (list->findRegister(label[i-1]) == NULL) {
-					// 	instruction.other.phi.label[i-1] = new Register(label[i-1]);
-					// 	list->addRegister(instruction.other.phi.label[i-1]);
-					// 	instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
-					// 	dependencies++;
-					// }
-					// else {
-					// 	instruction.other.phi.label[i-1] = list->findRegister(label[i-1]);
-					// 	instruction.dependencies.registers[dependencies] = instruction.other.phi.label[i-1];
-					// 	dependencies++;
-					// }
-					// }
-					// else{
-					// 	instruction.other.phi.ilabel[i-1] = label[i-1];
-					// 	instruction.other.phi.immLabel[i-1] = true;
-					// }
-
 				}
-
-				// //Improvement Opportunity - Dynamically allocated string to eliminate PHIPATHMAX
-				// attributes.params.dataType = parameters[0];
-				// for (int i = 1; i <= PHIPATHMAX; i++) {
-				// 	if (!(parameters[i].empty())) {
-				// 		attributes.phi.paths[i - 1] = parameters[i];
-				// 	}
-				// }
 				break;
 			}
 			case IR_Call: {
@@ -2209,6 +2246,7 @@ ComputeNode::compute() {
 }
 
 bool ComputeNode::commit(){
+	DPRINTF(LLVMInterface, "Commit %s Node\n", instruction.general.opCode);
 	if(instruction.general.returnRegister != NULL){
 		instruction.general.returnRegister->commit();
 		instruction.cycle.current++;
@@ -2221,13 +2259,17 @@ bool ComputeNode::commit(){
 }
 
 bool ComputeNode::checkDependency(){
-	bool hot = true;
+	bool hot = false;
+	DPRINTF(LLVMInterface,"Checking Dependencies\n");
 	for(int i = 0; i < MAXDEPENDENTS; i++){
 		if(instruction.dependencies.registers[i] != NULL){
-			if(instruction.dependencies.registers[i]->getStatus() == false) hot = false;
-			else hot = true;
+			if(instruction.dependencies.registers[i]->getStatus() == true){
+				hot = true;
+				break;
+			}
 		}
 	}
+	DPRINTF(LLVMInterface,"Checking Dependencies Finished\n");
 	return hot;
 }
 

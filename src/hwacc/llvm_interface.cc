@@ -41,12 +41,14 @@ LLVMInterface::tick() {
 
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
-    for (auto it=computeQueue->begin(); it!=computeQueue->end(); ++it) {
+    for (auto it = computeQueue->begin(); it != computeQueue->end(); ++it) {
+        DPRINTF(LLVMInterface, " Iterator Working");
         while ((*it)->commit()) {
+                DPRINTF(LLVMInterface, "While Loop Running \n");
             computeQueue->erase(it);
         }
     }
-
+    DPRINTF(LLVMInterface, "Schedule Basic Block\n");
     //
     if (reservation->empty()) {
         scheduleBB(currBB);
@@ -55,16 +57,19 @@ LLVMInterface::tick() {
     for (auto it=reservation->begin(); it!=reservation->end(); ++it) {
         Instruction instr = (*it)->getInstruction();
         while (!(instr.general.terminator) && ((*it)->checkDependency())) {
+            DPRINTF(LLVMInterface, "========================\n");
             instr = (*it)->getInstruction();
-            if (instr.general.opCode.compare("load") == 0) {
+            DPRINTF(LLVMInterface, "========================\n");
+            DPRINTF(LLVMInterface, "Non-Terminator Instruction Operation \n");
+            if (instr.general.opCode.find("load") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Load\n");
                 readQueue->push(*it);
                 (*it)->compute();
-            } else if (instr.general.opCode.compare("store") == 0) {
+            } else if (instr.general.opCode.find("store") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Store\n");
                 writeQueue->push(*it);
                 (*it)->compute();
-            } else if (instr.general.opCode.compare("phi") == 0) {
+            } else if (instr.general.opCode.find("phi") == 0) {
                 DPRINTF(LLVMInterface, "Queueing PHI\n");
                 (*it)->compute();
                 (*it)->commit();
@@ -76,10 +81,12 @@ LLVMInterface::tick() {
             reservation->erase(it);
         }
         if ((instr.general.opCode.compare("br") == 0) && ((*it)->checkDependency())) {
+        DPRINTF(LLVMInterface, "Branch Operation In Progress\n");
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
                 //currBB <- Calculate branch
                 prevBB = currBB;
                 (*it)->compute();
+                DPRINTF(LLVMInterface, "Branching to Basic Block %s\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest);
                 reservation->erase(it);
                 scheduleBB(currBB);
@@ -109,12 +116,19 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
         if(instr.general.phi) {
             (*it)->setPrevBB(prevBB->name);
             if((*it)->checkDependency()) {
+                DPRINTF(LLVMInterface, "Dependency Found\n");
+                DPRINTF(LLVMInterface, "Compute\n");
                 (*it)->compute();
+                DPRINTF(LLVMInterface, "Commit\n");
                 (*it)->commit();
             } else {
+                DPRINTF(LLVMInterface, "No Dependency Found\n");
+                DPRINTF(LLVMInterface, "Reset\n");
                 (*it)->reset();
+                DPRINTF(LLVMInterface, "Reserve\n");
                 reservation->push_back(*it);
-            }
+            } 
+        DPRINTF(LLVMInterface, "Phi Completed\n");
         //else if it is an unconditional branch -> evaluate immediately
         } else if (instr.general.terminator && instr.terminator.unconditional) {
             //currBB <- Calculate branch
@@ -188,7 +202,9 @@ LLVMInterface::constructBBList() {
                         inFunction = false;
                         DPRINTF(LLVMInterface, "Finished File Parsing\n");
                         break;
-                    } else {
+                    } else if (!(line.find_first_not_of(' ') != std::string::npos)){
+                        DPRINTF(LLVMInterface, "Empty Line\n");
+                    }else {
                         DPRINTF(LLVMInterface, "Registering Compute Node for: %s\n", line);
                         if(prevBB) {
                             currBB->addNode(new ComputeNode(line, regList, prevBB->getName()));
@@ -229,12 +245,16 @@ LLVMInterface::initialize() {
     if (!bbList)
         constructBBList();
     if(!reservation)
+        DPRINTF(LLVMInterface, "Initializing reservation list\n");
         reservation = new std::list<ComputeNode*>();
     if (!readQueue)
+        DPRINTF(LLVMInterface, "Initializing readQueue queue\n");
         readQueue = new std::queue<ComputeNode*>();
     if (!writeQueue)
+        DPRINTF(LLVMInterface, "Initializing writeQueue queue\n");
         writeQueue = new std::queue<ComputeNode*>();
     if (!computeQueue)
+        DPRINTF(LLVMInterface, "Initializing computeQueue list\n");
         computeQueue = new std::list<ComputeNode*>();
     tick();
 }

@@ -182,7 +182,9 @@ class CommInterface : public BasicPioDevice
     //int prepRead(Addr src, size_t length);
     //int prepWrite(Addr dst, uint8_t* value, size_t length);
 
-    void enqueueRead(Addr src, size_t length);
+    // Addr value stored in gep register, length based on data type
+    void enqueueRead(Addr src, size_t length); 
+
     void enqueueWrite(Addr dst, uint8_t* value, size_t length);
 
     uint8_t* getReadBuffer() { return readBuffer; }
