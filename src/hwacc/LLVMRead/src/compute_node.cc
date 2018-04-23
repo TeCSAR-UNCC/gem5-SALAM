@@ -2259,7 +2259,7 @@ bool ComputeNode::commit(){
 }
 
 bool ComputeNode::checkDependency(){
-	bool hot = true;
+	bool hot = false;
 	DPRINTF(LLVMInterface,"Checking Dependencies\n");
 	if(instruction.dependencies.registers[0] != NULL){
 	for(int i = 0; i < MAXDEPENDENTS; i++){
