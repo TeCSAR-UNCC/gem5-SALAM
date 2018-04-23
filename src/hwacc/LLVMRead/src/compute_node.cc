@@ -1596,12 +1596,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev)
 					if (list->findRegister(parameters[index+i]) == NULL) {
 						instruction.memory.getptr.idx[j] = new Register(parameters[index+2]);
 						list->addRegister(instruction.memory.getptr.idx[j]);
-						instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
+						// instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
 						dependencies++;
 					}
 					else {
 						instruction.memory.getptr.idx[j] = list->findRegister(parameters[index+i]);
-						instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
+						// instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
 						dependencies++;
 					}
 					j++;
@@ -2259,15 +2259,23 @@ bool ComputeNode::commit(){
 }
 
 bool ComputeNode::checkDependency(){
-	bool hot = false;
+	bool hot = true;
 	DPRINTF(LLVMInterface,"Checking Dependencies\n");
+	if(instruction.dependencies.registers[0] != NULL){
 	for(int i = 0; i < MAXDEPENDENTS; i++){
+		DPRINTF(LLVMInterface,"Checking Dependencies: %s\n",instruction.dependencies.registers[i]  ? "true" : "false");
+
 		if(instruction.dependencies.registers[i] != NULL){
-			if(instruction.dependencies.registers[i]->getStatus() == true){
+			if(instruction.dependencies.registers[i]->getStatus()){
 				hot = true;
 				break;
 			}
+			else {
+				hot = false;
+			}
 		}
+		else break;
+	}
 	}
 	DPRINTF(LLVMInterface,"Checking Dependencies Finished\n");
 	return hot;

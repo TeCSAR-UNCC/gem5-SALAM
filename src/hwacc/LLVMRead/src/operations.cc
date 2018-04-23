@@ -697,8 +697,12 @@ void Operations::llvm_getelementptr(const struct Instruction&  instruction){
 			size[i] = (stoi(dataTypes[i].substr(1)))/8;
 		}
 		else{
-			if(dataTypes[i].find("double") > 0) size[i] = 8;
-			else if(dataTypes[i].find("float") > 0) size[i] = 4;
+			if(dataTypes[i].find("double") > 0){ 
+				size[i] = 8;
+			}
+			else if(dataTypes[i].find("float") > 0) {
+				size[i] = 4;
+			}
 		}
 		instruction.memory.getptr.idx[i]->getValue(&currentValue[i]);
 	}

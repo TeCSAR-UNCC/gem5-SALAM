@@ -42,9 +42,7 @@ LLVMInterface::tick() {
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ++it) {
-        DPRINTF(LLVMInterface, " Iterator Working");
         while ((*it)->commit()) {
-                DPRINTF(LLVMInterface, "While Loop Running \n");
             computeQueue->erase(it);
         }
     }
@@ -56,10 +54,11 @@ LLVMInterface::tick() {
 
     for (auto it=reservation->begin(); it!=reservation->end(); ++it) {
         Instruction instr = (*it)->getInstruction();
+        DPRINTF(LLVMInterface, "============Next: %s============\n", instr.general.opCode);
+        
         while (!(instr.general.terminator) && ((*it)->checkDependency())) {
-            DPRINTF(LLVMInterface, "========================\n");
             instr = (*it)->getInstruction();
-            DPRINTF(LLVMInterface, "========================\n");
+
             DPRINTF(LLVMInterface, "Non-Terminator Instruction Operation \n");
             if (instr.general.opCode.find("load") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Load\n");
@@ -76,10 +75,16 @@ LLVMInterface::tick() {
             } else {
                 DPRINTF(LLVMInterface, "Queueing Compute\n");
                 computeQueue->push_back(*it);
+//                DPRINTF(LLVMInterface, "Queueing Compute\n");
                 (*it)->compute();
+//                DPRINTF(LLVMInterface, "Queueing Compute\n");
             }
-            reservation->erase(it);
+            reservation->erase(it); 
+            DPRINTF(LLVMInterface, "===================== 2\n");
         }
+
+         DPRINTF(LLVMInterface, "===================== 1\n");
+
         if ((instr.general.opCode.compare("br") == 0) && ((*it)->checkDependency())) {
         DPRINTF(LLVMInterface, "Branch Operation In Progress\n");
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
