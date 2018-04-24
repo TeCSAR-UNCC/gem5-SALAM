@@ -43,8 +43,10 @@ CommInterface::CommInterface(Params *p) :
     dataPort = &memPort;
     mmreg = new uint8_t[io_size];
     cu = NULL;
-    readQueue = new requestQueue();
-    writeQueue = new requestQueue();
+    //readQueue = new requestQueue();
+    //writeQueue = new requestQueue();
+    readQueue = new std::queue<memRequest*>();
+    writeQueue = new std::queue<memRequest*>();
     readQueueSize = 0;
     writeQueueSize = 0;
 }
@@ -66,7 +68,8 @@ CommInterface::MemSidePort::recvReqRetry() {
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
         if (!owner->tickEvent.scheduled()) {
-            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
+            //owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
+            owner->schedule(owner->tickEvent, owner->nextCycle());
         }
     }
 }
@@ -120,16 +123,19 @@ CommInterface::recvPacket(PacketPtr pkt) {
         } else {
             if (!tickEvent.scheduled())
             {
-                schedule(tickEvent, curTick() + processDelay);
+                //schedule(tickEvent, curTick() + processDelay);
+                schedule(tickEvent, nextCycle());
             }
         }
     }
-    if(!reading && (readQueueSize > 0)) {
-        prepRead(readQueue->dequeue());
+    if(!reading && !readQueue->empty()) {
+        prepRead(readQueue->front());
+        readQueue->pop();
         readQueueSize--;
     }
-    if(!writing && (writeQueueSize > 0)) {
-        prepWrite(writeQueue->dequeue());
+    if(!writing && !writeQueue->empty()) {
+        prepWrite(writeQueue->front());
+        writeQueue->pop();
         writeQueueSize--;
     }
     if (pkt->req) delete pkt->req;
@@ -139,7 +145,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
 void
 CommInterface::tick() {
     running = writing || reading;
-    if (!running) {
+    if (!computationNeeded) {
         DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
             *mmreg &= 0xfe;
@@ -150,7 +156,8 @@ CommInterface::tick() {
 
         if (processingDone && !tickEvent.scheduled()) {
             processingDone = false;
-            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
 
         return;
@@ -158,6 +165,16 @@ CommInterface::tick() {
     if (dataPort->isStalled()) {
         DPRINTF(CommInterface, "Stalled\n");
     } else {
+        if(!reading && !readQueue->empty()) {
+            prepRead(readQueue->front());
+            readQueue->pop();
+            readQueueSize--;
+        }
+        if(!writing && !writeQueue->empty()) {
+            prepWrite(writeQueue->front());
+            writeQueue->pop();
+            writeQueueSize--;
+        }
         if (needToRead && !dataPort->isStalled()) {
             DPRINTF(CommInterface, "trying read\n");
             tryRead();
@@ -205,12 +222,14 @@ CommInterface::tryRead() {
     if (!(readLeft > 0)) {
         needToRead = false;
         if (!tickEvent.scheduled()) {
-            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     } else {
         if (!dataPort->isStalled() && !tickEvent.scheduled())
         {
-            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -251,7 +270,8 @@ CommInterface::tryWrite() {
     writeLeft -= size;
 
     if (!(writeLeft > 0) && !tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 
@@ -261,7 +281,7 @@ CommInterface::prepRead(memRequest *readReq) {
     size_t length = readReq->length;
     assert(length > 0);
     assert(!reading);
-    running = true;
+    reading = true;
     //gic->clearInt(int_num);
 
     DPRINTF(CommInterface, "Initiating read of %d bytes from 0x%x\n", length, src);
@@ -288,7 +308,8 @@ CommInterface::prepRead(memRequest *readReq) {
     }
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 
     delete readReq;
@@ -331,7 +352,8 @@ CommInterface::prepWrite(memRequest *writeReq) {
     }
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 
     delete writeReq;
@@ -340,14 +362,24 @@ CommInterface::prepWrite(memRequest *writeReq) {
 
 void
 CommInterface::enqueueRead(Addr src, size_t length) {
-    readQueue->enqueue(new memRequest(src, length));
+    DPRINTF(CommInterface, "Read from 0x%lx of size:%d bytes enqueued\n", src, length);
+    readQueue->push(new memRequest(src, length));
     readQueueSize++;
+    if (!tickEvent.scheduled()) {
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
+    }
 }
 
 void
 CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
-    writeQueue->enqueue(new memRequest(dst, value, length));
+    DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", dst, length);
+    writeQueue->push(new memRequest(dst, value, length));
     writeQueueSize++;
+    if (!tickEvent.scheduled()) {
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
+    }
 }
 
 void
@@ -355,6 +387,7 @@ CommInterface::finish() {
     *mmreg &= 0xfc;
     *mmreg |= 0x04;
     int_flag = true;
+    computationNeeded = false;
     gic->sendInt(int_num);
 }
 

@@ -39,6 +39,10 @@ LLVMInterface::tick() {
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
 
+    DPRINTF(LLVMInterface, "*************************************\n");
+    DPRINTF(LLVMInterface, "                Cycle %d             \n", cycle);
+    DPRINTF(LLVMInterface, "*************************************\n");
+    cycle++;
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
@@ -48,9 +52,10 @@ LLVMInterface::tick() {
             ++it;
         }
     }
-    DPRINTF(LLVMInterface, "Schedule Basic Block\n");
+
     //
     if (reservation->empty()) {
+        DPRINTF(LLVMInterface, "Schedule Basic Block\n");
         scheduleBB(currBB);
     }
 
@@ -58,7 +63,7 @@ LLVMInterface::tick() {
         Instruction instr = (*it)->getInstruction();
         DPRINTF(LLVMInterface, "Next:%s\n", instr.general.llvm_Line);
 
-        if (!(instr.general.terminator) && ((*it)->checkDependency())) {
+        if (!(instr.general.terminator) && !((*it)->checkDependency())) {
             DPRINTF(LLVMInterface, "Non-Terminator Instruction Operation \n");
             if (instr.general.opCode.find("load") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Load\n");
@@ -78,7 +83,7 @@ LLVMInterface::tick() {
                 (*it)->compute();
             }
             it = reservation->erase(it);
-        } else if ((instr.general.opCode.compare("br") == 0) && ((*it)->checkDependency())) {
+        } else if ((instr.general.opCode.compare("br") == 0) && !((*it)->checkDependency())) {
         DPRINTF(LLVMInterface, "Branch Operation In Progress\n");
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
                 //currBB <- Calculate branch
@@ -115,14 +120,14 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
         //if it is a phi and we don't have an unmet dependency -> commit immediately
         if(instr.general.phi) {
             (*it)->setPrevBB(prevBB->name);
-            if((*it)->checkDependency()) {
-                DPRINTF(LLVMInterface, "Dependency Found\n");
+            if (!(*it)->checkDependency()) {
+                //DPRINTF(LLVMInterface, "Dependency Found\n");
                 DPRINTF(LLVMInterface, "Compute\n");
                 (*it)->compute();
                 DPRINTF(LLVMInterface, "Commit\n");
                 (*it)->commit();
             } else {
-                DPRINTF(LLVMInterface, "No Dependency Found\n");
+                //DPRINTF(LLVMInterface, "No Dependency Found\n");
                 DPRINTF(LLVMInterface, "Reset\n");
                 (*it)->reset();
                 DPRINTF(LLVMInterface, "Reserve\n");
@@ -158,7 +163,7 @@ LLVMInterface::constructBBList() {
             DPRINTF(LLVMInterface, "Line: %s\n", line);
             if (!inFunction) {
                 if (!line.find("define")) { //Found a function. Need to parse its header
-                    DPRINTF(LLVMInterface, "Found acc function. Parsing Gloabl Vars\n");
+                    DPRINTF(LLVMInterface, "Found acc function. Parsing Global Vars\n");
                     inFunction = true;
                     unsigned paramNum = 0;
                     unsigned linePos = 0;
@@ -207,9 +212,9 @@ LLVMInterface::constructBBList() {
                     }else {
                         DPRINTF(LLVMInterface, "Registering Compute Node for: %s\n", line);
                         if(prevBB) {
-                            currBB->addNode(new ComputeNode(line, regList, prevBB->getName()));
+                            currBB->addNode(new ComputeNode(line, regList, prevBB->getName(), comm));
                         } else {
-                            currBB->addNode(new ComputeNode(line, regList, "NULL"));
+                            currBB->addNode(new ComputeNode(line, regList, "NULL", comm));
                         }
                     }
                 }
@@ -263,6 +268,7 @@ LLVMInterface::initialize() {
     DPRINTF(LLVMInterface, "*************************************\n");
     DPRINTF(LLVMInterface, "*         Beginning Compute         *\n");
     DPRINTF(LLVMInterface, "*************************************\n");
+    cycle = 0;
     tick();
 }
 

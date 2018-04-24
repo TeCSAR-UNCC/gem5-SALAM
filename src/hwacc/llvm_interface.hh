@@ -25,6 +25,7 @@ class LLVMInterface : public ComputeUnit {
     std::queue<ComputeNode*> *writeQueue;
     std::list<ComputeNode*> *computeQueue;
     int process_delay;
+    int cycle;
   protected:
 
   public:
