@@ -91,8 +91,6 @@ public:
   static void llvm_silentstore(const struct Instruction &instruction);
   static void llvm_sine(const struct Instruction &instruction);
   static void llvm_cosine(const struct Instruction &instruction);
-
-  static bool to_bool(std::string const &il);
 };
 
 #endif //__OPERATIONS_HH__

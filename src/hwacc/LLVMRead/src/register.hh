@@ -8,7 +8,7 @@
 #include <vector>
 #include <list>
 
-class Register{
+class Register {
   friend class RegisterList;
 
 private:
