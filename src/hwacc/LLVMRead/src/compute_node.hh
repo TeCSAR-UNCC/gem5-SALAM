@@ -153,9 +153,10 @@ private:
   Instruction instruction;
   int dependencies = 0;
   std::string prevBB;
+  CommInterface *comm;
 
 public:
-  ComputeNode(std::string line, RegisterList *list, std::string prev);
+  ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co);
   ~ComputeNode();
   Instruction getInstruction() { return instruction; }
   void setPrevBB(std::string prev) { prevBB = prev; }

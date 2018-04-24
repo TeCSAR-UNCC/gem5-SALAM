@@ -5,6 +5,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('CommInterface.py')
     SimObject('ComputeUnit.py')
     SimObject('LLVMInterface.py')
+
     Source('io_acc.cc')
     Source('comm_interface.cc')
     Source('compute_unit.cc')
@@ -13,7 +14,13 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/compute_node.cc')
     Source('LLVMRead/src/operations.cc')
     Source('LLVMRead/src/register.cc')
+
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
     DebugFlag('ComputeUnit')
     DebugFlag('LLVMInterface')
+    DebugFlag('ComputeNode')
+    DebugFlag('LLVMRegister')
+    DebugFlag('LLVMOp')
+
+    CompoundFlag('LLVMParse', ['ComputeNode', 'LLVMRegister', 'LLVMOp'])

@@ -163,7 +163,7 @@ LLVMInterface::constructBBList() {
             DPRINTF(LLVMInterface, "Line: %s\n", line);
             if (!inFunction) {
                 if (!line.find("define")) { //Found a function. Need to parse its header
-                    DPRINTF(LLVMInterface, "Found acc function. Parsing Gloabl Vars\n");
+                    DPRINTF(LLVMInterface, "Found acc function. Parsing Global Vars\n");
                     inFunction = true;
                     unsigned paramNum = 0;
                     unsigned linePos = 0;
