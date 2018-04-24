@@ -1414,11 +1414,11 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		if (parameters[0] == "inbounds") {
 			instruction.memory.getptr.inbounds = true;
 			instruction.memory.getptr.pty = parameters[1];
-			instruction.memory.getptr.ptrval = parameters[1];
+			instruction.memory.getptr.ptrval = parameters[3];
 			index = 3;
 		} else {
 			instruction.memory.getptr.pty = parameters[0];
-			instruction.memory.getptr.ptrval = parameters[0];
+			instruction.memory.getptr.ptrval = parameters[2];
 			index = 2;
 		}
 		int j = 0;
@@ -1668,7 +1668,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		std::string *val = new std::string[last];
 		std::string *label = new std::string[last];
 		int labelLength = 0;
-
 		// Phi instructions grouped in brackets first listed as pairs in ival array
 		for (int i = 1; i <= last; i++) {
 			instruction.other.phi.ival[i - 1] = parameters[i];
@@ -1685,10 +1684,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				if (list->findRegister(val[i - 1]) == NULL) {
 					instruction.other.phi.val[i - 1] = new Register(val[i - 1]);
 					list->addRegister(instruction.other.phi.val[i - 1]);
+					instruction.other.phi.label[i - 1] = label[i - 1];
 					instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i - 1];
 					dependencies++;
 				} else {
 					instruction.other.phi.val[i - 1] = list->findRegister(val[i - 1]);
+					instruction.other.phi.label[i - 1] = label[i - 1];
 					instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i - 1];
 					dependencies++;
 				}
@@ -1696,6 +1697,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			} else {
 				instruction.other.phi.ival[i - 1] = val[i - 1];
 				instruction.other.phi.immVal[i - 1] = true;
+				instruction.other.phi.label[i - 1] = label[i - 1];
 				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			}
 		}

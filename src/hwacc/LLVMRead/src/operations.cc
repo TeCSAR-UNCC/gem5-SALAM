@@ -583,6 +583,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	unsigned long long int index = instruction.memory.getptr.index;
 	unsigned long long int currentValue[MAXGPE];
 	unsigned long long int size[MAXGPE];
+	unsigned long long int newAddress = 0;
 
 	for (int i = 1; i < index; i++) {
 		if (instruction.memory.getptr.ty[i][0] == 'i') {
@@ -596,11 +597,15 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		}
 		instruction.memory.getptr.idx[i]->getValue(&currentValue[i]);
 	}
+
 	for (int i = 1; i < index / 2; i++) {
 		instruction.memory.getptr.reference[i] = size[i] * currentValue[i];
+		newAddress = newAddress + instruction.memory.getptr.reference[i];
 	}
-	instruction.general.returnRegister->setValue(&instruction.memory.getptr.reference[1]);
-	DPRINTF(LLVMInterface, "Pointer Offset %u\n", instruction.general.returnRegister->value);
+	newAddress += instruction.memory.getptr.idx[0]->getStoredValue();
+	instruction.general.returnRegister->setValue(&newAddress);
+	DPRINTF(LLVMInterface, "Base Address in Register %s: %X\n", instruction.memory.getptr.idx[0]->getName(), instruction.memory.getptr.idx[0]->getStoredValue());
+	DPRINTF(LLVMInterface, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
 }
 void Operations::llvm_fence(const struct Instruction &instruction) {}
 void Operations::llvm_cmpxchg(const struct Instruction &instruction) {}
@@ -735,6 +740,7 @@ void Operations::llvm_phi(const struct Instruction &instruction, std::string pre
 		if (prevBB == instruction.other.phi.label[i]) {
 			if (instruction.other.phi.immVal[i]) val = stoi(instruction.other.phi.ival[i]);
 			else instruction.other.phi.val[i]->getValue(&val);
+			break;
 		}
 	}
 	instruction.general.returnRegister->setValue(&val);

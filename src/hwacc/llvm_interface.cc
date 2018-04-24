@@ -177,6 +177,7 @@ LLVMInterface::constructBBList() {
                             std::string regName = line.substr(percPos, (commaPos-percPos));
                             DPRINTF(LLVMInterface, "Creating register for: %s\n", regName);
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum)));
+                            DPRINTF(LLVMInterface, "Initial Value: %X\n", (regList->findRegister(regName))->getStoredValue());
                             paramNum++;
                         }
                         linePos = percPos + 1;
@@ -249,22 +250,22 @@ LLVMInterface::initialize() {
     running = true;
     if (!bbList)
         constructBBList();
-    if(!reservation) {
+    //if(!reservation) {
         DPRINTF(LLVMInterface, "Initializing reservation list\n");
         reservation = new std::list<ComputeNode*>();
-    }
-    if (!readQueue) {
+    //}
+    //if (!readQueue) {
         DPRINTF(LLVMInterface, "Initializing readQueue queue\n");
         readQueue = new std::queue<ComputeNode*>();
-    }
-    if (!writeQueue) {
+    //}
+    //if (!writeQueue) {
         DPRINTF(LLVMInterface, "Initializing writeQueue queue\n");
         writeQueue = new std::queue<ComputeNode*>();
-    }
-    if (!computeQueue) {
+    //}
+    //if (!computeQueue) {
         DPRINTF(LLVMInterface, "Initializing computeQueue list\n");
         computeQueue = new std::list<ComputeNode*>();
-    }
+    //}
     DPRINTF(LLVMInterface, "*************************************\n");
     DPRINTF(LLVMInterface, "*         Beginning Compute         *\n");
     DPRINTF(LLVMInterface, "*************************************\n");
