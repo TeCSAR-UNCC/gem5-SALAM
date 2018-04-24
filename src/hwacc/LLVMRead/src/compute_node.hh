@@ -12,7 +12,8 @@
 
 class ComputeNode {
   friend class BasicBlock;
-  private:  
+  private:
+    int dependencies;
   enum opValue {
        evNotDefined,
        IR_Move,
