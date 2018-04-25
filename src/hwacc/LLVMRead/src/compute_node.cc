@@ -1796,12 +1796,19 @@ ComputeNode::compute() {
 	case IR_Xor: { Operations::llvm_xor(instruction); break; }
 	case IR_Alloca: { Operations::llvm_alloca(instruction); break; }
 	case IR_Load: {
-        void * data = std::malloc(sizeof(Addr));
-        instruction.dependencies.registers[0]->getValue(data);
-	    comm->enqueueRead((Addr)data, instruction.general.returnRegister->size);
+        void * src = std::malloc(sizeof(Addr));
+        instruction.dependencies.registers[0]->getValue(src);
+	    comm->enqueueRead((Addr)src, instruction.general.returnRegister->size);
 	    break;
     }
-	case IR_Store: { Operations::llvm_store(instruction); break; }
+	case IR_Store: {
+	    void * dst = std::malloc(sizeof(Addr));
+	    instruction.dependencies.registers[0]->getValue(dst);
+        uint64_t data = instruction.dependencies.registers[1]->getStoredValue();
+
+	    comm->enqueueWrite((Addr)dst, (uint8_t *)(&data),
+	                       instruction.dependencies.registers[1]->size);
+	}
 	case IR_GetElementPtr: { Operations::llvm_getelementptr(instruction); break; }
 	case IR_Fence: { Operations::llvm_fence(instruction); break; }
 	case IR_AtomicCmpXchg: { Operations::llvm_cmpxchg(instruction); break; }
