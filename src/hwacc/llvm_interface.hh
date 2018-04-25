@@ -39,7 +39,7 @@ class LLVMInterface : public ComputeUnit {
     void scheduleBB(BasicBlock *bb);
 
     void readCommit(uint8_t * data);
-    void writeCommit() { writeQueue->pop(); }
+    void writeCommit();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

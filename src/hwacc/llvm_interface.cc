@@ -2,6 +2,8 @@
 #include <fstream>
 #include "hwacc/llvm_interface.hh"
 #include "debug/LLVMInterface.hh"
+#include "debug/LLVMParse.hh"
+#include "debug/LLVMRegister.hh"
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
@@ -39,14 +41,19 @@ LLVMInterface::tick() {
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
 
-    DPRINTF(LLVMInterface, "*************************************\n");
-    DPRINTF(LLVMInterface, "                Cycle %d             \n", cycle);
-    DPRINTF(LLVMInterface, "*************************************\n");
+//    DPRINTF(LLVMInterface, "*************************************\n");
+//    DPRINTF(LLVMInterface, "                Cycle %d             \n", cycle);
+//    DPRINTF(LLVMInterface, "*************************************\n");
+    DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
+            "*******************************************************************************",
+            "   Cycle", cycle,
+            "*******************************************************************************");
     cycle++;
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
         if ((*it)->commit()) {
+            Instruction instr = (*it)->getInstruction();
             it = computeQueue->erase(it);
         } else {
             ++it;
@@ -160,10 +167,10 @@ LLVMInterface::constructBBList() {
     DPRINTF(LLVMInterface, "Parsing %s\n", filename);
     if(llvmFile.is_open()) {
         while (getline(llvmFile, line)) {
-            DPRINTF(LLVMInterface, "Line: %s\n", line);
+            DPRINTF(LLVMParse, "Line: %s\n", line);
             if (!inFunction) {
                 if (!line.find("define")) { //Found a function. Need to parse its header
-                    DPRINTF(LLVMInterface, "Found acc function. Parsing Global Vars\n");
+                    DPRINTF(LLVMParse, "Found acc function. Parsing Global Vars\n");
                     inFunction = true;
                     unsigned paramNum = 0;
                     unsigned linePos = 0;
@@ -175,16 +182,16 @@ LLVMInterface::constructBBList() {
                             commaPos = line.find(",", percPos);
                             if (commaPos < 0) commaPos = line.find(")");
                             std::string regName = line.substr(percPos, (commaPos-percPos));
-                            DPRINTF(LLVMInterface, "Creating register for: %s\n", regName);
+                            DPRINTF(LLVMParse, "Creating register for: %s\n", regName);
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum)));
-                            DPRINTF(LLVMInterface, "Initial Value: %X\n", (regList->findRegister(regName))->getStoredValue());
+                            DPRINTF(LLVMParse, "Initial Value: %X\n", (regList->findRegister(regName))->getStoredValue());
                             paramNum++;
                         }
                         linePos = percPos + 1;
                         percPos = line.find("%", linePos);
                     }
                     currBB = new BasicBlock("0", bbnum);
-                    DPRINTF(LLVMInterface, "Found Basic Block: %s\n", currBB->name);
+                    DPRINTF(LLVMParse, "Found Basic Block: %s\n", currBB->name);
                     bbnum++;
                     bbList->push_back(currBB);
                 }
@@ -194,24 +201,24 @@ LLVMInterface::constructBBList() {
                         int labelEnd = line.find(" ", 10);
                         prevBB = currBB;
                         currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum);
-                        DPRINTF(LLVMInterface, "Found Basic Block: %s\n", currBB->name);
+                        DPRINTF(LLVMParse, "Found Basic Block: %s\n", currBB->name);
                         bbnum++;
                         bbList->push_back(currBB);
                     } else if (line.find(".") == 0) {
                         int labelEnd = line.find(" ");
                         prevBB = currBB;
                         currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
-                        DPRINTF(LLVMInterface, "Found Basic Block: %s\n", currBB->name);
+                        DPRINTF(LLVMParse, "Found Basic Block: %s\n", currBB->name);
                         bbnum++;
                         bbList->push_back(currBB);
                     } else if (line.find("}") == 0) {
                         inFunction = false;
-                        DPRINTF(LLVMInterface, "Finished File Parsing\n");
+                        DPRINTF(LLVMParse, "Finished File Parsing\n");
                         break;
                     } else if (!(line.find_first_not_of(' ') != std::string::npos)){
-                        DPRINTF(LLVMInterface, "Empty Line\n");
+                        DPRINTF(LLVMParse, "Empty Line\n");
                     }else {
-                        DPRINTF(LLVMInterface, "Registering Compute Node for: %s\n", line);
+                        DPRINTF(LLVMParse, "Registering Compute Node for: %s\n", line);
                         if(prevBB) {
                             currBB->addNode(new ComputeNode(line, regList, prevBB->getName(), comm));
                         } else {
@@ -241,7 +248,16 @@ LLVMInterface::readCommit(uint8_t * data) {
     Instruction instr = readQueue->front()->getInstruction();
     instr.general.returnRegister->setValue(data);
     instr.general.returnRegister->commit();
+    DPRINTF(LLVMInterface, "Read Operation Complete\n%s\n", instr.general.llvm_Line);
+    DPRINTF(LLVMRegister, "Commit %s\n", instr.general.returnRegister->getName());
     readQueue->pop();
+}
+
+void
+LLVMInterface::writeCommit() {
+    Instruction instr = writeQueue->front()->getInstruction();
+    DPRINTF(LLVMInterface, "Store Operation Complete\n%s\n", instr.general.llvm_Line);
+    writeQueue->pop();
 }
 
 void

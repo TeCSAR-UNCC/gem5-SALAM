@@ -43,7 +43,7 @@ int main(void) {
 	int *b = (int *)0x80d00000;
 	int *c = (int *)0x80e00000;
 	int *check;
-	int length = 256;
+	int length = 2;
 
 	common_val = 0;
 
@@ -55,9 +55,9 @@ int main(void) {
 
     genData(&vas);
 
-    val_a = 0x80c00000;
-    val_b = 0x80d00000;
-    val_c = 0x80e00000;
+    val_a = 0x0000000080c00000;
+    val_b = 0x0000000080d00000;
+    val_c = 0x0000000080e00000;
 
     acc = 0x01;
 

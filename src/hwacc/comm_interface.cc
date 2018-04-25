@@ -42,6 +42,9 @@ CommInterface::CommInterface(Params *p) :
     int_flag = false;
     dataPort = &memPort;
     mmreg = new uint8_t[io_size];
+    for(int i = 0; i < io_size; i++) {
+        mmreg[i] = 0;
+    }
     cu = NULL;
     //readQueue = new requestQueue();
     //writeQueue = new requestQueue();
@@ -105,7 +108,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
             DPRINTF(CommInterface, "Done reading\n");
             cu->readCommit(readBuffer);
             needToRead = false;
-            running = false;
+            reading = false;
         }
     } else {
         DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());

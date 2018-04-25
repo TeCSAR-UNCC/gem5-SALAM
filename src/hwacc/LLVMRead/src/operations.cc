@@ -1,6 +1,6 @@
 #include "operations.hh"
 #include <string>
-#include "debug/LLVMInterface.hh"
+#include "debug/LLVMOp.hh"
 #include <cstdint>
 #include <vector>
 
@@ -10,21 +10,21 @@ void Operations::llvm_move(const struct Instruction &instruction) {
 }
 void Operations::llvm_ret(const struct Instruction &instruction) {
 	//Operation of device is finished
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 }
 void Operations::llvm_br(const struct Instruction &instruction) {
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 
 	unsigned long long int condition;
 
 	if (!(instruction.terminator.unconditional)) {
-		DPRINTF(LLVMInterface, "Conditional Branch Operation \n");
+		DPRINTF(LLVMOp, "Conditional Branch Operation \n");
 		instruction.terminator.cond->getValue(&condition);
 		if (condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
 		else instruction.terminator.dest = instruction.terminator.iffalse;
-		DPRINTF(LLVMInterface, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
+		DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
 	}
-	else DPRINTF(LLVMInterface, "Unconditonal Branch Operation \n");
+	else DPRINTF(LLVMOp, "Unconditonal Branch Operation \n");
 }
 void Operations::llvm_switch(const struct Instruction &instruction) {}
 void Operations::llvm_indirectbr(const struct Instruction &instruction) {}
@@ -41,7 +41,7 @@ void Operations::llvm_add(const struct Instruction &instruction) {
 	// <result> = add nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -63,7 +63,7 @@ void Operations::llvm_add(const struct Instruction &instruction) {
 	instruction.general.returnRegister->setValue(&result);
 //	instruction.general.returnRegister->commit();
 
-	DPRINTF(LLVMInterface, "Result: %d Stored in Register %s.\n", result, instruction.general.returnRegister->getName());
+	DPRINTF(LLVMOp, "Result: %d Stored in Register %s.\n", result, instruction.general.returnRegister->getName());
 }
 void Operations::llvm_sub(const struct Instruction &instruction) {
 	// Subtract Instruction
@@ -71,7 +71,7 @@ void Operations::llvm_sub(const struct Instruction &instruction) {
 	// <result> = sub nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -98,7 +98,7 @@ void Operations::llvm_mul(const struct Instruction &instruction) {
 	// <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -121,7 +121,7 @@ void Operations::llvm_mul(const struct Instruction &instruction) {
 }
 void Operations::llvm_udiv(const struct Instruction &instruction) {
 	// Unsigned Division
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -144,7 +144,7 @@ void Operations::llvm_udiv(const struct Instruction &instruction) {
 }
 void Operations::llvm_sdiv(const struct Instruction &instruction) {
 	// Signed Division
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -167,7 +167,7 @@ void Operations::llvm_sdiv(const struct Instruction &instruction) {
 }
 void Operations::llvm_urem(const struct Instruction &instruction) {
 	//Unsigned modulo division
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -190,7 +190,7 @@ void Operations::llvm_urem(const struct Instruction &instruction) {
 }
 void Operations::llvm_srem(const struct Instruction &instruction) {
 	//Signed modulo division
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -225,7 +225,7 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 	// if(instruction.binary.ty.find("half")){
 	// No current implementation of half in c++, must implement an outside code for this functionality
 
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	double op1;
 	double op2;
 	double result;
@@ -258,7 +258,7 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 	// variables when calculating the time it takes for the computation to complete
 	// if(instruction.binary.ty.find("half")){
  	// No current implementation of half in c++, must implement an outside code for this functionality
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	double op1;
 	double op2;
 	double result;
@@ -291,7 +291,7 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 	// variables when calculating the time it takes for the computation to complete
 	// if(instruction.binary.ty.find("half")){
  	// No current implementation of half in c++, must implement an outside code for this functionality
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	double op1;
 	double op2;
 	double result;
@@ -325,7 +325,7 @@ void Operations::llvm_fdiv(const struct Instruction &instruction) {
 	// if(instruction.binary.ty.find("half")){
 	// No current implementation of half in c++, must implement an outside code for this functionality
 	
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	double op1;
 	double op2;
 	double result;
@@ -402,7 +402,7 @@ void Operations::llvm_shl(const struct Instruction &instruction) {
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
 	// Bitwise operations must be performed on integers or a vector of integers
 	// Vectors currently unsupported
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -429,7 +429,7 @@ void Operations::llvm_lshr(const struct Instruction &instruction) {
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
 	// Bitwise operations must be performed on integers or a vector of integers
 	// Vectors currently unsupported
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -456,7 +456,7 @@ void Operations::llvm_ashr(const struct Instruction &instruction) {
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
 	// Bitwise operations must be performed on integers or a vector of integers
 	// Vectors currently unsupported
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -482,7 +482,7 @@ void Operations::llvm_and(const struct Instruction &instruction) {
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
 	// Bitwise operations must be performed on integers or a vector of integers
 	// Vectors currently unsupported
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -509,7 +509,7 @@ void Operations::llvm_or(const struct Instruction &instruction) {
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
 	// Bitwise operations must be performed on integers or a vector of integers
 	// Vectors currently unsupported
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -535,7 +535,7 @@ void Operations::llvm_xor(const struct Instruction &instruction) {
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 	// Bitwise operations must be performed on integers or a vector of integers
 	// Vectors currently unsupported
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1 = 0;
 	unsigned long long int op2 = 0;
 	unsigned long long int result;
@@ -564,22 +564,22 @@ void Operations::llvm_alloca(const struct Instruction &instruction) {
 	// C++ Code - <type>* result = new <ty>[NumElements]
 	// Unsure how align will be used here if not == sizeOf(<type>)/8
 }
-void Operations::llvm_load(const struct Instruction &instruction) {
-	// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
-	// Addr value stored in gep register, length based on data type
-	// void enqueueRead(Addr src, size_t length);
-}
-void Operations::llvm_store(const struct Instruction &instruction) {
-	// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void Operations::}
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
-	// void enqueueWrite(Addr dst, uint8_t * value, size_t length);
-}
+//void Operations::llvm_load(const struct Instruction &instruction) {
+//	// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
+//	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
+//	// Addr value stored in gep register, length based on data type
+//	// void enqueueRead(Addr src, size_t length);
+//}
+//void Operations::llvm_store(const struct Instruction &instruction) {
+//	// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void Operations::}
+//	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
+//	// void enqueueWrite(Addr dst, uint8_t * value, size_t length);
+//}
 void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int index = instruction.memory.getptr.index;
 	unsigned long long int currentValue[MAXGPE];
 	unsigned long long int size[MAXGPE];
@@ -604,8 +604,8 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	}
 	newAddress += instruction.memory.getptr.idx[0]->getStoredValue();
 	instruction.general.returnRegister->setValue(&newAddress);
-	DPRINTF(LLVMInterface, "Base Address in Register %s: %X\n", instruction.memory.getptr.idx[0]->getName(), instruction.memory.getptr.idx[0]->getStoredValue());
-	DPRINTF(LLVMInterface, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
+	DPRINTF(LLVMOp, "Base Address in Register %s: %X\n", instruction.memory.getptr.idx[0]->getName(), instruction.memory.getptr.idx[0]->getStoredValue());
+	DPRINTF(LLVMOp, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
 }
 void Operations::llvm_fence(const struct Instruction &instruction) {}
 void Operations::llvm_cmpxchg(const struct Instruction &instruction) {}
@@ -628,7 +628,7 @@ void Operations::llvm_addrspacecast(const struct Instruction &instruction) {}
 
 /* Operations::llvm Control Operations */
 void Operations::llvm_icmp(const struct Instruction &instruction) {
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	unsigned long long int op1;
 	unsigned long long int op2;
 	bool result;
@@ -656,12 +656,12 @@ void Operations::llvm_icmp(const struct Instruction &instruction) {
 
 
 	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMInterface, "%s, %s.\n", instruction.general.returnRegister->getType(), instruction.other.compare.op1->getType());
-	DPRINTF(LLVMInterface, "Comparing %d and %d, result is %u.\n", op1, op2, instruction.general.returnRegister->getStoredValue());
+	DPRINTF(LLVMOp, "%s, %s.\n", instruction.general.returnRegister->getType(), instruction.other.compare.op1->getType());
+	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, instruction.general.returnRegister->getStoredValue());
 
 }
 void Operations::llvm_fcmp(const struct Instruction &instruction) {
-	DPRINTF(LLVMInterface, "Running %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Running %s Operation\n", instruction.general.opCode);
 	double op1;
 	double op2;
 	bool result;
@@ -732,7 +732,7 @@ void Operations::llvm_fcmp(const struct Instruction &instruction) {
 	memcpy(&instruction.general.returnRegister->value, &result, instruction.general.returnRegister->size);
 }
 void Operations::llvm_phi(const struct Instruction &instruction, std::string prevBB) {
-	DPRINTF(LLVMInterface, "Running %s Operation, Previous BB %s\n", instruction.general.opCode, prevBB);
+	DPRINTF(LLVMOp, "Running %s Operation, Previous BB %s\n", instruction.general.opCode, prevBB);
 	unsigned long long int val;
 
 	// <result> = phi <ty> [ <val0>, <label0>], ...
@@ -745,7 +745,7 @@ void Operations::llvm_phi(const struct Instruction &instruction, std::string pre
 	}
 	instruction.general.returnRegister->setValue(&val);
 
-	DPRINTF(LLVMInterface, "Storing %u in Register %s\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+	DPRINTF(LLVMOp, "Storing %u in Register %s\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }
 void Operations::llvm_call(const struct Instruction &instruction) {}
 void Operations::llvm_select(const struct Instruction &instruction) {}
