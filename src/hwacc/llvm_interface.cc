@@ -91,8 +91,8 @@ LLVMInterface::tick() {
             }
             it = reservation->erase(it);
         } else if ((instr.general.opCode.compare("br") == 0) && !((*it)->checkDependency())) {
-        DPRINTF(LLVMInterface, "Branch Operation In Progress\n");
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
+                DPRINTF(LLVMInterface, "Branch Operation In Progress\n");
                 //currBB <- Calculate branch
                 prevBB = currBB;
                 (*it)->compute();
@@ -100,6 +100,8 @@ LLVMInterface::tick() {
                 currBB = findBB(instr.terminator.dest);
                 it = reservation->erase(it);
                 scheduleBB(currBB);
+            } else {
+                ++it;
             }
         } else if (instr.general.opCode.compare("ret") == 0) {
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
