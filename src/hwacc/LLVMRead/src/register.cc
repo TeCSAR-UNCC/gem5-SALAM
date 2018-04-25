@@ -1,5 +1,9 @@
 #include "register.hh"
 #include <string>
+#include "debug/LLVMRegister.hh"
+#include "debug/LLVMInterface.hh"
+
+
 
 Register::Register(std::string id) {
     name = id;
@@ -19,7 +23,7 @@ Register::setSize(){
     // Set size if dataType is integer
     else if (temp[0] == 'i') {
         temp = temp.substr(1);
-        size = std::stoi(temp);
+        size = std::stoi(temp)/8;
     }
     // Floating point data types
     // Set size if dataType is half
@@ -48,7 +52,6 @@ Register::setSize(){
     
     // Unknown dataType
     else { }
-
     // // For any additional dataTypes follow this format in else if statements
     //   else if(temp.find("dataType")){
     // }
