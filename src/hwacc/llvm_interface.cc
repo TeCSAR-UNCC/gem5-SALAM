@@ -282,9 +282,13 @@ LLVMInterface::initialize() {
         DPRINTF(LLVMInterface, "Initializing computeQueue list\n");
         computeQueue = new std::list<ComputeNode*>();
     //}
-    DPRINTF(LLVMInterface, "*************************************\n");
-    DPRINTF(LLVMInterface, "*         Beginning Compute         *\n");
-    DPRINTF(LLVMInterface, "*************************************\n");
+//    DPRINTF(LLVMInterface, "*************************************\n");
+//    DPRINTF(LLVMInterface, "*         Beginning Compute         *\n");
+//    DPRINTF(LLVMInterface, "*************************************\n");
+    DPRINTF(LLVMInterface, "\n%s\n%s\n%s\n",
+            "*******************************************************************************",
+            "*                                 Begin Compute                               *",
+            "*******************************************************************************");
     cycle = 0;
     tick();
 }

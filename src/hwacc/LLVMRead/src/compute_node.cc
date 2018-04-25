@@ -15,15 +15,23 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
-		// Create new pointer to the return register
-		instruction.general.returnRegister = new Register(line.substr((line.find("%") + 1), returnChk - 3));
-		list->addRegister(instruction.general.returnRegister);
+	    std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3);
+	    Register * ret_reg = list->findRegister(ret_name);
+		//Check if register already exists
+		if(ret_reg == NULL) {
+		    // Create new pointer to the return register
+		    instruction.general.returnRegister = new Register(ret_name);
+		    list->addRegister(instruction.general.returnRegister);
+		    DPRINTF(ComputeNode, "Creating Return Register %s.\n", instruction.general.returnRegister->getName());
+		} else {
+		    instruction.general.returnRegister = ret_reg;
+		}
 		// In all instances where a return register is the first component, the next component is
 		// the opcode, which is parsed and removed from line
 		line = line.substr(returnChk + 3);
 		instruction.general.opCode = line.substr(0, line.find(' '));
 		line = line.substr(line.find(' '));
-		DPRINTF(ComputeNode, "Creating Return Register %s.\n", instruction.general.returnRegister->getName());
+		
 	} else {
 		// If no return register is found then the first component must instead be the opcode
 		// as of LLVM 3.4 instruction types
@@ -1811,6 +1819,7 @@ ComputeNode::compute() {
 
 	    comm->enqueueWrite((Addr)dst, (uint8_t *)(&data),
 	                       instruction.dependencies.registers[1]->size);
+        break;
 	}
 	case IR_GetElementPtr: { Operations::llvm_getelementptr(instruction); break; }
 	case IR_Fence: { Operations::llvm_fence(instruction); break; }
