@@ -601,14 +601,15 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 				size[i] = 4;
 			}
 		}
-		instruction.memory.getptr.idx[i]->getValue(&currentValue[i]);
+		currentValue[i] = instruction.memory.getptr.idx[i]->value;
+		DPRINTF(LLVMOp, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
 	}
 
-	for (int i = 1; i < index / 2; i++) {
+	for (int i = 1; i < index; i++) {
 		instruction.memory.getptr.reference[i] = size[i] * currentValue[i];
 		newAddress = newAddress + instruction.memory.getptr.reference[i];
 	}
-	newAddress += instruction.memory.getptr.idx[0]->getStoredValue();
+	newAddress += instruction.memory.getptr.idx[0]->value;
 	instruction.general.returnRegister->setValue(&newAddress);
 	DPRINTF(LLVMOp, "Base Address in Register %s: %X\n", instruction.memory.getptr.idx[0]->getName(), instruction.memory.getptr.idx[0]->getStoredValue());
 	DPRINTF(LLVMOp, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
