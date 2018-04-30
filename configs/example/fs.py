@@ -62,6 +62,7 @@ from common import MemConfig
 from common import CpuConfig
 from common.Caches import *
 from common import Options
+from common import HWAcc
 
 
 # Check if KVM support has been enabled, we might need to do VM
@@ -234,13 +235,16 @@ def build_test_system(np):
         MemConfig.config_mem(options, test_sys)
 
     if buildEnv['TARGET_ISA'] == "arm":    
-        test_sys.comm_int = CommInterface(pio_addr=0x2f000000, pio_size=25, gic=test_sys.realview.gic)
-        test_sys.comm_int.pio = test_sys.iobus.master
-        test_sys.comm_int.flags_size = 1;
-        test_sys.comm_int.mem_side = test_sys.iobus.slave
-        test_sys.comm_int.llvm_interface = LLVMInterface()
-        test_sys.comm_int.llvm_interface.in_file = "/home/josh/gem5Work/src/hwacc/LLVMRead/Benchmarks/vadd/vadd/vadd.ll"
-
+#        test_sys.comm_int = CommInterface(pio_addr=0x2f000000, pio_size=25, gic=test_sys.realview.gic)
+#        test_sys.comm_int.pio = test_sys.iobus.master
+#        test_sys.comm_int.flags_size = 1;
+#        test_sys.l2cache = Cache(assoc=8, tag_latency=20, data_latency=20, response_latency=20, mshrs=20, size='1kB', tgts_per_mshr=12)
+#        test_sys.l2cache.mem_side = test_sys.iobus.slave
+#        #test_sys.comm_int.mem_side = test_sys.iobus.slave
+#        test_sys.comm_int.mem_side = test_sys.l2cache.cpu_side
+#        test_sys.comm_int.llvm_interface = LLVMInterface()
+#        test_sys.comm_int.llvm_interface.in_file = "/home/samerogers/gem5/src/hwacc/LLVMRead/Benchmarks/vadd/vadd/vadd.ll"
+        HWAcc.makeHWAcc(options, test_sys)
     return test_sys
 
 def build_drive_system(np):

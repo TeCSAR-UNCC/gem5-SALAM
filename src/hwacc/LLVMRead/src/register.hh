@@ -18,7 +18,7 @@ private:
   //Register * next;
 public:
   uint64_t value;
-  uint64_t size = 8; // byte
+  uint64_t size; // byte
 
   Register(std::string id);
   Register(std::string id, uint64_t val);

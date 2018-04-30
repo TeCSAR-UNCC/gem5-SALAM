@@ -27,7 +27,7 @@ void genData(vadd_struct * vas) {
     int i;
     for (i = 0; i < vas->length; i++) {
         vas->a[i] = i;
-        vas->b[i] = vas->length - i;
+        vas->b[i] = vas->length - 1- i;
         vas->check[i] = vas->a[i] + vas->b[i];
     }
 }

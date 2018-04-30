@@ -78,7 +78,8 @@ class CommInterface : public BasicPioDevice
             address = add;
             length = len;
             next = NULL;
-            data = dat;
+            data = new uint8_t[len];
+            std::memcpy(data, dat, len);
         }
     };
 

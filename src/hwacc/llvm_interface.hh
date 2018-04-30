@@ -13,7 +13,6 @@
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
-    uint32_t numPE;
     bool running;
     std::list<BasicBlock*> *bbList;
     RegisterList *regList;

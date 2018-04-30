@@ -8,4 +8,3 @@ class LLVMInterface(ComputeUnit):
     cxx_header = "hwacc/llvm_interface.hh"
 
     in_file = Param.String("LLVM Trace File")
-    proc_elem = Param.UInt32(1, "The number of processing elements available in the device")

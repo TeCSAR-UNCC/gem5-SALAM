@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script to start up full system simulation
-build/ARM/gem5.opt --debug-flags=IOAcc,CommInterface,LLVMInterface,LLVMRuntime,-LLVMParse --outdir=BM_ARM_OUT configs/example/fs.py \
+build/ARM/gem5.opt --debug-flags=IOAcc,CommInterface,LLVMInterface,LLVMRuntime,-LLVMParse,Interrupt --outdir=BM_ARM_OUT configs/example/fs.py \
 --mem-size=4GB --kernel=$M5_PATH/baremetal/VAdd/main.elf \
 --disk-image=$M5_PATH/baremetal/common/fake.iso --machine-type=VExpress_GEM5_V1 \
---dtb-file=none --bare-metal --cpu-type=TimingSimpleCPU
+--dtb-file=none --bare-metal --cpu-type=TimingSimpleCPU > BM_ARM_OUT/debug_trace.txt

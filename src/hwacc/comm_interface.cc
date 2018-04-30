@@ -304,6 +304,7 @@ CommInterface::prepRead(memRequest *readReq) {
     readDone = 0;
 
     readBuffer = new uint8_t[length];
+    std::memset(readBuffer, 0, sizeof(length));
     readsDone = new bool[length];
     for (int i = 0; i < length; i++) {
         readBuffer[i] = 0;
@@ -387,10 +388,11 @@ CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
 
 void
 CommInterface::finish() {
-    *mmreg &= 0xfc;
+    *mmreg &= 0xfe;
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;
+    DPRINTF(CommInterface, "Computation Finished! Raising Interrupt!\n");
     gic->sendInt(int_num);
 }
 
