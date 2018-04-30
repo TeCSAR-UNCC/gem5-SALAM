@@ -110,7 +110,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
             needToRead = false;
             reading = false;
         }
-    } else {
+    } else if (pkt->isWrite()) {
         DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         writeDone += pkt->getSize();
         if (!(writeDone < totalLength)) {
@@ -130,6 +130,8 @@ CommInterface::recvPacket(PacketPtr pkt) {
                 schedule(tickEvent, nextCycle());
             }
         }
+    } else {
+        panic("Something went very wrong!");
     }
     if(!reading && !readQueue->empty()) {
         prepRead(readQueue->front());
@@ -261,8 +263,8 @@ CommInterface::tryWrite() {
 
 
     DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", totalLength, writeLeft);
-    DPRINTF(CommInterface, "Trying to write to addr: 0x%x, %d bytes, data 0x%08x\n",
-        currentWriteAddr, size, *((int*)(&writeBuffer[totalLength-writeLeft])));
+    DPRINTF(CommInterface, "Trying to write to addr: 0x%x, %d bytes, data 0x%x\n",
+        currentWriteAddr, size, *((uint64_t*)(&writeBuffer[totalLength-writeLeft])));
 
     PacketPtr pkt = new Packet(req, MemCmd::WriteReq);
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
@@ -332,7 +334,7 @@ CommInterface::prepWrite(memRequest *writeReq) {
     //*(uint32_t *)mmreg &= 0xefffffff;
 
     DPRINTF(CommInterface, "Initiating write of %d bytes at 0x%x to 0x%x\n",
-        length, dst, value);
+        length, dst, *(uint64_t *)value);
 
     needToRead = false;
     needToWrite = true;
@@ -388,7 +390,7 @@ CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
 
 void
 CommInterface::finish() {
-    *mmreg &= 0xfe;
+    *mmreg &= 0xfd;
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;

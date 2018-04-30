@@ -83,39 +83,6 @@ class CommInterface : public BasicPioDevice
         }
     };
 
-//    class requestQueue {
-//      private:
-//        memRequest *head;
-//        memRequest *tail;
-//      public:
-//        requestQueue() {
-//          head = NULL;
-//          tail = NULL;
-//        }
-//        void enqueue(memRequest *req) {
-//          if (head) {
-//            tail->next = req;
-//          } else {
-//            head = req;
-//          }
-//          tail = req;
-//        }
-//        memRequest * dequeue() {
-//          assert(head);
-//          memRequest *temp = head;
-//          if(head != tail) {
-//            head = head->next;
-//          } else {
-//            head = NULL;
-//            tail = NULL;
-//          }
-
-//          return temp;
-//        }
-//    };
-
-//    requestQueue *readQueue, *writeQueue;
-
     std::queue<memRequest*> *readQueue;
     std::queue<memRequest*> *writeQueue;
     int readQueueSize, writeQueueSize;
