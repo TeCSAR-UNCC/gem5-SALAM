@@ -7,7 +7,8 @@
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
-    filename(p->in_file) {
+    filename(p->in_file),
+    numPE(p->proc_elem) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -47,7 +48,7 @@ LLVMInterface::tick() {
             "*******************************************************************************",
             "   Cycle", cycle,
             "*******************************************************************************");
-
+    cycle++;
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
@@ -95,12 +96,10 @@ LLVMInterface::tick() {
                 //currBB <- Calculate branch
                 prevBB = currBB;
                 (*it)->compute();
-                instr = (*it)->getInstruction();
                 DPRINTF(LLVMInterface, "Branching to Basic Block %s\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest);
                 it = reservation->erase(it);
                 scheduleBB(currBB);
-                it = reservation->begin();
             } else {
                 ++it;
             }
@@ -115,7 +114,7 @@ LLVMInterface::tick() {
             ++it;
         }
     }
-    cycle++;
+
     if (running && !tickEvent.scheduled())
     {
         schedule(tickEvent, curTick() + clock_period * process_delay);

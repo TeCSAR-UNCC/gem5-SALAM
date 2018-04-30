@@ -8,25 +8,22 @@
 Register::Register(std::string id) {
     name = id;
     value = 0;
-    size = 8;
 }
 Register::Register(std::string id, uint64_t val){
     name = id;
     value = val;
-    size = 8;
 }
 void 
 Register::setSize(){
     // Code here will infer size based around the stored dataType string
     std::string temp = dataType;
     // Pointers
-    if (temp.compare("pointer") == 0) size = 8;
-    else if (temp.back() =='*') size = 8;
+    if (temp.find('*')) size = 8;
     //Boolean and integer data types
     // Set size if dataType is integer
-    else if (temp.front() == 'i') {
+    else if (temp[0] == 'i') {
         temp = temp.substr(1);
-        size = ((std::stoi(temp)-1)/8)+1;
+        size = std::stoi(temp)/8;
     }
     // Floating point data types
     // Set size if dataType is half

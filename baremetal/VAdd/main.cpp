@@ -43,7 +43,7 @@ int main(void) {
 	int *b = (int *)0x80d00000;
 	int *c = (int *)0x80e00000;
 	int *check;
-	int length = 16;
+	int length = 2;
 
 	common_val = 0;
 
@@ -59,11 +59,12 @@ int main(void) {
     val_b = 0x0000000080d00000;
     val_c = 0x0000000080e00000;
 
-    int i;
-    printf("\n");
     acc = 0x01;
 
-	while(!common_val) {
-        checkData(&vas);
+	while(1) {
+        if(common_val = 1) {
+            checkData(&vas);
+            common_val = 0;
+        }
 	}
 }
