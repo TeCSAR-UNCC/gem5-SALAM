@@ -65,26 +65,23 @@ class CommInterface : public BasicPioDevice
       public:
         Addr address;
         size_t length;
-        memRequest *next;
         uint8_t *data;
 
         memRequest(Addr add, size_t len) {
             address = add;
             length = len;
-            next = NULL;
             data = NULL;
         }
         memRequest(Addr add, uint8_t *dat, size_t len) {
             address = add;
             length = len;
-            next = NULL;
-            data = dat;
+            data = new uint8_t[len];
+            std::memcpy(data, dat, len);
         }
     };
 
     std::queue<memRequest*> *readQueue;
     std::queue<memRequest*> *writeQueue;
-    int readQueueSize, writeQueueSize;
 
     MemSidePort memPort;
     MemSidePort* dataPort;

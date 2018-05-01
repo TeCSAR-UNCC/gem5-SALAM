@@ -96,6 +96,7 @@ LLVMInterface::tick() {
                 //currBB <- Calculate branch
                 prevBB = currBB;
                 (*it)->compute();
+                instr = (*it)->getInstruction();
                 DPRINTF(LLVMInterface, "Branching to Basic Block %s\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest);
                 it = reservation->erase(it);
@@ -186,7 +187,7 @@ LLVMInterface::constructBBList() {
                             std::string regName = line.substr(percPos, (commaPos-percPos));
                             DPRINTF(LLVMParse, "Creating register for: %s\n", regName);
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum)));
-                            DPRINTF(LLVMParse, "Initial Value: %X\n", (regList->findRegister(regName))->getStoredValue());
+                            DPRINTF(LLVMParse, "Initial Value: %X\n", (regList->findRegister(regName))->getValue());
                             paramNum++;
                         }
                         linePos = percPos + 1;

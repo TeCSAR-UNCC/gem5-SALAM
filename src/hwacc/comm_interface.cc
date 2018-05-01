@@ -50,8 +50,6 @@ CommInterface::CommInterface(Params *p) :
     //writeQueue = new requestQueue();
     readQueue = new std::queue<memRequest*>();
     writeQueue = new std::queue<memRequest*>();
-    readQueueSize = 0;
-    writeQueueSize = 0;
 }
 
 bool
@@ -136,12 +134,10 @@ CommInterface::recvPacket(PacketPtr pkt) {
     if(!reading && !readQueue->empty()) {
         prepRead(readQueue->front());
         readQueue->pop();
-        readQueueSize--;
     }
     if(!writing && !writeQueue->empty()) {
         prepWrite(writeQueue->front());
         writeQueue->pop();
-        writeQueueSize--;
     }
     if (pkt->req) delete pkt->req;
     delete pkt;
@@ -173,12 +169,10 @@ CommInterface::tick() {
         if(!reading && !readQueue->empty()) {
             prepRead(readQueue->front());
             readQueue->pop();
-            readQueueSize--;
         }
         if(!writing && !writeQueue->empty()) {
             prepWrite(writeQueue->front());
             writeQueue->pop();
-            writeQueueSize--;
         }
         if (needToRead && !dataPort->isStalled()) {
             DPRINTF(CommInterface, "trying read\n");
@@ -306,6 +300,7 @@ CommInterface::prepRead(memRequest *readReq) {
     readDone = 0;
 
     readBuffer = new uint8_t[length];
+    std::memset(readBuffer, 0, sizeof(length));
     readsDone = new bool[length];
     for (int i = 0; i < length; i++) {
         readBuffer[i] = 0;
@@ -369,7 +364,6 @@ void
 CommInterface::enqueueRead(Addr src, size_t length) {
     DPRINTF(CommInterface, "Read from 0x%lx of size:%d bytes enqueued\n", src, length);
     readQueue->push(new memRequest(src, length));
-    readQueueSize++;
     if (!tickEvent.scheduled()) {
         //schedule(tickEvent, curTick() + processDelay);
         schedule(tickEvent, nextCycle());
@@ -380,7 +374,6 @@ void
 CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
     DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", dst, length);
     writeQueue->push(new memRequest(dst, value, length));
-    writeQueueSize++;
     if (!tickEvent.scheduled()) {
         //schedule(tickEvent, curTick() + processDelay);
         schedule(tickEvent, nextCycle());
@@ -389,14 +382,11 @@ CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
 
 void
 CommInterface::finish() {
-<<<<<<< HEAD
     *mmreg &= 0xfd;
-=======
-    *mmreg &= 0xfc;
->>>>>>> parent of ba1359c... Working for Vector Add
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;
+    DPRINTF(CommInterface, "Computation Finished! Raising Interrupt!\n");
     gic->sendInt(int_num);
 }
 

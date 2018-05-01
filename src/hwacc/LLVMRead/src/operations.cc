@@ -421,29 +421,29 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 
 	for(int i = 0; i<MAXGPE; i++) {
 		currentValue[i] = 0;
-		size[i] = 0;
+		size[i] = 1;
 	}
-DPRINTF(LLVMOp, "Index = %d \n", index);
+	size[0] = stoi(instruction.memory.getptr.ty[0].substr(1)) / 8;
+
 	for (int i = 1; i < index; i++) {
-		if (instruction.memory.getptr.ty[i][0] == 'i') {
-			size[i] = (stoi(instruction.memory.getptr.ty[i].substr(1))) / 8;
-		} else {
-			if (instruction.memory.getptr.ty[i].find("double") > 0) {
-				size[i] = 8;
-			} else if (instruction.memory.getptr.ty[i].find("float") > 0) {
-				size[i] = 4;
-			}
-		}
+//		if (instruction.memory.getptr.ty[i][0] == 'i') {
+//			size[i] = (stoi(instruction.memory.getptr.ty[i].substr(1))) / 8;
+//		} else {
+//			if (instruction.memory.getptr.ty[i].find("double") > 0) {
+//				size[i] = 8;
+//			} else if (instruction.memory.getptr.ty[i].find("float") > 0) {
+//				size[i] = 4;
+//			}
+//		}
 		currentValue[i] = instruction.memory.getptr.idx[i]->value;
 		DPRINTF(LLVMOp, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
 	}
 
-	DPRINTF(LLVMOp, "Index = %d \n", index);
 	for (int i = 1; i < index; i++) {
 		instruction.memory.getptr.reference[i] = size[i] * currentValue[i];
 		newAddress = newAddress + instruction.memory.getptr.reference[i];
 	}
-	
+	newAddress *= size[0];
 	newAddress += instruction.memory.getptr.idx[0]->getValue();
 	instruction.general.returnRegister->setValue(&newAddress);
 	DPRINTF(LLVMOp, "Base Address in Register %s: %X\n", instruction.memory.getptr.idx[0]->getName(), instruction.memory.getptr.idx[0]->getValue());

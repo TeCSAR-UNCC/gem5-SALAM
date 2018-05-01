@@ -39,11 +39,14 @@
 vadd_struct vas;
 
 int main(void) {
-	int *a = (int *)0x80c00000;
-	int *b = (int *)0x80d00000;
-	int *c = (int *)0x80e00000;
+//	int *a = (int *)0x80c00000;
+//	int *b = (int *)0x80d00000;
+//	int *c = (int *)0x80e00000;
+	int *a = (int *)0x2f000020;
+	int *b = (int *)0x2f000060;
+	int *c = (int *)0x2f0000a0;
 	int *check;
-	int length = 2;
+	int length = 16;
 
 	common_val = 0;
 
@@ -55,16 +58,25 @@ int main(void) {
 
     genData(&vas);
 
-    val_a = 0x0000000080c00000;
-    val_b = 0x0000000080d00000;
-    val_c = 0x0000000080e00000;
+//    val_a = 0x0000000080c00000;
+//    val_b = 0x0000000080d00000;
+//    val_c = 0x0000000080e00000;
+    val_a = 0x000000002f000020;
+    val_b = 0x000000002f000060;
+    val_c = 0x000000002f0000a0;
+
+
+    int i;
+    printf("%d\n", acc);
 
     acc = 0x01;
+    printf("%d\n", acc);
 
-	while(1) {
-        if(common_val = 1) {
-            checkData(&vas);
-            common_val = 0;
-        }
+	while(acc != 0x4) {
+        printf("%d\n", acc);
+	}
+	checkData(&vas);
+	for (i = 0; i < length; i++) {
+	    printf("C[%2d]=%d\n", i, c[i]);
 	}
 }

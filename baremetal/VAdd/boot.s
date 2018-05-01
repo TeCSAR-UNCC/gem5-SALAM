@@ -59,12 +59,8 @@ _Reset:
 .equ set_enable2,       0x108
 
 //Example definitions
-//.equ timer_irq_id,      36   // 36 <64 => set_enable1 Reg
-.equ timer_irq_id,    131   // 36 <64 => set_enable1 Reg
-.equ kmio_irq_id,     44
-.equ uart0_irq_id,    37
-.equ rtc_irq_id,      36
-.equ sam_dev_id,      320
+//.equ timer_irq_id,    36   // 36 <64 => set_enable1 Reg
+.equ sam_dev_id,      68
 
 //GIC_CPU_INTERFACE
 //.equ GIC_CPU_BASE,                  0x1f000100
@@ -176,7 +172,7 @@ irq_unexpected:
     ldr r1, =GIC_CPU_BASE + GIC_CPU_End_of_int_offset
 //    ldr r2, =timer_irq_id
 //	ldr r2, = uart0_irq_id
-	ldr r2, = rtc_irq_id
+	ldr r2, = sam_dev_id
 //	ldr r2, = kmio_irq_id
     str r2, [r1]
 
