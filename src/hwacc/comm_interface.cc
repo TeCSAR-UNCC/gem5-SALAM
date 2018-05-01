@@ -22,25 +22,25 @@ CommInterface::CommInterface(Params *p) :
     devname(p->devicename),
     gic(p->gic),
     int_num(p->int_num),
-    memPort(p->name + ".mem_side", this),
+    memPort0(p->name + ".mem_side0", this),
+    memPort1(p->name + ".mem_side1", this),
+    memPort2(p->name + ".mem_side2", this),
+    memPort3(p->name + ".mem_side3", this),
     masterId(p->system->getMasterId(name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period) {
-
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
     VAR_OFFSET = CONFIG_OFFSET + config_size;
-    needToRead = false;
-    needToWrite = false;
-    running = false;
-    reading = false;
-    writing = false;
     processingDone = false;
     computationNeeded = false;
     int_flag = false;
-    dataPort = &memPort;
+    dataPort[0] = &memPort0;
+    dataPort[1] = &memPort1;
+    dataPort[2] = &memPort2;
+    dataPort[3] = &memPort3;
     mmreg = new uint8_t[io_size];
     for(int i = 0; i < io_size; i++) {
         mmreg[i] = 0;
@@ -48,8 +48,8 @@ CommInterface::CommInterface(Params *p) :
     cu = NULL;
     //readQueue = new requestQueue();
     //writeQueue = new requestQueue();
-    readQueue = new std::queue<memRequest*>();
-    writeQueue = new std::queue<memRequest*>();
+    readQueue = new std::queue<MemRequest*>();
+    writeQueue = new std::queue<MemRequest*>();
 }
 
 bool
@@ -86,58 +86,45 @@ CommInterface::MemSidePort::sendPacket(PacketPtr pkt) {
 void
 CommInterface::recvPacket(PacketPtr pkt) {
     if (pkt->isRead()) {
+        MemRequest * readReq = findMemRequest(pkt, true);
         DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
-        pkt->writeData(readBuffer + (pkt->req->getPaddr() - beginAddr));
-
-        for (int i = pkt->req->getPaddr() - beginAddr;
-             i < pkt->req->getPaddr() - beginAddr + pkt->getSize(); i++)
+        pkt->writeData(readReq->buffer + (pkt->req->getPaddr() - readReq->beginAddr));
+        for (int i = pkt->req->getPaddr() - readReq->beginAddr;
+             i < pkt->req->getPaddr() - readReq->beginAddr + pkt->getSize(); i++)
         {
-            readsDone[i] = true;
+            readReq->readsDone[i] = true;
         }
 
         // mark readDone as only the contiguous region
-        while (readDone < totalLength && readsDone[readDone])
+        while (readReq->readDone < readReq->totalLength && readReq->readsDone[readReq->readDone])
         {
-            readDone++;
+            readReq->readDone++;
         }
 
-        if (readDone >= totalLength)
+        if (!readReq->needToRead)
         {
             DPRINTF(CommInterface, "Done reading\n");
-            cu->readCommit(readBuffer);
-            needToRead = false;
-            reading = false;
+            cu->readCommit(readReq->buffer);
+            delete readReq;
         }
     } else if (pkt->isWrite()) {
+        MemRequest * writeReq = findMemRequest(pkt, false);
         DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
-        writeDone += pkt->getSize();
-        if (!(writeDone < totalLength)) {
+        writeReq->writeDone += pkt->getSize();
+        if (!(writeReq->needToWrite)) {
             DPRINTF(CommInterface, "Done writing\n");
-            //gic->sendInt(int_num);
-            //*(uint32_t *)mmreg |= 0x80000000;
-            //DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
             cu->writeCommit();
-            needToWrite = false;
-            delete[] writeBuffer;
-            delete[] readsDone;
-            writing = false;
-        } else {
-            if (!tickEvent.scheduled())
-            {
-                //schedule(tickEvent, curTick() + processDelay);
-                schedule(tickEvent, nextCycle());
-            }
+            delete[] writeReq->buffer;
+            delete[] writeReq->readsDone;
+            delete writeReq;
         }
     } else {
         panic("Something went very wrong!");
     }
-    if(!reading && !readQueue->empty()) {
-        prepRead(readQueue->front());
-        readQueue->pop();
-    }
-    if(!writing && !writeQueue->empty()) {
-        prepWrite(writeQueue->front());
-        writeQueue->pop();
+    if (!tickEvent.scheduled())
+    {
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
     if (pkt->req) delete pkt->req;
     delete pkt;
@@ -145,7 +132,6 @@ CommInterface::recvPacket(PacketPtr pkt) {
 
 void
 CommInterface::tick() {
-    running = writing || reading;
     if (!computationNeeded) {
         DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
@@ -163,69 +149,72 @@ CommInterface::tick() {
 
         return;
     }
-    if (dataPort->isStalled()) {
-        DPRINTF(CommInterface, "Stalled\n");
-    } else {
-        if(!reading && !readQueue->empty()) {
-            prepRead(readQueue->front());
-            readQueue->pop();
-        }
-        if(!writing && !writeQueue->empty()) {
-            prepWrite(writeQueue->front());
-            writeQueue->pop();
-        }
-        if (needToRead && !dataPort->isStalled()) {
-            DPRINTF(CommInterface, "trying read\n");
-            tryRead();
-        }
 
-        if (needToWrite && !dataPort->isStalled() &&
-            ((totalLength - writeLeft) < readDone)) {
-            DPRINTF(CommInterface, "trying write\n");
-            tryWrite();
+    for (int i = 0; i < NUM_PORTS; i++) {
+        if (dataPort[i]->isStalled()) {
+            DPRINTF(CommInterface, "Port[%d] Stalled\n", i);
+        } else {
+            if (!dataPort[i]->readReq && !readQueue->empty()) {
+                dataPort[i]->readReq = readQueue->front();
+                DPRINTF(CommInterface, "Request Address:%lx\n", dataPort[i]->readReq->address);
+                readQueue->pop();
+                dataPort[i]->readActive = true;
+            }
+            if (!dataPort[i]->writeReq && !writeQueue->empty()) {
+                dataPort[i]->writeReq = writeQueue->front();
+                writeQueue->pop();
+                dataPort[i]->writeActive = true;
+            }
+            if (dataPort[i]->readReq && dataPort[i]->readReq->needToRead) {
+                DPRINTF(CommInterface, "Trying read on Port[%d]\n", i);
+                tryRead(dataPort[i]);
+            }
+            if (dataPort[i]->writeReq && dataPort[i]->writeReq->needToWrite) {
+                DPRINTF(CommInterface, "Trying write on Port[%d]\n", i);
+                tryWrite(dataPort[i]);
+            }
         }
     }
 }
 
 void
-CommInterface::tryRead() {
+CommInterface::tryRead(MemSidePort * port) {
     //RequestPtr req = new Request();
+    MemRequest * readReq = port->readReq;
     Request::Flags flags;
-
-    if (readLeft <= 0) {
+    if (readReq->readLeft <= 0) {
         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
         return;
     }
-
     int size;
-    if (currentReadAddr % cacheLineSize) {
-        size = cacheLineSize - (currentReadAddr % cacheLineSize);
+    if (readReq->currentReadAddr % cacheLineSize) {
+        size = cacheLineSize - (readReq->currentReadAddr % cacheLineSize);
         DPRINTF(CommInterface, "Aligning\n");
     } else {
         size = cacheLineSize;
     }
-    size = readLeft > (size - 1) ? size : readLeft;
-    RequestPtr req = new Request(currentReadAddr, size, flags, masterId);
-
+    size = readReq->readLeft > (size - 1) ? size : readReq->readLeft;
+    RequestPtr req = new Request(readReq->currentReadAddr, size, flags, masterId);
     DPRINTF(CommInterface, "Trying to read addr: 0x%x, %d bytes\n",
         req->getPaddr(), size);
 
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
     pkt->allocate();
-    dataPort->sendPacket(pkt);
+    readReq->pkt = pkt;
+    port->sendPacket(pkt);
 
-    currentReadAddr += size;
+    readReq->currentReadAddr += size;
 
-    readLeft -= size;
+    readReq->readLeft -= size;
 
-    if (!(readLeft > 0)) {
-        needToRead = false;
+    if (!(readReq->readLeft > 0)) {
+        readReq->needToRead = false;
         if (!tickEvent.scheduled()) {
             //schedule(tickEvent, curTick() + processDelay);
             schedule(tickEvent, nextCycle());
         }
     } else {
-        if (!dataPort->isStalled() && !tickEvent.scheduled())
+        if (!port->isStalled() && !tickEvent.scheduled())
         {
             //schedule(tickEvent, curTick() + processDelay);
             schedule(tickEvent, nextCycle());
@@ -234,136 +223,58 @@ CommInterface::tryRead() {
 }
 
 void
-CommInterface::tryWrite() {
-    if (writeLeft <= 0) {
+CommInterface::tryWrite(MemSidePort * port) {
+    MemRequest * writeReq = port->writeReq;
+    if (writeReq->writeLeft <= 0) {
         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
         return;
     }
 
     int size;
-    if (currentWriteAddr % cacheLineSize) {
-        size = cacheLineSize - (currentWriteAddr % cacheLineSize);
+    if (writeReq->currentWriteAddr % cacheLineSize) {
+        size = cacheLineSize - (writeReq->currentWriteAddr % cacheLineSize);
         DPRINTF(CommInterface, "Aligning\n");
     } else {
         size = cacheLineSize;
     }
-    size = writeLeft > size - 1 ? size : writeLeft;
+    size = writeReq->writeLeft > size - 1 ? size : writeReq->writeLeft;
 
     Request::Flags flags;
     uint8_t *data = new uint8_t[size];
-    std::memcpy(data, &writeBuffer[totalLength-writeLeft], size);
-    RequestPtr req = new Request(currentWriteAddr, size, flags, masterId);
+    std::memcpy(data, &(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]), size);
+    RequestPtr req = new Request(writeReq->currentWriteAddr, size, flags, masterId);
     req->setExtraData((uint64_t)data);
 
 
-    DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", totalLength, writeLeft);
+    DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
     DPRINTF(CommInterface, "Trying to write to addr: 0x%x, %d bytes, data 0x%x\n",
-        currentWriteAddr, size, *((uint64_t*)(&writeBuffer[totalLength-writeLeft])));
+        writeReq->currentWriteAddr, size, *((uint64_t*)(&(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]))));
 
     PacketPtr pkt = new Packet(req, MemCmd::WriteReq);
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
     pkt->dataDynamic(pkt_data);
-    dataPort->sendPacket(pkt);
+    writeReq->pkt = pkt;
+    port->sendPacket(pkt);
 
-    currentWriteAddr += size;
-    writeLeft -= size;
+    writeReq->currentWriteAddr += size;
+    writeReq->writeLeft -= size;
 
-    if (!(writeLeft > 0) && !tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+    if (!(writeReq->writeLeft > 0)) {
+        writeReq->needToWrite = false;
+        if (!tickEvent.scheduled()) {
+            //schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
+        }
+    } else if (!port->isStalled() && !tickEvent.scheduled()) {
+            //schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
     }
-}
-
-int
-CommInterface::prepRead(memRequest *readReq) {
-    Addr src = readReq->address;
-    size_t length = readReq->length;
-    assert(length > 0);
-    assert(!reading);
-    reading = true;
-    //gic->clearInt(int_num);
-
-    DPRINTF(CommInterface, "Initiating read of %d bytes from 0x%x\n", length, src);
-
-    needToRead = true;
-    needToWrite = false;
-
-    currentReadAddr = src;
-
-    beginAddr = src;
-
-    readLeft = length;
-    writeLeft = 0;
-
-    totalLength = length;
-
-    readDone = 0;
-
-    readBuffer = new uint8_t[length];
-    std::memset(readBuffer, 0, sizeof(length));
-    readsDone = new bool[length];
-    for (int i = 0; i < length; i++) {
-        readBuffer[i] = 0;
-        readsDone[i] = false;
-    }
-
-    if (!tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
-    }
-
-    delete readReq;
-    return 0;
-}
-
-int
-CommInterface::prepWrite(memRequest *writeReq) {
-    assert(!writing);
-    Addr dst = writeReq->address;
-    uint8_t *value = writeReq->data;
-    size_t length = writeReq->length;
-    assert(length > 0);
-    writing = true;
-    //gic->clearInt(int_num);
-    //*(uint32_t *)mmreg &= 0xefffffff;
-
-    DPRINTF(CommInterface, "Initiating write of %d bytes at 0x%x to 0x%x\n",
-        length, dst, *(uint64_t *)value);
-
-    needToRead = false;
-    needToWrite = true;
-
-    currentWriteAddr = dst;
-
-    readLeft = 0;
-    writeLeft = length;
-
-    totalLength = length;
-    writeLeft = totalLength;
-
-    readDone = length;
-    writeDone = 0;
-
-    writeBuffer = new uint8_t[length];
-    readsDone = new bool[length];
-    for (int i = 0; i < length; i++) {
-        writeBuffer[i] = *(value + i);
-        readsDone[i] = true;
-    }
-
-    if (!tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
-    }
-
-    delete writeReq;
-    return 0;
 }
 
 void
 CommInterface::enqueueRead(Addr src, size_t length) {
     DPRINTF(CommInterface, "Read from 0x%lx of size:%d bytes enqueued\n", src, length);
-    readQueue->push(new memRequest(src, length));
+    readQueue->push(new MemRequest(src, length));
     if (!tickEvent.scheduled()) {
         //schedule(tickEvent, curTick() + processDelay);
         schedule(tickEvent, nextCycle());
@@ -373,7 +284,7 @@ CommInterface::enqueueRead(Addr src, size_t length) {
 void
 CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
     DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", dst, length);
-    writeQueue->push(new memRequest(dst, value, length));
+    writeQueue->push(new MemRequest(dst, value, length));
     if (!tickEvent.scheduled()) {
         //schedule(tickEvent, curTick() + processDelay);
         schedule(tickEvent, nextCycle());
@@ -382,11 +293,10 @@ CommInterface::enqueueWrite(Addr dst, uint8_t* value, size_t length) {
 
 void
 CommInterface::finish() {
-    *mmreg &= 0xfd;
+    *mmreg &= 0xfc;
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;
-    DPRINTF(CommInterface, "Computation Finished! Raising Interrupt!\n");
     gic->sendInt(int_num);
 }
 
@@ -453,9 +363,63 @@ CommInterfaceParams::create() {
 
 BaseMasterPort&
 CommInterface::getMasterPort(const std::string& if_name, PortID idx) {
-    if (if_name == "mem_side") {
-        return memPort;
-    } else {
+    if (if_name == "mem_side0") {
+        return memPort0;
+    } else if (if_name == "mem_side1") {
+        return memPort1;
+    } else if (if_name == "mem_side2") {
+        return memPort2;
+    } else if (if_name == "mem_side3") {
+        return memPort3;
+    }else {
         return MemObject::getMasterPort(if_name, idx);
     }
 }
+
+CommInterface::MemRequest::MemRequest(Addr add, size_t len) {
+    address = add;
+    length = len;
+    currentReadAddr = address;
+    needToRead = true;
+    beginAddr = address;
+    readLeft = length;
+    writeLeft = 0;
+    totalLength = length;
+    readDone = 0;
+    buffer = new uint8_t[length];
+    std::memset(buffer, 0, sizeof(length));
+    readsDone = new bool[length];
+    for (int i = 0; i < length; i++) {
+        buffer[i] = 0;
+        readsDone[i] = false;
+    }
+
+    pkt = NULL;
+}
+CommInterface::MemRequest::MemRequest(Addr add, uint8_t *data, size_t len) {
+    address = add;
+    length = len;
+    needToWrite = true;
+
+    currentWriteAddr = address;
+
+    readLeft = 0;
+    writeLeft = length;
+
+    totalLength = length;
+    writeLeft = totalLength;
+
+    readDone = length;
+    writeDone = 0;
+
+    buffer = new uint8_t[length];
+    readsDone = new bool[length];
+    for (int i = 0; i < length; i++) {
+        buffer[i] = *(data + i);
+        readsDone[i] = true;
+    }
+
+    pkt = NULL;
+}
+
+

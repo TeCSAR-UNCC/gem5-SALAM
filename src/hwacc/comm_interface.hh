@@ -9,6 +9,8 @@
 
 #include <queue>
 
+#define NUM_PORTS 4
+
 class CommInterface : public BasicPioDevice
 {
   private:
@@ -23,6 +25,8 @@ class CommInterface : public BasicPioDevice
     BaseGic *gic;
     uint32_t int_num;
 
+    class MemRequest;
+
     class MemSidePort : public MasterPort
     {
       friend class CommInterface;
@@ -30,11 +34,19 @@ class CommInterface : public BasicPioDevice
       private:
         CommInterface *owner;
         std::queue<PacketPtr> outstandingPkts;
+        MemRequest *readReq;
+        MemRequest *writeReq;
+        bool readActive;
+        bool writeActive;
 
       public:
         MemSidePort(const std::string& name, CommInterface *owner) :
-          MasterPort(name, owner), owner(owner)
-        { }
+          MasterPort(name, owner), owner(owner) {
+          readActive = false;
+          writeActive = false;
+          readReq = NULL;
+          writeReq = NULL;
+        }
 
       protected:
         virtual bool recvTimingResp(PacketPtr pkt);
@@ -48,6 +60,9 @@ class CommInterface : public BasicPioDevice
         }
         bool isStalled() { return !outstandingPkts.empty(); }
         void sendPacket(PacketPtr pkt);
+        bool active() { return readActive && writeActive; }
+        bool reading() { return readActive; }
+        bool writing() { return writeActive; }
     };
 
     class TickEvent : public Event
@@ -61,30 +76,45 @@ class CommInterface : public BasicPioDevice
         virtual const char *description() const { return "CommInterface tick"; }
     };
 
-    class memRequest {
-      public:
+    class MemRequest {
+      friend class CommInterface;
+      private:
         Addr address;
         size_t length;
-        uint8_t *data;
+        bool needToRead;
+        bool needToWrite;
+        Addr currentReadAddr;
+        Addr currentWriteAddr;
+        Addr beginAddr;
+        Tick writeLeft;
+        Tick writeDone;
+        Tick readLeft;
+        Tick readDone;
+        Tick totalLength;
 
-        memRequest(Addr add, size_t len) {
-            address = add;
-            length = len;
-            data = NULL;
-        }
-        memRequest(Addr add, uint8_t *dat, size_t len) {
-            address = add;
-            length = len;
-            data = new uint8_t[len];
-            std::memcpy(data, dat, len);
-        }
+        uint8_t *buffer;
+        bool *readsDone;
+
+        PacketPtr pkt;
+      public:
+        MemRequest(Addr add, size_t len);
+        MemRequest(Addr add, uint8_t *data, size_t len);
     };
 
-    std::queue<memRequest*> *readQueue;
-    std::queue<memRequest*> *writeQueue;
+    std::queue<MemRequest*> *readQueue;
+    std::queue<MemRequest*> *writeQueue;
+    int readQueueSize, writeQueueSize;
 
-    MemSidePort memPort;
-    MemSidePort* dataPort;
+    MemSidePort memPort0;
+    //MemSidePort* dataPort0;
+    MemSidePort memPort1;
+    //MemSidePort* dataPort1;
+    MemSidePort memPort2;
+    //MemSidePort* dataPort2;
+    MemSidePort memPort3;
+    //MemSidePort* dataPort3;
+    MemSidePort* dataPort[NUM_PORTS];
+
     CommInterface *comm;
     MasterID masterId;
     TickEvent tickEvent;
@@ -92,28 +122,12 @@ class CommInterface : public BasicPioDevice
 
     void tick();
 
-    bool needToRead;
-    bool needToWrite;
-    Addr currentReadAddr;
-    Addr currentWriteAddr;
-    Addr beginAddr;
-    Tick writeLeft;
-    Tick writeDone;
-    Tick readLeft;
-    Tick readDone;
-    Tick totalLength;
-
-    uint8_t *readBuffer;
-    uint8_t *writeBuffer;
-    bool *readsDone;
     bool running;
-    bool reading;
-    bool writing;
     bool computationNeeded;
     bool int_flag;
 
-    void tryRead();
-    void tryWrite();
+    void tryRead(MemSidePort * port);
+    void tryWrite(MemSidePort * port);
 
     Addr dataAddr;
 
@@ -144,17 +158,12 @@ class CommInterface : public BasicPioDevice
 
     void recvPacket(PacketPtr pkt);
 
-    int prepRead(memRequest *readReq);
-    int prepWrite(memRequest *writeReq);
-    //int prepRead(Addr src, size_t length);
-    //int prepWrite(Addr dst, uint8_t* value, size_t length);
-
     // Addr value stored in gep register, length based on data type
     void enqueueRead(Addr src, size_t length); 
 
     void enqueueWrite(Addr dst, uint8_t* value, size_t length);
 
-    uint8_t* getReadBuffer() { return readBuffer; }
+    //uint8_t* getReadBuffer() { return readBuffer; }
 
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }
@@ -165,6 +174,22 @@ class CommInterface : public BasicPioDevice
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
 
     void finish();
+
+    MemRequest * findMemRequest(PacketPtr pkt, bool isRead) {
+        for(int i = 0; i < NUM_PORTS; i++)
+        {
+            if (isRead) {
+                if (dataPort[i]->readReq->pkt == pkt) {
+                    return dataPort[i]->readReq;
+                }
+            } else {
+                if (dataPort[i]->writeReq->pkt == pkt) {
+                    return dataPort[i]->writeReq;
+                }
+            }
+        }
+        return NULL;
+    }
   protected:
 };
 
