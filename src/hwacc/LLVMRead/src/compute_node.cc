@@ -327,7 +327,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		}
 		break;
 	}
-
 	case IR_Invoke: {
 		// Not up to date with setting register datatypes
 		// <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
@@ -371,7 +370,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		break;
 	}
 	case IR_Resume: {
-		// Not up to date with setting register datatypes
 		// resume <type> <value>
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
@@ -401,648 +399,116 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i <= 1; i++) {
-			if (parameters[i] == "nuw") instruction.flags.nuw = true;
-			if (parameters[i] == "nsw") instruction.flags.nsw = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last].substr(1)) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last].substr(1));
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1].substr(1));
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_FAdd: {
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i < parameters.size() - 3; i++) {
-			if (parameters.at(i) == "nnan")
-				instruction.flags.nnan = true;
-			else if (parameters.at(i) == "ninf")
-				instruction.flags.ninf = true;
-			else if (parameters.at(i) == "nsz")
-				instruction.flags.nsz = true;
-			else if (parameters.at(i) == "arcp")
-				instruction.flags.arcp = true;
-			else if (parameters.at(i) == "contract")
-				instruction.flags.contract = true;
-			else if (parameters.at(i) == "afn")
-				instruction.flags.afn = true;
-			else if (parameters.at(i) == "reassoc")
-				instruction.flags.reassoc = true;
-			else if (parameters.at(i) == "fast")
-				instruction.flags.fast = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_Sub: {
 		// <result> = sub <ty> <op1>, <op2>          ; yields {ty}:result
 		// <result> = sub nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i <= 1; i++) {
-			if (parameters[i] == "nuw") instruction.flags.nuw = true;
-			if (parameters[i] == "nsw") instruction.flags.nsw = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_FSub: {
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		
-		for (int i = 0; i < parameters.size() - 3; i++) {
-			if (parameters.at(i) == "nnan")
-				instruction.flags.nnan = true;
-			else if (parameters.at(i) == "ninf")
-				instruction.flags.ninf = true;
-			else if (parameters.at(i) == "nsz")
-				instruction.flags.nsz = true;
-			else if (parameters.at(i) == "arcp")
-				instruction.flags.arcp = true;
-			else if (parameters.at(i) == "contract")
-				instruction.flags.contract = true;
-			else if (parameters.at(i) == "afn")
-				instruction.flags.afn = true;
-			else if (parameters.at(i) == "reassoc")
-				instruction.flags.reassoc = true;
-			else if (parameters.at(i) == "fast")
-				instruction.flags.fast = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_Mul: {
 		// <result> = mul <ty> <op1>, <op2>          ; yields {ty}:result
 		// <result> = mul nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i <= 1; i++) {
-			if (parameters[i] == "nuw") instruction.flags.nuw = true;
-			if (parameters[i] == "nsw") instruction.flags.nsw = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_FMul: {
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		for (int i = 0; i < parameters.size() - 3; i++) {
-			if (parameters.at(i) == "nnan")
-				instruction.flags.nnan = true;
-			else if (parameters.at(i) == "ninf")
-				instruction.flags.ninf = true;
-			else if (parameters.at(i) == "nsz")
-				instruction.flags.nsz = true;
-			else if (parameters.at(i) == "arcp")
-				instruction.flags.arcp = true;
-			else if (parameters.at(i) == "contract")
-				instruction.flags.contract = true;
-			else if (parameters.at(i) == "afn")
-				instruction.flags.afn = true;
-			else if (parameters.at(i) == "reassoc")
-				instruction.flags.reassoc = true;
-			else if (parameters.at(i) == "fast")
-				instruction.flags.fast = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_UDiv: {
 		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		if (parameters[0] == "exact") instruction.flags.exact = true;
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_SDiv: {
 		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		if (parameters[0] == "exact") instruction.flags.exact = true;
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_FDiv: {
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i < parameters.size() - 3; i++) {
-			if (parameters.at(i) == "nnan")
-				instruction.flags.nnan = true;
-			else if (parameters.at(i) == "ninf")
-				instruction.flags.ninf = true;
-			else if (parameters.at(i) == "nsz")
-				instruction.flags.nsz = true;
-			else if (parameters.at(i) == "arcp")
-				instruction.flags.arcp = true;
-			else if (parameters.at(i) == "contract")
-				instruction.flags.contract = true;
-			else if (parameters.at(i) == "afn")
-				instruction.flags.afn = true;
-			else if (parameters.at(i) == "reassoc")
-				instruction.flags.reassoc = true;
-			else if (parameters.at(i) == "fast")
-				instruction.flags.fast = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
 	case IR_URem: {
 		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
 	case IR_SRem: {
 		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_FRem: {
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i < parameters.size() - 3; i++) {
-			if (parameters.at(i) == "nnan")
-				instruction.flags.nnan = true;
-			else if (parameters.at(i) == "ninf")
-				instruction.flags.ninf = true;
-			else if (parameters.at(i) == "nsz")
-				instruction.flags.nsz = true;
-			else if (parameters.at(i) == "arcp")
-				instruction.flags.arcp = true;
-			else if (parameters.at(i) == "contract")
-				instruction.flags.contract = true;
-			else if (parameters.at(i) == "afn")
-				instruction.flags.afn = true;
-			else if (parameters.at(i) == "reassoc")
-				instruction.flags.reassoc = true;
-			else if (parameters.at(i) == "fast")
-				instruction.flags.fast = true;
-		}
-
-		instruction.binary.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.binary.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.binary.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.binary.op2);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			} else {
-				instruction.binary.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate2 = true;
-			instruction.binary.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.binary.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.binary.op1);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			} else {
-				instruction.binary.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.binary.immediate1 = true;
-			instruction.binary.iop1 = parameters[last - 1];
-		}
+		instruction.general.binary = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
 	// Bitwise Operations
@@ -1051,333 +517,114 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = shl nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		for (int i = 0; i <= 1; i++) {
-			if (parameters[i] == "nuw") instruction.flags.nuw = true;
-			if (parameters[i] == "nsw") instruction.flags.nsw = true;
-		}
-
-		instruction.bitwise.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.bitwise.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.bitwise.op2);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			} else {
-				instruction.bitwise.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate2 = true;
-			instruction.bitwise.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.bitwise.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.bitwise.op1);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			} else {
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate1 = true;
-			instruction.bitwise.iop1 = parameters[last - 1];
-		}
+		instruction.general.bitwise = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_LShr: {
 		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		if (parameters[0] == "exact") instruction.flags.exact = true;
-
-		instruction.bitwise.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.bitwise.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.bitwise.op2);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			} else {
-				instruction.bitwise.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate2 = true;
-			instruction.bitwise.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.bitwise.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.bitwise.op1);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			} else {
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate1 = true;
-			instruction.bitwise.iop1 = parameters[last - 1];
-		}
+		instruction.general.bitwise = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_AShr: {
 		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		if (parameters[0] == "exact") instruction.flags.exact = true;
-
-		instruction.bitwise.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.bitwise.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.bitwise.op2);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			} else {
-				instruction.bitwise.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate2 = true;
-			instruction.bitwise.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.bitwise.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.bitwise.op1);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			} else {
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate1 = true;
-			instruction.bitwise.iop1 = parameters[last - 1];
-		}
+		instruction.general.bitwise = true;
+		debug(parameters);
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_And: {
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
-
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		instruction.bitwise.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.bitwise.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.bitwise.op2);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			} else {
-				instruction.bitwise.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate2 = true;
-			instruction.bitwise.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.bitwise.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.bitwise.op1);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			} else {
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate1 = true;
-			instruction.bitwise.iop1 = parameters[last - 1];
-		}
+		instruction.general.bitwise = true;
+		debug(parameters);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_Or: {
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		instruction.bitwise.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.bitwise.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.bitwise.op2);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			} else {
-				instruction.bitwise.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate2 = true;
-			instruction.bitwise.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.bitwise.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.bitwise.op1);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			} else {
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate1 = true;
-			instruction.bitwise.iop1 = parameters[last - 1];
-		}
+		instruction.general.bitwise = true;
+		debug(parameters);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
-
 	case IR_Xor: {
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
-		instruction.bitwise.ty = parameters[last - 2];
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
-
-		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.bitwise.op2 = new Register(parameters[last]);
-				list->addRegister(instruction.bitwise.op2);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			} else {
-				instruction.bitwise.op2 = list->findRegister(parameters[last]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate2 = true;
-			instruction.bitwise.iop2 = parameters[last];
-		}
-
-		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.bitwise.op1 = new Register(parameters[last - 1]);
-				list->addRegister(instruction.bitwise.op1);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			} else {
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1]);
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				dependencies++;
-			}
-		} else {
-			instruction.bitwise.immediate1 = true;
-			instruction.bitwise.iop1 = parameters[last - 1];
-		}
+		instruction.general.bitwise = true;
+		debug(parameters);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
 		break;
 	}
 	// Memory Operations
 	case IR_Alloca: {
-		// Not up to date with setting register datatypes
 		// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
-		// DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		// for(int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		// attributes.params.dataType = parameters[0];
-
-		// if (parameters[1] == "align") {
-		// 	attributes.params.align = parameters[2];
-		// }
-		// else if (parameters.size() == 5) {
-		// 	attributes.params.type2 = parameters[1];
-		// 	attributes.params.numElements = parameters[2];
-		// 	attributes.params.align = parameters[4];
-		// }
-		// else {
-		// 	attributes.params.type2 = parameters[1];
-		// 	attributes.params.numElements = parameters[2];
-		// }
 		break;
 	}
 	case IR_Load: {
 		// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
 		// <result> = load atomic[volatile] <ty>* <pointer>[singlethread] <ordering>, align <alignment>
 		//	!<index> = !{ i32 1 }
+		// *** Debug *** //
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
+		// *** Debug *** //
+		// Set memory operation flag to true
 		instruction.general.memory = true;
+		// Index variable tracks keywords starting from the beginning of instruction
 		int index = 0;
+		// Check if instruction has volatilte keyword
 		if (parameters[0] == "volatile") {
-			index = 1;
+			// Increment index
+			index++;
+			// Set volatile flag 
 			instruction.memory.load.volatileVar = true;
 		}
+		// Set return type
 		instruction.memory.load.ty = parameters[index];
+		// Set return register type and size
 		instruction.general.returnRegister->setSize(instruction.memory.load.ty);
-
+		// Determine if register that contains load address exists
 		if (list->findRegister(parameters[index + 2].substr(1)) == NULL) {
+			// Create register and store as load pointer
 			instruction.memory.load.pointer = new Register(parameters[index + 2].substr(1));
+			// Add register to register list
 			list->addRegister(instruction.memory.load.pointer);
+			// Add register to dependencies list
 			instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
+			// Increment dependencies count for instruction
 			dependencies++;
 		} else {
+			// Assign the register to the load pointer
 			instruction.memory.load.pointer = list->findRegister(parameters[index + 2].substr(1));
+			// Add register to dependencies list
 			instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
+			// Increment dependencies count for instruction
 			dependencies++;
 		}
+		// Set value for alignment 
 		instruction.memory.load.align = stoi(parameters[index + 4]);
 		break;
 	}
 	case IR_Store: {
 		// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 		// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
+		// *** Debug *** //
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
+		// *** Debug *** //
 		instruction.general.memory = true;
 		int index = 1;
 		if (parameters[1] == "volatile") {
@@ -1451,6 +698,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			j++;
 			instruction.memory.getptr.index = j;
 		}
+
+		
 		break;
 	}
 	case IR_Fence: {
@@ -1527,6 +776,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.other = true;
 		instruction.general.compare = true;
 		instruction.other.compare.condition.cond = parameters[0];
+
 		instruction.other.compare.ty = parameters[1];
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
@@ -1563,6 +813,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.other.compare.immediate1 = true;
 			instruction.other.compare.iop1 = parameters[last - 1];
 		}
+
 		if (instruction.other.compare.condition.cond == "eq")
 			instruction.other.compare.condition.eq = true;
 		else if (instruction.other.compare.condition.cond == "ne")
@@ -1593,18 +844,19 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.other = true;
 		instruction.general.compare = true;
 		instruction.other.compare.condition.cond = parameters[0];
+
 		instruction.other.compare.ty = parameters[1];
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
 		// Check if adding from register or immediate value
 		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last]) == NULL) {
-				instruction.other.compare.op2 = new Register(parameters[last]);
+			if (list->findRegister(parameters[last].substr(1)) == NULL) {
+				instruction.other.compare.op2 = new Register(parameters[last].substr(1));
 				list->addRegister(instruction.other.compare.op2);
 				instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
 				dependencies++;
 			} else {
-				instruction.other.compare.op2 = list->findRegister(parameters[last]);
+				instruction.other.compare.op2 = list->findRegister(parameters[last].substr(1));
 				instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
 				dependencies++;
 			}
@@ -1612,15 +864,16 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.other.compare.immediate2 = true;
 			instruction.other.compare.iop2 = parameters[last];
 		}
+
 		// Check if value is from register or immediate value
 		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1]) == NULL) {
-				instruction.other.compare.op1 = new Register(parameters[last - 1]);
+			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
+				instruction.other.compare.op1 = new Register(parameters[last - 1].substr(1));
 				list->addRegister(instruction.other.compare.op1);
 				instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
 				dependencies++;
 			} else {
-				instruction.other.compare.op1 = list->findRegister(parameters[last - 1]);
+				instruction.other.compare.op1 = list->findRegister(parameters[last - 1].substr(1));
 				instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
 				dependencies++;
 			}
@@ -1628,7 +881,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.other.compare.immediate1 = true;
 			instruction.other.compare.iop1 = parameters[last - 1];
 		}
-
+		
 		if (instruction.other.compare.condition.cond == "false")
 			instruction.other.compare.condition.condFalse = true;
 		else if (instruction.other.compare.condition.cond == "oeq")
@@ -1805,20 +1058,14 @@ ComputeNode::compute() {
 	case IR_Xor: { Operations::llvm_xor(instruction); break; }
 	case IR_Alloca: { Operations::llvm_alloca(instruction); break; }
 	case IR_Load: {
-        //void * src = std::malloc(sizeof(Addr));
-        //instruction.memory.load.pointer->getValue(src);
         uint64_t src = instruction.memory.load.pointer->value;
 	    comm->enqueueRead((Addr)src, instruction.general.returnRegister->size);
 	    break;
     }
 	case IR_Store: {
-	    //void * dst = std::malloc(sizeof(Addr));
-	    //instruction.dependencies.registers[0]->getValue(dst);
-	    uint64_t dst = instruction.dependencies.registers[0]->value;
-        uint64_t data = instruction.dependencies.registers[1]->getStoredValue();
-
-	    comm->enqueueWrite((Addr)dst, (uint8_t *)(&data),
-	                       instruction.dependencies.registers[1]->size);
+	    uint64_t dst = instruction.dependencies.registers[0]->getValue();
+        uint64_t data = instruction.dependencies.registers[1]->getValue();
+	    comm->enqueueWrite((Addr)dst, (uint8_t *)(&data), instruction.dependencies.registers[1]->size);
         break;
 	}
 	case IR_GetElementPtr: { Operations::llvm_getelementptr(instruction); break; }
@@ -1916,5 +1163,185 @@ ComputeNode::reset() {
 	if (instruction.general.returnRegister != NULL) {
 		instruction.general.returnRegister->reset();
 		instruction.cycle.current = 0;
+	}
+}
+
+void
+ComputeNode::debug(std::vector<std::string> &parameters) {
+	DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
+	for (int debug = 0; debug < parameters.size(); debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
+}
+
+void
+ComputeNode::setFlags(std::vector<std::string> &parameters, Instruction &instruction) {
+	for(int i = 0; i < parameters.size(); i++){
+		if (parameters[i] == "nuw") instruction.flags.nuw = true;
+		else if (parameters[i] == "nsw") instruction.flags.nsw = true;
+		else if (parameters[i] == "nnan") instruction.flags.nnan = true;
+		else if (parameters[i] == "ninf") instruction.flags.ninf = true;
+		else if (parameters[i] == "nsz") instruction.flags.nsz = true;
+		else if (parameters[i] == "arcp") instruction.flags.arcp = true;
+		else if (parameters[i] == "contract") instruction.flags.contract = true;
+		else if (parameters[i] == "afn") instruction.flags.afn = true;
+		else if (parameters[i] == "reassoc") instruction.flags.reassoc = true;
+		else if (parameters[i] == "fast") instruction.flags.fast = true;
+		else if (parameters[i] == "exact") instruction.flags.exact = true;
+	}
+}
+
+bool 
+ComputeNode::isRegister(std::string data){
+	if(data[0] == '%') return true;
+	return false;
+}
+
+void
+ComputeNode::initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction){
+	int last = parameters.size() - 1;
+	if(instruction.general.binary){
+		// Set instruction return type <ty>
+		instruction.binary.ty = parameters[last - 2];
+		// Set size of return register to match instruction return type
+		instruction.general.returnRegister->setSize(instruction.binary.ty);	
+	}
+	else if(instruction.general.bitwise){
+		// Set instruction return type <ty>
+		instruction.bitwise.ty = parameters[last - 2];
+		// Set size of return register to match instruction return type
+		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
+	}
+}
+
+void
+ComputeNode::setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction) {
+	int last = parameters.size() - 1;
+	if(instruction.general.binary){
+		// Operand 2
+		// Check if adding from register or immediate value
+		if (parameters[last][0] == '%') {
+			// Value Stored in register
+			// Substring to remove % symbol
+			// Check register list to see if register already exists
+			if (list->findRegister(parameters[last].substr(1)) == NULL) {
+				// Create new register
+				// Set operand to point to new register
+				instruction.binary.op2 = new Register(parameters[last].substr(1));
+				// Add new register to register list
+				list->addRegister(instruction.binary.op2);
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
+				// Increment dependencies count for operation
+				dependencies++;
+			} else {
+				// Register already exists, update instruction pointer
+				instruction.binary.op2 = list->findRegister(parameters[last].substr(1));
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
+				// Increment dependencies count for operation
+				dependencies++;
+			}
+		} else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.binary.immediate2 = true;
+			// Load string representation of immediate value
+			instruction.binary.iop2 = parameters[last];
+		}
+
+		// Operand 1
+		// Check if value is from register or immediate value
+		if (parameters[last - 1][0] == '%') {
+			// Value Stored in register
+			// Substring to remove % symbol
+			// Check register list to see if register already exists
+			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
+				// Create new register
+				// Set operand to point to new register
+				instruction.binary.op1 = new Register(parameters[last - 1].substr(1));
+				// Add new register to register list
+				list->addRegister(instruction.binary.op1);
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
+				// Increment dependencies count for operation
+				dependencies++;
+			} else {
+				// Register already exists, update instruction pointer
+				instruction.binary.op1 = list->findRegister(parameters[last - 1].substr(1));
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
+				// Increment dependencies count for operation
+				dependencies++;
+			}
+		} else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.binary.immediate1 = true;
+			// Load string representation of immediate value
+			instruction.binary.iop1 = parameters[last - 1];
+		}
+	} else if(instruction.general.bitwise) {
+		// Operand 2
+		// Check if adding from register or immediate value
+		if (parameters[last][0] == '%') {
+			// Value Stored in register
+			// Substring to remove % symbol
+			// Check register list to see if register already exists
+			if (list->findRegister(parameters[last].substr(1)) == NULL) {
+				// Create new register
+				// Set operand to point to new register
+				instruction.bitwise.op2 = new Register(parameters[last].substr(1));
+				// Add new register to register list
+				list->addRegister(instruction.bitwise.op2);
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
+				// Increment dependencies count for operation
+				dependencies++;
+			} else {
+				// Register already exists, update instruction pointer
+				instruction.bitwise.op2 = list->findRegister(parameters[last].substr(1));
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
+				// Increment dependencies count for operation
+				dependencies++;
+			}
+		} else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.bitwise.immediate2 = true;
+			// Load string representation of immediate value
+			instruction.bitwise.iop2 = parameters[last];
+		}
+
+		// Operand 1
+		// Check if value is from register or immediate value
+		if (parameters[last - 1][0] == '%') {
+			// Value Stored in register
+			// Substring to remove % symbol
+			// Check register list to see if register already exists
+			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
+				// Create new register
+				// Set operand to point to new register
+				instruction.bitwise.op1 = new Register(parameters[last - 1].substr(1));
+				// Add new register to register list
+				list->addRegister(instruction.bitwise.op1);
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
+				// Increment dependencies count for operation
+				dependencies++;
+			} else {
+				// Register already exists, update instruction pointer
+				instruction.bitwise.op1 = list->findRegister(parameters[last - 1].substr(1));
+				// Update dependencies for this operation
+				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
+				// Increment dependencies count for operation
+				dependencies++;
+			}
+		} else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.bitwise.immediate1 = true;
+			// Load string representation of immediate value
+			instruction.bitwise.iop1 = parameters[last - 1];
+		}
 	}
 }

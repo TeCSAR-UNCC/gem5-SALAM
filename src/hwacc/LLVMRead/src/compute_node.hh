@@ -164,7 +164,11 @@ public:
   void compute();
   bool commit();
   bool checkDependency();
-
+  void debug(std::vector<std::string> &parameters);
+  void setFlags(std::vector<std::string> &parameters, Instruction &instruction);
+  bool isRegister(std::string data);
+  void setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction);
+  void initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction);
 protected:
 };
 
