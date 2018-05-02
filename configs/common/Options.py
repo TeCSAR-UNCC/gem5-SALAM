@@ -291,7 +291,8 @@ def addCommonOptions(parser):
     parser.add_option("--arm-iset", default="arm", type="choice",
                       choices=["arm", "thumb", "aarch64"],
                       help="ARM instruction set.")
-
+    parser.add_option("--accpath", action="store", type="string",
+                      help="""Path to folders containing accelerator benchmarks""", default="")
 
 def addSEOptions(parser):
     # Benchmark options

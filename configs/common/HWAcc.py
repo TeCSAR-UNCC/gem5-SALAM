@@ -16,7 +16,7 @@ def makeHWAcc(options, system):
 #    system.l2cache.mem_side = system.iobus.slave
 #    system.vadd.mem_side = system.l2cache.cpu_side
     system.vadd.llvm_interface = LLVMInterface()
-    system.vadd.llvm_interface.in_file = "/home/samerogers/gem5/src/hwacc/LLVMRead/Benchmarks/vadd/vadd/vadd.ll"
+    system.vadd.llvm_interface.in_file = options.accpath + "/vadd/vadd/vadd.ll"
     system.vadd.int_num = 68
     system.vadd.clock_period = 10
 
