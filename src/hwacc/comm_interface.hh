@@ -7,6 +7,7 @@
 #include "dev/arm/base_gic.hh"
 #include "hwacc/compute_unit.hh"
 
+#include <list>
 #include <queue>
 
 #define NUM_PORTS 4
@@ -101,19 +102,19 @@ class CommInterface : public BasicPioDevice
         MemRequest(Addr add, uint8_t *data, size_t len);
     };
 
-    std::queue<MemRequest*> *readQueue;
-    std::queue<MemRequest*> *writeQueue;
-    int readQueueSize, writeQueueSize;
+    std::list<MemRequest*> *readQueue;
+    std::list<MemRequest*> *writeQueue;
+    std::list<MemRequest*> *dramRdQ;
+    std::list<MemRequest*> *dramWrQ;
+    std::list<MemRequest*> *spmRdQ;
+    std::list<MemRequest*> *spmWrQ;
 
-    MemSidePort memPort0;
-    //MemSidePort* dataPort0;
-    MemSidePort memPort1;
-    //MemSidePort* dataPort1;
-    MemSidePort memPort2;
-    //MemSidePort* dataPort2;
-    MemSidePort memPort3;
-    //MemSidePort* dataPort3;
-    MemSidePort* dataPort[NUM_PORTS];
+    MemSidePort dramSide;
+    MemSidePort spmSide;
+    MemSidePort *dramPort;
+    MemSidePort *spmPort;
+
+    AddrRange dramRange;
 
     CommInterface *comm;
     MasterID masterId;
@@ -176,15 +177,26 @@ class CommInterface : public BasicPioDevice
     void finish();
 
     MemRequest * findMemRequest(PacketPtr pkt, bool isRead) {
-        for(int i = 0; i < NUM_PORTS; i++)
-        {
-            if (isRead) {
-                if (dataPort[i]->readReq->pkt == pkt) {
-                    return dataPort[i]->readReq;
+        if (isRead) {
+            for (auto it=dramRdQ->begin(); it!=dramRdQ->end(); ++it) {
+                if ((*it)->pkt == pkt) {
+                    return (*it);
                 }
-            } else {
-                if (dataPort[i]->writeReq->pkt == pkt) {
-                    return dataPort[i]->writeReq;
+            }
+            for (auto it=spmRdQ->begin(); it!=dramRdQ->end(); ++it) {
+                if ((*it)->pkt == pkt) {
+                    return (*it);
+                }
+            }
+        } else {
+            for (auto it=dramWrQ->begin(); it!=dramWrQ->end(); ++it) {
+                if ((*it)->pkt == pkt) {
+                    return (*it);
+                }
+            }
+            for (auto it=spmWrQ->begin(); it!=dramWrQ->end(); ++it) {
+                if ((*it)->pkt == pkt) {
+                    return (*it);
                 }
             }
         }
