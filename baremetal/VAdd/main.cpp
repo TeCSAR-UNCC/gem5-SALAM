@@ -58,6 +58,7 @@ int main(void) {
     vas.b = b;
     vas.c = c;
     vas.length = LENGTH;
+
     printf("Generating data\n");
     genData(&vas);
     printf("Data generated\n");
@@ -75,6 +76,7 @@ int main(void) {
 	while(acc != 0x4) {
         printf("%d\n", acc);
 	}
+
 	if(!checkData(&vas)) {
 	    for (i = 0; i < LENGTH; i++) {
 	        printf("C[%2d]=%d\n", i, vas.c[i]);
