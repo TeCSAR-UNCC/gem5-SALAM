@@ -26,6 +26,6 @@ def makeHWAcc(options, system):
     system.vadd.int_num = 68
     system.vadd.clock_period = 10
 
-    system.vadd.spad = SimpleMemory(range=AddrRange(0x2f000020, size='4kB'),
+    system.vadd.spad = SimpleMemory(range=AddrRange(0x2f000020, size='8kB'),
                                   conf_table_reported=False, latency='6ns')
     system.vadd.spad.port = system.iobus.master
