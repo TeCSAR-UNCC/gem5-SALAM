@@ -16,7 +16,7 @@ define void @vadd(i32* nocapture readonly %a, i32* nocapture readonly %b, i32* n
   %7 = getelementptr inbounds i32, i32* %c, i64 %indvars.iv
   store i32 %6, i32* %7, align 4, !tbaa !1
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
-  %exitcond = icmp eq i64 %indvars.iv.next, 256
+  %exitcond = icmp eq i64 %indvars.iv.next, 1024
   br i1 %exitcond, label %8, label %1, !llvm.loop !5
 
 ; <label>:8                                       ; preds = %1

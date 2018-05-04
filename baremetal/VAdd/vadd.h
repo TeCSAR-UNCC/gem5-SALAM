@@ -8,19 +8,19 @@ typedef struct {
     int * a;
     int * b;
     int * c;
-    int * check;
     int length;
 } vadd_struct;
 
-void checkData(vadd_struct * vas) {
+int checkData(vadd_struct * vas) {
     int i;
     for (i = 0; i < vas->length; i++) {
-        if (vas->c[i] != vas->check[i]) {
+        if (vas->c[i] != vas->a[i]+vas->b[i]) {
             printf("Check Failed\n");
-            return;
+            return 0;
         }
     }
     printf("Check Passed\n");
+    return 1;
 }
 
 void genData(vadd_struct * vas) {
@@ -28,6 +28,5 @@ void genData(vadd_struct * vas) {
     for (i = 0; i < vas->length; i++) {
         vas->a[i] = i;
         vas->b[i] = vas->length - i;
-        vas->check[i] = vas->a[i] + vas->b[i];
     }
 }
