@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <iomanip>
 
 using namespace std;
 
@@ -412,7 +412,20 @@ CommInterface::write(PacketPtr pkt) {
 
     pkt->writeData(mmreg + (pkt->req->getPaddr() - io_addr));
 
-    DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
+    //DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
+    std::stringstream mm;
+    for (int i = io_size-1; i >= 0; i--) {
+        if ((i >= flag_size+config_size) && ((i-flag_size-config_size)%8 == 0))
+            mm << std::setfill('0') << std::setw(2) << std::hex << (uint32_t)mmreg[i] << "|";
+        else if (i == flag_size+config_size)
+            mm << "|" << std::setfill('0') << std::setw(2) << std::hex << (uint32_t)mmreg[i];
+        else if (i == flag_size)
+            mm << "|" << std::setfill('0') << std::setw(2) << std::hex << (uint32_t)mmreg[i];
+        else
+            mm << std::setfill('0') << std::setw(2) << std::hex << (uint32_t)mmreg[i];
+    }
+    std::string mmr = mm.str();
+    DPRINTF(CommInterface, "MMReg value: %s\n", mmr);
 
     pkt->makeAtomicResponse();
 
