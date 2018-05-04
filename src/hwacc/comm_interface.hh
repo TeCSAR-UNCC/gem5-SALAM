@@ -202,6 +202,8 @@ class CommInterface : public BasicPioDevice
         }
         return NULL;
     }
+
+    void clearMemRequest(MemRequest * req, bool isRead);
   protected:
 };
 

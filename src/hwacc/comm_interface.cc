@@ -104,6 +104,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
         {
             DPRINTF(CommInterface, "Done reading\n");
             cu->readCommit(readReq->buffer);
+            clearMemRequest(readReq, true);
             delete readReq;
         }
     } else if (pkt->isWrite()) {
@@ -115,6 +116,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
             cu->writeCommit();
             delete[] writeReq->buffer;
             delete[] writeReq->readsDone;
+            clearMemRequest(writeReq, false);
             delete writeReq;
         }
     } else {
@@ -492,4 +494,39 @@ CommInterface::MemRequest::MemRequest(Addr add, uint8_t *data, size_t len) {
     pkt = NULL;
 }
 
-
+void
+CommInterface::clearMemRequest(MemRequest * req, bool isRead) {
+    if (isRead) {
+        if (dramRange.contains(req->address)) {
+            for (auto it=dramRdQ->begin(); it!=dramRdQ->end(); ++it) {
+                if ((*it)==req) {
+                    it=dramRdQ->erase(it);
+                    break;
+                }
+            }
+        } else {
+            for (auto it=spmRdQ->begin(); it!=dramRdQ->end(); ++it) {
+                if ((*it) == req) {
+                    it=spmRdQ->erase(it);
+                    break;
+                }
+            }
+        }
+    } else {
+        if (dramRange.contains(req->address)) {
+            for (auto it=dramWrQ->begin(); it!=dramWrQ->end(); ++it) {
+                if ((*it) == req) {
+                    it=dramWrQ->erase(it);
+                    break;
+                }
+            }
+        } else {
+            for (auto it=spmWrQ->begin(); it!=dramWrQ->end(); ++it) {
+                if ((*it) == req) {
+                    it=spmWrQ->erase(it);
+                    break;
+                }
+            }
+        }
+    }
+}
