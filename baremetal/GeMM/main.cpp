@@ -36,36 +36,64 @@
 #include <cstdio>
 #include "gemm.h"
 
+
 gemm_struct ges;
 
 int main(void) {
-	int *a = (int *)0x80c00000;
-	int *b = (int *)0x80d00000;
-	int *c = (int *)0x80e00000;
-	int *check;
-	int row_size = 4;
-    int col_size = 4;
+    uint64_t base = 0x80c00000;
+	double *m1 = (double *)base;
+	double *m2 = (double *)(base+8*ROW*COL);
+	double *m3 = (double *)(base+16*ROW*COL);
+	double *check = (double *)(base+24*ROW*COL);
+	int row_size = ROW;
+    int col_size = COL;
 
 	common_val = 0;
 
-    ges.a = a;
-    ges.b = b;
-    ges.c = c;
-    ges.check = check;
+    ges.a = m1;
+    ges.b = m2;
+    ges.c = m3;
     ges.row_size = row_size;
     ges.col_size = col_size;
 
     genData(&ges);
 
-    val_a = 0x0000000080c00000;
-    val_b = 0x0000000080d00000;
-    val_c = 0x0000000080e00000;
+    val_a = (uint64_t)base;
+    val_b = (uint64_t)(base+8*ROW*COL);
+    val_c = (uint64_t)(base+16*ROW*COL);
 
-    int i;
-    printf("\n");
+    printf("%d\n", acc);
     acc = 0x01;
-
-	while(!common_val) {
-        checkData(&ges);
+    printf("%d\n", acc);
+	while(acc != 0x4) {
+        printf("%d\n", acc);
 	}
+	bool fail = false;
+	int i, j, k, k_col, i_col;
+	double sum = 0;
+	double mult = 0;
+
+	for(i=0;i<ROW;i++) {
+        for(j=0;j<COL;j++) {
+            i_col = i * COL;
+            sum = 0;
+            for(k=0;k<ROW;k++) {
+                k_col = k * COL;
+                mult = m1[i_col + k] * m2[k_col + j];
+                sum += mult;
+            }
+            check[i_col + j] = sum;
+        }
+    }
+
+    for(i=0; i<ROW*COL; i++) {
+        printf("Expected:%f Actual:%f\n", check[i], m3[ROW*COL + i]);
+        if(m3[ROW*COL + i] != check[i])
+            fail = true;
+    }
+
+    if(fail)
+        printf("Check Failed\n");
+    else
+        printf("Check Passed\n");
 }

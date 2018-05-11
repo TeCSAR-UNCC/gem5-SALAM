@@ -596,10 +596,13 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.memory.load.ty = parameters[index];
 		// Set return register type and size
 		instruction.general.returnRegister->setSize(instruction.memory.load.ty);
+		int align = 0;
+		while (parameters[align].compare("align") != 0)
+		    align++;
 		// Determine if register that contains load address exists
-		if (list->findRegister(parameters[index + 2].substr(1)) == NULL) {
+		if (list->findRegister(parameters[align - 1].substr(1)) == NULL) {
 			// Create register and store as load pointer
-			instruction.memory.load.pointer = new Register(parameters[index + 2].substr(1));
+			instruction.memory.load.pointer = new Register(parameters[align - 1].substr(1));
 			// Add register to register list
 			list->addRegister(instruction.memory.load.pointer);
 			// Add register to dependencies list
@@ -608,14 +611,15 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			dependencies++;
 		} else {
 			// Assign the register to the load pointer
-			instruction.memory.load.pointer = list->findRegister(parameters[index + 2].substr(1));
+			instruction.memory.load.pointer = list->findRegister(parameters[align - 1].substr(1));
 			// Add register to dependencies list
 			instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
 			// Increment dependencies count for instruction
 			dependencies++;
 		}
-		// Set value for alignment 
-		instruction.memory.load.align = stoi(parameters[index + 4]);
+		// Set value for alignment
+		DPRINTF(ComputeNode, "Align: %s\n", parameters[align]);
+	        instruction.memory.load.align = stoi(parameters[align + 1]);
 		break;
 	}
 	case IR_Store: {
@@ -671,11 +675,17 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.memory.getptr.inbounds = true;
 			instruction.memory.getptr.pty = parameters[1];
 			instruction.memory.getptr.ptrval = parameters[3];
-			index = 3;
+			if(parameters[1].back() != '*')
+			    index = 3;
+		    else
+		        index = 2;
 		} else {
 			instruction.memory.getptr.pty = parameters[0];
 			instruction.memory.getptr.ptrval = parameters[2];
-			index = 2;
+			if(parameters[0].back() != '*')
+			    index = 2;
+		    else
+		        index = 1;
 		}
 		int j = 0;
 		for (int i = 0; i + index <= last; i += 2) {

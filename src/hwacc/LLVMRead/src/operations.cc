@@ -423,7 +423,16 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		currentValue[i] = 0;
 		size[i] = 1;
 	}
-	size[0] = stoi(instruction.memory.getptr.ty[0].substr(1)) / 8;
+	if (instruction.memory.getptr.ty[0][0] == 'i') {
+		size[0] = (stoi(instruction.memory.getptr.ty[0].substr(1))) / 8;
+	} else {
+		if (instruction.memory.getptr.ty[0].find("double") > 0) {
+			size[0] = 8;
+		} else if (instruction.memory.getptr.ty[0].find("float") > 0) {
+			size[0] = 4;
+		}
+	}
+//	size[0] = stoi(instruction.memory.getptr.ty[0].substr(1)) / 8;
 
 	for (int i = 1; i < index; i++) {
 //		if (instruction.memory.getptr.ty[i][0] == 'i') {

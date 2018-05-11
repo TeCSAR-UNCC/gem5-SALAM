@@ -7,8 +7,8 @@
 #define TYPE double
 
 //Specify row/column sizes
-#define row_size 64
-#define col_size 64
+#define row_size 16
+#define col_size 16
 #define N row_size*col_size
 
 //Define the input range to operate over

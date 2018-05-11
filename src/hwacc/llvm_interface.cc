@@ -149,7 +149,9 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
             //currBB <- Calculate branch
             prevBB = currBB;
             (*it)->compute();
+            instr = (*it)->getInstruction();
             currBB = findBB(instr.terminator.dest);
+            assert(currBB);
             scheduleBB(currBB);
         } else {
             (*it)->reset();
@@ -210,7 +212,7 @@ LLVMInterface::constructBBList() {
                     } else if (line.find(".") == 0) {
                         int labelEnd = line.find(" ");
                         prevBB = currBB;
-                        currBB = new BasicBlock(line.substr(1,(labelEnd - 1)), bbnum);
+                        currBB = new BasicBlock(line.substr(0,(labelEnd-1)), bbnum);
                         DPRINTF(LLVMParse, "Found Basic Block: %s\n", currBB->name);
                         bbnum++;
                         bbList->push_back(currBB);
