@@ -35,6 +35,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include "vadd.h"
 
 #define SPM
@@ -43,11 +44,8 @@
 vadd_struct vas;
 
 int main(void) {
-#ifndef SPM
 	uint64_t base = 0x80c00000;
-#else
-    uint64_t base = 0x2f000020;
-#endif
+    uint64_t spm_base = 0x2f000020;
 
 	int *a = (int *)(base+0);
 	int *b = (int *)(base+4*LENGTH);
@@ -62,11 +60,18 @@ int main(void) {
     printf("Generating data\n");
     genData(&vas);
     printf("Data generated\n");
-
+#ifndef SPM
     val_a = (uint64_t)base;
     val_b = (uint64_t)(base+4*LENGTH);
     val_c = (uint64_t)(base+8*LENGTH);
+#else
+    val_a = (uint64_t)spm_base;
+    val_b = (uint64_t)(spm_base+4*LENGTH);
+    val_c = (uint64_t)(spm_base+8*LENGTH);
 
+    std::memcpy((void *)spm_base, (void *)a, 4*LENGTH);
+    std::memcpy((void *)(spm_base+4*LENGTH), (void *)b, 4*LENGTH);
+#endif
     int i;
     printf("%d\n", acc);
 
@@ -76,7 +81,10 @@ int main(void) {
 	while(acc != 0x4) {
         printf("%d\n", acc);
 	}
-
+#ifdef SPM
+    std::memcpy((void *)c, (void *)(spm_base+8*LENGTH), 4*LENGTH);
+#endif
+    acc = 0x00;
 	if(!checkData(&vas)) {
 	    for (i = 0; i < LENGTH; i++) {
 	        printf("C[%2d]=%d\n", i, vas.c[i]);

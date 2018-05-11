@@ -8,7 +8,7 @@ def makeHWAcc(options, system):
     system.vadd.flags_size = 1;
     system.vadd.config_size = 0;
     if options.acc_cache:
-        system.acc_cache = Cache(assoc=2, tag_latency=2, data_latency=2, response_latency=2, mshrs=4, size='1kB', tgts_per_mshr=20)
+        system.acc_cache = Cache(assoc=4, tag_latency=4, data_latency=2, response_latency=2, mshrs=4, size='1kB', tgts_per_mshr=20)
         if options.l2cache:
             system.acc_cache.mem_side = system.tol2bus.slave
         else:
@@ -27,5 +27,5 @@ def makeHWAcc(options, system):
     system.vadd.clock_period = 10
 
     system.vadd.spad = SimpleMemory(range=AddrRange(0x2f000020, size='64kB'),
-                                  conf_table_reported=False, latency='6ns')
+                                  conf_table_reported=False, latency='2ns')
     system.vadd.spad.port = system.iobus.master

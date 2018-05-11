@@ -1,12 +1,12 @@
 #!/bin/bash
-FLAGS=IOAcc,CommInterface,LLVMInterface,LLVMRuntime,-LLVMParse,Interrupt
+FLAGS=IOAcc,CommInterface,LLVMInterface,LLVMRuntime,LLVMParse,Interrupt
 SYS_OPTS="--mem-size=4GB \
           --kernel=$M5_PATH/baremetal/VAdd/main.elf \
           --disk-image=$M5_PATH/baremetal/common/fake.iso \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
           --cpu-type=TimingSimpleCPU"
-CACHE_OPTS="--caches --acc_cache --l2cache"
+CACHE_OPTS="--acc_cache"
 # Script to start up full system simulation
 build/ARM/gem5.opt --debug-flags=$FLAGS --outdir=BM_ARM_OUT configs/example/fs.py \
 $SYS_OPTS --accpath=$M5_PATH/src/hwacc/LLVMRead/Benchmarks \
