@@ -3,8 +3,8 @@
 #define val_a      *(int *)0x2f000001
 #define val_b      *(int *)0x2f000009
 #define val_c      *(int *)0x2f000011
-#define ROW 16
-#define COL 16
+#define ROW 32
+#define COL 32
 #define rcIndex     (r*ROW + c)
 
 typedef struct {

@@ -41,6 +41,7 @@ gemm_struct ges;
 
 int main(void) {
     uint64_t base = 0x80c00000;
+    //uint64_t base = 0x2f000020;
 	double *m1 = (double *)base;
 	double *m2 = (double *)(base+8*ROW*COL);
 	double *m3 = (double *)(base+16*ROW*COL);
@@ -56,7 +57,9 @@ int main(void) {
     ges.row_size = row_size;
     ges.col_size = col_size;
 
+    printf("Generating data\n");
     genData(&ges);
+    printf("Data generated\n");
 
     val_a = (uint64_t)base;
     val_b = (uint64_t)(base+8*ROW*COL);
@@ -86,11 +89,11 @@ int main(void) {
         }
     }
 
-    for(i=0; i<ROW*COL; i++) {
-        printf("Expected:%f Actual:%f\n", check[i], m3[ROW*COL + i]);
-        if(m3[ROW*COL + i] != check[i])
-            fail = true;
-    }
+//    for(i=0; i<ROW*COL; i++) {
+//        printf("Expected:%f Actual:%f\n", check[i], m3[i]);
+//        if(m3[i] != check[i])
+//            fail = true;
+//    }
 
     if(fail)
         printf("Check Failed\n");

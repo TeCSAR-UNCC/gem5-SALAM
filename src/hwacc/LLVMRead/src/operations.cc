@@ -178,9 +178,15 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 	float fresult;
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
+	else {
+	    uint64_t temp1 = instruction.binary.op1->getValue();
+	    op1 = *(double *)&temp1;
+	}
 	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	else {
+	    uint64_t temp2 = instruction.binary.op2->getValue();
+	    op2 = *(double *)&temp2;
+	}
 	// Perform arithmetic
 	result = op1 + op2;
 	// Store result in return register
@@ -224,9 +230,15 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 	float fresult;
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
+	else {
+	    uint64_t temp1 = instruction.binary.op1->getValue();
+	    op1 = *(double *)&temp1;
+	}
 	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	else {
+	    uint64_t temp2 = instruction.binary.op2->getValue();
+	    op2 = *(double *)&temp2;
+	}
 	// Perform arithmetic
 	result = op1 * op2;
 	// Store result in return register
@@ -426,12 +438,13 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	if (instruction.memory.getptr.ty[0][0] == 'i') {
 		size[0] = (stoi(instruction.memory.getptr.ty[0].substr(1))) / 8;
 	} else {
-		if (instruction.memory.getptr.ty[0].find("double") > 0) {
+		if (instruction.memory.getptr.ty[0].find("ouble") > 0) {
 			size[0] = 8;
-		} else if (instruction.memory.getptr.ty[0].find("float") > 0) {
+		} else if (instruction.memory.getptr.ty[0].find("loat") > 0) {
 			size[0] = 4;
 		}
 	}
+	DPRINTF(LLVMOp, "Size of data type: %d\n", size[0]);
 //	size[0] = stoi(instruction.memory.getptr.ty[0].substr(1)) / 8;
 
 	for (int i = 1; i < index; i++) {

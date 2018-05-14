@@ -28,14 +28,14 @@ public:
   std::string getName() { return name; }
   std::string getType() { return dataType; }
   uint64_t getValue() { return value; }
-  void getValue(void *data) { memcpy(&data, &value, size); }
+  void getValue(void *data) { memcpy(data, &value, size); }
   void commit() { hot = false; }
   void reset() { hot = true; }
   void setType(std::string type) { dataType = type; }
   void setSize();
   void setSize(std::string type);
   void setValue();
-  void setValue(void *data) { memcpy(&value, data, size); }
+  void setValue(void *data);
 };
 
 class RegisterList{

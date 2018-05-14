@@ -30,20 +30,20 @@ Register::setSize(){
     }
     // Floating point data types    
     // Set size if dataType is float
-    else if (temp.find("float")) size = 4;
+    else if (temp.find("float") > -1) size = 4;
     // Set size if dataType is double
-    else if (temp.find("double")) size = 8;
+    else if (temp.find("double") > -1) size = 8;
     // Set size if dataType is void
-    else if (temp.find("void")) size = 0;
+    else if (temp.find("void") > -1) size = 0;
     // Aggregate data types
     // Array dataType
     else if (temp[0] == '[') { }
     // Struct dataType
-    else if (temp.find("{")) { }
+    else if (temp.find("{") > -1) { }
     // Unspecified dataType
     // Label
     // Treat size equivalent to a pointer
-    else if (temp.find("label")) size = 8;
+    else if (temp.find("label") > -1) size = 8;
     // Unknown dataType
     else { }
 }
@@ -58,4 +58,8 @@ RegisterList::findRegister(std::string name) {
         if ((*it)->name.compare(name) == 0) return *it;
     }
     return NULL;
+}
+void
+Register::setValue(void *data) { 
+    memcpy(&value, data, size);
 }
