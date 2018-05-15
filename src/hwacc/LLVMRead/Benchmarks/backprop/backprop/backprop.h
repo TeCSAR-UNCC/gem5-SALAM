@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../../common/support.h"
+#include "support.h"
 
 // Fixed parameters
 #define input_dimension  13

@@ -35,13 +35,6 @@ void ms_mergesort(TYPE a[SIZE], TYPE temp[SIZE]) {
     int start, stop;
     int i, m, from, mid, to;
 
-#ifdef DMA_MODE
-    dmaLoad(&a[0], 0 * 1024 * sizeof(TYPE), PAGE_SIZE);
-    dmaLoad(&a[0], 1 * 1024 * sizeof(TYPE), PAGE_SIZE);
-    dmaLoad(&a[0], 2 * 1024 * sizeof(TYPE), PAGE_SIZE);
-    dmaLoad(&a[0], 3 * 1024 * sizeof(TYPE), PAGE_SIZE);
-#endif
-
     start = 0;
     stop = SIZE;
 
@@ -58,10 +51,4 @@ void ms_mergesort(TYPE a[SIZE], TYPE temp[SIZE]) {
             }
         }
     }
-#ifdef DMA_MODE
-    dmaStore(&a[0], 0 * 1024 * sizeof(TYPE), PAGE_SIZE);
-    dmaStore(&a[0], 1 * 1024 * sizeof(TYPE), PAGE_SIZE);
-    dmaStore(&a[0], 2 * 1024 * sizeof(TYPE), PAGE_SIZE);
-    dmaStore(&a[0], 3 * 1024 * sizeof(TYPE), PAGE_SIZE);
-#endif
 }

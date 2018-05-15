@@ -1,7 +1,9 @@
-void vadd(int* a, int* b, int* c) {
+#include "/home/samerogers/gem5/baremetal/VAdd/defines.h"
+
+void vadd(TYPE* a, TYPE* b, TYPE* c) {
     int i;
     #pragma clang loop unroll(disable)
-    for (i = 0; i < 1024; i++) {
+    for (i = 0; i < LENGTH; i++) {
         c[i] = a[i] + b[i];
     }
 }
