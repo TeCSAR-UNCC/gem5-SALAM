@@ -88,7 +88,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
         MemoryRequest * readReq = findMemRequest(pkt, true);
         DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         pkt->writeData(readReq->buffer + (pkt->req->getPaddr() - readReq->beginAddr));
-        DPRINTF(CommInterface, "Read:%d\n", *(int *)readReq->buffer);
+        DPRINTF(CommInterface, "Read:0x%016lx\n", *(uint64_t *)readReq->buffer);
         for (int i = pkt->req->getPaddr() - readReq->beginAddr;
              i < pkt->req->getPaddr() - readReq->beginAddr + pkt->getSize(); i++)
         {
