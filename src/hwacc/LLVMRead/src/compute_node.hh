@@ -6,6 +6,7 @@
 #include "operations.hh"
 #include "instruction.hh"
 #include "hwacc/comm_interface.hh"
+#include "mem_request.hh"
 #include "base/types.hh"
 #include <vector>
 
@@ -154,6 +155,7 @@ private:
   int dependencies = 0;
   std::string prevBB;
   CommInterface *comm;
+  MemoryRequest *req;
 
 public:
   ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co);
@@ -169,6 +171,7 @@ public:
   bool isRegister(std::string data);
   void setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction);
   void initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction);
+  MemoryRequest * getReq() { return req; }
 protected:
 };
 

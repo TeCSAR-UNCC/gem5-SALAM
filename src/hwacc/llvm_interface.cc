@@ -74,11 +74,11 @@ LLVMInterface::tick() {
             DPRINTF(LLVMInterface, "Non-Terminator Instruction Operation \n");
             if (instr.general.opCode.find("load") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Load\n");
-                readQueue->push(*it);
+                readQueue->push_back(*it);
                 (*it)->compute();
             } else if (instr.general.opCode.find("store") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Store\n");
-                writeQueue->push(*it);
+                writeQueue->push_back(*it);
                 (*it)->compute();
             } else if (instr.general.opCode.find("phi") == 0) {
                 DPRINTF(LLVMInterface, "Queueing PHI\n");
@@ -249,20 +249,28 @@ LLVMInterface::findBB(std::string bbname) {
 }
 
 void
-LLVMInterface::readCommit(uint8_t * data) {
-    Instruction instr = readQueue->front()->getInstruction();
-    instr.general.returnRegister->setValue(data);
-    instr.general.returnRegister->commit();
-    DPRINTF(LLVMInterface, "Read Operation Complete\n%s\n", instr.general.llvm_Line);
-    DPRINTF(LLVMRegister, "Commit %s\n", instr.general.returnRegister->getName());
-    readQueue->pop();
+LLVMInterface::readCommit(MemoryRequest * req) {
+    for (auto it=readQueue->begin(); it!=readQueue->end(); ++it) {
+        if ((*it)->getReq() == req) {
+            Instruction instr = (*it)->getInstruction();
+            instr.general.returnRegister->setValue(req->buffer);
+            instr.general.returnRegister->commit();
+            DPRINTF(LLVMInterface, "Read Operation Complete\n%s\n", instr.general.llvm_Line);
+            DPRINTF(LLVMRegister, "Commit %s\n", instr.general.returnRegister->getName());
+            it = readQueue->erase(it);
+        }
+    }
 }
 
 void
-LLVMInterface::writeCommit() {
-    Instruction instr = writeQueue->front()->getInstruction();
-    DPRINTF(LLVMInterface, "Store Operation Complete\n%s\n", instr.general.llvm_Line);
-    writeQueue->pop();
+LLVMInterface::writeCommit(MemoryRequest * req) {
+    for (auto it=writeQueue->begin(); it!=writeQueue->end(); ++it) {
+        if ((*it)->getReq() == req) {
+            Instruction instr = (*it)->getInstruction();
+            DPRINTF(LLVMInterface, "Store Operation Complete\n%s\n", instr.general.llvm_Line);
+            it = writeQueue->erase(it);
+        }
+    }
 }
 
 void
@@ -277,11 +285,11 @@ LLVMInterface::initialize() {
     //}
     //if (!readQueue) {
         DPRINTF(LLVMInterface, "Initializing readQueue queue\n");
-        readQueue = new std::queue<ComputeNode*>();
+        readQueue = new std::list<ComputeNode*>();
     //}
     //if (!writeQueue) {
         DPRINTF(LLVMInterface, "Initializing writeQueue queue\n");
-        writeQueue = new std::queue<ComputeNode*>();
+        writeQueue = new std::list<ComputeNode*>();
     //}
     //if (!computeQueue) {
         DPRINTF(LLVMInterface, "Initializing computeQueue list\n");

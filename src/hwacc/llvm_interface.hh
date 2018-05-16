@@ -21,8 +21,8 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock *prevBB;
     ComputeNode *currCompNode;
     std::list<ComputeNode*> *reservation;
-    std::queue<ComputeNode*> *readQueue;
-    std::queue<ComputeNode*> *writeQueue;
+    std::list<ComputeNode*> *readQueue;
+    std::list<ComputeNode*> *writeQueue;
     std::list<ComputeNode*> *computeQueue;
     int process_delay;
     int cycle;
@@ -38,8 +38,8 @@ class LLVMInterface : public ComputeUnit {
 
     void scheduleBB(BasicBlock *bb);
 
-    void readCommit(uint8_t * data);
-    void writeCommit();
+    void readCommit(MemoryRequest * req);
+    void writeCommit(MemoryRequest * req);
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

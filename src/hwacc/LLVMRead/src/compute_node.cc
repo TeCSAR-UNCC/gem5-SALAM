@@ -1069,13 +1069,15 @@ ComputeNode::compute() {
 	case IR_Alloca: { Operations::llvm_alloca(instruction); break; }
 	case IR_Load: {
         uint64_t src = instruction.memory.load.pointer->value;
-	    comm->enqueueRead((Addr)src, instruction.general.returnRegister->size);
+        req = new MemoryRequest((Addr)src, instruction.general.returnRegister->size);
+	    comm->enqueueRead(req);
 	    break;
     }
 	case IR_Store: {
 	    uint64_t dst = instruction.dependencies.registers[0]->getValue();
         uint64_t data = instruction.dependencies.registers[1]->getValue();
-	    comm->enqueueWrite((Addr)dst, (uint8_t *)(&data), instruction.dependencies.registers[1]->size);
+        req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.dependencies.registers[1]->size);
+	    comm->enqueueWrite(req);
         break;
 	}
 	case IR_GetElementPtr: { Operations::llvm_getelementptr(instruction); break; }

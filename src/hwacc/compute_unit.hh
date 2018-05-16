@@ -5,6 +5,7 @@
 #include "params/ComputeUnit.hh"
 #include "sim/sim_object.hh"
 #include "hwacc/comm_interface.hh"
+#include "hwacc/LLVMRead/src/mem_request.hh"
 
 class ComputeUnit : public SimObject {
   private:
@@ -30,8 +31,8 @@ class ComputeUnit : public SimObject {
     virtual void tick() {}
     ComputeUnit(ComputeUnitParams *p);
     virtual void initialize() {}
-    virtual void readCommit(uint8_t * data) {}
-    virtual void writeCommit() {}
+    virtual void readCommit(MemoryRequest * req) {}
+    virtual void writeCommit(MemoryRequest * req) {}
 };
 
 #endif //__HWACC_COMPUTE_UNIT_HH__
