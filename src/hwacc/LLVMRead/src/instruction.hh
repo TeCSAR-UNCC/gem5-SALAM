@@ -165,9 +165,11 @@ struct Instruction {
 			int index;
 			mutable unsigned long long int reference[MAXGPE];
 			std::string pty;
-			std::string ptrval;
+			Register *ptrval;
 			std::string ty[MAXGPE];
 			Register *idx[MAXGPE];
+			int immdx[MAXGPE];
+			bool immediate[MAXGPE];
 		};
 		Load load;
 		Store store;
