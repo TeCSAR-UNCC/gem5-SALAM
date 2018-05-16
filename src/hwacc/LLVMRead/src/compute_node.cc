@@ -123,6 +123,10 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				leftDelimeter = i;
 				if (line[i] == '=') {
 					//Ignore
+				} else if (line[i] == '*') {
+					// Should only occur after finding a struct or vector pointer, append onto
+					// previous parameter
+					parameters[parameters.size()-1]+='*';
 				} else if (line[i] == ',') {
 					//Ignore
 				} else if (line.substr(i + 1).find(" ") > line.substr(i + 1).find(",")) {
@@ -409,6 +413,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FAdd: {
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = 5;
 		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
@@ -430,6 +435,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FSub: {
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = 5;
 		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
@@ -451,6 +457,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FMul: {
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = 5;
 		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
@@ -480,6 +487,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FDiv: {
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = 5;
 		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
@@ -505,6 +513,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FRem: {
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = 5;
 		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
@@ -661,32 +670,73 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		break;
 	}
 	case IR_GetElementPtr: {
-		// <result> = getelementptr <pty>* <ptrval>{, <ty> <idx>}*
-		// <result> = getelementptr inbounds <pty>* <ptrval>{, <ty> <idx>}*
-		// <result> = getelementptr <ptr vector> ptrval, <vector index type> idx
+	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
 
 		int index = 0;
+		int j = 0;
 		instruction.general.memory = true;
 		instruction.general.returnRegister->setSize("pointer");
 
 		if (parameters[0] == "inbounds") {
 			instruction.memory.getptr.inbounds = true;
 			instruction.memory.getptr.pty = parameters[1];
-			instruction.memory.getptr.ptrval = parameters[3];
+			if (list->findRegister(parameters[3].substr(1)) == NULL) {
+				instruction.memory.getptr.ptrval = new Register(parameters[3]);
+				list->addRegister(instruction.memory.getptr.ptrval);
+			} else {
+				instruction.memory.getptr.ptrval = list->findRegister(parameters[3].substr(1));
+			}
 			if(parameters[1].back() != '*')
 			    index = 3;
 		    else
 		        index = 2;
 		} else {
 			instruction.memory.getptr.pty = parameters[0];
-			instruction.memory.getptr.ptrval = parameters[2];
+			if (list->findRegister(parameters[2].substr(1)) == NULL) {
+				instruction.memory.getptr.ptrval = new Register(parameters[3]);
+				list->addRegister(instruction.memory.getptr.ptrval);
+				instruction.dependencies.registers[dependencies] = instruction.memory.getptr.ptrval;
+				dependencies++;
+			} else {
+				instruction.memory.getptr.ptrval = list->findRegister(parameters[2].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.memory.getptr.ptrval;
+				dependencies++;
+			}
 			if(parameters[0].back() != '*')
 			    index = 2;
 		    else
 		        index = 1;
 		}
+		for (int i = 1; i + index <= last; i+=2) {
+			instruction.memory.getptr.ty[j] = parameters[index+i];
+			if(parameters[index+i+1][0] == '%') {
+				instruction.memory.getptr.immediate[j] = false;
+				instruction.memory.getptr.immdx[j] = 0;
+				if (list->findRegister(parameters[index+i+1].substr(1)) == NULL) {
+					instruction.memory.getptr.idx[j] = new Register(parameters[index + i + 1]);
+					list->addRegister(instruction.memory.getptr.idx[j]);
+					instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
+					dependencies++;
+				} else {
+					instruction.memory.getptr.idx[j] = list->findRegister(parameters[index + i + 1].substr(1));
+					instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
+					dependencies++;
+				}
+				DPRINTF(ComputeNode, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
+			}
+			else {
+				instruction.memory.getptr.immediate[j] = true;
+				instruction.memory.getptr.immdx[j] = stoi(parameters[index+i+1]);
+				DPRINTF(ComputeNode, "idx%d = %d\n", j, instruction.memory.getptr.immdx[j]);
+			}
+			j++;
+			instruction.memory.getptr.index = j;
+		}
+		/*
 		int j = 0;
 		for (int i = 0; i + index <= last; i += 2) {
 			instruction.memory.getptr.ty[j] = parameters[index + i - 1];
@@ -705,11 +755,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 					dependencies++;
 				}
 			}
+			DPRINTF(ComputeNode, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
 			j++;
 			instruction.memory.getptr.index = j;
+			
 		}
-
-		
+		*/
 		break;
 	}
 	case IR_Fence: {
@@ -1069,8 +1120,8 @@ ComputeNode::compute() {
 	case IR_Alloca: { Operations::llvm_alloca(instruction); break; }
 	case IR_Load: {
         uint64_t src = instruction.memory.load.pointer->value;
-        req = new MemoryRequest((Addr)src, instruction.general.returnRegister->size);
-	    comm->enqueueRead(req);
+		req = new MemoryRequest((Addr)src, instruction.general.returnRegister->size);
+		comm->enqueueRead(req);
 	    break;
     }
 	case IR_Store: {
@@ -1078,7 +1129,7 @@ ComputeNode::compute() {
         uint64_t data = instruction.dependencies.registers[1]->getValue();
         req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.dependencies.registers[1]->size);
 	    comm->enqueueWrite(req);
-        break;
+		break;
 	}
 	case IR_GetElementPtr: { Operations::llvm_getelementptr(instruction); break; }
 	case IR_Fence: { Operations::llvm_fence(instruction); break; }
