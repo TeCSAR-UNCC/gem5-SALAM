@@ -63,7 +63,7 @@ int main(void) {
     std::memcpy((void *)(SPM_BASE+VAL_OFFSET),  (void *)val,           sizeof(TYPE)*NNZ);
     std::memcpy((void *)(SPM_BASE+COLS_OFFSET), (void *)cols,          sizeof(int)*NNZ);
     std::memcpy((void *)(SPM_BASE+ROWD_OFFSET), (void *)rowDelimiters, sizeof(int)*(N+1));
-    std::memcpy((void *)(SPM_BASE+VEC_OFFSET),  (void *)cols,          sizeof(TYPE)*N);
+    std::memcpy((void *)(SPM_BASE+VEC_OFFSET),  (void *)vec,           sizeof(TYPE)*N);
 #endif
     int i;
     printf("%d\n", acc);
