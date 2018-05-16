@@ -41,7 +41,7 @@ gemm_struct ges;
 
 int main(void) {
     uint64_t base = 0x80c00000;
-    //uint64_t base = 0x2f000020;
+    //uint64_t base = 0x2f100000;
 	TYPE *m1 = (TYPE *)base;
 	TYPE *m2 = (TYPE *)(base+8*ROW*COL);
 	TYPE *m3 = (TYPE *)(base+16*ROW*COL);
@@ -99,4 +99,5 @@ int main(void) {
         printf("Check Failed\n");
     else
         printf("Check Passed\n");
+    *(char *)0x2FFFFFFF = 1;
 }

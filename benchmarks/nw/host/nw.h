@@ -1,0 +1,56 @@
+#include "../defines.h"
+
+#define common_val    *(unsigned *)0x80b00000
+#define acc           *(char *)0x2f000000
+#define val_seqa      *(int *)0x2f000001
+#define val_seqb      *(int *)0x2f000009
+#define val_aligna    *(int *)0x2f000011
+#define val_alignb    *(int *)0x2f000019
+#define val_M         *(int *)0x2f000021
+#define val_ptr       *(int *)0x2f000029
+
+typedef struct {
+    char * seqA;
+    char * seqB;
+    char * alignedA;
+    char * alignedB;
+    int  * M;
+    int  * ptr;
+    char * checkA;
+    char * checkB;
+} nw_struct;
+
+int checkData(nw_struct * nws) {
+    int i;
+    for (i = 0; i < (ALEN+BLEN); i++) {
+        if (nws->alignedA[i] != nws->checkA[i]) {
+            printf("Check Failed\n");
+            return 0;
+        }
+        if (nws->alignedB[i] != nws->checkB[i]) {
+            printf("Check Failed\n");
+            return 0;
+        }
+    }
+    printf("Check Passed\n");
+    return 1;
+}
+
+void genData(nw_struct * nws) {
+    const char *a = "tcgacgaaataggatgacagcacgttctcgtattagagggccgcggtacaaaccaaatgctgcggcgtacagggcacggggcgctgttcgggagatcgggggaatcgtggcgtgggtgattcgccggc";
+    const char *b = "ttcgagggcgcgtgtcgcggtccatcgacatgcccggtcggtgggacgtgggcgcctgatatagaggaatgcgattggaaggtcggacgggtcggcgagttgggcccggtgaatctgccatggtcgat";
+    const char *alia = "cggccgcttag-tgggtgcggtgctaagggggctagagggcttg-tc-gcggggcacgggacatgcg--gcg-t--cgtaaaccaaacat-g-gcgccgggag-attatgctcttgcacg-acag-ta----g-gat-aaagc---agc-t_________________________________________________________________________________________________________";
+    const char *alib = "--------tagct-ggtaccgt-ctaa-gtggc--ccggg-ttgagcggctgggca--gg-c-tg-gaag-gttagcgt-aaggagatatagtccg-cgggtgcagggtg-gctggcccgtacagctacctggcgctgtgcgcgggagctt_________________________________________________________________________________________________________";
+
+    int i;
+    for (i = 0; i < ALEN; i++) {
+        nws->seqA[i] = a[i];
+    }
+    for (i = 0; i < BLEN; i++) {
+        nws->seqB[i] = b[i];
+    }
+    for (i = 0; i < (ALEN+BLEN); i++) {
+        nws->alignedA[i] = alia[i];
+        nws->alignedB[i] = alib[i];
+    }
+}
