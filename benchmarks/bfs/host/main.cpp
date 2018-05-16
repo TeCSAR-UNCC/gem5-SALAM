@@ -7,7 +7,7 @@ vadd_struct vas;
 
 int main(void) {
 	uint64_t base = 0x80c00000;
-    uint64_t spm_base = 0x2f000030;
+    uint64_t spm_base = 0x2f000020;
 
 	TYPE *a = (TYPE *)(base+0);
 	TYPE *b = (TYPE *)(base+sizeof(TYPE)*LENGTH);
@@ -54,5 +54,4 @@ int main(void) {
 	        printf("C[%2d]=%f\n", i, vas.c[i]);
 	    }
 	}
-	*(char *)0x2FFFFFFF = 1;
 }

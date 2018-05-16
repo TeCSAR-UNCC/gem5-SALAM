@@ -1,2 +1,3 @@
-#define TYPE double
-#define LENGTH 16
+#define TYPE int
+#define LENGTH 1024
+#define SPM

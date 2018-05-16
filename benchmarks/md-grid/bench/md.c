@@ -1,9 +1,5 @@
 #include "md.h"
 
-#ifdef DMA_MODE
-#include "gem5/dma_interface.h"
-#endif
-
 #define MIN(x,y) ( (x)<(y) ? (x) : (y) )
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 
@@ -15,19 +11,6 @@ void md( int n_points[blockSide][blockSide][blockSide],
   dvector_t p, q; // p is a point in b0, q is a point in either b0 or b1
   int32_t p_idx, q_idx;
   TYPE dx, dy, dz, r2inv, r6inv, potential, f;
-
-#ifdef DMA_MODE
-  dmaLoad(&n_points[0], 0, blockSide * blockSide * blockSide * sizeof(int));
-  // position is three doubles -> 24 bytes -> 4096/24 = 170 -> 170*24 = 4080.
-  dmaLoad(&position[0], 0 * 4080, 4080);
-  dmaLoad(&position[0], 1 * 4080, 4080);
-  dmaLoad(&position[0], 2 * 4080, 4080);
-  dmaLoad(&position[0], 3 * 4080, 3120);
-  dmaLoad(&force[0], 0 * 4080, 4080);
-  dmaLoad(&force[0], 1 * 4080, 4080);
-  dmaLoad(&force[0], 2 * 4080, 4080);
-  dmaLoad(&force[0], 3 * 4080, 3120);
-#endif
 
   // Iterate over the grid, block by block
   loop_grid0_x: for( b0.x=0; b0.x<blockSide; b0.x++ ) {
@@ -71,11 +54,4 @@ void md( int n_points[blockSide][blockSide][blockSide],
     } // loop_p
   }}} // loop_grid1_*
   }}} // loop_grid0_*
-
-#ifdef DMA_MODE
-/*  dmaStore(&force[0], 0 * 4080, 4080);*/
-/*  dmaStore(&force[0], 1 * 4080, 4080);*/
-/*  dmaStore(&force[0], 2 * 4080, 4080);*/
-/*  dmaStore(&force[0], 3 * 4080, 3120);*/
-#endif
 }

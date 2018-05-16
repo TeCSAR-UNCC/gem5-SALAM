@@ -30,74 +30,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Authors: Matthias Jung
-            Frederik Lauer
+ 			Frederik Lauer
  */
 
-#include <cstdio>
-#include "gemm.h"
 
+ENTRY(_Reset)
+SECTIONS
+{
 
-gemm_struct ges;
-
-int main(void) {
-    uint64_t base = 0x80c00000;
-    //uint64_t base = 0x2f000020;
-	TYPE *m1 = (TYPE *)base;
-	TYPE *m2 = (TYPE *)(base+8*ROW*COL);
-	TYPE *m3 = (TYPE *)(base+16*ROW*COL);
-	TYPE *check = (TYPE *)(base+24*ROW*COL);
-	int row_size = ROW;
-    int col_size = COL;
-
-	common_val = 0;
-
-    ges.a = m1;
-    ges.b = m2;
-    ges.c = m3;
-    ges.row_size = row_size;
-    ges.col_size = col_size;
-
-    printf("Generating data\n");
-    genData(&ges);
-    printf("Data generated\n");
-
-    val_a = (uint64_t)base;
-    val_b = (uint64_t)(base+8*ROW*COL);
-    val_c = (uint64_t)(base+16*ROW*COL);
-
-    printf("%d\n", acc);
-    acc = 0x01;
-    printf("%d\n", acc);
-	while(acc != 0x4) {
-        printf("%d\n", acc);
+	.text : {
+		. = 0x00000000;
+		boot.o (INTERRUPT_VECTOR)
+		*(.text)
 	}
-	bool fail = false;
-	int i, j, k, k_col, i_col;
-	TYPE sum = 0;
-	TYPE mult = 0;
+	. = 0x80000000;
 
-	for(i=0;i<ROW;i++) {
-        for(j=0;j<COL;j++) {
-            i_col = i * COL;
-            sum = 0;
-            for(k=0;k<ROW;k++) {
-                k_col = k * COL;
-                mult = m1[i_col + k] * m2[k_col + j];
-                sum += mult;
-            }
-            check[i_col + j] = sum;
-        }
-    }
-
-//    for(i=0; i<ROW*COL; i++) {
-//        printf("Expected:%f Actual:%f\n", check[i], m3[i]);
-//        if(m3[i] != check[i])
-//            fail = true;
-//    }
-
-    if(fail)
-        printf("Check Failed\n");
-    else
-        printf("Check Passed\n");
-    *(char *)0x2FFFFFFF = 1;
+	.data : { *(.data) }
+	.bss : { *(.bss COMMON) }
+	. = ALIGN(8);
+	stack_base = .;
+	. = . + 0x1000; /* 4kB of stack memory*/
+	. = . + 0x1000; /* 4kB of stack memory for IRQ*/
+	PROVIDE (end = .)   ;
 }
