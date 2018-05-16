@@ -6,7 +6,7 @@
 spmv_struct sps;
 
 #define BASE            0x80c00000
-#define SPM_BASE        0x2f000030
+#define SPM_BASE        0x2f100000
 
 #ifndef TEST
 //Ensure 8 byte alignment
@@ -29,12 +29,12 @@ spmv_struct sps;
 #endif
 
 int main(void) {
-	TYPE *val = (TYPE *)(BASE+VAL_OFFSET);
-	int *cols = (int *)(BASE+COLS_OFFSET);
-	int *rowDelimiters = (int *)(BASE+ROWD_OFFSET);
-	TYPE *vec = (TYPE *)(BASE+VEC_OFFSET);
-	TYPE *out = (TYPE *)(BASE+OUT_OFFSET);
-	TYPE *check = (TYPE *)(BASE+CHK_OFFSET);
+	TYPE *val          = (TYPE *)(BASE+VAL_OFFSET);
+	int *cols          = (int  *)(BASE+COLS_OFFSET);
+	int *rowDelimiters = (int  *)(BASE+ROWD_OFFSET);
+	TYPE *vec          = (TYPE *)(BASE+VEC_OFFSET);
+	TYPE *out          = (TYPE *)(BASE+OUT_OFFSET);
+	TYPE *check        = (TYPE *)(BASE+CHK_OFFSET);
 
 	common_val = 0;
     sps.val = val;
@@ -48,22 +48,22 @@ int main(void) {
     genData(&sps);
     printf("Data generated\n");
 #ifndef SPM
-    loc_val = (uint64_t)(BASE+VAL_OFFSET);
+    loc_val  = (uint64_t)(BASE+VAL_OFFSET);
     loc_cols = (uint64_t)(BASE+COLS_OFFSET);
     loc_rows = (uint64_t)(BASE+ROWD_OFFSET);
-    loc_vec = (uint64_t)(BASE+VEC_OFFSET);
-    loc_out = (uint64_t)(BASE+OUT_OFFSET);
+    loc_vec  = (uint64_t)(BASE+VEC_OFFSET);
+    loc_out  = (uint64_t)(BASE+OUT_OFFSET);
 #else
-    loc_val = (uint64_t)(SPM_BASE+VAL_OFFSET);
+    loc_val  = (uint64_t)(SPM_BASE+VAL_OFFSET);
     loc_cols = (uint64_t)(SPM_BASE+COLS_OFFSET);
     loc_rows = (uint64_t)(SPM_BASE+ROWD_OFFSET);
-    loc_vec = (uint64_t)(SPM_BASE+VEC_OFFSET);
-    loc_out = (uint64_t)(SPM_BASE+OUT_OFFSET);
+    loc_vec  = (uint64_t)(SPM_BASE+VEC_OFFSET);
+    loc_out  = (uint64_t)(SPM_BASE+OUT_OFFSET);
 
-    std::memcpy((void *)SPM_BASE, (void *)val, sizeof(TYPE)*NNZ);
-    std::memcpy((void *)(SPM_BASE+COLS_OFFSET), (void *)cols, sizeof(int)*NNZ);
+    std::memcpy((void *)(SPM_BASE+VAL_OFFSET),  (void *)val,           sizeof(TYPE)*NNZ);
+    std::memcpy((void *)(SPM_BASE+COLS_OFFSET), (void *)cols,          sizeof(int)*NNZ);
     std::memcpy((void *)(SPM_BASE+ROWD_OFFSET), (void *)rowDelimiters, sizeof(int)*(N+1));
-    std::memcpy((void *)(SPM_BASE+VEC_OFFSET), (void *)cols, sizeof(TYPE)*N);
+    std::memcpy((void *)(SPM_BASE+VEC_OFFSET),  (void *)cols,          sizeof(TYPE)*N);
 #endif
     int i;
     printf("%d\n", acc);

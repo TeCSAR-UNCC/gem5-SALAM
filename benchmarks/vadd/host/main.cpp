@@ -7,7 +7,7 @@ vadd_struct vas;
 
 int main(void) {
 	uint64_t base = 0x80c00000;
-    uint64_t spm_base = 0x2f000030;
+    uint64_t spm_base = 0x2f100000;
 
 	TYPE *a = (TYPE *)(base+0);
 	TYPE *b = (TYPE *)(base+sizeof(TYPE)*LENGTH);

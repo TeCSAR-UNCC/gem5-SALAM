@@ -1,40 +1,61 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "vadd.h"
+#include "nw.h"
 
-vadd_struct vas;
+nw_struct nws;
+
+#define BASE        0x80c00000
+#define SPM_BASE    0x2f100000
+#define SEQA_OFF    0
+#define SEQB_OFF    ALEN
+#define ALIA_OFF    ALEN+BLEN
+#define ALIB_OFF    2*(ALEN+BLEN)
+#define M_OFF       3*(ALEN+BLEN)
+#define PTR_OFF     3*(ALEN+BLEN)+4*((ALEN+1)*(BLEN+1))
+#define CHECKA_OFF  3*(ALEN+BLEN)+5*((ALEN+1)*(BLEN+1))
+#define CHECKB_OFF  4*(ALEN+BLEN)+5*((ALEN+1)*(BLEN+1))
 
 int main(void) {
-	uint64_t base = 0x80c00000;
-    uint64_t spm_base = 0x2f000020;
-
-	TYPE *a = (TYPE *)(base+0);
-	TYPE *b = (TYPE *)(base+sizeof(TYPE)*LENGTH);
-	TYPE *c = (TYPE *)(base+2*sizeof(TYPE)*LENGTH);
-	TYPE *check = (TYPE *)(base+3*sizeof(TYPE)*LENGTH);
+	char * seqA     = (char *)(BASE+SEQA_OFF);
+	char * seqB     = (char *)(BASE+SEQB_OFF);
+	char * alignedA = (char *)(BASE+ALIA_OFF);
+	char * alignedB = (char *)(BASE+ALIB_OFF);
+	int  * M        = (int  *)(BASE+M_OFF);
+	int  * ptr      = (int  *)(BASE+PTR_OFF);
+	char * checkA   = (char *)(BASE+CHECKA_OFF);
+	char * checkB   = (char *)(BASE+CHECKB_OFF);
 
 	common_val = 0;
-    vas.a = a;
-    vas.b = b;
-    vas.c = c;
-    vas.check = check;
-    vas.length = LENGTH;
+    nws.seqA = seqA;
+    nws.seqB = seqB;
+    nws.alignedA = alignedA;
+    nws.alignedB = alignedB;
+    nws.M = M;
+    nws.ptr = ptr;
+    nws.checkA = checkA;
+    nws.checkB = checkB;
 
     printf("Generating data\n");
-    genData(&vas);
+    genData(&nws);
     printf("Data generated\n");
 #ifndef SPM
-    val_a = (uint64_t)base;
-    val_b = (uint64_t)(base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(base+2*sizeof(TYPE)*LENGTH);
+    val_seqa   = (uint64_t)(BASE+SEQA_OFF);
+    val_seqb   = (uint64_t)(BASE+SEQB_OFF);
+    val_aligna = (uint64_t)(BASE+ALIA_OFF);
+    val_alignb = (uint64_t)(BASE+ALIB_OFF);
+    val_M      = (uint64_t)(BASE+M_OFF);
+    val_ptr    = (uint64_t)(BASE+PTR_OFF);
 #else
-    val_a = (uint64_t)spm_base;
-    val_b = (uint64_t)(spm_base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
+    val_seqa   = (uint64_t)(SPM_BASE+SEQA_OFF);
+    val_seqb   = (uint64_t)(SPM_BASE+SEQB_OFF);
+    val_aligna = (uint64_t)(SPM_BASE+ALIA_OFF);
+    val_alignb = (uint64_t)(SPM_BASE+ALIB_OFF);
+    val_M      = (uint64_t)(SPM_BASE+M_OFF);
+    val_ptr    = (uint64_t)(SPM_BASE+PTR_OFF);
 
-    std::memcpy((void *)spm_base, (void *)a, sizeof(TYPE)*LENGTH);
-    std::memcpy((void *)(spm_base+4*LENGTH), (void *)b, sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)(SPM_BASE+SEQA_OFF), (void *)seqA, ALEN);
+    std::memcpy((void *)(SPM_BASE+SEQB_OFF), (void *)seqB, BLEN);
 #endif
     int i;
     printf("%d\n", acc);
@@ -46,12 +67,17 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)c, (void *)(spm_base+2*sizeof(TYPE)*LENGTH), sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)alignedA, (void *)(SPM_BASE+ALIA_OFF), (ALEN+BLEN));
+    std::memcpy((void *)alignedB, (void *)(SPM_BASE+ALIB_OFF), (ALEN+BLEN));
 #endif
     acc = 0x00;
-	if(!checkData(&vas)) {
-	    for (i = 0; i < LENGTH; i++) {
-	        printf("C[%2d]=%f\n", i, vas.c[i]);
+	if(!checkData(&nws)) {
+	    for (i = 0; i < (ALEN+BLEN); i++) {
+	        if (alignedA[i] != checkA[i])
+	            printf("alignedA[%2d]=\'%s\' Expected=\'%s\'\n", i, alignedA[i], checkA[i]);
+            if (alignedB[i] != checkB[i])
+	            printf("alignedB[%2d]=\'%s\' Expected=\'%s\'\n", i, alignedB[i], checkB[i]);
 	    }
 	}
+	*(char *)0x7fffffff = 1;
 }
