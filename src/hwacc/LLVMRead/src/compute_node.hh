@@ -5,6 +5,7 @@
 #include "register.hh"
 #include "operations.hh"
 #include "instruction.hh"
+#include "llvm_types.hh"
 #include "hwacc/comm_interface.hh"
 #include "mem_request.hh"
 #include "base/types.hh"
@@ -158,7 +159,7 @@ private:
   MemoryRequest *req;
 
 public:
-  ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co);
+  ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
   ~ComputeNode();
   Instruction getInstruction() { return instruction; }
   void setPrevBB(std::string prev) { prevBB = prev; }

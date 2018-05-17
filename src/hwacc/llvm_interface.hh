@@ -6,6 +6,7 @@
 #include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/operations.hh"
+#include "hwacc/LLVMRead/src/llvm_types.hh"
 
 #include <list>
 #include <queue>
@@ -20,6 +21,7 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock *currBB;
     BasicBlock *prevBB;
     ComputeNode *currCompNode;
+    TypeList *typeList;
     std::list<ComputeNode*> *reservation;
     std::list<ComputeNode*> *readQueue;
     std::list<ComputeNode*> *writeQueue;

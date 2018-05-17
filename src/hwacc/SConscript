@@ -14,6 +14,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/compute_node.cc')
     Source('LLVMRead/src/operations.cc')
     Source('LLVMRead/src/register.cc')
+    Source('LLVMRead/src/llvm_types.cc')
     Source('LLVMRead/src/mem_request.cc')
 
     DebugFlag('IOAcc')

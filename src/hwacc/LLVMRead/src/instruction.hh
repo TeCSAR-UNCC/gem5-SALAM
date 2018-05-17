@@ -3,6 +3,7 @@
 #define __DECODER_HH__
 
 #include "register.hh"
+#include "llvm_types.hh"
 
 #define MAXCASES 4
 #define MAXDEPENDENTS 5
@@ -170,6 +171,8 @@ struct Instruction {
 			Register *idx[MAXGPE];
 			int immdx[MAXGPE];
 			bool immediate[MAXGPE];
+			LLVMType *llvmType;
+
 		};
 		Load load;
 		Store store;

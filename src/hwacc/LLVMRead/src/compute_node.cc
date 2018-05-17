@@ -1,7 +1,7 @@
 #include "compute_node.hh"
 #include "debug/ComputeNode.hh"
 
-ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co) {
+ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
 	std::vector<std::string> parameters;
 	int leftDelimeter, rightDelimeter, lastInLine;
 	int returnChk = line.find(" = ");
@@ -240,8 +240,10 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
 		// When using a switch statement the default case is within instruction.terminator
 		// while each case statement exists within instruction.terminator.cases
+		
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
+		/*
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
 		instruction.terminator.intty = parameters[0];
@@ -292,6 +294,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				n--;
 			}
 		}
+		*/
 		break;
 	}
 	case IR_IndirectBr: {
@@ -678,6 +681,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 
 		int index = 0;
 		int j = 0;
+		std::string customDataType;
 		instruction.general.memory = true;
 		instruction.general.returnRegister->setSize("pointer");
 
@@ -711,6 +715,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		    else
 		        index = 1;
 		}
+		if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
+			int stringLength = (instruction.memory.getptr.pty.find_first_of(']') - instruction.memory.getptr.pty.find('%')-1);
+			customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
+			instruction.memory.getptr.llvmType = typeList->findType(customDataType);
+			DPRINTF(ComputeNode, "Custom Data Type = %s\n", customDataType);
+		}
 		for (int i = 1; i + index <= last; i+=2) {
 			instruction.memory.getptr.ty[j] = parameters[index+i];
 			if(parameters[index+i+1][0] == '%') {
@@ -736,31 +746,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			j++;
 			instruction.memory.getptr.index = j;
 		}
-		/*
-		int j = 0;
-		for (int i = 0; i + index <= last; i += 2) {
-			instruction.memory.getptr.ty[j] = parameters[index + i - 1];
-
-			if (list->findRegister(parameters[index + i].substr(1)) == NULL) {
-				instruction.memory.getptr.idx[j] = new Register(parameters[index + i]);
-				list->addRegister(instruction.memory.getptr.idx[j]);
-				if (i != 0) {
-					instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
-					dependencies++;
-				}
-			} else {
-				instruction.memory.getptr.idx[j] = list->findRegister(parameters[index + i].substr(1));
-				if (i != 0) {
-					instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
-					dependencies++;
-				}
-			}
-			DPRINTF(ComputeNode, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
-			j++;
-			instruction.memory.getptr.index = j;
-			
-		}
-		*/
 		break;
 	}
 	case IR_Fence: {

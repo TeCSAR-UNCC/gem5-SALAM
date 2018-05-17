@@ -13,6 +13,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     regList = NULL;
     currBB = NULL;
     prevBB = NULL;
+    typeList = NULL;
     currCompNode = NULL;
     running = false;
     clock_period = comm->getProcessDelay(); //Clock period
@@ -165,6 +166,7 @@ LLVMInterface::constructBBList() {
     DPRINTF(LLVMInterface, "Constructing Dependency Graph\n");
     bbList = new std::list<BasicBlock*>();
     regList = new RegisterList();
+    typeList = new TypeList();
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
     bool inFunction = false;
@@ -174,7 +176,16 @@ LLVMInterface::constructBBList() {
         while (getline(llvmFile, line)) {
             DPRINTF(LLVMParse, "Line: %s\n", line);
             if (!inFunction) {
-                if (!line.find("define")) { //Found a function. Need to parse its header
+                if (!line.find("%struct")) { // Found defined data type.
+                    int pos = line.find('=');
+                    int size = 1;
+                    std::string name = line.substr(1,pos-2);
+                    for(int i = pos; i < line.size(); i++) {
+                        if(line[i] == ',') size++;
+                    }
+                    typeList->addType(new LLVMType(size, name));
+                   // DPRINTF(LLVMParse, "Found new data type. %s of size %i\n", name, size);
+                } else if (!line.find("define")) { //Found a function. Need to parse its header
                     DPRINTF(LLVMParse, "Found acc function. Parsing Global Vars\n");
                     inFunction = true;
                     unsigned paramNum = 0;
@@ -222,12 +233,26 @@ LLVMInterface::constructBBList() {
                         break;
                     } else if (!(line.find_first_not_of(' ') != std::string::npos)){
                         DPRINTF(LLVMParse, "Empty Line\n");
-                    }else {
+                    } else {
                         DPRINTF(LLVMParse, "Registering Compute Node for: %s\n", line);
+                        /////////////////////////////////////////////////
+                        if ((line.find("switch") != -1)) {
+                            DPRINTF(LLVMParse, "Found switch statement, converting to inline\n");
+                            std::string concatLine;
+                            while(line.find(" ]") == -1) {
+                                DPRINTF(LLVMParse, " %s +\n", line);
+                                concatLine += line;
+                                getline(llvmFile, line);
+                            }
+                        concatLine+= ']';
+                        line = concatLine;
+                        DPRINTF(LLVMParse, "New Line: %s\n", line);
+                        }
+                        /////////////////////////////////////////////////
                         if(prevBB) {
-                            currBB->addNode(new ComputeNode(line, regList, prevBB->getName(), comm));
+                            currBB->addNode(new ComputeNode(line, regList, prevBB->getName(), comm, typeList));
                         } else {
-                            currBB->addNode(new ComputeNode(line, regList, "NULL", comm));
+                            currBB->addNode(new ComputeNode(line, regList, "NULL", comm, typeList));
                         }
                     }
                 }
