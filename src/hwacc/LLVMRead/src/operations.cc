@@ -26,7 +26,18 @@ void Operations::llvm_br(const struct Instruction &instruction) {
 	}
 	else DPRINTF(LLVMOp, "Unconditonal Branch Operation \n");
 }
-void Operations::llvm_switch(const struct Instruction &instruction) {}
+void Operations::llvm_switch(const struct Instruction &instruction) {
+	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	uint64_t mainValue = instruction.terminator.value->getValue();
+	bool found = false;
+	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
+		if(mainValue == instruction.terminator.cases.value[i]){
+			instruction.terminator.dest = instruction.terminator.cases.dest[i]->getName();
+			found = true;
+		}
+	}
+	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest->getName();
+}
 void Operations::llvm_indirectbr(const struct Instruction &instruction) {}
 void Operations::llvm_invoke(const struct Instruction &instruction) {}
 void Operations::llvm_resume(const struct Instruction &instruction) {}

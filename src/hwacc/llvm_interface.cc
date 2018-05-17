@@ -244,7 +244,7 @@ LLVMInterface::constructBBList() {
                                 concatLine += line;
                                 getline(llvmFile, line);
                             }
-                        concatLine+= ']';
+                        concatLine+= " ]";
                         line = concatLine;
                         DPRINTF(LLVMParse, "New Line: %s\n", line);
                         }

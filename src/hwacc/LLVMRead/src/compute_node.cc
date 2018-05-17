@@ -243,58 +243,61 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		/*
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
-		instruction.terminator.intty = parameters[0];
-		if (parameters.size() <= 5) {
-			if (list->findRegister(parameters[1]) == NULL) {
-				instruction.terminator.value = new Register(parameters[1]);
-				list->addRegister(instruction.terminator.value);
-				instruction.dependencies.registers[0] = instruction.terminator.value;
-			} else {
-				instruction.terminator.value = list->findRegister(parameters[1]);
-				instruction.dependencies.registers[0] = instruction.terminator.value;
-			}
-
-			if (list->findRegister(parameters[3]) == NULL) {
-				instruction.terminator.defaultdest = new Register(parameters[3]);
-				list->addRegister(instruction.terminator.defaultdest);
-				instruction.dependencies.registers[1] = instruction.terminator.defaultdest;
-			} else {
-				instruction.terminator.defaultdest = list->findRegister(parameters[3]);
-				instruction.dependencies.registers[1] = instruction.terminator.defaultdest;
-			}
+		instruction.terminator.intty = parameters[1];
+		
+		if (list->findRegister(parameters[2]) == NULL) {
+			instruction.terminator.value = new Register(parameters[2]);
+			list->addRegister(instruction.terminator.value);
+			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
+			dependencies++;
 		} else {
-			// Since the switch statement will always be n*4 elements where n is the number of case statements (min 1 = default only)
-			// NOTE *** BUG BUG *** NOTE //
-			// Currently the parser will see the entire struct as a single element, that will need to be broken apart here
-			// to make this section of the code functionable.
-			n = parameters.size() / 4;
-			instruction.terminator.cases.statements = n;
-			while (n >= 1) {
-				instruction.terminator.cases.intty[n - 1] = parameters[((n - 1) * 4)];
-				if (list->findRegister(parameters[((n - 1) * 4) + 1]) == NULL) {
-					instruction.terminator.cases.value[n - 1] = new Register(parameters[((n - 1) * 4) + 1]);
-					list->addRegister(instruction.terminator.cases.value[n - 1]);
-					instruction.dependencies.registers[(n * 2) - 2] = instruction.terminator.cases.value[n - 1];
-				} else {
-					instruction.terminator.cases.value[n - 1] = list->findRegister(parameters[((n - 1) * 4) + 1]);
-					instruction.dependencies.registers[(n * 2) - 2] = instruction.terminator.cases.value[n - 1];
-				}
-
-				if (list->findRegister(parameters[((n - 1) * 4) + 3]) == NULL) {
-					instruction.terminator.cases.dest[n - 1] = new Register(parameters[((n - 1) * 4) + 3]);
-					list->addRegister(instruction.terminator.cases.dest[n - 1]);
-					instruction.dependencies.registers[((n * 2) - 1)] = instruction.terminator.cases.dest[n - 1];
-				} else {
-					instruction.terminator.cases.dest[n - 1] = list->findRegister(parameters[((n - 1) * 4) + 3]);
-					instruction.dependencies.registers[(n * 2) - 1] = instruction.terminator.cases.dest[n - 1];
-				}
-				n--;
-			}
+			instruction.terminator.value = list->findRegister(parameters[2]);
+			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
+			dependencies++;
 		}
-		*/
+
+		if (list->findRegister(parameters[4]) == NULL) {
+			instruction.terminator.defaultdest = new Register(parameters[4]);
+			list->addRegister(instruction.terminator.defaultdest);
+			instruction.dependencies.registers[dependencies] = instruction.terminator.defaultdest;
+			dependencies++;
+		} else {
+			instruction.terminator.defaultdest = list->findRegister(parameters[4]);
+			instruction.dependencies.registers[dependencies] = instruction.terminator.defaultdest;
+			dependencies++;
+		} 
+		int location = 0;
+		int length = 0;
+		int statements = 0;
+		int i = 0;
+		std::string cases[MAXCASES][2];
+		for(int k = 0; k < parameters[5].size(); k++) {
+			if(parameters[5][k] == '%') statements++;
+		}
+		instruction.terminator.cases.statements = statements;
+		while(i < statements) {
+			location = parameters[5].find_first_of('i', location);
+			location = parameters[5].find_first_of(' ', location) + 1;
+			length = parameters[5].find_first_of(',', location) - location;
+			instruction.terminator.cases.value[i] = stoi(parameters[5].substr(location, length));
+			location = parameters[5].find_first_of('%', location)+1;
+			length = parameters[5].find_first_of(' ', location) - location;
+			if (list->findRegister(parameters[5].substr(location, length)) == NULL) {
+				instruction.terminator.cases.dest[i] = new Register(parameters[5].substr(location, length));
+				list->addRegister(instruction.terminator.cases.dest[i]);
+				instruction.dependencies.registers[dependencies] = instruction.terminator.cases.dest[i];
+				dependencies++;
+			} else {				
+				instruction.terminator.cases.dest[i] = list->findRegister(parameters[5].substr(location, length));
+				instruction.dependencies.registers[dependencies] = instruction.terminator.cases.dest[i];
+				dependencies++;
+			}
+			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", instruction.terminator.cases.value[i], instruction.terminator.cases.dest[i]->getName());
+			i++;
+		}
+		
 		break;
 	}
 	case IR_IndirectBr: {

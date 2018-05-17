@@ -123,7 +123,7 @@ struct Instruction {
 		struct Cases {
 			int statements = 0;
 			std::string intty[MAXCASES];
-			Register *value[MAXCASES];
+			int value[MAXCASES];
 			Register *dest[MAXCASES];
 		};
 		Cases cases;
