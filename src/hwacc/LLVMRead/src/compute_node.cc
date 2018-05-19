@@ -8,7 +8,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	int last = 0;
 	instruction.general.llvm_Line = line;
 	instruction.cycle.max = 1;
-	int n = 1;
 	comm = co;
 	prevBB = prev;
 	// ////////////////////////////////////////////////////////////////////
@@ -257,17 +256,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
 			dependencies++;
 		}
-
-		if (list->findRegister(parameters[4]) == NULL) {
-			instruction.terminator.defaultdest = new Register(parameters[4]);
-			list->addRegister(instruction.terminator.defaultdest);
-			instruction.dependencies.registers[dependencies] = instruction.terminator.defaultdest;
-			dependencies++;
-		} else {
-			instruction.terminator.defaultdest = list->findRegister(parameters[4]);
-			instruction.dependencies.registers[dependencies] = instruction.terminator.defaultdest;
-			dependencies++;
-		} 
+		instruction.terminator.defaultdest = parameters[4].substr(1); 
 		int location = 0;
 		int length = 0;
 		int statements = 0;
@@ -284,63 +273,23 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.terminator.cases.value[i] = stoi(parameters[5].substr(location, length));
 			location = parameters[5].find_first_of('%', location)+1;
 			length = parameters[5].find_first_of(' ', location) - location;
-			if (list->findRegister(parameters[5].substr(location, length)) == NULL) {
-				instruction.terminator.cases.dest[i] = new Register(parameters[5].substr(location, length));
-				list->addRegister(instruction.terminator.cases.dest[i]);
-				instruction.dependencies.registers[dependencies] = instruction.terminator.cases.dest[i];
-				dependencies++;
-			} else {				
-				instruction.terminator.cases.dest[i] = list->findRegister(parameters[5].substr(location, length));
-				instruction.dependencies.registers[dependencies] = instruction.terminator.cases.dest[i];
-				dependencies++;
-			}
-			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", instruction.terminator.cases.value[i], instruction.terminator.cases.dest[i]->getName());
+			instruction.terminator.cases.dest[i] = parameters[5].substr(location, length);
+			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", instruction.terminator.cases.value[i], instruction.terminator.cases.dest[i]);
 			i++;
 		}
-		
 		break;
 	}
 	case IR_IndirectBr: {
 		// Not up to date with setting register datatypes
 		// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		instruction.general.terminator = true;
-		instruction.general.flowControl = true;
-		if (parameters.size() <= 3) {
-			instruction.terminator.somety = parameters[0];
-			if (list->findRegister(parameters[1]) == NULL) {
-				instruction.terminator.Addr = new Register(parameters[1]);
-				list->addRegister(instruction.terminator.Addr);
-				instruction.dependencies.registers[0] = instruction.terminator.Addr;
-			} else {
-				instruction.terminator.Addr = list->findRegister(parameters[1]);
-				instruction.dependencies.registers[0] = instruction.terminator.Addr;
-			}
-		} else {
-			// NOTE *** BUG BUG *** NOTE //
-			// Currently the parser will see the entire struct as a single element, that will need to be broken apart here
-			// to make this section of the code functionable.
-			n = parameters.size() / 2;
-			instruction.terminator.cases.statements = n;
-			while (n >= 1) {
-				if (list->findRegister(parameters[((n - 1) * 2) + 1]) == NULL) {
-					instruction.terminator.cases.dest[n - 1] = new Register(parameters[((n - 1) * 2) + 1]);
-					list->addRegister(instruction.terminator.cases.dest[n - 1]);
-					instruction.dependencies.registers[n - 1] = instruction.terminator.cases.dest[n - 1];
-				} else {
-					instruction.terminator.cases.dest[n - 1] = list->findRegister(parameters[((n - 1) * 2) + 1]);
-					instruction.dependencies.registers[n - 1] = instruction.terminator.cases.dest[n - 1];
-				}
-				n--;
-			}
-		}
+		
 		break;
 	}
 	case IR_Invoke: {
 		// Not up to date with setting register datatypes
 		// <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
 		//   to label <normal label> unwind label <exception label>
+		/*
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
 		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
 		instruction.general.terminator = true;
@@ -378,6 +327,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.attributes.cconv.ccc = true;
 		// Implementation incomplete
 		break;
+		*/
 	}
 	case IR_Resume: {
 		// resume <type> <value>
@@ -766,54 +716,301 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	// Conversion Operations
 	case IR_Trunc: {
 		// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_ZExt: {
 		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_SExt: {
 		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_FPToUI: {
 		// <result> = fptoui <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_FPToSI: {
 		// <result> = fptosi <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_UIToFP: {
 		// <result> = uitofp <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_SIToFP: {
 		// <result> = sitofp <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_FPTrunc: {
 		// <result> = fptrunc <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_FPExt: {
 		// <result> = fpext <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_PtrToInt: {
 		// <result> = ptrtoint <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_IntToPtr: {
 		// <result> = inttoptr <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_BitCast: {
 		// <result> = bitcast <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	case IR_AddrSpaceCast: {
 		// <result> = addrspacecast <pty> <ptrval> to <pty2>       ; yields pty2
+		instruction.general.conversion = true;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(parameters[1][0] == '%') {
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.conversion.value = new Register(parameters[1]);
+				list->addRegister(instruction.conversion.value);
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			} else {
+				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
 		break;
 	}
 	// Other Operations - Compare

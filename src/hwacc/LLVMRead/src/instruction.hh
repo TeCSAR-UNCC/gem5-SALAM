@@ -115,7 +115,7 @@ struct Instruction {
 		std::string iffalse;
 		Register *cond;
 		mutable std::string dest;
-		Register *defaultdest;
+		std::string defaultdest;
 		Register *Addr;
 		Register *exception_label;
 		Register *normal_label;
@@ -124,7 +124,7 @@ struct Instruction {
 			int statements = 0;
 			std::string intty[MAXCASES];
 			int value[MAXCASES];
-			Register *dest[MAXCASES];
+			std::string dest[MAXCASES];
 		};
 		Cases cases;
 	};
@@ -178,7 +178,13 @@ struct Instruction {
 		Store store;
 		GetElementPtr getptr;
 	};
-	struct Conversion { };
+	struct Conversion { 
+		bool immediate = false;
+		int immVal;
+		Register* value;
+		std::string ty;
+		std::string ty2;
+	};
 	struct Other {
 		struct Compare {
 			std::string ty;

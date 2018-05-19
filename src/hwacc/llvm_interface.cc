@@ -105,7 +105,21 @@ LLVMInterface::tick() {
             } else {
                 ++it;
             }
-        } else if (instr.general.opCode.compare("ret") == 0) {
+        } else if ((instr.general.opCode.compare("switch") == 0) && !((*it)->checkDependency())) {
+            if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
+                DPRINTF(LLVMInterface, "Switch Operation In Progress\n");
+                //currBB <- Calculate branch
+                prevBB = currBB;
+                (*it)->compute();
+                instr = (*it)->getInstruction();
+                DPRINTF(LLVMInterface, "Branching to Basic Block %s\n", instr.terminator.dest);
+                currBB = findBB(instr.terminator.dest);
+                it = reservation->erase(it);
+                scheduleBB(currBB);
+            } else {
+                ++it;
+            }
+        }else if (instr.general.opCode.compare("ret") == 0) {
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
                 running = false;
                 //We are done!!!!

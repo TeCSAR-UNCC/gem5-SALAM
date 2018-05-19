@@ -32,11 +32,11 @@ void Operations::llvm_switch(const struct Instruction &instruction) {
 	bool found = false;
 	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
 		if(mainValue == instruction.terminator.cases.value[i]){
-			instruction.terminator.dest = instruction.terminator.cases.dest[i]->getName();
+			instruction.terminator.dest = instruction.terminator.cases.dest[i];
 			found = true;
 		}
 	}
-	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest->getName();
+	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
 }
 void Operations::llvm_indirectbr(const struct Instruction &instruction) {}
 void Operations::llvm_invoke(const struct Instruction &instruction) {}
@@ -357,7 +357,7 @@ void Operations::llvm_lshr(const struct Instruction &instruction) {
 	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
 	else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
-	result = op1 >> op2;
+	result = ((unsigned) op1) >> op2;
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
@@ -376,7 +376,10 @@ void Operations::llvm_ashr(const struct Instruction &instruction) {
 	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
 	else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
-	result = op1 >> op2;
+	if (op1 < 0 && op2 > 0)
+        result = op1 >> op2 | ~(~0U >> op2);
+    else
+        result = op1 >> op2;
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
@@ -530,17 +533,189 @@ void Operations::llvm_cmpxchg(const struct Instruction &instruction) {}
 void Operations::llvm_atomicrmw(const struct Instruction &instruction) {}
 
 /* Operations::llvm Conversion Operations */
-void Operations::llvm_trunc(const struct Instruction &instruction) {}
-void Operations::llvm_zext(const struct Instruction &instruction) {}
-void Operations::llvm_sext(const struct Instruction &instruction) {}
-void Operations::llvm_fptoui(const struct Instruction &instruction) {}
-void Operations::llvm_fptosi(const struct Instruction &instruction) {}
-void Operations::llvm_uitofp(const struct Instruction &instruction) {}
-void Operations::llvm_sitofp(const struct Instruction &instruction) {}
-void Operations::llvm_fptrunc(const struct Instruction &instruction) {}
-void Operations::llvm_fpext(const struct Instruction &instruction) {}
-void Operations::llvm_ptrtoint(const struct Instruction &instruction) {}
-void Operations::llvm_inttoptr(const struct Instruction &instruction) {}
+void Operations::llvm_trunc(const struct Instruction &instruction) {
+	int64_t value;
+	int64_t result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+
+	if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
+	else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
+	else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
+	else if (instruction.conversion.ty2 == "i1") {
+		if(value) result = 1;
+		else result = 0;
+	}
+	instruction.general.returnRegister->setValue(&result);
+}
+void Operations::llvm_zext(const struct Instruction &instruction) {
+	uint64_t value;
+	uint64_t result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
+	else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
+	else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
+	else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
+	else if (instruction.conversion.ty2 == "i1") {
+		if(value) result = 1;
+		else result = 0;
+	}
+	instruction.general.returnRegister->setValue(&result);
+}
+void Operations::llvm_sext(const struct Instruction &instruction) {
+	int64_t value;
+	int64_t result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "i64") result = (int64_t) value;
+	else if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
+	else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
+	else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
+	else if (instruction.conversion.ty2 == "i1") {
+		if(value) result = -1;
+		else result = 0;
+	}
+	instruction.general.returnRegister->setValue(&result);
+}
+void Operations::llvm_fptoui(const struct Instruction &instruction) {
+	double value;
+	uint64_t result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
+	else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
+	else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
+	else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
+	else if (instruction.conversion.ty2 == "i1") {
+		if(value) result = 1;
+		else result = 0;
+	}
+	instruction.general.returnRegister->setValue(&result);
+}
+void Operations::llvm_fptosi(const struct Instruction &instruction) {
+	double value;
+	int64_t result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "i64") result = (int64_t) value;
+	else if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
+	else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
+	else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
+	else if (instruction.conversion.ty2 == "i1") {
+		if(value) result = 1;
+		else result = 0;
+	}
+	instruction.general.returnRegister->setValue(&result);	
+}
+void Operations::llvm_uitofp(const struct Instruction &instruction) {
+	uint64_t value;
+	double result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "double") result = (double) value;
+	else if (instruction.conversion.ty2 == "float") result = (float) value;
+
+	instruction.general.returnRegister->setValue(&result);
+}
+void Operations::llvm_sitofp(const struct Instruction &instruction) {
+	int64_t value;
+	double result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "double") result = (double) value;
+	else if (instruction.conversion.ty2 == "float") result = (float) value;
+
+	instruction.general.returnRegister->setValue(&result);
+}
+void Operations::llvm_fptrunc(const struct Instruction &instruction) {
+	double value;
+	double result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "float") result = (float) value;
+
+	instruction.general.returnRegister->setValue(&result);	
+}
+void Operations::llvm_fpext(const struct Instruction &instruction) {
+	double value;
+	double result;
+	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+	else value = instruction.conversion.value->getValue();
+	
+	if (instruction.conversion.ty2 == "double") result = (float) value;
+
+	instruction.general.returnRegister->setValue(&result);		
+}
+void Operations::llvm_ptrtoint(const struct Instruction &instruction) {
+	int64_t value;
+	int64_t result;
+	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
+		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+		else value = instruction.conversion.value->getValue();
+
+		if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
+		else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
+		else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
+		else if (instruction.conversion.ty2 == "i1") {
+			if(value) result = 1;
+			else result = 0;
+		}
+		instruction.general.returnRegister->setValue(&result);
+	}
+	else {
+		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+		else value = instruction.conversion.value->getValue();
+	
+		if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
+		else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
+		else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
+		else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
+		else if (instruction.conversion.ty2 == "i1") {
+			if(value) result = 1;
+			else result = 0;
+		}
+	instruction.general.returnRegister->setValue(&result);
+	}
+}
+void Operations::llvm_inttoptr(const struct Instruction &instruction) {
+	int64_t value;
+	int64_t result;
+	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
+		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+		else value = instruction.conversion.value->getValue();
+
+		if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
+		else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
+		else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
+		else if (instruction.conversion.ty2 == "i1") {
+			if(value) result = 1;
+			else result = 0;
+		}
+		instruction.general.returnRegister->setValue(&result);
+	}
+	else {
+		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
+		else value = instruction.conversion.value->getValue();
+	
+		if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
+		else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
+		else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
+		else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
+		else if (instruction.conversion.ty2 == "i1") {
+			if(value) result = 1;
+			else result = 0;
+		}
+	instruction.general.returnRegister->setValue(&result);
+	}	
+}
 void Operations::llvm_bitcast(const struct Instruction &instruction) {}
 void Operations::llvm_addrspacecast(const struct Instruction &instruction) {}
 
