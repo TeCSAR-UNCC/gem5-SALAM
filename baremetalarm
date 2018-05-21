@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS=IOAcc,CommInterface,LLVMInterface #,LLVMRuntime,-LLVMParse,Interrupt
+FLAGS=IOAcc #,CommInterface,LLVMInterface #,LLVMRuntime,-LLVMParse,Interrupt
 KERNEL=$M5_PATH/benchmarks/gemm/host/main.elf
 SYS_OPTS="--mem-size=4GB \
           --kernel=$KERNEL \
@@ -7,8 +7,8 @@ SYS_OPTS="--mem-size=4GB \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
           --cpu-type=TimingSimpleCPU"
-CACHE_OPTS="--acc_cache --l2cache"
+CACHE_OPTS="--acc_cache"
 # Script to start up full system simulation
 build/ARM/gem5.opt --debug-flags=$FLAGS --outdir=BM_ARM_OUT configs/example/fs.py \
 $SYS_OPTS --accpath=$M5_PATH/benchmarks \
-$CACHE_OPTS > BM_ARM_OUT/debug_trace.txt
+$CACHE_OPTS #> BM_ARM_OUT/debug_trace.txt
