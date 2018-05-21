@@ -28,6 +28,8 @@ class LLVMInterface : public ComputeUnit {
     std::list<ComputeNode*> *computeQueue;
     int process_delay;
     int cycle;
+    int stalls;
+    int execnodes;
   protected:
 
   public:

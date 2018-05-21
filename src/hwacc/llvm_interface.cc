@@ -4,6 +4,7 @@
 #include "debug/LLVMInterface.hh"
 #include "debug/LLVMParse.hh"
 #include "debug/LLVMRegister.hh"
+#include "debug/IOAcc.hh"
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
@@ -66,7 +67,7 @@ LLVMInterface::tick() {
         DPRINTF(LLVMInterface, "Schedule Basic Block\n");
         scheduleBB(currBB);
     }
-
+    bool scheduled = false;
     for (auto it=reservation->begin(); it!=reservation->end(); ) {
         Instruction instr = (*it)->getInstruction();
         DPRINTF(LLVMInterface, "Next:%s\n", instr.general.llvm_Line);
@@ -75,18 +76,25 @@ LLVMInterface::tick() {
             DPRINTF(LLVMInterface, "Non-Terminator Instruction Operation \n");
             if (instr.general.opCode.find("load") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Load\n");
+                scheduled = true;
+                execnodes++;
                 readQueue->push_back(*it);
                 (*it)->compute();
             } else if (instr.general.opCode.find("store") == 0) {
                 DPRINTF(LLVMInterface, "Queueing Store\n");
+                scheduled = true;
+                execnodes++;
                 writeQueue->push_back(*it);
                 (*it)->compute();
             } else if (instr.general.opCode.find("phi") == 0) {
                 DPRINTF(LLVMInterface, "Queueing PHI\n");
+                scheduled = true;
                 (*it)->compute();
                 (*it)->commit();
             } else {
                 DPRINTF(LLVMInterface, "Queueing Compute\n");
+                scheduled = true;
+                execnodes++;
                 computeQueue->push_back(*it);
                 (*it)->compute();
             }
@@ -123,6 +131,13 @@ LLVMInterface::tick() {
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
                 running = false;
                 //We are done!!!!
+                DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s",
+                        "\n*******************************************************************************",
+                        "\n   Runtime (Cycles): ", cycle,
+                        "\n   Runtime (Seconds):", (cycle*10*(1e-12)),
+                        "\n   Stalls  (Cycles): ", stalls,
+                        "\n   Executed Nodes: ", execnodes,
+                        "\n*******************************************************************************");
                 comm->finish();
                 break;
             }
@@ -130,6 +145,7 @@ LLVMInterface::tick() {
             ++it;
         }
     }
+    if (!scheduled) stalls++;
 
     if (running && !tickEvent.scheduled())
     {
@@ -342,6 +358,8 @@ LLVMInterface::initialize() {
             "*                                 Begin Compute                               *",
             "*******************************************************************************");
     cycle = 0;
+    stalls = 0;
+    execnodes = 0;
     tick();
 }
 
