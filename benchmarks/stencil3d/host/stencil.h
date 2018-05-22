@@ -3,8 +3,8 @@
 #define common_val  *(unsigned *)0x80b00000
 #define acc         *(char *)0x2f000000
 #define loc_C       *(int *)0x2f000001
-#define loc_inp     *(int *)(0x2f000001 + sizeof(TYPE))
-#define loc_sol     *(int *)(0x2f000001 + 2*sizeof(TYPE))
+#define loc_inp     *(int *)0x2f000009
+#define loc_sol     *(int *)0x2f000011
 
 #define EPSILON 1.0e-6
 

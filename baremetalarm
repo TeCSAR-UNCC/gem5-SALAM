@@ -1,6 +1,6 @@
 #!/bin/bash
-FLAGS=IOAcc,CommInterface,LLVMInterface #,LLVMRuntime,-LLVMParse,Interrupt
-KERNEL=$M5_PATH/benchmarks/stencil2d/host/main.elf
+FLAGS=IOAcc,CommInterface,LLVMInterface,LLVMRuntime,-LLVMParse,Interrupt
+KERNEL=$M5_PATH/benchmarks/stencil3d/host/main.elf
 SYS_OPTS="--mem-size=4GB \
           --kernel=$KERNEL \
           --disk-image=$M5_PATH/baremetal/common/fake.iso \

@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include "stencil.h"
 
 #define BASE            0x80c00000
@@ -39,7 +40,7 @@ int main(void) {
     loc_sol     = (uint64_t)(BASE+SOL_OFFSET);
 
 #else
-    loc_C       = (uint64_t)(BASE+C_OFFSET);
+    loc_C       = (uint64_t)(SPM_BASE+C_OFFSET);
     loc_inp     = (uint64_t)(SPM_BASE+INP_OFFSET);
     loc_sol     = (uint64_t)(SPM_BASE+SOL_OFFSET);
 
@@ -58,13 +59,15 @@ int main(void) {
 	}
 	
 #ifdef SPM
-    std::memcpy((void *)(SPM_BASE+SOL_OFFSET), (void *)sol,       sizeof(TYPE)*SIZE);
+    std::memcpy((void *)((void *)sol,   SPM_BASE+SOL_OFFSET), sizeof(TYPE)*SIZE);
 #endif
     acc = 0x00;
 	if(!checkData(&sts)) {
 	    for (i = 0; i < SIZE; i++) {
 	        if(((sts.sol[i]-sts.check[i]) > EPSILON) || ((sts.sol[i]-sts.check[i]) < -EPSILON))
-	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, sts.sol[i], i, sts.check[i]);
+	            printf("out[%2d]=%d expected[%d]=%d\n", i, sts.sol[i], i, sts.check[i]);
+	        else
+	            printf("Minute diff %d\n", i);
 	    }
 	}
 
