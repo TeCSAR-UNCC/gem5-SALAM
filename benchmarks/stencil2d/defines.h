@@ -1,4 +1,4 @@
-//#define SPM
+#define SPM
 //#define TEST
 
 #ifndef TEST

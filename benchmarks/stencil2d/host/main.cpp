@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include "stencil.h"
 
 #define BASE            0x80c00000
@@ -58,13 +59,13 @@ int main(void) {
 	}
 	
 #ifdef SPM
-    std::memcpy((void *)(SPM_BASE+SOL_OFFSET), (void *)sol,       sizeof(TYPE)*ROW*COL);
+    std::memcpy((void *)sol, (void *)(SPM_BASE+SOL_OFFSET), sizeof(TYPE)*ROW*COL);
 #endif
     acc = 0x00;
 	if(!checkData(&sts)) {
 	    for (i = 0; i < ROW*COL; i++) {
 	        if(((sts.sol[i]-sts.check[i]) > EPSILON) || ((sts.sol[i]-sts.check[i]) < -EPSILON))
-	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, sts.sol[i], i, sts.check[i]);
+	            printf("out[%2d]=%d expected[%d]=%d\n", i, sts.sol[i], i, sts.check[i]);
 	    }
 	}
 

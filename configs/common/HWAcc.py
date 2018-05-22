@@ -27,11 +27,12 @@ def makeHWAcc(options, system):
 #    system.vadd.llvm_interface.in_file = options.accpath + "/fft/bench/fft.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/nw/bench/nw.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/spmv/bench/spmv.ll"
-    system.vadd.llvm_interface.in_file = options.accpath + "/gemm/bench/gemm.ll"
+#    system.vadd.llvm_interface.in_file = options.accpath + "/gemm/bench/gemm.ll"
+    system.vadd.llvm_interface.in_file = options.accpath + "/stencil2d/bench/stencil.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/vadd/bench/vadd.ll"
     system.vadd.int_num = 68
     system.vadd.clock_period = 10
 
-    system.vadd.spad = SimpleMemory(range=AddrRange(0x2f100000, size='64kB'),
+    system.vadd.spad = SimpleMemory(range=AddrRange(0x2f100000, size='128kB'),
                                   conf_table_reported=False, latency='2ns')
     system.vadd.spad.port = system.iobus.master
