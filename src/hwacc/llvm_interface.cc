@@ -131,12 +131,13 @@ LLVMInterface::tick() {
             if(readQueue->empty() && writeQueue->empty() && computeQueue->empty()) {
                 running = false;
                 //We are done!!!!
-                DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s",
+                DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %d %s",
                         "\n*******************************************************************************",
                         "\n   Runtime (Cycles): ", cycle,
                         "\n   Runtime (Seconds):", (cycle*10*(1e-12)),
                         "\n   Stalls  (Cycles): ", stalls,
                         "\n   Executed Nodes: ", execnodes,
+                        "\n   Number of Registers: ", regList->size(),
                         "\n*******************************************************************************");
                 comm->finish();
                 break;
