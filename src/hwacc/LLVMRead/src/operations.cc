@@ -513,7 +513,8 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		DPRINTF(LLVMOp, "Size of data type: %d\n", size[0]);
 
 		for (int i = 0; i < index; i++) {
-			currentValue[i] = instruction.memory.getptr.idx[i]->value;
+			if(!instruction.memory.getptr.immediate[i]) currentValue[i] = instruction.memory.getptr.idx[i]->value;
+			else currentValue[i] = insturction.memory.getptr.immdx[i];
 			DPRINTF(LLVMOp, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
 		}
 
