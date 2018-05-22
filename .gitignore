@@ -29,3 +29,5 @@ chisel/target/
 chisel/*.iml
 chisel
 build.sh
+baremetalarm
+/configs/common/HWAcc.py
