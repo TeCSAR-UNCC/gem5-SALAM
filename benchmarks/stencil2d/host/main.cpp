@@ -1,51 +1,29 @@
-/*
- * Copyright (c) 2015, University of Kaiserslautern
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from
- *    this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matthias Jung
-            Frederik Lauer
- */
-
 #include <cstdio>
+#include <cstring>
 #include "stencil.h"
+
+#define BASE            0x80c00000
+#define SPM_BASE        0x2f100000
+
+#define INP_OFFSET      0
+#define SOL_OFFSET      sizeof(TYPE)*ROW*COL
+#define FIL_OFFSET      2*sizeof(TYPE)*ROW*COL
+#define CHK_OFFSET      2*sizeof(TYPE)*ROW*COL  + sizeof(TYPE)*FIL
 
 stencil_struct sts;
 
 int main(void) {
-	int *inp = (int *)0x80c00000;
-	int *sol = (int *)0x80d00000;
-	int *filter = (int *)0x80e00000;
-	int *check;
-	int row_size = 128;
-    int col_size = 64;
-    int f_size = 3;
+	//uint64_t base =     0x80c00000;
+	TYPE *inp          = (TYPE *)(BASE+INP_OFFSET);
+	TYPE *sol          = (TYPE *)(BASE+SOL_OFFSET);
+	TYPE *filter       = (TYPE *)(BASE+FIL_OFFSET);
+	TYPE *check        = (TYPE *)(BASE+CHK_OFFSET);
+    int i;
+	//int *check;
+//	int row_size = ROW;
+//    int col_size = COL;
+//    int f_size = FIL;
+
 
 	common_val = 0;
 
@@ -53,21 +31,43 @@ int main(void) {
     sts.sol = sol;
     sts.filter = filter;
     sts.check = check;
-    sts.row_size = row_size;
-    sts.col_size = col_size;
-    sts.f_size= f_size;
 
+    printf("Generating data\n");
     genData(&sts);
+    printf("Data generated\n");
+    
+#ifndef SPM
+    loc_inp     = (uint64_t)(BASE+INP_OFFSET);
+    loc_sol     = (uint64_t)(BASE+SOL_OFFSET);
+    loc_filter  = (uint64_t)(BASE+FIL_OFFSET);
+#else
+    loc_inp     = (uint64_t)(SPM_BASE+INP_OFFSET);
+    loc_sol     = (uint64_t)(SPM_BASE+SOL_OFFSET);
+    loc_filter  = (uint64_t)(SPM_BASE+FIL_OFFSET);
 
-    val_a = 0x0000000080c00000;
-    val_b = 0x0000000080d00000;
-    val_c = 0x0000000080e00000;
+    std::memcpy((void *)(SPM_BASE+INP_OFFSET), (void *)inp,       sizeof(TYPE)*ROW*COL);
+//    std::memcpy((void *)(SPM_BASE+SOL_OFFSET), (void *)sol,     sizeof(TYPE)*ROW*COL);
+    std::memcpy((void *)(SPM_BASE+FIL_OFFSET), (void *)filter,    sizeof(TYPE)*FIL);
+#endif
 
-    int i;
-    printf("\n");
+    printf("%d\n", acc);
     acc = 0x01;
+    printf("%d\n", acc);
 
-	while(!common_val) {
-        checkData(&sts);
+	while(acc != 0x4) {
+        printf("%d\n", acc);
 	}
+	
+#ifdef SPM
+    std::memcpy((void *)sol, (void *)(SPM_BASE+SOL_OFFSET), sizeof(TYPE)*ROW*COL);
+#endif
+    acc = 0x00;
+	if(!checkData(&sts)) {
+	    for (i = 0; i < ROW*COL; i++) {
+	        if(((sts.sol[i]-sts.check[i]) > EPSILON) || ((sts.sol[i]-sts.check[i]) < -EPSILON))
+	            printf("out[%2d]=%d expected[%d]=%d\n", i, sts.sol[i], i, sts.check[i]);
+	    }
+	}
+
+	*(char *)0x7fffffff = 1; //Kill the simulation
 }

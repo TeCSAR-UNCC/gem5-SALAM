@@ -1,75 +1,74 @@
-/*
- * Copyright (c) 2015, University of Kaiserslautern
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from
- *    this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matthias Jung
-            Frederik Lauer
- */
-
 #include <cstdio>
 #include "md.h"
+
+#define BASE            0x80c00000
+#define SPM_BASE        0x2f100000
+
+#define NP_OFFSET       0
+#define FRC_OFFSET      sizeof(dvector_t)*3*blockSide
+#define POS_OFFSET      sizeof(dvector_t)*3*blockSide + sizeof(dvector_t)*(3*blockSide+densityFactor)
+#define CHK_OFFSET      sizeof(dvector_t)*3*blockSide + sizeof(dvector_t)*2*(3*blockSide+densityFactor)
 
 md_struct mds;
 
 int main(void) {
-    int * n_points;
-    dvector_t * force;
-    dvector_t * position;
-    
-	int *n_points = (int *)0x80c00000;
-	dvector_t *force = (int *)0x80d00000;
-	dvector_t *position = (int *)0x80e00000;
-	dvector_t *check;
-    int blockSide = 4;
-    int densityFactor = 10;
+	int32_t ***n_points    = (int32_t       ***)(BASE+NP_OFFSET);
+	dvector_t ****force    = (dvector_t    ****)(BASE+FRC_OFFSET);
+	dvector_t ****position = (dvector_t    ****)(BASE+POS_OFFSET);
+	dvector_t ****check    = (dvector_t    ****)(BASE+CHK_OFFSET);
+    int i, j, k, d;
 
 	common_val = 0;
 
     mds.n_points = n_points;
-    md.force = force;
-    md.position = position;
-    md.check = check;
-    md.blockSide = blockSide;
-    md.densityFactor = densityFactor;
+    mds.force = force;
+    mds.position = position;
+    mds.check = check;
 
+    printf("Generating data\n");
     genData(&mds);
+    printf("Data generated\n");
 
-    val_a = 0x0000000080c00000;
-    val_b = 0x0000000080d00000;
-    val_c = 0x0000000080e00000;
+#ifndef SPM
+    loc_n_points    = (uint64_t)(BASE+NP_OFFSET);
+    loc_force       = (uint64_t)(BASE+FRC_OFFSET);
+    loc_position    = (uint64_t)(BASE+POS_OFFSET);
+#else
+    loc_n_points    = (uint64_t)(SPM_BASE+NP_OFFSET);
+    loc_force       = (uint64_t)(SPM_BASE+FRC_OFFSET);
+    loc_position    = (uint64_t)(SPM_BASE+POS_OFFSET);
 
-    int i;
-    printf("\n");
+    std::memcpy((void *)(SPM_BASE+NP_OFFSET), (void ***)n_points,      sizeof(dvector_t)*3*blockSide);
+//    std::memcpy((void *)(SPM_BASE+SOL_OFFSET), (void *)sol,     sizeof(TYPE)*ROW*COL);
+    std::memcpy((void *)(SPM_BASE+POS_OFFSET), (void ****)position,  sizeof(dvector_t)*3*(blockSide+densityFactor));
+#endif
+    printf("%d\n", acc);
+
     acc = 0x01;
+    printf("%d\n", acc);
 
-	while(!common_val) {
-        checkData(&mds);
+	while(acc != 0x4) {
+        printf("%d\n", acc);
 	}
+#ifdef SPM
+    std::memcpy((void ****)force, (void *)(SPM_BASE+FRC_OFFSET), sizeof(dvector_t)*3*(blockSide+densityFactor));
+#endif
+    acc = 0x00;
+	if(!checkData(&mds)) {
+        for(i=0; i<blockSide; i++) {
+            for(j=0; j<blockSide; j++) {
+                for(k=0; k<blockSide; k++) {
+                    for(d=0; d<densityFactor; d++) {
+                        if((((mds->force[i][j][k][d].x - mds->check[i][j][k][d].x)) > EPSILON) || ((mds->force[i][j][k][d].x - mds->check[i][j][k][d].x) < -EPSILON))
+            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds->force[i][j][k][d].x, i, mds->check[i][j][k][d].x);
+                        if(((mds->force[i][j][k][d].y - mds->check[i][j][k][d].y)) > EPSILON) || ((mds->force[i][j][k][d].y - mds->check[i][j][k][d].y) < -EPSILON))
+            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds->force[i][j][k][d].y, i, mds->check[i][j][k][d].y);
+                        if(((mds->force[i][j][k][d].z - mds->check[i][j][k][d].z) > EPSILON) || ((mds->force[i][j][k][d].z - mds->check[i][j][k][d].z) < -EPSILON))
+            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds->force[i][j][k][d].z, i, mds->check[i][j][k][d].z);
+                    }
+                }
+            }
+        }
+	}
+	*(char *)0x7fffffff = 1; //Kill the simulation
 }
