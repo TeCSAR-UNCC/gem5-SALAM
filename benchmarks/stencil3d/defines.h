@@ -3,11 +3,11 @@
 
 #define C_SIZE  2
 
-#ifndef TEST
+#ifdef TEST
 //Define input sizes
-#define HYT     32
-#define COL     32
-#define ROW     16
+#define HYT     4
+#define COL     4
+#define ROW     4
 //Data Bounds
 #define TYPE int32_t
 #define MAX 1000
