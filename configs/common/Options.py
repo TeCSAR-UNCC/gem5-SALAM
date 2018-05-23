@@ -294,6 +294,8 @@ def addCommonOptions(parser):
                       help="ARM instruction set.")
     parser.add_option("--accpath", action="store", type="string",
                       help="""Path to folders containing accelerator benchmarks""", default="")
+    parser.add_option("--accbench", action="store", type="string",
+                      help="""Name of benchmark to accelerate""", default="")
 
 def addSEOptions(parser):
     # Benchmark options

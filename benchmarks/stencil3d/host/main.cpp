@@ -64,10 +64,8 @@ int main(void) {
     acc = 0x00;
 	if(!checkData(&sts)) {
 	    for (i = 0; i < SIZE; i++) {
-	        if(((sts.sol[i]-sts.check[i]) > EPSILON) || ((sts.sol[i]-sts.check[i]) < -EPSILON))
+	        if(sts.sol[i] != sts.check[i])
 	            printf("out[%2d]=%d expected[%d]=%d\n", i, sts.sol[i], i, sts.check[i]);
-	        else
-	            printf("Minute diff %d\n", i);
 	    }
 	}
 
