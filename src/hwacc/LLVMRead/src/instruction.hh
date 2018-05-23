@@ -159,7 +159,11 @@ struct Instruction {
 			bool volatileVar = false;
 			std::string ty;
 			Register *pointer;
+			Register *value;
 			int align;
+			int ival;
+			bool immediate = false;
+
 		};
 		struct GetElementPtr {
 			bool inbounds = false;
@@ -233,6 +237,20 @@ struct Instruction {
 			mutable Register *takenVal;
 		};
 		Phi phi;
+		struct Select {
+			Register *cond;
+			Register *val1;
+			Register *val2;
+			bool icondFlag = false;
+			bool icond = false;
+			int immVal[2];
+			std::string ty;
+			bool intTy = false;
+			bool floatTy = false;
+			bool doubleTy = false;
+			bool immediate[2];
+		};
+		Select select;
 	};
 	struct Custom { };
 	General general;

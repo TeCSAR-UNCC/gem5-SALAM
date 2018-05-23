@@ -602,31 +602,47 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		}
 		instruction.memory.store.ty = parameters[index];
 
-		if (list->findRegister(parameters[index + 3].substr(1)) == NULL) {
-			instruction.memory.store.pointer = new Register(parameters[index + 3].substr(1));
-			list->addRegister(instruction.memory.store.pointer);
-			instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
-			dependencies++;
-		} else {
-			instruction.memory.store.pointer = list->findRegister(parameters[index + 3].substr(1));
-			instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
-			dependencies++;
+		if(parameters[index + 3][0] == '%') {
+			if (list->findRegister(parameters[index + 3].substr(1)) == NULL) {
+				instruction.memory.store.pointer = new Register(parameters[index + 3].substr(1));
+				list->addRegister(instruction.memory.store.pointer);
+				instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
+				dependencies++;
+			} else {
+				instruction.memory.store.pointer = list->findRegister(parameters[index + 3].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
+				dependencies++;
+			}
 		}
-		if (list->findRegister(parameters[index + 1].substr(1)) == NULL) {
-			instruction.memory.store.pointer = new Register(parameters[index + 1].substr(1));
-			list->addRegister(instruction.memory.store.pointer);
-			instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
-			dependencies++;
-		} else {
-			instruction.memory.store.pointer = list->findRegister(parameters[index + 1].substr(1));
-			instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
-			dependencies++;
+		else {
+			DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
+		}
+		if(parameters[index + 1][0] == '%') {
+			if (list->findRegister(parameters[index + 1].substr(1)) == NULL) {
+				instruction.memory.store.value = new Register(parameters[index + 1].substr(1));
+				list->addRegister(instruction.memory.store.value);
+				instruction.dependencies.registers[dependencies] = instruction.memory.store.value;
+				dependencies++;
+			} else {
+				instruction.memory.store.value = list->findRegister(parameters[index + 1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.memory.store.value;
+				dependencies++;
+			}
+		}
+		else {
+			instruction.memory.store.immediate = true;
+			if (instruction.memory.store.ty[0] == 'i') {
+				instruction.memory.store.ival = stoi(parameters[2]);
+			}
+			else {
+				DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
+			}
 		}
 		instruction.memory.store.align = std::stoi(parameters[index + 5]);
 		break;
 	}
 	case IR_GetElementPtr: {
-	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr Creating select<ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
@@ -1218,6 +1234,93 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Select: {
 		// <result> = select selty <cond>, <ty> <val1>, <ty> <val2>             ; yields ty
 		// selty is either i1 or {<N x i1>}
+		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
+		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
+		for(int i = 0; i < parameters.size(); i++){
+			for(int j = 0; j < parameters[i].size(); j++){
+				DPRINTF(ComputeNode, "parameters[%d][%d] %c\n", i, j, parameters[i][j]);
+			}
+		}
+		instruction.general.other = true;
+		instruction.other.select.ty = parameters[2];
+		instruction.general.returnRegister->setSize(instruction.other.select.ty);
+
+		instruction.other.select.immediate[0] = false;
+		instruction.other.select.immediate[1] = false;
+		
+		if(parameters[2][0] == 'i') {
+			instruction.other.select.intTy = true;
+			DPRINTF(ComputeNode, "Integer Type\n");
+		} else if(parameters[2] == "float") {
+			instruction.other.select.floatTy = true;
+		} else if(parameters[2] == "double") {
+			instruction.other.select.doubleTy = true;
+		} else {
+
+		}
+
+		if(parameters[1][0] == '%'){
+			if (list->findRegister(parameters[1].substr(1)) == NULL) {
+				instruction.other.select.cond = new Register(parameters[1].substr(1));
+				list->addRegister(instruction.other.select.cond);
+				instruction.dependencies.registers[dependencies] = instruction.other.select.cond;
+				dependencies++;
+			} else {
+				instruction.other.select.cond = list->findRegister(parameters[1].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.other.select.cond;
+				dependencies++;
+			}
+		} else {
+			instruction.other.select.icondFlag = true;
+			if(parameters[1] == "true") instruction.other.select.icond = true;
+		}
+
+		if(parameters[3][0] == '%') {
+			if (list->findRegister(parameters[3].substr(1)) == NULL) {
+				instruction.other.select.val1 = new Register(parameters[3].substr(1));
+				list->addRegister(instruction.other.select.val1);
+				instruction.dependencies.registers[dependencies] = instruction.other.select.val1;
+				dependencies++;
+			} else {
+				instruction.other.select.val1 = list->findRegister(parameters[3].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.other.select.val1;
+				dependencies++;
+			}
+		} else {
+			///////////////////////////////////
+			instruction.other.select.immediate[0] = true;
+			instruction.other.select.immVal[0] = stoi(parameters[3]);
+			///////////////////////////////////
+			if(parameters[2][0] == 'i') {
+			} else if(parameters[2] == "float") {
+			} else if(parameters[2] == "double") {
+			} else {
+
+			}
+		}
+		if(parameters[5][0] == '%') {
+			if (list->findRegister(parameters[5].substr(1)) == NULL) {
+				instruction.other.select.val2 = new Register(parameters[5].substr(1));
+				list->addRegister(instruction.other.select.val2);
+				instruction.dependencies.registers[dependencies] = instruction.other.select.val2;
+				dependencies++;
+			} else {
+				instruction.other.select.val2 = list->findRegister(parameters[5].substr(1));
+				instruction.dependencies.registers[dependencies] = instruction.other.select.val2;
+				dependencies++;
+			}
+		} else {
+				////////////////////////////////
+				instruction.other.select.immediate[1] = true;
+				instruction.other.select.immVal[1] = stoi(parameters[5]);
+				////////////////////////////
+			if(parameters[4][0] == 'i') {
+			} else if(parameters[2] == "float") {
+			} else if(parameters[2] == "double") {
+			} else {
+				
+			}
+		}
 		break;
 	}
 	case IR_VAArg: {
@@ -1310,10 +1413,18 @@ ComputeNode::compute() {
 	    break;
     }
 	case IR_Store: {
-	    uint64_t dst = instruction.dependencies.registers[0]->getValue();
-        uint64_t data = instruction.dependencies.registers[1]->getValue();
-        req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.dependencies.registers[1]->size);
-	    comm->enqueueWrite(req);
+		uint64_t data;
+	    uint64_t dst = instruction.memory.store.pointer->getValue();
+		if(instruction.memory.store.immediate) {
+			DPRINTF(ComputeNode, "Immediate value store. \n");
+			data = (uint64_t) instruction.memory.store.ival;
+			req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), 1);
+		}
+        else {
+			data = instruction.memory.store.value->getValue();
+        	req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.memory.store.value->size);
+		}
+		comm->enqueueWrite(req);
 		break;
 	}
 	case IR_GetElementPtr: { Operations::llvm_getelementptr(instruction); break; }

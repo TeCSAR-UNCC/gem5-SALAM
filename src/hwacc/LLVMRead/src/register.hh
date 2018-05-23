@@ -48,6 +48,7 @@ public:
   void addRegister(Register *reg) { regList->push_back(reg); }
   size_t size() { return regList->size(); }
   Register *findRegister(std::string name);
+  void printRegNames();
 
 protected:
 };
