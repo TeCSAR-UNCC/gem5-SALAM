@@ -14,7 +14,7 @@ friend class RegisterList;
 private:
   std::string dataType;
   std::string name;
-  bool hot = true;
+  bool hot = false;
 
 public:
   uint64_t value;
