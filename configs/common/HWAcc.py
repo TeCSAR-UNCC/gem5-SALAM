@@ -24,12 +24,13 @@ def makeHWAcc(options, system):
     system.vadd.spm_side = system.iobus.slave
     system.vadd.dram_ranges = [AddrRange(0x80000000, '4GB')]
     system.vadd.llvm_interface = LLVMInterface()
+    system.vadd.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/fft/bench/fft.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/nw/bench/nw.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/spmv/bench/spmv.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/gemm/bench/gemm.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/stencil2d/bench/stencil.ll"
-    system.vadd.llvm_interface.in_file = options.accpath + "/stencil3d/bench/stencil.ll"
+#    system.vadd.llvm_interface.in_file = options.accpath + "/stencil3d/bench/stencil.ll"
 #    system.vadd.llvm_interface.in_file = options.accpath + "/vadd/bench/vadd.ll"
     system.vadd.int_num = 68
     system.vadd.clock_period = 10

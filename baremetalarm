@@ -1,6 +1,12 @@
 #!/bin/bash
-FLAGS=IOAcc,CommInterface,LLVMInterface,LLVMRuntime,-LLVMParse,Interrupt
-KERNEL=$M5_PATH/benchmarks/stencil3d/host/main.elf
+FLAGS=IOAcc,CommInterface,LLVMInterface #,LLVMRuntime,-LLVMParse,Interrupt
+if [ "$1" != "" ]; then
+    BENCH=$1
+else
+    echo "No benchmark specified. Using vadd."
+    BENCH="vadd"
+fi
+KERNEL=$M5_PATH/benchmarks/$BENCH/host/main.elf
 SYS_OPTS="--mem-size=4GB \
           --kernel=$KERNEL \
           --disk-image=$M5_PATH/baremetal/common/fake.iso \
@@ -10,5 +16,5 @@ SYS_OPTS="--mem-size=4GB \
 CACHE_OPTS="--acc_cache"
 # Script to start up full system simulation
 build/ARM/gem5.opt --debug-flags=$FLAGS --outdir=BM_ARM_OUT configs/example/fs.py \
-$SYS_OPTS --accpath=$M5_PATH/benchmarks \
+$SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
 $CACHE_OPTS > BM_ARM_OUT/debug_trace.txt
