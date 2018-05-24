@@ -28,12 +28,16 @@ void Operations::llvm_br(const struct Instruction &instruction) {
 }
 void Operations::llvm_switch(const struct Instruction &instruction) {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
-	uint64_t mainValue = instruction.terminator.value->getValue();
+	uint64_t mainValue = instruction.terminator.value->value;
 	bool found = false;
+	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
 	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
+		DPRINTF(LLVMOp, "Comparing main value %d to case value %d \n", mainValue, instruction.terminator.cases.value[i]);
 		if(mainValue == instruction.terminator.cases.value[i]){
 			instruction.terminator.dest = instruction.terminator.cases.dest[i];
+			DPRINTF(LLVMOp, "Found!\n");
 			found = true;
+			return;
 		}
 	}
 	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
@@ -803,18 +807,14 @@ void Operations::llvm_select(const struct Instruction &instruction) {
 		int val1 = 0;
 		int val2 = 0;
 		int condition = 0;
-		DPRINTF(LLVMOp, "1\n");
 		if(instruction.other.select.immediate[0]) {
 			val1 = instruction.other.select.immVal[0];
 		}
 		else {
-			DPRINTF(LLVMOp, "2\n");
 			val1 = instruction.other.select.val1->getValue();
 		}
-		DPRINTF(LLVMOp, "3\n");
 		if(instruction.other.select.immediate[1]) val2 = instruction.other.select.immVal[1];
 		else val2 = instruction.other.select.val2->getValue();		
-		DPRINTF(LLVMOp, "4\n");
 		if(instruction.other.select.icondFlag){
 			if(instruction.other.select.icond) instruction.general.returnRegister->setValue(&val1);
 			else instruction.general.returnRegister->setValue(&val2);

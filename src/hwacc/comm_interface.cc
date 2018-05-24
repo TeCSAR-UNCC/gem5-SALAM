@@ -264,7 +264,7 @@ CommInterface::tryRead(MemSidePort * port) {
     }
     size = readReq->readLeft > (size - 1) ? size : readReq->readLeft;
     RequestPtr req = new Request(readReq->currentReadAddr, size, flags, masterId);
-    DPRINTF(CommInterface, "Trying to read addr: 0x%x, %d bytes\n",
+    DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes\n",
         req->getPaddr(), size);
 
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
@@ -316,7 +316,7 @@ CommInterface::tryWrite(MemSidePort * port) {
 
 
     DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
-    DPRINTF(CommInterface, "Trying to write to addr: 0x%x, %d bytes, data 0x%x\n",
+    DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%x\n",
         writeReq->currentWriteAddr, size, *((uint64_t*)(&(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]))));
 
     PacketPtr pkt = new Packet(req, MemCmd::WriteReq);

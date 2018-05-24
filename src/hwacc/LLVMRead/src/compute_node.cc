@@ -246,13 +246,13 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.flowControl = true;
 		instruction.terminator.intty = parameters[1];
 		
-		if (list->findRegister(parameters[2]) == NULL) {
-			instruction.terminator.value = new Register(parameters[2]);
+		if (list->findRegister(parameters[2].substr(1)) == NULL) {
+			instruction.terminator.value = new Register(parameters[2].substr(1));
 			list->addRegister(instruction.terminator.value);
 			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
 			dependencies++;
 		} else {
-			instruction.terminator.value = list->findRegister(parameters[2]);
+			instruction.terminator.value = list->findRegister(parameters[2].substr(1));
 			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
 			dependencies++;
 		}
@@ -1219,7 +1219,13 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				}
 				DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			} else {
-				instruction.other.phi.ival[i - 1] = val[i - 1];
+				if (val[i-1] == "true") {
+					instruction.other.phi.ival[i - 1] = '1';
+				} else if (val[i-1] == "false") {
+					instruction.other.phi.ival[i - 1] = '0';
+				} else {
+					instruction.other.phi.ival[i - 1] = val[i - 1];
+				}
 				instruction.other.phi.immVal[i - 1] = true;
 				instruction.other.phi.label[i - 1] = label[i - 1];
 				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
