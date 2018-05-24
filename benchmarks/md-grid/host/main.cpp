@@ -5,9 +5,9 @@
 #define SPM_BASE        0x2f100000
 
 #define NP_OFFSET       0
-#define FRC_OFFSET      sizeof(dvector_t)*3*blockSide
-#define POS_OFFSET      sizeof(dvector_t)*3*blockSide + sizeof(dvector_t)*(3*blockSide+densityFactor)
-#define CHK_OFFSET      sizeof(dvector_t)*3*blockSide + sizeof(dvector_t)*2*(3*blockSide+densityFactor)
+#define FRC_OFFSET      (NP_OFFSET  + sizeof(dvector_t)*3*blockSide)
+#define POS_OFFSET      (FRC_OFFSET + sizeof(dvector_t)*(3*blockSide+densityFactor))
+#define CHK_OFFSET      (POS_OFFSET + sizeof(dvector_t)*(3*blockSide+densityFactor))
 
 md_struct mds;
 
@@ -59,12 +59,12 @@ int main(void) {
             for(j=0; j<blockSide; j++) {
                 for(k=0; k<blockSide; k++) {
                     for(d=0; d<densityFactor; d++) {
-                        if((((mds->force[i][j][k][d].x - mds->check[i][j][k][d].x)) > EPSILON) || ((mds->force[i][j][k][d].x - mds->check[i][j][k][d].x) < -EPSILON))
-            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds->force[i][j][k][d].x, i, mds->check[i][j][k][d].x);
-                        if(((mds->force[i][j][k][d].y - mds->check[i][j][k][d].y)) > EPSILON) || ((mds->force[i][j][k][d].y - mds->check[i][j][k][d].y) < -EPSILON))
-            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds->force[i][j][k][d].y, i, mds->check[i][j][k][d].y);
-                        if(((mds->force[i][j][k][d].z - mds->check[i][j][k][d].z) > EPSILON) || ((mds->force[i][j][k][d].z - mds->check[i][j][k][d].z) < -EPSILON))
-            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds->force[i][j][k][d].z, i, mds->check[i][j][k][d].z);
+                        if((((mds.force[i][j][k][d].x - mds.check[i][j][k][d].x)) > EPSILON) || ((mds.force[i][j][k][d].x - mds.check[i][j][k][d].x) < -EPSILON))
+            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].x, i, mds.check[i][j][k][d].x);
+                        if((((mds.force[i][j][k][d].y - mds.check[i][j][k][d].y)) > EPSILON) || ((mds.force[i][j][k][d].y - mds.check[i][j][k][d].y) < -EPSILON))
+            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].y, i, mds.check[i][j][k][d].y);
+                        if(((mds.force[i][j][k][d].z - mds.check[i][j][k][d].z) > EPSILON) || ((mds.force[i][j][k][d].z - mds.check[i][j][k][d].z) < -EPSILON))
+            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].z, i, mds.check[i][j][k][d].z);
                     }
                 }
             }

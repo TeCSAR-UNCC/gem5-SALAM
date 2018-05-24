@@ -3,8 +3,8 @@
 #define common_val      *(unsigned *)0x80b00000
 #define acc             *(char *)0x2f000000
 #define loc_n_points    *(int *)0x2f000001
-#define loc_force       *(int *)(0x2f000001 + sizeof(int32_t))
-#define loc_position    *(int *)(0x2f000001 + sizeof(int32_t)   + sizeof(dvector_t))
+#define loc_force       *(int *)0x2f000009
+#define loc_position    *(int *)0x2f000011
 
 #define EPSILON 1.0e-6
 
@@ -55,22 +55,25 @@ void genData(md_struct * mds) {
         for(j=0; j<blockSide; j++) {
             for(k=0; k<blockSide; k++) {
                 mds->n_points[i][j][k] = blockSide*2*i + blockSide*j + k;
+//                printf("Creating npoints: %d\n", mds->n_points[i][j][k]);
             }
         }
     }
+//    printf("Created npoints\n");
     
     for(i=0; i<blockSide; i++) {
         for(j=0; j<blockSide; j++) {
             for(k=0; k<blockSide; k++) {
                 for(l=0; l<densityFactor; l++) {
-                    mds->position[i][j][k][l].x = blockSide*3*i + blockSide*2*j + blockSide*k + l;
-                    mds->position[i][j][k][l].y = blockSide*3*i + blockSide*2*j + blockSide*(blockSide-k) + l;
-                    mds->position[i][j][k][l].z = blockSide*3*i + blockSide*2*(blockSide-j) + blockSide*(blockSide-k) + l;
+                    mds->position[i][j][k][l].x = blockSide*3*i + blockSide*2*j + blockSide*k + l + 3;
+                    mds->position[i][j][k][l].y = blockSide*3*i + blockSide*2*j + blockSide*(blockSide-k) + l + 4;
+                    mds->position[i][j][k][l].z = blockSide*3*i + blockSide*2*(blockSide-j) + blockSide*(blockSide-k) + l +3;
+//                    printf("Creating position [%d][%d][%d][%d]: %d %d %d\n", i, j, k, l, mds->position[i][j][k][l].x, mds->position[i][j][k][l].y, mds->position[i][j][k][l].z);
                 }
             }
         }
     }
-    
+//        printf("Created position all\n");
       // Iterate over the grid, block by block
     for( b0.x=0; b0.x<blockSide; b0.x++ ) {
     for( b0.y=0; b0.y<blockSide; b0.y++ ) {
