@@ -5,17 +5,17 @@
 #define SPM_BASE        0x2f100000
 
 #define NP_OFFSET       0
-#define FRC_OFFSET      (NP_OFFSET  + sizeof(dvector_t)*3*blockSide)
-#define POS_OFFSET      (FRC_OFFSET + sizeof(dvector_t)*(3*blockSide+densityFactor))
-#define CHK_OFFSET      (POS_OFFSET + sizeof(dvector_t)*(3*blockSide+densityFactor))
+#define FRC_OFFSET      (NP_OFFSET  + sizeof(int32_t)*blockSide*blockSide*blockSide)
+#define POS_OFFSET      (FRC_OFFSET + sizeof(dvector_t)*(blockSide*blockSide*blockSide*densityFactor))
+#define CHK_OFFSET      (POS_OFFSET + sizeof(dvector_t)*(blockSide*blockSide*blockSide*densityFactor))
 
 md_struct mds;
 
 int main(void) {
-	int32_t ***n_points    = (int32_t       ***)(BASE+NP_OFFSET);
-	dvector_t ****force    = (dvector_t    ****)(BASE+FRC_OFFSET);
-	dvector_t ****position = (dvector_t    ****)(BASE+POS_OFFSET);
-	dvector_t ****check    = (dvector_t    ****)(BASE+CHK_OFFSET);
+	int32_t *n_points    = (int32_t       *)(BASE+NP_OFFSET);
+	TYPE *force    = (TYPE    *)(BASE+FRC_OFFSET);
+	TYPE *position = (TYPE    *)(BASE+POS_OFFSET);
+	TYPE *check    = (TYPE    *)(BASE+CHK_OFFSET);
     int i, j, k, d;
 
 	common_val = 0;
@@ -55,20 +55,20 @@ int main(void) {
 #endif
     acc = 0x00;
 	if(!checkData(&mds)) {
-        for(i=0; i<blockSide; i++) {
-            for(j=0; j<blockSide; j++) {
-                for(k=0; k<blockSide; k++) {
-                    for(d=0; d<densityFactor; d++) {
-                        if((((mds.force[i][j][k][d].x - mds.check[i][j][k][d].x)) > EPSILON) || ((mds.force[i][j][k][d].x - mds.check[i][j][k][d].x) < -EPSILON))
-            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].x, i, mds.check[i][j][k][d].x);
-                        if((((mds.force[i][j][k][d].y - mds.check[i][j][k][d].y)) > EPSILON) || ((mds.force[i][j][k][d].y - mds.check[i][j][k][d].y) < -EPSILON))
-            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].y, i, mds.check[i][j][k][d].y);
-                        if(((mds.force[i][j][k][d].z - mds.check[i][j][k][d].z) > EPSILON) || ((mds.force[i][j][k][d].z - mds.check[i][j][k][d].z) < -EPSILON))
-            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].z, i, mds.check[i][j][k][d].z);
-                    }
-                }
-            }
-        }
+//        for(i=0; i<blockSide; i++) {
+//            for(j=0; j<blockSide; j++) {
+//                for(k=0; k<blockSide; k++) {
+//                    for(d=0; d<densityFactor; d++) {
+//                        if((((mds.force[i][j][k][d].x - mds.check[i][j][k][d].x)) > EPSILON) || ((mds.force[i][j][k][d].x - mds.check[i][j][k][d].x) < -EPSILON))
+//            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].x, i, mds.check[i][j][k][d].x);
+//                        if((((mds.force[i][j][k][d].y - mds.check[i][j][k][d].y)) > EPSILON) || ((mds.force[i][j][k][d].y - mds.check[i][j][k][d].y) < -EPSILON))
+//            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].y, i, mds.check[i][j][k][d].y);
+//                        if(((mds.force[i][j][k][d].z - mds.check[i][j][k][d].z) > EPSILON) || ((mds.force[i][j][k][d].z - mds.check[i][j][k][d].z) < -EPSILON))
+//            	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, mds.force[i][j][k][d].z, i, mds.check[i][j][k][d].z);
+//                    }
+//                }
+//            }
+//        }
 	}
 	*(char *)0x7fffffff = 1; //Kill the simulation
 }

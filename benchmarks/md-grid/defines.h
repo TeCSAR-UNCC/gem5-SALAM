@@ -1,7 +1,11 @@
+#ifndef __DEFINES_H__
+#define __DEFINES_H__
+
+#include "stdint.h"
 //#define SPM
 //#define TEST
 
-#ifndef TEST
+#ifdef TEST
 #define TYPE double
 // Problem Constants
 #define nAtoms        256
@@ -46,3 +50,5 @@ typedef struct {
 } ivector_t;
 #define MIN(x,y) ( (x)<(y) ? (x) : (y) )
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
+
+#endif
