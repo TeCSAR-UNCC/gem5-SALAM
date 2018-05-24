@@ -22,7 +22,7 @@ int main(void) {
 	char * alignedA = (char *)(BASE+ALIA_OFF);
 	char * alignedB = (char *)(BASE+ALIB_OFF);
 	int  * M        = (int  *)(BASE+M_OFF);
-	int  * ptr      = (int  *)(BASE+PTR_OFF);
+	char * ptr      = (char *)(BASE+PTR_OFF);
 	char * checkA   = (char *)(BASE+CHECKA_OFF);
 	char * checkB   = (char *)(BASE+CHECKB_OFF);
 

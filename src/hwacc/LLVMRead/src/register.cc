@@ -1,9 +1,10 @@
 #include "register.hh"
 #include <string>
+#include <iostream>
 #include "debug/LLVMRegister.hh"
 #include "debug/LLVMInterface.hh"
 
-
+#define SystemSize 64
 
 Register::Register(std::string id) {
     name = id;
@@ -20,8 +21,8 @@ Register::setSize(){
     // Code here will infer size based around the stored dataType string
     std::string temp = dataType;
     // Pointers
-    if (temp.compare("pointer") == 0) size = 8;
-    else if (temp.back() =='*') size = 8;
+    if (temp.compare("pointer") == 0) size = SystemSize/8;
+    else if (temp.back() =='*') size = SystemSize/8;
     // Boolean and integer data types
     // Set size if dataType is integer
     else if (temp.front() == 'i') {
@@ -30,9 +31,9 @@ Register::setSize(){
     }
     // Floating point data types    
     // Set size if dataType is float
-    else if (temp.find("float") > -1) size = 4;
+    else if (temp.find("float") > -1) size = SystemSize/16;
     // Set size if dataType is double
-    else if (temp.find("double") > -1) size = 8;
+    else if (temp.find("double") > -1) size = SystemSize/8;
     // Set size if dataType is void
     else if (temp.find("void") > -1) size = 0;
     // Aggregate data types
@@ -43,7 +44,7 @@ Register::setSize(){
     // Unspecified dataType
     // Label
     // Treat size equivalent to a pointer
-    else if (temp.find("label") > -1) size = 8;
+    else if (temp.find("label") > -1) size = SystemSize/8;
     // Unknown dataType
     else { }
 }
@@ -62,4 +63,10 @@ RegisterList::findRegister(std::string name) {
 void
 Register::setValue(void *data) { 
     memcpy(&value, data, size);
+}
+void
+RegisterList::printRegNames() {
+    for (auto it=regList->begin(); it!=regList->end(); ++it) {
+        std::cout << (*it)->getName() << "\n";
+    }
 }

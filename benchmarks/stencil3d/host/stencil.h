@@ -23,7 +23,7 @@ int checkData( stencil_struct * sts ) {
     int i, j, k;
     
     for( i=0; i < SIZE; i++ ) {
-        if (sts->sol[INDX(ROW, COL, k, j, i)]!= sts->check[INDX(ROW, COL, k, j, i)]) {
+        if (sts->sol[i]!= sts->check[i]) {
             printf("Check Failed\n");
             return 0;
         }
@@ -42,7 +42,7 @@ void genData(stencil_struct * sts) {
     }
     
     for( i=0; i < C_SIZE; i++ ) {
-        sts->C[i] = i;
+        sts->C[i] = i+2;
     }
     
     for(j=0; j < COL; j++) {

@@ -795,7 +795,38 @@ void Operations::llvm_phi(const struct Instruction &instruction, std::string pre
 	DPRINTF(LLVMOp, "Storing %u in Register %s\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }
 void Operations::llvm_call(const struct Instruction &instruction) {}
-void Operations::llvm_select(const struct Instruction &instruction) {}
+void Operations::llvm_select(const struct Instruction &instruction) {
+	// Currently only supports integer types but the framework for doubles and floats
+	// exists within compute_node.cc and instruction.hh already
+	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	if(instruction.other.select.intTy) {
+		int val1 = 0;
+		int val2 = 0;
+		int condition = 0;
+		DPRINTF(LLVMOp, "1\n");
+		if(instruction.other.select.immediate[0]) {
+			val1 = instruction.other.select.immVal[0];
+		}
+		else {
+			DPRINTF(LLVMOp, "2\n");
+			val1 = instruction.other.select.val1->getValue();
+		}
+		DPRINTF(LLVMOp, "3\n");
+		if(instruction.other.select.immediate[1]) val2 = instruction.other.select.immVal[1];
+		else val2 = instruction.other.select.val2->getValue();		
+		DPRINTF(LLVMOp, "4\n");
+		if(instruction.other.select.icondFlag){
+			if(instruction.other.select.icond) instruction.general.returnRegister->setValue(&val1);
+			else instruction.general.returnRegister->setValue(&val2);
+		} else {
+			condition = instruction.other.select.cond->getValue();
+			if(condition) instruction.general.returnRegister->setValue(&val1);
+			else instruction.general.returnRegister->setValue(&val2);
+		}
+	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, instruction.general.returnRegister->value);
+	}
+	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+}
 void Operations::llvm_vaarg(const struct Instruction &instruction) {}
 void Operations::llvm_landingpad(const struct Instruction &instruction) {}
 

@@ -293,6 +293,7 @@ LLVMInterface::constructBBList() {
     } else {
         panic("Unable to open LLVM file\n");
     }
+    //regList->printRegNames();
 }
 
 BasicBlock*

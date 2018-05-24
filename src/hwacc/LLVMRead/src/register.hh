@@ -14,7 +14,7 @@ friend class RegisterList;
 private:
   std::string dataType;
   std::string name;
-  bool hot = true;
+  bool hot = false;
 
 public:
   uint64_t value;
@@ -48,6 +48,7 @@ public:
   void addRegister(Register *reg) { regList->push_back(reg); }
   size_t size() { return regList->size(); }
   Register *findRegister(std::string name);
+  void printRegNames();
 
 protected:
 };

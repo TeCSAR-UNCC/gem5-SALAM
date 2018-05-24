@@ -15,7 +15,7 @@ typedef struct {
     char * alignedA;
     char * alignedB;
     int  * M;
-    int  * ptr;
+    char  * ptr;
     char * checkA;
     char * checkB;
 } nw_struct;
