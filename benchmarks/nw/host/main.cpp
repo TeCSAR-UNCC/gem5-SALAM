@@ -8,13 +8,13 @@ nw_struct nws;
 #define BASE        0x80c00000
 #define SPM_BASE    0x2f100000
 #define SEQA_OFF    0
-#define SEQB_OFF    ALEN
-#define ALIA_OFF    ALEN+BLEN
-#define ALIB_OFF    2*(ALEN+BLEN)
-#define M_OFF       3*(ALEN+BLEN)
-#define PTR_OFF     3*(ALEN+BLEN)+4*((ALEN+1)*(BLEN+1))
-#define CHECKA_OFF  3*(ALEN+BLEN)+5*((ALEN+1)*(BLEN+1))
-#define CHECKB_OFF  4*(ALEN+BLEN)+5*((ALEN+1)*(BLEN+1))
+#define SEQB_OFF    SEQA_OFF + ALEN
+#define ALIA_OFF    SEQB_OFF + BLEN
+#define ALIB_OFF    ALIA_OFF + (ALEN+BLEN)
+#define M_OFF       ALIB_OFF + (ALEN+BLEN)
+#define PTR_OFF     M_OFF + 4*((ALEN+1)*(BLEN+1))
+#define CHECKA_OFF  PTR_OFF + ((ALEN+1)*(BLEN+1))
+#define CHECKB_OFF  CHECKA_OFF + (ALEN+BLEN)
 
 int main(void) {
 	char * seqA     = (char *)(BASE+SEQA_OFF);
@@ -73,11 +73,24 @@ int main(void) {
     acc = 0x00;
 	if(!checkData(&nws)) {
 	    for (i = 0; i < (ALEN+BLEN); i++) {
-	        if (alignedA[i] != checkA[i])
-	            printf("alignedA[%2d]=\'%s\' Expected=\'%s\'\n", i, alignedA[i], checkA[i]);
-            if (alignedB[i] != checkB[i])
-	            printf("alignedB[%2d]=\'%s\' Expected=\'%s\'\n", i, alignedB[i], checkB[i]);
+	        //if (alignedA[i] != checkA[i])
+	         //   printf("alignedA[%2d]=\'%c\' Expected=\'%c\'\n", i, alignedA[i], checkA[i]);
+            	//if (alignedB[i] != checkB[i])
+	         //   printf("alignedB[%2d]=\'%c\' Expected=\'%c\'\n", i, alignedB[i], checkB[i]);
+			printf("%c", alignedA[i]);
 	    }
+	    printf("\n");
+		for (i = 0; i < (ALEN+BLEN); i++) {
+			printf("%c", checkA[i]);
+		}
+		printf("\n");
+		for (i = 0; i < (ALEN+BLEN); i++) {
+			printf("%c", alignedB[i]);
+		}
+		printf("\n");
+		for (i = 0; i < (ALEN+BLEN); i++) {
+			printf("%c", checkB[i]);
+		}
 	}
 	*(char *)0x7fffffff = 1;
 }

@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+#define MAXINT 2147483647
+
 /* Operations::llvm Terminator Instructions */
 void Operations::llvm_move(const struct Instruction &instruction) {
 	//Not in current Operations::llvm reference. memmove perhaps?
@@ -61,13 +63,20 @@ void Operations::llvm_add(const struct Instruction &instruction) {
 	int64_t result = 0;
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
+	else {
+		op1 = instruction.binary.op1->getValue();
+		DPRINTF(LLVMOp, "Register: %s = %d \n", instruction.binary.op1->getName(), op1);
+	}
 	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	else {
+		op2 = instruction.binary.op2->getValue();
+		DPRINTF(LLVMOp, "Register: %s = %d \n", instruction.binary.op2->getName(), op2);
+	}
 	// Perform arithmetic
 	result = op1 + op2;
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
+	
 	DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }
 void Operations::llvm_sub(const struct Instruction &instruction) {
@@ -727,28 +736,39 @@ void Operations::llvm_addrspacecast(const struct Instruction &instruction) {}
 /* Operations::llvm Control Operations */
 void Operations::llvm_icmp(const struct Instruction &instruction) {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	// uint64_t op1 = 0;
+	// uint64_t op2 = 0;
+	uint64_t result = 0;
 	int64_t op1 = 0;
 	int64_t op2 = 0;
-	int64_t result = 0;
+	
 	// Determine if comparison is being made between registers or immediate values
 	if (instruction.other.compare.immediate1) op1 = stoi(instruction.other.compare.iop1);
 	else op1 = instruction.other.compare.op1->getValue();
 	if (instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
-	else op2 = instruction.other.compare.op2->getValue();
+	else op2 =  instruction.other.compare.op2->getValue();
 	// Perform Comparison
+	if (op1 > MAXINT) {
+		op1 = ((op1 ^ 0xFFFFFFFF)+1)*-1;
+	}
+	if (op2 > MAXINT) {
+		op2 = ((op2 ^ 0xFFFFFFFF)+1)*-1;
+	}
+	DPRINTF(LLVMOp, "Op1 = %d, Op2 = %d\n", op1, op2);	
+
 	if (instruction.other.compare.condition.eq) result = (op1 == op2);
 	else if (instruction.other.compare.condition.ne) result = (op1 != op2);
-	else if (instruction.other.compare.condition.ugt) result = ((uint)op1 > (uint)op2);
-	else if (instruction.other.compare.condition.uge) result = ((uint)op1 >= (uint)op2);
-	else if (instruction.other.compare.condition.ult) result = ((uint)op1 < (uint)op2);
-	else if (instruction.other.compare.condition.ule) result = ((uint)op1 <= (uint)op2);
-	else if (instruction.other.compare.condition.sgt) result = (op1 > op2);
-	else if (instruction.other.compare.condition.sge) result = (op1 >= op2);
-	else if (instruction.other.compare.condition.slt) result = (op1 < op2);
-	else if (instruction.other.compare.condition.sle) result = (op1 <= op2);
+	else if (instruction.other.compare.condition.ugt) result = (op1 > op2);
+	else if (instruction.other.compare.condition.uge) result = (op1 >= op2);
+	else if (instruction.other.compare.condition.ult) result = (op1 < op2);
+	else if (instruction.other.compare.condition.ule) result = (op1 <= op2);
+	else if (instruction.other.compare.condition.sgt) result = ((int64_t)op1 > (int64_t)op2);
+	else if (instruction.other.compare.condition.sge) result = ((int64_t)op1 >= (int64_t)op2);
+	else if (instruction.other.compare.condition.slt) result = ((int64_t)op1 < (int64_t)op2);
+	else if (instruction.other.compare.condition.sle) result = ((int64_t)op1 <= (int64_t)op2);
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "Comparing %u and %u, result is %u.\n", op1, op2, instruction.general.returnRegister->getValue());
+	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
 }
 void Operations::llvm_fcmp(const struct Instruction &instruction) {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -809,12 +829,13 @@ void Operations::llvm_select(const struct Instruction &instruction) {
 		int condition = 0;
 		if(instruction.other.select.immediate[0]) {
 			val1 = instruction.other.select.immVal[0];
-		}
-		else {
+		} else {
 			val1 = instruction.other.select.val1->getValue();
 		}
-		if(instruction.other.select.immediate[1]) val2 = instruction.other.select.immVal[1];
-		else val2 = instruction.other.select.val2->getValue();		
+		if(instruction.other.select.immediate[1]) {
+			val2 = instruction.other.select.immVal[1];
+		} else val2 = instruction.other.select.val2->getValue();		
+		
 		if(instruction.other.select.icondFlag){
 			if(instruction.other.select.icond) instruction.general.returnRegister->setValue(&val1);
 			else instruction.general.returnRegister->setValue(&val2);
@@ -823,7 +844,7 @@ void Operations::llvm_select(const struct Instruction &instruction) {
 			if(condition) instruction.general.returnRegister->setValue(&val1);
 			else instruction.general.returnRegister->setValue(&val2);
 		}
-	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, instruction.general.returnRegister->value);
+	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, (int) instruction.general.returnRegister->value);
 	}
 	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }

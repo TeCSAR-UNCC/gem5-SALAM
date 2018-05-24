@@ -1,4 +1,5 @@
 #include "../defines.h"
+#include "data.h"
 
 #define common_val    *(unsigned *)0x80b00000
 #define acc           *(char *)0x2f000000
@@ -37,20 +38,15 @@ int checkData(nw_struct * nws) {
 }
 
 void genData(nw_struct * nws) {
-    const char *a = "tcgacgaaataggatgacagcacgttctcgtattagagggccgcggtacaaaccaaatgctgcggcgtacagggcacggggcgctgttcgggagatcgggggaatcgtggcgtgggtgattcgccggc";
-    const char *b = "ttcgagggcgcgtgtcgcggtccatcgacatgcccggtcggtgggacgtgggcgcctgatatagaggaatgcgattggaaggtcggacgggtcggcgagttgggcccggtgaatctgccatggtcgat";
-    const char *alia = "cggccgcttag-tgggtgcggtgctaagggggctagagggcttg-tc-gcggggcacgggacatgcg--gcg-t--cgtaaaccaaacat-g-gcgccgggag-attatgctcttgcacg-acag-ta----g-gat-aaagc---agc-t_________________________________________________________________________________________________________";
-    const char *alib = "--------tagct-ggtaccgt-ctaa-gtggc--ccggg-ttgagcggctgggca--gg-c-tg-gaag-gttagcgt-aaggagatatagtccg-cgggtgcagggtg-gctggcccgtacagctacctggcgctgtgcgcgggagctt_________________________________________________________________________________________________________";
-
     int i;
-    for (i = 0; i < ALEN; i++) {
+	for (i = 0; i < ALEN; i++) {
         nws->seqA[i] = a[i];
     }
     for (i = 0; i < BLEN; i++) {
         nws->seqB[i] = b[i];
     }
     for (i = 0; i < (ALEN+BLEN); i++) {
-        nws->alignedA[i] = alia[i];
-        nws->alignedB[i] = alib[i];
+        nws->checkA[i] = alia[i];
+        nws->checkB[i] = alib[i];
     }
 }
