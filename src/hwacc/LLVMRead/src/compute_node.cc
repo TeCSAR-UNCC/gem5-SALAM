@@ -1,5 +1,6 @@
 #include "compute_node.hh"
 #include "debug/ComputeNode.hh"
+#include "debug/LLVMGEP.hh"
 
 ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
 	std::vector<std::string> parameters;
@@ -685,10 +686,16 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		        index = 1;
 		}
 		if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
-			int stringLength = (instruction.memory.getptr.pty.find_first_of(']') - instruction.memory.getptr.pty.find('%')-1);
-			customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
-			instruction.memory.getptr.llvmType = typeList->findType(customDataType);
-			DPRINTF(ComputeNode, "Custom Data Type = %s\n", customDataType);
+				int stringLength = (instruction.memory.getptr.pty.find_first_of(']') - instruction.memory.getptr.pty.find('%')-1);
+				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
+				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
+			if(instruction.memory.getptr.llvmType != NULL) {	
+				DPRINTF(ComputeNode, "Custom Data Type = %s\n", customDataType);
+			}
+			else {
+				customDataType = "none";
+				DPRINTF(ComputeNode, "No custom data types found\n");
+			}
 		}
 		for (int i = 1; i + index <= last; i+=2) {
 			instruction.memory.getptr.ty[j] = parameters[index+i];

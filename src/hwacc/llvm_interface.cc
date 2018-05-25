@@ -46,7 +46,7 @@ LLVMInterface::tick() {
 //    DPRINTF(LLVMInterface, "*************************************\n");
 //    DPRINTF(LLVMInterface, "                Cycle %d             \n", cycle);
 //    DPRINTF(LLVMInterface, "*************************************\n");
-    DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
+    DPRINTF(IOAcc, "\n%s\n%s %d\n%s\n",
             "*******************************************************************************",
             "   Cycle", cycle,
             "*******************************************************************************");
@@ -215,7 +215,7 @@ LLVMInterface::constructBBList() {
                         if(line[i] == ',') size++;
                     }
                     typeList->addType(new LLVMType(size, name));
-                   // DPRINTF(LLVMParse, "Found new data type. %s of size %i\n", name, size);
+                    // DPRINTF(LLVMInterface, "Found new data type. %s of size %i\n", name, size);
                 } else if (!line.find("define")) { //Found a function. Need to parse its header
                     DPRINTF(LLVMParse, "Found acc function. Parsing Global Vars\n");
                     inFunction = true;

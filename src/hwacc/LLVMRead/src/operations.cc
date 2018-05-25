@@ -1,6 +1,7 @@
 #include "operations.hh"
 #include <string>
 #include "debug/LLVMOp.hh"
+#include "debug/LLVMGEP.hh"
 #include <cstdint>
 #include <vector>
 
@@ -491,27 +492,44 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 				DPRINTF(LLVMOp, "Element Size = %d\n", elements[j]);
 				j++;
 			}
+			if(instruction.memory.getptr.pty[i] == ']') break;
 		}
+		
+		if(instruction.memory.getptr.llvmType != NULL) {
 		dataSize = instruction.memory.getptr.llvmType->getSize();
-		DPRINTF(LLVMOp, "Custom Data Type Size = %d\n", dataSize);
-		for(int i = 0; i < j; i++){
-			for(int k = 0; k < j; k++){
+		j++;
+		
+		////////////////////////////////////////
+		DPRINTF(LLVMGEP, "GEP Instruction: <ty> %s, Base Memory Location: %X (%d), Index Variables: [%s][%s][%s][%s][%d] \n", instruction.memory.getptr.pty, instruction.memory.getptr.ptrval->getValue(), instruction.memory.getptr.ptrval->getValue(), instruction.memory.getptr.idx[0]->getName(),instruction.memory.getptr.idx[1]->getName(),instruction.memory.getptr.idx[2]->getName(),instruction.memory.getptr.idx[3]->getName(),instruction.memory.getptr.immdx[4]);
+		DPRINTF(LLVMGEP, "GEP Index: [%d][%d][%d][%d][%d]\n", instruction.memory.getptr.idx[0]->getValue(),instruction.memory.getptr.idx[1]->getValue(),instruction.memory.getptr.idx[2]->getValue(),instruction.memory.getptr.idx[3]->getValue(),instruction.memory.getptr.immdx[4]);
+		////////////////////////////////////////
+		DPRINTF(LLVMGEP, "Custom Data Type: %s, Size = %d\n", instruction.memory.getptr.llvmType->getName(), dataSize);
+		} else {
+			dataSize = 1;
+			DPRINTF(LLVMOp, "Data Type Size = %d\n", dataSize);
+		}
+		for(int i = 0; i <= j; i++){
+			for(int k = 0; k <= j; k++){
 				totalElements*=elements[k];
 			}
 			if(instruction.memory.getptr.immediate[i]) {
-				DPRINTF(LLVMOp, "Total Elements * dataSize * idx: %d * %d * %d = \n", totalElements, dataSize, instruction.memory.getptr.immdx[i]);
+				DPRINTF(LLVMOp, "Immediate \n");
+				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.immdx[i]);
 				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
 			} else {
-				DPRINTF(LLVMOp, "Total Elements * dataSize * idx: %d * %d * %d = \n", totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
+				DPRINTF(LLVMOp, "Register \n");
+				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 			}
 			finalCount += totalElements;
-			DPRINTF(LLVMOp, " Final Count = %d\n", finalCount);
+			DPRINTF(LLVMGEP, " Final Count = %d\n", finalCount);
 			totalElements = 1;
 			elements[i] = 1;
 		}
-		finalCount *=8; // Final offset calculation, total elements * memory size in bytes
-		DPRINTF(LLVMOp, "Final Offset: %d\n", finalCount);
+
+		if(instruction.memory.getptr.llvmType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
+		else finalCount *=4;
+		DPRINTF(LLVMGEP, "Final Offset: %d\n", finalCount);
 		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
 		instruction.general.returnRegister->setValue(&newAddress);
 	} else {
@@ -539,8 +557,8 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		newAddress += instruction.memory.getptr.ptrval->getValue();
 		instruction.general.returnRegister->setValue(&newAddress);
 	}
-	DPRINTF(LLVMOp, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
-	DPRINTF(LLVMOp, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
+	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
+	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
 }
 void Operations::llvm_fence(const struct Instruction &instruction) {}
 void Operations::llvm_cmpxchg(const struct Instruction &instruction) {}
@@ -748,6 +766,7 @@ void Operations::llvm_icmp(const struct Instruction &instruction) {
 	if (instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
 	else op2 =  instruction.other.compare.op2->getValue();
 	// Perform Comparison
+	/*
 	if (op1 > MAXINT) {
 		op1 = ((op1 ^ 0xFFFFFFFF)+1)*-1;
 	}
@@ -755,17 +774,17 @@ void Operations::llvm_icmp(const struct Instruction &instruction) {
 		op2 = ((op2 ^ 0xFFFFFFFF)+1)*-1;
 	}
 	DPRINTF(LLVMOp, "Op1 = %d, Op2 = %d\n", op1, op2);	
-
+	*/
 	if (instruction.other.compare.condition.eq) result = (op1 == op2);
 	else if (instruction.other.compare.condition.ne) result = (op1 != op2);
 	else if (instruction.other.compare.condition.ugt) result = (op1 > op2);
 	else if (instruction.other.compare.condition.uge) result = (op1 >= op2);
 	else if (instruction.other.compare.condition.ult) result = (op1 < op2);
 	else if (instruction.other.compare.condition.ule) result = (op1 <= op2);
-	else if (instruction.other.compare.condition.sgt) result = ((int64_t)op1 > (int64_t)op2);
-	else if (instruction.other.compare.condition.sge) result = ((int64_t)op1 >= (int64_t)op2);
-	else if (instruction.other.compare.condition.slt) result = ((int64_t)op1 < (int64_t)op2);
-	else if (instruction.other.compare.condition.sle) result = ((int64_t)op1 <= (int64_t)op2);
+	else if (instruction.other.compare.condition.sgt) result = ((int)op1 > (int)op2);
+	else if (instruction.other.compare.condition.sge) result = ((int)op1 >= (int)op2);
+	else if (instruction.other.compare.condition.slt) result = ((int)op1 < (int)op2);
+	else if (instruction.other.compare.condition.sle) result = ((int)op1 <= (int)op2);
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);

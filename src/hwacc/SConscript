@@ -25,5 +25,6 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('LLVMRegister')
     DebugFlag('LLVMOp')
     DebugFlag('LLVMParse')
+    DebugFlag('LLVMGEP')
 
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])
