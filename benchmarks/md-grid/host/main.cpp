@@ -38,7 +38,7 @@ int main(void) {
     loc_force       = (uint64_t)(SPM_BASE+FRC_OFFSET);
     loc_position    = (uint64_t)(SPM_BASE+POS_OFFSET);
 
-    std::memcpy((void *)(SPM_BASE+NP_OFFSET), (void ***)n_points,      sizeof(dvector_t)*3*blockSide);
+    std::memcpy((void *)(SPM_BASE+NP_OFFSET), (void ***)n_points,      sizeof(ivector_t)*3*blockSide);
 //    std::memcpy((void *)(SPM_BASE+SOL_OFFSET), (void *)sol,     sizeof(TYPE)*ROW*COL);
     std::memcpy((void *)(SPM_BASE+POS_OFFSET), (void ****)position,  sizeof(dvector_t)*3*(blockSide+densityFactor));
 #endif
@@ -55,6 +55,30 @@ int main(void) {
 #endif
     acc = 0x00;
 	if(!checkData(&mds)) {
+	    for(i = 0; i < blockSide3*densityFactor; i++) {
+	        int dind = i % densityFactor;
+	        int kind = (i - dind) / densityFactor % blockSide;
+	        int jind = (i - dind - densityFactor * kind) / densityFactor / blockSide % blockSide;
+	        int iind = (i - dind - densityFactor * kind - densityFactor * blockSide * jind) / densityFactor / blockSide2;
+	        printf("f[%d][%d][%d][%d]     \n", iind, jind, kind, dind);
+	        if (std::abs(force[3*i]-check[3*i]) > EPSILON) {
+                printf("X                 \n");
+            }
+            if (std::abs(force[3*i+1]-check[3*i+1]) > EPSILON) {
+                printf("Y                 \n");
+            }
+            if (std::abs(force[3*i+2]-check[3*i+2]) > EPSILON) {
+                printf("Z                 \n");
+            }
+            printf("\n");
+            printf("x:%.13f\n",force[3*i]);
+            printf("y:%.13f\n",force[3*i+1]);
+            printf("z:%.13f\n",force[3*i+2]);
+            printf("c:%.13f\n",check[3*i]);
+            printf("c:%.13f\n",check[3*i+1]);
+            printf("c:%.13f\n",check[3*i+2]);
+            printf("\n");
+	    }
 //        for(i=0; i<blockSide; i++) {
 //            for(j=0; j<blockSide; j++) {
 //                for(k=0; k<blockSide; k++) {
