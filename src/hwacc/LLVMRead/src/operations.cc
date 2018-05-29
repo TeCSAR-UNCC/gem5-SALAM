@@ -250,7 +250,7 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 		fresult = (float)result;
 		instruction.general.returnRegister->setValue(&fresult);
 	} else instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+	DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, instruction.general.returnRegister->getName());
 }
 void Operations::llvm_fmul(const struct Instruction &instruction) {
 	// Floating point Multiplication
@@ -508,19 +508,28 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		} else {
 			dataSize = 1;
 			DPRINTF(LLVMOp, "Data Type Size = %d\n", dataSize);
+			DPRINTF(LLVMGEP, "GEP Index: [%d][%d][%d]\n", instruction.memory.getptr.idx[0]->getValue(),instruction.memory.getptr.idx[1]->getValue(),instruction.memory.getptr.idx[2]->getValue());
 		}
 		for(int i = 0; i <= j; i++){
 			for(int k = 0; k <= j; k++){
 				totalElements*=elements[k];
 			}
 			if(instruction.memory.getptr.immediate[i]) {
+				if(i == j) {
+					totalElements*=(instruction.memory.getptr.immdx[i]);
+				} else {				
 				DPRINTF(LLVMOp, "Immediate \n");
 				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.immdx[i]);
 				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
+				}
 			} else {
+				if(i == j) {
+					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
+				} else {
 				DPRINTF(LLVMOp, "Register \n");
 				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
+				}
 			}
 			finalCount += totalElements;
 			DPRINTF(LLVMGEP, " Final Count = %d\n", finalCount);
