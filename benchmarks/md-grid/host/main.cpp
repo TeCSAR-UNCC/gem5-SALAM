@@ -60,9 +60,12 @@ int main(void) {
 	        int kind = (i - dind) / densityFactor % blockSide;
 	        int jind = (i - dind - densityFactor * kind) / densityFactor / blockSide % blockSide;
 	        int iind = (i - dind - densityFactor * kind - densityFactor * blockSide * jind) / densityFactor / blockSide / blockSide;
-	        bool xfail = std::abs(force[3*i]-check[3*i]) > EPSILON;
-	        bool yfail = std::abs(force[3*i+1]-check[3*i+1]) > EPSILON;
-	        bool zfail = std::abs(force[3*i+2]-check[3*i+2]) > EPSILON;
+	        double xerror = std::abs(force[3*i]-check[3*i])/check[3*i];
+	        double yerror = std::abs(force[3*i+1]-check[3*i+1])/check[3*i+1];
+	        double zerror = std::abs(force[3*i+2]-check[3*i+2])/check[3*i+2];
+	        bool xfail = xerror > EPSILON;
+	        bool yfail = yerror > EPSILON;
+	        bool zfail = zerror > EPSILON;
 	        if (xfail || yfail || zfail) {
 	            printf("f[%d][%d][%d][%d]     \n", iind, jind, kind, dind);
 	            if (xfail) {
@@ -74,20 +77,19 @@ int main(void) {
                 if (zfail) {
                     printf("Z                 \n");
                 }
-                printf("\nForce\n");
-                if (xfail)
-                    printf("x:%.13f\n",force[3*i]);
-                if (yfail)
-                    printf("y:%.13f\n",force[3*i+1]);
-                if (zfail)
-                    printf("z:%.13f\n",force[3*i+2]);
-                printf("Check\n");
-                if (xfail)
-                    printf("x:%.13f\n",check[3*i]);
-                if (yfail)
-                    printf("y:%.13f\n",check[3*i+1]);
-                if (zfail)
-                    printf("z:%.13f\n",check[3*i+2]);
+                printf("\nError\n");
+                if (xfail) {
+                    printf("x:%.3f%%       \n",xerror*100);
+                    printf("%.14f\n", force[3*i]-check[3*i]);
+                }
+                if (yfail) {
+                    printf("y:%.3f%%       \n",yerror*100);
+                    printf("%.14f\n", force[3*i+1]-check[3*i+1]);
+                }
+                if (zfail) {
+                    printf("z:%.3f%%       \n",zerror*100);
+                    printf("%.14f\n", force[3*i+2]-check[3*i+2]);
+                }
                 printf("\n");
             }
 	    }

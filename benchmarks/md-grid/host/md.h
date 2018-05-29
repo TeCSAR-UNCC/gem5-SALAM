@@ -9,7 +9,7 @@
 #define loc_force       *(int *)0x2f000009
 #define loc_position    *(int *)0x2f000011
 
-#define EPSILON 1.0e-6
+#define EPSILON 1.0e-2
 #define blockSide3 blockSide*blockSide*blockSide
 #define blockSide2 blockSide*blockSide
 
@@ -26,7 +26,7 @@ int checkData(md_struct * mds) {
     int i;
 
     for (int i = 0; i < blockSide3*densityFactor; i++) {
-        if (std::abs(mds->force[i]-mds->check[i]) > EPSILON) {
+        if (std::abs(mds->force[i]-mds->check[i])/(mds->check[i]) > EPSILON) {
             printf("Check Failed\n");
             return 0;
         }
