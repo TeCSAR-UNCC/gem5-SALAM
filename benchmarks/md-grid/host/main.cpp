@@ -59,25 +59,37 @@ int main(void) {
 	        int dind = i % densityFactor;
 	        int kind = (i - dind) / densityFactor % blockSide;
 	        int jind = (i - dind - densityFactor * kind) / densityFactor / blockSide % blockSide;
-	        int iind = (i - dind - densityFactor * kind - densityFactor * blockSide * jind) / densityFactor / blockSide2;
-	        printf("f[%d][%d][%d][%d]     \n", iind, jind, kind, dind);
-	        if (std::abs(force[3*i]-check[3*i]) > EPSILON) {
-                printf("X                 \n");
+	        int iind = (i - dind - densityFactor * kind - densityFactor * blockSide * jind) / densityFactor / blockSide / blockSide;
+	        bool xfail = std::abs(force[3*i]-check[3*i]) > EPSILON;
+	        bool yfail = std::abs(force[3*i+1]-check[3*i+1]) > EPSILON;
+	        bool zfail = std::abs(force[3*i+2]-check[3*i+2]) > EPSILON;
+	        if (xfail || yfail || zfail) {
+	            printf("f[%d][%d][%d][%d]     \n", iind, jind, kind, dind);
+	            if (xfail) {
+                    printf("X                 \n");
+                }
+                if (yfail) {
+                    printf("Y                 \n");
+                }
+                if (zfail) {
+                    printf("Z                 \n");
+                }
+                printf("\nForce\n");
+                if (xfail)
+                    printf("x:%.13f\n",force[3*i]);
+                if (yfail)
+                    printf("y:%.13f\n",force[3*i+1]);
+                if (zfail)
+                    printf("z:%.13f\n",force[3*i+2]);
+                printf("Check\n");
+                if (xfail)
+                    printf("x:%.13f\n",check[3*i]);
+                if (yfail)
+                    printf("y:%.13f\n",check[3*i+1]);
+                if (zfail)
+                    printf("z:%.13f\n",check[3*i+2]);
+                printf("\n");
             }
-            if (std::abs(force[3*i+1]-check[3*i+1]) > EPSILON) {
-                printf("Y                 \n");
-            }
-            if (std::abs(force[3*i+2]-check[3*i+2]) > EPSILON) {
-                printf("Z                 \n");
-            }
-            printf("\n");
-            printf("x:%.13f\n",force[3*i]);
-            printf("y:%.13f\n",force[3*i+1]);
-            printf("z:%.13f\n",force[3*i+2]);
-            printf("c:%.13f\n",check[3*i]);
-            printf("c:%.13f\n",check[3*i+1]);
-            printf("c:%.13f\n",check[3*i+2]);
-            printf("\n");
 	    }
 //        for(i=0; i<blockSide; i++) {
 //            for(j=0; j<blockSide; j++) {
