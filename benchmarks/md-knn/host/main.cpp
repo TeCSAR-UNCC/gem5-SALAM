@@ -1,40 +1,75 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "vadd.h"
+#include "md.h"
 
-vadd_struct vas;
+#define BASE            0x80c00000
+#define SPM_BASE        0x2f100000
+
+#define FRCX_OFFSET     0
+#define FRCY_OFFSET     (FRCX_OFFSET  + sizeof(TYPE)*nAtoms)
+#define FRCZ_OFFSET     (FRCY_OFFSET  + sizeof(TYPE)*nAtoms)
+#define POSX_OFFSET     (FRCZ_OFFSET  + sizeof(TYPE)*nAtoms)
+#define POSY_OFFSET     (POSX_OFFSET  + sizeof(TYPE)*nAtoms)
+#define POSZ_OFFSET     (POSY_OFFSET  + sizeof(TYPE)*nAtoms)
+#define NL_OFFSET       (POSZ_OFFSET  + sizeof(TYPE)*nAtoms)
+#define CHKX_OFFSET     (NL_OFFSET  + sizeof(int32_t)*nAtoms*maxNeighbors)
+#define CHKY_OFFSET     (CHKX_OFFSET  + sizeof(TYPE)*nAtoms)
+#define CHKZ_OFFSET     (CHKY_OFFSET  + sizeof(TYPE)*nAtoms)
+
+md_struct mds;
 
 int main(void) {
-	uint64_t base = 0x80c00000;
-    uint64_t spm_base = 0x2f000020;
 
-	TYPE *a = (TYPE *)(base+0);
-	TYPE *b = (TYPE *)(base+sizeof(TYPE)*LENGTH);
-	TYPE *c = (TYPE *)(base+2*sizeof(TYPE)*LENGTH);
-	TYPE *check = (TYPE *)(base+3*sizeof(TYPE)*LENGTH);
+	TYPE *force_x       = (TYPE     *)(BASE+FRCX_OFFSET);
+	TYPE *force_y       = (TYPE     *)(BASE+FRCY_OFFSET);
+	TYPE *force_z       = (TYPE     *)(BASE+FRCZ_OFFSET);
+	TYPE *position_x    = (TYPE     *)(BASE+POSX_OFFSET);
+	TYPE *position_y    = (TYPE     *)(BASE+POSY_OFFSET);
+	TYPE *position_z    = (TYPE     *)(BASE+POSZ_OFFSET);
+	int32_t *NL         = (int32_t  *)(BASE+NL_OFFSET);
+	TYPE *check_x       = (TYPE     *)(BASE+CHKX_OFFSET);
+	TYPE *check_y       = (TYPE     *)(BASE+CHKY_OFFSET);
+	TYPE *check_z       = (TYPE     *)(BASE+CHKZ_OFFSET);
 
 	common_val = 0;
-    vas.a = a;
-    vas.b = b;
-    vas.c = c;
-    vas.check = check;
-    vas.length = LENGTH;
+
+    mds.force_x     = force_x;
+    mds.force_y     = force_y;
+    mds.force_z     = force_z;
+    mds.position_x  = position_x;
+    mds.position_y  = position_y;
+    mds.position_z  = position_z;
+    mds.NL          = NL;
+    mds.check_x     = check_x;
+    mds.check_y     = check_y;
+    mds.check_z     = check_z;
 
     printf("Generating data\n");
-    genData(&vas);
+    genData(&mds);
     printf("Data generated\n");
+    
 #ifndef SPM
-    val_a = (uint64_t)base;
-    val_b = (uint64_t)(base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(base+2*sizeof(TYPE)*LENGTH);
+    loc_force_x     = (uint64_t)(BASE+FRCX_OFFSET);
+    loc_force_y     = (uint64_t)(BASE+FRCY_OFFSET);
+    loc_force_z     = (uint64_t)(BASE+FRCY_OFFSET);
+    loc_position_x  = (uint64_t)(BASE+POSX_OFFSET);
+    loc_position_y  = (uint64_t)(BASE+POSY_OFFSET);
+    loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
+    loc_NL          = (uint64_t)(BASE+NL_OFFSET);
 #else
-    val_a = (uint64_t)spm_base;
-    val_b = (uint64_t)(spm_base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
+    loc_force_x     = (uint64_t)(BASE+FRCX_OFFSET);
+    loc_force_y     = (uint64_t)(BASE+FRCY_OFFSET);
+    loc_force_z     = (uint64_t)(BASE+FRCY_OFFSET);
+    loc_position_x  = (uint64_t)(BASE+POSX_OFFSET);
+    loc_position_y  = (uint64_t)(BASE+POSY_OFFSET);
+    loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
+    loc_NL          = (uint64_t)(BASE+NL_OFFSET);
 
-    std::memcpy((void *)spm_base, (void *)a, sizeof(TYPE)*LENGTH);
-    std::memcpy((void *)(spm_base+4*LENGTH), (void *)b, sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)(SPM_BASE+POSX_OFFSET), (void ***)position_x,   sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+POSY_OFFSET), (void ***)position_y,   sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+POSZ_OFFSET), (void ***)position_z,   sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+NL_OFFSET),   (void ***)NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
 #endif
     int i;
     printf("%d\n", acc);
@@ -46,12 +81,13 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)c, (void *)(spm_base+2*sizeof(TYPE)*LENGTH), sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)(SPM_BASE+FRCX_OFFSET), (void ***)force_x,      sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+FRCY_OFFSET), (void ***)force_y,      sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+FRCZ_OFFSET), (void ***)force_z,      sizeof(TYPE)*nAtoms);
 #endif
     acc = 0x00;
-	if(!checkData(&vas)) {
-	    for (i = 0; i < LENGTH; i++) {
-	        printf("C[%2d]=%f\n", i, vas.c[i]);
-	    }
-	}
+    if(!checkData(&mds)) {
+        /* TBD */
+    }
+	*(char *)0x7fffffff = 1; //Kill the simulation
 }

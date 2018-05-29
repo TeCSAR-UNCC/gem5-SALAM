@@ -7,16 +7,8 @@ In Proceedings of the 3rd Workshop on General-Purpose Computation on Graphics Pr
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "support.h"
-
-#define TYPE double
-
-// Problem Constants
-#define nAtoms        256
-#define maxNeighbors  16
-// LJ coefficients
-#define lj1           1.5
-#define lj2           2.0
+#include <string.h>
+#include "../defines.h"
 
 void md_kernel(TYPE force_x[nAtoms],
                TYPE force_y[nAtoms],

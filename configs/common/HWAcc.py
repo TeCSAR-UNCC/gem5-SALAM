@@ -3,7 +3,7 @@ from m5.objects import *
 from m5.util import *
 
 def makeHWAcc(options, system):
-    system.vadd = CommInterface(pio_addr=0x2f000000, pio_size=49, gic=system.realview.gic)
+    system.vadd = CommInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
     system.vadd.pio = system.iobus.master
     system.vadd.flags_size = 1;
     system.vadd.config_size = 0;
