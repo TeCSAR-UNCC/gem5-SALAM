@@ -16,18 +16,18 @@ void Operations::llvm_ret(const struct Instruction &instruction) {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 }
 void Operations::llvm_br(const struct Instruction &instruction) {
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation!\n", instruction.general.opCode);
 
 	unsigned long long int condition = 0;
 
 	if (!(instruction.terminator.unconditional)) {
-		DPRINTF(LLVMOp, "Conditional Branch Operation \n");
+		DPRINTF(LLVMOp, "Conditional Branch Operation! \n");
 		condition = instruction.terminator.cond->value;
 		if (condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
 		else instruction.terminator.dest = instruction.terminator.iffalse;
 		DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
 	}
-	else DPRINTF(LLVMOp, "Unconditonal Branch Operation \n");
+	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");
 }
 void Operations::llvm_switch(const struct Instruction &instruction) {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -35,7 +35,7 @@ void Operations::llvm_switch(const struct Instruction &instruction) {
 	bool found = false;
 	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
 	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
-		DPRINTF(LLVMOp, "Comparing main value %d to case value %d \n", mainValue, instruction.terminator.cases.value[i]);
+		DPRINTF(LLVMOp, "Comparing main value %d to case value %d: \n", mainValue, instruction.terminator.cases.value[i]);
 		if(mainValue == instruction.terminator.cases.value[i]){
 			instruction.terminator.dest = instruction.terminator.cases.dest[i];
 			DPRINTF(LLVMOp, "Found!\n");
@@ -44,6 +44,7 @@ void Operations::llvm_switch(const struct Instruction &instruction) {
 		}
 	}
 	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
+	DPRINTF(LLVMOp, "Switch selected, destination is %s!", instruction.terminator.dest);
 }
 void Operations::llvm_indirectbr(const struct Instruction &instruction) {}
 void Operations::llvm_invoke(const struct Instruction &instruction) {}
@@ -800,22 +801,62 @@ void Operations::llvm_fcmp(const struct Instruction &instruction) {
 	if (instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
 	else op2 = instruction.other.compare.op2->getValue();
 	// Perform Comparison
-	if (instruction.other.compare.condition.condFalse) result = false;
-	else if (instruction.other.compare.condition.condTrue) result = true;
-	else if (instruction.other.compare.condition.oeq) {if (!(std::isnan(op1) && std::isnan(op2))) {result = (op1 == op2);}
-	} else if (instruction.other.compare.condition.ogt) { if (!(std::isnan(op1) && std::isnan(op2))) { result = (op1 > op2); }
-	} else if (instruction.other.compare.condition.oge) { if (!(std::isnan(op1) && std::isnan(op2))) { result = (op1 >= op2); } 
-	} else if (instruction.other.compare.condition.olt) { if (!(std::isnan(op1) && std::isnan(op2))) { result = (op1 < op2); } 
-	} else if (instruction.other.compare.condition.ole) { if (!(std::isnan(op1) && std::isnan(op2))) { result = (op1 <= op2); } 
-	} else if (instruction.other.compare.condition.one) { if (!(std::isnan(op1) && std::isnan(op2))) { result = (op1 != op2); } 
-	} else if (instruction.other.compare.condition.ord) { if (!(std::isnan(op1) && std::isnan(op2))) { result = true; }
-	} else if (instruction.other.compare.condition.ueq) result = (op1 == op2);
- 	else if (instruction.other.compare.condition.ugt) result = (op1 > op2);
-	else if (instruction.other.compare.condition.uge) result = (op1 >= op2);
-	else if (instruction.other.compare.condition.ult) result = (op1 < op2);
-	else if (instruction.other.compare.condition.ule) result = (op1 <= op2);
-	else if (instruction.other.compare.condition.une) result = (op1 != op2);
-	else if (instruction.other.compare.condition.uno) result = (op1 != op2);
+	if (instruction.other.compare.condition.condFalse) {
+		result = false;
+		DPRINTF(LLVMOp, "Always false:\n");
+	} else if (instruction.other.compare.condition.condTrue) {
+		result = true;
+		DPRINTF(LLVMOp, "Always true:\n");				
+	} else if (instruction.other.compare.condition.oeq) {
+		if (!(std::isnan(op1) && std::isnan(op2))) 
+		DPRINTF(LLVMOp, "Ordered Equal:\n");
+		result = (op1 == op2);
+	} else if (instruction.other.compare.condition.ogt) { 
+		if (!(std::isnan(op1) && std::isnan(op2))) 
+		result = (op1 > op2); 
+		DPRINTF(LLVMOp, "Ordered Greater Then:\n");
+	} else if (instruction.other.compare.condition.oge) { 
+		if (!(std::isnan(op1) && std::isnan(op2)))  
+		result = (op1 >= op2);  
+		DPRINTF(LLVMOp, "Ordered Greater Than or Equal:\n");
+	} else if (instruction.other.compare.condition.olt) { 
+		if (!(std::isnan(op1) && std::isnan(op2)))  
+		result = (op1 < op2);  
+		DPRINTF(LLVMOp, "Ordered Less Than:\n");
+	} else if (instruction.other.compare.condition.ole) { 
+		if (!(std::isnan(op1) && std::isnan(op2)))  
+		result = (op1 <= op2);  
+		DPRINTF(LLVMOp, "Ordered Less Than or Equal:\n");
+	} else if (instruction.other.compare.condition.one) { 
+		if (!(std::isnan(op1) && std::isnan(op2))) 
+		result = (op1 != op2);  
+		DPRINTF(LLVMOp, "Ordered Not Equal:\n");
+	} else if (instruction.other.compare.condition.ord) { 
+		if (!(std::isnan(op1) && std::isnan(op2))) 
+		 result = true; 
+		 DPRINTF(LLVMOp, "Ordered:\n");
+	} else if (instruction.other.compare.condition.ueq) {
+		result = (op1 == op2);
+		DPRINTF(LLVMOp, "Unordered. Equal to:\n");
+ 	} else if (instruction.other.compare.condition.ugt) {
+		result = (op1 > op2);
+		DPRINTF(LLVMOp, "Unordered. Greater Than:\n");
+	} else if (instruction.other.compare.condition.uge) {
+		result = (op1 >= op2);
+		DPRINTF(LLVMOp, "Unordered. Greater or Equal:\n");
+	}else if (instruction.other.compare.condition.ult) {
+		result = (op1 < op2);
+		DPRINTF(LLVMOp, "Unordered. Less than:\n");
+	}else if (instruction.other.compare.condition.ule) {
+		result = (op1 <= op2);
+		DPRINTF(LLVMOp, "Unordered. Less than or equal:\n");
+	}else if (instruction.other.compare.condition.une) {
+		result = (op1 != op2);
+		DPRINTF(LLVMOp, "Unordered. Not equal:\n");
+	}else if (instruction.other.compare.condition.uno) {
+		result = (op1 != op2);
+		DPRINTF(LLVMOp, "Unordered:\n");
+	}
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, instruction.general.returnRegister->getValue());
