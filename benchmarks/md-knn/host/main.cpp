@@ -87,14 +87,40 @@ int main(void) {
 #endif
     acc = 0x00;
     if(!checkData(&mds)) {
+        int checkvals = 0;
+        int errors = 0;
         for (int i = 0; i < nAtoms; i++) {
-            if(((std::abs(force_x[i]-check_x[i])/check_x[i]) > EPSILON) ||
-               ((std::abs(force_y[i]-check_y[i])/check_y[i]) > EPSILON) ||
-               ((std::abs(force_z[i]-check_z[i])/check_z[i]) > EPSILON)) {
-                printf("f[%d] = %f %f %f \t c[%d] = %f %f %f \n", i, force_x[i], force_y[i], force_z[i],
-                                                                  i, check_x[i], check_y[i], check_z[i]);
+            bool xfail = (std::abs(force_x[i]-check_x[i])/check_x[i]) > EPSILON;
+            bool yfail = (std::abs(force_y[i]-check_y[i])/check_y[i]) > EPSILON;
+            bool zfail = (std::abs(force_z[i]-check_z[i])/check_z[i]) > EPSILON;
+            double xerror = (std::abs(force_x[i]-check_x[i])/check_x[i]);
+            double yerror = (std::abs(force_y[i]-check_y[i])/check_y[i]);
+            double zerror = (std::abs(force_z[i]-check_z[i])/check_z[i]);
+            double xemag = std::abs(force_x[i]-check_x[i]);
+            double yemag = std::abs(force_y[i]-check_y[i]);
+            double zemag = std::abs(force_z[i]-check_z[i]);
+            checkvals+=3;
+            if(xfail || yfail || zfail) {
+                printf("I:%3d            \n", i);
+                if(xfail) {
+                    printf("X:             \n");
+                    printf("%.3f%%\n %.13f\n", xerror*100, xemag);
+                    errors++;
+                }
+                if(yfail) {
+                    printf("Y:             \n");
+                    printf("%.3f%%\n %.13f\n", yerror*100, yemag);
+                    errors++;
+                }
+                if(zfail) {
+                    printf("Z:             \n");
+                    printf("%.3f%%\n %.13f\n", zerror*100, zemag);
+                    errors++;
+                }
             }
         }
+        printf("                               \n");
+        printf("Errors: %d \n Total Checks: %d \n", errors, checkvals);
     }
 	*(char *)0x7fffffff = 1; //Kill the simulation
 }
