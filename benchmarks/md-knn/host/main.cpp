@@ -52,7 +52,7 @@ int main(void) {
 #ifndef SPM
     loc_force_x     = (uint64_t)(BASE+FRCX_OFFSET);
     loc_force_y     = (uint64_t)(BASE+FRCY_OFFSET);
-    loc_force_z     = (uint64_t)(BASE+FRCY_OFFSET);
+    loc_force_z     = (uint64_t)(BASE+FRCZ_OFFSET);
     loc_position_x  = (uint64_t)(BASE+POSX_OFFSET);
     loc_position_y  = (uint64_t)(BASE+POSY_OFFSET);
     loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
@@ -60,16 +60,16 @@ int main(void) {
 #else
     loc_force_x     = (uint64_t)(BASE+FRCX_OFFSET);
     loc_force_y     = (uint64_t)(BASE+FRCY_OFFSET);
-    loc_force_z     = (uint64_t)(BASE+FRCY_OFFSET);
+    loc_force_z     = (uint64_t)(BASE+FRCZ_OFFSET);
     loc_position_x  = (uint64_t)(BASE+POSX_OFFSET);
     loc_position_y  = (uint64_t)(BASE+POSY_OFFSET);
     loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
     loc_NL          = (uint64_t)(BASE+NL_OFFSET);
 
-    std::memcpy((void *)(SPM_BASE+POSX_OFFSET), (void ***)position_x,   sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+POSY_OFFSET), (void ***)position_y,   sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+POSZ_OFFSET), (void ***)position_z,   sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+NL_OFFSET),   (void ***)NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
+    std::memcpy((void *)(SPM_BASE+POSX_OFFSET), (void *)position_x,   sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+POSY_OFFSET), (void *)position_y,   sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+POSZ_OFFSET), (void *)position_z,   sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)(SPM_BASE+NL_OFFSET),   (void *)NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
 #endif
     int i;
     printf("%d\n", acc);
@@ -81,13 +81,20 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)(SPM_BASE+FRCX_OFFSET), (void ***)force_x,      sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+FRCY_OFFSET), (void ***)force_y,      sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+FRCZ_OFFSET), (void ***)force_z,      sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)force_x,    (void *)(SPM_BASE+FRCX_OFFSET),     sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)force_y,    (void *)(SPM_BASE+FRCY_OFFSET),     sizeof(TYPE)*nAtoms);
+    std::memcpy((void *)force_z,    (void *)(SPM_BASE+FRCZ_OFFSET),     sizeof(TYPE)*nAtoms);
 #endif
     acc = 0x00;
     if(!checkData(&mds)) {
-        /* TBD */
+        for (int i = 0; i < nAtoms; i++) {
+            if(((std::abs(force_x[i]-check_x[i])/check_x[i]) > EPSILON) ||
+               ((std::abs(force_y[i]-check_y[i])/check_y[i]) > EPSILON) ||
+               ((std::abs(force_z[i]-check_z[i])/check_z[i]) > EPSILON)) {
+                printf("f[%d] = %f %f %f \t c[%d] = %f %f %f \n", i, force_x[i], force_y[i], force_z[i],
+                                                                  i, check_x[i], check_y[i], check_z[i]);
+            }
+        }
     }
 	*(char *)0x7fffffff = 1; //Kill the simulation
 }

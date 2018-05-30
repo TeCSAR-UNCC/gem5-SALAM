@@ -12,7 +12,7 @@
 #define loc_position_z  *(int *)0x2f000029
 #define loc_NL          *(int *)0x2f000031
 
-#define EPSILON 1.0e-6
+#define EPSILON 1.0e-3
 
 typedef struct {
     TYPE * force_x;
@@ -31,9 +31,9 @@ int checkData(md_struct * mds) {
     int i;
 
     for (int i = 0; i < nAtoms; i++) {
-        if (    (std::abs(mds->force_x[i]-mds->check_x[i]) > EPSILON) || 
-                (std::abs(mds->force_y[i]-mds->check_y[i]) > EPSILON) || 
-                (std::abs(mds->force_z[i]-mds->check_z[i]) > EPSILON)) {
+        if (    (std::abs(mds->force_x[i]-mds->check_x[i])/mds->check_x[i] > EPSILON) || 
+                (std::abs(mds->force_y[i]-mds->check_y[i])/mds->check_y[i] > EPSILON) || 
+                (std::abs(mds->force_z[i]-mds->check_z[i])/mds->check_z[i] > EPSILON)) {
             printf("Check Failed\n");
             return 0;
         }
@@ -45,13 +45,21 @@ int checkData(md_struct * mds) {
 void genData(md_struct * mds) {
     int i;
     for(i = 0; i < nAtoms; i++) {
+        mds->check_x[i]     = c_x[i];
+        mds->check_y[i]     = c_y[i];
+        mds->check_z[i]     = c_z[i];
+        mds->position_x[i]  = p_x[i];
+        mds->position_y[i]  = p_y[i];
+        mds->position_z[i]  = p_z[i];
+    }
+    /*
+    for(i = 0; i < nAtoms; i++) {
         mds->check_x[i] = c_x[i];
     }
     
     for(i = 0; i < nAtoms; i++) {
         mds->check_y[i] = c_y[i];
     }
-    printf("CheckY done\n");
     
     for(i = 0; i < nAtoms; i++) {
         mds->check_z[i] = c_z[i];
@@ -65,6 +73,7 @@ void genData(md_struct * mds) {
     for(i = 0; i < nAtoms; i++) {
         mds->position_z[i] = p_z[i];
     }
+    */
     for(i = 0; i < nAtoms*maxNeighbors; i++) {
         mds->NL[i] = n_l[i];
     }
