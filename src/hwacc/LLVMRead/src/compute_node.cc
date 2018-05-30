@@ -520,10 +520,21 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
 				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
 			if(instruction.memory.getptr.llvmType != NULL) {	
-				DPRINTF(ComputeNode, "Custom Data Type = %s\n", customDataType);
+				DPRINTF(LLVMGEP, "Custom Data Type = %s\n", customDataType);
 			} else {
 				customDataType = "none";
-				DPRINTF(ComputeNode, "No custom data types found\n");
+				DPRINTF(LLVMGEP, "No Custom Data Types Found!\n");
+			}
+		}
+		if(instruction.memory.getptr.pty[0] == '%') { // Return type is a custom data type
+				int stringLength = (instruction.memory.getptr.pty.find_first_of(' ') - instruction.memory.getptr.pty.find('%')-1);
+				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
+				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
+			if(instruction.memory.getptr.llvmType != NULL) {	
+				DPRINTF(LLVMGEP, "Custom Data Type = %s\n", customDataType);
+			} else {
+				customDataType = "none";
+				DPRINTF(LLVMGEP, "No Custom Data Types Found!\n");
 			}
 		}
 		for (int i = 1; i + index <= last; i+=2) {
@@ -533,12 +544,12 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				setRegister(parameters[index+i+1], instruction.memory.getptr.idx[j], instruction, list, parameters);
 				instruction.memory.getptr.immediate[j] = false;
 				instruction.memory.getptr.immdx[j] = 0;
-				DPRINTF(ComputeNode, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
+				DPRINTF(LLVMGEP, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
 			}
 			else {
 				instruction.memory.getptr.immediate[j] = true;
 				instruction.memory.getptr.immdx[j] = stoi(parameters[index+i+1]);
-				DPRINTF(ComputeNode, "idx%d = %d\n", j, instruction.memory.getptr.immdx[j]);
+				DPRINTF(LLVMGEP, "idx%d = %d\n", j, instruction.memory.getptr.immdx[j]);
 			}
 			j++;
 			instruction.memory.getptr.index = j;
@@ -1091,7 +1102,7 @@ ComputeNode::checkDependency() {
 						hot = true;
 					} else DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
 				} else {
-					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded", instruction.other.phi.val[i]);
+					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded!\n", instruction.other.phi.val[i]);
 				}
 			}
 		}

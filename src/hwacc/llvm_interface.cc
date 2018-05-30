@@ -206,6 +206,7 @@ LLVMInterface::constructBBList() {
                 if (!line.find("%struct")) { // Found defined data type.
                     int pos = line.find('=');
                     int size = 1;
+                    std::string ty;
                     std::string name = line.substr(1,pos-2);
                     for(int i = pos; i < line.size(); i++) {
                         if(line[i] == ',') size++;
