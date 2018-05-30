@@ -5,6 +5,7 @@
 #include <string>
 #include "compute_node.hh"
 #include "instruction.hh"
+#include "debug.hh"
 
 class Operations
 {

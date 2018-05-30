@@ -2,6 +2,7 @@
 
 #define __REGISTER_HH__
 
+#include "debug.hh"
 #include <cstdint>
 #include <cstring>
 #include <string>

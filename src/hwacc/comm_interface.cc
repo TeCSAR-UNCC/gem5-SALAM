@@ -1,11 +1,8 @@
 #include "hwacc/comm_interface.hh"
-
 #include "base/trace.hh"
-#include "debug/CommInterface.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
-#include "debug/LLVMGEP.hh"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -3,6 +3,7 @@
 #define __MEMORY_REQUEST_HH__
 
 #include "mem/packet.hh"
+#include "debug.hh"
 
 class MemoryRequest {
   friend class CommInterface;

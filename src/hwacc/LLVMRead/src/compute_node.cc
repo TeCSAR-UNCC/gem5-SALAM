@@ -1,6 +1,4 @@
 #include "compute_node.hh"
-#include "debug/ComputeNode.hh"
-#include "debug/LLVMGEP.hh"
 
 ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
 	std::vector<std::string> parameters;
@@ -12,7 +10,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	comm = co;
 	prevBB = prev;
 	// ////////////////////////////////////////////////////////////////////
-
+	
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
 	    std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3);
@@ -22,7 +20,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		    // Create new pointer to the return register
 		    instruction.general.returnRegister = new Register(ret_name);
 		    list->addRegister(instruction.general.returnRegister);
-		    DPRINTF(ComputeNode, "Creating Return Register %s.\n", instruction.general.returnRegister->getName());
+		    DPRINTF(ComputeNode, "Creating Return Register: (%s)\n", instruction.general.returnRegister->getName());
 		} else {
 		    instruction.general.returnRegister = ret_reg;
 		}
@@ -50,7 +48,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	// //////////////////////////////////////////////////////////////////////////////////
 
-	DPRINTF(ComputeNode, "Opcode Found: %s  \n", instruction.general.opCode);
+	DPRINTF(ComputeNode, "Opcode Found: (%s)\n", instruction.general.opCode);
 	// Loop to break apart each component of the LLVM line
 	// Any brackets or braces that contain data are stored as under the parent set
 	// Components are pushed back into the parameter vector in order they are read
@@ -148,6 +146,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 
 	instruction.general.fields = parameters.size();
 	last = (parameters.size() - 1);
+	debugParams(parameters);
 	// Once all components have been found, navigate through and define each component
 	// and initialize the attributes struct values to match the line
 	//Instruction Type
@@ -168,11 +167,10 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Ret: {
 		// ret <type> <value>; Return a value from a non - void function
 		// ret void; Return from void function
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameters[%d]: %s \n", debug, parameters[debug]);
-		
+		// Set general instruction parameters
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
+
 		if (parameters[last].find("void")) {
 			// If void is found then it must not have a return value
 			instruction.terminator.type = "void";
@@ -180,33 +178,22 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			// If void is not found then the last parameters must be the return value,
 			// and preceding it the return type
 			instruction.terminator.type = parameters[last - 1];
-			if (parameters[last][0] == '%') {
-				// Find if return value references a register
+			if(isRegister(parameters[last])) {
+				setRegister(parameters[last], instruction.terminator.value, instruction, list, parameters);
 				instruction.terminator.ivalue = "void";
 				instruction.terminator.intermediate = false;
-				if (list->findRegister(parameters[last]) == NULL) {
-					instruction.terminator.value = new Register(parameters[last]);
-					list->addRegister(instruction.terminator.value);
-					instruction.terminator.value->setSize(instruction.terminator.type);
-					instruction.dependencies.registers[0] = instruction.terminator.value;
-				} else {
-					instruction.terminator.value = list->findRegister(parameters[last]);
-					instruction.terminator.value->setSize(instruction.terminator.type);
-					instruction.dependencies.registers[0] = instruction.terminator.value;
-				}
+				instruction.terminator.value->setSize(instruction.terminator.type);
 			} else {
-				instruction.terminator.intermediate = true;
-				instruction.terminator.ivalue = parameters[last];
+			instruction.terminator.intermediate = true;
+			instruction.terminator.ivalue = parameters[last];
 			}
 		}
 		break;
+		
 	}
 	case IR_Br: {
 		// br i1 <cond>, label <iftrue>, label <iffalse>
 		// br label <dest>          ; Unconditional branch
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
 		if (parameters.size() == 3) {
@@ -219,44 +206,17 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.terminator.type = parameters[1];
 			instruction.terminator.iftrue = parameters[4].substr(1);
 			instruction.terminator.iffalse = parameters[6].substr(1);
-
-			if (list->findRegister(parameters[2].substr(1)) == NULL) {
-				instruction.terminator.cond = new Register(parameters[2].substr(1));
-				list->addRegister(instruction.terminator.cond);
-				instruction.terminator.cond->setSize(instruction.terminator.type);
-				instruction.dependencies.registers[dependencies] = instruction.terminator.cond;
-				dependencies++;
-			} else {
-				instruction.terminator.cond = list->findRegister(parameters[2].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.terminator.cond;
-				instruction.terminator.cond->setSize(instruction.terminator.type);
-				dependencies++;
-			}
+			if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.cond, instruction, list, parameters);
+			instruction.terminator.cond->setSize(instruction.terminator.type);
 		}
 		break;
 	}
 	case IR_Switch: {
-		// Not up to date with setting register datatypes
 		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
-		// When using a switch statement the default case is within instruction.terminator
-		// while each case statement exists within instruction.terminator.cases
-		
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
 		instruction.terminator.intty = parameters[1];
-		
-		if (list->findRegister(parameters[2].substr(1)) == NULL) {
-			instruction.terminator.value = new Register(parameters[2].substr(1));
-			list->addRegister(instruction.terminator.value);
-			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
-			dependencies++;
-		} else {
-			instruction.terminator.value = list->findRegister(parameters[2].substr(1));
-			instruction.dependencies.registers[dependencies] = instruction.terminator.value;
-			dependencies++;
-		}
+		if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.value, instruction, list, parameters);
 		instruction.terminator.defaultdest = parameters[4].substr(1); 
 		int location = 0;
 		int length = 0;
@@ -281,76 +241,24 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		break;
 	}
 	case IR_IndirectBr: {
-		// Not up to date with setting register datatypes
 		// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]
 		
 		break;
 	}
 	case IR_Invoke: {
-		// Not up to date with setting register datatypes
 		// <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
-		//   to label <normal label> unwind label <exception label>
-		/*
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		instruction.general.terminator = true;
-		instruction.general.flowControl = true;
-
-		if (list->findRegister(parameters[last]) == NULL) {
-			instruction.terminator.exception_label = new Register(parameters[last]);
-			list->addRegister(instruction.terminator.exception_label);
-			instruction.dependencies.registers[0] = instruction.terminator.exception_label;
-		} else {
-			instruction.terminator.exception_label = list->findRegister(parameters[last]);
-			instruction.dependencies.registers[0] = instruction.terminator.exception_label;
-		}
-
-		if (list->findRegister(parameters[last - 3]) == NULL) {
-			instruction.terminator.normal_label = new Register(parameters[last - 3]);
-			list->addRegister(instruction.terminator.normal_label);
-			instruction.dependencies.registers[1] = instruction.terminator.normal_label;
-		} else {
-			instruction.terminator.normal_label = list->findRegister(parameters[last - 3]);
-			instruction.dependencies.registers[1] = instruction.terminator.normal_label;
-		}
-		// Determine the calling convention, default to c if none specified
-		if (parameters[0] == "ccc")
-			instruction.attributes.cconv.ccc = true;
-		else if (parameters[0] == "fastcc")
-			instruction.attributes.cconv.fastcc = true;
-		else if (parameters[0] == "coldcc")
-			instruction.attributes.cconv.coldcc = true;
-		else if (parameters[0] == "cc10")
-			instruction.attributes.cconv.cc10 = true;
-		else if (parameters[0] == "cc11")
-			instruction.attributes.cconv.cc11 = true;
-		else
-			instruction.attributes.cconv.ccc = true;
-		// Implementation incomplete
-		break;
-		*/
+		// to label <normal label> unwind label <exception label>
 	}
 	case IR_Resume: {
 		// resume <type> <value>
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
-
+		
 		instruction.terminator.type = parameters[0];
-
-		if (list->findRegister(parameters[1]) == NULL) {
-			instruction.terminator.value = new Register(parameters[1]);
-			list->addRegister(instruction.terminator.value);
-			instruction.dependencies.registers[0] = instruction.terminator.value;
-		} else {
-			instruction.terminator.value = list->findRegister(parameters[1]);
-			instruction.dependencies.registers[0] = instruction.terminator.value;
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.terminator.value, instruction, list, parameters);
 		break;
 	}
 	case IR_Unreachable: {
-		// Not up to date with setting register datatypes
 		// The unreachable instruction has no defined semantics.
 		break;
 	}
@@ -361,7 +269,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -371,7 +278,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
 		instruction.cycle.max = 5;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -383,7 +289,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -393,7 +298,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
 		instruction.cycle.max = 5;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -405,7 +309,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -415,7 +318,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
 		instruction.cycle.max = 5;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -425,7 +327,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -435,7 +336,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -445,7 +345,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
 		instruction.cycle.max = 5;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -454,7 +353,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_URem: {
 		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		debug(parameters);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -462,7 +360,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_SRem: {
 		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		debug(parameters);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -471,7 +368,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
 		instruction.cycle.max = 5;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -484,7 +380,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.bitwise = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -494,7 +389,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.bitwise = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -504,7 +398,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.bitwise = true;
-		debug(parameters);
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -513,7 +406,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_And: {
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.bitwise = true;
-		debug(parameters);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -521,7 +413,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Or: {
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.bitwise = true;
-		debug(parameters);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -529,7 +420,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Xor: {
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.bitwise = true;
-		debug(parameters);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -543,10 +433,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
 		// <result> = load atomic[volatile] <ty>* <pointer>[singlethread] <ordering>, align <alignment>
 		//	!<index> = !{ i32 1 }
-		// *** Debug *** //
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		// *** Debug *** //
 		// Set memory operation flag to true
 		instruction.general.memory = true;
 		// Index variable tracks keywords starting from the beginning of instruction
@@ -566,35 +452,15 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		while (parameters[align].compare("align") != 0)
 		    align++;
 		// Determine if register that contains load address exists
-		if (list->findRegister(parameters[align - 1].substr(1)) == NULL) {
-			// Create register and store as load pointer
-			instruction.memory.load.pointer = new Register(parameters[align - 1].substr(1));
-			// Add register to register list
-			list->addRegister(instruction.memory.load.pointer);
-			// Add register to dependencies list
-			instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
-			// Increment dependencies count for instruction
-			dependencies++;
-		} else {
-			// Assign the register to the load pointer
-			instruction.memory.load.pointer = list->findRegister(parameters[align - 1].substr(1));
-			// Add register to dependencies list
-			instruction.dependencies.registers[dependencies] = instruction.memory.load.pointer;
-			// Increment dependencies count for instruction
-			dependencies++;
-		}
+		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], instruction.memory.load.pointer, instruction, list, parameters);
 		// Set value for alignment
-		DPRINTF(ComputeNode, "Align: %s\n", parameters[align]);
+		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
 	        instruction.memory.load.align = stoi(parameters[align + 1]);
 		break;
 	}
 	case IR_Store: {
 		// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 		// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
-		// *** Debug *** //
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		// *** Debug *** //
 		instruction.general.memory = true;
 		int index = 1;
 		if (parameters[1] == "volatile") {
@@ -602,42 +468,16 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.memory.store.volatileVar = true;
 		}
 		instruction.memory.store.ty = parameters[index];
-
-		if(parameters[index + 3][0] == '%') {
-			if (list->findRegister(parameters[index + 3].substr(1)) == NULL) {
-				instruction.memory.store.pointer = new Register(parameters[index + 3].substr(1));
-				list->addRegister(instruction.memory.store.pointer);
-				instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
-				dependencies++;
-			} else {
-				instruction.memory.store.pointer = list->findRegister(parameters[index + 3].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.memory.store.pointer;
-				dependencies++;
-			}
-		}
-		else {
-			DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
-		}
-		if(parameters[index + 1][0] == '%') {
-			if (list->findRegister(parameters[index + 1].substr(1)) == NULL) {
-				instruction.memory.store.value = new Register(parameters[index + 1].substr(1));
-				list->addRegister(instruction.memory.store.value);
-				instruction.dependencies.registers[dependencies] = instruction.memory.store.value;
-				dependencies++;
-			} else {
-				instruction.memory.store.value = list->findRegister(parameters[index + 1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.memory.store.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, instruction, list, parameters);
+		else DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
+		
+		if(isRegister(parameters[index + 1])) setRegister(parameters[index + 1], instruction.memory.store.value, instruction, list, parameters);
 		else {
 			instruction.memory.store.immediate = true;
 			if (instruction.memory.store.ty[0] == 'i') {
 				instruction.memory.store.ival = stoi(parameters[2]);
 			}
-			else {
-				DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
-			}
+			else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
 		instruction.memory.store.align = std::stoi(parameters[index + 5]);
 		break;
@@ -646,9 +486,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	// <result> = getelementptr Creating select<ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
 		int index = 0;
 		int j = 0;
 		std::string customDataType;
@@ -661,9 +498,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			if (list->findRegister(parameters[3].substr(1)) == NULL) {
 				instruction.memory.getptr.ptrval = new Register(parameters[3]);
 				list->addRegister(instruction.memory.getptr.ptrval);
-			} else {
-				instruction.memory.getptr.ptrval = list->findRegister(parameters[3].substr(1));
-			}
+			} else instruction.memory.getptr.ptrval = list->findRegister(parameters[3].substr(1));
 			if(parameters[1].back() != '*')
 			    index = 3;
 		    else
@@ -673,14 +508,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			if (list->findRegister(parameters[2].substr(1)) == NULL) {
 				instruction.memory.getptr.ptrval = new Register(parameters[3]);
 				list->addRegister(instruction.memory.getptr.ptrval);
-				instruction.dependencies.registers[dependencies] = instruction.memory.getptr.ptrval;
-				dependencies++;
-			} else {
-				instruction.memory.getptr.ptrval = list->findRegister(parameters[2].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.memory.getptr.ptrval;
-				dependencies++;
-			}
-			if(parameters[0].back() != '*')
+			} else instruction.memory.getptr.ptrval = list->findRegister(parameters[2].substr(1));
+			
+			if (parameters[0].back() != '*')
 			    index = 2;
 		    else
 		        index = 1;
@@ -691,27 +521,18 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
 			if(instruction.memory.getptr.llvmType != NULL) {	
 				DPRINTF(ComputeNode, "Custom Data Type = %s\n", customDataType);
-			}
-			else {
+			} else {
 				customDataType = "none";
 				DPRINTF(ComputeNode, "No custom data types found\n");
 			}
 		}
 		for (int i = 1; i + index <= last; i+=2) {
 			instruction.memory.getptr.ty[j] = parameters[index+i];
-			if(parameters[index+i+1][0] == '%') {
+			//if(parameters[index+i+1][0] == '%') {
+			if(isRegister(parameters[index+i+1])) {
+				setRegister(parameters[index+i+1], instruction.memory.getptr.idx[j], instruction, list, parameters);
 				instruction.memory.getptr.immediate[j] = false;
 				instruction.memory.getptr.immdx[j] = 0;
-				if (list->findRegister(parameters[index+i+1].substr(1)) == NULL) {
-					instruction.memory.getptr.idx[j] = new Register(parameters[index + i + 1]);
-					list->addRegister(instruction.memory.getptr.idx[j]);
-					instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
-					dependencies++;
-				} else {
-					instruction.memory.getptr.idx[j] = list->findRegister(parameters[index + i + 1].substr(1));
-					instruction.dependencies.registers[dependencies] = instruction.memory.getptr.idx[j];
-					dependencies++;
-				}
 				DPRINTF(ComputeNode, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
 			}
 			else {
@@ -742,18 +563,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -765,18 +575,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -788,18 +587,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -811,18 +599,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -834,18 +611,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -857,18 +623,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -880,18 +635,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -903,18 +647,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -926,18 +659,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -949,18 +671,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -972,18 +683,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -995,18 +695,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -1018,18 +707,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.conversion = true;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
-		if(parameters[1][0] == '%') {
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.conversion.value = new Register(parameters[1]);
-				list->addRegister(instruction.conversion.value);
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			} else {
-				instruction.conversion.value = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.conversion.value;
-				dependencies++;
-			}
-		}
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
 		else {
 			instruction.conversion.immVal = stoi(parameters[1]);
 			instruction.conversion.immediate = true;
@@ -1039,9 +717,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	// Other Operations - Compare
 	case IR_ICmp: {
 		// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
 		instruction.general.other = true;
 		instruction.general.compare = true;
 		instruction.other.compare.condition.cond = parameters[0];
@@ -1050,35 +725,15 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
 		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last].substr(1)) == NULL) {
-				instruction.other.compare.op2 = new Register(parameters[last].substr(1));
-				list->addRegister(instruction.other.compare.op2);
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
-				dependencies++;
-			} else {
-				instruction.other.compare.op2 = list->findRegister(parameters[last].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.other.compare.op2, instruction, list, parameters);	
+		else {
 			instruction.other.compare.immediate2 = true;
 			instruction.other.compare.iop2 = parameters[last];
 		}
 
 		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
-				instruction.other.compare.op1 = new Register(parameters[last - 1].substr(1));
-				list->addRegister(instruction.other.compare.op1);
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
-				dependencies++;
-			} else {
-				instruction.other.compare.op1 = list->findRegister(parameters[last - 1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.other.compare.op1, instruction, list, parameters);
+		else {
 			instruction.other.compare.immediate1 = true;
 			instruction.other.compare.iop1 = parameters[last - 1];
 		}
@@ -1107,9 +762,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_FCmp: {
 		// <result> = fcmp <cond> <ty> <op1>, <op2>     ; yields {i1} or {<N x i1>}:result
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-
 		instruction.general.other = true;
 		instruction.general.compare = true;
 		instruction.other.compare.condition.cond = parameters[0];
@@ -1118,35 +770,15 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
 		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			if (list->findRegister(parameters[last].substr(1)) == NULL) {
-				instruction.other.compare.op2 = new Register(parameters[last].substr(1));
-				list->addRegister(instruction.other.compare.op2);
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
-				dependencies++;
-			} else {
-				instruction.other.compare.op2 = list->findRegister(parameters[last].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op2;
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.other.compare.op2, instruction, list, parameters);
+		else {
 			instruction.other.compare.immediate2 = true;
 			instruction.other.compare.iop2 = parameters[last];
 		}
 
 		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
-				instruction.other.compare.op1 = new Register(parameters[last - 1].substr(1));
-				list->addRegister(instruction.other.compare.op1);
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
-				dependencies++;
-			} else {
-				instruction.other.compare.op1 = list->findRegister(parameters[last - 1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.compare.op1;
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.other.compare.op1, instruction, list, parameters);
+		else {
 			instruction.other.compare.immediate1 = true;
 			instruction.other.compare.iop1 = parameters[last - 1];
 		}
@@ -1188,9 +820,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_PHI: {
 		// <result> = phi <ty> [ <val0>, <label0>], ...
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		
 		instruction.general.other = true;
 		instruction.general.phi = true;
 		instruction.general.flowControl = true;
@@ -1199,7 +828,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		std::string *val = new std::string[last];
 		std::string *label = new std::string[last];
 		int labelLength = 0;
-		// Phi instructions grouped in brackets first listed as pairs in ival array
 		for (int i = 1; i <= last; i++) {
 			instruction.other.phi.ival[i - 1] = parameters[i];
 			labelLength = instruction.other.phi.ival[i - 1].find(',');
@@ -1208,22 +836,11 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			labelLength = instruction.other.phi.ival[i - 1].find(',');
 			labelLength = instruction.other.phi.ival[i - 1].find(']') - labelLength;
 			label[i - 1] = instruction.other.phi.ival[i - 1].substr((instruction.other.phi.ival[i - 1].find(',')) + 3, labelLength - 4);
-			if (val[i - 1][0] == '%') {
+			if(isRegister(val[i-1])) {
+				setRegister(val[i-1], instruction.other.phi.val[i - 1], instruction, list, parameters);
 				instruction.other.phi.ival[i - 1].clear();
 				instruction.other.phi.immVal[i - 1] = false;
-				val[i - 1] = val[i - 1].substr(1);
-				if (list->findRegister(val[i - 1]) == NULL) {
-					instruction.other.phi.val[i - 1] = new Register(val[i - 1]);
-					list->addRegister(instruction.other.phi.val[i - 1]);
-					instruction.other.phi.label[i - 1] = label[i - 1];
-					instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i - 1];
-					dependencies++;
-				} else {
-					instruction.other.phi.val[i - 1] = list->findRegister(val[i - 1]);
-					instruction.other.phi.label[i - 1] = label[i - 1];
-					instruction.dependencies.registers[dependencies] = instruction.other.phi.val[i - 1];
-					dependencies++;
-				}
+				instruction.other.phi.label[i - 1] = label[i - 1];
 				DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			} else {
 				if (val[i-1] == "true") {
@@ -1247,13 +864,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Select: {
 		// <result> = select selty <cond>, <ty> <val1>, <ty> <val2>             ; yields ty
 		// selty is either i1 or {<N x i1>}
-		DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-		for (int debug = 0; debug <= last; debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
-		for(int i = 0; i < parameters.size(); i++){
-			for(int j = 0; j < parameters[i].size(); j++){
-				DPRINTF(ComputeNode, "parameters[%d][%d] %c\n", i, j, parameters[i][j]);
-			}
-		}
 		instruction.general.other = true;
 		instruction.other.select.ty = parameters[2];
 		instruction.general.returnRegister->setSize(instruction.other.select.ty);
@@ -1268,38 +878,14 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.other.select.floatTy = true;
 		} else if(parameters[2] == "double") {
 			instruction.other.select.doubleTy = true;
-		} else {
-
-		}
-
-		if(parameters[1][0] == '%'){
-			if (list->findRegister(parameters[1].substr(1)) == NULL) {
-				instruction.other.select.cond = new Register(parameters[1].substr(1));
-				list->addRegister(instruction.other.select.cond);
-				instruction.dependencies.registers[dependencies] = instruction.other.select.cond;
-				dependencies++;
-			} else {
-				instruction.other.select.cond = list->findRegister(parameters[1].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.select.cond;
-				dependencies++;
-			}
-		} else {
+		} else { }
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.other.select.cond, instruction, list, parameters);
+		else {
 			instruction.other.select.icondFlag = true;
 			if(parameters[1] == "true") instruction.other.select.icond = true;
 		}
-
-		if(parameters[3][0] == '%') {
-			if (list->findRegister(parameters[3].substr(1)) == NULL) {
-				instruction.other.select.val1 = new Register(parameters[3].substr(1));
-				list->addRegister(instruction.other.select.val1);
-				instruction.dependencies.registers[dependencies] = instruction.other.select.val1;
-				dependencies++;
-			} else {
-				instruction.other.select.val1 = list->findRegister(parameters[3].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.select.val1;
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[3])) setRegister(parameters[3], instruction.other.select.val1, instruction, list, parameters);
+		else {
 			///////////////////////////////////
 			instruction.other.select.immediate[0] = true;
 			instruction.other.select.immVal[0] = stoi(parameters[3]);
@@ -1307,32 +893,18 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			if(parameters[2][0] == 'i') {
 			} else if(parameters[2] == "float") {
 			} else if(parameters[2] == "double") {
-			} else {
-
-			}
+			} else { }
 		}
-		if(parameters[5][0] == '%') {
-			if (list->findRegister(parameters[5].substr(1)) == NULL) {
-				instruction.other.select.val2 = new Register(parameters[5].substr(1));
-				list->addRegister(instruction.other.select.val2);
-				instruction.dependencies.registers[dependencies] = instruction.other.select.val2;
-				dependencies++;
-			} else {
-				instruction.other.select.val2 = list->findRegister(parameters[5].substr(1));
-				instruction.dependencies.registers[dependencies] = instruction.other.select.val2;
-				dependencies++;
-			}
-		} else {
-				////////////////////////////////
-				instruction.other.select.immediate[1] = true;
-				instruction.other.select.immVal[1] = stoi(parameters[5]);
-				////////////////////////////
+		if(isRegister(parameters[5])) setRegister(parameters[5], instruction.other.select.val2, instruction, list, parameters);
+		else {
+			////////////////////////////////
+			instruction.other.select.immediate[1] = true;
+			instruction.other.select.immVal[1] = stoi(parameters[5]);
+			////////////////////////////
 			if(parameters[4][0] == 'i') {
 			} else if(parameters[2] == "float") {
 			} else if(parameters[2] == "double") {
-			} else {
-				
-			}
+			} else { }
 		}
 		break;
 	}
@@ -1377,13 +949,18 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Move: { break; }
 	default: { break; }
 	}
+	dependencyList(parameters, dependencies);
+}
 
+void
+ComputeNode::dependencyList(std::vector<std::string> &parameters, int dependencies) {
 	DPRINTF(ComputeNode, "\n");
 	DPRINTF(ComputeNode, "Dependencies List: \n");
-	if(dependencies == 0) DPRINTF(ComputeNode, "No Dependencies!\n");
-	else {
+	if(dependencies == 0) {
+		DPRINTF(ComputeNode, "No Dependencies!\n\n");
+	} else {
 		for (int i = 0; i < dependencies; i++) {
-			DPRINTF(ComputeNode, "#%d = Register %s. \n", i + 1, instruction.dependencies.registers[i]->getName());
+			DPRINTF(ComputeNode, "#%d = Register (%s)\n", i + 1, instruction.dependencies.registers[i]->getName());
 		}
 		DPRINTF(ComputeNode, "\n");
 	}
@@ -1482,15 +1059,17 @@ ComputeNode::compute() {
 
 bool 
 ComputeNode::commit() {
-	DPRINTF(ComputeNode, "Commit %s Node\n", instruction.general.opCode);
+	// If cycle count is = max cycle count, commit register value to memory
+	DPRINTF(LLVMRegister, "Committing (%s) Compute Node:\n", instruction.general.opCode);
 	if (instruction.general.returnRegister != NULL) {
-		DPRINTF(ComputeNode, "Commit Register %s.\n", instruction.general.returnRegister->getName());
-		//instruction.general.returnRegister->commit();
+		DPRINTF(LLVMRegister, "Attempting to Commit Register (%s)\n", instruction.general.returnRegister->getName());
 		instruction.cycle.current++;
+		DPRINTF(LLVMRegister, "Cycle: Current = (%d) || Max = (%d) || Remaining = (%d)\n", instruction.cycle.current, instruction.cycle.max, instruction.cycle.max - instruction.cycle.current);
 		if (instruction.cycle.current >= instruction.cycle.max) {
 			instruction.general.returnRegister->commit();
+			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", instruction.general.returnRegister->getName(), instruction.general.returnRegister->getValue());
 			return true;
-		}
+		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
 	}
 	return false;
 }
@@ -1499,33 +1078,36 @@ bool
 ComputeNode::checkDependency() {
 	bool hot = false;
 	bool phiBranchDependent = false;
-	if(dependencies == 0) DPRINTF(ComputeNode, "Checking Dependencies: No Dependencies\n");
-	DPRINTF(ComputeNode, "%s.\n", instruction.general.opCode);
+	DPRINTF(LLVMRegister, "Checking Dependencies for (%s) Compute Node!\n", instruction.general.opCode);
+	if(dependencies == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
 	if(instruction.general.opCode == "phi"){
+		DPRINTF(LLVMRegister,"Phi Instruction Detected: Previous BB = (%s)\n", prevBB);
 		for (int i = 0; i < MAXPHI; i++) {
 			if (prevBB == instruction.other.phi.label[i]) {
 				if(!instruction.other.phi.immVal[i]) {
 					phiBranchDependent = true;
 					if(instruction.other.phi.val[i]->getStatus()){
-						DPRINTF(ComputeNode, "Register %s is Hot.\n", instruction.other.phi.val[i]->getName());
+						DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.other.phi.val[i]->getName());
 						hot = true;
-					} else DPRINTF(ComputeNode, "Register %s is Ready.\n", instruction.other.phi.val[i]->getName());
+					} else DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
+				} else {
+					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded", instruction.other.phi.val[i]);
 				}
 			}
 		}
-		if(!phiBranchDependent) DPRINTF(ComputeNode, "Checking Dependencies: No Dependencies.\n");
+		if(!phiBranchDependent) DPRINTF(LLVMRegister, "No Dependencies!\n");
 	} else {
 		for (int i = 0; i < dependencies; i++) {
-			DPRINTF(ComputeNode, "Checking Dependencies #%d:\n", i+1);
+			DPRINTF(LLVMRegister, "Checking Dependency #%d:\n", i+1);
 			if (instruction.dependencies.registers[i]->getStatus()) {
-				DPRINTF(ComputeNode, "Register %s is Hot. %d\n", instruction.dependencies.registers[i]->getName(), instruction.dependencies.registers[i]->getStatus());
+				DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.dependencies.registers[i]->getName());
 				hot = true;
 			} else {
-				DPRINTF(ComputeNode, "Register %s is Ready.\n", instruction.dependencies.registers[i]->getName());
+				DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.dependencies.registers[i]->getName());
 			}
 		}
 	}
-	DPRINTF(ComputeNode, "Checking Dependencies: Finished!\n");
+	DPRINTF(LLVMRegister, "Checking Dependencies: Finished!\n\n");
 
 	return hot;
 }
@@ -1539,9 +1121,10 @@ ComputeNode::reset() {
 }
 
 void
-ComputeNode::debug(std::vector<std::string> &parameters) {
-	DPRINTF(ComputeNode, "Creating %s Compute Node\n", instruction.general.opCode);
-	for (int debug = 0; debug < parameters.size(); debug++) DPRINTF(ComputeNode, "Parameter[%d]: %s \n", debug, parameters[debug]);
+ComputeNode::debugParams(std::vector<std::string> &parameters) { 
+	DPRINTF(ComputeNode, "Creating (%s) Compute Node:\n", instruction.general.opCode);
+	if(DEBUGPARAMS) for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
+	DPRINTF(ComputeNode, "\n");
 }
 
 void
@@ -1568,6 +1151,21 @@ ComputeNode::isRegister(std::string data){
 }
 
 void
+ComputeNode::setRegister(std::string data, Register *&reg, Instruction &instruction, RegisterList *list, std::vector<std::string> &parameters) {
+	std::string name = data.substr(1);
+	if (list->findRegister(name) == NULL) {
+		reg = new Register(name);
+		list->addRegister(reg);
+		instruction.dependencies.registers[dependencies] = reg;
+		dependencies++;
+		} else {
+		reg = list->findRegister(name);
+		instruction.dependencies.registers[dependencies] = reg;
+		dependencies++;
+	}
+}
+
+void
 ComputeNode::initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction){
 	int last = parameters.size() - 1;
 	if(instruction.general.binary){
@@ -1590,61 +1188,18 @@ ComputeNode::setOperands(RegisterList *list, std::vector<std::string> &parameter
 	if(instruction.general.binary){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			// Value Stored in register
-			// Substring to remove % symbol
-			// Check register list to see if register already exists
-			if (list->findRegister(parameters[last].substr(1)) == NULL) {
-				// Create new register
-				// Set operand to point to new register
-				instruction.binary.op2 = new Register(parameters[last].substr(1));
-				// Add new register to register list
-				list->addRegister(instruction.binary.op2);
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				// Increment dependencies count for operation
-				dependencies++;
-			} else {
-				// Register already exists, update instruction pointer
-				instruction.binary.op2 = list->findRegister(parameters[last].substr(1));
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.binary.op2;
-				// Increment dependencies count for operation
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.binary.op2, instruction, list, parameters);
+		else {
 			// Operation uses immediate value
 			// Set immediate flag true
 			instruction.binary.immediate2 = true;
 			// Load string representation of immediate value
 			instruction.binary.iop2 = parameters[last];
 		}
-
 		// Operand 1
 		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			// Value Stored in register
-			// Substring to remove % symbol
-			// Check register list to see if register already exists
-			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
-				// Create new register
-				// Set operand to point to new register
-				instruction.binary.op1 = new Register(parameters[last - 1].substr(1));
-				// Add new register to register list
-				list->addRegister(instruction.binary.op1);
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				// Increment dependencies count for operation
-				dependencies++;
-			} else {
-				// Register already exists, update instruction pointer
-				instruction.binary.op1 = list->findRegister(parameters[last - 1].substr(1));
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.binary.op1;
-				// Increment dependencies count for operation
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.binary.op1, instruction, list, parameters);
+		else {
 			// Operation uses immediate value
 			// Set immediate flag true
 			instruction.binary.immediate1 = true;
@@ -1654,61 +1209,18 @@ ComputeNode::setOperands(RegisterList *list, std::vector<std::string> &parameter
 	} else if(instruction.general.bitwise) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if (parameters[last][0] == '%') {
-			// Value Stored in register
-			// Substring to remove % symbol
-			// Check register list to see if register already exists
-			if (list->findRegister(parameters[last].substr(1)) == NULL) {
-				// Create new register
-				// Set operand to point to new register
-				instruction.bitwise.op2 = new Register(parameters[last].substr(1));
-				// Add new register to register list
-				list->addRegister(instruction.bitwise.op2);
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				// Increment dependencies count for operation
-				dependencies++;
-			} else {
-				// Register already exists, update instruction pointer
-				instruction.bitwise.op2 = list->findRegister(parameters[last].substr(1));
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op2;
-				// Increment dependencies count for operation
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.bitwise.op2, instruction, list, parameters);
+		else {
 			// Operation uses immediate value
 			// Set immediate flag true
 			instruction.bitwise.immediate2 = true;
 			// Load string representation of immediate value
 			instruction.bitwise.iop2 = parameters[last];
 		}
-
 		// Operand 1
 		// Check if value is from register or immediate value
-		if (parameters[last - 1][0] == '%') {
-			// Value Stored in register
-			// Substring to remove % symbol
-			// Check register list to see if register already exists
-			if (list->findRegister(parameters[last - 1].substr(1)) == NULL) {
-				// Create new register
-				// Set operand to point to new register
-				instruction.bitwise.op1 = new Register(parameters[last - 1].substr(1));
-				// Add new register to register list
-				list->addRegister(instruction.bitwise.op1);
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				// Increment dependencies count for operation
-				dependencies++;
-			} else {
-				// Register already exists, update instruction pointer
-				instruction.bitwise.op1 = list->findRegister(parameters[last - 1].substr(1));
-				// Update dependencies for this operation
-				instruction.dependencies.registers[dependencies] = instruction.bitwise.op1;
-				// Increment dependencies count for operation
-				dependencies++;
-			}
-		} else {
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.bitwise.op1, instruction, list, parameters);
+		else {
 			// Operation uses immediate value
 			// Set immediate flag true
 			instruction.bitwise.immediate1 = true;

@@ -4,6 +4,7 @@
 
 #include "register.hh"
 #include "llvm_types.hh"
+#include "debug.hh"
 
 #define MAXCASES 4
 #define MAXDEPENDENTS 5

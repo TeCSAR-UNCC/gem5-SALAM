@@ -5,6 +5,7 @@
 #include "params/IOAcc.hh"
 #include "dev/io_device.hh"
 #include "dev/arm/base_gic.hh"
+#include "hwacc/LLVMRead/src/debug.hh"
 
 #include <queue>
 

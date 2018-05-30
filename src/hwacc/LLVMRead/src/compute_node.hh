@@ -9,6 +9,7 @@
 #include "hwacc/comm_interface.hh"
 #include "mem_request.hh"
 #include "base/types.hh"
+#include "debug.hh"
 #include <vector>
 
 class ComputeNode {
@@ -167,9 +168,11 @@ public:
   void compute();
   bool commit();
   bool checkDependency();
-  void debug(std::vector<std::string> &parameters);
+  void dependencyList(std::vector<std::string> &parameters, int dependencies);
+  void debugParams(std::vector<std::string> &parameters);
   void setFlags(std::vector<std::string> &parameters, Instruction &instruction);
   bool isRegister(std::string data);
+  void setRegister(std::string data, Register *&reg, Instruction &instruction, RegisterList *list, std::vector<std::string> &parameters);
   void setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction);
   void initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction);
   MemoryRequest * getReq() { return req; }

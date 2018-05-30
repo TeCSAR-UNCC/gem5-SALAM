@@ -1,8 +1,6 @@
 #include "register.hh"
 #include <string>
 #include <iostream>
-#include "debug/LLVMRegister.hh"
-#include "debug/LLVMInterface.hh"
 
 #define SystemSize 64
 

@@ -7,6 +7,7 @@
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/operations.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
+#include "hwacc/LLVMRead/src/debug.hh"
 
 #include <list>
 #include <queue>
