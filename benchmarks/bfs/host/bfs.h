@@ -1,36 +1,47 @@
+#ifndef DEFINES
 #include "../defines.h"
+#endif
+#include "data.h"
 
-#define common_val *(unsigned *)0x80b00000
-#define acc        *(char *)0x2f000000
-#define val_a      *(int *)0x2f000001
-#define val_b      *(int *)0x2f000009
-#define val_c      *(int *)0x2f000011
+#define common_val      *(unsigned *)0x80b00000
+#define ACC             *(char *)0x2f000000
+#define NODES_ADDR      *(int *)0x2f000001
+#define EDGES_ADDR      *(int *)0x2f000009
+#define START_ADDR      *(int *)0x2f000011
+#define LEVEL_ADDR      *(int *)0x2f000019
+#define COUNT_ADDR      *(int *)0x2f000021
 
 typedef struct {
-    TYPE * a;
-    TYPE * b;
-    TYPE * c;
-    TYPE * check;
-    int length;
-} vadd_struct;
+    node_index_t * nodes;
+    edge_index_t * edges;
+    node_index_t * starting_node;
+    level_t      * level;
+    edge_index_t * level_counts;
+    edge_index_t * check;
+} bfs_struct;
 
-int checkData(vadd_struct * vas) {
+int checkData(bfs_struct * bfs) {
     int i;
-    for (i = 0; i < vas->length; i++) {
-        if (vas->c[i] != vas->check[i]) {
-            printf("Check Failed\n");
+    for (i = 0; i < N_LEVELS; i++) {
+        if (bfs->level_counts[i] != bfs->check[i]) {
+            printf("Check Failed!\n");
             return 0;
         }
     }
-    printf("Check Passed\n");
+    printf("Check Passed!\n");
     return 1;
 }
 
-void genData(vadd_struct * vas) {
+void genData(bfs_struct * bfs) {
     int i;
-    for (i = 0; i < vas->length; i++) {
-        vas->a[i] = (TYPE)i;
-        vas->b[i] = (TYPE)(vas->length - i);
-        vas->check[i] = vas->a[i]+vas->b[i];
+    *(bfs->starting_node) = start;
+    for (i = 0; i < 2*N_NODES; i++) {
+        bfs->nodes[i] = nod[i];
+    }
+    for (i = 0; i < N_NODES; i++) {
+        bfs->edges[i] = edg[i];
+    }
+    for (i = 0; i < N_LEVELS; i++) {
+        bfs->check[i] = chk[i];
     }
 }

@@ -1,57 +1,74 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "vadd.h"
+#include "bfs.h"
 
-vadd_struct vas;
+bfs_struct bfs;
+
+#define BASE            0x80c00000
+#define SPM_BASE        0x2f100000
+
+#define NODES_OFFSET 0
+#define EDGES_OFFSET NODES_OFFSET + sizeof(node_index_t) * N_NODES * 2
+#define START_OFFSET EDGES_OFFSET + sizeof(edge_index_t) * N_NODES
+#define LEVEL_OFFSET START_OFFSET + sizeof(node_index_t)
+#define COUNT_OFFSET LEVEL_OFFSET + sizeof(level_t)      * N_NODES
+#define CHECK_OFFSET COUNT_OFFSET + sizeof(edge_index_t) * N_LEVELS
 
 int main(void) {
-	uint64_t base = 0x80c00000;
-    uint64_t spm_base = 0x2f000020;
+    node_index_t * nodes =         (node_index_t *)(BASE + NODES_OFFSET);
+    edge_index_t * edges =         (edge_index_t *)(BASE + EDGES_OFFSET);
+    node_index_t * starting_node = (node_index_t *)(BASE + START_OFFSET);
+    level_t      * level =         (level_t      *)(BASE + LEVEL_OFFSET);
+    edge_index_t * level_counts =  (edge_index_t *)(BASE + COUNT_OFFSET);
+    edge_index_t * check =         (edge_index_t *)(BASE + CHECK_OFFSET);
 
-	TYPE *a = (TYPE *)(base+0);
-	TYPE *b = (TYPE *)(base+sizeof(TYPE)*LENGTH);
-	TYPE *c = (TYPE *)(base+2*sizeof(TYPE)*LENGTH);
-	TYPE *check = (TYPE *)(base+3*sizeof(TYPE)*LENGTH);
-
-	common_val = 0;
-    vas.a = a;
-    vas.b = b;
-    vas.c = c;
-    vas.check = check;
-    vas.length = LENGTH;
+    bfs.nodes = nodes;
+    bfs.edges = edges;
+    bfs.starting_node = starting_node;
+    bfs.level = level;
+    bfs.level_counts = level_counts;
+    bfs.check = check;
 
     printf("Generating data\n");
-    genData(&vas);
+    genData(&bfs);
     printf("Data generated\n");
 #ifndef SPM
-    val_a = (uint64_t)base;
-    val_b = (uint64_t)(base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(base+2*sizeof(TYPE)*LENGTH);
+    NODES_ADDR = (uint64_t)(BASE + NODES_OFFSET);
+    EDGES_ADDR = (uint64_t)(BASE + EDGES_OFFSET);
+    START_ADDR = (uint64_t)(BASE + START_OFFSET);
+    LEVEL_ADDR = (uint64_t)(BASE + LEVEL_OFFSET);
+    COUNT_ADDR = (uint64_t)(BASE + COUNT_OFFSET);
 #else
-    val_a = (uint64_t)spm_base;
-    val_b = (uint64_t)(spm_base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
+    NODES_ADDR = (uint64_t)(SPM_BASE + NODES_OFFSET);
+    EDGES_ADDR = (uint64_t)(SPM_BASE + EDGES_OFFSET);
+    START_ADDR = (uint64_t)(SPM_BASE + START_OFFSET);
+    LEVEL_ADDR = (uint64_t)(SPM_BASE + LEVEL_OFFSET);
+    COUNT_ADDR = (uint64_t)(SPM_BASE + COUNT_OFFSET);
 
-    std::memcpy((void *)spm_base, (void *)a, sizeof(TYPE)*LENGTH);
-    std::memcpy((void *)(spm_base+4*LENGTH), (void *)b, sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)(SPM_BASE + NODES_OFFSET), (void *)nodes, sizeof(node_index_t) * N_NODES * 2);
+    std::memcpy((void *)(SPM_BASE + EDGES_OFFSET), (void *)edges, sizeof(edge_index_t) * N_NODES);
+    std::memcpy((void *)(SPM_BASE + START_OFFSET), (void *)start, sizeof(node_index_t));
 #endif
     int i;
-    printf("%d\n", acc);
+    printf("%d\n", ACC);
 
-    acc = 0x01;
-    printf("%d\n", acc);
+    ACC = 0x01;
+    printf("%d\n", ACC);
 
-	while(acc != 0x4) {
-        printf("%d\n", acc);
+	while(ACC != 0x4) {
+        printf("%d\n", ACC);
 	}
 #ifdef SPM
-    std::memcpy((void *)c, (void *)(spm_base+2*sizeof(TYPE)*LENGTH), sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)level, (void *)(SPM_BASE + LEVEL_OFFSET), sizeof(level_t));
+    std::memcpy((void *)level_counts, (void *)(SPM_BASE + COUNT_OFFSET), sizeof(edge_index_t) * N_LEVELS);
 #endif
-    acc = 0x00;
-	if(!checkData(&vas)) {
-	    for (i = 0; i < LENGTH; i++) {
-	        printf("C[%2d]=%f\n", i, vas.c[i]);
+    ACC = 0x00;
+	if(!checkData(&bfs)) {
+	    for (i = 0; i < N_LEVELS; i++) {
+	        if (check[i] != level_counts[i]) {
+	            printf("idx:%d exp:%d act:%d\n", i, check[i], level_counts[i]);
+	        }
 	    }
 	}
 }
