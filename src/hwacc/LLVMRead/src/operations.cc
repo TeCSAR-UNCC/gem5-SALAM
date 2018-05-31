@@ -466,7 +466,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMGEP, "Performing %s Operation  (%s)\n", instruction.general.opCode, instruction.general.returnRegister->getName());
 	uint64_t index = instruction.memory.getptr.index;
 	uint64_t elements[MAXGPE];
 	uint64_t currentValue[MAXGPE];
@@ -484,13 +484,55 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		elements[i] = 1;
 	}
 	
+	if(instruction.memory.getptr.pty[0] == '%') { // Return type is a custom data type
+		if(instruction.memory.getptr.llvmType != NULL) {
+			dataSize = instruction.memory.getptr.llvmType->getSize();
+			DPRINTF(LLVMGEP, "Custom Data Type: %s, Size = %d\n", instruction.memory.getptr.llvmType->getName(), dataSize);
+			j++;
+		} else {
+			dataSize = 1;
+			DPRINTF(LLVMGEP, "Data Type Size = %d\n", dataSize);
+		}
 
-	if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
+	for(int i = 0; i <= j; i++){
+			for(int k = 0; k <= j; k++){
+				totalElements*=elements[k];
+			}
+			if(instruction.memory.getptr.immediate[i]) {
+				if(i == j) {
+					totalElements*=(instruction.memory.getptr.immdx[i]);
+				} else {				
+				DPRINTF(LLVMGEP, "Immediate \n");
+				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.immdx[i]);
+				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
+				}
+			} else {
+				if(i == j) {
+					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
+				} else {
+				DPRINTF(LLVMGEP, "Register \n");
+				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
+				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
+				}
+			}
+			finalCount += totalElements;
+			DPRINTF(LLVMGEP, " Final Count = %d\n", finalCount);
+			totalElements = 1;
+			elements[i] = 1;
+		}
+
+		if(instruction.memory.getptr.llvmType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
+		else finalCount *=4;
+		DPRINTF(LLVMGEP, "Final Offset: %d\n", finalCount);
+		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
+		instruction.general.returnRegister->setValue(&newAddress);
+		////////////////////////////////////////
+	} else if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
 		for(int i = 0; i < instruction.memory.getptr.pty.size(); i++){
 			if(instruction.memory.getptr.pty[i] == '[') {
 				// Find the next integer value Ex: [A x [B x [C x dataSize]]] returns A, B, C
 				elements[j] = stoi(instruction.memory.getptr.pty.substr(i+1, instruction.memory.getptr.pty.find(' ', i)-i-1));
-				DPRINTF(LLVMOp, "Element Size = %d\n", elements[j]);
+				DPRINTF(LLVMGEP, "Element Size = %d\n", elements[j]);
 				j++;
 			}
 			if(instruction.memory.getptr.pty[i] == ']') break;
@@ -499,16 +541,10 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		if(instruction.memory.getptr.llvmType != NULL) {
 		dataSize = instruction.memory.getptr.llvmType->getSize();
 		j++;
-		
-		////////////////////////////////////////
-		DPRINTF(LLVMGEP, "GEP Instruction: <ty> %s, Base Memory Location: %X (%d), Index Variables: [%s][%s][%s][%s][%d] \n", instruction.memory.getptr.pty, instruction.memory.getptr.ptrval->getValue(), instruction.memory.getptr.ptrval->getValue(), instruction.memory.getptr.idx[0]->getName(),instruction.memory.getptr.idx[1]->getName(),instruction.memory.getptr.idx[2]->getName(),instruction.memory.getptr.idx[3]->getName(),instruction.memory.getptr.immdx[4]);
-		DPRINTF(LLVMGEP, "GEP Index: [%d][%d][%d][%d][%d]\n", instruction.memory.getptr.idx[0]->getValue(),instruction.memory.getptr.idx[1]->getValue(),instruction.memory.getptr.idx[2]->getValue(),instruction.memory.getptr.idx[3]->getValue(),instruction.memory.getptr.immdx[4]);
-		////////////////////////////////////////
 		DPRINTF(LLVMGEP, "Custom Data Type: %s, Size = %d\n", instruction.memory.getptr.llvmType->getName(), dataSize);
 		} else {
 			dataSize = 1;
-			DPRINTF(LLVMOp, "Data Type Size = %d\n", dataSize);
-			DPRINTF(LLVMGEP, "GEP Index: [%d][%d][%d]\n", instruction.memory.getptr.idx[0]->getValue(),instruction.memory.getptr.idx[1]->getValue(),instruction.memory.getptr.idx[2]->getValue());
+			DPRINTF(LLVMGEP, "Data Type Size = %d\n", dataSize);
 		}
 		for(int i = 0; i <= j; i++){
 			for(int k = 0; k <= j; k++){
@@ -518,7 +554,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 				if(i == j) {
 					totalElements*=(instruction.memory.getptr.immdx[i]);
 				} else {				
-				DPRINTF(LLVMOp, "Immediate \n");
+				DPRINTF(LLVMGEP, "Immediate \n");
 				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.immdx[i]);
 				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
 				}
@@ -526,7 +562,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 				if(i == j) {
 					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
 				} else {
-				DPRINTF(LLVMOp, "Register \n");
+				DPRINTF(LLVMGEP, "Register \n");
 				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 				}
@@ -543,32 +579,34 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
 		instruction.general.returnRegister->setValue(&newAddress);
 	} else {
-		if (instruction.memory.getptr.pty[0] == 'i') {
-			size[0] = (stoi(instruction.memory.getptr.pty.substr(1))) / 8;
-		} else if (instruction.memory.getptr.pty.find("double") == 0) {
-			size[0] = 8;
-		} else if (instruction.memory.getptr.pty.find("float") == 0) {
-			size[0] = 4;
+		for(int i = 0; i < MAXGPE; i++) {
+			if (instruction.memory.getptr.pty[i] == 'i') {
+				size[i] = (stoi(instruction.memory.getptr.pty.substr(1))) / 8;
+			} else if (instruction.memory.getptr.pty.find("double") == 0) {
+				size[i] = 8;
+			} else if (instruction.memory.getptr.pty.find("float") == 0) {
+				size[i] = 4;
+			}
 		}
 	
-		DPRINTF(LLVMOp, "Size of data type: %d\n", size[0]);
+		DPRINTF(LLVMGEP, "Size of data type: %d\n", size[0]);
 
 		for (int i = 0; i < index; i++) {
 			if(!instruction.memory.getptr.immediate[i]) currentValue[i] = instruction.memory.getptr.idx[i]->value;
 			else currentValue[i] = instruction.memory.getptr.immdx[i];
-			DPRINTF(LLVMOp, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
+			DPRINTF(LLVMGEP, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
 		}
 
 		for (int i = 0; i < index; i++) {
 			instruction.memory.getptr.reference[i] = currentValue[i];
-			newAddress = newAddress + instruction.memory.getptr.reference[i];
+			newAddress = newAddress + instruction.memory.getptr.reference[i]*size[i];
 		}
-		newAddress *= size[0];
+		//newAddress *= size[0];
 		newAddress += instruction.memory.getptr.ptrval->getValue();
 		instruction.general.returnRegister->setValue(&newAddress);
 	}
 	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
-	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
+	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
 }
 void Operations::llvm_fence(const struct Instruction &instruction) {}
 void Operations::llvm_cmpxchg(const struct Instruction &instruction) {}
@@ -581,9 +619,9 @@ void Operations::llvm_trunc(const struct Instruction &instruction) {
 	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
 	else value = instruction.conversion.value->getValue();
 
-	if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
-	else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
-	else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
+	if (instruction.conversion.ty2 == "i32") result = 0xffffffff & value;
+	else if (instruction.conversion.ty2 == "i16") result = 0xffff & value;
+	else if (instruction.conversion.ty2 == "i8") result = 0xff & value;
 	else if (instruction.conversion.ty2 == "i1") {
 		if(value) result = 1;
 		else result = 0;
