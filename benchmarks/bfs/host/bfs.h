@@ -44,4 +44,7 @@ void genData(bfs_struct * bfs) {
     for (i = 0; i < N_LEVELS; i++) {
         bfs->check[i] = chk[i];
     }
+    for (i = 0; i < N_NODES; i++) {
+        bfs->level[i] = MAX_LEVEL;
+    }
 }
