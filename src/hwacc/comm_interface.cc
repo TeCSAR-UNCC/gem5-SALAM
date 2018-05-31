@@ -343,7 +343,7 @@ CommInterface::tryWrite(MemSidePort * port) {
 
 void
 CommInterface::enqueueRead(MemoryRequest * req) {
-    DPRINTF(CommInterface, "Read from 0x%lx of size:%d bytes enqueued\n", req->address, req->length);
+    DPRINTF(CommInterface, "Read from 0x%lx of Size:%d Bytes Enqueued:\n", req->address, req->length);
     readQueue->push_back(req);
     DPRINTF(CommInterface, "Current Queue:\n");
     for (auto it=readQueue->begin(); it!=readQueue->end(); ++it) {

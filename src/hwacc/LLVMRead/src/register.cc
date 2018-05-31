@@ -2,8 +2,6 @@
 #include <string>
 #include <iostream>
 
-#define SystemSize 64
-
 Register::Register(std::string id) {
     name = id;
     value = 0;

@@ -47,6 +47,7 @@ LLVMInterface::tick() {
             "   Cycle", cycle,
             "*******************************************************************************");
     cycle++;
+    DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue->size(), readQueue->size(), writeQueue->size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit\n");
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
@@ -276,7 +277,7 @@ LLVMInterface::constructBBList() {
                         line = concatLine;
                         DPRINTF(LLVMParse, "New Line: %s\n", line);
                         }
-                        /////////////////////////////////////////////////
+                        ////////////////////////////////////////////////
                         if(prevBB) {
                             currBB->addNode(new ComputeNode(line, regList, prevBB->getName(), comm, typeList));
                         } else {
@@ -290,7 +291,7 @@ LLVMInterface::constructBBList() {
     } else {
         panic("Unable to open LLVM file\n");
     }
-    //regList->printRegNames();
+    if(PRINTREGISTERS) regList->printRegNames();
 }
 
 BasicBlock*

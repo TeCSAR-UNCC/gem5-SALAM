@@ -477,48 +477,48 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	uint64_t finalCount = 0;
 	
 	int j = 0;
-
+	// Initialize array values
 	for(int i = 0; i<MAXGPE; i++) {
 		currentValue[i] = 0;
 		size[i] = 1;
 		elements[i] = 1;
 	}
-	
-	if(instruction.memory.getptr.pty[0] == '%') { // Return type is a custom data type
+
+	if(instruction.memory.getptr.pty[0] == '%') { // Return Type is a custom data type
 		if(instruction.memory.getptr.llvmType != NULL) {
 			dataSize = instruction.memory.getptr.llvmType->getSize();
-			DPRINTF(LLVMGEP, "Custom Data Type: %s, Size = %d\n", instruction.memory.getptr.llvmType->getName(), dataSize);
+			DPRINTF(LLVMGEP, "Custom Data Type: (%s), Number of Elements = (%d)\n", instruction.memory.getptr.llvmType->getName(), dataSize);
 			j++;
 		} else {
-			dataSize = 1;
-			DPRINTF(LLVMGEP, "Data Type Size = %d\n", dataSize);
+			DPRINTF(LLVMGEP, "Unknown Case - Custom Data Type!\n", dataSize);
 		}
 
 	for(int i = 0; i <= j; i++){
-			for(int k = 0; k <= j; k++){
-				totalElements*=elements[k];
-			}
-			if(instruction.memory.getptr.immediate[i]) {
+			if(instruction.memory.getptr.immediate[i]) {  // Immediate Values
 				if(i == j) {
+					// Final offset variable
 					totalElements*=(instruction.memory.getptr.immdx[i]);
+					DPRINTF(LLVMGEP, "Adding Final Offset: (%d)\n", instruction.memory.getptr.immdx[i]);
 				} else {				
-				DPRINTF(LLVMGEP, "Immediate \n");
-				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.immdx[i]);
+					// Total data size in memory offset variable 
+				DPRINTF(LLVMGEP, "Immediate Values Offset:\n");
+				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d)  =  (%d)\n", i, dataSize, instruction.memory.getptr.immdx[i],  dataSize * instruction.memory.getptr.immdx[i]);
 				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
 				}
-			} else {
+			} else { // Register loaded values
 				if(i == j) {
+					// Final offset variable
 					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
+					DPRINTF(LLVMGEP, "Adding Final Offset: (%d)\n", instruction.memory.getptr.idx[i]->getValue());
 				} else {
-				DPRINTF(LLVMGEP, "Register \n");
-				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
+				DPRINTF(LLVMGEP, "Register Loaded Value:\n");
+				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d) = (%d)\n", i, dataSize, instruction.memory.getptr.idx[i]->getValue(), dataSize * instruction.memory.getptr.idx[i]->getValue());				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 				}
 			}
 			finalCount += totalElements;
 			DPRINTF(LLVMGEP, " Final Count = %d\n", finalCount);
 			totalElements = 1;
-			elements[i] = 1;
 		}
 
 		if(instruction.memory.getptr.llvmType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes

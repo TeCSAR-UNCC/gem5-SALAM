@@ -175,6 +175,7 @@ public:
   void setRegister(std::string data, Register *&reg, Instruction &instruction, RegisterList *list, std::vector<std::string> &parameters);
   void setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction);
   void initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction);
+  int setSize(std::string dataType);
   MemoryRequest * getReq() { return req; }
 protected:
 };

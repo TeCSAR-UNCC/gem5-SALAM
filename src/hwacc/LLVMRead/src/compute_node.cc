@@ -471,14 +471,17 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, instruction, list, parameters);
 		else DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
 		
-		if(isRegister(parameters[index + 1])) setRegister(parameters[index + 1], instruction.memory.store.value, instruction, list, parameters);
-		else {
+		if(isRegister(parameters[index + 1])) {
+			setRegister(parameters[index + 1], instruction.memory.store.value, instruction, list, parameters);
+			instruction.memory.store.value->setSize(instruction.memory.store.ty);
+		} else {
 			instruction.memory.store.immediate = true;
 			if (instruction.memory.store.ty[0] == 'i') {
 				instruction.memory.store.ival = stoi(parameters[2]);
 			}
 			else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
+
 		instruction.memory.store.align = std::stoi(parameters[index + 5]);
 		break;
 	}
@@ -1015,15 +1018,18 @@ ComputeNode::compute() {
     }
 	case IR_Store: {
 		uint64_t data;
+		uint64_t size = 0;
 	    uint64_t dst = instruction.memory.store.pointer->getValue();
 		if(instruction.memory.store.immediate) {
 			DPRINTF(ComputeNode, "Immediate value store. \n");
 			data = (uint64_t) instruction.memory.store.ival;
-			req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), 1);
+			size = setSize(instruction.memory.store.ty);
+			req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 		}
         else {
 			data = instruction.memory.store.value->getValue();
         	req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.memory.store.value->size);
+			DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
 		}
 		comm->enqueueWrite(req);
 		break;
@@ -1239,4 +1245,39 @@ ComputeNode::setOperands(RegisterList *list, std::vector<std::string> &parameter
 			instruction.bitwise.iop1 = parameters[last - 1];
 		}
 	}
+}
+
+int
+ComputeNode::setSize(std::string dataType) {
+    // Code here will infer size based around the stored dataType string
+    std::string temp = dataType;
+	int size = 8;
+    // Pointers
+    if (temp.compare("pointer") == 0) size = SystemSize/8;
+    else if (temp.back() =='*') size = SystemSize/8;
+    // Boolean and integer data types
+    // Set size if dataType is integer
+    else if (temp.front() == 'i') {
+        temp = temp.substr(1);
+        size = ((std::stoi(temp)-1)/8)+1;
+    }
+    // Floating point data types    
+    // Set size if dataType is float
+    else if (temp.find("float") > -1) size = SystemSize/16;
+    // Set size if dataType is double
+    else if (temp.find("double") > -1) size = SystemSize/8;
+    // Set size if dataType is void
+    else if (temp.find("void") > -1) size = 0;
+    // Aggregate data types
+    // Array dataType
+    else if (temp[0] == '[') { }
+    // Struct dataType
+    else if (temp.find("{") > -1) { }
+    // Unspecified dataType
+    // Label
+    // Treat size equivalent to a pointer
+    else if (temp.find("label") > -1) size = SystemSize/8;
+    // Unknown dataType
+    else { }
+	return size;
 }

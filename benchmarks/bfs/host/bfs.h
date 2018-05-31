@@ -34,11 +34,12 @@ int checkData(bfs_struct * bfs) {
 
 void genData(bfs_struct * bfs) {
     int i;
+
     *(bfs->starting_node) = start;
     for (i = 0; i < 2*N_NODES; i++) {
         bfs->nodes[i] = nod[i];
     }
-    for (i = 0; i < N_NODES; i++) {
+    for (i = 0; i < N_EDGES; i++) {
         bfs->edges[i] = edg[i];
     }
     for (i = 0; i < N_LEVELS; i++) {

@@ -34,7 +34,7 @@ int main(void) {
     val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
 
     std::memcpy((void *)spm_base, (void *)a, sizeof(TYPE)*LENGTH);
-    std::memcpy((void *)(spm_base+4*LENGTH), (void *)b, sizeof(TYPE)*LENGTH);
+    std::memcpy((void *)(spm_base+sizeof(TYPE)*LENGTH), (void *)b, sizeof(TYPE)*LENGTH);
 #endif
     int i;
     printf("%d\n", acc);

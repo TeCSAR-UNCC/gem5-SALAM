@@ -55,7 +55,7 @@ void FIRFilterStreaming ( int * in, int * coefficients, int * previous, int * te
 
         if (previous[TAPS-1] == 0) {
             temp[i] = 0;
-            return;
+            
         }
         else {
             temp[i] = 0;

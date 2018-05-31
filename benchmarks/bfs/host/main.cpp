@@ -27,6 +27,7 @@ int main(void) {
     bfs.edges = edges;
     bfs.starting_node = starting_node;
     bfs.level = level;
+
     bfs.level_counts = level_counts;
     bfs.check = check;
 
@@ -51,10 +52,8 @@ int main(void) {
 #endif
     int i;
     printf("%d\n", ACC);
-
     ACC = 0x01;
     printf("%d\n", ACC);
-
 	while(ACC != 0x4) {
         printf("%d\n", ACC);
 	}
@@ -64,9 +63,9 @@ int main(void) {
 #endif
 	if(!checkData(&bfs)) {
 	    for (i = 0; i < N_LEVELS; i++) {
-	        if (check[i] != level_counts[i]) {
+	        //if (check[i] != level_counts[i]) {
 	            printf("idx:%d exp:%d act:%d\n", i, check[i], level_counts[i]);
-	        }
+	        //}
 	    }
 	}
 	*(char *)(0x7fffffff) = 0;
