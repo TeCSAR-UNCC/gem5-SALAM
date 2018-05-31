@@ -446,6 +446,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		}
 		// Set return type
 		instruction.memory.load.ty = parameters[index];
+		instruction.general.returnType = parameters[index];
+		
 		// Set return register type and size
 		instruction.general.returnRegister->setSize(instruction.memory.load.ty);
 		int align = 0;
@@ -468,6 +470,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			instruction.memory.store.volatileVar = true;
 		}
 		instruction.memory.store.ty = parameters[index];
+		
 		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, instruction, list, parameters);
 		else DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
 		
@@ -498,6 +501,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		if (parameters[0] == "inbounds") {
 			instruction.memory.getptr.inbounds = true;
 			instruction.memory.getptr.pty = parameters[1];
+			instruction.general.returnType = parameters[1];
 			if (list->findRegister(parameters[3].substr(1)) == NULL) {
 				instruction.memory.getptr.ptrval = new Register(parameters[3]);
 				list->addRegister(instruction.memory.getptr.ptrval);
@@ -1012,6 +1016,8 @@ ComputeNode::compute() {
 	case IR_Alloca: { Operations::llvm_alloca(instruction); break; }
 	case IR_Load: {
         uint64_t src = instruction.memory.load.pointer->value;
+		instruction.general.returnRegister->setSize();
+		DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), instruction.general.returnRegister->size);
 		req = new MemoryRequest((Addr)src, instruction.general.returnRegister->size);
 		comm->enqueueRead(req);
 	    break;
@@ -1197,6 +1203,7 @@ ComputeNode::initializeReturnRegister(std::vector<std::string> &parameters, Inst
 		// Set size of return register to match instruction return type
 		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
 	}
+	instruction.general.returnType = parameters[last-2];
 }
 
 void
@@ -1263,7 +1270,7 @@ ComputeNode::setSize(std::string dataType) {
     }
     // Floating point data types    
     // Set size if dataType is float
-    else if (temp.find("float") > -1) size = SystemSize/16;
+    else if (temp.compare("float")  != -1) size = SystemSize/16;
     // Set size if dataType is double
     else if (temp.find("double") > -1) size = SystemSize/8;
     // Set size if dataType is void

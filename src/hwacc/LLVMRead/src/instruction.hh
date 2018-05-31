@@ -30,6 +30,7 @@ struct Instruction {
 		bool phi = false;
 		bool custom = false;
 		bool flowControl = false;
+		std::string returnType;
 	};
 	struct Dependencies {
 		Register *registers[MAXDEPENDENTS];

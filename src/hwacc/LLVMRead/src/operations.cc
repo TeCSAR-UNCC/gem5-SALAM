@@ -201,26 +201,41 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 	double op1;
 	double op2;
 	double result;
-	float fresult;
+	float fresult = 0.0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else {
-	    uint64_t temp1 = instruction.binary.op1->getValue();
-	    op1 = *(double *)&temp1;
-	}
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else {
-	    uint64_t temp2 = instruction.binary.op2->getValue();
-	    op2 = *(double *)&temp2;
+	if (instruction.binary.ty.find("double") == 0) {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(double *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(double *)&temp2;
+		}
+	} else {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(float *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(float *)&temp2;
+		}
 	}
 	// Perform arithmetic
 	result = op1 + op2;
 	// Store result in return register
+	
 	if (instruction.binary.ty.find("float") == 0) {
 		// Typecast to float before returning value
 		fresult = (float)result;
 		instruction.general.returnRegister->setValue(&fresult);
 	} else instruction.general.returnRegister->setValue(&result);
+	DPRINTF(LLVMOp,"%u\n", fresult);
 	DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }
 void Operations::llvm_fsub(const struct Instruction &instruction) {
@@ -231,16 +246,28 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 	double op2;
 	double result;
 	float fresult;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else {
-	    uint64_t temp1 = instruction.binary.op1->getValue();
-	    op1 = *(double *)&temp1;
-	}
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else {
-	    uint64_t temp2 = instruction.binary.op2->getValue();
-	    op2 = *(double *)&temp2;
+	if (instruction.binary.ty.find("double") == 0) {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(double *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(double *)&temp2;
+		}
+	} else {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(float *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(float *)&temp2;
+		}
 	}
 	// Perform arithmetic
 	result = op1 - op2;
@@ -261,15 +288,28 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 	double result;
 	float fresult;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else {
-	    uint64_t temp1 = instruction.binary.op1->getValue();
-	    op1 = *(double *)&temp1;
-	}
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else {
-	    uint64_t temp2 = instruction.binary.op2->getValue();
-	    op2 = *(double *)&temp2;
+	if (instruction.binary.ty.find("double") == 0) {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(double *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(double *)&temp2;
+		}
+	} else {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(float *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(float *)&temp2;
+		}
 	}
 	// Perform arithmetic
 	result = op1 * op2;
@@ -290,15 +330,28 @@ void Operations::llvm_fdiv(const struct Instruction &instruction) {
 	double result;
 	float fresult;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else {
-	    uint64_t temp1 = instruction.binary.op1->getValue();
-	    op1 = *(double *)&temp1;
-	}
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else {
-	    uint64_t temp2 = instruction.binary.op2->getValue();
-	    op2 = *(double *)&temp2;
+	if (instruction.binary.ty.find("double") == 0) {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(double *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(double *)&temp2;
+		}
+	} else {
+		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
+		else {
+		    uint64_t temp1 = instruction.binary.op1->getValue();
+		    op1 = *(float *)&temp1;
+		}
+		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
+		else {
+		    uint64_t temp2 = instruction.binary.op2->getValue();
+		    op2 = *(float *)&temp2;
+		}
 	}
 	// Perform arithmetic
 	result = op1 / op2;

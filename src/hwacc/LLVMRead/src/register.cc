@@ -27,7 +27,7 @@ Register::setSize(){
     }
     // Floating point data types    
     // Set size if dataType is float
-    else if (temp.find("float") > -1) size = SystemSize/16;
+    else if (temp.find("float") != -1) size = SystemSize/16;
     // Set size if dataType is double
     else if (temp.find("double") > -1) size = SystemSize/8;
     // Set size if dataType is void
