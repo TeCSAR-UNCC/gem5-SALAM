@@ -62,7 +62,6 @@ int main(void) {
     std::memcpy((void *)level, (void *)(SPM_BASE + LEVEL_OFFSET), sizeof(level_t));
     std::memcpy((void *)level_counts, (void *)(SPM_BASE + COUNT_OFFSET), sizeof(edge_index_t) * N_LEVELS);
 #endif
-    ACC = 0x00;
 	if(!checkData(&bfs)) {
 	    for (i = 0; i < N_LEVELS; i++) {
 	        if (check[i] != level_counts[i]) {
@@ -70,4 +69,5 @@ int main(void) {
 	        }
 	    }
 	}
+	*(char *)(0x7fffffff) = 0;
 }
