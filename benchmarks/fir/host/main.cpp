@@ -7,10 +7,10 @@
 #define SPM_BASE        0x2f100000
 
 #define IN_OFFSET       0
-#define COEF_OFFSET     (IN_OFFSET      + sizeof(int))
+#define COEF_OFFSET     (IN_OFFSET      + sizeof(int)*INPUTSIZE)
 #define PREV_OFFSET     (COEF_OFFSET    + sizeof(int)*TAPS)
 #define TEMP_OFFSET     (PREV_OFFSET    + sizeof(int)*TAPS)
-#define CHK_OFFSET      (TEMP_OFFSET    + sizeof(int))
+#define CHK_OFFSET      (TEMP_OFFSET    + sizeof(int)*INPUTSIZE)
 
 fir_struct fir;
 
@@ -45,7 +45,7 @@ int main(void) {
     loc_previous    = (uint64_t)(BASE+PREV_OFFSET);
     loc_temp        = (uint64_t)(BASE+TEMP_OFFSET);
     
-    std::memcpy((void *)(SPM_BASE+IN_OFFSET),   (void *)in,             sizeof(int));
+    std::memcpy((void *)(SPM_BASE+IN_OFFSET),   (void *)in,             sizeof(int)*INPUTSIZE);
     std::memcpy((void *)(SPM_BASE+COEF_OFFSET), (void *)coefficient,    sizeof(int)*TAPS);
     std::memcpy((void *)(SPM_BASE+PREV_OFFSET), (void *)previous,       sizeof(int)*TAPS);
 #endif
@@ -59,7 +59,7 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)temp, (void *)(SPM_BASE+TEMP_OFFSET),           sizeof(int));
+    std::memcpy((void *)temp, (void *)(SPM_BASE+TEMP_OFFSET),           sizeof(int)*INPUTSIZE);
 #endif
     acc = 0x00;
 	if(!checkData(&fir)) {

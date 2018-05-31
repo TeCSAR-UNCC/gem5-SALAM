@@ -21,8 +21,10 @@ int checkData(fir_struct * fir) {
     
     for (i = 0; i < INPUTSIZE; i++) {
         total += fir->temp[i];
+        printf("Temp[%2d] %5d\n", i, fir->temp[i]);
     }
     
+    printf("Total %5d, Check %5d\n", total, fir->check[0]);
     if(total != fir->check[0]) {
         printf("Check Failed\n");
         return 0;
@@ -41,6 +43,8 @@ void genData(fir_struct * fir) {
     for (i = 0; i < TAPS; i++) {
         fir->previous[i] = 0;
         fir->coefficient[i] = 10;
+//        printf("P[%2d] = %5d\n", i, fir->previous[i]);
+        printf("C[%2d] = %5d\n", i, fir->coefficient[i]);
     }
     
     fir->check[0] = EXPECTED_TOTAL;
