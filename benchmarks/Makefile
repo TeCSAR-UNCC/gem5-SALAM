@@ -1,6 +1,12 @@
 BENCHMARKS=\
+	bfs \
+	fft \
+	fir \
 	gemm \
 	md-grid \
+	md-knn \
+	nw \
+	spmv \
 	stencil2d \
 	stencil3d \
 	vadd
