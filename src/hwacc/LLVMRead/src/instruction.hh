@@ -15,9 +15,9 @@ struct Instruction {
 	struct General {
 		std::string llvm_Line;	//
 		std::string opCode;		  //
+		std::string returnType;
 		Register *returnRegister; //
-		int lineNumber;
-		int fields; //
+		bool flowControl = false;
 		bool terminator = false;
 		bool binary = false;
 		bool bitwise = false;
@@ -29,8 +29,6 @@ struct Instruction {
 		bool compare = false;
 		bool phi = false;
 		bool custom = false;
-		bool flowControl = false;
-		std::string returnType;
 	};
 	struct Dependencies {
 		Register *registers[MAXDEPENDENTS];

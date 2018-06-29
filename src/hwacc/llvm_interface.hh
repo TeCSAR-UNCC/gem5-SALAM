@@ -31,6 +31,8 @@ class LLVMInterface : public ComputeUnit {
     int cycle;
     int stalls;
     int execnodes;
+    typedef std::map<std::string, int> opCodeCount;
+    opCodeCount opCount;
   protected:
 
   public:
@@ -40,7 +42,7 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock * findBB(std::string bbname);
     void startup();
     void initialize();
-
+    void statistics();
     void scheduleBB(BasicBlock *bb);
 
     void readCommit(MemoryRequest * req);

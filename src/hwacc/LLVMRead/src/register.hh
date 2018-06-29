@@ -15,6 +15,7 @@ friend class RegisterList;
 private:
   std::string dataType;
   std::string name;
+  int accessCount;
   bool hot = false;
 
 public:
@@ -30,13 +31,14 @@ public:
   std::string getType() { return dataType; }
   uint64_t getValue() { return value; }
   void getValue(void *data) { memcpy(data, &value, size); }
-  void commit() { hot = false; }
+  void commit() { accessed(); hot = false; }
   void reset() { hot = true; }
   void setType(std::string type) { dataType = type; }
   void setSize();
   void setSize(std::string type);
   void setValue();
   void setValue(void *data);
+  void accessed() { accessCount++; }
 };
 
 class RegisterList{

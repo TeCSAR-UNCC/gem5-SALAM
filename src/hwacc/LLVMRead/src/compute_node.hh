@@ -7,6 +7,7 @@
 #include "instruction.hh"
 #include "llvm_types.hh"
 #include "hwacc/comm_interface.hh"
+#include "cycle_count.hh"
 #include "mem_request.hh"
 #include "base/types.hh"
 #include "debug.hh"
@@ -16,7 +17,8 @@ class ComputeNode {
   friend class BasicBlock;
 
 private:
-  enum opValue {
+  
+  enum opValue { // Enumerate all Op-Codes to be used in switch statement
     evNotDefined,
     IR_Move,
     IR_Ret,
@@ -82,11 +84,11 @@ private:
     IR_IndexAdd,
     IR_SilentStore,
     IR_Sine,
-    IR_Cosine
-  };
+    IR_Cosine };
 
-  typedef std::map<std::string, int> OPMap;
-  OPMap s_opMap = {
+  typedef std::map<std::string, int> OPMap; // Define new type that maps LLVM instruction
+                                            // to enumerated switch cases
+  OPMap s_opMap = { // Mapped values for op codes
       {"move", IR_Move},
       {"ret", IR_Ret},
       {"br", IR_Br},
@@ -151,19 +153,20 @@ private:
       {"indexadd", IR_IndexAdd},
       {"silentstore", IR_SilentStore},
       {"sine", IR_Sine},
-      {"cosine", IR_Cosine}};
+      {"cosine", IR_Cosine} };
 
-  Instruction instruction;
-  int dependencies = 0;
-  std::string prevBB;
-  CommInterface *comm;
-  MemoryRequest *req;
+  Instruction instruction; // Struct that contains all data related to compute node
+  int dependencies = 0; // Data dependencies count
+  std::string prevBB; // Label for previous basic block
+  CommInterface *comm; // Pointer to add basic block to queues 
+  MemoryRequest *req; // Pointer for creating a memory access request
 
 public:
   ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
   ~ComputeNode();
   Instruction getInstruction() { return instruction; }
-  void setPrevBB(std::string prev) { prevBB = prev; }
+  void setPrevBB(std::string newPrev) { prevBB = newPrev; }
+  void setCommInterface(CommInterface *newComm) { comm = newComm; }
   void reset();
   void compute();
   bool commit();

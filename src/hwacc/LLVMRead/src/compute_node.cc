@@ -1,53 +1,66 @@
 #include "compute_node.hh"
 
+// ////////////////////////////////////////////////////////////////////
+// Compute Node Constructor 
+// Inputs:	string line 		- line parsed from llvm file
+//			RegisterList *list 	- pointer to linked list that contains all return registers created 
+//			string prev 		- name of the previous basic block created 
+//			CommInterface *co 	- pointer to communications interface to enque read and write requests
+//			TypeList *typeList 	- linked list that contains all custom data types defines for function
+//
+// Outputs: none
+// 
+// This function is used to create a new compute node and initialize it based around the arguments 
+// parsed from the passed LLVM instruction line.
+// ////////////////////////////////////////////////////////////////////
+
 ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
-	std::vector<std::string> parameters;
-	int leftDelimeter, rightDelimeter, lastInLine;
-	int returnChk = line.find(" = ");
-	int last = 0;
-	instruction.general.llvm_Line = line;
-	instruction.cycle.max = 1;
-	comm = co;
-	prevBB = prev;
 	// ////////////////////////////////////////////////////////////////////
-	
+	// Local Variables
+	std::vector<std::string> parameters; // Used to store each each element of the passed in LLVM instruction line 
+	int leftDelimeter, rightDelimeter, lastInLine; // Used for parsing elements from the instruction line
+	int returnChk = line.find(" = "); // If a return register exists, this value is set greater than 0
+	int last = 0; // Set as index to the last element in the parameters vector once initialized
+	// ////////////////////////////////////////////////////////////////////
+	instruction.general.llvm_Line = line; // Store passed line into instruction struct.
+	setCommInterface(co);
+	setPrevBB(prev);  
+	// ////////////////////////////////////////////////////////////////////
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
-	    std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3);
-	    Register * ret_reg = list->findRegister(ret_name);
-		//Check if register already exists
+		// Check if register already exists (It should not because SSA)
+		std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3); // Set return register name
+		Register * ret_reg = list->findRegister(ret_name); // Ensure the return register isnt already in the list 
 		if(ret_reg == NULL) {
 		    // Create new pointer to the return register
 		    instruction.general.returnRegister = new Register(ret_name);
 		    list->addRegister(instruction.general.returnRegister);
-		    DPRINTF(ComputeNode, "Creating Return Register: (%s)\n", instruction.general.returnRegister->getName());
+		    DPRINTF(LLVMRegister, "Creating Return Register: (%s)\n", instruction.general.returnRegister->getName());
 		} else {
 		    instruction.general.returnRegister = ret_reg;
+			DPRINTF(LLVMRegister, "Error: Trying to Create Duplicate Return Register!\n");
 		}
 		// In all instances where a return register is the first component, the next component is
 		// the opcode, which is parsed and removed from line
-		line = line.substr(returnChk + 3);
-		instruction.general.opCode = line.substr(0, line.find(' '));
-		line = line.substr(line.find(' '));
-		
+		line = line.substr(returnChk + 3); // Skip over " = " 
+		instruction.general.opCode = line.substr(0, line.find(' ')); // Store opcode in instruction struct
+		line = line.substr(line.find(' ')); // Drop opcode and return register from instruction line
 	} else {
 		// If no return register is found then the first component must instead be the opcode
-		// as of LLVM 3.4 instruction types
 		// Search for first none empty space which is were the opcode must begin
 		// Then store the opcode and remove the parsed information from the line
 		for (int i = 0; i < line.length(); i++) {
 			if (line[i] != ' ') {
-				instruction.general.opCode = line.substr(i, line.find(' ', i) - 2);
-				line = line.substr(line.find(' ') + 1);
-				i = line.length();
+				instruction.general.opCode = line.substr(i, line.find(' ', i) - 2); // Store opcode in instruction struct
+				line = line.substr(line.find(' ') + 1); // Drop opcode from instruction line
+				break;
 			}
 		}
 		// No return register needed
-		DPRINTF(ComputeNode, "No Return Register Needed!\n");
-		instruction.general.returnRegister = NULL;
+		DPRINTF(LLVMRegister, "No Return Register Needed!\n");
+		instruction.general.returnRegister = NULL; // Set return register to NULL
 	}
 	// //////////////////////////////////////////////////////////////////////////////////
-
 	DPRINTF(ComputeNode, "Opcode Found: (%s)\n", instruction.general.opCode);
 	// Loop to break apart each component of the LLVM line
 	// Any brackets or braces that contain data are stored as under the parent set
@@ -55,7 +68,6 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	// This vector is initialized after the return register and opcode are found
 	// and the line at this point already has those components removed if they
 	// exist.
-
 	for (int i = 0; i < line.length(); i++) {
 		// Looks until the loop finds a non-space character
 		if (line[i] != ' ') {
@@ -128,25 +140,25 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 				} else if (line[i] == ',') {
 					//Ignore
 				} else if (line.substr(i + 1).find(" ") > line.substr(i + 1).find(",")) {
+					// Catches any additional elements in the instruction line seperated by commas
 					rightDelimeter = 1 + line.substr(i + 1).find(",");
 					parameters.push_back(line.substr(leftDelimeter, rightDelimeter));
 					i += rightDelimeter;
 				} else if (line.substr(i + 1).find(" ") < line.substr(i + 1).find(",")) {
+					// Catches any additional elements in the instruction line seperated by whitespace
 					rightDelimeter = 1 + line.substr(i + 1).find(" ");
 					parameters.push_back(line.substr(leftDelimeter, rightDelimeter));
 					i += rightDelimeter;
-				} else if (line.substr(i + 1).find(" ") == -1) {
+				} else if (line.substr(i + 1).find(" ") == -1) { // End of line
 					parameters.push_back(line.substr(leftDelimeter));
 					i = (line.length() - 1);
-					//This will always be the last object on the line
+					// This will always be the last object on the line
 				}
 			}
 		}
 	}
-
-	instruction.general.fields = parameters.size();
-	last = (parameters.size() - 1);
-	debugParams(parameters);
+	last = (parameters.size() - 1); // Set last to index the final value in the parameters vector
+	debugParams(parameters); // Prints all found parameters for the instruction line
 	// Once all components have been found, navigate through and define each component
 	// and initialize the attributes struct values to match the line
 	//Instruction Type
@@ -168,9 +180,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// ret <type> <value>; Return a value from a non - void function
 		// ret void; Return from void function
 		// Set general instruction parameters
+		instruction.cycle.max = CYCLECOUNTRET;
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
-
 		if (parameters[last].find("void")) {
 			// If void is found then it must not have a return value
 			instruction.terminator.type = "void";
@@ -178,24 +190,25 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			// If void is not found then the last parameters must be the return value,
 			// and preceding it the return type
 			instruction.terminator.type = parameters[last - 1];
+			// If return value is stored in a register
 			if(isRegister(parameters[last])) {
 				setRegister(parameters[last], instruction.terminator.value, instruction, list, parameters);
 				instruction.terminator.ivalue = "void";
 				instruction.terminator.intermediate = false;
 				instruction.terminator.value->setSize(instruction.terminator.type);
-			} else {
+			} else { // Should be optimized out of code
 			instruction.terminator.intermediate = true;
 			instruction.terminator.ivalue = parameters[last];
 			}
 		}
-		break;
-		
+		break;	
 	}
 	case IR_Br: {
 		// br i1 <cond>, label <iftrue>, label <iffalse>
 		// br label <dest>          ; Unconditional branch
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTBR;
 		if (parameters.size() == 3) {
 			//Unconditional branch
 			instruction.terminator.unconditional = true;
@@ -215,14 +228,15 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTSWITCH;
 		instruction.terminator.intty = parameters[1];
-		if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.value, instruction, list, parameters);
 		instruction.terminator.defaultdest = parameters[4].substr(1); 
 		int location = 0;
 		int length = 0;
 		int statements = 0;
 		int i = 0;
 		std::string cases[MAXCASES][2];
+		if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.value, instruction, list, parameters);
 		for(int k = 0; k < parameters[5].size(); k++) {
 			if(parameters[5][k] == '%') statements++;
 		}
@@ -241,8 +255,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		break;
 	}
 	case IR_IndirectBr: {
-		// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]
-		
+		// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]	
 		break;
 	}
 	case IR_Invoke: {
@@ -253,7 +266,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// resume <type> <value>
 		instruction.general.terminator = true;
 		instruction.general.flowControl = true;
-		
+		instruction.cycle.max = CYCLECOUNTRESUME;
 		instruction.terminator.type = parameters[0];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.terminator.value, instruction, list, parameters);
 		break;
@@ -268,6 +281,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.cycle.max = CYCLECOUNTADD;
 		instruction.general.binary = true;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
@@ -277,7 +291,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FAdd: {
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		instruction.cycle.max = 5;
+		instruction.cycle.max = CYCLECOUNTFADD;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -289,6 +303,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTSUB;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -297,7 +312,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FSub: {
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		instruction.cycle.max = 5;
+		instruction.cycle.max = CYCLECOUNTFSUB;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -309,6 +324,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTMUL;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -317,7 +333,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FMul: {
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		instruction.cycle.max = 5;
+		instruction.cycle.max = CYCLECOUNTFMUL;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -327,6 +343,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTUDIV;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -336,6 +353,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTSDIV;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -344,7 +362,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FDiv: {
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		instruction.cycle.max = 5;
+		instruction.cycle.max = CYCLECOUNTFDIV;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -353,6 +371,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_URem: {
 		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTUREM;
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -360,6 +379,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_SRem: {
 		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTSREM;
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -367,7 +387,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FRem: {
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.binary = true;
-		instruction.cycle.max = 5;
+		instruction.cycle.max = CYCLECOUNTFREM;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -380,6 +400,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTSHL;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -389,6 +410,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTLSHR;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -398,6 +420,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result
 		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTASHR;
 		setFlags(parameters, instruction);
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
@@ -406,6 +429,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_And: {
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTAND;
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -413,6 +437,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Or: {
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTOR;
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -420,6 +445,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Xor: {
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
 		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTXOR;
 		initializeReturnRegister(parameters, instruction);
 		setOperands(list, parameters, instruction);
 		break;
@@ -435,6 +461,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		//	!<index> = !{ i32 1 }
 		// Set memory operation flag to true
 		instruction.general.memory = true;
+		instruction.cycle.max = CYCLECOUNTLOAD;
 		// Index variable tracks keywords starting from the beginning of instruction
 		int index = 0;
 		// Check if instruction has volatilte keyword
@@ -464,6 +491,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 		// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
 		instruction.general.memory = true;
+		instruction.cycle.max = CYCLECOUNTSTORE;
 		int index = 1;
 		if (parameters[1] == "volatile") {
 			index = 2;
@@ -496,6 +524,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		int j = 0;
 		std::string customDataType;
 		instruction.general.memory = true;
+		instruction.cycle.max = CYCLECOUNTGETELEMENTPTR;
 		instruction.general.returnRegister->setSize("pointer");
 
 		if (parameters[0] == "inbounds") {
@@ -579,6 +608,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_Trunc: {
 		// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTTRUNC;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -591,6 +621,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_ZExt: {
 		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTZEXT;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -603,6 +634,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_SExt: {
 		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTSEXT;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -615,6 +647,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FPToUI: {
 		// <result> = fptoui <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPTOUI;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -627,6 +660,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FPToSI: {
 		// <result> = fptosi <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPTOSI;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -639,6 +673,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_UIToFP: {
 		// <result> = uitofp <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTUITOFP;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -651,6 +686,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_SIToFP: {
 		// <result> = sitofp <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTSITOFP;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -663,6 +699,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FPTrunc: {
 		// <result> = fptrunc <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPTRUNC;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -675,6 +712,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_FPExt: {
 		// <result> = fpext <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPEXT;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -687,6 +725,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_PtrToInt: {
 		// <result> = ptrtoint <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTPTRTOINT;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -699,6 +738,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_IntToPtr: {
 		// <result> = inttoptr <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTINTTOPTR;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -711,6 +751,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_BitCast: {
 		// <result> = bitcast <ty> <value> to <ty2>             ; yields ty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTBITCAST;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -723,6 +764,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_AddrSpaceCast: {
 		// <result> = addrspacecast <pty> <ptrval> to <pty2>       ; yields pty2
 		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTADDRSPACECAST;
 		instruction.conversion.ty = parameters[0];
 		instruction.conversion.ty2 = parameters[3];
 		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
@@ -738,7 +780,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.other = true;
 		instruction.general.compare = true;
 		instruction.other.compare.condition.cond = parameters[0];
-
+		instruction.cycle.max = CYCLECOUNTICMP;
 		instruction.other.compare.ty = parameters[1];
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
@@ -783,7 +825,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.other = true;
 		instruction.general.compare = true;
 		instruction.other.compare.condition.cond = parameters[0];
-
+		instruction.cycle.max = CYCLECOUNTFCMP;
 		instruction.other.compare.ty = parameters[1];
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
@@ -841,6 +883,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.other = true;
 		instruction.general.phi = true;
 		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTPHI;
 		instruction.other.phi.ty = parameters[0];
 		instruction.general.returnRegister->setSize(instruction.other.phi.ty);
 		std::string *val = new std::string[last];
@@ -883,6 +926,7 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = select selty <cond>, <ty> <val1>, <ty> <val2>             ; yields ty
 		// selty is either i1 or {<N x i1>}
 		instruction.general.other = true;
+		instruction.cycle.max = CYCLECOUNTSELECT;
 		instruction.other.select.ty = parameters[2];
 		instruction.general.returnRegister->setSize(instruction.other.select.ty);
 
