@@ -35,7 +35,6 @@ class PowerUtilization {
      float leakage_power;
      float area;
      float max_leakage_power;
-     float 
 };
 
 #endif //__UTILIZATION_HH__
