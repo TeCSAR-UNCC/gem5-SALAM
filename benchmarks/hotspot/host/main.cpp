@@ -56,21 +56,16 @@ int main(void) {
     std::memcpy((void *)result, (void *)(SPM_BASE+RESULT_OFFSET),   sizeof(double)*GRID_COLS*GRID_ROWS);
 #endif
     acc = 0x00;
-    for (i = 0; i < GRID_COLS*GRID_ROWS; i++) {
-            //printf("Check[%d]=%lf\n", i, hss.check[i]);
-            printf("%016llx\n", result[i]);
-            //double error = (result[i]-check[i]);///result[i]*100;
-            //printf("Error[%d] %f\n", i, error);
-        }    
-//	if(!checkData(&hss)) {
-//	
-//	    printf("failed");
-//        for (i = 0; i < GRID_COLS*GRID_ROWS; i++) {
-//            printf("Check[%d]=%lf\n", i, result[i]);
-//            //double error = (result[i]-check[i]);///result[i]*100;
-//            //printf("Error[%d] %f\n", i, error);
-//        }
-//        printf("failed");
-//	}
+   
+	if(!checkData(&hss)) {
+	
+	    printf("failed");
+        for (i = 0; i < GRID_COLS*GRID_ROWS; i++) {
+            //printf("Check[%d]=%lf\n", i, result[i]);
+            double error = (result[i]-check[i])/result[i]*100;
+            printf("Error[%d] %f\n", i, error);
+        }
+        printf("failed");
+	}
 	*(char *)0x7FFFFFFF = 1;//Kill the simulation
 }

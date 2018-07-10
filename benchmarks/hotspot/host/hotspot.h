@@ -19,9 +19,12 @@ typedef struct {
 
 int checkData(hotspot_struct * hss) {
     int i;
-    
+    double error;
+
     for (i = 0; i < GRID_COLS*GRID_ROWS; i++) {
-        if(hss->result[i] != hss->check[i]) {
+		error = (hss->result[i]-hss->check[i])/hss->result[i]*100;
+		printf("Error[%d] = %f%\n",i, error);
+        if(error >= 0.1) {
             printf("Check Failed\n");
             return 0;
         }

@@ -95,4 +95,7 @@ public:
   static void llvm_cosine(const struct Instruction &instruction);
 };
 
+
+  std::string convertImmediate(std::string dataType, std::string immediateValue);
+  std::string sciToDecimal(std::string immediateValue);
 #endif //__OPERATIONS_HH__

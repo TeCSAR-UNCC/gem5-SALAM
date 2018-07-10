@@ -232,14 +232,14 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.ty.find("double") == 0) {
 		if (instruction.binary.immediate1) {
-			op1 = stof(instruction.binary.iop1);
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -247,14 +247,14 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 		}
 	} else {
 		if (instruction.binary.immediate1) {
-			op1 = stof(instruction.binary.iop1);
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -283,14 +283,14 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 	float fresult;
 	if (instruction.binary.ty.find("double") == 0) {
 		if (instruction.binary.immediate1) {
-			op1 = stof(instruction.binary.iop1);
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -298,14 +298,14 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 		}
 	} else {
 		if (instruction.binary.immediate1) {
-			op1 = stof(instruction.binary.iop1);
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -333,14 +333,16 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.ty.find("double") == 0) {
 		if (instruction.binary.immediate1) { 
-			op1 = stof(instruction.binary.iop1);
+			DPRINTF(IOAcc, "Gibberish\n");
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			DPRINTF(IOAcc, "Gibberish\n");
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -348,14 +350,16 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 		}
 	} else {
 		if (instruction.binary.immediate1) {
-			op1 = stof(instruction.binary.iop1);
+			DPRINTF(IOAcc, "Gibberish\n");
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			DPRINTF(IOAcc, "Gibberish\n");
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -383,14 +387,14 @@ void Operations::llvm_fdiv(const struct Instruction &instruction) {
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.ty.find("double") == 0) {
 		if (instruction.binary.immediate1) { 
-			op1 = stof(instruction.binary.iop1);
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -398,14 +402,14 @@ void Operations::llvm_fdiv(const struct Instruction &instruction) {
 		}
 	} else {
 		if (instruction.binary.immediate1) { 
-			op1 = stof(instruction.binary.iop1);
+			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
 		if (instruction.binary.immediate2) {
-			op2 = stof(instruction.binary.iop2);
+			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
 			instruction.general.immediateCount->accessedRead();
 		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
@@ -1156,3 +1160,56 @@ void Operations::llvm_indexadd(const struct Instruction &instruction) {}
 void Operations::llvm_silentstore(const struct Instruction &instruction) {}
 void Operations::llvm_sine(const struct Instruction &instruction) {}
 void Operations::llvm_cosine(const struct Instruction &instruction) {}
+
+std::string convertImmediate(std::string dataType, std::string immediateValue) {
+	int arr1 = 0;
+	int arr2 = 0;
+	int integer = 0;
+	double doub;
+	float flt;
+	std::string temp;
+	char *array = &immediateValue[0];
+	char *end;
+	DPRINTF(IOAcc, "Type: %s, Value: %s\n",dataType, immediateValue);
+	if(dataType.compare("double") == 0) {
+		if(immediateValue[1] == 'x') {
+			doub = strtol(array, &end, 16);
+			uint64_t convert = (uint64_t) doub;
+			doub = *((double*)&convert);
+			temp = std::to_string(doub);
+		} else temp = sciToDecimal(immediateValue);
+	} else if(dataType.compare("float") == 0) {
+		if(immediateValue[1] == 'x') {
+			flt = strtol(array, &end, 16);
+			uint64_t convert = (uint64_t) flt;
+			doub = *((float*)&convert);
+			temp = std::to_string(flt);
+		} else temp = sciToDecimal(immediateValue);
+	} else { // Integer Value
+		if(immediateValue[1] == 'x') {
+			integer = strtol(array, &end, 0);
+			temp = std::to_string(integer);
+		} else temp = sciToDecimal(immediateValue);
+	}
+	DPRINTF(IOAcc, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
+	return temp;
+}
+
+std::string sciToDecimal(std::string immediateValue) {
+	int decimalLocation = 0;
+	int magnitudeLoc = 0;
+	int magnitude = 0;
+
+	for(int i = 0; i < immediateValue.length()-1; i++) {
+		if(immediateValue[i] == '.') decimalLocation = i;
+		if(immediateValue[i] == 'e') magnitudeLoc = i;
+	}
+	magnitude = stoi(immediateValue.substr(magnitudeLoc+2));
+	for(int i = decimalLocation; i < decimalLocation+magnitude; i++) {
+		immediateValue[i] = immediateValue[i+1];
+	}
+	immediateValue[decimalLocation+magnitude] = '.';
+	immediateValue = immediateValue.substr(0,magnitudeLoc);
+	
+	return immediateValue;
+}
