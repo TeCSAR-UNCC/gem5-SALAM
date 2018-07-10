@@ -5,7 +5,8 @@
 #include <string>
 #include "compute_node.hh"
 #include "instruction.hh"
-#include "debug.hh"
+#include "utilization.hh"
+#include "debugFlags.hh"
 
 class Operations
 {
@@ -30,7 +31,7 @@ public:
   static void llvm_udiv(const struct Instruction &instruction);
   static void llvm_sdiv(const struct Instruction &instruction);
   static void llvm_fdiv(const struct Instruction &instruction);
-  static void llvm_urem(const struct Instruction &instruction);
+  static void llvm_urem(const struct Instruction &inAccessstruction);
   static void llvm_srem(const struct Instruction &instruction);
   static void llvm_frem(const struct Instruction &instruction);
 

@@ -7,7 +7,8 @@
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/operations.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
-#include "hwacc/LLVMRead/src/debug.hh"
+#include "hwacc/LLVMRead/src/debugFlags.hh"
+#include "hwacc/LLVMRead/src/utilization.hh"
 
 #include <list>
 #include <queue>
@@ -31,6 +32,7 @@ class LLVMInterface : public ComputeUnit {
     int cycle;
     int stalls;
     int execnodes;
+    instructionUtilization *instrUtil;
     typedef std::map<std::string, int> opCodeCount;
     opCodeCount opCount;
   protected:
@@ -44,7 +46,6 @@ class LLVMInterface : public ComputeUnit {
     void initialize();
     void statistics();
     void scheduleBB(BasicBlock *bb);
-
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
 };

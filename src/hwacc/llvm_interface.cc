@@ -51,7 +51,8 @@ LLVMInterface::tick() {
         if ((*it)->commit()) {
             // If compute node is ready to commit, fetch the updated instruction struct
             Instruction instr = (*it)->getInstruction(); // Update instruction data struct
-            opCount[instr.general.opCode]++; // Increment intruction use counter
+            instrUtil->update(instr);
+            // opCount[instr.general.opCode]++; // Increment intruction use counter
             it = computeQueue->erase(it); // Remove the compute node from the queue
         } else {
             ++it; // Compute node is not ready, check next node
@@ -93,7 +94,8 @@ LLVMInterface::tick() {
                 computeQueue->push_back(*it); // Interface instruction with runtime computation engine
                 (*it)->compute(); // Send instruction to runtime computation simulator
             }
-            opCount[instr.general.opCode]++; // Increment instruction use counter
+            instrUtil->update(instr);
+            // opCount[instr.general.opCode]++; // Increment instruction use counter
             it = reservation->erase(it); // Remove instruction from reservation table
         } else if ((instr.general.opCode.compare("br") == 0) && !((*it)->checkDependency())) {
             // If instruction is a branch instruction with no hot dependencies
@@ -105,7 +107,8 @@ LLVMInterface::tick() {
                 instr = (*it)->getInstruction(); // Update instruction data struct
                 DPRINTF(LLVMInterface, "Branching to Basic Block: (%s)\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest); // Set pointer to next basic block
-                opCount[instr.general.opCode]++; // Increment intruction use counter 
+                instrUtil->update(instr);
+                // opCount[instr.general.opCode]++; // Increment intruction use counter 
                 it = reservation->erase(it); // Remove instruction from reservation table
                 scheduleBB(currBB); // Add next basic block to reservation table
             } else {
@@ -121,7 +124,8 @@ LLVMInterface::tick() {
                 instr = (*it)->getInstruction(); // Update instruction data struct
                 DPRINTF(LLVMInterface, "Branching to Basic Block from Switch Statement: (%s)\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest); // Set pointer to next basic block
-                opCount[instr.general.opCode]++; // Increment intruction use counter
+                instrUtil->update(instr);
+                // opCount[instr.general.opCode]++; // Increment intruction use counter
                 it = reservation->erase(it); // Remove instruction from reservation table
                 scheduleBB(currBB); // Add next basic block to reservation table
             } else {
@@ -175,7 +179,8 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
                 // Phi should never have runtime dependency once BB is scheduled
                 (*it)->compute(); // Send instruction to runtime computation simulator
                // (*it)->commit(); // Store Phi 
-                opCount[instr.general.opCode]++; // Increment intruction use counter
+               instrUtil->update(instr);
+               // opCount[instr.general.opCode]++; // Increment intruction use counter
             } else {
                 // Phi instruction should never have a dependency when scheduled
                 DPRINTF(IOAcc, "Error: Phi Instruction Scheduled with Dependency!\n");
@@ -210,8 +215,11 @@ LLVMInterface::constructBBList() {
     bbList = new std::list<BasicBlock*>();
     regList = new RegisterList();
     typeList = new TypeList();
+    instrUtil = new instructionUtilization();
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
+    regList->addRegister(new Register("ImmediateValue"));
+    regList->addRegister(new Register("Label"));
     bool inFunction = false;
     unsigned bbnum = 0;
     DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
@@ -227,6 +235,7 @@ LLVMInterface::constructBBList() {
                         if(line[i] == ',') size++; // Elements delimeted by commas, counts number of elements
                     }
                     typeList->addType(new LLVMType(size, name)); // Add custom data type to typeList
+                    
                 } else if (!line.find("define")) { //Found a function. Need to parse its header
                     DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
                     inFunction = true;
@@ -408,7 +417,40 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
+    /*
     for(auto it = opCount.begin(); it != opCount.end(); ++it)  {
         DPRINTF(IOAcc, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
+    */
+    DPRINTF(Hardware, "Floating Point Model:\n");
+    for(auto it = instrUtil->floats.begin(); it != instrUtil->floats.end(); ++it)  {
+        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+    }
+    DPRINTF(Hardware, "Integer Model:\n");
+    for(auto it = instrUtil->integer.begin(); it != instrUtil->integer.end(); ++it)  {
+        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+    }
+    DPRINTF(Hardware, "Custom Model:\n");
+    for(auto it = instrUtil->others.begin(); it != instrUtil->others.end(); ++it)  {
+        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+    }
+    DPRINTF(Hardware, "Bit Model:\n");
+    for(auto it = instrUtil->bitCount.begin(); it != instrUtil->bitCount.end(); ++it)  {
+        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+    }
+    DPRINTF(Hardware, "Shift Model:\n");
+    for(auto it = instrUtil->shiftCount.begin(); it != instrUtil->shiftCount.end(); ++it)  {
+        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+    }
+    DPRINTF(Hardware, "Other Instructions:\n");
+    for(auto it = instrUtil->opCount.begin(); it != instrUtil->opCount.end(); ++it)  {
+        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+    }
+    DPRINTF(Hardware, "Register Access:\n");
+    
+    for (auto it=regList->beginit(); it!=regList->endit(); ++it) {
+        DPRINTF(Hardware, "Register: (%s) Polled: (%d) Read: (%d) Write: (%d)\n", (*it)->getName(), (*it)->getPoll(), (*it)->getRead(), (*it)->getWrite());
+    }
+    
 }
+

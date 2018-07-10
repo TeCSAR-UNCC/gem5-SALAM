@@ -2,7 +2,7 @@
 
 #define __REGISTER_HH__
 
-#include "debug.hh"
+#include "debugFlags.hh"
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -15,7 +15,9 @@ friend class RegisterList;
 private:
   std::string dataType;
   std::string name;
-  int accessCount;
+  int writeCount;
+  int readCount;
+  int polledCount;
   bool hot = false;
 
 public:
@@ -26,19 +28,25 @@ public:
   Register(std::string id, uint64_t val);
   ~Register();
 
-  bool getStatus() { return hot; }
+
+  bool getStatus() { polled(); return hot; }
   std::string getName() { return name; }
   std::string getType() { return dataType; }
   uint64_t getValue() { return value; }
   void getValue(void *data) { memcpy(data, &value, size); }
-  void commit() { accessed(); hot = false; }
+  void commit() { hot = false; }
   void reset() { hot = true; }
   void setType(std::string type) { dataType = type; }
   void setSize();
   void setSize(std::string type);
   void setValue();
   void setValue(void *data);
-  void accessed() { accessCount++; }
+  void accessedWrite() { writeCount++; }
+  void accessedRead() { readCount++; }
+  void polled() { polledCount++;}
+  int getRead() { return readCount; }
+  int getWrite() { return writeCount; }
+  int getPoll() { return polledCount; }
 };
 
 class RegisterList{
@@ -52,7 +60,8 @@ public:
   size_t size() { return regList->size(); }
   Register *findRegister(std::string name);
   void printRegNames();
-
+  std::list<Register *>::iterator beginit() { auto it = regList->begin(); return it; }
+  std::list<Register *>::iterator endit() {  auto it = regList->end(); return it; }
 protected:
 };
 

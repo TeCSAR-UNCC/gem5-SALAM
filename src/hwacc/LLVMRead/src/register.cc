@@ -6,12 +6,17 @@ Register::Register(std::string id) {
     name = id;
     value = 0;
     size = 8;
-    accessCount = 0;
+    writeCount = 0;
+    readCount = 0;
+    polledCount = 0;
 }
 Register::Register(std::string id, uint64_t val){
     name = id;
     value = val;
     size = 8;
+    writeCount = 0;
+    readCount = 0;
+    polledCount = 0;
 }
 void 
 Register::setSize(){

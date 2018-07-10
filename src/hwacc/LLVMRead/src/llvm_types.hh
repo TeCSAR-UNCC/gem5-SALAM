@@ -4,7 +4,7 @@
 
 #include <string>
 #include <list>
-#include "debug.hh"
+#include "debugFlags.hh"
 
 class LLVMType {
 friend class TypeList;

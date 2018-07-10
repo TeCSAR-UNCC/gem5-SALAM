@@ -3,7 +3,7 @@
 #define __BASIC_BLOCK_HH__
 
 #include "compute_node.hh"
-#include "debug.hh"
+#include "debugFlags.hh"
 
 #include <list>
 

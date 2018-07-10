@@ -1,7 +1,5 @@
 #include "operations.hh"
 #include <string>
-#include "debug/LLVMOp.hh"
-#include "debug/LLVMGEP.hh"
 #include <cstdint>
 #include <vector>
 
@@ -22,20 +20,23 @@ void Operations::llvm_br(const struct Instruction &instruction) {
 
 	if (!(instruction.terminator.unconditional)) {
 		DPRINTF(LLVMOp, "Conditional Branch Operation! \n");
-		condition = instruction.terminator.cond->value;
+		condition = instruction.terminator.cond->getValue();
+		instruction.general.labelCount->accessedRead();
 		if (condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
 		else instruction.terminator.dest = instruction.terminator.iffalse;
 		DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
+		instruction.terminator.cond->accessedRead();
 	}
 	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");
 }
 void Operations::llvm_switch(const struct Instruction &instruction) {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
-	uint64_t mainValue = instruction.terminator.value->value;
+	uint64_t mainValue = instruction.terminator.value->getValue();
 	bool found = false;
 	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
 	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
 		DPRINTF(LLVMOp, "Comparing main value %d to case value %d: \n", mainValue, instruction.terminator.cases.value[i]);
+		instruction.general.immediateCount->accessedRead();
 		if(mainValue == instruction.terminator.cases.value[i]){
 			instruction.terminator.dest = instruction.terminator.cases.dest[i];
 			DPRINTF(LLVMOp, "Found!\n");
@@ -64,15 +65,17 @@ void Operations::llvm_add(const struct Instruction &instruction) {
 	int64_t op2 = 0;
 	int64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else {
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else {
 		op1 = instruction.binary.op1->getValue();
-		DPRINTF(LLVMOp, "Register: %s = %d \n", instruction.binary.op1->getName(), op1);
 	}
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else {
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else {
 		op2 = instruction.binary.op2->getValue();
-		DPRINTF(LLVMOp, "Register: %s = %d \n", instruction.binary.op2->getName(), op2);
 	}
 	// Perform arithmetic
 	result = op1 + op2;
@@ -92,10 +95,14 @@ void Operations::llvm_sub(const struct Instruction &instruction) {
 	int64_t op2 = 0;
 	int64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.binary.op1->getValue();
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.binary.op2->getValue();
 	// Perform arithmetic
 	result = op1 - op2;
 	// Store result in return register
@@ -113,10 +120,14 @@ void Operations::llvm_mul(const struct Instruction &instruction) {
 	int64_t op2 = 0;
 	int64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.binary.op1->getValue();
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.binary.op2->getValue();
 	// Perform arithmetic
 	result = op1 * op2;
 	// Store result in return register
@@ -130,10 +141,14 @@ void Operations::llvm_udiv(const struct Instruction &instruction) {
 	uint64_t op2 = 0;
 	uint64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.binary.op1->getValue();
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.binary.op2->getValue();
 	// Perform arithmetic
 	result = op1 / op2;
 	// Store result in return register
@@ -147,10 +162,14 @@ void Operations::llvm_sdiv(const struct Instruction &instruction) {
 	int64_t op2 = 0;
 	int64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.binary.op1->getValue();
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.binary.op2->getValue();
 	// Perform arithmetic
 	result = op1 / op2;
 	// Store result in return register
@@ -164,10 +183,14 @@ void Operations::llvm_urem(const struct Instruction &instruction) {
 	uint64_t op2 = 0;
 	uint64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.binary.op1->getValue();
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.binary.op2->getValue();
 	// Perform arithmetic
 	result = op1 % op2;
 	// Store result in return register
@@ -181,10 +204,14 @@ void Operations::llvm_srem(const struct Instruction &instruction) {
 	int64_t op2 = 0;
 	int64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
+	if (instruction.binary.immediate1) {
+		op1 = stoi(instruction.binary.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.binary.op1->getValue();
+	if (instruction.binary.immediate2) {
+		op2 = stoi(instruction.binary.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.binary.op2->getValue();
 	// Perform arithmetic
 	result = op1 % op2;
 	// Store result in return register
@@ -204,24 +231,32 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 	float fresult = 0.0;
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) {
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(double *)&temp2;
 		}
 	} else {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) {
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(float *)&temp2;
 		}
@@ -247,24 +282,32 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 	double result;
 	float fresult;
 	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) {
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(double *)&temp2;
 		}
 	} else {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) {
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(float *)&temp2;
 		}
@@ -289,24 +332,32 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 	float fresult;
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) { 
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(double *)&temp2;
 		}
 	} else {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) {
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(float *)&temp2;
 		}
@@ -331,24 +382,32 @@ void Operations::llvm_fdiv(const struct Instruction &instruction) {
 	float fresult;
 	// If immediate values convert from string, else load from register
 	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) { 
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(double *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(double *)&temp2;
 		}
 	} else {
-		if (instruction.binary.immediate1) op1 = stof(instruction.binary.iop1);
-		else {
+		if (instruction.binary.immediate1) { 
+			op1 = stof(instruction.binary.iop1);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp1 = instruction.binary.op1->getValue();
 		    op1 = *(float *)&temp1;
 		}
-		if (instruction.binary.immediate2) op2 = stof(instruction.binary.iop2);
-		else {
+		if (instruction.binary.immediate2) {
+			op2 = stof(instruction.binary.iop2);
+			instruction.general.immediateCount->accessedRead();
+		} else {
 		    uint64_t temp2 = instruction.binary.op2->getValue();
 		    op2 = *(float *)&temp2;
 		}
@@ -401,10 +460,14 @@ void Operations::llvm_shl(const struct Instruction &instruction) {
 	int64_t op2;
 	int64_t result;
 	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) op1 = stoi(instruction.bitwise.iop1);
-	else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
-	else op2 = instruction.bitwise.op2->getValue();
+	if (instruction.bitwise.immediate1) {
+		op1 = stoi(instruction.bitwise.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.bitwise.op1->getValue();
+	if (instruction.bitwise.immediate2) {
+		op2 = stoi(instruction.bitwise.iop2);
+		instruction.general.immediateCount->accessedRead();	
+	} else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
 	result = op1 << op2;
 	// Store result in return register
@@ -420,10 +483,14 @@ void Operations::llvm_lshr(const struct Instruction &instruction) {
 	int64_t op2;
 	int64_t result;
 	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) op1 = stoi(instruction.bitwise.iop1);
-	else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
-	else op2 = instruction.bitwise.op2->getValue();
+	if (instruction.bitwise.immediate1) {
+		op1 = stoi(instruction.bitwise.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.bitwise.op1->getValue();
+	if (instruction.bitwise.immediate2) {
+		op2 = stoi(instruction.bitwise.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
 	result = ((unsigned) op1) >> op2;
 	// Store result in return register
@@ -439,10 +506,14 @@ void Operations::llvm_ashr(const struct Instruction &instruction) {
 	int64_t op2;
 	int64_t result;
 	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) op1 = stoi(instruction.bitwise.iop1);
-	else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
-	else op2 = instruction.bitwise.op2->getValue();
+	if (instruction.bitwise.immediate1) {
+		op1 = stoi(instruction.bitwise.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.bitwise.op1->getValue();
+	if (instruction.bitwise.immediate2) {
+		op2 = stoi(instruction.bitwise.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
 	if (op1 < 0 && op2 > 0)
         result = op1 >> op2 | ~(~0U >> op2);
@@ -460,10 +531,14 @@ void Operations::llvm_and(const struct Instruction &instruction) {
 	int64_t op2;
 	int64_t result;
 	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) op1 = stoi(instruction.bitwise.iop1);
-	else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
-	else op2 = instruction.bitwise.op2->getValue();
+	if (instruction.bitwise.immediate1) {
+		op1 = stoi(instruction.bitwise.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.bitwise.op1->getValue();
+	if (instruction.bitwise.immediate2) {
+		op2 = stoi(instruction.bitwise.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
 	result = op1 & op2;
 	// Store result in return register
@@ -478,10 +553,14 @@ void Operations::llvm_or(const struct Instruction &instruction) {
 	int64_t op2;
 	int64_t result;
 	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) op1 = stoi(instruction.bitwise.iop1);
-	else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
-	else op2 = instruction.bitwise.op2->getValue();
+	if (instruction.bitwise.immediate1) {
+		op1 = stoi(instruction.bitwise.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.bitwise.op1->getValue();
+	if (instruction.bitwise.immediate2) {
+		op2 = stoi(instruction.bitwise.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
 	result = op1 | op2;
 	// Store result in return register
@@ -496,10 +575,14 @@ void Operations::llvm_xor(const struct Instruction &instruction) {
 	int64_t op2;
 	int64_t result;
 	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) op1 = stoi(instruction.bitwise.iop1);
-	else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) op2 = stoi(instruction.bitwise.iop2);
-	else op2 = instruction.bitwise.op2->getValue();
+	if (instruction.bitwise.immediate1) {
+		op1 = stoi(instruction.bitwise.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.bitwise.op1->getValue();
+	if (instruction.bitwise.immediate2) {
+		op2 = stoi(instruction.bitwise.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.bitwise.op2->getValue();
 	// Perform arithmetic
 	result = op1 ^ op2;
 	// Store result in return register
@@ -548,6 +631,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 
 	for(int i = 0; i <= j; i++){
 			if(instruction.memory.getptr.immediate[i]) {  // Immediate Values
+				instruction.general.immediateCount->accessedRead();
 				if(i == j) {
 					// Final offset variable
 					totalElements*=(instruction.memory.getptr.immdx[i]);
@@ -565,7 +649,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 					DPRINTF(LLVMGEP, "Adding Final Offset: (%d)\n", instruction.memory.getptr.idx[i]->getValue());
 				} else {
 				DPRINTF(LLVMGEP, "Register Loaded Value:\n");
-				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d) = (%d)\n", i, dataSize, instruction.memory.getptr.idx[i]->getValue(), dataSize * instruction.memory.getptr.idx[i]->getValue());				
+				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d) = (%d)\n", i, dataSize, instruction.memory.getptr.idx[i]->value, dataSize * instruction.memory.getptr.idx[i]->value);				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 				}
 			}
@@ -604,6 +688,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 				totalElements*=elements[k];
 			}
 			if(instruction.memory.getptr.immediate[i]) {
+				instruction.general.immediateCount->accessedRead();
 				if(i == j) {
 					totalElements*=(instruction.memory.getptr.immdx[i]);
 				} else {				
@@ -616,7 +701,7 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
 				} else {
 				DPRINTF(LLVMGEP, "Register \n");
-				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
+				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->value);				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 				}
 			}
@@ -645,8 +730,11 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		DPRINTF(LLVMGEP, "Size of data type: %d\n", size[0]);
 
 		for (int i = 0; i < index; i++) {
-			if(!instruction.memory.getptr.immediate[i]) currentValue[i] = instruction.memory.getptr.idx[i]->value;
-			else currentValue[i] = instruction.memory.getptr.immdx[i];
+			if(!instruction.memory.getptr.immediate[i]) currentValue[i] = instruction.memory.getptr.idx[i]->getValue();
+			else {
+				currentValue[i] = instruction.memory.getptr.immdx[i];
+				instruction.general.immediateCount->accessedRead();
+			}
 			DPRINTF(LLVMGEP, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
 		}
 
@@ -658,7 +746,9 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 		newAddress += instruction.memory.getptr.ptrval->getValue();
 		instruction.general.returnRegister->setValue(&newAddress);
 	}
-	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
+	DPRINTF(LLVMGEP, "Global Register Read: (%s)\n",instruction.memory.getptr.ptrval->getName());
+	instruction.memory.getptr.ptrval->accessedRead();
+	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->value);
 	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
 }
 void Operations::llvm_fence(const struct Instruction &instruction) {}
@@ -669,8 +759,10 @@ void Operations::llvm_atomicrmw(const struct Instruction &instruction) {}
 void Operations::llvm_trunc(const struct Instruction &instruction) {
 	int64_t value;
 	int64_t result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 
 	if (instruction.conversion.ty2 == "i32") result = 0xffffffff & value;
 	else if (instruction.conversion.ty2 == "i16") result = 0xffff & value;
@@ -684,8 +776,10 @@ void Operations::llvm_trunc(const struct Instruction &instruction) {
 void Operations::llvm_zext(const struct Instruction &instruction) {
 	uint64_t value;
 	uint64_t result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
 	else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
@@ -700,8 +794,10 @@ void Operations::llvm_zext(const struct Instruction &instruction) {
 void Operations::llvm_sext(const struct Instruction &instruction) {
 	int64_t value;
 	int64_t result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "i64") result = (int64_t) value;
 	else if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
@@ -716,8 +812,10 @@ void Operations::llvm_sext(const struct Instruction &instruction) {
 void Operations::llvm_fptoui(const struct Instruction &instruction) {
 	double value;
 	uint64_t result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
 	else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
@@ -732,8 +830,10 @@ void Operations::llvm_fptoui(const struct Instruction &instruction) {
 void Operations::llvm_fptosi(const struct Instruction &instruction) {
 	double value;
 	int64_t result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "i64") result = (int64_t) value;
 	else if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
@@ -748,8 +848,10 @@ void Operations::llvm_fptosi(const struct Instruction &instruction) {
 void Operations::llvm_uitofp(const struct Instruction &instruction) {
 	uint64_t value;
 	double result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "double") result = (double) value;
 	else if (instruction.conversion.ty2 == "float") result = (float) value;
@@ -759,8 +861,10 @@ void Operations::llvm_uitofp(const struct Instruction &instruction) {
 void Operations::llvm_sitofp(const struct Instruction &instruction) {
 	int64_t value;
 	double result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "double") result = (double) value;
 	else if (instruction.conversion.ty2 == "float") result = (float) value;
@@ -770,8 +874,10 @@ void Operations::llvm_sitofp(const struct Instruction &instruction) {
 void Operations::llvm_fptrunc(const struct Instruction &instruction) {
 	double value;
 	double result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "float") result = (float) value;
 
@@ -780,8 +886,10 @@ void Operations::llvm_fptrunc(const struct Instruction &instruction) {
 void Operations::llvm_fpext(const struct Instruction &instruction) {
 	double value;
 	double result;
-	if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-	else value = instruction.conversion.value->getValue();
+	if(instruction.conversion.immediate) {
+		value = instruction.conversion.immVal;
+		instruction.general.immediateCount->accessedRead();
+	} else value = instruction.conversion.value->getValue();
 	
 	if (instruction.conversion.ty2 == "double") result = (float) value;
 
@@ -791,8 +899,10 @@ void Operations::llvm_ptrtoint(const struct Instruction &instruction) {
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
-		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-		else value = instruction.conversion.value->getValue();
+		if(instruction.conversion.immediate) {
+			value = instruction.conversion.immVal;
+			instruction.general.immediateCount->accessedRead();
+		} else value = instruction.conversion.value->getValue();
 
 		if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
 		else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
@@ -804,8 +914,10 @@ void Operations::llvm_ptrtoint(const struct Instruction &instruction) {
 		instruction.general.returnRegister->setValue(&result);
 	}
 	else {
-		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-		else value = instruction.conversion.value->getValue();
+		if(instruction.conversion.immediate) {
+			value = instruction.conversion.immVal;
+			instruction.general.immediateCount->accessedRead();
+		} else value = instruction.conversion.value->getValue();
 	
 		if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
 		else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
@@ -822,8 +934,10 @@ void Operations::llvm_inttoptr(const struct Instruction &instruction) {
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
-		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-		else value = instruction.conversion.value->getValue();
+		if(instruction.conversion.immediate) {
+			value = instruction.conversion.immVal;
+			instruction.general.immediateCount->accessedRead();
+		} else value = instruction.conversion.value->getValue();
 
 		if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
 		else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
@@ -835,8 +949,10 @@ void Operations::llvm_inttoptr(const struct Instruction &instruction) {
 		instruction.general.returnRegister->setValue(&result);
 	}
 	else {
-		if(instruction.conversion.immediate) value = instruction.conversion.immVal;
-		else value = instruction.conversion.value->getValue();
+		if(instruction.conversion.immediate) {
+			value = instruction.conversion.immVal;
+			instruction.general.immediateCount->accessedRead();
+		} else value = instruction.conversion.value->getValue();
 	
 		if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
 		else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
@@ -862,10 +978,14 @@ void Operations::llvm_icmp(const struct Instruction &instruction) {
 	int64_t op2 = 0;
 	
 	// Determine if comparison is being made between registers or immediate values
-	if (instruction.other.compare.immediate1) op1 = stoi(instruction.other.compare.iop1);
-	else op1 = instruction.other.compare.op1->getValue();
-	if (instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
-	else op2 =  instruction.other.compare.op2->getValue();
+	if (instruction.other.compare.immediate1) {
+		op1 = stoi(instruction.other.compare.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.other.compare.op1->getValue();
+	if (instruction.other.compare.immediate2) {
+		op2 = stoi(instruction.other.compare.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 =  instruction.other.compare.op2->getValue();
 	// Perform Comparison
 	/*
 	if (op1 > MAXINT) {
@@ -896,10 +1016,14 @@ void Operations::llvm_fcmp(const struct Instruction &instruction) {
 	double op2 = 0.0;
 	uint64_t result = 0;
 	// Determine if comparison is being made between registers or immediate values
-	if (instruction.other.compare.immediate1) op1 = stoi(instruction.other.compare.iop1);
-	else op1 = instruction.other.compare.op1->getValue();
-	if (instruction.other.compare.immediate2) op2 = stoi(instruction.other.compare.iop2);
-	else op2 = instruction.other.compare.op2->getValue();
+	if (instruction.other.compare.immediate1) {
+		op1 = stoi(instruction.other.compare.iop1);
+		instruction.general.immediateCount->accessedRead();
+	} else op1 = instruction.other.compare.op1->getValue();
+	if (instruction.other.compare.immediate2) {
+		op2 = stoi(instruction.other.compare.iop2);
+		instruction.general.immediateCount->accessedRead();
+	} else op2 = instruction.other.compare.op2->getValue();
 	// Perform Comparison
 	if (instruction.other.compare.condition.condFalse) {
 		result = false;
@@ -959,7 +1083,7 @@ void Operations::llvm_fcmp(const struct Instruction &instruction) {
 	}
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, instruction.general.returnRegister->getValue());
+	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, instruction.general.returnRegister->value);
 }
 void Operations::llvm_phi(const struct Instruction &instruction, std::string prevBB) {
 	// <result> = phi <ty> [ <val0>, <label0>], ...
@@ -969,8 +1093,10 @@ void Operations::llvm_phi(const struct Instruction &instruction, std::string pre
 		// Look for phi label that matches the previous basic block
 		if (prevBB == instruction.other.phi.label[i]) {
 			// Store the value associated with the label into val
-			if (instruction.other.phi.immVal[i]) val = stoi(instruction.other.phi.ival[i]);
-			else val = instruction.other.phi.val[i]->getValue();
+			if (instruction.other.phi.immVal[i]) {
+				val = stoi(instruction.other.phi.ival[i]);
+				instruction.general.immediateCount->accessedRead();
+			} else val = instruction.other.phi.val[i]->getValue();
 			break;
 		}
 	}
@@ -989,11 +1115,13 @@ void Operations::llvm_select(const struct Instruction &instruction) {
 		int condition = 0;
 		if(instruction.other.select.immediate[0]) {
 			val1 = instruction.other.select.immVal[0];
+			instruction.general.immediateCount->accessedRead();
 		} else {
 			val1 = instruction.other.select.val1->getValue();
 		}
 		if(instruction.other.select.immediate[1]) {
 			val2 = instruction.other.select.immVal[1];
+			instruction.general.immediateCount->accessedRead();
 		} else val2 = instruction.other.select.val2->getValue();		
 		
 		if(instruction.other.select.icondFlag){

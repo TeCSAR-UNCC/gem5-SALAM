@@ -6,7 +6,7 @@
 #include "sim/sim_object.hh"
 #include "hwacc/comm_interface.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
-#include "hwacc/LLVMRead/src/debug.hh"
+#include "hwacc/LLVMRead/src/debugFlags.hh"
 
 class ComputeUnit : public SimObject {
   private:

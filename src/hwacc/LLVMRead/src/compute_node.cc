@@ -157,6 +157,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 			}
 		}
 	}
+	instruction.general.immediateCount = list->findRegister("ImmediateValue");
+	instruction.general.labelCount = list->findRegister("Label");
 	last = (parameters.size() - 1); // Set last to index the final value in the parameters vector
 	debugParams(parameters); // Prints all found parameters for the instruction line
 	// Once all components have been found, navigate through and define each component
@@ -1069,7 +1071,7 @@ ComputeNode::compute() {
 	case IR_Store: {
 		uint64_t data;
 		uint64_t size = 0;
-	    uint64_t dst = instruction.memory.store.pointer->getValue();
+	    uint64_t dst = instruction.memory.store.pointer->value;
 		if(instruction.memory.store.immediate) {
 			DPRINTF(ComputeNode, "Immediate value store. \n");
 			data = (uint64_t) instruction.memory.store.ival;
@@ -1077,7 +1079,7 @@ ComputeNode::compute() {
 			req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 		}
         else {
-			data = instruction.memory.store.value->getValue();
+			data = instruction.memory.store.value->value;
         	req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.memory.store.value->size);
 			DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
 		}
@@ -1134,7 +1136,7 @@ ComputeNode::commit() {
 		DPRINTF(LLVMRegister, "Cycle: Current = (%d) || Max = (%d) || Remaining = (%d)\n", instruction.cycle.current, instruction.cycle.max, instruction.cycle.max - instruction.cycle.current);
 		if (instruction.cycle.current >= instruction.cycle.max) {
 			instruction.general.returnRegister->commit();
-			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", instruction.general.returnRegister->getName(), instruction.general.returnRegister->getValue());
+			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", instruction.general.returnRegister->getName(), instruction.general.returnRegister->value);
 			return true;
 		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
 	}
@@ -1156,7 +1158,9 @@ ComputeNode::checkDependency() {
 					if(instruction.other.phi.val[i]->getStatus()){
 						DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.other.phi.val[i]->getName());
 						hot = true;
-					} else DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
+					} else {
+						DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
+					}
 				} else {
 					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded!\n", instruction.other.phi.val[i]);
 				}
@@ -1166,6 +1170,7 @@ ComputeNode::checkDependency() {
 	} else {
 		for (int i = 0; i < dependencies; i++) {
 			DPRINTF(LLVMRegister, "Checking Dependency #%d:\n", i+1);
+			// Increment counter for register dependency check
 			if (instruction.dependencies.registers[i]->getStatus()) {
 				DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.dependencies.registers[i]->getName());
 				hot = true;
@@ -1176,6 +1181,18 @@ ComputeNode::checkDependency() {
 	}
 	DPRINTF(LLVMRegister, "Checking Dependencies: Finished!\n\n");
 
+	if(!hot) {
+		if((instruction.general.returnRegister != NULL)) {
+			DPRINTF(LLVMRegister, "Writing to Register (%s)!\n",instruction.general.returnRegister->getName());
+			instruction.general.returnRegister->accessedWrite();
+		}
+		if(!instruction.general.terminator) {
+			for(int i = 0; i < dependencies; i++) {
+				DPRINTF(LLVMRegister, "Reading from register (%s)!\n", instruction.dependencies.registers[i]->getName());
+				instruction.dependencies.registers[i]->accessedRead();
+			}
+		}
+	}
 	return hot;
 }
 

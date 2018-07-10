@@ -16,6 +16,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/register.cc')
     Source('LLVMRead/src/llvm_types.cc')
     Source('LLVMRead/src/mem_request.cc')
+    Source('LLVMRead/src/utilization.cc')
+    Source('LLVMRead/src/power_func.cc')
 
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
@@ -26,6 +28,7 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('LLVMOp')
     DebugFlag('LLVMParse')
     DebugFlag('LLVMGEP')
+    DebugFlag('Hardware')
 
 
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])

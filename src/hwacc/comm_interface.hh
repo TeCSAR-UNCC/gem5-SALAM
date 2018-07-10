@@ -7,7 +7,7 @@
 #include "dev/arm/base_gic.hh"
 #include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
-#include "hwacc/LLVMRead/src/debug.hh"
+#include "hwacc/LLVMRead/src/debugFlags.hh"
 
 #include <list>
 #include <queue>

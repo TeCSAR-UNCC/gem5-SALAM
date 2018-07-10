@@ -4,19 +4,23 @@
 
 #include "register.hh"
 #include "llvm_types.hh"
-#include "debug.hh"
+#include "debugFlags.hh"
 
-#define MAXCASES 4
+#define MAXCASES 5
 #define MAXDEPENDENTS 5
 #define MAXPHI 5
 #define MAXGPE 5
-
+// ******************************************************************
 struct Instruction {
+	// **************************************************************
 	struct General {
-		std::string llvm_Line;	//
-		std::string opCode;		  //
+		std::string llvm_Line;	
+		std::string opCode;		  
 		std::string returnType;
-		Register *returnRegister; //
+		Register *returnRegister; 
+		Register *immediateCount;
+		Register *labelCount;
+		// Flags
 		bool flowControl = false;
 		bool terminator = false;
 		bool binary = false;
@@ -30,15 +34,20 @@ struct Instruction {
 		bool phi = false;
 		bool custom = false;
 	};
+	// **************************************************************
 	struct Dependencies {
 		Register *registers[MAXDEPENDENTS];
 	};
+	// **************************************************************
 	struct Cycle {
 		int current;
 		int max;
 	};
+	// **************************************************************
 	struct Attributes {
+		// **********************************************************
 		struct Parameters {
+			// Flags
 			bool zeroext = false,
 				 signext = false,
 				 inreg = false,
@@ -49,9 +58,11 @@ struct Instruction {
 				 nest = false,
 				 returned = false;
 		};
+		// **********************************************************
 		struct Function {
-			int allign = 0;
-			bool allignstack = false,
+			int align = 0;
+			// Flags
+			bool alignstack = false,
 				 alwaysinline = false,
 				 builtin = false,
 				 cold = false,
@@ -79,18 +90,25 @@ struct Instruction {
 				 sspstrong = false,
 				 uwtable = false;
 		};
+		// **********************************************************
 		struct CConv {
+			// Flags
 			bool ccc = false,
 				 fastcc = false,
 				 coldcc = false,
 				 cc10 = false,
 				 cc11 = false;
 		};
+		// **********************************************************
+		// Nested struct definitions
 		CConv cconv;
 		Parameters parameters;
 		Function fuction;
+		// **********************************************************
 	};
+	// **************************************************************
 	struct Flags {
+		// Flags
 		bool nnan = false,
 			 ninf = false,
 			 nsz = false,
@@ -103,85 +121,109 @@ struct Instruction {
 			 nuw = false,
 			 exact = false;
 	};
+	// **************************************************************
 	struct Terminator {
 		std::string type;
 		std::string ivalue;
-		std::string intty; //int type
+		std::string intty; 
 		std::string somety;
-		bool intermediate = false;
-		bool unconditional = false;
-		Register *value;
 		std::string iftrue;
 		std::string iffalse;
-		Register *cond;
-		mutable std::string dest;
 		std::string defaultdest;
+		// **********************************************************
+		// Mutable because destination can changed during runtime
+		mutable std::string dest;
+		// **********************************************************
+		Register *cond;
+		Register *value;
 		Register *Addr;
 		Register *exception_label;
 		Register *normal_label;
-
+		// Flags
+		bool intermediate = false;
+		bool unconditional = false;
+		// **********************************************************
 		struct Cases {
 			int statements = 0;
-			std::string intty[MAXCASES];
 			int value[MAXCASES];
 			std::string dest[MAXCASES];
+			std::string intty[MAXCASES];
 		};
+		// **********************************************************
+		// Nested struct defintion
 		Cases cases;
+		// **********************************************************
 	};
+	// **************************************************************
 	struct Binary {
 		std::string iop1;
 		std::string iop2;
 		std::string ty;
-		bool immediate1 = false;
-		bool immediate2 = false;
 		Register *op1;
 		Register *op2;
+		// Flags
+		bool immediate1 = false;
+		bool immediate2 = false;
 	};
+	// **************************************************************
 	struct Bitwise {
 		std::string iop1;
 		std::string iop2;
 		std::string ty;
-		bool immediate1 = false;
-		bool immediate2 = false;
 		Register *op1;
 		Register *op2;
+		// Flags
+		bool immediate1 = false;
+		bool immediate2 = false;
 	};
+	// **************************************************************
 	struct Vector { };
+	// **************************************************************
 	struct Aggregate { };
+	// **************************************************************
 	struct Memory {
+		// **********************************************************
 		struct Load {
-			bool volatileVar = false;
 			std::string ty;
 			Register *pointer;
 			int align;
-		};
-		struct Store {
+			// Flags
 			bool volatileVar = false;
+		};
+		// **********************************************************
+		struct Store {
 			std::string ty;
 			Register *pointer;
 			Register *value;
 			int align;
 			int ival;
+			// Flags
+			bool volatileVar = false;
 			bool immediate = false;
 
 		};
+		// **********************************************************
 		struct GetElementPtr {
-			bool inbounds = false;
+			int immdx[MAXGPE];
 			int index;
 			mutable unsigned long long int reference[MAXGPE];
 			std::string pty;
-			Register *ptrval;
 			std::string ty[MAXGPE];
+			Register *ptrval;
 			Register *idx[MAXGPE];
-			int immdx[MAXGPE];
-			bool immediate[MAXGPE];
 			LLVMType *llvmType;
-
+			// Flags
+			bool inbounds = false;
+			bool immediate[MAXGPE];
 		};
+		// **********************************************************
+		// Nested struct definitions
 		Load load;
 		Store store;
 		GetElementPtr getptr;
+		// **********************************************************
 	};
+	// **************************************************************
 	struct Conversion { 
 		bool immediate = false;
 		int immVal;
@@ -189,7 +231,9 @@ struct Instruction {
 		std::string ty;
 		std::string ty2;
 	};
+	// **************************************************************
 	struct Other {
+		// **********************************************************
 		struct Compare {
 			std::string ty;
 			std::string iop1;
@@ -198,6 +242,7 @@ struct Instruction {
 			Register *op2;
 			bool immediate1 = false;
 			bool immediate2 = false;
+			// ******************************************************
 			struct Condition {
 				std::string cond;
 				bool eq = false,
@@ -223,9 +268,12 @@ struct Instruction {
 					 une = false,
 					 uno = false;
 			};
+			// ******************************************************
+			// Nested struct definition
 			Condition condition;
+			// ******************************************************
 		};
-		Compare compare;
+		// **********************************************************
 		struct Phi {
 			std::string ty;
 			std::string ival[MAXPHI];
@@ -236,7 +284,7 @@ struct Instruction {
 			std::string label[MAXPHI];
 			mutable Register *takenVal;
 		};
-		Phi phi;
+		// **********************************************************
 		struct Select {
 			Register *cond;
 			Register *val1;
@@ -250,9 +298,17 @@ struct Instruction {
 			bool doubleTy = false;
 			bool immediate[2];
 		};
+		// **********************************************************
+		// Nested struct definition
+		Compare compare;
+		Phi phi;
 		Select select;
+		// **********************************************************
 	};
+	// **************************************************************
 	struct Custom { };
+	// **************************************************************
+	// Struct definitions
 	General general;
 	Dependencies dependencies;
 	Cycle cycle;
@@ -267,6 +323,8 @@ struct Instruction {
 	Conversion conversion;
 	Other other;
 	Custom custom;
+	// **************************************************************
 };
+// ******************************************************************
 
 #endif //__DECODER_HH__

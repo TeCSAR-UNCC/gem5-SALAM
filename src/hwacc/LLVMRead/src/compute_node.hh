@@ -10,7 +10,7 @@
 #include "cycle_count.hh"
 #include "mem_request.hh"
 #include "base/types.hh"
-#include "debug.hh"
+#include "debugFlags.hh"
 #include <vector>
 
 class ComputeNode {
