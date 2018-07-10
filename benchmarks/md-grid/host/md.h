@@ -2,7 +2,6 @@
 #include "data.h"
 #include <cmath>
 
-
 #define common_val      *(unsigned *)0x80b00000
 #define acc             *(char *)0x2f000000
 #define loc_n_points    *(int *)0x2f000001
