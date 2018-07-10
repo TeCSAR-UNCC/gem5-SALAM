@@ -3,7 +3,7 @@
 
 #include "stdint.h"
 //#define SPM
-#define TEST
+//#define TEST
 
 #ifdef TEST
 #define TYPE double

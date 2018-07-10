@@ -8,7 +8,7 @@
 
 #define MAXCASES 4
 #define MAXDEPENDENTS 5
-#define MAXPHI 5
+#define MAXPHI 10
 #define MAXGPE 5
 
 struct Instruction {
