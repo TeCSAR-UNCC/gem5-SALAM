@@ -32,7 +32,7 @@ class LLVMInterface : public ComputeUnit {
     int cycle;
     int stalls;
     int execnodes;
-    instructionUtilization *instrUtil;
+    Utilization *pwrUtil;
     typedef std::map<std::string, int> opCodeCount;
     opCodeCount opCount;
   protected:

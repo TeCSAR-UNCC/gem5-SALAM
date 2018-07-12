@@ -283,6 +283,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.adder = true;
 		instruction.cycle.max = CYCLECOUNTADD;
 		instruction.general.binary = true;
 		setFlags(parameters, instruction);
@@ -292,6 +294,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_FAdd: {
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.adder = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTFADD;
 		setFlags(parameters, instruction);
@@ -304,6 +308,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = sub nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.adder = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTSUB;
 		setFlags(parameters, instruction);
@@ -313,6 +319,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_FSub: {
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.adder = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTFSUB;
 		setFlags(parameters, instruction);
@@ -325,6 +333,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = mul nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTMUL;
 		setFlags(parameters, instruction);
@@ -333,7 +343,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		break;
 	}
 	case IR_FMul: {
-		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result.
+		instruction.general.floatingPoint = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTFMUL;
 		setFlags(parameters, instruction);
@@ -344,6 +356,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_UDiv: {
 		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTUDIV;
 		setFlags(parameters, instruction);
@@ -354,6 +368,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_SDiv: {
 		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTSDIV;
 		setFlags(parameters, instruction);
@@ -363,6 +379,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_FDiv: {
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTFDIV;
 		setFlags(parameters, instruction);
@@ -372,6 +390,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_URem: {
 		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTUREM;
 		initializeReturnRegister(parameters, instruction);
@@ -380,6 +400,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_SRem: {
 		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTSREM;
 		initializeReturnRegister(parameters, instruction);
@@ -388,6 +410,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_FRem: {
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.multiplier = true;
 		instruction.general.binary = true;
 		instruction.cycle.max = CYCLECOUNTFREM;
 		setFlags(parameters, instruction);
@@ -401,6 +425,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = shl nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
 		instruction.general.bitwise = true;
 		instruction.cycle.max = CYCLECOUNTSHL;
 		setFlags(parameters, instruction);
@@ -411,6 +437,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	case IR_LShr: {
 		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
 		instruction.general.bitwise = true;
 		instruction.cycle.max = CYCLECOUNTLSHR;
 		setFlags(parameters, instruction);
@@ -420,7 +448,9 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_AShr: {
 		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
-		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result.
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
 		instruction.general.bitwise = true;
 		instruction.cycle.max = CYCLECOUNTASHR;
 		setFlags(parameters, instruction);
@@ -430,6 +460,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_And: {
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.bit = true;
 		instruction.general.bitwise = true;
 		instruction.cycle.max = CYCLECOUNTAND;
 		initializeReturnRegister(parameters, instruction);
@@ -438,6 +470,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_Or: {
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.bit = true;
 		instruction.general.bitwise = true;
 		instruction.cycle.max = CYCLECOUNTOR;
 		initializeReturnRegister(parameters, instruction);
@@ -446,6 +480,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 	}
 	case IR_Xor: {
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.bit = true;
 		instruction.general.bitwise = true;
 		instruction.cycle.max = CYCLECOUNTXOR;
 		initializeReturnRegister(parameters, instruction);

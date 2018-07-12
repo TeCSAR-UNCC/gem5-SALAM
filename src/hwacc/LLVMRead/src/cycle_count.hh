@@ -21,8 +21,8 @@
 
 #define CYCLECOUNTFADD				5
 #define CYCLECOUNTFSUB				5
-#define CYCLECOUNTFMUL				3
-#define CYCLECOUNTFDIV				6
+#define CYCLECOUNTFMUL				4
+#define CYCLECOUNTFDIV				16
 #define CYCLECOUNTFREM				5
 
 #define CYCLECOUNTSHL				1

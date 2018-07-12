@@ -33,6 +33,12 @@ struct Instruction {
 		bool compare = false;
 		bool phi = false;
 		bool custom = false;
+		bool integer = false;
+		bool floatingPoint = false;
+		bool multiplier = false;
+		bool adder = false;
+		bool bit = false;
+		bool shifter = false;
 	};
 	// **************************************************************
 	struct Dependencies {

@@ -9,6 +9,13 @@
 #include <vector>
 #include <list>
 
+struct RegisterTotals {
+  int reads = 0;
+  int writes = 0;
+  int count = 0;
+  int wordSize = 0;
+};
+
 class Register {
 friend class RegisterList;
 
@@ -33,6 +40,7 @@ public:
   std::string getName() { return name; }
   std::string getType() { return dataType; }
   uint64_t getValue() { return value; }
+  int getSize() { return size; }
   void getValue(void *data) { memcpy(data, &value, size); }
   void commit() { hot = false; }
   void reset() { hot = true; }
@@ -52,6 +60,7 @@ public:
 class RegisterList{
 private:
   std::list<Register *> *regList;
+  RegisterTotals regTotals;
 
 public:
   RegisterList() { regList = new std::list<Register *>(); }
@@ -62,7 +71,11 @@ public:
   void printRegNames();
   std::list<Register *>::iterator beginit() { auto it = regList->begin(); return it; }
   std::list<Register *>::iterator endit() {  auto it = regList->end(); return it; }
-protected:
+  void calculateTotals();
+  int getReads() { return regTotals.reads; }
+  int getWrites() { return regTotals.writes; }
+  int getCount() { return regTotals.count; }
+  int getWordSize() { return regTotals.wordSize; }
 };
 
 #endif //__REGISTER_HH__

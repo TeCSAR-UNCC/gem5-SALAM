@@ -72,3 +72,14 @@ RegisterList::printRegNames() {
         std::cout << (*it)->getName() << "\n";
     }
 }
+
+void
+RegisterList::calculateTotals() {
+    for (auto it = regList->begin(); it != regList->end(); ++it) {
+        regTotals.reads += (*it)->getRead();
+        regTotals.writes += (*it)->getWrite();
+        regTotals.wordSize += (*it)->getSize();
+    }
+    regTotals.count = regList->size();
+    regTotals.wordSize = regTotals.wordSize/regTotals.count;
+}

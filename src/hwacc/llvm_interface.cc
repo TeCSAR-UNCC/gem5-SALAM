@@ -47,18 +47,54 @@ LLVMInterface::tick() {
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue->size(), readQueue->size(), writeQueue->size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
+
+    int intMultiplierCount = 0;
+    int intAdderCount = 0;
+    int fpMultiplierCount = 0;
+    int fpAdderCount = 0;
+    int bitCount = 0;
+    int shiftCount = 0;
+
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
         if ((*it)->commit()) {
             // If compute node is ready to commit, fetch the updated instruction struct
             Instruction instr = (*it)->getInstruction(); // Update instruction data struct
-            instrUtil->update(instr);
+            pwrUtil->update(instr);
             // opCount[instr.general.opCode]++; // Increment intruction use counter
             it = computeQueue->erase(it); // Remove the compute node from the queue
+            // Determine maximum number of hardware units needed
+            if(instr.general.multiplier) {
+                if(instr.general.integer) {
+                    intMultiplierCount++;
+                    pwrUtil->currUnits(intMultiplierCount, MULUNIT, instr.general.floatingPoint);
+                } else if(instr.general.floatingPoint) {
+                    fpMultiplierCount++;
+                    pwrUtil->currUnits(fpMultiplierCount, MULUNIT, instr.general.floatingPoint);
+                }
+            } else if(instr.general.adder) {
+                if(instr.general.integer) {
+                    intAdderCount++;
+                    pwrUtil->currUnits(intAdderCount, ADDUNIT, instr.general.floatingPoint);
+                } else if(instr.general.floatingPoint) {
+                    fpAdderCount++;
+                    pwrUtil->currUnits(fpAdderCount, ADDUNIT, instr.general.floatingPoint);
+                }
+            } else if(instr.general.bit) {
+                bitCount++;
+                pwrUtil->currUnits(bitCount, BITUNIT, instr.general.floatingPoint);
+            } else if(instr.general.shifter) {
+                shiftCount++;
+                pwrUtil->currUnits(shiftCount, SHIFTUNIT, instr.general.floatingPoint);
+            }
+            // ///////////////////////////////////////////////////////////
         } else {
             ++it; // Compute node is not ready, check next node
         }
     }
-    
+    pwrUtil->calculateLeakagePowerUsage();
+    pwrUtil->calculateDynamicPowerUsage();
+   // pwrUtil->clearAll();
+
     if (reservation->empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
@@ -94,7 +130,7 @@ LLVMInterface::tick() {
                 computeQueue->push_back(*it); // Interface instruction with runtime computation engine
                 (*it)->compute(); // Send instruction to runtime computation simulator
             }
-            instrUtil->update(instr);
+            pwrUtil->update(instr);
             // opCount[instr.general.opCode]++; // Increment instruction use counter
             it = reservation->erase(it); // Remove instruction from reservation table
         } else if ((instr.general.opCode.compare("br") == 0) && !((*it)->checkDependency())) {
@@ -107,7 +143,7 @@ LLVMInterface::tick() {
                 instr = (*it)->getInstruction(); // Update instruction data struct
                 DPRINTF(LLVMInterface, "Branching to Basic Block: (%s)\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest); // Set pointer to next basic block
-                instrUtil->update(instr);
+                pwrUtil->update(instr);
                 // opCount[instr.general.opCode]++; // Increment intruction use counter 
                 it = reservation->erase(it); // Remove instruction from reservation table
                 scheduleBB(currBB); // Add next basic block to reservation table
@@ -124,7 +160,7 @@ LLVMInterface::tick() {
                 instr = (*it)->getInstruction(); // Update instruction data struct
                 DPRINTF(LLVMInterface, "Branching to Basic Block from Switch Statement: (%s)\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest); // Set pointer to next basic block
-                instrUtil->update(instr);
+                pwrUtil->update(instr);
                 // opCount[instr.general.opCode]++; // Increment intruction use counter
                 it = reservation->erase(it); // Remove instruction from reservation table
                 scheduleBB(currBB); // Add next basic block to reservation table
@@ -144,7 +180,10 @@ LLVMInterface::tick() {
                         "\n   Executed Nodes: ", execnodes,
                         "\n   Number of Registers: ", regList->size(),
                         "\n*******************************************************************************\n");
-                statistics(); // Prints out instruction use count
+                regList->calculateTotals();
+                pwrUtil->calculateRegisterPowerUsage(regList->getReads(),regList->getWrites(),regList->getCount(),regList->getWordSize());
+                pwrUtil->calculateArea();
+                 statistics(); // Prints out instruction use count
                 comm->finish(); // Signal to gem5 simulation is complete
                 break; 
             }
@@ -179,7 +218,7 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
                 // Phi should never have runtime dependency once BB is scheduled
                 (*it)->compute(); // Send instruction to runtime computation simulator
                // (*it)->commit(); // Store Phi 
-               instrUtil->update(instr);
+               pwrUtil->update(instr);
                // opCount[instr.general.opCode]++; // Increment intruction use counter
             } else {
                 // Phi instruction should never have a dependency when scheduled
@@ -215,7 +254,7 @@ LLVMInterface::constructBBList() {
     bbList = new std::list<BasicBlock*>();
     regList = new RegisterList();
     typeList = new TypeList();
-    instrUtil = new instructionUtilization();
+    pwrUtil = new Utilization();
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
     regList->addRegister(new Register("ImmediateValue"));
@@ -423,27 +462,27 @@ LLVMInterface::statistics() {
     }
     */
     DPRINTF(Hardware, "Floating Point Model:\n");
-    for(auto it = instrUtil->floats.begin(); it != instrUtil->floats.end(); ++it)  {
+    for(auto it = pwrUtil->floats.begin(); it != pwrUtil->floats.end(); ++it)  {
         DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Integer Model:\n");
-    for(auto it = instrUtil->integer.begin(); it != instrUtil->integer.end(); ++it)  {
+    for(auto it = pwrUtil->integer.begin(); it != pwrUtil->integer.end(); ++it)  {
         DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Custom Model:\n");
-    for(auto it = instrUtil->others.begin(); it != instrUtil->others.end(); ++it)  {
+    for(auto it = pwrUtil->others.begin(); it != pwrUtil->others.end(); ++it)  {
         DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Bit Model:\n");
-    for(auto it = instrUtil->bitCount.begin(); it != instrUtil->bitCount.end(); ++it)  {
+    for(auto it = pwrUtil->bitCount.begin(); it != pwrUtil->bitCount.end(); ++it)  {
         DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Shift Model:\n");
-    for(auto it = instrUtil->shiftCount.begin(); it != instrUtil->shiftCount.end(); ++it)  {
+    for(auto it = pwrUtil->shiftCount.begin(); it != pwrUtil->shiftCount.end(); ++it)  {
         DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Other Instructions:\n");
-    for(auto it = instrUtil->opCount.begin(); it != instrUtil->opCount.end(); ++it)  {
+    for(auto it = pwrUtil->opCount.begin(); it != pwrUtil->opCount.end(); ++it)  {
         DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Register Access:\n");
@@ -452,5 +491,22 @@ LLVMInterface::statistics() {
         DPRINTF(Hardware, "Register: (%s) Polled: (%d) Read: (%d) Write: (%d)\n", (*it)->getName(), (*it)->getPoll(), (*it)->getRead(), (*it)->getWrite());
     }
     
+    DPRINTF(Hardware, "Floating Point Hardware: (%d) Multipliers/Dividers\n", pwrUtil->fpMaxMul());
+    DPRINTF(Hardware, "Floating Point Hardware: (%d) Adders/Subtractors\n", pwrUtil->fpMaxAdd());
+    DPRINTF(Hardware, "Integer Hardware: (%d) Multipliers/Dividers\n", pwrUtil->intMaxMul());
+    DPRINTF(Hardware, "Integer Hardware: (%d) Adders/Subtractors\n", pwrUtil->intMaxAdd());
+    DPRINTF(Hardware, "Bit Manipulation Hardware: (%d) Comparators\n", pwrUtil->maxBit());
+    DPRINTF(Hardware, "Bit Manipulation Hardware: (%d) Shifters\n", pwrUtil->maxShift());
+    int freq = 1000000;
+    DPRINTF(Hardware, "Leakage Power = %f mW\n", pwrUtil->getLeakage()/freq);
+    DPRINTF(Hardware, "Dynamic Power = %f mW\n", pwrUtil->getDyn()/freq);
+    DPRINTF(Hardware, "Reg Leakage Power = %f mW\n", pwrUtil->getRegLeak()/freq);
+    DPRINTF(Hardware, "Reg Dynamic Energy = %f pJ\n", pwrUtil->getRegDyn());
+    DPRINTF(Hardware, "Read Energy = %f mW\n", pwrUtil->getReadEnergy()/freq);
+    DPRINTF(Hardware, "Write Energy = %f mW\n", pwrUtil->getWriteEnergy()/freq);
+    DPRINTF(Hardware, "Area = %f um^2\n", pwrUtil->getArea());
+    DPRINTF(Hardware, "Area = %f mm^2\n", pwrUtil->getArea()/1000000);
+    DPRINTF(Hardware, "Power Total: %f mW\n", ((pwrUtil->getLeakage()+pwrUtil->getDyn()+pwrUtil->getRegLeak())/freq));
+
 }
 
