@@ -564,7 +564,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.general.memory = true;
 		instruction.cycle.max = CYCLECOUNTGETELEMENTPTR;
 		instruction.general.returnRegister->setSize("pointer");
-
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
 		if (parameters[0] == "inbounds") {
 			instruction.memory.getptr.inbounds = true;
 			instruction.memory.getptr.pty = parameters[1];
@@ -817,6 +818,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
 		instruction.general.other = true;
 		instruction.general.compare = true;
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
 		instruction.other.compare.condition.cond = parameters[0];
 		instruction.cycle.max = CYCLECOUNTICMP;
 		instruction.other.compare.ty = parameters[1];
@@ -865,6 +868,8 @@ ComputeNode::ComputeNode(std::string line, RegisterList *list, std::string prev,
 		instruction.other.compare.condition.cond = parameters[0];
 		instruction.cycle.max = CYCLECOUNTFCMP;
 		instruction.other.compare.ty = parameters[1];
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
 		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
 
 		// Check if adding from register or immediate value

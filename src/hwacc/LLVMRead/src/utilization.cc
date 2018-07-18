@@ -1,6 +1,6 @@
 #include "utilization.hh"
 
-Utilization::Utilization() {
+Utilization::Utilization(int clock_period) {
     for(int i = 0; i < 4; i++) {
         intHardwareUnits[i] = 0;
         maxIntHardwareUnits[i] = 0;
@@ -9,6 +9,10 @@ Utilization::Utilization() {
         fpHardwareUnits[i] = 0;
         maxfpHardwareUnits[i] = 0;
     }
+    for(auto it = pwrUnits.begin(); it != pwrUnits.end(); ++it) {
+        (*it)->cycleTime = clock_period;
+    }
+    totalPwr.cycleTime = clock_period;
     getRegisterPowerArea(regPwr.cycleTime, &regPwr.internal_power, &regPwr.switch_power, &regPwr.leakage_power, &regPwr.area);
     pwrUnits.push_back(&regPwr);
     getAdderPowerArea(adderPwr.cycleTime, &adderPwr.internal_power, &adderPwr.switch_power, &adderPwr.leakage_power, &adderPwr.area);
@@ -85,49 +89,47 @@ void
 Utilization::clearAll() {
     for(int i = 0; i < 4; i++) {
         intHardwareUnits[i] = 0;
-        maxIntHardwareUnits[i] = 0;
     }
     for(int i = 0; i < 2; i++) {
         fpHardwareUnits[i] = 0;
-        maxfpHardwareUnits[i] = 0;
     } 
 }
 
 void
 Utilization::calculateLeakagePowerUsage() {
     // for(auto it = pwrUnits.begin(); it != pwrUnits.end(); ++it) 
-    totalPwr.leakage_power += adderPwr.leakage_power*intHardwareUnits[ADDUNIT];
-    totalPwr.leakage_power += multiPwr.leakage_power*intHardwareUnits[MULUNIT];
-    totalPwr.leakage_power += bitPwr.leakage_power*intHardwareUnits[BITUNIT];
-    totalPwr.leakage_power += shiftPwr.leakage_power*intHardwareUnits[SHIFTUNIT];
-    totalPwr.leakage_power += spfpAddPwr.leakage_power*fpHardwareUnits[ADDUNIT];
-    //totalPwr.leakage_power += dpfpAddPwr.leakage_power*fpHardwareUnits[ADDUNIT];
-    totalPwr.leakage_power += spfpMulPwr.leakage_power*fpHardwareUnits[MULUNIT];
-    //totalPwr.leakage_power += dpfpMulPwr.leakage_power*fpHardwareUnits[MULUNIT];
+    totalPwr.leakage_power += adderPwr.leakage_power*maxIntHardwareUnits[ADDUNIT];
+    totalPwr.leakage_power += multiPwr.leakage_power*maxIntHardwareUnits[MULUNIT];
+    totalPwr.leakage_power += bitPwr.leakage_power*maxIntHardwareUnits[BITUNIT];
+    totalPwr.leakage_power += shiftPwr.leakage_power*maxIntHardwareUnits[SHIFTUNIT];
+    totalPwr.leakage_power += spfpAddPwr.leakage_power*maxfpHardwareUnits[ADDUNIT];
+    //totalPwr.leakage_power += dpfpAddPwr.leakage_power*maxfpHardwareUnits[ADDUNIT];
+    totalPwr.leakage_power += spfpMulPwr.leakage_power*maxfpHardwareUnits[MULUNIT];
+    //totalPwr.leakage_power += dpfpMulPwr.leakage_power*maxfpHardwareUnits[MULUNIT];
 }
 
 void 
 Utilization::calculateDynamicPowerUsage() {
     // for(auto it = pwrUnits.begin(); it != pwrUnits.end(); ++it) 
-    totalPwr.dynamic_power += (adderPwr.switch_power+adderPwr.internal_power)*intHardwareUnits[ADDUNIT];
+    totalPwr.dynamic_power = (adderPwr.switch_power+adderPwr.internal_power)*intHardwareUnits[ADDUNIT];
     totalPwr.dynamic_power += (multiPwr.switch_power+multiPwr.internal_power)*intHardwareUnits[MULUNIT];
     totalPwr.dynamic_power += (bitPwr.switch_power+bitPwr.internal_power)*intHardwareUnits[BITUNIT];
     totalPwr.dynamic_power += (shiftPwr.switch_power+shiftPwr.internal_power)*intHardwareUnits[SHIFTUNIT];
-    totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*fpHardwareUnits[ADDUNIT];
-    //totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*fpHardwareUnits[ADDUNIT];
-    totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT];
-    //totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT];
+    //totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*fpHardwareUnits[ADDUNIT];
+    totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*fpHardwareUnits[ADDUNIT]*5;
+    //totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT];
+    totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT]*4;
+    totalPwr.dynamic_energy += (totalPwr.dynamic_power*totalPwr.cycleTime);
 }
 
 void 
 Utilization::calculateRegisterPowerUsage(int read, int write, int count, int wordSize) {
-    float flop_leakage_power = regPwr.leakage_power*32*count;
-    totalPwr.readEnergy += wordSize*8*(regPwr.internal_power + regPwr.switch_power)*read;
-    totalPwr.writeEnergy += wordSize*8*(regPwr.internal_power + regPwr.switch_power)*write;
-    totalPwr.reg_leakage_power += (count*8*regPwr.leakage_power + flop_leakage_power);
-    totalPwr.reg_dynamic_energy = totalPwr.readEnergy + totalPwr.writeEnergy;
-    totalPwr.area += count*8*regPwr.area;
-    totalPwr.area += regPwr.area*32*count;
+    float flop_leakage_power = regPwr.leakage_power*wordSize*count;
+    totalPwr.readEnergy = read*wordSize*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
+    totalPwr.writeEnergy = write*wordSize*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
+    totalPwr.reg_leakage_power += (count*wordSize*regPwr.leakage_power + flop_leakage_power);
+    totalPwr.reg_dynamic_energy += (totalPwr.readEnergy + totalPwr.writeEnergy);
+    totalPwr.area += count*wordSize*regPwr.area;
 }
 
 void 
@@ -136,6 +138,6 @@ Utilization::calculateArea() {
     totalPwr.area += multiPwr.area*maxIntHardwareUnits[MULUNIT];
     totalPwr.area += bitPwr.area*maxIntHardwareUnits[BITUNIT];
     totalPwr.area += shiftPwr.area*maxIntHardwareUnits[SHIFTUNIT];
-    totalPwr.area += adderPwr.area*maxfpHardwareUnits[ADDUNIT];
-    totalPwr.area += multiPwr.area*maxfpHardwareUnits[MULUNIT];
+    totalPwr.area += dpfpAddPwr.area*maxfpHardwareUnits[ADDUNIT];
+    totalPwr.area += dpfpMulPwr.area*maxfpHardwareUnits[MULUNIT];
 }

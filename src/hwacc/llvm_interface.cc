@@ -54,7 +54,7 @@ LLVMInterface::tick() {
     int fpAdderCount = 0;
     int bitCount = 0;
     int shiftCount = 0;
-
+    pwrUtil->clearAll();
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
         if ((*it)->commit()) {
             // If compute node is ready to commit, fetch the updated instruction struct
@@ -91,8 +91,9 @@ LLVMInterface::tick() {
             ++it; // Compute node is not ready, check next node
         }
     }
-    pwrUtil->calculateLeakagePowerUsage();
     pwrUtil->calculateDynamicPowerUsage();
+    DPRINTF(Hardware, "Integer Units: (%d) Add | (%d) Mul | (%d) Bit | (%d) Shift\n",pwrUtil->currintAdd(), pwrUtil->currintMul(), pwrUtil->currBit(), pwrUtil->currShift());
+    DPRINTF(Hardware, "FP Units: (%d) Add | (%d) Mul\n",pwrUtil->currfpAdd(), pwrUtil->currfpMul());
    // pwrUtil->clearAll();
 
     if (reservation->empty()) { // If no compute nodes in reservation queue, load next basic block
@@ -121,9 +122,9 @@ LLVMInterface::tick() {
             } else if (instr.general.opCode.find("phi") == 0) { // Phi Instruction
                 DPRINTF(LLVMInterface, "Queueing Phi Instruction!\n");
                 scheduled = true;
-                (*it)->compute(); // Send instruction to runtime computation simulator
-                (*it)->commit(); // Phi instructions have no dependencies within BB, commit immediately 
-            } else { // General Computation Instruction
+                (*it)->compute(); // Send instruction t144834computation simulator
+                (*it)->commit(); // Phi instructions ha144834ndencies within BB, commit immediately 
+            } else { // General Computation Instruction144834
                 DPRINTF(LLVMInterface, "Queueing Compute Instruction!\n"); 
                 scheduled = true;
                 execnodes++;
@@ -172,6 +173,7 @@ LLVMInterface::tick() {
                 // Only execute instruction once all other compute nodes in BB are complete
                 running = false;
                 //We are done!!!!
+                /*
                 DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %d %s",
                         "\n*******************************************************************************",
                         "\n   Runtime (Cycles): ", cycle,
@@ -180,10 +182,12 @@ LLVMInterface::tick() {
                         "\n   Executed Nodes: ", execnodes,
                         "\n   Number of Registers: ", regList->size(),
                         "\n*******************************************************************************\n");
+                */
                 regList->calculateTotals();
+                pwrUtil->calculateLeakagePowerUsage();
                 pwrUtil->calculateRegisterPowerUsage(regList->getReads(),regList->getWrites(),regList->getCount(),regList->getWordSize());
                 pwrUtil->calculateArea();
-                 statistics(); // Prints out instruction use count
+                statistics(); // Prints out instruction use count
                 comm->finish(); // Signal to gem5 simulation is complete
                 break; 
             }
@@ -254,7 +258,7 @@ LLVMInterface::constructBBList() {
     bbList = new std::list<BasicBlock*>();
     regList = new RegisterList();
     typeList = new TypeList();
-    pwrUtil = new Utilization();
+    pwrUtil = new Utilization(clock_period/1000);
     std::ifstream llvmFile(filename, std::ifstream::in);
     std::string line;
     regList->addRegister(new Register("ImmediateValue"));
@@ -408,7 +412,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 
 void
 LLVMInterface::initialize() {
-/*********************************************************************************************
+/*********************************regPwr.************************************************************
  Initialize the Runtime Engine
 
  Calls function that constructs the basic block list, initializes the reservation table and
@@ -461,52 +465,69 @@ LLVMInterface::statistics() {
         DPRINTF(IOAcc, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     */
-    DPRINTF(Hardware, "Floating Point Model:\n");
+    DPRINTF(Hardware, "%s %s %s",
+    "\n*******************************************************************************",
+    "\n******************************* Instruction Usage *****************************",
+    "\n*******************************************************************************\n");
+    DPRINTF(Hardware, "Floating Point Instructions:\n");
     for(auto it = pwrUtil->floats.begin(); it != pwrUtil->floats.end(); ++it)  {
-        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
     }
-    DPRINTF(Hardware, "Integer Model:\n");
+    DPRINTF(Hardware, "Integer Instructions:\n");
     for(auto it = pwrUtil->integer.begin(); it != pwrUtil->integer.end(); ++it)  {
-        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
     }
-    DPRINTF(Hardware, "Custom Model:\n");
+    DPRINTF(Hardware, "Custom Instructions:\n");
     for(auto it = pwrUtil->others.begin(); it != pwrUtil->others.end(); ++it)  {
-        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
     }
-    DPRINTF(Hardware, "Bit Model:\n");
+    DPRINTF(Hardware, "Bitwise Instructions:\n");
     for(auto it = pwrUtil->bitCount.begin(); it != pwrUtil->bitCount.end(); ++it)  {
-        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
     }
-    DPRINTF(Hardware, "Shift Model:\n");
+    DPRINTF(Hardware, "Shift Instructions:\n");
     for(auto it = pwrUtil->shiftCount.begin(); it != pwrUtil->shiftCount.end(); ++it)  {
-        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
     }
     DPRINTF(Hardware, "Other Instructions:\n");
     for(auto it = pwrUtil->opCount.begin(); it != pwrUtil->opCount.end(); ++it)  {
-        DPRINTF(Hardware, "Instruction (Count): %s  (%d)\n", it->first, it->second);
+        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
     }
-    DPRINTF(Hardware, "Register Access:\n");
-    
+    DPRINTF(Hardware, "%s %s %s",
+    "\n*******************************************************************************",
+    "\n*******************************  Register Usage   *****************************",
+    "\n*******************************************************************************\n");
+
     for (auto it=regList->beginit(); it!=regList->endit(); ++it) {
-        DPRINTF(Hardware, "Register: (%s) Polled: (%d) Read: (%d) Write: (%d)\n", (*it)->getName(), (*it)->getPoll(), (*it)->getRead(), (*it)->getWrite());
+        DPRINTF(Hardware, "[%s] Reads-(%d) Writes-(%d)\n", (*it)->getName(),(*it)->getRead(), (*it)->getWrite());
     }
-    
-    DPRINTF(Hardware, "Floating Point Hardware: (%d) Multipliers/Dividers\n", pwrUtil->fpMaxMul());
-    DPRINTF(Hardware, "Floating Point Hardware: (%d) Adders/Subtractors\n", pwrUtil->fpMaxAdd());
-    DPRINTF(Hardware, "Integer Hardware: (%d) Multipliers/Dividers\n", pwrUtil->intMaxMul());
-    DPRINTF(Hardware, "Integer Hardware: (%d) Adders/Subtractors\n", pwrUtil->intMaxAdd());
-    DPRINTF(Hardware, "Bit Manipulation Hardware: (%d) Comparators\n", pwrUtil->maxBit());
-    DPRINTF(Hardware, "Bit Manipulation Hardware: (%d) Shifters\n", pwrUtil->maxShift());
-    int freq = 1000000;
-    DPRINTF(Hardware, "Leakage Power = %f mW\n", pwrUtil->getLeakage()/freq);
-    DPRINTF(Hardware, "Dynamic Power = %f mW\n", pwrUtil->getDyn()/freq);
-    DPRINTF(Hardware, "Reg Leakage Power = %f mW\n", pwrUtil->getRegLeak()/freq);
-    DPRINTF(Hardware, "Reg Dynamic Energy = %f pJ\n", pwrUtil->getRegDyn());
-    DPRINTF(Hardware, "Read Energy = %f mW\n", pwrUtil->getReadEnergy()/freq);
-    DPRINTF(Hardware, "Write Energy = %f mW\n", pwrUtil->getWriteEnergy()/freq);
-    DPRINTF(Hardware, "Area = %f um^2\n", pwrUtil->getArea());
-    DPRINTF(Hardware, "Area = %f mm^2\n", pwrUtil->getArea()/1000000);
-    DPRINTF(Hardware, "Power Total: %f mW\n", ((pwrUtil->getLeakage()+pwrUtil->getDyn()+pwrUtil->getRegLeak())/freq));
+    DPRINTF(Hardware, "%s %s %s",
+    "\n*******************************************************************************",
+    "\n*******************************   Final Results   *****************************",
+    "\n*******************************************************************************\n");
+
+    double divisor = cycle * (clock_period / 1000);
+
+    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d  %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
+    "\n*******************************************************************************",
+    "\n   Runtime (Cycles): ", cycle,
+    "\n   Runtime (Seconds):", (cycle*10*(1e-12)),
+    "\n   Stalls  (Cycles): ", stalls,
+    "\n   Executed Nodes: ", execnodes,
+    "\n   Average Power: ", (pwrUtil->getLeakage()+ pwrUtil->getDynEnergy()/divisor+pwrUtil->getRegLeak()+pwrUtil->getRegDyn()/divisor), "mW",
+    "\n   FU Leakage Power: ", pwrUtil->getLeakage(), "mW",
+    "\n   FU Dynamic Power: ", pwrUtil->getDynEnergy()/divisor, "mW",
+    "\n   Register Leakage Power: ", pwrUtil->getRegLeak(), "mW",
+    "\n   Register Dynamic Power: ", pwrUtil->getRegDyn()/divisor, "mW",
+    "\n   FU Area = ",pwrUtil->getArea()," um^2, (", pwrUtil->getArea()/1000000, " mm^2)",
+    "\n   Number of Double Precision FP Multipliers: ", pwrUtil->fpMaxMul(),
+    "\n   Number of Double Precision FP Adders: ", pwrUtil->fpMaxAdd(),
+    "\n   Number of Bit-Wise Operator: ", pwrUtil->maxBit(),
+    "\n   Number of Shifters: ", pwrUtil->maxShift(),
+    "\n   Number of Integer Adders: ", pwrUtil->intMaxAdd(),
+    "\n   Number of Integer Multipliers: ", pwrUtil->intMaxMul(),
+    "\n   Number of Registers: ", regList->size(),
+    "\n*******************************************************************************\n");
 
 }
 

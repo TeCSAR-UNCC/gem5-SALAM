@@ -15,7 +15,7 @@
 #define SHIFTUNIT 3
 
 struct PowerUsage {
-    float cycleTime = 1;
+    float cycleTime = 10;
     float internal_power = 0;
     float switch_power = 0;
     float leakage_power = 0;
@@ -23,10 +23,12 @@ struct PowerUsage {
 };
 
 struct PowerTotals {
+    float cycleTime = 0;
     float reg_leakage_power = 0;
     float reg_dynamic_energy = 0;
     float leakage_power = 0;
     float dynamic_power = 0;
+    float dynamic_energy = 0;
     float readEnergy = 0;
     float writeEnergy = 0;
     float area = 0;
@@ -34,7 +36,7 @@ struct PowerTotals {
 
 class Utilization {
     private:
-     float cycleTime = 1;
+     //float cycleTime = 10;
      float internal_power;
      float switch_power;
      float leakage_power;
@@ -65,15 +67,21 @@ class Utilization {
       PowerUsage dpfpMulPwr;
       PowerTotals totalPwr;
     
-     Utilization(); 
+     Utilization(int clock_period); 
      void maxUnits(int count, int unit, bool fp);
      void currUnits(int count, int unit, bool fp);
-     int fpMaxMul() { return fpHardwareUnits[MULUNIT]; }
-     int fpMaxAdd() { return fpHardwareUnits[ADDUNIT]; }
-     int intMaxMul() { return intHardwareUnits[MULUNIT]; }
-     int intMaxAdd() { return intHardwareUnits[ADDUNIT]; }
-     int maxShift() { return intHardwareUnits[SHIFTUNIT]; }
-     int maxBit() { return intHardwareUnits[BITUNIT]; }
+     int fpMaxMul() { return maxfpHardwareUnits[MULUNIT]; }
+     int fpMaxAdd() { return maxfpHardwareUnits[ADDUNIT]; }
+     int intMaxMul() { return maxIntHardwareUnits[MULUNIT]; }
+     int intMaxAdd() { return maxIntHardwareUnits[ADDUNIT]; }
+     int maxShift() { return maxIntHardwareUnits[SHIFTUNIT]; }
+     int maxBit() { return maxIntHardwareUnits[BITUNIT]; }
+     int currfpMul() { return fpHardwareUnits[MULUNIT]; }
+     int currfpAdd() { return fpHardwareUnits[ADDUNIT]; }
+     int currintMul() { return intHardwareUnits[MULUNIT]; }
+     int currintAdd() { return intHardwareUnits[ADDUNIT]; }
+     int currShift() { return intHardwareUnits[SHIFTUNIT]; }
+     int currBit() { return intHardwareUnits[BITUNIT]; }
      int totalUnits();
      void calculateLeakagePowerUsage();
      void calculateDynamicPowerUsage();
@@ -88,6 +96,7 @@ class Utilization {
      float getReadEnergy() { return totalPwr.readEnergy; }
      float getWriteEnergy() { return totalPwr.writeEnergy; }
      float getArea() { return totalPwr.area; }
+     float getDynEnergy() { return totalPwr.dynamic_energy; }
      
      Floats floats;
      Integer integer;
