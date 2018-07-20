@@ -17,8 +17,7 @@ void dmacpy(void * dst, void * src, int len) {
 }
 
 int pollDma() {
-    char flag = *FLAGS;
-    return ((flag&0x04)==0x04);
+    return ((*FLAGS&0x04)==0x04);
 }
 void resetDma() {
     *FLAGS = 0;

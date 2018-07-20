@@ -38,10 +38,10 @@ int main(void) {
     val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
 
     dmacpy(spm_a, a, sizeof(TYPE)*LENGTH);
-    while(!pollDma()) { printf("C\n"); }
+    while(!pollDma());
     resetDma();
     dmacpy(spm_b, b, sizeof(TYPE)*LENGTH);
-    while(!pollDma()) { printf("C\n"); }
+    while(!pollDma());
     resetDma();
 #endif
     int i;
@@ -55,7 +55,7 @@ int main(void) {
 	}
 #ifdef SPM
     dmacpy(c, spm_c, sizeof(TYPE)*LENGTH);
-    while(!pollDma()) { printf("C\n"); }
+    while(!pollDma());
 #endif
     acc = 0x00;
 	if(!checkData(&vas)) {
