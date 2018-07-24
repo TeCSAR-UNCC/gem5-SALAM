@@ -6,6 +6,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('ComputeUnit.py')
     SimObject('LLVMInterface.py')
     SimObject('NoncoherentDma.py')
+    SimObject('StreamDma.py')
 
     Source('io_acc.cc')
     Source('comm_interface.cc')
@@ -21,6 +22,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/power_func.cc')
     Source('dma_write_fifo.cc')
     Source('noncoherent_dma.cc')
+    Source('stream_dma.cc')
 
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
@@ -33,6 +35,6 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('LLVMGEP')
     DebugFlag('Hardware')
     DebugFlag('NoncoherentDma')
-
+    DebugFlag('StreamDma')
 
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])

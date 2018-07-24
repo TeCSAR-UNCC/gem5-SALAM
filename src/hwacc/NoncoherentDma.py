@@ -5,7 +5,7 @@ from Device import DmaDevice
 class NoncoherentDma(DmaDevice) :
     type = 'NoncoherentDma'
     cxx_header = 'hwacc/noncoherent_dma.hh'
-    devicename = Param.String("comm_interface", "Name of comm_interface device")
+    devicename = Param.String("noncoherent_dma", "Name of DMA device")
     pio_addr = Param.Addr("Device Address")
     pio_delay = Param.Latency('100ns', "PIO Latency")
     pio_size = Param.Addr("MMR Size")

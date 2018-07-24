@@ -42,3 +42,16 @@ def makeHWAcc(options, system):
     system.accdma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32)
     system.accdma.pio = system.iobus.master
     system.accdma.dma = system.iobus.slave
+
+    system.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.stream_dma_0.pio_delay = '1ns'
+    system.stream_dma_0.pio = system.iobus.master
+    system.stream_dma_0.dma = system.iobus.slave
+    system.stream_dma_0.rd_int = 210
+    system.stream_dma_0.wr_int = 211
+    system.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.stream_dma_1.pio_delay = '1ns'
+    system.stream_dma_1.pio = system.iobus.master
+    system.stream_dma_1.dma = system.iobus.slave
+    system.stream_dma_1.rd_int = 212
+    system.stream_dma_1.wr_int = 213
