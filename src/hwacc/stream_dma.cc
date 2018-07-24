@@ -21,7 +21,7 @@ StreamDma::StreamDma(const Params *p)
     tickEvent(this) {
     readFifo = new DmaReadFifo(dmaPort, rdBufferSize, maxReqSize, maxPending);
     writeFifo = new DmaWriteFifo(dmaPort, wrBufferSize, maxReqSize, maxPending);
-    mmreg = new uint8_t[pioSize];
+    mmreg = new uint8_t[32];
     for (int i=0; i<pioSize; i++)
         mmreg[i]=0;
     FLAGS = mmreg;
