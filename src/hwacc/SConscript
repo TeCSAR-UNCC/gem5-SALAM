@@ -23,6 +23,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('dma_write_fifo.cc')
     Source('noncoherent_dma.cc')
     Source('stream_dma.cc')
+    Source('LLVMRead/src/src_restructure/instructions.cc')
+    Source('LLVMRead/src/src_restructure/registers.cc')
 
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
