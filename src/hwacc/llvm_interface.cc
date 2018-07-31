@@ -54,6 +54,7 @@ LLVMInterface::tick() {
     int fpAdderCount = 0;
     int bitCount = 0;
     int shiftCount = 0;
+    int fpDivision = 0;
     pwrUtil->clearAll();
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
         if ((*it)->commit()) {
@@ -70,6 +71,7 @@ LLVMInterface::tick() {
                 } else if(instr.general.floatingPoint) {
                     fpMultiplierCount++;
                     pwrUtil->currUnits(fpMultiplierCount, MULUNIT, instr.general.floatingPoint);
+                    if(!instr.general.opCode.find("fdiv")) fpDivision++;
                 }
             } else if(instr.general.adder) {
                 if(instr.general.integer) {
@@ -91,7 +93,7 @@ LLVMInterface::tick() {
             ++it; // Compute node is not ready, check next node
         }
     }
-    pwrUtil->calculateDynamicPowerUsage();
+    pwrUtil->calculateDynamicPowerUsage(fpDivision);
     DPRINTF(Hardware, "Integer Units: (%d) Add | (%d) Mul | (%d) Bit | (%d) Shift\n",pwrUtil->currintAdd(), pwrUtil->currintMul(), pwrUtil->currBit(), pwrUtil->currShift());
     DPRINTF(Hardware, "FP Units: (%d) Add | (%d) Mul\n",pwrUtil->currfpAdd(), pwrUtil->currfpMul());
    // pwrUtil->clearAll();

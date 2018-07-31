@@ -13,6 +13,7 @@ Utilization::Utilization(int clock_period) {
         (*it)->cycleTime = clock_period;
     }
     totalPwr.cycleTime = clock_period;
+    regPwr.cycleTime = clock_period;
     getRegisterPowerArea(regPwr.cycleTime, &regPwr.internal_power, &regPwr.switch_power, &regPwr.leakage_power, &regPwr.area);
     pwrUnits.push_back(&regPwr);
     getAdderPowerArea(adderPwr.cycleTime, &adderPwr.internal_power, &adderPwr.switch_power, &adderPwr.leakage_power, &adderPwr.area);
@@ -109,7 +110,7 @@ Utilization::calculateLeakagePowerUsage() {
 }
 
 void 
-Utilization::calculateDynamicPowerUsage() {
+Utilization::calculateDynamicPowerUsage(int fpDivision) {
     // for(auto it = pwrUnits.begin(); it != pwrUnits.end(); ++it) 
     totalPwr.dynamic_power = (adderPwr.switch_power+adderPwr.internal_power)*intHardwareUnits[ADDUNIT];
     totalPwr.dynamic_power += (multiPwr.switch_power+multiPwr.internal_power)*intHardwareUnits[MULUNIT];
@@ -117,8 +118,13 @@ Utilization::calculateDynamicPowerUsage() {
     totalPwr.dynamic_power += (shiftPwr.switch_power+shiftPwr.internal_power)*intHardwareUnits[SHIFTUNIT];
     //totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*fpHardwareUnits[ADDUNIT];
     totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*fpHardwareUnits[ADDUNIT]*5;
+    fpHardwareUnits[MULUNIT] -= fpDivision;
+
     //totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT];
     totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT]*4;
+    
+    //totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*fpHardwareUnits[MULUNIT];
+    totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*fpDivision*16;
     totalPwr.dynamic_energy += (totalPwr.dynamic_power*totalPwr.cycleTime);
 }
 
@@ -129,7 +135,8 @@ Utilization::calculateRegisterPowerUsage(int read, int write, int count, int wor
     totalPwr.writeEnergy = write*wordSize*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
     totalPwr.reg_leakage_power += (count*wordSize*regPwr.leakage_power + flop_leakage_power);
     totalPwr.reg_dynamic_energy += (totalPwr.readEnergy + totalPwr.writeEnergy);
-    totalPwr.area += count*wordSize*regPwr.area;
+    //totalPwr.area += count*wordSize*regPwr.area;
+     totalPwr.area += 12*wordSize*regPwr.area;
 }
 
 void 

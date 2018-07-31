@@ -15,7 +15,7 @@
 #define SHIFTUNIT 3
 
 struct PowerUsage {
-    float cycleTime = 10;
+    float cycleTime = 0;
     float internal_power = 0;
     float switch_power = 0;
     float leakage_power = 0;
@@ -36,7 +36,6 @@ struct PowerTotals {
 
 class Utilization {
     private:
-     //float cycleTime = 10;
      float internal_power;
      float switch_power;
      float leakage_power;
@@ -84,7 +83,7 @@ class Utilization {
      int currBit() { return intHardwareUnits[BITUNIT]; }
      int totalUnits();
      void calculateLeakagePowerUsage();
-     void calculateDynamicPowerUsage();
+     void calculateDynamicPowerUsage(int cycle);
      void calculateRegisterPowerUsage(int read, int write, int count, int wordSize);
      void calculateArea();
      void update(Instruction instr);
@@ -97,6 +96,7 @@ class Utilization {
      float getWriteEnergy() { return totalPwr.writeEnergy; }
      float getArea() { return totalPwr.area; }
      float getDynEnergy() { return totalPwr.dynamic_energy; }
+     
      
      Floats floats;
      Integer integer;
