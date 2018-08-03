@@ -4,6 +4,8 @@
 
 //#include "power_func.hh"
 
+#include <cstdint>
+
 #define TRANSISTOR 10
 
 struct Pwr_Parameters {

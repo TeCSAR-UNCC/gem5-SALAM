@@ -18,4 +18,21 @@
 #define SKIPFIRST       1   // Start string on second character
 #define COMPAREFOUND    0   // Index 0 returned if entire string is found
 
+// Keyword Definition
+// Hardware Units
+#define    INTADDER 0
+#define    INTMULTI 1
+#define    BITWISE 2
+#define    SHIFTER 3
+#define    FPSPADDER 4
+#define    FPSPMULTI 5
+#define    FPDPADDER 6
+#define    FPDPMULTI 7
+
+//Data Types
+#define INTEGER 0
+#define FLOAT 1
+#define DOUBLE 2
+#define CUSTOM 3
+
 #endif //__MACROS_HH__
