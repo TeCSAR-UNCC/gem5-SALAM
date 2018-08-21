@@ -1,7 +1,5 @@
 #ifndef __MEMORY_REQUEST_HH__
-
 #define __MEMORY_REQUEST_HH__
-
 #include "mem/packet.hh"
 #include "debugFlags.hh"
 

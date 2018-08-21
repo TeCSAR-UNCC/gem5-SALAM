@@ -1,9 +1,5 @@
 #ifndef __POWER_HH__
-
 #define __POWER_HH__
-
-//#include "power_func.hh"
-
 #include <cstdint>
 
 #define TRANSISTOR 10

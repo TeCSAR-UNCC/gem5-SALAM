@@ -1,7 +1,7 @@
 #include "registers.hh"
 
 void 
-Register2::setSize(const std::string& Data_Type) {
+Register::setSize(const std::string& Data_Type) {
     // --- Store data type as register parameters ---------------------//
     _Data_Type = Data_Type;
     //  --- Determine needed register size based around data type -----//
@@ -22,12 +22,12 @@ Register2::setSize(const std::string& Data_Type) {
 }   //  --- End Function ----------------------------------------------//
 
 void
-Register2::setValue(void *Data) { // memcpy shortcut method
+Register::setValue(void *Data) { // memcpy shortcut method
     memcpy(&_Value, Data, _Size);
 }   //  --- End Function ----------------------------------------------//
 
 void
-RegisterList2::printRegNames() { // Prints name of all current registers
+RegisterList::printRegNames() { // Prints name of all current registers
     for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
         std::cout << (*it)->getName() << "\n";
     }

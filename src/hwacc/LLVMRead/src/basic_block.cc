@@ -1,15 +1,1289 @@
-#include <cassert>
 #include "basic_block.hh"
 
-BasicBlock::BasicBlock(std::string id, unsigned bbnum) {
-    cnList = new std::list<ComputeNode *>();
-    name = id;
-    bbID = bbnum;
+// ////////////////////////////////////////////////////////////////////
+// Compute Node Constructor 
+// Inputs:	string line 		- line parsed from llvm file
+//			RegisterList *list 	- pointer to linked list that contains all return registers created 
+//			string prev 		- name of the previous basic block created 
+//			CommInterface *co 	- pointer to communications interface to enque read and write requests
+//			TypeList *typeList 	- linked list that contains all custom data types defines for function
+//
+// Outputs: none
+// 
+// This function is used to create a new compute node and initialize it based around the arguments 
+// parsed from the passed LLVM instruction line.
+// ////////////////////////////////////////////////////////////////////
+
+void
+BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
+	// ////////////////////////////////////////////////////////////////////
+	// Local Variables
+	std::vector<std::string> parameters; // Used to store each each element of the passed in LLVM instruction line 
+	int leftDelimeter, rightDelimeter, lastInLine; // Used for parsing elements from the instruction line
+	int returnChk = line.find(" = "); // If a return register exists, this value is set greater than 0
+	int last = 0; // Set as index to the last element in the parameters vector once initialized
+	// ////////////////////////////////////////////////////////////////////
+	instruction.general.llvm_Line = line; // Store passed line into instruction struct.
+	setCommInterface(co);
+	setPrevBB(prev);  
+	// ////////////////////////////////////////////////////////////////////
+	// Find the return register. If it exists, it is always the first component of the line
+	if (returnChk > 0) {
+		// Check if register already exists (It should not because SSA)
+		std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3); // Set return register name
+		Register * ret_reg = list->findRegister(ret_name); // Ensure the return register isnt already in the list 
+		if(ret_reg == NULL) {
+		    // Create new pointer to the return register
+		    instruction.general.returnRegister = new Register(ret_name);
+		    list->addRegister(instruction.general.returnRegister);
+		    DPRINTF(LLVMRegister, "Creating Return Register: (%s)\n", instruction.general.returnRegister->getName());
+		} else {
+		    instruction.general.returnRegister = ret_reg;
+			DPRINTF(LLVMRegister, "Error: Trying to Create Duplicate Return Register!\n");
+		}
+		// In all instances where a return register is the first component, the next component is
+		// the opcode, which is parsed and removed from line
+		line = line.substr(returnChk + 3); // Skip over " = " 
+		instruction.general.opCode = line.substr(0, line.find(' ')); // Store opcode in instruction struct
+		line = line.substr(line.find(' ')); // Drop opcode and return register from instruction line
+	} else {
+		// If no return register is found then the first component must instead be the opcode
+		// Search for first none empty space which is were the opcode must begin
+		// Then store the opcode and remove the parsed information from the line
+		for (int i = 0; i < line.length(); i++) {
+			if (line[i] != ' ') {
+				instruction.general.opCode = line.substr(i, line.find(' ', i) - 2); // Store opcode in instruction struct
+				line = line.substr(line.find(' ') + 1); // Drop opcode from instruction line
+				break;
+			}
+		}
+		// No return register needed
+		DPRINTF(LLVMRegister, "No Return Register Needed!\n");
+		instruction.general.returnRegister = NULL; // Set return register to NULL
+	}
+	// //////////////////////////////////////////////////////////////////////////////////
+	DPRINTF(ComputeNode, "Opcode Found: (%s)\n", instruction.general.opCode);
+	// Loop to break apart each component of the LLVM line
+	// Any brackets or braces that contain data are stored as under the parent set
+	// Components are pushed back into the parameter vector in order they are read
+	// This vector is initialized after the return register and opcode are found
+	// and the line at this point already has those components removed if they
+	// exist.
+	for (int i = 0; i < line.length(); i++) {
+		// Looks until the loop finds a non-space character
+		if (line[i] != ' ') {
+			// Each of these functions preform the same action using a different
+			// bracket or brace as the searchable character. Since the loop looks
+			// through the line sequentially no type of brace or bracket takes
+			// precendence over the others, it simply finds the first instance
+			// and matches the component to the correct closing character and stores
+			// the entire encapsulated component and its sub components if they exist
+			// as one entry in the struct
+			if (line[i] == '(') {
+				lastInLine = 0; //Returned as -1 when no character found in string
+				leftDelimeter = i + 1 + line.substr(i + 1).find('(');
+				rightDelimeter = i + line.substr(i).find(')');
+				lastInLine = rightDelimeter;
+				while ((leftDelimeter < rightDelimeter) && (lastInLine >= 0)) {
+					lastInLine = line.substr(leftDelimeter + 1).find('(');
+					leftDelimeter = leftDelimeter + 1 + line.substr(leftDelimeter + 1).find('(');
+					rightDelimeter = rightDelimeter + 1 + line.substr(rightDelimeter + 1).find(')');
+				}
+				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
+				i += (rightDelimeter - i);
+			} else if (line[i] == '[') {
+				lastInLine = 0;
+				leftDelimeter = i + 1 + line.substr(i + 1).find('[');
+				rightDelimeter = i + line.substr(i).find(']');
+				lastInLine = rightDelimeter;
+				while ((leftDelimeter < rightDelimeter) && (lastInLine >= 0)) {
+					lastInLine = line.substr(leftDelimeter + 1).find('[');
+					leftDelimeter = leftDelimeter + 1 + line.substr(leftDelimeter + 1).find('[');
+					rightDelimeter = rightDelimeter + 1 + line.substr(rightDelimeter + 1).find(']');
+				}
+				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
+				i += (rightDelimeter - i);
+			} else if (line[i] == '{') {
+				lastInLine = 0;
+				leftDelimeter = i + 1 + line.substr(i + 1).find('{');
+				rightDelimeter = i + line.substr(i).find('}');
+				lastInLine = rightDelimeter;
+				while ((leftDelimeter < rightDelimeter) && (lastInLine >= 0)) {
+					lastInLine = line.substr(leftDelimeter + 1).find('{');
+					leftDelimeter = leftDelimeter + 1 + line.substr(leftDelimeter + 1).find('{');
+					rightDelimeter = rightDelimeter + 1 + line.substr(rightDelimeter + 1).find('}');
+				}
+				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
+				i += (rightDelimeter - i);
+			} else if (line[i] == '<') {
+				lastInLine = 0;
+				leftDelimeter = i + 1 + line.substr(i + 1).find('<');
+				rightDelimeter = i + line.substr(i).find('>');
+				lastInLine = rightDelimeter;
+				while ((leftDelimeter < rightDelimeter) && (lastInLine >= 0)) {
+					lastInLine = line.substr(leftDelimeter + 1).find('<');
+					leftDelimeter = leftDelimeter + 1 + line.substr(leftDelimeter + 1).find('<');
+					rightDelimeter = rightDelimeter + 1 + line.substr(rightDelimeter + 1).find('>');
+				}
+				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
+				i += (rightDelimeter - i);
+				// End of functions that search for encapulated components
+			} else {	
+				// The else condition catches all other components of the function and stores them
+				// in the order found as parameters
+				leftDelimeter = i;
+				if (line[i] == '=') {
+					//Ignore
+				} else if (line[i] == '*') {
+					// Should only occur after finding a struct or vector pointer, append onto
+					// previous parameter
+					parameters[parameters.size()-1]+='*';
+				} else if (line[i] == ',') {
+					//Ignore
+				} else if (line.substr(i + 1).find(" ") > line.substr(i + 1).find(",")) {
+					// Catches any additional elements in the instruction line seperated by commas
+					rightDelimeter = 1 + line.substr(i + 1).find(",");
+					parameters.push_back(line.substr(leftDelimeter, rightDelimeter));
+					i += rightDelimeter;
+				} else if (line.substr(i + 1).find(" ") < line.substr(i + 1).find(",")) {
+					// Catches any additional elements in the instruction line seperated by whitespace
+					rightDelimeter = 1 + line.substr(i + 1).find(" ");
+					parameters.push_back(line.substr(leftDelimeter, rightDelimeter));
+					i += rightDelimeter;
+				} else if (line.substr(i + 1).find(" ") == -1) { // End of line
+					parameters.push_back(line.substr(leftDelimeter));
+					i = (line.length() - 1);
+					// This will always be the last object on the line
+				}
+			}
+		}
+	}
+	instruction.general.immediateCount = list->findRegister("ImmediateValue");
+	instruction.general.labelCount = list->findRegister("Label");
+	last = (parameters.size() - 1); // Set last to index the final value in the parameters vector
+	debugParams(parameters); // Prints all found parameters for the instruction line
+	// Once all components have been found, navigate through and define each component
+	// and initialize the attributes struct values to match the line
+	//Instruction Type
+	// Terminator
+	// Binary Operations
+	// Integer
+	// Floating Point
+	// Bitwise Binary Operation
+	// Vector Operations
+	// Aggregate Operations
+	// Memory Access and Addressing Oprations
+	// Converstion Operation
+	// Other Operations
+	// Custom Operations
+
+	switch (s_opMap[instruction.general.opCode]) {
+	// Terminator Instructions
+	case IR_Ret: {
+		// ret <type> <value>; Return a value from a non - void function
+		// ret void; Return from void function
+		// Set general instruction parameters
+		instruction.cycle.max = CYCLECOUNTRET;
+		instruction.general.terminator = true;
+		instruction.general.flowControl = true;
+		if (parameters[last].find("void")) {
+			// If void is found then it must not have a return value
+			instruction.terminator.type = "void";
+		} else {
+			// If void is not found then the last parameters must be the return value,
+			// and preceding it the return type
+			instruction.terminator.type = parameters[last - 1];
+			// If return value is stored in a register
+			if(isRegister(parameters[last])) {
+				setRegister(parameters[last], instruction.terminator.value, instruction, list, parameters);
+				instruction.terminator.ivalue = "void";
+				instruction.terminator.intermediate = false;
+				instruction.terminator.value->setSize(instruction.terminator.type);
+			} else { // Should be optimized out of code
+			instruction.terminator.intermediate = true;
+			instruction.terminator.ivalue = parameters[last];
+			}
+		}
+		break;	
+	}
+	case IR_Br: {
+		// br i1 <cond>, label <iftrue>, label <iffalse>
+		// br label <dest>          ; Unconditional branch
+		instruction.general.terminator = true;
+		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTBR;
+		if (parameters.size() == 3) {
+			//Unconditional branch
+			instruction.terminator.unconditional = true;
+			instruction.terminator.type = "void";
+			instruction.terminator.dest = parameters[2].substr(1);
+		} else {
+			// Conditional Branch
+			instruction.terminator.type = parameters[1];
+			instruction.terminator.iftrue = parameters[4].substr(1);
+			instruction.terminator.iffalse = parameters[6].substr(1);
+			if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.cond, instruction, list, parameters);
+			instruction.terminator.cond->setSize(instruction.terminator.type);
+		}
+		break;
+	}
+	case IR_Switch: {
+		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
+		instruction.general.terminator = true;
+		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTSWITCH;
+		instruction.terminator.intty = parameters[1];
+		instruction.terminator.defaultdest = parameters[4].substr(1); 
+		int location = 0;
+		int length = 0;
+		int statements = 0;
+		int i = 0;
+		std::string cases[MAXCASES][2];
+		if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.value, instruction, list, parameters);
+		for(int k = 0; k < parameters[5].size(); k++) {
+			if(parameters[5][k] == '%') statements++;
+		}
+		instruction.terminator.cases.statements = statements;
+		while(i < statements) {
+			location = parameters[5].find_first_of('i', location);
+			location = parameters[5].find_first_of(' ', location) + 1;
+			length = parameters[5].find_first_of(',', location) - location;
+			instruction.terminator.cases.value[i] = stoi(parameters[5].substr(location, length));
+			location = parameters[5].find_first_of('%', location)+1;
+			length = parameters[5].find_first_of(' ', location) - location;
+			instruction.terminator.cases.dest[i] = parameters[5].substr(location, length);
+			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", instruction.terminator.cases.value[i], instruction.terminator.cases.dest[i]);
+			i++;
+		}
+		break;
+	}
+	case IR_IndirectBr: {
+		// indirectbr <somety>* <address>, [ label <dest1>, label <dest2>, ... ]	
+		break;
+	}
+	case IR_Invoke: {
+		// <result> = invoke [cconv] [ret attrs] <ptr to function ty> <function ptr val>(<function args>) [fn attrs]
+		// to label <normal label> unwind label <exception label>
+	}
+	case IR_Resume: {
+		// resume <type> <value>
+		instruction.general.terminator = true;
+		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTRESUME;
+		instruction.terminator.type = parameters[0];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.terminator.value, instruction, list, parameters);
+		break;
+	}
+	case IR_Unreachable: {
+		// The unreachable instruction has no defined semantics.
+		break;
+	}
+	// Binary Operations
+	case IR_Add: {
+		// <result> = add <ty> <op1>, <op2>          ; yields {ty}:result
+		// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.adder = true;
+		instruction.cycle.max = CYCLECOUNTADD;
+		instruction.general.binary = true;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_FAdd: {
+		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.adder = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTFADD;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_Sub: {
+		// <result> = sub <ty> <op1>, <op2>          ; yields {ty}:result
+		// <result> = sub nuw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.adder = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTSUB;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_FSub: {
+		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.adder = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTFSUB;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_Mul: {
+		// <result> = mul <ty> <op1>, <op2>          ; yields {ty}:result
+		// <result> = mul nuw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTMUL;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_FMul: {
+		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result.
+		instruction.general.floatingPoint = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTFMUL;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_UDiv: {
+		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
+		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTUDIV;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_SDiv: {
+		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
+		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTSDIV;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_FDiv: {
+		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTFDIV;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_URem: {
+		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTUREM;
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_SRem: {
+		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTSREM;
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_FRem: {
+		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.floatingPoint = true;
+		instruction.general.multiplier = true;
+		instruction.general.binary = true;
+		instruction.cycle.max = CYCLECOUNTFREM;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	// Bitwise Operations
+	case IR_Shl: {
+		// <result> = shl <ty> <op1>, <op2>           ; yields {ty}:result
+		// <result> = shl nuw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
+		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
+		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTSHL;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_LShr: {
+		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
+		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
+		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTLSHR;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_AShr: {
+		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
+		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result.
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
+		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTASHR;
+		setFlags(parameters, instruction);
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_And: {
+		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.bit = true;
+		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTAND;
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_Or: {
+		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.bit = true;
+		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTOR;
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	case IR_Xor: {
+		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
+		instruction.general.integer = true;
+		instruction.general.bit = true;
+		instruction.general.bitwise = true;
+		instruction.cycle.max = CYCLECOUNTXOR;
+		initializeReturnRegister(parameters, instruction);
+		setOperands(list, parameters, instruction);
+		break;
+	}
+	// Memory Operations
+	case IR_Alloca: {
+		// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
+		break;
+	}
+	case IR_Load: {
+		// <result> = load [volatile] <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>][, !invariant.load !<index>]
+		// <result> = load atomic[volatile] <ty>* <pointer>[singlethread] <ordering>, align <alignment>
+		//	!<index> = !{ i32 1 }
+		// Set memory operation flag to true
+		instruction.general.memory = true;
+		instruction.cycle.max = CYCLECOUNTLOAD;
+		// Index variable tracks keywords starting from the beginning of instruction
+		int index = 0;
+		// Check if instruction has volatilte keyword
+		if (parameters[0] == "volatile") {
+			// Increment index
+			index++;
+			// Set volatile flag 
+			instruction.memory.load.volatileVar = true;
+		}
+		// Set return type
+		instruction.memory.load.ty = parameters[index];
+		instruction.general.returnType = parameters[index];
+		
+		// Set return register type and size
+		instruction.general.returnRegister->setSize(instruction.memory.load.ty);
+		int align = 0;
+		while (parameters[align].compare("align") != 0)
+		    align++;
+		// Determine if register that contains load address exists
+		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], instruction.memory.load.pointer, instruction, list, parameters);
+		// Set value for alignment
+		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
+	        instruction.memory.load.align = stoi(parameters[align + 1]);
+		break;
+	}
+	case IR_Store: {
+		// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
+		// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
+		instruction.general.memory = true;
+		instruction.cycle.max = CYCLECOUNTSTORE;
+		int index = 1;
+		if (parameters[1] == "volatile") {
+			index = 2;
+			instruction.memory.store.volatileVar = true;
+		}
+		instruction.memory.store.ty = parameters[index];
+		
+		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, instruction, list, parameters);
+		else DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
+		
+		if(isRegister(parameters[index + 1])) {
+			setRegister(parameters[index + 1], instruction.memory.store.value, instruction, list, parameters);
+			instruction.memory.store.value->setSize(instruction.memory.store.ty);
+		} else {
+			instruction.memory.store.immediate = true;
+			if (instruction.memory.store.ty[0] == 'i') {
+				instruction.memory.store.ival = stoi(parameters[2]);
+			}
+			else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
+		}
+
+		instruction.memory.store.align = std::stoi(parameters[index + 5]);
+		break;
+	}
+	case IR_GetElementPtr: {
+	// <result> = getelementptr Creating select<ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
+		int index = 0;
+		int j = 0;
+		std::string customDataType;
+		instruction.general.memory = true;
+		instruction.cycle.max = CYCLECOUNTGETELEMENTPTR;
+		instruction.general.returnRegister->setSize("pointer");
+		instruction.general.integer = true;
+		instruction.general.multiplier = true;
+		if (parameters[0] == "inbounds") {
+			instruction.memory.getptr.inbounds = true;
+			instruction.memory.getptr.pty = parameters[1];
+			instruction.general.returnType = parameters[1];
+			if (list->findRegister(parameters[3].substr(1)) == NULL) {
+				instruction.memory.getptr.ptrval = new Register(parameters[3]);
+				list->addRegister(instruction.memory.getptr.ptrval);
+			} else instruction.memory.getptr.ptrval = list->findRegister(parameters[3].substr(1));
+			if(parameters[1].back() != '*')
+			    index = 3;
+		    else
+		        index = 2;
+		} else {
+			instruction.memory.getptr.pty = parameters[0];
+			if (list->findRegister(parameters[2].substr(1)) == NULL) {
+				instruction.memory.getptr.ptrval = new Register(parameters[3]);
+				list->addRegister(instruction.memory.getptr.ptrval);
+			} else instruction.memory.getptr.ptrval = list->findRegister(parameters[2].substr(1));
+			
+			if (parameters[0].back() != '*')
+			    index = 2;
+		    else
+		        index = 1;
+		}
+		if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
+				int stringLength = (instruction.memory.getptr.pty.find_first_of(']') - instruction.memory.getptr.pty.find('%')-1);
+				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
+				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
+			if(instruction.memory.getptr.llvmType != NULL) {	
+				DPRINTF(LLVMGEP, "Custom Data Type = %s\n", customDataType);
+			} else {
+				customDataType = "none";
+				DPRINTF(LLVMGEP, "No Custom Data Types Found!\n");
+			}
+		}
+		if(instruction.memory.getptr.pty[0] == '%') { // Return type is a custom data type
+				int stringLength = (instruction.memory.getptr.pty.find_first_of(' ') - instruction.memory.getptr.pty.find('%')-1);
+				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
+				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
+			if(instruction.memory.getptr.llvmType != NULL) {	
+				DPRINTF(LLVMGEP, "Custom Data Type = %s\n", customDataType);
+			} else {
+				customDataType = "none";
+				DPRINTF(LLVMGEP, "No Custom Data Types Found!\n");
+			}
+		}
+		for (int i = 1; i + index <= last; i+=2) {
+			instruction.memory.getptr.ty[j] = parameters[index+i];
+			//if(parameters[index+i+1][0] == '%') {
+			if(isRegister(parameters[index+i+1])) {
+				setRegister(parameters[index+i+1], instruction.memory.getptr.idx[j], instruction, list, parameters);
+				instruction.memory.getptr.immediate[j] = false;
+				instruction.memory.getptr.immdx[j] = 0;
+				DPRINTF(LLVMGEP, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
+			}
+			else {
+				instruction.memory.getptr.immediate[j] = true;
+				instruction.memory.getptr.immdx[j] = stoi(parameters[index+i+1]);
+				DPRINTF(LLVMGEP, "idx%d = %d\n", j, instruction.memory.getptr.immdx[j]);
+			}
+			j++;
+			instruction.memory.getptr.index = j;
+		}
+		break;
+	}
+	case IR_Fence: {
+		// fence [singlethread] <ordering>                   ; yields {void}
+		break;
+	}
+	case IR_AtomicCmpXchg: {
+		// cmpxchg [volatile] <ty>* <pointer>, <ty> <cmp>, <ty> <new> [singlethread] <ordering>  ; yields {ty}
+		break;
+	}
+	case IR_AtomicRMW: {
+		// atomicrmw [volatile] <operation> <ty>* <pointer>, <ty> <value> [singlethread] <ordering>                   ; yields {ty}
+		break;
+	}
+	// Conversion Operations
+	case IR_Trunc: {
+		// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTTRUNC;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_ZExt: {
+		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTZEXT;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_SExt: {
+		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTSEXT;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_FPToUI: {
+		// <result> = fptoui <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPTOUI;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_FPToSI: {
+		// <result> = fptosi <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPTOSI;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_UIToFP: {
+		// <result> = uitofp <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTUITOFP;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_SIToFP: {
+		// <result> = sitofp <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTSITOFP;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_FPTrunc: {
+		// <result> = fptrunc <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPTRUNC;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_FPExt: {
+		// <result> = fpext <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTFPEXT;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_PtrToInt: {
+		// <result> = ptrtoint <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTPTRTOINT;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_IntToPtr: {
+		// <result> = inttoptr <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTINTTOPTR;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_BitCast: {
+		// <result> = bitcast <ty> <value> to <ty2>             ; yields ty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTBITCAST;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	case IR_AddrSpaceCast: {
+		// <result> = addrspacecast <pty> <ptrval> to <pty2>       ; yields pty2
+		instruction.general.conversion = true;
+		instruction.cycle.max = CYCLECOUNTADDRSPACECAST;
+		instruction.conversion.ty = parameters[0];
+		instruction.conversion.ty2 = parameters[3];
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
+		else {
+			instruction.conversion.immVal = stoi(parameters[1]);
+			instruction.conversion.immediate = true;
+		}
+		break;
+	}
+	// Other Operations - Compare
+	case IR_ICmp: {
+		// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
+		instruction.general.other = true;
+		instruction.general.compare = true;
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
+		instruction.other.compare.condition.cond = parameters[0];
+		instruction.cycle.max = CYCLECOUNTICMP;
+		instruction.other.compare.ty = parameters[1];
+		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
+
+		// Check if adding from register or immediate value
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.other.compare.op2, instruction, list, parameters);	
+		else {
+			instruction.other.compare.immediate2 = true;
+			instruction.other.compare.iop2 = parameters[last];
+		}
+
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.other.compare.op1, instruction, list, parameters);
+		else {
+			instruction.other.compare.immediate1 = true;
+			instruction.other.compare.iop1 = parameters[last - 1];
+		}
+
+		if (instruction.other.compare.condition.cond == "eq")
+			instruction.other.compare.condition.eq = true;
+		else if (instruction.other.compare.condition.cond == "ne")
+			instruction.other.compare.condition.ne = true;
+		else if (instruction.other.compare.condition.cond == "ugt")
+			instruction.other.compare.condition.ugt = true;
+		else if (instruction.other.compare.condition.cond == "uge")
+			instruction.other.compare.condition.uge = true;
+		else if (instruction.other.compare.condition.cond == "ult")
+			instruction.other.compare.condition.ult = true;
+		else if (instruction.other.compare.condition.cond == "ule")
+			instruction.other.compare.condition.ule = true;
+		else if (instruction.other.compare.condition.cond == "sgt")
+			instruction.other.compare.condition.sgt = true;
+		else if (instruction.other.compare.condition.cond == "sge")
+			instruction.other.compare.condition.sge = true;
+		else if (instruction.other.compare.condition.cond == "slt")
+			instruction.other.compare.condition.slt = true;
+		else if (instruction.other.compare.condition.cond == "sle")
+			instruction.other.compare.condition.sle = true;
+		break;
+	}
+	case IR_FCmp: {
+		// <result> = fcmp <cond> <ty> <op1>, <op2>     ; yields {i1} or {<N x i1>}:result
+		instruction.general.other = true;
+		instruction.general.compare = true;
+		instruction.other.compare.condition.cond = parameters[0];
+		instruction.cycle.max = CYCLECOUNTFCMP;
+		instruction.other.compare.ty = parameters[1];
+		instruction.general.integer = true;
+		instruction.general.shifter = true;
+		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
+
+		// Check if adding from register or immediate value
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.other.compare.op2, instruction, list, parameters);
+		else {
+			instruction.other.compare.immediate2 = true;
+			instruction.other.compare.iop2 = parameters[last];
+		}
+
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.other.compare.op1, instruction, list, parameters);
+		else {
+			instruction.other.compare.immediate1 = true;
+			instruction.other.compare.iop1 = parameters[last - 1];
+		}
+		
+		if (instruction.other.compare.condition.cond == "false")
+			instruction.other.compare.condition.condFalse = true;
+		else if (instruction.other.compare.condition.cond == "oeq")
+			instruction.other.compare.condition.oeq = true;
+		else if (instruction.other.compare.condition.cond == "ogt")
+			instruction.other.compare.condition.ogt = true;
+		else if (instruction.other.compare.condition.cond == "oge")
+			instruction.other.compare.condition.oge = true;
+		else if (instruction.other.compare.condition.cond == "olt")
+			instruction.other.compare.condition.olt = true;
+		else if (instruction.other.compare.condition.cond == "ole")
+			instruction.other.compare.condition.ole = true;
+		else if (instruction.other.compare.condition.cond == "one")
+			instruction.other.compare.condition.one = true;
+		else if (instruction.other.compare.condition.cond == "ord")
+			instruction.other.compare.condition.ord = true;
+		else if (instruction.other.compare.condition.cond == "ueq")
+			instruction.other.compare.condition.ueq = true;
+		else if (instruction.other.compare.condition.cond == "ugt")
+			instruction.other.compare.condition.ugt = true;
+		else if (instruction.other.compare.condition.cond == "uge")
+			instruction.other.compare.condition.uge = true;
+		else if (instruction.other.compare.condition.cond == "ult")
+			instruction.other.compare.condition.ult = true;
+		else if (instruction.other.compare.condition.cond == "ule")
+			instruction.other.compare.condition.ule = true;
+		else if (instruction.other.compare.condition.cond == "une")
+			instruction.other.compare.condition.une = true;
+		else if (instruction.other.compare.condition.cond == "uno")
+			instruction.other.compare.condition.uno = true;
+		else if (instruction.other.compare.condition.cond == "true")
+			instruction.other.compare.condition.condTrue = true;
+
+		break;
+	}
+	case IR_PHI: {
+		// <result> = phi <ty> [ <val0>, <label0>], ...
+		instruction.general.other = true;
+		instruction.general.phi = true;
+		instruction.general.flowControl = true;
+		instruction.cycle.max = CYCLECOUNTPHI;
+		instruction.other.phi.ty = parameters[0];
+		instruction.general.returnRegister->setSize(instruction.other.phi.ty);
+		std::string *val = new std::string[last];
+		std::string *label = new std::string[last];
+		int labelLength = 0;
+		for (int i = 1; i <= last; i++) {
+			instruction.other.phi.ival[i - 1] = parameters[i];
+			labelLength = instruction.other.phi.ival[i - 1].find(',');
+			labelLength = labelLength - instruction.other.phi.ival[i - 1].find('[');
+			val[i - 1] = instruction.other.phi.ival[i - 1].substr(2, (instruction.other.phi.ival[i - 1].find(',')) - 2);
+			labelLength = instruction.other.phi.ival[i - 1].find(',');
+			labelLength = instruction.other.phi.ival[i - 1].find(']') - labelLength;
+			label[i - 1] = instruction.other.phi.ival[i - 1].substr((instruction.other.phi.ival[i - 1].find(',')) + 3, labelLength - 4);
+			if(isRegister(val[i-1])) {
+				setRegister(val[i-1], instruction.other.phi.val[i - 1], instruction, list, parameters);
+				instruction.other.phi.ival[i - 1].clear();
+				instruction.other.phi.immVal[i - 1] = false;
+				instruction.other.phi.label[i - 1] = label[i - 1];
+				DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
+			} else {
+				if (val[i-1] == "true") {
+					instruction.other.phi.ival[i - 1] = '1';
+				} else if (val[i-1] == "false") {
+					instruction.other.phi.ival[i - 1] = '0';
+				} else {
+					instruction.other.phi.ival[i - 1] = val[i - 1];
+				}
+				instruction.other.phi.immVal[i - 1] = true;
+				instruction.other.phi.label[i - 1] = label[i - 1];
+				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
+			}
+		}
+		break;
+	}
+	case IR_Call: {
+		// <result> = [tail] call[cconv][ret attrs] <ty>[<fnty>*] <fnptrval>(<function args>)[fn attrs]
+		break;
+	}
+	case IR_Select: {
+		// <result> = select selty <cond>, <ty> <val1>, <ty> <val2>             ; yields ty
+		// selty is either i1 or {<N x i1>}
+		instruction.general.other = true;
+		instruction.cycle.max = CYCLECOUNTSELECT;
+		instruction.other.select.ty = parameters[2];
+		instruction.general.returnRegister->setSize(instruction.other.select.ty);
+
+		instruction.other.select.immediate[0] = false;
+		instruction.other.select.immediate[1] = false;
+		
+		if(parameters[2][0] == 'i') {
+			instruction.other.select.intTy = true;
+			DPRINTF(ComputeNode, "Integer Type\n");
+		} else if(parameters[2] == "float") {
+			instruction.other.select.floatTy = true;
+		} else if(parameters[2] == "double") {
+			instruction.other.select.doubleTy = true;
+		} else { }
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.other.select.cond, instruction, list, parameters);
+		else {
+			instruction.other.select.icondFlag = true;
+			if(parameters[1] == "true") instruction.other.select.icond = true;
+		}
+		if(isRegister(parameters[3])) setRegister(parameters[3], instruction.other.select.val1, instruction, list, parameters);
+		else {
+			///////////////////////////////////
+			instruction.other.select.immediate[0] = true;
+			instruction.other.select.immVal[0] = stoi(parameters[3]);
+			///////////////////////////////////
+			if(parameters[2][0] == 'i') {
+			} else if(parameters[2] == "float") {
+			} else if(parameters[2] == "double") {
+			} else { }
+		}
+		if(isRegister(parameters[5])) setRegister(parameters[5], instruction.other.select.val2, instruction, list, parameters);
+		else {
+			////////////////////////////////
+			instruction.other.select.immediate[1] = true;
+			instruction.other.select.immVal[1] = stoi(parameters[5]);
+			////////////////////////////
+			if(parameters[4][0] == 'i') {
+			} else if(parameters[2] == "float") {
+			} else if(parameters[2] == "double") {
+			} else { }
+		}
+		break;
+	}
+	case IR_VAArg: {
+		// <resultval> = va_arg <va_list*> <arglist>, <argty>
+		break;
+	}
+	case IR_ExtractElement: {
+		// <result> = extractelement <n x <ty>> <val>, i32 <idx>    ; yields <ty>
+		break;
+	}
+	case IR_InsertElement: {
+		// <result> = insertelement <n x <ty>> <val>, <ty> <elt>, i32 <idx>    ; yields <n x <ty>>
+		break;
+	}
+	case IR_ShuffleVector: {
+		// <result> = shufflevector <n x <ty>> <v1>, <n x <ty>> <v2>, <m x i32> <mask>    ; yields <m x <ty>>
+		break;
+	}
+	case IR_ExtractValue: {
+		// <result> = extractvalue <aggregate type> <val>, <idx>{, <idx>}*
+		break;
+	}
+	case IR_InsertValue: {
+		// <result> = insertvalue <aggregate type> <val>, <ty> <elt>, <idx>{ , <idx> }*; yields <aggregate type>
+		break;
+	}
+	case IR_LandingPad: {
+		// <resultval> = landingpad <resultty> personality <type> <pers_fn> <clause>+
+		// <resultval> = landingpad <resultty> personality <type> <pers_fn> cleanup <clause>*
+		// <clause> : = catch <type> <value>
+		// <clause> : = filter <array constant type> <array constant>
+		break;
+	}
+	case IR_DMAFence: { break; }
+	case IR_DMAStore: { break; }
+	case IR_DMALoad: { break; }
+	case IR_IndexAdd: { break; }
+	case IR_SilentStore: { break; }
+	case IR_Sine: { break; }
+	case IR_Cosine: { break; }
+	case IR_Move: { break; }
+	default: { break; }
+	}
+	dependencyList(parameters, dependencies);
 }
 
 void
-BasicBlock::addNode(ComputeNode * cn) {
-    cnList->push_back(cn);
+ComputeNode::dependencyList(std::vector<std::string> &parameters, int dependencies) {
+	DPRINTF(ComputeNode, "\n");
+	DPRINTF(ComputeNode, "Dependencies List: \n");
+	if(dependencies == 0) {
+		DPRINTF(ComputeNode, "No Dependencies!\n\n");
+	} else {
+		for (int i = 0; i < dependencies; i++) {
+			DPRINTF(ComputeNode, "#%d = Register (%s)\n", i + 1, instruction.dependencies.registers[i]->getName());
+		}
+		DPRINTF(ComputeNode, "\n");
+	}
 }
 
 
+
+BasicBlock::BasicBlock(const std::string& Name, uint64_t BBID) {
+    //cnList = new std::list<ComputeNode *>();
+    _Name = Name;
+    _BBID = BBID;
+}
+
+void
+BasicBlock::addNode(InstructionBase* Node) {
+    _Nodes->push_back(Node);
+}
+
+
+std::string 
+BasicBlock::convertImmediate(std::string dataType, std::string immediateValue) {
+	int arr1 = 0;
+	int arr2 = 0;
+	int integer = 0;
+	double doub;
+	float flt;
+	std::string temp;
+	char *array = &immediateValue[0];
+	char *end;
+	DPRINTF(IOAcc, "Type: %s, Value: %s\n",dataType, immediateValue);
+	if(dataType.compare("double") == 0) {
+		if(immediateValue[1] == 'x') {
+			doub = strtol(array, &end, 16);
+			uint64_t convert = (uint64_t) doub;
+			doub = *((double*)&convert);
+			temp = std::to_string(doub);
+		} else temp = sciToDecimal(immediateValue);
+	} else if(dataType.compare("float") == 0) {
+		if(immediateValue[1] == 'x') {
+			flt = strtol(array, &end, 16);
+			uint64_t convert = (uint64_t) flt;
+			doub = *((float*)&convert);
+			temp = std::to_string(flt);
+		} else temp = sciToDecimal(immediateValue);
+	} else { // Integer Value
+		if(immediateValue[1] == 'x') {
+			integer = strtol(array, &end, 0);
+			temp = std::to_string(integer);
+		} else temp = sciToDecimal(immediateValue);
+	}
+	DPRINTF(IOAcc, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
+	return temp;
+}
+
+std::string 
+BasicBlock::sciToDecimal(std::string immediateValue) {
+	int decimalLocation = 0;
+	int magnitudeLoc = 0;
+	int magnitude = 0;
+
+	for(int i = 0; i < immediateValue.length()-1; i++) {
+		if(immediateValue[i] == '.') decimalLocation = i;
+		if(immediateValue[i] == 'e') magnitudeLoc = i;
+	}
+	magnitude = stoi(immediateValue.substr(magnitudeLoc+2));
+	for(int i = decimalLocation; i < decimalLocation+magnitude; i++) {
+		immediateValue[i] = immediateValue[i+1];
+	}
+	immediateValue[decimalLocation+magnitude] = '.';
+	immediateValue = immediateValue.substr(0,magnitudeLoc);
+	
+	return immediateValue;
+}
+
+
+void
+BasicBlock::debugParams(std::vector<std::string> &parameters) { 
+	DPRINTF(ComputeNode, "Creating (%s) Compute Node:\n", instruction.general.opCode);
+	if(DEBUGPARAMS) for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
+	DPRINTF(ComputeNode, "\n");
+}
+
+void
+BasicBlock::setFlags(std::vector<std::string> &parameters, Instruction &instruction) {
+	for(int i = 0; i < parameters.size(); i++){
+		if (parameters[i] == "nuw") instruction.flags.nuw = true;
+		else if (parameters[i] == "nsw") instruction.flags.nsw = true;
+		else if (parameters[i] == "nnan") instruction.flags.nnan = true;
+		else if (parameters[i] == "ninf") instruction.flags.ninf = true;
+		else if (parameters[i] == "nsz") instruction.flags.nsz = true;
+		else if (parameters[i] == "arcp") instruction.flags.arcp = true;
+		else if (parameters[i] == "contract") instruction.flags.contract = true;
+		else if (parameters[i] == "afn") instruction.flags.afn = true;
+		else if (parameters[i] == "reassoc") instruction.flags.reassoc = true;
+		else if (parameters[i] == "fast") instruction.flags.fast = true;
+		else if (parameters[i] == "exact") instruction.flags.exact = true;
+	}
+}
+
+bool 
+BasicBlock::isRegister(std::string data){
+	if(data[0] == '%') return true;
+	return false;
+}
+
+void
+BasicBlock::setRegister(std::string data, Register *&reg, Instruction &instruction, RegisterList *list, std::vector<std::string> &parameters) {
+	std::string name = data.substr(1);
+	if (list->findRegister(name) == NULL) {
+		reg = new Register(name);
+		list->addRegister(reg);
+		instruction.dependencies.registers[dependencies] = reg;
+		dependencies++;
+		} else {
+		reg = list->findRegister(name);
+		instruction.dependencies.registers[dependencies] = reg;
+		dependencies++;
+	}
+}
+
+void
+BasicBlock::initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction){
+	int last = parameters.size() - 1;
+	if(instruction.general.binary){
+		// Set instruction return type <ty>
+		instruction.binary.ty = parameters[last - 2];
+		// Set size of return register to match instruction return type
+		instruction.general.returnRegister->setSize(instruction.binary.ty);	
+	}
+	else if(instruction.general.bitwise){
+		// Set instruction return type <ty>
+		instruction.bitwise.ty = parameters[last - 2];
+		// Set size of return register to match instruction return type
+		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
+	}
+	instruction.general.returnType = parameters[last-2];
+}
+
+void
+BasicBlock::setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction) {
+	int last = parameters.size() - 1;
+	if(instruction.general.binary){
+		// Operand 2
+		// Check if adding from register or immediate value
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.binary.op2, instruction, list, parameters);
+		else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.binary.immediate2 = true;
+			// Load string representation of immediate value
+			instruction.binary.iop2 = parameters[last];
+		}
+		// Operand 1
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.binary.op1, instruction, list, parameters);
+		else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.binary.immediate1 = true;
+			// Load string representation of immediate value
+			instruction.binary.iop1 = parameters[last - 1];
+		}
+	} else if(instruction.general.bitwise) {
+		// Operand 2
+		// Check if adding from register or immediate value
+		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.bitwise.op2, instruction, list, parameters);
+		else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.bitwise.immediate2 = true;
+			// Load string representation of immediate value
+			instruction.bitwise.iop2 = parameters[last];
+		}
+		// Operand 1
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.bitwise.op1, instruction, list, parameters);
+		else {
+			// Operation uses immediate value
+			// Set immediate flag true
+			instruction.bitwise.immediate1 = true;
+			// Load string representation of immediate value
+			instruction.bitwise.iop1 = parameters[last - 1];
+		}
+	}
+}
+
+int
+BasicBlock::setSize(std::string dataType) {
+    // Code here will infer size based around the stored dataType string
+    std::string temp = dataType;
+	int size = 8;
+    // Pointers
+    if (temp.compare("pointer") == 0) size = SystemSize/8;
+    else if (temp.back() =='*') size = SystemSize/8;
+    // Boolean and integer data types
+    // Set size if dataType is integer
+    else if (temp.front() == 'i') {
+        temp = temp.substr(1);
+        size = ((std::stoi(temp)-1)/8)+1;
+    }
+    // Floating point data types    
+    // Set size if dataType is float
+    else if (temp.compare("float")  != -1) size = SystemSize/16;
+    // Set size if dataType is double
+    else if (temp.find("double") > -1) size = SystemSize/8;
+    // Set size if dataType is void
+    else if (temp.find("void") > -1) size = 0;
+    // Aggregate data types
+    // Array dataType
+    else if (temp[0] == '[') { }
+    // Struct dataType
+    else if (temp.find("{") > -1) { }
+    // Unspecified dataType
+    // Label
+    // Treat size equivalent to a pointer
+    else if (temp.find("label") > -1) size = SystemSize/8;
+    // Unknown dataType
+    else { }
+	return size;
+}

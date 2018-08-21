@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS=IOAcc #,LLVMRuntime #,LLVMGEP,LLVMInterface,CommInterface,-LLVMParse,Interrupt,LLVMRegister
+FLAGS=IOAcc,Hardware #,LLVMRuntime,LLVMGEP,LLVMInterface,CommInterface,-LLVMParse,Interrupt,LLVMRegister
 if [ "$1" != "" ]; then
     BENCH=$1
 else

@@ -1,18 +1,10 @@
 #ifndef __UTILIZATION_HH__
-
 #define __UTILIZATION_HH__
-
 #include "debugFlags.hh" 
 #include "debug/Hardware.hh"
 #include "power_func.hh"
-#include "instruction.hh"
 #include <map>
 #include <vector>
-
-#define ADDUNIT 0
-#define MULUNIT 1
-#define BITUNIT 2
-#define SHIFTUNIT 3
 
 struct PowerUsage {
     float cycleTime = 0;

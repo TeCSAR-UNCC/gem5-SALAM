@@ -1,7 +1,5 @@
 #ifndef __REGISTERS_HH__
-
 #define __REGISTERS_HH__
-
 #include <iostream>
 #include <cstdint>
 #include <cstring>
@@ -10,8 +8,7 @@
 #include "power.hh"
 #include "macros.hh"
 
-
-class Register2 {
+class Register {
     //-----------------------------------------------------------------------//
     //----- Begin Private ---------------------------------------------------//
     private:
@@ -27,14 +24,14 @@ class Register2 {
     //----- Begin Public ----------------------------------------------------//
     public:
         // ---- Constructor
-        Register2(const std::string& Name, uint64_t Value):
+        Register(const std::string& Name, uint64_t Value):
                 _Name(Name),
                 _Data_Type("NA"),
                 _Value(Value),
                 _Size(8),
                 _Hot(false) { }
         // ---- Constructor
-        Register2(const std::string& Name): 
+        Register(const std::string& Name): 
                 _Name(Name),
                 _Data_Type("NA"),
                 _Value(0),
@@ -60,23 +57,23 @@ class Register2 {
 };
 
 
-class RegisterList2{
+class RegisterList{
     //-----------------------------------------------------------------------//
     //----- Begin Private ---------------------------------------------------//
     private:  
-        std::list<Register2*> *_RegList; // List of all registers
+        std::list<Register*> *_RegList; // List of all registers
 
     //----- End Private -----------------------------------------------------//
     //-----------------------------------------------------------------------//
     //----- Begin Public ----------------------------------------------------//
     public:
         // ---- Constructor
-        RegisterList2()                  { _RegList = new std::list<Register2*>(); }
+        RegisterList2()                  { _RegList = new std::list<Register*>(); }
         // ---- Get Functions
         uint64_t size()                 { return _RegList->size(); }
         // ---- Helper Functions
         Register2* findRegister(const std::string& Name);
-        void addRegister(Register2 *Reg) { _RegList->push_back(Reg); }
+        void addRegister(Register *Reg) { _RegList->push_back(Reg); }
         void printRegNames();
     //----- End Public ------------------------------------------------------//
     //-----------------------------------------------------------------------//

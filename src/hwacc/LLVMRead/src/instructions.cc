@@ -1,61 +1,8 @@
-#include "operations.hh"
-#include <string>
-#include <cstdint>
-#include <vector>
+#include "instructions.hh"
 
-#define MAXINT 2147483647
-
-/* Operations::llvm Terminator Instructions */
-void Operations::llvm_move(const struct Instruction &instruction) {
-	//Not in current Operations::llvm reference. memmove perhaps?
-}
-void Operations::llvm_ret(const struct Instruction &instruction) {
-	//Operation of device is finished
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
-}
-void Operations::llvm_br(const struct Instruction &instruction) {
-	DPRINTF(LLVMOp, "Performing %s Operation!\n", instruction.general.opCode);
-
-	unsigned long long int condition = 0;
-
-	if (!(instruction.terminator.unconditional)) {
-		DPRINTF(LLVMOp, "Conditional Branch Operation! \n");
-		condition = instruction.terminator.cond->getValue();
-		instruction.general.labelCount->accessedRead();
-		if (condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
-		else instruction.terminator.dest = instruction.terminator.iffalse;
-		DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
-		instruction.terminator.cond->accessedRead();
-	}
-	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");
-}
-void Operations::llvm_switch(const struct Instruction &instruction) {
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
-	uint64_t mainValue = instruction.terminator.value->getValue();
-	bool found = false;
-	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
-	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
-		DPRINTF(LLVMOp, "Comparing main value %d to case value %d: \n", mainValue, instruction.terminator.cases.value[i]);
-		instruction.general.immediateCount->accessedRead();
-		if(mainValue == instruction.terminator.cases.value[i]){
-			instruction.terminator.dest = instruction.terminator.cases.dest[i];
-			DPRINTF(LLVMOp, "Found!\n");
-			found = true;
-			return;
-		}
-	}
-	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
-	DPRINTF(LLVMOp, "Switch selected, destination is %s!", instruction.terminator.dest);
-}
-void Operations::llvm_indirectbr(const struct Instruction &instruction) {}
-void Operations::llvm_invoke(const struct Instruction &instruction) {}
-void Operations::llvm_resume(const struct Instruction &instruction) {}
-void Operations::llvm_unreachable(const struct Instruction &instruction) {}
-///////////////////////////////////////////////////////////////////////////////
-/* LLVM Binary Operations*/
-/* Integer Operations*/
-void Operations::llvm_add(const struct Instruction &instruction) {
-	// Integer Addition
+void 
+Add::compute() {
+// Integer Addition
 	// <result> = add <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
@@ -83,8 +30,11 @@ void Operations::llvm_add(const struct Instruction &instruction) {
 	instruction.general.returnRegister->setValue(&result);
 	
 	DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_sub(const struct Instruction &instruction) {
+
+void 
+Sub::compute() {
 	// Subtract Instruction
 	// <result> = sub <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw <ty> <op1>, <op2>; yields ty : result
@@ -108,8 +58,11 @@ void Operations::llvm_sub(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_mul(const struct Instruction &instruction) {
+
+void 
+Mul::compute() {
 	// Multiply Instruction
 	// <result> = mul <ty> <op1>, <op2>          ; yields ty:result
 	// <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
@@ -133,8 +86,11 @@ void Operations::llvm_mul(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_udiv(const struct Instruction &instruction) {
+
+void 
+UDiv::compute() {
 	// Unsigned Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 	uint64_t op1 = 0;
@@ -154,8 +110,11 @@ void Operations::llvm_udiv(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_sdiv(const struct Instruction &instruction) {
+
+void 
+SDiv::compute() {
 	// Signed Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 	int64_t op1 = 0;
@@ -175,8 +134,11 @@ void Operations::llvm_sdiv(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_urem(const struct Instruction &instruction) {
+
+void 
+URem::compute() {
 	//Unsigned modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 	uint64_t op1 = 0;
@@ -196,8 +158,11 @@ void Operations::llvm_urem(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_srem(const struct Instruction &instruction) {
+
+void 
+SRem::compute() {
 	//Signed modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 	int64_t op1 = 0;
@@ -217,11 +182,11 @@ void Operations::llvm_srem(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-///////////////////////////////////////////////////////////////////////////////
-/* LLVM Binary Operations*/
-/* Floating Point Operations*/
-void Operations::llvm_fadd(const struct Instruction &instruction) {
+
+void 
+FAdd::compute() {
 	// Floating point Addition
 	// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -272,8 +237,11 @@ void Operations::llvm_fadd(const struct Instruction &instruction) {
 	} else instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp,"%u\n", fresult);
 	DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_fsub(const struct Instruction &instruction) {
+
+void 
+FSub::compute() {
 	// Floating point Subtraction
 	// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -321,8 +289,11 @@ void Operations::llvm_fsub(const struct Instruction &instruction) {
 		instruction.general.returnRegister->setValue(&fresult);
 	} else instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_fmul(const struct Instruction &instruction) {
+
+void 
+FMul::compute() {
 	// Floating point Multiplication
 	// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -375,8 +346,11 @@ void Operations::llvm_fmul(const struct Instruction &instruction) {
 		instruction.general.returnRegister->setValue(&fresult);
 	} else instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_fdiv(const struct Instruction &instruction) {
+
+void 
+FDiv::compute() {
 	// Floating point Division
 	// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -425,35 +399,14 @@ void Operations::llvm_fdiv(const struct Instruction &instruction) {
 		instruction.general.returnRegister->setValue(&fresult);
 	} else instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_frem(const struct Instruction &instruction) {
-	// Floating point modulo division
-	// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-	/* Not possible until modulo operator is overloaded to accept floating point numbers
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
-	double op1;
-	double op2;
-	double result;
-	float fresult;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) op1 = stoi(instruction.binary.iop1);
-	else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) op2 = stoi(instruction.binary.iop2);
-	else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 % op2;
-	// Store result in return register
-	if (instruction.binary.ty.find("float") == 0) {
-		// Typecast to float before returning value
-		fresult = (float)result;
-		instruction.general.returnRegister->setValue(&fresult);
-	} else instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-	*/
-}
-///////////////////////////////////////////////////////////////////////////////
-/* LLVM Bitwise Binary Operations */
-void Operations::llvm_shl(const struct Instruction &instruction) {
+
+void 
+FRem::compute() { }
+
+void 
+Shl::compute() {
 	// Shift Left Operation
 	// <result> = shl <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
@@ -477,8 +430,11 @@ void Operations::llvm_shl(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u << %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_lshr(const struct Instruction &instruction) {
+
+void 
+LShr::compute() {
 	// Logical Shift Right Operation
 	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
@@ -500,8 +456,11 @@ void Operations::llvm_lshr(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_ashr(const struct Instruction &instruction) {
+
+void 
+AShr::compute() {
 	// Arithmatic Shift Right Operation
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
@@ -526,8 +485,11 @@ void Operations::llvm_ashr(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_and(const struct Instruction &instruction) {
+
+void 
+And::compute() {
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -548,8 +510,11 @@ void Operations::llvm_and(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u & %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_or(const struct Instruction &instruction) {
+
+void 
+Or::compute() {
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -570,8 +535,11 @@ void Operations::llvm_or(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+
 }
-void Operations::llvm_xor(const struct Instruction &instruction) {
+
+void 
+Xor::compute() {
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -592,17 +560,105 @@ void Operations::llvm_xor(const struct Instruction &instruction) {
 	// Store result in return register
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "%u ^ %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-}
-///////////////////////////////////////////////////////////////////////////////
-/* LLVM Memory Access Operations */
 
-void Operations::llvm_alloca(const struct Instruction &instruction) {
-	// <result> = alloca <type>[, <ty> <NumElements>][, align <alignment>]     ; yields {type*}:result
-	// C++ Code - <type>* result = new <ty>[NumElements]
-	// Unsure how align will be used here if not == sizeOf(<type>)/8
 }
 
-void Operations::llvm_getelementptr(const struct Instruction &instruction) {
+/*
+void
+Load::compute() {
+    uint64_t src = instruction.memory.load.pointer->value;
+	instruction.general.returnRegister->setSize();
+	DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), instruction.general.returnRegister->size);
+	req = new MemoryRequest((Addr)src, instruction.general.returnRegister->size);
+	comm->enqueueRead(req);
+	break;  
+}
+
+void
+Store::compute() {
+	uint64_t data;
+	uint64_t size = 0;
+	uint64_t dst = instruction.memory.store.pointer->value;
+	if(instruction.memory.store.immediate) {
+		DPRINTF(ComputeNode, "Immediate value store. \n");
+		data = (uint64_t) instruction.memory.store.ival;
+		size = setSize(instruction.memory.store.ty);
+		req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
+	} else {
+	    data = instruction.memory.store.value->value;
+        req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.memory.store.value->size);
+		DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
+	}
+	comm->enqueueWrite(req);
+	break;    
+}
+
+void
+Move::compute() {
+
+}
+
+void
+Ret::compute() {
+
+}
+
+void
+Br::compute() {
+	DPRINTF(LLVMOp, "Performing %s Operation!\n", instruction.general.opCode);
+
+	unsigned long long int condition = 0;
+
+	if (!(instruction.terminator.unconditional)) {
+		DPRINTF(LLVMOp, "Conditional Branch Operation! \n");
+		condition = instruction.terminator.cond->getValue();
+		instruction.general.labelCount->accessedRead();
+		if (condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
+		else instruction.terminator.dest = instruction.terminator.iffalse;
+		DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
+		instruction.terminator.cond->accessedRead();
+	}
+	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");    
+}
+
+void
+Switch::compute() {
+	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	uint64_t mainValue = instruction.terminator.value->getValue();
+	bool found = false;
+	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
+	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
+		DPRINTF(LLVMOp, "Comparing main value %d to case value %d: \n", mainValue, instruction.terminator.cases.value[i]);
+		instruction.general.immediateCount->accessedRead();
+		if(mainValue == instruction.terminator.cases.value[i]){
+			instruction.terminator.dest = instruction.terminator.cases.dest[i];
+			DPRINTF(LLVMOp, "Found!\n");
+			found = true;
+			return;
+		}
+	}
+	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
+	DPRINTF(LLVMOp, "Switch selected, destination is %s!", instruction.terminator.dest);
+
+}
+
+void
+IndirectBr::compute() { }
+
+void
+Invoke::compute() { }
+
+void
+Resume::compute() { }
+
+void
+Unreachable::compute() { }
+
+void
+Alloca::compute() { }
+
+void
+GetElementPtr::compute {
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
@@ -754,13 +810,20 @@ void Operations::llvm_getelementptr(const struct Instruction &instruction) {
 	instruction.memory.getptr.ptrval->accessedRead();
 	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->value);
 	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
-}
-void Operations::llvm_fence(const struct Instruction &instruction) {}
-void Operations::llvm_cmpxchg(const struct Instruction &instruction) {}
-void Operations::llvm_atomicrmw(const struct Instruction &instruction) {}
 
-/* Operations::llvm Conversion Operations */
-void Operations::llvm_trunc(const struct Instruction &instruction) {
+}
+
+void
+Fence::compute() { }
+
+void
+CmpXChg::compute() { }
+
+void
+AtomicRMW::compute() { }
+
+void
+Trunc::compute() {
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.immediate) {
@@ -776,8 +839,11 @@ void Operations::llvm_trunc(const struct Instruction &instruction) {
 		else result = 0;
 	}
 	instruction.general.returnRegister->setValue(&result);
+
 }
-void Operations::llvm_zext(const struct Instruction &instruction) {
+
+void
+ZExt::compute() {
 	uint64_t value;
 	uint64_t result;
 	if(instruction.conversion.immediate) {
@@ -793,9 +859,11 @@ void Operations::llvm_zext(const struct Instruction &instruction) {
 		if(value) result = 1;
 		else result = 0;
 	}
-	instruction.general.returnRegister->setValue(&result);
+	instruction.general.returnRegister->setValue(&result);    
 }
-void Operations::llvm_sext(const struct Instruction &instruction) {
+
+void
+SExt::compute() {
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.immediate) {
@@ -813,7 +881,10 @@ void Operations::llvm_sext(const struct Instruction &instruction) {
 	}
 	instruction.general.returnRegister->setValue(&result);
 }
-void Operations::llvm_fptoui(const struct Instruction &instruction) {
+////////////////////////////////////////////////////////
+
+void 
+FPtoUI::compute() {
 	double value;
 	uint64_t result;
 	if(instruction.conversion.immediate) {
@@ -831,7 +902,8 @@ void Operations::llvm_fptoui(const struct Instruction &instruction) {
 	}
 	instruction.general.returnRegister->setValue(&result);
 }
-void Operations::llvm_fptosi(const struct Instruction &instruction) {
+void
+FPtoSI::compute() {
 	double value;
 	int64_t result;
 	if(instruction.conversion.immediate) {
@@ -849,7 +921,8 @@ void Operations::llvm_fptosi(const struct Instruction &instruction) {
 	}
 	instruction.general.returnRegister->setValue(&result);	
 }
-void Operations::llvm_uitofp(const struct Instruction &instruction) {
+void
+UItoFP::compute() {
 	uint64_t value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -862,7 +935,8 @@ void Operations::llvm_uitofp(const struct Instruction &instruction) {
 
 	instruction.general.returnRegister->setValue(&result);
 }
-void Operations::llvm_sitofp(const struct Instruction &instruction) {
+void
+SItoFP::compute() {
 	int64_t value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -875,7 +949,8 @@ void Operations::llvm_sitofp(const struct Instruction &instruction) {
 
 	instruction.general.returnRegister->setValue(&result);
 }
-void Operations::llvm_fptrunc(const struct Instruction &instruction) {
+void 
+FPTrunc::compute() {
 	double value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -887,7 +962,8 @@ void Operations::llvm_fptrunc(const struct Instruction &instruction) {
 
 	instruction.general.returnRegister->setValue(&result);	
 }
-void Operations::llvm_fpext(const struct Instruction &instruction) {
+void
+FPExt::compute() {
 	double value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -899,7 +975,8 @@ void Operations::llvm_fpext(const struct Instruction &instruction) {
 
 	instruction.general.returnRegister->setValue(&result);		
 }
-void Operations::llvm_ptrtoint(const struct Instruction &instruction) {
+void
+PtrtoInt::compute() {
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
@@ -934,7 +1011,8 @@ void Operations::llvm_ptrtoint(const struct Instruction &instruction) {
 	instruction.general.returnRegister->setValue(&result);
 	}
 }
-void Operations::llvm_inttoptr(const struct Instruction &instruction) {
+void
+InttoPtr::compute() {
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
@@ -969,11 +1047,13 @@ void Operations::llvm_inttoptr(const struct Instruction &instruction) {
 	instruction.general.returnRegister->setValue(&result);
 	}	
 }
-void Operations::llvm_bitcast(const struct Instruction &instruction) {}
-void Operations::llvm_addrspacecast(const struct Instruction &instruction) {}
+void
+Bitcast::compute() { }
+void 
+AddrSpaceCast::compute() { }
 
-/* Operations::llvm Control Operations */
-void Operations::llvm_icmp(const struct Instruction &instruction) {
+void
+ICmp::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 	// uint64_t op1 = 0;
 	// uint64_t op2 = 0;
@@ -999,7 +1079,7 @@ void Operations::llvm_icmp(const struct Instruction &instruction) {
 		op2 = ((op2 ^ 0xFFFFFFFF)+1)*-1;
 	}
 	DPRINTF(LLVMOp, "Op1 = %d, Op2 = %d\n", op1, op2);	
-	*/
+	
 	if (instruction.other.compare.condition.eq) result = (op1 == op2);
 	else if (instruction.other.compare.condition.ne) result = (op1 != op2);
 	else if (instruction.other.compare.condition.ugt) result = (op1 > op2);
@@ -1014,7 +1094,8 @@ void Operations::llvm_icmp(const struct Instruction &instruction) {
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
 }
-void Operations::llvm_fcmp(const struct Instruction &instruction) {
+void
+FCmp::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
 	double op1 = 0.0;
 	double op2 = 0.0;
@@ -1089,7 +1170,8 @@ void Operations::llvm_fcmp(const struct Instruction &instruction) {
 	instruction.general.returnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, instruction.general.returnRegister->value);
 }
-void Operations::llvm_phi(const struct Instruction &instruction, std::string prevBB) {
+void
+Phi::compute() {
 	// <result> = phi <ty> [ <val0>, <label0>], ...
 	DPRINTF(LLVMOp, "Performing %s Operation, Previous BB was #%s\n", instruction.general.opCode, prevBB);
 	uint64_t val;
@@ -1108,8 +1190,11 @@ void Operations::llvm_phi(const struct Instruction &instruction, std::string pre
 	instruction.general.returnRegister->setValue(&val);
 	DPRINTF(LLVMOp, "Storing %u in Register %s\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }
-void Operations::llvm_call(const struct Instruction &instruction) {}
-void Operations::llvm_select(const struct Instruction &instruction) {
+void 
+Call::compute() { }
+
+void
+Select::compute() {
 	// Currently only supports integer types but the framework for doubles and floats
 	// exists within compute_node.cc and instruction.hh already
 	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
@@ -1140,76 +1225,175 @@ void Operations::llvm_select(const struct Instruction &instruction) {
 	}
 	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
 }
-void Operations::llvm_vaarg(const struct Instruction &instruction) {}
-void Operations::llvm_landingpad(const struct Instruction &instruction) {}
 
-/* Operations::llvm Vector Operations*/
-void Operations::llvm_extractelement(const struct Instruction &instruction) {}
-void Operations::llvm_insertelement(const struct Instruction &instruction) {}
-void Operations::llvm_shufflevector(const struct Instruction &instruction) {}
+*/
 
-/* Operations::llvm Aggregate Operations */
-void Operations::llvm_extractvalue(const struct Instruction &instruction) {}
-void Operations::llvm_insertvalue(const struct Instruction &instruction) {}
+//////////////////////////
 
-/* Custom Operations */
-void Operations::llvm_dmafence(const struct Instruction &instruction) {}
-void Operations::llvm_dmastore(const struct Instruction &instruction) {}
-void Operations::llvm_dmaload(const struct Instruction &instruction) {}
-void Operations::llvm_indexadd(const struct Instruction &instruction) {}
-void Operations::llvm_silentstore(const struct Instruction &instruction) {}
-void Operations::llvm_sine(const struct Instruction &instruction) {}
-void Operations::llvm_cosine(const struct Instruction &instruction) {}
+void 
+Add::powerCycle() {
 
-std::string convertImmediate(std::string dataType, std::string immediateValue) {
-	int arr1 = 0;
-	int arr2 = 0;
-	int integer = 0;
-	double doub;
-	float flt;
-	std::string temp;
-	char *array = &immediateValue[0];
-	char *end;
-	DPRINTF(IOAcc, "Type: %s, Value: %s\n",dataType, immediateValue);
-	if(dataType.compare("double") == 0) {
-		if(immediateValue[1] == 'x') {
-			doub = strtol(array, &end, 16);
-			uint64_t convert = (uint64_t) doub;
-			doub = *((double*)&convert);
-			temp = std::to_string(doub);
-		} else temp = sciToDecimal(immediateValue);
-	} else if(dataType.compare("float") == 0) {
-		if(immediateValue[1] == 'x') {
-			flt = strtol(array, &end, 16);
-			uint64_t convert = (uint64_t) flt;
-			doub = *((float*)&convert);
-			temp = std::to_string(flt);
-		} else temp = sciToDecimal(immediateValue);
-	} else { // Integer Value
-		if(immediateValue[1] == 'x') {
-			integer = strtol(array, &end, 0);
-			temp = std::to_string(integer);
-		} else temp = sciToDecimal(immediateValue);
-	}
-	DPRINTF(IOAcc, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
-	return temp;
 }
 
-std::string sciToDecimal(std::string immediateValue) {
-	int decimalLocation = 0;
-	int magnitudeLoc = 0;
-	int magnitude = 0;
+void 
+Sub::powerCycle() {
 
-	for(int i = 0; i < immediateValue.length()-1; i++) {
-		if(immediateValue[i] == '.') decimalLocation = i;
-		if(immediateValue[i] == 'e') magnitudeLoc = i;
+}
+
+void 
+Mul::powerCycle() {
+
+}
+
+void 
+UDiv::powerCycle() {
+
+}
+
+void 
+SDiv::powerCycle() {
+
+}
+
+void 
+URem::powerCycle() {
+
+}
+
+void 
+SRem::powerCycle() {
+
+}
+
+void 
+FAdd::powerCycle() {
+
+}
+
+void 
+FSub::powerCycle() {
+
+}
+
+void 
+FMul::powerCycle() {
+
+}
+
+void 
+FDiv::powerCycle() {
+
+}
+
+void 
+FRem::powerCycle() {
+
+}
+
+void 
+Shl::powerCycle() {
+
+}
+
+void 
+LShr::powerCycle() {
+
+}
+
+void 
+AShr::powerCycle() {
+
+}
+
+void 
+And::powerCycle() {
+
+}
+
+void 
+Or::powerCycle() {
+
+}
+
+void 
+Xor::powerCycle() {
+
+}
+
+///////////////////////////////////////////
+
+bool 
+InstructionBase::commit() {
+    /*
+	// If cycle count is = max cycle count, commit register value to memory
+	DPRINTF(LLVMRegister, "Committing (%s) Compute Node:\n", instruction.general.opCode);
+	if (instruction.general.returnRegister != NULL) {
+		DPRINTF(LLVMRegister, "Attempting to Commit Register (%s)\n", instruction.general.returnRegister->getName());
+		instruction.cycle.current++;
+		DPRINTF(LLVMRegister, "Cycle: Current = (%d) || Max = (%d) || Remaining = (%d)\n", instruction.cycle.current, instruction.cycle.max, instruction.cycle.max - instruction.cycle.current);
+		if (instruction.cycle.current >= instruction.cycle.max) {
+			instruction.general.returnRegister->commit();
+			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", instruction.general.returnRegister->getName(), instruction.general.returnRegister->value);
+			return true;
+		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
 	}
-	magnitude = stoi(immediateValue.substr(magnitudeLoc+2));
-	for(int i = decimalLocation; i < decimalLocation+magnitude; i++) {
-		immediateValue[i] = immediateValue[i+1];
+	return false;
+    */
+}
+
+
+
+std::vector<InstructionBase*> 
+InstructionBase::checkDependency() {
+	/*
+    bool hot = false;
+	bool phiBranchDependent = false;
+	DPRINTF(LLVMRegister, "Checking Dependencies for (%s) Compute Node!\n", instruction.general.opCode);
+	if(dependencies == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
+	if(instruction.general.opCode == "phi"){
+		DPRINTF(LLVMRegister,"Phi Instruction Detected: Previous BB = (%s)\n", prevBB);
+		for (int i = 0; i < MAXPHI; i++) {
+			if (prevBB == instruction.other.phi.label[i]) {
+				if(!instruction.other.phi.immVal[i]) {
+					phiBranchDependent = true;
+					if(instruction.other.phi.val[i]->getStatus()){
+						DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.other.phi.val[i]->getName());
+						hot = true;
+					} else {
+						DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
+					}
+				} else {
+					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded!\n", instruction.other.phi.val[i]);
+				}
+			}
+		}
+		if(!phiBranchDependent) DPRINTF(LLVMRegister, "No Dependencies!\n");
+	} else {
+		for (int i = 0; i < dependencies; i++) {
+			DPRINTF(LLVMRegister, "Checking Dependency #%d:\n", i+1);
+			// Increment counter for register dependency check
+			if (instruction.dependencies.registers[i]->getStatus()) {
+				DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.dependencies.registers[i]->getName());
+				hot = true;
+			} else {
+				DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.dependencies.registers[i]->getName());
+			}
+		}
 	}
-	immediateValue[decimalLocation+magnitude] = '.';
-	immediateValue = immediateValue.substr(0,magnitudeLoc);
-	
-	return immediateValue;
+	DPRINTF(LLVMRegister, "Checking Dependencies: Finished!\n\n");
+
+	if(!hot) {
+		if((instruction.general.returnRegister != NULL)) {
+			DPRINTF(LLVMRegister, "Writing to Register (%s)!\n",instruction.general.returnRegister->getName());
+			instruction.general.returnRegister->accessedWrite();
+		}
+		if(!instruction.general.terminator) {
+			for(int i = 0; i < dependencies; i++) {
+				DPRINTF(LLVMRegister, "Reading from register (%s)!\n", instruction.dependencies.registers[i]->getName());
+				instruction.dependencies.registers[i]->accessedRead();
+			}
+		}
+	}
+	return hot;
+    */
 }

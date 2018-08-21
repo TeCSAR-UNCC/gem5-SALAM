@@ -124,9 +124,9 @@ LLVMInterface::tick() {
             } else if (instr.general.opCode.find("phi") == 0) { // Phi Instruction
                 DPRINTF(LLVMInterface, "Queueing Phi Instruction!\n");
                 scheduled = true;
-                (*it)->compute(); // Send instruction t144834computation simulator
-                (*it)->commit(); // Phi instructions ha144834ndencies within BB, commit immediately 
-            } else { // General Computation Instruction144834
+                (*it)->compute(); // Send instruction to computation simulator
+                (*it)->commit(); // Phi instructions has dependencies within BB, commit immediately 
+            } else { // General Computation Instruction
                 DPRINTF(LLVMInterface, "Queueing Compute Instruction!\n"); 
                 scheduled = true;
                 execnodes++;
