@@ -144,9 +144,11 @@ class BasicBlock {
     // Previously list * cnList
     std::vector<InstructionBase*> _Nodes;
     // Previously name
+    std::string _PrevBB; // Not stored but should be here I think
     std::string _Name;
     // Previously bbID;
     uint64_t _BBID;
+  
   public:
     BasicBlock(const std::string& Name, uint64_t BBID);
     ~BasicBlock();
@@ -158,11 +160,11 @@ class BasicBlock {
     void debugParams(std::vector<std::string> &parameters);
     void setFlags(std::vector<std::string> &parameters, Instruction &instruction);
     bool isRegister(std::string data);
-    void setRegister(std::string data, Register *&reg, Instruction &instruction, RegisterList *list, std::vector<std::string> &parameters);
+    void setRegister(std::string data, Register *&reg, std::vector<*Register> &dependencies, RegisterList *list, std::vector<std::string> &parameters) {
     void setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction);
     void initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction);
     int setSize(std::string dataType);
-    void Parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
+    void parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
   protected:
   
 };

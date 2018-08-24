@@ -68,11 +68,11 @@ class RegisterList{
     //----- Begin Public ----------------------------------------------------//
     public:
         // ---- Constructor
-        RegisterList2()                  { _RegList = new std::list<Register*>(); }
+        RegisterList()                  { _RegList = new std::list<Register*>(); }
         // ---- Get Functions
         uint64_t size()                 { return _RegList->size(); }
         // ---- Helper Functions
-        Register2* findRegister(const std::string& Name);
+        Register* findRegister(const std::string& Name);
         void addRegister(Register *Reg) { _RegList->push_back(Reg); }
         void printRegNames();
     //----- End Public ------------------------------------------------------//

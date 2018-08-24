@@ -7,7 +7,7 @@ Add::compute() {
 	// <result> = add nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1 = 0;
 	int64_t op2 = 0;
 	int64_t result = 0;
@@ -40,7 +40,7 @@ Sub::compute() {
 	// <result> = sub nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1 = 0;
 	int64_t op2 = 0;
 	int64_t result = 0;
@@ -68,7 +68,7 @@ Mul::compute() {
 	// <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1 = 0;
 	int64_t op2 = 0;
 	int64_t result = 0;
@@ -92,7 +92,7 @@ Mul::compute() {
 void 
 UDiv::compute() {
 	// Unsigned Division
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	uint64_t op1 = 0;
 	uint64_t op2 = 0;
 	uint64_t result = 0;
@@ -116,7 +116,7 @@ UDiv::compute() {
 void 
 SDiv::compute() {
 	// Signed Division
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1 = 0;
 	int64_t op2 = 0;
 	int64_t result = 0;
@@ -140,7 +140,7 @@ SDiv::compute() {
 void 
 URem::compute() {
 	//Unsigned modulo division
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	uint64_t op1 = 0;
 	uint64_t op2 = 0;
 	uint64_t result = 0;
@@ -164,7 +164,7 @@ URem::compute() {
 void 
 SRem::compute() {
 	//Signed modulo division
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1 = 0;
 	int64_t op2 = 0;
 	int64_t result = 0;
@@ -189,7 +189,7 @@ void
 FAdd::compute() {
 	// Floating point Addition
 	// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
 	double result;
@@ -244,7 +244,7 @@ void
 FSub::compute() {
 	// Floating point Subtraction
 	// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
 	double result;
@@ -296,7 +296,7 @@ void
 FMul::compute() {
 	// Floating point Multiplication
 	// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
 	double result;
@@ -353,7 +353,7 @@ void
 FDiv::compute() {
 	// Floating point Division
 	// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
 	double result;
@@ -412,7 +412,7 @@ Shl::compute() {
 	// <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1;
 	int64_t op2;
 	int64_t result;
@@ -438,7 +438,7 @@ LShr::compute() {
 	// Logical Shift Right Operation
 	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1;
 	int64_t op2;
 	int64_t result;
@@ -464,7 +464,7 @@ AShr::compute() {
 	// Arithmatic Shift Right Operation
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1;
 	int64_t op2;
 	int64_t result;
@@ -492,7 +492,7 @@ void
 And::compute() {
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1;
 	int64_t op2;
 	int64_t result;
@@ -517,7 +517,7 @@ void
 Or::compute() {
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1;
 	int64_t op2;
 	int64_t result;
@@ -542,7 +542,7 @@ void
 Xor::compute() {
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	int64_t op1;
 	int64_t op2;
 	int64_t result;
@@ -605,7 +605,7 @@ Ret::compute() {
 
 void
 Br::compute() {
-	DPRINTF(LLVMOp, "Performing %s Operation!\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation!\n", _OpCode);
 
 	unsigned long long int condition = 0;
 
@@ -623,7 +623,7 @@ Br::compute() {
 
 void
 Switch::compute() {
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	uint64_t mainValue = instruction.terminator.value->getValue();
 	bool found = false;
 	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
@@ -662,7 +662,7 @@ GetElementPtr::compute {
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-	DPRINTF(LLVMGEP, "Performing %s Operation  (%s)\n", instruction.general.opCode, instruction.general.returnRegister->getName());
+	DPRINTF(LLVMGEP, "Performing %s Operation  (%s)\n", _OpCode, instruction.general.returnRegister->getName());
 	uint64_t index = instruction.memory.getptr.index;
 	uint64_t elements[MAXGPE];
 	uint64_t currentValue[MAXGPE];
@@ -1054,7 +1054,7 @@ AddrSpaceCast::compute() { }
 
 void
 ICmp::compute() {
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	// uint64_t op1 = 0;
 	// uint64_t op2 = 0;
 	uint64_t result = 0;
@@ -1096,7 +1096,7 @@ ICmp::compute() {
 }
 void
 FCmp::compute() {
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1 = 0.0;
 	double op2 = 0.0;
 	uint64_t result = 0;
@@ -1173,7 +1173,7 @@ FCmp::compute() {
 void
 Phi::compute() {
 	// <result> = phi <ty> [ <val0>, <label0>], ...
-	DPRINTF(LLVMOp, "Performing %s Operation, Previous BB was #%s\n", instruction.general.opCode, prevBB);
+	DPRINTF(LLVMOp, "Performing %s Operation, Previous BB was #%s\n", _OpCode, prevBB);
 	uint64_t val;
 	for (int i = 0; i < MAXPHI; i++) {
 		// Look for phi label that matches the previous basic block
@@ -1197,7 +1197,7 @@ void
 Select::compute() {
 	// Currently only supports integer types but the framework for doubles and floats
 	// exists within compute_node.cc and instruction.hh already
-	DPRINTF(LLVMOp, "Performing %s Operation\n", instruction.general.opCode);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	if(instruction.other.select.intTy) {
 		int val1 = 0;
 		int val2 = 0;
@@ -1326,7 +1326,7 @@ bool
 InstructionBase::commit() {
     /*
 	// If cycle count is = max cycle count, commit register value to memory
-	DPRINTF(LLVMRegister, "Committing (%s) Compute Node:\n", instruction.general.opCode);
+	DPRINTF(LLVMRegister, "Committing (%s) Compute Node:\n", _OpCode);
 	if (instruction.general.returnRegister != NULL) {
 		DPRINTF(LLVMRegister, "Attempting to Commit Register (%s)\n", instruction.general.returnRegister->getName());
 		instruction.cycle.current++;
@@ -1348,9 +1348,9 @@ InstructionBase::checkDependency() {
 	/*
     bool hot = false;
 	bool phiBranchDependent = false;
-	DPRINTF(LLVMRegister, "Checking Dependencies for (%s) Compute Node!\n", instruction.general.opCode);
+	DPRINTF(LLVMRegister, "Checking Dependencies for (%s) Compute Node!\n", _OpCode);
 	if(dependencies == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
-	if(instruction.general.opCode == "phi"){
+	if(_OpCode == "phi"){
 		DPRINTF(LLVMRegister,"Phi Instruction Detected: Previous BB = (%s)\n", prevBB);
 		for (int i = 0; i < MAXPHI; i++) {
 			if (prevBB == instruction.other.phi.label[i]) {

@@ -1,4 +1,5 @@
 #include "basic_block.hh"
+#include <memory>
 
 // ////////////////////////////////////////////////////////////////////
 // Compute Node Constructor 
@@ -19,32 +20,37 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	// ////////////////////////////////////////////////////////////////////
 	// Local Variables
 	std::vector<std::string> parameters; // Used to store each each element of the passed in LLVM instruction line 
+	std::vector<Register*> dependencies;
 	int leftDelimeter, rightDelimeter, lastInLine; // Used for parsing elements from the instruction line
 	int returnChk = line.find(" = "); // If a return register exists, this value is set greater than 0
 	int last = 0; // Set as index to the last element in the parameters vector once initialized
-	// ////////////////////////////////////////////////////////////////////
-	instruction.general.llvm_Line = line; // Store passed line into instruction struct.
-	setCommInterface(co);
-	setPrevBB(prev);  
+	Register * ret_reg = NULL;
+	std::string lineCpy = line;
+	std::string opCode;
+	std::string returnType;
+	std::string instructionType;
+	uint64_t maxCycles = 0;
+	uint64_t computeFlags = 0;
+	uint64_t attributeFlags = 0;
+
 	// ////////////////////////////////////////////////////////////////////
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
 		// Check if register already exists (It should not because SSA)
 		std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3); // Set return register name
-		Register * ret_reg = list->findRegister(ret_name); // Ensure the return register isnt already in the list 
+		ret_reg = list->findRegister(ret_name); // Ensure the return register isnt already in the list 
 		if(ret_reg == NULL) {
 		    // Create new pointer to the return register
-		    instruction.general.returnRegister = new Register(ret_name);
-		    list->addRegister(instruction.general.returnRegister);
-		    DPRINTF(LLVMRegister, "Creating Return Register: (%s)\n", instruction.general.returnRegister->getName());
+		    ret_reg = new Register(ret_name);
+		    list->addRegister(ret_reg);
+		    DPRINTF(LLVMRegister, "Creating Return Register: (%s)\n", ret_reg->getName());
 		} else {
-		    instruction.general.returnRegister = ret_reg;
 			DPRINTF(LLVMRegister, "Error: Trying to Create Duplicate Return Register!\n");
 		}
 		// In all instances where a return register is the first component, the next component is
 		// the opcode, which is parsed and removed from line
 		line = line.substr(returnChk + 3); // Skip over " = " 
-		instruction.general.opCode = line.substr(0, line.find(' ')); // Store opcode in instruction struct
+		opCode = line.substr(0, line.find(' ')); // Store opcode in instruction struct
 		line = line.substr(line.find(' ')); // Drop opcode and return register from instruction line
 	} else {
 		// If no return register is found then the first component must instead be the opcode
@@ -52,17 +58,16 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// Then store the opcode and remove the parsed information from the line
 		for (int i = 0; i < line.length(); i++) {
 			if (line[i] != ' ') {
-				instruction.general.opCode = line.substr(i, line.find(' ', i) - 2); // Store opcode in instruction struct
+				opCode = line.substr(i, line.find(' ', i) - 2); // Store opcode in instruction struct
 				line = line.substr(line.find(' ') + 1); // Drop opcode from instruction line
 				break;
 			}
 		}
 		// No return register needed
 		DPRINTF(LLVMRegister, "No Return Register Needed!\n");
-		instruction.general.returnRegister = NULL; // Set return register to NULL
 	}
 	// //////////////////////////////////////////////////////////////////////////////////
-	DPRINTF(ComputeNode, "Opcode Found: (%s)\n", instruction.general.opCode);
+	DPRINTF(ComputeNode, "Opcode Found: (%s)\n", opCode);
 	// Loop to break apart each component of the LLVM line
 	// Any brackets or braces that contain data are stored as under the parent set
 	// Components are pushed back into the parameter vector in order they are read
@@ -93,7 +98,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 				i += (rightDelimeter - i);
 			} else if (line[i] == '[') {
 				lastInLine = 0;
-				leftDelimeter = i + 1 + line.substr(i + 1).find('[');
+				leftDelimeter = i + 1 +instruction.binary line.substr(i + 1).find('[');
 				rightDelimeter = i + line.substr(i).find(']');
 				lastInLine = rightDelimeter;
 				while ((leftDelimeter < rightDelimeter) && (lastInLine >= 0)) {
@@ -154,12 +159,10 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 					parameters.push_back(line.substr(leftDelimeter));
 					i = (line.length() - 1);
 					// This will always be the last object on the line
-				}
+				}MemoryRequest* _Req
 			}
 		}
 	}
-	instruction.general.immediateCount = list->findRegister("ImmediateValue");
-	instruction.general.labelCount = list->findRegister("Label");
 	last = (parameters.size() - 1); // Set last to index the final value in the parameters vector
 	debugParams(parameters); // Prints all found parameters for the instruction line
 	// Once all components have been found, navigate through and define each component
@@ -177,84 +180,119 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	// Other Operations
 	// Custom Operations
 
-	switch (s_opMap[instruction.general.opCode]) {
+	switch (s_opMap[opCode]) {
 	// Terminator Instructions
 	case IR_Ret: {
 		// ret <type> <value>; Return a value from a non - void function
 		// ret void; Return from void function
 		// Set general instruction parameters
-		instruction.cycle.max = CYCLECOUNTRET;
-		instruction.general.terminator = true;
-		instruction.general.flowControl = true;
+		maxCycles = CYCLECOUNTRET;
+		instructionType = "Terminator";
 		if (parameters[last].find("void")) {
 			// If void is found then it must not have a return value
-			instruction.terminator.type = "void";
+			returnType = "void";
 		} else {
-			// If void is not found then the last parameters must be the return value,
-			// and preceding it the return type
-			instruction.terminator.type = parameters[last - 1];
-			// If return value is stored in a register
-			if(isRegister(parameters[last])) {
-				setRegister(parameters[last], instruction.terminator.value, instruction, list, parameters);
-				instruction.terminator.ivalue = "void";
-				instruction.terminator.intermediate = false;
-				instruction.terminator.value->setSize(instruction.terminator.type);
-			} else { // Should be optimized out of code
-			instruction.terminator.intermediate = true;
-			instruction.terminator.ivalue = parameters[last];
-			}
+			// Implementation Removed for Returns of Non-Void type
 		}
+		auto ret = std::make_shared<Ret>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co);
+		addNode(ret);
 		break;	
 	}
 	case IR_Br: {
 		// br i1 <cond>, label <iftrue>, label <iffalse>
 		// br label <dest>          ; Unconditional branch
-		instruction.general.terminator = true;
-		instruction.general.flowControl = true;
-		instruction.cycle.max = CYCLECOUNTBR;
+		instructionType = "Terminator";
+		maxCycles = CYCLECOUNTBR;
 		if (parameters.size() == 3) {
 			//Unconditional branch
-			instruction.terminator.unconditional = true;
-			instruction.terminator.type = "void";
-			instruction.terminator.dest = parameters[2].substr(1);
+			returnType = "void";
+			auto br = std::make_shared<Br>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											parameters[2].substr(1),
+											true);
+			addNode(br);
 		} else {
 			// Conditional Branch
-			instruction.terminator.type = parameters[1];
-			instruction.terminator.iftrue = parameters[4].substr(1);
-			instruction.terminator.iffalse = parameters[6].substr(1);
-			if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.cond, instruction, list, parameters);
-			instruction.terminator.cond->setSize(instruction.terminator.type);
+			returnType = parameters[1];
+			std::vector<std::string> branches;
+			Register* condition;
+			branches.push_back(parameters[4].substr(1)); // If True [0]
+			branches.push_back(parameters[6].substr(1)); // If False [1]
+			setRegister(parameters[2], condition, dependencies, list, parameters);
+			condition->setSize(returnType);
+			auto br = std::make_shared<Br>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											condition,
+											branches,
+											false);
+			addNode(br);
 		}
 		break;
 	}
 	case IR_Switch: {
 		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
-		instruction.general.terminator = true;
-		instruction.general.flowControl = true;
-		instruction.cycle.max = CYCLECOUNTSWITCH;
-		instruction.terminator.intty = parameters[1];
-		instruction.terminator.defaultdest = parameters[4].substr(1); 
+		instructionType = "Terminator";
+		maxCycles = CYCLECOUNTSWITCH;
+		returnType = parameters[1];
+		std::vector<std::string> branches;
+		std::vector<int>caseValues;
+		Register* condition;
+		branches.push_back(parameters[4].substr(1)); // Default Destination [0]
+		caseValues.push_back(0); // Initialize first location of case values for Index Matching 
+		// Derive case statements
 		int location = 0;
 		int length = 0;
 		int statements = 0;
-		int i = 0;
+		int i = 1;
 		std::string cases[MAXCASES][2];
-		if(isRegister(parameters[2])) setRegister(parameters[2], instruction.terminator.value, instruction, list, parameters);
+		setRegister(parameters[2], condition, dependencies, list, parameters);
+		// Determine the number of case statements 
 		for(int k = 0; k < parameters[5].size(); k++) {
 			if(parameters[5][k] == '%') statements++;
 		}
-		instruction.terminator.cases.statements = statements;
-		while(i < statements) {
+		// Set the value and location of each case statement
+		while(i <= statements) {
 			location = parameters[5].find_first_of('i', location);
 			location = parameters[5].find_first_of(' ', location) + 1;
 			length = parameters[5].find_first_of(',', location) - location;
-			instruction.terminator.cases.value[i] = stoi(parameters[5].substr(location, length));
+			caseValues.push_back(stoi(parameters[5].substr(location, length)));
 			location = parameters[5].find_first_of('%', location)+1;
 			length = parameters[5].find_first_of(' ', location) - location;
-			instruction.terminator.cases.dest[i] = parameters[5].substr(location, length);
-			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", instruction.terminator.cases.value[i], instruction.terminator.cases.dest[i]);
+			branches.push_back(parameters[5].substr(location, length));
+			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", caseValues.at(i), branches.at(i));
 			i++;
 		}
+		auto swtch = std::make_shared<Switch>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												condition,
+												branches,
+												caseValues);
+		addNode(swtch);
 		break;
 	}
 	case IR_IndirectBr: {
@@ -267,12 +305,13 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	}
 	case IR_Resume: {
 		// resume <type> <value>
-		instruction.general.terminator = true;
-		instruction.general.flowControl = true;
-		instruction.cycle.max = CYCLECOUNTRESUME;
-		instruction.terminator.type = parameters[0];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.terminator.value, instruction, list, parameters);
+		instructionType = "Terminator";
+		maxCycles = CYCLECOUNTRESUME;
+		returnType = parameters[0];
+		Register* condition;
+		setRegister(parameters[1], condition, dependencies, list, parameters);
 		break;
+		// Untested Implementation
 	}
 	case IR_Unreachable: {
 		// The unreachable instruction has no defined semantics.
@@ -284,24 +323,50 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.adder = true;
-		instruction.cycle.max = CYCLECOUNTADD;
-		instruction.general.binary = true;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		maxCycles = CYCLECOUNTADD;
+		instructionType = "Binary";
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto add = std::make_shared<Add>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(add);
 		break;
 	}
 	case IR_FAdd: {
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.floatingPoint = true;
-		instruction.general.adder = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTFADD;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTFADD;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		double immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		auto fadd = std::make_shared<FAdd>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(fadd);
 		break;
 	}
 	case IR_Sub: {
@@ -309,24 +374,52 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sub nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.adder = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTSUB;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTSUB;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto sub = std::make_shared<Sub>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(sub);
 		break;
 	}
 	case IR_FSub: {
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.floatingPoint = true;
-		instruction.general.adder = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTFSUB;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTFSUB;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		double immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		auto fsub = std::make_shared<FSub>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(fsub);_Req = NULL;
+                          _CurrCycle = 0; 
+                          _Usage = 0;
 		break;
 	}
 	case IR_Mul: {
@@ -334,90 +427,196 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = mul nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTMUL;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTMUL;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto mul = std::make_shared<Mul>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(mul);
 		break;
 	}
 	case IR_FMul: {
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result.
-		instruction.general.floatingPoint = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTFMUL;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTFMUL;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		double immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		auto fmul = std::make_shared<FMul>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(fmul);
 		break;
 	}
 	case IR_UDiv: {
 		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTUDIV;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTUDIV;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto udiv = std::make_shared<UDiv>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(udiv);
 		break;
 	}
 	case IR_SDiv: {
 		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTSDIV;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTSDIV;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto sdiv = std::make_shared<SDiv>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(sdiv);
 		break;
 	}
 	case IR_FDiv: {
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.floatingPoint = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTFDIV;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTFDIV;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		double immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		auto fdiv = std::make_shared<FDiv>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(fdiv);
 		break;
 	}
 	case IR_URem: {
 		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.integer = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTUREM;
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTUREM;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto urem = std::make_shared<URem>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(urem);
 		break;
 	}
 	case IR_SRem: {
 		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.integer = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTSREM;
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTSREM;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto srem = std::make_shared<SRem>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(srem);
 		break;
 	}
 	case IR_FRem: {
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.floatingPoint = true;
-		instruction.general.multiplier = true;
-		instruction.general.binary = true;
-		instruction.cycle.max = CYCLECOUNTFREM;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Binary";
+		maxCycles = CYCLECOUNTFREM;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		double immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		auto frem = std::make_shared<FRem>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(frem);
 		break;
 	}
 	// Bitwise Operations
@@ -426,67 +625,147 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = shl nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.shifter = true;
-		instruction.general.bitwise = true;
-		instruction.cycle.max = CYCLECOUNTSHL;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Bitwise";
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto shl = std::make_shared<Shl>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(shl);
 		break;
 	}
 	case IR_LShr: {
 		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
-		instruction.general.integer = true;
-		instruction.general.shifter = true;
-		instruction.general.bitwise = true;
-		instruction.cycle.max = CYCLECOUNTLSHR;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Bitwise";
+		maxCycles = CYCLECOUNTLSHR;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto lshr = std::make_shared<LShr>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(lshr);
 		break;
 	}
 	case IR_AShr: {
 		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result.
-		instruction.general.integer = true;
-		instruction.general.shifter = true;
-		instruction.general.bitwise = true;
-		instruction.cycle.max = CYCLECOUNTASHR;
-		setFlags(parameters, instruction);
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Bitwise";
+		maxCycles = CYCLECOUNTASHR;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto ashr = std::make_shared<AShr>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(ashr);
 		break;
 	}
 	case IR_And: {
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.integer = true;
-		instruction.general.bit = true;
-		instruction.general.bitwise = true;
-		instruction.cycle.max = CYCLECOUNTAND;
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Bitwise";
+		maxCycles = CYCLECOUNTAND;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto and = std::make_shared<And>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(and);
 		break;
 	}
 	case IR_Or: {
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.integer = true;
-		instruction.general.bit = true;
-		instruction.general.bitwise = true;
-		instruction.cycle.max = CYCLECOUNTOR;
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Bitwise";
+		maxCycles = CYCLECOUNTOR;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto or = std::make_shared<Or>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(or);
 		break;
 	}
 	case IR_Xor: {
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
-		instruction.general.integer = true;
-		instruction.general.bit = true;
-		instruction.general.bitwise = true;
-		instruction.cycle.max = CYCLECOUNTXOR;
-		initializeReturnRegister(parameters, instruction);
-		setOperands(list, parameters, instruction);
+		instructionType = "Bitwise";
+		maxCycles = CYCLECOUNTXOR;
+		computeFlags = setFlags(parameters);
+		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		int64_t immOp = 0;
+		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		auto xor = std::make_shared<Xor>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp );
+		addNode(xor);
 		break;
 	}
 	// Memory Operations
@@ -499,8 +778,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = load atomic[volatile] <ty>* <pointer>[singlethread] <ordering>, align <alignment>
 		//	!<index> = !{ i32 1 }
 		// Set memory operation flag to true
-		instruction.general.memory = true;
-		instruction.cycle.max = CYCLECOUNTLOAD;
+		instructionType = "Memory";
+		maxCycles = CYCLECOUNTLOAD;
 		// Index variable tracks keywords starting from the beginning of instruction
 		int index = 0;
 		// Check if instruction has volatilte keyword
@@ -520,7 +799,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		while (parameters[align].compare("align") != 0)
 		    align++;
 		// Determine if register that contains load address exists
-		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], instruction.memory.load.pointer, instruction, list, parameters);
+		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], instruction.memory.load.pointer, dependencies, list, parameters);
 		// Set value for alignment
 		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
 	        instruction.memory.load.align = stoi(parameters[align + 1]);
@@ -529,8 +808,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Store: {
 		// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 		// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
-		instruction.general.memory = true;
-		instruction.cycle.max = CYCLECOUNTSTORE;
+		instructionType = "Memory";
+		maxCycles = CYCLECOUNTSTORE;
 		int index = 1;
 		if (parameters[1] == "volatile") {
 			index = 2;
@@ -538,11 +817,11 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		}
 		instruction.memory.store.ty = parameters[index];
 		
-		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, instruction, list, parameters);
+		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, dependencies, list, parameters);
 		else DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
 		
 		if(isRegister(parameters[index + 1])) {
-			setRegister(parameters[index + 1], instruction.memory.store.value, instruction, list, parameters);
+			setRegister(parameters[index + 1], instruction.memory.store.value, dependencies, list, parameters);
 			instruction.memory.store.value->setSize(instruction.memory.store.ty);
 		} else {
 			instruction.memory.store.immediate = true;
@@ -562,8 +841,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		int index = 0;
 		int j = 0;
 		std::string customDataType;
-		instruction.general.memory = true;
-		instruction.cycle.max = CYCLECOUNTGETELEMENTPTR;
+		instructionType = "Memory";
+		maxCycles = CYCLECOUNTGETELEMENTPTR;
 		instruction.general.returnRegister->setSize("pointer");
 		instruction.general.integer = true;
 		instruction.general.multiplier = true;
@@ -617,7 +896,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			instruction.memory.getptr.ty[j] = parameters[index+i];
 			//if(parameters[index+i+1][0] == '%') {
 			if(isRegister(parameters[index+i+1])) {
-				setRegister(parameters[index+i+1], instruction.memory.getptr.idx[j], instruction, list, parameters);
+				setRegister(parameters[index+i+1], instruction.memory.getptr.idx[j], dependencies, list, parameters);
 				instruction.memory.getptr.immediate[j] = false;
 				instruction.memory.getptr.immdx[j] = 0;
 				DPRINTF(LLVMGEP, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
@@ -647,287 +926,379 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	// Conversion Operations
 	case IR_Trunc: {
 		// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTTRUNC;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTTRUNC;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto trnc = std::make_shared<Trunc>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(trnc);
 		break;
 	}
 	case IR_ZExt: {
 		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTZEXT;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTZEXT;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto zext = std::make_shared<ZExt>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(zext);
 		break;
 	}
 	case IR_SExt: {
 		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTSEXT;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTSEXT;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto sext = std::make_shared<SExt>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(sext);
 		break;
 	}
 	case IR_FPToUI: {
 		// <result> = fptoui <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTFPTOUI;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTFPTOUI;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto fptoui = std::make_shared<FPToUI>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(fptoui);
 		break;
 	}
 	case IR_FPToSI: {
 		// <result> = fptosi <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTFPTOSI;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTFPTOSI;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto fptosi = std::make_shared<FPToSI>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(fptosi);
 		break;
 	}
 	case IR_UIToFP: {
 		// <result> = uitofp <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTUITOFP;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTUITOFP;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto uitofp = std::make_shared<UIToFP>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(uitofp);
 		break;
 	}
 	case IR_SIToFP: {
 		// <result> = sitofp <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTSITOFP;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTSITOFP;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto sitofp = std::make_shared<SIToFP>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(sitofp);
 		break;
 	}
 	case IR_FPTrunc: {
 		// <result> = fptrunc <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTFPTRUNC;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTFPTRUNC;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto fptrunc = std::make_shared<FPTrunc>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(fptrunc);
 		break;
 	}
 	case IR_FPExt: {
 		// <result> = fpext <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTFPEXT;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTFPEXT;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto fpext = std::make_shared<FPExt>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(fpext);
 		break;
 	}
 	case IR_PtrToInt: {
 		// <result> = ptrtoint <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTPTRTOINT;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTPTRTOINT;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto ptrtoint = std::make_shared<PtrToInt>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(ptrtoint);
 		break;
 	}
 	case IR_IntToPtr: {
 		// <result> = inttoptr <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTINTTOPTR;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTINTTOPTR;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto inttoptr = std::make_shared<IntToPtr>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(inttoptr);
 		break;
 	}
 	case IR_BitCast: {
 		// <result> = bitcast <ty> <value> to <ty2>             ; yields ty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTBITCAST;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTBITCAST;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto bitcast = std::make_shared<BitCast>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												originalType,
+												operand);
+		addNode(bitcast);
 		break;
 	}
 	case IR_AddrSpaceCast: {
 		// <result> = addrspacecast <pty> <ptrval> to <pty2>       ; yields pty2
-		instruction.general.conversion = true;
-		instruction.cycle.max = CYCLECOUNTADDRSPACECAST;
-		instruction.conversion.ty = parameters[0];
-		instruction.conversion.ty2 = parameters[3];
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.conversion.value, instruction, list, parameters);
-		else {
-			instruction.conversion.immVal = stoi(parameters[1]);
-			instruction.conversion.immediate = true;
-		}
+		instructionType = "Conversion";
+		maxCycles = CYCLECOUNTADDRSPACECAST;
+		returnType = parameters[0];
+		std::string originalType = parameters[3];
+		Register* operand = NULL;
+		if(isRegister(parameters[1])) setRegister(parameters[1], operand, dependencies, list, parameters);
+		auto addrspacecast = std::make_shared<AddrSpaceCast>(	lineCpy, 
+																opCode, 
+																returnType, 
+																instructionType, 
+																ret_reg, 
+																maxCycles, 
+																dependencies, 
+																co,
+																originalType,
+																operand);
+		addNode(addrspacecast);
 		break;
 	}
 	// Other Operations - Compare
 	case IR_ICmp: {
 		// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
-		instruction.general.other = true;
-		instruction.general.compare = true;
-		instruction.general.integer = true;
-		instruction.general.shifter = true;
-		instruction.other.compare.condition.cond = parameters[0];
-		instruction.cycle.max = CYCLECOUNTICMP;
-		instruction.other.compare.ty = parameters[1];
-		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
-
+		instructionType = "Compare";
+		std::string condition = parameters[0];
+		maxCycles = CYCLECOUNTICMP;
+		returnType = parameters[1];
+		std::vector<Register*> regOps;
+		int64_t immOp = 0;
+		Register* op1;
+		Register* op2;
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.other.compare.op2, instruction, list, parameters);	
-		else {
-			instruction.other.compare.immediate2 = true;
-			instruction.other.compare.iop2 = parameters[last];
-		}
-
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op1, dependencies, list, parameters);	
+			regOps.push_back(op1);
+		} 
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.other.compare.op1, instruction, list, parameters);
-		else {
-			instruction.other.compare.immediate1 = true;
-			instruction.other.compare.iop1 = parameters[last - 1];
-		}
-
-		if (instruction.other.compare.condition.cond == "eq")
-			instruction.other.compare.condition.eq = true;
-		else if (instruction.other.compare.condition.cond == "ne")
-			instruction.other.compare.condition.ne = true;
-		else if (instruction.other.compare.condition.cond == "ugt")
-			instruction.other.compare.condition.ugt = true;
-		else if (instruction.other.compare.condition.cond == "uge")
-			instruction.other.compare.condition.uge = true;
-		else if (instruction.other.compare.condition.cond == "ult")
-			instruction.other.compare.condition.ult = true;
-		else if (instruction.other.compare.condition.cond == "ule")
-			instruction.other.compare.condition.ule = true;
-		else if (instruction.other.compare.condition.cond == "sgt")
-			instruction.other.compare.condition.sgt = true;
-		else if (instruction.other.compare.condition.cond == "sge")
-			instruction.other.compare.condition.sge = true;
-		else if (instruction.other.compare.condition.cond == "slt")
-			instruction.other.compare.condition.slt = true;
-		else if (instruction.other.compare.condition.cond == "sle")
-			instruction.other.compare.condition.sle = true;
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op2, dependencies, list, parameters);
+			regOps.push_back(op2);
+		} else immOp = stoi(parameters[last - 1]);
+		if (condition == "eq") computeFlags = EQ;
+		else if (condition == "ne") computeFlags = NE;
+		else if (condition == "ugt") computeFlags = UGT;
+		else if (condition == "uge") computeFlags = UGE;
+		else if (condition == "ult") computeFlags = ULT;
+		else if (condition == "ule") computeFlags = ULE;
+		else if (condition == "sgt") computeFlags = SGT;
+		else if (condition == "sge") computeFlags = SGE;
+		else if (condition == "slt") computeFlags = SLT;
+		else if (condition == "sle") computeFlags = SLE;
+		auto icmp = std::make_shared<ICmp>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp);
+		addNode(icmp);
 		break;
 	}
 	case IR_FCmp: {
 		// <result> = fcmp <cond> <ty> <op1>, <op2>     ; yields {i1} or {<N x i1>}:result
-		instruction.general.other = true;
-		instruction.general.compare = true;
-		instruction.other.compare.condition.cond = parameters[0];
-		instruction.cycle.max = CYCLECOUNTFCMP;
-		instruction.other.compare.ty = parameters[1];
-		instruction.general.integer = true;
-		instruction.general.shifter = true;
-		instruction.general.returnRegister->setSize(instruction.other.compare.ty);
-
+		instructionType = "Compare";
+		std::string condition = parameters[0];
+		maxCycles = CYCLECOUNTFCMP;
+		returnType = parameters[1];
+		std::vector<Register*> regOps;
+		double immOp = 0;
+		Register* op1;
+		Register* op2;
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.other.compare.op2, instruction, list, parameters);
-		else {
-			instruction.other.compare.immediate2 = true;
-			instruction.other.compare.iop2 = parameters[last];
-		}
-
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op1, dependencies, list, parameters);	
+			regOps.push_back(op1);
+		} 
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.other.compare.op1, instruction, list, parameters);
-		else {
-			instruction.other.compare.immediate1 = true;
-			instruction.other.compare.iop1 = parameters[last - 1];
-		}
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op2, dependencies, list, parameters);
+			regOps.push_back(op2);
+		} else immOp = stof(convertImmediate(returnType, parameters[last - 1]);
 		
-		if (instruction.other.compare.condition.cond == "false")
-			instruction.other.compare.condition.condFalse = true;
-		else if (instruction.other.compare.condition.cond == "oeq")
-			instruction.other.compare.condition.oeq = true;
-		else if (instruction.other.compare.condition.cond == "ogt")
-			instruction.other.compare.condition.ogt = true;
-		else if (instruction.other.compare.condition.cond == "oge")
-			instruction.other.compare.condition.oge = true;
-		else if (instruction.other.compare.condition.cond == "olt")
-			instruction.other.compare.condition.olt = true;
-		else if (instruction.other.compare.condition.cond == "ole")
-			instruction.other.compare.condition.ole = true;
-		else if (instruction.other.compare.condition.cond == "one")
-			instruction.other.compare.condition.one = true;
-		else if (instruction.other.compare.condition.cond == "ord")
-			instruction.other.compare.condition.ord = true;
-		else if (instruction.other.compare.condition.cond == "ueq")
-			instruction.other.compare.condition.ueq = true;
-		else if (instruction.other.compare.condition.cond == "ugt")
-			instruction.other.compare.condition.ugt = true;
-		else if (instruction.other.compare.condition.cond == "uge")
-			instruction.other.compare.condition.uge = true;
-		else if (instruction.other.compare.condition.cond == "ult")
-			instruction.other.compare.condition.ult = true;
-		else if (instruction.other.compare.condition.cond == "ule")
-			instruction.other.compare.condition.ule = true;
-		else if (instruction.other.compare.condition.cond == "une")
-			instruction.other.compare.condition.une = true;
-		else if (instruction.other.compare.condition.cond == "uno")
-			instruction.other.compare.condition.uno = true;
-		else if (instruction.other.compare.condition.cond == "true")
-			instruction.other.compare.condition.condTrue = true;
-
+		if (condition == "false") computeFlags = CONDFALSE;
+		else if (condition == "oeq") computeFlags = OEQ;
+		else if (condition == "ogt") computeFlags = OGR;
+		else if (condition == "oge") computeFlags = OGE;
+		else if (condition == "olt") computeFlags = OLT;
+		else if (condition == "ole") computeFlags = OLE;
+		else if (condition == "one") computeFlags = ONE;
+		else if (condition == "ord") computeFlags = ORD;
+		else if (condition == "ueq") computeFlags = UEQ;
+		else if (condition == "ugt") computeFlags = UGT;
+		else if (condition == "uge") computeFlags = UGE;
+		else if (condition == "ult") computeFlags = ULT;
+		else if (condition == "ule") computeFlags = ULE;
+		else if (condition == "une") computeFlags = UNE;
+		else if (condition == "uno") computeFlags = UNO;
+		else if (condition == "true") computeFlags = CONDTRUE;
+		auto fcmp = std::make_shared<FCmp>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											regOps,
+											computeFlags,
+											immOp);
+		addNode(fcmp);
 		break;
 	}
 	case IR_PHI: {
 		// <result> = phi <ty> [ <val0>, <label0>], ...
-		instruction.general.other = true;
+		instructionType = "Other";
 		instruction.general.phi = true;
-		instruction.general.flowControl = true;
-		instruction.cycle.max = CYCLECOUNTPHI;
+		
+		maxCycles = CYCLECOUNTPHI;
 		instruction.other.phi.ty = parameters[0];
 		instruction.general.returnRegister->setSize(instruction.other.phi.ty);
 		std::string *val = new std::string[last];
@@ -942,7 +1313,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			labelLength = instruction.other.phi.ival[i - 1].find(']') - labelLength;
 			label[i - 1] = instruction.other.phi.ival[i - 1].substr((instruction.other.phi.ival[i - 1].find(',')) + 3, labelLength - 4);
 			if(isRegister(val[i-1])) {
-				setRegister(val[i-1], instruction.other.phi.val[i - 1], instruction, list, parameters);
+				setRegister(val[i-1], instruction.other.phi.val[i - 1], dependencies, list, parameters);
 				instruction.other.phi.ival[i - 1].clear();
 				instruction.other.phi.immVal[i - 1] = false;
 				instruction.other.phi.label[i - 1] = label[i - 1];
@@ -969,8 +1340,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Select: {
 		// <result> = select selty <cond>, <ty> <val1>, <ty> <val2>             ; yields ty
 		// selty is either i1 or {<N x i1>}
-		instruction.general.other = true;
-		instruction.cycle.max = CYCLECOUNTSELECT;
+		instructionType = "Other";
+		maxCycles = CYCLECOUNTSELECT;
 		instruction.other.select.ty = parameters[2];
 		instruction.general.returnRegister->setSize(instruction.other.select.ty);
 
@@ -985,12 +1356,12 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		} else if(parameters[2] == "double") {
 			instruction.other.select.doubleTy = true;
 		} else { }
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.other.select.cond, instruction, list, parameters);
+		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.other.select.cond, dependencies, list, parameters);
 		else {
 			instruction.other.select.icondFlag = true;
 			if(parameters[1] == "true") instruction.other.select.icond = true;
 		}
-		if(isRegister(parameters[3])) setRegister(parameters[3], instruction.other.select.val1, instruction, list, parameters);
+		if(isRegister(parameters[3])) setRegister(parameters[3], instruction.other.select.val1, dependencies, list, parameters);
 		else {
 			///////////////////////////////////
 			instruction.other.select.immediate[0] = true;
@@ -1001,7 +1372,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			} else if(parameters[2] == "double") {
 			} else { }
 		}
-		if(isRegister(parameters[5])) setRegister(parameters[5], instruction.other.select.val2, instruction, list, parameters);
+		if(isRegister(parameters[5])) setRegister(parameters[5], instruction.other.select.val2, dependencies, list, parameters);
 		else {
 			////////////////////////////////
 			instruction.other.select.immediate[1] = true;
@@ -1056,6 +1427,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	default: { break; }
 	}
 	dependencyList(parameters, dependencies);
+
+
 }
 
 void
@@ -1073,7 +1446,6 @@ ComputeNode::dependencyList(std::vector<std::string> &parameters, int dependenci
 }
 
 
-
 BasicBlock::BasicBlock(const std::string& Name, uint64_t BBID) {
     //cnList = new std::list<ComputeNode *>();
     _Name = Name;
@@ -1084,7 +1456,6 @@ void
 BasicBlock::addNode(InstructionBase* Node) {
     _Nodes->push_back(Node);
 }
-
 
 std::string 
 BasicBlock::convertImmediate(std::string dataType, std::string immediateValue) {
@@ -1141,16 +1512,16 @@ BasicBlock::sciToDecimal(std::string immediateValue) {
 	return immediateValue;
 }
 
-
 void
 BasicBlock::debugParams(std::vector<std::string> &parameters) { 
-	DPRINTF(ComputeNode, "Creating (%s) Compute Node:\n", instruction.general.opCode);
+	DPRINTF(ComputeNode, "Creating (%s) Compute Node:\n", opCode);
 	if(DEBUGPARAMS) for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
 	DPRINTF(ComputeNode, "\n");
 }
 
-void
-BasicBlock::setFlags(std::vector<std::string> &parameters, Instruction &instruction) {
+uint64_t
+BasicBlock::setFlags(std::vector<std::string> &parameters) {
+	/*
 	for(int i = 0; i < parameters.size(); i++){
 		if (parameters[i] == "nuw") instruction.flags.nuw = true;
 		else if (parameters[i] == "nsw") instruction.flags.nsw = true;
@@ -1164,6 +1535,8 @@ BasicBlock::setFlags(std::vector<std::string> &parameters, Instruction &instruct
 		else if (parameters[i] == "fast") instruction.flags.fast = true;
 		else if (parameters[i] == "exact") instruction.flags.exact = true;
 	}
+	*/
+	return 0;
 }
 
 bool 
@@ -1173,82 +1546,95 @@ BasicBlock::isRegister(std::string data){
 }
 
 void
-BasicBlock::setRegister(std::string data, Register *&reg, Instruction &instruction, RegisterList *list, std::vector<std::string> &parameters) {
+BasicBlock::setRegister(std::string data, Register *&reg, std::vector<Register*> &dependencies, RegisterList *list, std::vector<std::string> &parameters) {
 	std::string name = data.substr(1);
 	if (list->findRegister(name) == NULL) {
 		reg = new Register(name);
 		list->addRegister(reg);
-		instruction.dependencies.registers[dependencies] = reg;
-		dependencies++;
+		dependencies.push_back(reg);
 		} else {
 		reg = list->findRegister(name);
-		instruction.dependencies.registers[dependencies] = reg;
-		dependencies++;
+		dependencies.push_back(reg);
 	}
 }
 
 void
-BasicBlock::initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction){
+BasicBlock::initializeReturnRegister(std::vector<std::string> &parameters, Register *&reg , std::string &returnType, const std::string &instructionType ){
 	int last = parameters.size() - 1;
-	if(instruction.general.binary){
+	if(!(instructionType.compare("Binary"))){
 		// Set instruction return type <ty>
-		instruction.binary.ty = parameters[last - 2];
+		returnType = parameters[last - 2];
 		// Set size of return register to match instruction return type
-		instruction.general.returnRegister->setSize(instruction.binary.ty);	
+		reg->setSize(returnType);	
 	}
-	else if(instruction.general.bitwise){
+	else if(!(instructionType.compare("Bitwise"))){
 		// Set instruction return type <ty>
-		instruction.bitwise.ty = parameters[last - 2];
+		returnType = parameters[last - 2];
 		// Set size of return register to match instruction return type
-		instruction.general.returnRegister->setSize(instruction.bitwise.ty);
+		reg->setSize(returnType);
 	}
-	instruction.general.returnType = parameters[last-2];
 }
 
-void
-BasicBlock::setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction) {
+std::vector<Register*>
+BasicBlock::setRegOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const string& instructionType) {
 	int last = parameters.size() - 1;
-	if(instruction.general.binary){
+	Register* op;
+	std::vector<Register*> operands;
+	if(!(instructionType.compare("Binary"))){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.binary.op2, instruction, list, parameters);
+		if(isRegister(parameters[last])) setRegister(parameters[last], op, dependencies, list, parameters);
+		// Operand 1
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], op, dependencies, list, parameters);
+
+	} else if(!(instructionType.compare("Bitwise"))) {
+		// Operand 2
+		// Check if adding from register or immediate value
+		if(isRegister(parameters[last])) setRegister(parameters[last], op, dependencies, list, parameters);
+		// Operand 1
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], op, dependencies, list, parameters);
+	}
+}
+
+std::vector<std::string>
+BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const string& instructionType) {
+	int last = parameters.size() - 1;
+	std::vector<std::string> operands;
+	if(!(instructionType.compare("Binary"))){
+		// Operand 2
+		// Check if adding from register or immediate value
+		if(isRegister(parameters[last])) 
 		else {
 			// Operation uses immediate value
-			// Set immediate flag true
-			instruction.binary.immediate2 = true;
 			// Load string representation of immediate value
-			instruction.binary.iop2 = parameters[last];
+			operands.push_back([last]);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.binary.op1, instruction, list, parameters);
+		if(isRegister(parameters[last-1])) 
 		else {
 			// Operation uses immediate value
-			// Set immediate flag true
-			instruction.binary.immediate1 = true;
 			// Load string representation of immediate value
-			instruction.binary.iop1 = parameters[last - 1];
+			operands.push_back(parameters[last - 1]);
 		}
-	} else if(instruction.general.bitwise) {
+	} else if(!(instructionType.compare("Bitwise"))) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) setRegister(parameters[last], instruction.bitwise.op2, instruction, list, parameters);
+		if(isRegister(parameters[last])) 
 		else {
 			// Operation uses immediate value
-			// Set immediate flag true
-			instruction.bitwise.immediate2 = true;
 			// Load string representation of immediate value
-			instruction.bitwise.iop2 = parameters[last];
+			operands.push_back(parameters[last]);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], instruction.bitwise.op1, instruction, list, parameters);
+		if(isRegister(parameters[last-1])) 
 		else {
 			// Operation uses immediate value
-			// Set immediate flag true
-			instruction.bitwise.immediate1 = true;
 			// Load string representation of immediate value
-			instruction.bitwise.iop1 = parameters[last - 1];
+			operands.push_back(parameters[last - 1]);
 		}
 	}
 }

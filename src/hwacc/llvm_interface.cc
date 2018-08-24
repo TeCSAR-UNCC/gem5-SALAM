@@ -60,35 +60,7 @@ LLVMInterface::tick() {
         if ((*it)->commit()) {
             // If compute node is ready to commit, fetch the updated instruction struct
             Instruction instr = (*it)->getInstruction(); // Update instruction data struct
-            pwrUtil->update(instr);
-            // opCount[instr.general.opCode]++; // Increment intruction use counter
             it = computeQueue->erase(it); // Remove the compute node from the queue
-            // Determine maximum number of hardware units needed
-            if(instr.general.multiplier) {
-                if(instr.general.integer) {
-                    intMultiplierCount++;
-                    pwrUtil->currUnits(intMultiplierCount, MULUNIT, instr.general.floatingPoint);
-                } else if(instr.general.floatingPoint) {
-                    fpMultiplierCount++;
-                    pwrUtil->currUnits(fpMultiplierCount, MULUNIT, instr.general.floatingPoint);
-                    if(!instr.general.opCode.find("fdiv")) fpDivision++;
-                }
-            } else if(instr.general.adder) {
-                if(instr.general.integer) {
-                    intAdderCount++;
-                    pwrUtil->currUnits(intAdderCount, ADDUNIT, instr.general.floatingPoint);
-                } else if(instr.general.floatingPoint) {
-                    fpAdderCount++;
-                    pwrUtil->currUnits(fpAdderCount, ADDUNIT, instr.general.floatingPoint);
-                }
-            } else if(instr.general.bit) {
-                bitCount++;
-                pwrUtil->currUnits(bitCount, BITUNIT, instr.general.floatingPoint);
-            } else if(instr.general.shifter) {
-                shiftCount++;
-                pwrUtil->currUnits(shiftCount, SHIFTUNIT, instr.general.floatingPoint);
-            }
-            // ///////////////////////////////////////////////////////////
         } else {
             ++it; // Compute node is not ready, check next node
         }
@@ -257,16 +229,14 @@ LLVMInterface::constructBBList() {
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine. 
 *********************************************************************************************/
     DPRINTF(LLVMInterface, "Constructing Dependency Graph!\n");
-    bbList = new std::list<BasicBlock*>();
-    regList = new RegisterList();
-    typeList = new TypeList();
-    pwrUtil = new Utilization(clock_period/1000);
-    std::ifstream llvmFile(filename, std::ifstream::in);
-    std::string line;
-    regList->addRegister(new Register("ImmediateValue"));
-    regList->addRegister(new Register("Label"));
-    bool inFunction = false;
-    unsigned bbnum = 0;
+    bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
+    regList = new RegisterList(); // Create New Register List
+    typeList = new TypeList(); // Create New User Defined Types List
+    //pwrUtil = new Utilization(clock_period/1000);
+    std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
+    std::string line; // Stores Single Line of File
+    bool inFunction = false; // Parse Variable
+    unsigned bbnum = 0; // Start of Basic Block Numbering
     DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
     if(llvmFile.is_open()) {
         while (getline(llvmFile, line)) { // Read until end of LLVM file
@@ -349,9 +319,9 @@ LLVMInterface::constructBBList() {
                         DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
-                            currBB->addNode(new ComputeNode(line, regList, prevBB->getName(), comm, typeList));
+                            currBB->parse(line, regList, prevBB->getName(), comm, typeList));
                         } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            currBB->addNode(new ComputeNode(line, regList, "NULL", comm, typeList));
+                            currBB->parse(line, regList, "NULL", comm, typeList));
                         }
                     }
                 }
@@ -361,7 +331,6 @@ LLVMInterface::constructBBList() {
     } else { // Could not find LLVM file
         panic("Unable to open LLVM file!\n");
     }
-    if(PRINTREGISTERS) regList->printRegNames(); // Debug option, prints all registers created during parsing.
 }
 
 BasicBlock*
