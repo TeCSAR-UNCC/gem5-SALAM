@@ -32,3 +32,11 @@ RegisterList::printRegNames() { // Prints name of all current registers
         std::cout << (*it)->getName() << "\n";
     }
 }   //  --- End Function ----------------------------------------------//
+
+Register *
+RegisterList::findRegister(std::string Name) {
+    for (auto it = _RegList->begin(); it != _RegList->end(); ++it) {
+        if ((*it)->getName() == Name) return *it;
+    }
+    return NULL;
+}

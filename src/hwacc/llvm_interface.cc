@@ -11,7 +11,6 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     currBB = NULL;
     prevBB = NULL;
     typeList = NULL;
-    currCompNode = NULL;
     running = false;
     clock_period = comm->getProcessDelay(); //Clock period
     process_delay = 1; //Number of cycles a compute_node needs to complete
@@ -29,10 +28,14 @@ LLVMInterface::tick() {
 
  Each tick we must first check our in-flight compute queue. Each node should have its cycle
  count incremented, and should commit if max cycle is reached.
+    currCompNode = NULL;
 
- After queues are evaluated we must check our reservation table. If all dependencies of a CN
- are satisfied we mark it as in-flight, evaluate it, and add it to its respective queue if
- applicable. Upon commit the CN will be removed both from its queue and the reservation table.
+    currCompNode = NULL;
+le. If all dependencies of a CN
+    currCompNode = NULL;
+it to its respective queue if
+    currCompNode = NULL;
+ queue and the reservation table.
 
  New CNs are added to the reservation table whenever a new BB is encountered. This may occur
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
@@ -44,7 +47,7 @@ LLVMInterface::tick() {
             "   Cycle", cycle,
             "********************************************************************************");
     cycle++;
-    DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue->size(), readQueue->size(), writeQueue->size());
+   // DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue->size(), readQueue->size(), writeQueue->size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     /*
@@ -62,7 +65,9 @@ LLVMInterface::tick() {
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
     }
+    */
     bool scheduled = false;
+    /*
     for (auto it=reservation->begin(); it!=reservation->end(); ) {
         Instruction instr = (*it)->getInstruction(); // Update instruction data struct
         DPRINTF(LLVMInterface, "Next:(%s)\n", instr.general.llvm_Line);
@@ -199,10 +204,10 @@ LLVMInterface::constructBBList() {
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
-    Register alwaysTrue = new Register(alwaysTrue, 1);
-    Register alwaysFalse = new Register(alwaysFalse, 0);
-    regList.addRegister(alwaysTrue);
-    regList.addRegister(alwaysFalse);
+    Register* alwaysTrue = new Register("alwaysTrue", ((uint64_t) 1));
+    Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
+    regList->addRegister(alwaysTrue);
+    regList->addRegister(alwaysFalse);
     //pwrUtil = new Utilization(clock_period/1000);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
@@ -245,7 +250,7 @@ LLVMInterface::constructBBList() {
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
                     currBB = new BasicBlock("0", bbnum); // First basic block is always defined as BB 0
-                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->name);
+                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
                 }
@@ -255,14 +260,14 @@ LLVMInterface::constructBBList() {
                         int labelEnd = line.find(" ", 10);
                         prevBB = currBB; // Set previous basic block
                         currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum); // Create new basic block
-                        DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->name);
+                        DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
                     } else if (line.find(".") == 0) { // Found new basic block (edge)
                         int labelEnd = line.find(" "); 
                         prevBB = currBB; // Set previous basic block
                         currBB = new BasicBlock(line.substr(0,(labelEnd-1)), bbnum); // Create new basic block
-                        DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->name); 
+                        DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name); 
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
                     } else if (line.find("}") == 0) { // Found end of function definition
@@ -290,9 +295,9 @@ LLVMInterface::constructBBList() {
                         DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
-                            currBB->parse(line, regList, prevBB->getName(), comm, typeList));
+                            currBB->parse(line, regList, prevBB->getName(), comm, typeList);
                         } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            currBB->parse(line, regList, "NULL", comm, typeList));
+                            currBB->parse(line, regList, "NULL", comm, typeList);
                         }
                     }
                 }
@@ -313,7 +318,7 @@ LLVMInterface::findBB(std::string bbname) {
  and NULL if the BB does not exist in the BB list.
 *********************************************************************************************/
     for (auto it = bbList->begin(); it != bbList->end(); ++it) {
-        if ((*it)->name.compare(bbname) == 0)
+        if ((*it)->_Name.compare(bbname) == 0)
             return (*it);
     }
     return NULL;
@@ -324,6 +329,7 @@ LLVMInterface::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Read Request 
 *********************************************************************************************/
+   /*
     for (auto it=readQueue->begin(); it!=readQueue->end(); ++it) {
         if ((*it)->getReq() == req) {
           //  Instruction instr = (*it)->getInstruction(); // Update instruction data struct
@@ -334,6 +340,7 @@ LLVMInterface::readCommit(MemoryRequest * req) {
             it = readQueue->erase(it); // Remove compute node from queue
         }
     }
+    */
 }
 
 void
@@ -341,6 +348,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Write Request 
 *********************************************************************************************/    
+   /*
     for (auto it=writeQueue->begin(); it!=writeQueue->end(); ++it) {
         if ((*it)->getReq() == req) {
           //  Instruction instr = (*it)->getInstruction(); // Update instruction data struct
@@ -350,6 +358,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
             it = writeQueue->erase(it); // Remove compute node from queue
         }
     }
+    */
 }
 
 void
@@ -364,13 +373,13 @@ LLVMInterface::initialize() {
     running = true;
     constructBBList();
     DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
-    reservation = new std::list<ComputeNode*>();
+   // reservation = new std::list<ComputeNode*>();
     DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
-    readQueue = new std::list<ComputeNode*>();
+   // readQueue = new std::list<ComputeNode*>();
     DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");
-    writeQueue = new std::list<ComputeNode*>();
+  // writeQueue = new std::list<ComputeNode*>();
     DPRINTF(LLVMInterface, "Initializing computeQueue List!\n");
-    computeQueue = new std::list<ComputeNode*>();
+   // computeQueue = new std::list<ComputeNode*>();
     DPRINTF(LLVMInterface, "\n%s\n%s\n%s\n",
             "*******************************************************************************",
             "*                 Begin Runtime Simulation Computation Engine                 *",
@@ -407,6 +416,7 @@ LLVMInterface::statistics() {
         DPRINTF(IOAcc, "Instruction (Count): %s  (%d)\n", it->first, it->second);
     }
     */
+   /*
     DPRINTF(Hardware, "%s %s %s",
     "\n*******************************************************************************",
     "\n******************************* Instruction Usage *****************************",
@@ -470,6 +480,6 @@ LLVMInterface::statistics() {
     "\n   Number of Integer Multipliers: ", pwrUtil->intMaxMul(),
     "\n   Number of Registers: ", regList->size(),
     "\n*******************************************************************************\n");
-
+    */
 }
 

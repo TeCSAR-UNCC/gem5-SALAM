@@ -16,7 +16,7 @@
 // ////////////////////////////////////////////////////////////////////
 
 void
-BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
+BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
 	// ////////////////////////////////////////////////////////////////////
 	// Local Variables
 	std::vector<std::string> parameters; // Used to store each each element of the passed in LLVM instruction line 
@@ -108,7 +108,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 				}
 				parameters.push_back(line.substr(i, rightDelimeter - (i - 1)));
 				i += (rightDelimeter - i);
-			} else if (line[i] == '{') {
+			} else if (line[i] == '{') {  
 				lastInLine = 0;
 				leftDelimeter = i + 1 + line.substr(i + 1).find('{');
 				rightDelimeter = i + line.substr(i).find('}');
@@ -159,7 +159,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 					parameters.push_back(line.substr(leftDelimeter));
 					i = (line.length() - 1);
 					// This will always be the last object on the line
-				}MemoryRequest* _Req
+				}
 			}
 		}
 	}
@@ -263,7 +263,6 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		int length = 0;
 		int statements = 0;
 		int i = 1;
-		std::string cases[MAXCASES][2];
 		setRegister(parameters[2], condition, dependencies, list, parameters);
 		// Determine the number of case statements 
 		for(int k = 0; k < parameters[5].size(); k++) {
@@ -354,7 +353,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fadd = std::make_shared<FAdd>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -405,7 +404,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fsub = std::make_shared<FSub>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -416,10 +415,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
-		addNode(fsub);_Req = NULL;
-                          _CurrCycle = 0; 
-                          _Usage = 0;
+											immOp);
+		addNode(fsub);
 		break;
 	}
 	case IR_Mul: {
@@ -458,7 +455,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fmul = std::make_shared<FMul>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -532,7 +529,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fdiv = std::make_shared<FDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -567,7 +564,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp);
 		addNode(urem);
 		break;
 	}
@@ -604,7 +601,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0));
+		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto frem = std::make_shared<FRem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -706,7 +703,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
 		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
-		auto and = std::make_shared<And>(	lineCpy, 
+		auto andoc = std::make_shared<And>(	lineCpy, 
 											opCode, 
 											returnType, 
 											instructionType, 
@@ -717,7 +714,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 											regOps,
 											computeFlags,
 											immOp );
-		addNode(and);
+		addNode(andoc);
 		break;
 	}
 	case IR_Or: {
@@ -730,7 +727,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
 		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
-		auto or = std::make_shared<Or>(	lineCpy, 
+		auto oroc = std::make_shared<Or>(	lineCpy, 
 											opCode, 
 											returnType, 
 											instructionType, 
@@ -741,7 +738,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 											regOps,
 											computeFlags,
 											immOp );
-		addNode(or);
+		addNode(oroc);
 		break;
 	}
 	case IR_Xor: {
@@ -754,7 +751,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
 		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
-		auto xor = std::make_shared<Xor>(	lineCpy, 
+		auto xoroc = std::make_shared<Xor>(	lineCpy, 
 											opCode, 
 											returnType, 
 											instructionType, 
@@ -765,7 +762,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 											regOps,
 											computeFlags,
 											immOp );
-		addNode(xor);
+		addNode(xoroc);
 		break;
 	}
 	// Memory Operations
@@ -803,12 +800,17 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// Set value for alignment
 		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
 	    align = stoi(parameters[align + 1]);
-
-		/*
-			align
-			pointer
-		*/
-
+		auto loadoc = std::make_shared<Load>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												align,
+												pointer);
+		addNode(loadoc);
 		break;
 	}
 	case IR_Store: {
@@ -826,23 +828,28 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		returnType = parameters[index];
 		Register* pointer;
 		Register* value;
-		
 		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], pointer, dependencies, list, parameters);
 		if(isRegister(parameters[index + 1])) {
 			setRegister(parameters[index + 1], value, dependencies, list, parameters);
-			value->setSize(returnType;
+			value->setSize(returnType);
 		} else {
 			if (returnType[0] == 'i') imm  = stoi(parameters[2]);
 			else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
 		align = std::stoi(parameters[index + 5]);
-		/*
-			align
-			imm
-			pointer
-			value
-		*/
-
+		auto storeoc = std::make_shared<Store>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												align,
+												imm,
+												pointer,
+												value);
+		addNode(storeoc);
 		break;
 	}
 	case IR_GetElementPtr: {
@@ -850,14 +857,14 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 		int index = 0;
-		int j = 0;
+		int j = 0;	
 		std::string customDataType;
 		instructionType = "Memory";
 		maxCycles = CYCLECOUNTGETELEMENTPTR;
 		ret_reg->setSize("pointer");
 		std::string pty; //instruction.memory.getptr.pty
 		Register* ptrval; // instruction.memory.getptr.ptrval
-		LLVMType* llvmtype; // instruction.memory.getptr.llvmType
+		LLVMType* llvmtype = NULL; // instruction.memory.getptr.llvmType
 		std::vector<std::string> ty; // instruction.memory.getptr.ty[j]
 		std::vector<Register*> idx;
 		std::vector<int64_t> immdx;
@@ -926,17 +933,22 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			j++;
 			indexRet = j;
 		}
-
-		/*
-		pty
-		llvmtype
-		idx
-		ty
-		immdx
-		ptrval
-		indexret
-		*/
-
+		auto gep = std::make_shared<GetElementPtr>(	lineCpy, 
+													opCode, 
+													returnType, 
+													instructionType, 
+													ret_reg, 
+													maxCycles, 
+													dependencies, 
+													co,
+													pty,
+													llvmtype,
+													idx,
+													ty,
+													immdx,
+													ptrval,
+													indexRet);
+		addNode(gep);
 
 		// Null Stored for register if immediate value used in the situation
 		break;
@@ -1291,11 +1303,11 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		if(isRegister(parameters[last-1])) {
 			setRegister(parameters[last-1], op2, dependencies, list, parameters);
 			regOps.push_back(op2);
-		} else immOp = stof(convertImmediate(returnType, parameters[last - 1]);
+		} else immOp = stof(convertImmediate(returnType, parameters[last - 1]));
 		
 		if (condition == "false") computeFlags = CONDFALSE;
 		else if (condition == "oeq") computeFlags = OEQ;
-		else if (condition == "ogt") computeFlags = OGR;
+		else if (condition == "ogt") computeFlags = OGT;
 		else if (condition == "oge") computeFlags = OGE;
 		else if (condition == "olt") computeFlags = OLT;
 		else if (condition == "ole") computeFlags = OLE;
@@ -1325,6 +1337,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	}
 	case IR_PHI: {
 		// <result> = phi <ty> [ <val0>, <label0>], ...
+		int labelLength = 0;
 		instructionType = "Other";		
 		maxCycles = CYCLECOUNTPHI;
 		returnType = parameters[0];
@@ -1391,6 +1404,17 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			}
 		}
+		auto phi = std::make_shared<Phi>(	lineCpy, 
+											opCode, 
+											returnType, 
+											instructionType, 
+											ret_reg, 
+											maxCycles, 
+											dependencies, 
+											co,
+											phiVal,
+											phiLabel);
+		addNode(phi);
 		// Further Testing will be needed for phi for computing
 
 		break;
@@ -1417,8 +1441,8 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			setRegister(parameters[1], condition, dependencies, list, parameters);
 			regvalues.push_back(tempReg);
 		} else {
-			if(parameters[1] == "true") condition = regList.findRegister("alwaysTrue");
-			else condition = regList.findRegister("alwaysFalse");
+			if(parameters[1] == "true") condition = list->findRegister("alwaysTrue");
+			else condition = list->findRegister("alwaysFalse");
 		}
 		if(isRegister(parameters[3])) {
 			setRegister(parameters[3], tempReg, dependencies, list, parameters);
@@ -1446,10 +1470,19 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			} else if(parameters[2] == "double") {
 			} else { }
 		}
-
-
-
-
+		auto select = std::make_shared<Select>(	lineCpy, 
+												opCode, 
+												returnType, 
+												instructionType, 
+												ret_reg, 
+												maxCycles, 
+												dependencies, 
+												co,
+												condition,
+												regvalues,
+												immvalues,
+												imm);
+		addNode(select);
 		break;
 	}
 	case IR_VAArg: {
@@ -1493,13 +1526,13 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Move: { break; }
 	default: { break; }
 	}
-	dependencyList(parameters, dependencies);
+	//dependencyList(parameters, dependencies);
 
 
 }
 
 void
-ComputeNode::dependencyList(std::vector<std::string> &parameters, int dependencies) {
+BasicBlock::dependencyList(std::vector<std::string> &parameters, int dependencies) {
 	/*
 	DPRINTF(ComputeNode, "\n");
 	DPRINTF(ComputeNode, "Dependencies List: \n");
@@ -1522,8 +1555,8 @@ BasicBlock::BasicBlock(const std::string& Name, uint64_t BBID) {
 }
 
 void
-BasicBlock::addNode(InstructionBase* Node) {
-    _Nodes->push_back(Node);
+BasicBlock::addNode(std::shared_ptr<InstructionBase> Node) {
+    _Nodes.push_back(Node);
 }
 
 std::string 
@@ -1583,7 +1616,6 @@ BasicBlock::sciToDecimal(std::string immediateValue) {
 
 void
 BasicBlock::debugParams(std::vector<std::string> &parameters) { 
-	DPRINTF(ComputeNode, "Creating (%s) Compute Node:\n", opCode);
 	if(DEBUGPARAMS) for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
 	DPRINTF(ComputeNode, "\n");
 }
@@ -1645,7 +1677,7 @@ BasicBlock::initializeReturnRegister(std::vector<std::string> &parameters, Regis
 }
 
 std::vector<Register*>
-BasicBlock::setRegOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const string& instructionType) {
+BasicBlock::setRegOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType) {
 	int last = parameters.size() - 1;
 	Register* op;
 	std::vector<Register*> operands;
@@ -1665,25 +1697,24 @@ BasicBlock::setRegOperands(RegisterList *list, std::vector<std::string> &paramet
 		// Check if value is from register or immediate value
 		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], op, dependencies, list, parameters);
 	}
+	return operands;
 }
 
 std::vector<std::string>
-BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const string& instructionType) {
+BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType) {
 	int last = parameters.size() - 1;
 	std::vector<std::string> operands;
 	if(!(instructionType.compare("Binary"))){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) 
-		else {
+		if(!(isRegister(parameters[last-1]))) {
 			// Operation uses immediate value
 			// Load string representation of immediate value
-			operands.push_back([last]);
+			operands.push_back(parameters[last]);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) 
-		else {
+		if(!(isRegister(parameters[last-1])))  {
 			// Operation uses immediate value
 			// Load string representation of immediate value
 			operands.push_back(parameters[last - 1]);
@@ -1691,21 +1722,20 @@ BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &paramet
 	} else if(!(instructionType.compare("Bitwise"))) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) 
-		else {
+		if(!(isRegister(parameters[last-1]))) {
 			// Operation uses immediate value
 			// Load string representation of immediate value
 			operands.push_back(parameters[last]);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) 
-		else {
+		if(isRegister(parameters[last-1]))  {
 			// Operation uses immediate value
 			// Load string representation of immediate value
 			operands.push_back(parameters[last - 1]);
 		}
 	}
+	return operands;
 }
 
 int

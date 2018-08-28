@@ -31,7 +31,8 @@ class Unsigned {
     protected:
         uint64_t _UOperand;
     public:
-            // ---- Constructor
+            // ---- Constructorbuild/ARM/hwacc/LLVMRead/src/instructions.cc:831:2: error: "/*" within comment [-Werror=comment]
+
         Unsigned(        uint64_t Operand):           
                         _UOperand((uint64_t)Operand) { }
         // ---- Get Functions
@@ -123,9 +124,10 @@ class InstructionBase {
         std::string getOpCode()        { return _OpCode; }
         std::string getInstrType()     { return _InstructionType; }
         // ---- Virtual Functions
-        virtual bool commit()            = 0;
+        virtual bool commit();
+        // Each commit increments cycle count once, broadcast once complete
         virtual void compute()           = 0;  
-        virtual void powerCycle()        = 0;
+        //virtual void powerCycle()        = 0;
         // ---- Hardware Usage Functions
         void used() { _Usage++; }
         // ---- Dependency Graph Functions
@@ -154,19 +156,45 @@ class Terminator : public InstructionBase {
         // Br: [0] == iftrue, [1] == iffalse
         // Switch: [0] == default, [1] == case 1, [2] == case 2, etc...
     public:
-        Terminator ( const std::string& Destination) : // Unconditional Branch
-                    _Destination(Destination) { }
-        Terminator ( std::vector<std::string> Branches,
-                    Register* Condition) : // Conditional Branches
-                    _Condition(Condition),
-                    _Branches(Branches) { }   
-};
-
-class Ret : public Terminator {
-    protected:
-
-    public:
-        Ret (               const std::string& Line,
+        Terminator (        const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            const std::string& Destination) // Unconditional Branch
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)            
+        , _Destination(     Destination) { }
+        Terminator (        const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            Register* Condition,
+                            std::vector<std::string> Branches )  // Conditional Branches
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)                    
+        , _Condition(       Condition)
+        , _Branches(        Branches) { }
+        Terminator (        const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -182,6 +210,30 @@ class Ret : public Terminator {
                             MaxCycle, 
                             Dependencies, 
                             Comm) { }
+          
+};
+
+class Ret : public Terminator {
+    protected:
+
+    public:
+        Ret (               const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm)
+        : Terminator (      Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) { }
+        void compute() override;
 };
 
 class Br : public Terminator {
@@ -200,15 +252,15 @@ class Br : public Terminator {
                             CommInterface* Comm,
                             std::string Destination,
                             bool Unconditional)
-        : InstructionBase ( Line, 
+        : Terminator (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Terminator (      Destination)
+                            Comm, 
+                            Destination)
         , _Unconditional(   Unconditional) { }
         // Conditional Branch Constructor
         Br (                const std::string& Line,
@@ -222,23 +274,24 @@ class Br : public Terminator {
                             Register* Condition,
                             std::vector<std::string> Branches,
                             bool Unconditional)
-        : InstructionBase ( Line, 
+        : Terminator (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Terminator (      Condition,
+                            Comm, 
+                            Condition,
                             Branches)
         , _Unconditional(   Unconditional) { }
+        void compute() override;
 };
 
 class Switch : public Terminator {
     protected:
     // returnType is switch statement Int Type
-    std::vector<std::int> _CaseValues;
+    std::vector<int> _CaseValues;
     public:
         Switch (            const std::string& Line,
                             const std::string& OpCode,
@@ -251,17 +304,18 @@ class Switch : public Terminator {
                             Register* Condition,
                             std::vector<std::string> Branches,
                             std::vector<int> CaseValues)
-        : InstructionBase ( Line, 
+        : Terminator (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Terminator (      Condition,
+                            Comm,
+                            Condition,
                             Branches)
         , _CaseValues(      CaseValues) { }
+        void compute() override;
 };
 
 class IndirectBr : public Terminator {
@@ -303,10 +357,26 @@ class Binary : public InstructionBase {
         uint64_t _Flags;
     public:
         // ---- Constructor
-        Binary(     std::vector<Register*> Operands,
-                    uint64_t Flags)
-        :           _Operands(Operands),
-                    _Flags(Flags) { }
+        Binary(             const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,     
+                            std::vector<Register*> Operands,
+                            uint64_t Flags)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)
+        , _Operands(        Operands)
+        , _Flags(           Flags) { }
 };
 // ---- Binary ---- Integer Instructions
 
@@ -325,19 +395,18 @@ class Add : public Binary, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class Sub : public Binary, public Integer {
@@ -355,26 +424,25 @@ class Sub : public Binary, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class Mul : public Binary, public Integer {
     protected:
         
     public:
-        Mul  (               const std::string& Line,
+        Mul  (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -385,26 +453,25 @@ class Mul : public Binary, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class UDiv : public Binary, public Integer, public Unsigned {
     protected:
 
     public:
-        UDiv  (               const std::string& Line,
+        UDiv  (             const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -415,27 +482,26 @@ class UDiv : public Binary, public Integer, public Unsigned {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) 
         , Unsigned (        ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class SDiv : public Binary, public Integer, public Signed {
     protected:
 
     public:
-    SDiv  (               const std::string& Line,
+    SDiv  (                 const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -446,25 +512,26 @@ class SDiv : public Binary, public Integer, public Signed {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) 
         , Signed (          ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class URem : public Binary, public Integer, public Unsigned {
     protected:
-        URem  (               const std::string& Line,
+
+    public:
+        URem  (             const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -475,21 +542,19 @@ class URem : public Binary, public Integer, public Unsigned {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) 
         , Unsigned (        ImmOp) { }
-    public:
         void compute() override;
-        void powerCycle() override;
 };
 
 class SRem : public Binary, public Integer, public Signed {
@@ -507,20 +572,19 @@ class SRem : public Binary, public Integer, public Signed {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) 
         , Signed (          ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 // ---- Binary ---- Floating Point Instructions
@@ -540,20 +604,19 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
@@ -571,27 +634,26 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
     protected:
 
     public:
-    FMul (              const std::string& Line,
+        FMul (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -602,27 +664,26 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
     protected:
 
     public:
-    FDiv (              const std::string& Line,
+        FDiv (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -633,27 +694,26 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
     protected:
 
     public:
-    FRem (              const std::string& Line,
+        FRem (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -664,20 +724,19 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Binary (          RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 //---------------------------------------------------------------------------//
@@ -689,12 +748,28 @@ class Bitwise : public InstructionBase {
     protected:
         std::vector<Register*> _Operands;
         uint64_t _Result;
-        uint64_t _Flag;
+        uint64_t _Flags;
    public:
         // ---- Constructor
-        Binary(     std::vector<Register*> Operands,
-                    uint64_t Flags)
-        :           _Operands(Operands),
+        Bitwise(            const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,     
+                            std::vector<Register*> Operands,
+                            uint64_t Flags)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)
+        ,           _Operands(Operands),
                     _Flags(Flags) { }
 };
 // ---- Bitwise Instructions
@@ -703,7 +778,7 @@ class Shl : public Bitwise, public Integer {
     protected:
 
     public:
-    Shl (                   const std::string& Line,
+        Shl (               const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -714,26 +789,25 @@ class Shl : public Bitwise, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Bitwise (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class LShr : public Bitwise, public Integer {
     protected:
 
     public:
-    LShr (                   const std::string& Line,
+        LShr (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -744,26 +818,25 @@ class LShr : public Bitwise, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Bitwise (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class AShr : public Bitwise, public Integer {
     protected:
 
     public:
-    AShr (                   const std::string& Line,
+        AShr (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -774,26 +847,25 @@ class AShr : public Bitwise, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Bitwise (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class And : public Bitwise, public Integer {
     protected:
 
     public:
-        And  (               const std::string& Line,
+        And  (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -804,26 +876,25 @@ class And : public Bitwise, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Bitwise (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class Or : public Bitwise, public Integer {
     protected:
 
     public:
-        Or (              const std::string& Line,
+        Or (                const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -834,26 +905,25 @@ class Or : public Bitwise, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Bitwise (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class Xor : public Bitwise, public Integer {
     protected:
 
     public:
-    Xor (                  const std::string& Line,
+        Xor (               const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -864,19 +934,18 @@ class Xor : public Bitwise, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Bitwise (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 //---------------------------------------------------------------------------//
@@ -886,16 +955,32 @@ class Xor : public Bitwise, public Integer {
 //---------------------------------------------------------------------------//
 class Conversion : public InstructionBase {
     protected:
-        Register* _Operand;
         std::string _OriginalType;
+        Register* _Operand;
         uint64_t _Result;
 
     public:
         // ---- Constructor
-        Conversion(         const std::string& OriginalType,
-                            Register* Operand) :
-        _OriginalType(      OriginalType),
-        _Operand(           Operand) { }
+        Conversion(         const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,         
+                            const std::string& OriginalType,
+                            Register* Operand)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) 
+        , _OriginalType(    OriginalType)
+        , _Operand(         Operand) { }
 };
 // ---- Conversion Instructions
 
@@ -909,18 +994,19 @@ class Trunc : public Conversion {
                             uint64_t MaxCycle,
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
-                            std::string& OriginalType,
+                            const std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;   
 };
 
 class ZExt : public Conversion {
@@ -935,16 +1021,17 @@ class ZExt : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class SExt : public Conversion {
@@ -959,16 +1046,17 @@ class SExt : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class FPToUI : public Conversion {
@@ -983,16 +1071,17 @@ class FPToUI : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class FPToSI : public Conversion {
@@ -1007,16 +1096,17 @@ class FPToSI : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class UIToFP : public Conversion {
@@ -1031,16 +1121,17 @@ class UIToFP : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class SIToFP : public Conversion {
@@ -1055,16 +1146,17 @@ class SIToFP : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class FPTrunc : public Conversion {
@@ -1079,16 +1171,17 @@ class FPTrunc : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class FPExt : public Conversion {
@@ -1103,16 +1196,17 @@ class FPExt : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class PtrToInt : public Conversion {
@@ -1127,16 +1221,17 @@ class PtrToInt : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class IntToPtr : public Conversion {
@@ -1151,16 +1246,17 @@ class IntToPtr : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class BitCast : public Conversion {
@@ -1175,16 +1271,17 @@ class BitCast : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 class AddrSpaceCast : public Conversion {
@@ -1199,16 +1296,17 @@ class AddrSpaceCast : public Conversion {
                             CommInterface* Comm,
                             std::string& OriginalType,
                             Register* Operand)
-        : InstructionBase ( Line, 
+        : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Conversion (      OriginalType,
-                            Operand)
+                            Comm,
+                            OriginalType,
+                            Operand) { }
+        void compute() override;
 };
 
 //---------------------------------------------------------------------------//
@@ -1222,8 +1320,22 @@ class Memory : public InstructionBase {
         // alignment
 
     public:
-        Memory();
-
+        Memory (            const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) { }
 };
 
 class Load : public Memory {
@@ -1231,7 +1343,27 @@ class Load : public Memory {
         uint64_t _Align;
         Register* _Pointer;
     public:
-        Load();
+        Load (              const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            uint64_t Align,
+                            Register* Pointer)
+        : Memory (          Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) 
+        , _Align(           Align)
+        , _Pointer(         Pointer) { }
+        void compute() override;
 };
 
 class Store : public Memory {
@@ -1241,7 +1373,31 @@ class Store : public Memory {
         Register* _Pointer;
         Register* _Value;
     public:
-        Store();
+        Store (             const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            uint64_t Align,
+                            uint64_t Imm,
+                            Register* Pointer,
+                            Register* Value)
+        : Memory (          Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)
+        , _Align(           Align)
+        , _Imm(             Imm)
+        , _Pointer(         Pointer)
+        , _Value(           Value) { } 
+        void compute() override;
 };
 
 class GetElementPtr : public Memory {
@@ -1255,7 +1411,37 @@ class GetElementPtr : public Memory {
         uint64_t _Index;
 
     public:
-        GetElementPtr();
+        GetElementPtr (     const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            std::string Pty,
+                            LLVMType* LLVMType,
+                            std::vector<Register*> Idx,
+                            std::vector<std::string> Type,
+                            std::vector<int64_t> ImmIdx,
+                            Register* PtrVal,
+                            uint64_t Index)
+        : Memory (          Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)
+        , _Pty(             Pty)
+        , _LLVMType(        LLVMType)
+        , _Idx(             Idx)
+        , _Type(            Type)
+        , _ImmIdx(          ImmIdx)
+        , _PtrVal(          PtrVal)
+        , _Index(           Index) { }
+        void compute() override; 
 };
 //---------------------------------------------------------------------------//
 //--------- End Memory Instruction Base -------------------------------------//
@@ -1267,50 +1453,86 @@ class Other : public InstructionBase {
 
 
     public:
-
+        Other (             const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) { }
 };
 
-class Phi : public Other, public Integer {
-/* 
-			std::string ty;
-			std::string ival[MAXPHI];
-			std::string ilabel[MAXPHI];
-			bool immVal[MAXPHI];
-			bool immLabel[MAXPHI];
-			Register *val[MAXPHI];
-			std::string label[MAXPHI];
-			mutable Register *takenVal;
-*/
+class Phi : public Other {
     protected:
         std::vector<std::string> _PhiVal; // Value to be loaded
 		std::vector<std::string> _PhiLabel; // If from this BB
 
     public:
-        Phi();
-
+         Phi (              const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            std::vector<std::string> PhiVal,
+                            std::vector<std::string> PhiLabel)
+        : Other (           Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) 
+        , _PhiVal(          PhiVal)
+        , _PhiLabel(        PhiLabel) { }
+        void compute() override;
 };
 
-class Select : public Other, public Integer, public FloatingPointSP, public FloatingPointDP {
-/*
-			Register *cond;
-			Register *val1;
-			Register *val2;
-			bool icondFlag = false;
-			bool icond = false;
-			int immVal[2];
-			std::string ty;
-			bool intTy = false;
-			bool floatTy = false;
-			bool doubleTy = false;
-			bool immediate[2];
-*/
+class Select : public Other {
     protected:
         Register* _Condition;
         std::vector<Register*> _RegValues;
 		std::vector<int64_t> _ImmValues;
         std::vector<bool> _Imm;
     public:
-        Select();
+        // ---- Constructor
+        Select (            const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,            
+                            Register* Condition,
+                            std::vector<Register*> RegValues,
+		                    std::vector<int64_t> ImmValues,
+                            std::vector<bool> Imm )
+        : Other (           Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)
+        , _Condition (      Condition)
+        , _RegValues (      RegValues) 
+        , _ImmValues (      ImmValues)
+        , _Imm (            Imm) { }
+        void compute() override;
 };
 // ---- Other Sub Type ---- Compare
 class Compare : public Other {
@@ -1321,10 +1543,26 @@ class Compare : public Other {
         uint64_t _Result;
     public:
         // ---- Constructor
-        Compare(            std::vector<Register*> Operands,
-                            uint64_t Flags ) :
-        _Operands(          Operands),
-        _Flags(             Flags) { }
+        Compare (           const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,            
+                            std::vector<Register*> Operands,
+                            uint64_t Flags )
+        : Other (           Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm)
+        , _Operands (       Operands)
+        , _Flags (          Flags) { }
 };
 
 class ICmp : public Compare, public Integer {
@@ -1340,19 +1578,18 @@ class ICmp : public Compare, public Integer {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             int64_t ImmOp)
-        : InstructionBase ( Line, 
+        : Compare (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Compare (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 
 class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
@@ -1368,20 +1605,19 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
                             double ImmOp)
-        : InstructionBase ( Line, 
+        : Compare (         Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
-        , Compare (         RegOps,
+                            Comm,
+                            RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOP) { }
+        , FloatingPointDP ( ImmOp) { }
         void compute() override;
-        void powerCycle() override;
 };
 //---------------------------------------------------------------------------//
 //--------- End Other Instruction Base --------------------------------------//

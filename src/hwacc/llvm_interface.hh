@@ -19,17 +19,15 @@ class LLVMInterface : public ComputeUnit {
     RegisterList *regList;
     BasicBlock *currBB;
     BasicBlock *prevBB;
-    ComputeNode *currCompNode;
     TypeList *typeList;
-    std::list<ComputeNode*> *reservation;
-    std::list<ComputeNode*> *readQueue;
-    std::list<ComputeNode*> *writeQueue;
-    std::list<ComputeNode*> *computeQueue;
+   // std::list<ComputeNode*> *reservation;
+   // std::list<ComputeNode*> *readQueue;
+   // std::list<ComputeNode*> *writeQueue;
+   // std::list<ComputeNode*> *computeQueue;
     int process_delay;
     int cycle;
     int stalls;
-    typedef std::map<std::string, int> opCodeCount;
-    opCodeCount opCount;
+    int execnodes;
   protected:
 
   public:

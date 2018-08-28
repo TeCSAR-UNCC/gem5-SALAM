@@ -7,6 +7,7 @@
 #include <list>
 #include "power.hh"
 #include "macros.hh"
+#include "debugFlags.hh"
 
 class Register {
     //-----------------------------------------------------------------------//
@@ -72,7 +73,7 @@ class RegisterList{
         // ---- Get Functions
         uint64_t size()                 { return _RegList->size(); }
         // ---- Helper Functions
-        Register* findRegister(const std::string& Name);
+        Register* findRegister(std::string Name);
         void addRegister(Register *Reg) { _RegList->push_back(Reg); }
         void printRegNames();
     //----- End Public ------------------------------------------------------//

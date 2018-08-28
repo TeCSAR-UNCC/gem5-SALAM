@@ -9,8 +9,8 @@ Add::compute() {
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	// If immediate values convert from string, else load from register
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() + _Operand;
-	else _Results = _Operands.at(0)->getValue() + _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() + _Operand;
+	else _Result = _Operands.at(0)->getValue() + _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -24,8 +24,8 @@ Sub::compute() {
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() - _Operand;
-	else _Results = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() - _Operand;
+	else _Result = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -39,12 +39,10 @@ Mul::compute() {
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() * _Operand;
-	else _Results = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() * _Operand;
+	else _Result = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
-	// Store result in return register
-	_ReturnRegister->setValue(&result);
 	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -52,8 +50,8 @@ void
 UDiv::compute() {
 	// Unsigned Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() / _UOperand;
-	else _Results = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _UOperand;
+	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -63,8 +61,8 @@ void
 SDiv::compute() {
 	// Signed Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() / _SOperand;
-	else _Results = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _SOperand;
+	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -74,8 +72,8 @@ void
 URem::compute() {
 	//Unsigned modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() % _UOperand;
-	else _Results = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _UOperand;
+	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -85,8 +83,8 @@ void
 SRem::compute() {
 	//Signed modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() % _SOperand;
-	else _Results = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _SOperand;
+	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -102,24 +100,24 @@ FAdd::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(double *)&OP1;
 			_Result = op1 + _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 + op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(float *)&OP1;
 			_Result = op1 + _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 + op2;
@@ -139,24 +137,24 @@ FSub::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(double *)&OP1;
 			_Result = op1 - _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 - op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(float *)&OP1;
 			_Result = op1 - _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 - op2;
@@ -176,24 +174,24 @@ FMul::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(double *)&OP1;
 			_Result = op1 * _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 * op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(float *)&OP1;
 			_Result = op1 * _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 * op2;
@@ -213,24 +211,24 @@ FDiv::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(double *)&OP1;
 			_Result = op1 / _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 / op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operand.at(0)->getValue();
+			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(float *)&OP1;
 			_Result = op1 / _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operand.at(0)->getValue();
-		    uint64_t OP2 = _Operand.at(1)->getValue();
+		    uint64_t OP1 = _Operands.at(0)->getValue();
+		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 / op2;
@@ -251,8 +249,8 @@ Shl::compute() {
 	// <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() << _Operand;
-	else _Results = _Operands.at(0)->getValue() << _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() << _Operand;
+	else _Result = _Operands.at(0)->getValue() << _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u << %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -264,8 +262,8 @@ LShr::compute() {
 	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() >> _Operand;
-	else _Results = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() >> _Operand;
+	else _Result = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -277,8 +275,8 @@ AShr::compute() {
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() >> _Operand;
-	else _Results = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() >> _Operand;
+	else _Result = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -289,8 +287,8 @@ And::compute() {
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() & _Operand;
-	else _Results = _Operands.at(0)->getValue() & _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() & _Operand;
+	else _Result = _Operands.at(0)->getValue() & _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u & %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
@@ -301,11 +299,11 @@ Or::compute() {
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() | _Operand;
-	else _Results = _Operands.at(0)->getValue() | _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() | _Operand;
+	else _Result = _Operands.at(0)->getValue() | _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
-	DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	//DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -313,26 +311,29 @@ Xor::compute() {
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() ^ _Operand;
-	else _Results = _Operands.at(0)->getValue() ^ _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() ^ _Operand;
+	else _Result = _Operands.at(0)->getValue() ^ _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u ^ %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
-/*
+
 void
 Load::compute() {
+	/*
     uint64_t src = instruction.memory.load.pointer->getValue();
 	_ReturnRegister->setSize();
 	DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), _ReturnRegister->size);
 	req = new MemoryRequest((Addr)src, _ReturnRegister->size);
 	comm->enqueueRead(req);
-	break;  
+	break;
+	*/  
 }
 
 void
 Store::compute() {
+	/*
 	uint64_t data;
 	uint64_t size = 0;
 	uint64_t dst = instruction.memory.store.pointer->getValue();
@@ -347,13 +348,10 @@ Store::compute() {
 		DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
 	}
 	comm->enqueueWrite(req);
-	break;    
+	break;
+	*/    
 }
 
-void
-Move::compute() {
-
-}
 
 void
 Ret::compute() {
@@ -362,6 +360,7 @@ Ret::compute() {
 
 void
 Br::compute() {
+	/*
 	DPRINTF(LLVMOp, "Performing %s Operation!\n", _OpCode);
 
 	unsigned long long int condition = 0;
@@ -376,10 +375,12 @@ Br::compute() {
 		instruction.terminator.cond->accessedRead();
 	}
 	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");    
+	*/
 }
 
 void
 Switch::compute() {
+	/*
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	uint64_t mainValue = instruction.terminator.value->getValue();
 	bool found = false;
@@ -396,26 +397,13 @@ Switch::compute() {
 	}
 	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
 	DPRINTF(LLVMOp, "Switch selected, destination is %s!", instruction.terminator.dest);
-
+	*/
 }
 
-void
-IndirectBr::compute() { }
 
 void
-Invoke::compute() { }
-
-void
-Resume::compute() { }
-
-void
-Unreachable::compute() { }
-
-void
-Alloca::compute() { }
-
-void
-GetElementPtr::compute {
+GetElementPtr::compute() {
+	/*
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
@@ -567,20 +555,13 @@ GetElementPtr::compute {
 	instruction.memory.getptr.ptrval->accessedRead();
 	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
 	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", _ReturnRegister->getValue(), _ReturnRegister->getValue());
-
+	*/
 }
 
-void
-Fence::compute() { }
-
-void
-CmpXChg::compute() { }
-
-void
-AtomicRMW::compute() { }
 
 void
 Trunc::compute() {
+	/*
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.immediate) {
@@ -595,12 +576,13 @@ Trunc::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	_ReturnRegister->setValue(&result);
-
+	_ReturnRegister->setValue(&_Result);
+	*/
 }
 
 void
 ZExt::compute() {
+	/*
 	uint64_t value;
 	uint64_t result;
 	if(instruction.conversion.immediate) {
@@ -616,11 +598,13 @@ ZExt::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	_ReturnRegister->setValue(&result);    
+	_ReturnRegister->setValue(&_Result); 
+	*/   
 }
 
 void
 SExt::compute() {
+	/*
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.immediate) {
@@ -636,12 +620,14 @@ SExt::compute() {
 		if(value) result = -1;
 		else result = 0;
 	}
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
+	*/
 }
 ////////////////////////////////////////////////////////
 
 void 
-FPtoUI::compute() {
+FPToUI::compute() {
+	/*
 	double value;
 	uint64_t result;
 	if(instruction.conversion.immediate) {
@@ -657,10 +643,12 @@ FPtoUI::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
+	*/
 }
 void
-FPtoSI::compute() {
+FPToSI::compute() {
+	/*
 	double value;
 	int64_t result;
 	if(instruction.conversion.immediate) {
@@ -676,10 +664,12 @@ FPtoSI::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	_ReturnRegister->setValue(&result);	
+	_ReturnRegister->setValue(&_Result);	
+	*/
 }
 void
-UItoFP::compute() {
+UIToFP::compute() {
+	/*
 	uint64_t value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -690,10 +680,12 @@ UItoFP::compute() {
 	if (instruction.conversion.ty2 == "double") result = (double) value;
 	else if (instruction.conversion.ty2 == "float") result = (float) value;
 
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
+	*/
 }
 void
-SItoFP::compute() {
+SIToFP::compute() {
+	/*
 	int64_t value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -704,10 +696,12 @@ SItoFP::compute() {
 	if (instruction.conversion.ty2 == "double") result = (double) value;
 	else if (instruction.conversion.ty2 == "float") result = (float) value;
 
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
+	*/
 }
 void 
 FPTrunc::compute() {
+	/*
 	double value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -717,10 +711,12 @@ FPTrunc::compute() {
 	
 	if (instruction.conversion.ty2 == "float") result = (float) value;
 
-	_ReturnRegister->setValue(&result);	
+	_ReturnRegister->setValue(&_Result);	
+	*/
 }
 void
 FPExt::compute() {
+	/*
 	double value;
 	double result;
 	if(instruction.conversion.immediate) {
@@ -730,10 +726,12 @@ FPExt::compute() {
 	
 	if (instruction.conversion.ty2 == "double") result = (float) value;
 
-	_ReturnRegister->setValue(&result);		
+	_ReturnRegister->setValue(&_Result);		
+	*/
 }
 void
-PtrtoInt::compute() {
+PtrToInt::compute() {
+	/*
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
@@ -749,7 +747,7 @@ PtrtoInt::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-		_ReturnRegister->setValue(&result);
+		_ReturnRegister->setValue(&_Result);
 	}
 	else {
 		if(instruction.conversion.immediate) {
@@ -765,11 +763,13 @@ PtrtoInt::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
 	}
+	*/
 }
 void
-InttoPtr::compute() {
+IntToPtr::compute() {
+	/*
 	int64_t value;
 	int64_t result;
 	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
@@ -785,7 +785,7 @@ InttoPtr::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-		_ReturnRegister->setValue(&result);
+		_ReturnRegister->setValue(&_Result);
 	}
 	else {
 		if(instruction.conversion.immediate) {
@@ -801,16 +801,18 @@ InttoPtr::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
 	}	
+	*/
 }
 void
-Bitcast::compute() { }
+BitCast::compute() { }
 void 
 AddrSpaceCast::compute() { }
 
 void
 ICmp::compute() {
+	/*
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	// uint64_t op1 = 0;
 	// uint64_t op2 = 0;
@@ -828,7 +830,7 @@ ICmp::compute() {
 		instruction.general.immediateCount->accessedRead();
 	} else op2 =  instruction.other.compare.op2->getValue();
 	// Perform Comparison
-	/*
+	
 	if (op1 > MAXINT) {
 		op1 = ((op1 ^ 0xFFFFFFFF)+1)*-1;
 	}
@@ -848,11 +850,13 @@ ICmp::compute() {
 	else if (instruction.other.compare.condition.slt) result = ((int)op1 < (int)op2);
 	else if (instruction.other.compare.condition.sle) result = ((int)op1 <= (int)op2);
 	// Store result in return register
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
 	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
+	*/
 }
 void
 FCmp::compute() {
+	/*
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1 = 0.0;
 	double op2 = 0.0;
@@ -913,10 +917,14 @@ FCmp::compute() {
 	}else if (instruction.other.compare.condition.ult) {
 		result = (op1 < op2);
 		DPRINTF(LLVMOp, "Unordered. Less than:\n");
-	}else if (instruction.other.compare.condition.ule) {
-		result = (op1 <= op2);
-		DPRINTF(LLVMOp, "Unordered. Less than or equal:\n");
-	}else if (instruction.other.compare.condition.une) {
+	}else if (instruction.other.comparvoid 
+Call::compute() { }e.condition.ule) {
+		result = (op1 <= op2);void 
+Call::compute() { }
+		DPRINTF(LLVMOp, "Unordered. Levoid 
+Call::compute() { }ss than or equal:\n");
+	}else if (instruction.other.comparvoid 
+Call::compute() { }e.condition.une) {
 		result = (op1 != op2);
 		DPRINTF(LLVMOp, "Unordered. Not equal:\n");
 	}else if (instruction.other.compare.condition.uno) {
@@ -924,11 +932,13 @@ FCmp::compute() {
 		DPRINTF(LLVMOp, "Unordered:\n");
 	}
 	// Store result in return register
-	_ReturnRegister->setValue(&result);
+	_ReturnRegister->setValue(&_Result);
 	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, _ReturnRegister->getValue());
+	*/
 }
 void
 Phi::compute() {
+	/*
 	// <result> = phi <ty> [ <val0>, <label0>], ...
 	DPRINTF(LLVMOp, "Performing %s Operation, Previous BB was #%s\n", _OpCode, prevBB);
 	uint64_t val;
@@ -946,12 +956,12 @@ Phi::compute() {
 	// Store val in return register
 	_ReturnRegister->setValue(&val);
 	DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
+	*/
 }
-void 
-Call::compute() { }
 
 void
 Select::compute() {
+	/*
 	// Currently only supports integer types but the framework for doubles and floats
 	// exists within compute_node.cc and instruction.hh already
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
@@ -981,103 +991,9 @@ Select::compute() {
 	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, (int) _ReturnRegister->getValue());
 	}
 	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
+	*/
 }
 
-*/
-
-//////////////////////////
-
-void 
-Add::powerCycle() {
-
-}
-
-void 
-Sub::powerCycle() {
-
-}
-
-void 
-Mul::powerCycle() {
-
-}
-
-void 
-UDiv::powerCycle() {
-
-}
-
-void 
-SDiv::powerCycle() {
-
-}
-
-void 
-URem::powerCycle() {
-
-}
-
-void 
-SRem::powerCycle() {
-
-}
-
-void 
-FAdd::powerCycle() {
-
-}
-
-void 
-FSub::powerCycle() {
-
-}
-
-void 
-FMul::powerCycle() {
-
-}
-
-void 
-FDiv::powerCycle() {
-
-}
-
-void 
-FRem::powerCycle() {
-
-}
-
-void 
-Shl::powerCycle() {
-
-}
-
-void 
-LShr::powerCycle() {
-
-}
-
-void 
-AShr::powerCycle() {
-
-}
-
-void 
-And::powerCycle() {
-
-}
-
-void 
-Or::powerCycle() {
-
-}
-
-void 
-Xor::powerCycle() {
-
-}
-
-///////////////////////////////////////////
 
 bool 
 InstructionBase::commit() {
@@ -1094,14 +1010,15 @@ InstructionBase::commit() {
 			return true;
 		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
 	}
+	*/
 	return false;
-    */
+    
 }
 
 
 
 std::vector<InstructionBase*> 
-InstructionBase::checkDependency() {
+InstructionBase::checkDependencies() {
 	/*
     bool hot = false;
 	bool phiBranchDependent = false;
@@ -1153,4 +1070,6 @@ InstructionBase::checkDependency() {
 	}
 	return hot;
     */
+   std::vector<InstructionBase*> dependents;
+   return dependents;
 }

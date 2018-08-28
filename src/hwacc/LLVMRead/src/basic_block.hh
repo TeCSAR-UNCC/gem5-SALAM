@@ -2,6 +2,7 @@
 #define __BASIC_BLOCK_HH__
 #include "debugFlags.hh"
 #include "instructions.hh"
+#include <memory>
 
 class BasicBlock {
   friend class LLVMInterface;
@@ -148,24 +149,25 @@ class BasicBlock {
     std::string _Name;
     // Previously bbID;
     uint64_t _BBID;
+    std::vector<std::shared_ptr<InstructionBase> > _Nodes;
   
   public:
     BasicBlock(const std::string& Name, uint64_t BBID);
     ~BasicBlock();
-    void addNode(InstructionBase* Node);
+    void addNode(std::shared_ptr<InstructionBase> Node);
     std::string getName() { return _Name; }
     std::string convertImmediate(std::string dataType, std::string immediateValue);
     std::string sciToDecimal(std::string immediateValue);
     void dependencyList(std::vector<std::string> &parameters, int dependencies);
     void debugParams(std::vector<std::string> &parameters);
-    void setFlags(std::vector<std::string> &parameters, Instruction &instruction);
+    uint64_t setFlags(std::vector<std::string> &parameters);
     bool isRegister(std::string data);
-    void setRegister(std::string data, Register *&reg, std::vector<*Register> &dependencies, RegisterList *list, std::vector<std::string> &parameters) {
-    void setOperands(RegisterList *list, std::vector<std::string> &parameters, Instruction &instruction);
-    void initializeReturnRegister(std::vector<std::string> &parameters, Instruction &instruction);
+    void setRegister(std::string data, Register *&reg, std::vector<Register*> &dependencies, RegisterList *list, std::vector<std::string> &parameters);
+    std::vector<Register*> setRegOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType);
+    std::vector<std::string> setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType);
+    void initializeReturnRegister(std::vector<std::string> &parameters, Register *&reg , std::string &returnType, const std::string &instructionType );
     int setSize(std::string dataType);
     void parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
-  protected:
   
 };
 
