@@ -3,6 +3,7 @@
 
 #include "hwacc/comm_interface.hh"
 #include "mem_request.hh"
+#include "llvm_types.hh"
 #include "debugFlags.hh"
 #include "registers.hh"
 #include "power.hh"
@@ -16,7 +17,7 @@
 //--------- Begin Immediate Value Sub Classes -------------------------------//
 //---------------------------------------------------------------------------//
 class Signed {
-    private: 
+    protected: 
         int64_t _SOperand;
     public:
         // ---- Constructor
@@ -27,7 +28,7 @@ class Signed {
 };
 
 class Unsigned {
-    private:
+    protected:
         uint64_t _UOperand;
     public:
             // ---- Constructor
@@ -38,7 +39,7 @@ class Unsigned {
 };
 
 class Integer {
-    private:
+    protected:
         int64_t _Operand;
     public:
         // ---- Constructor
@@ -49,18 +50,18 @@ class Integer {
 };
 
 class FloatingPointSP {
-    private:
+    protected:
         float _OperandSP;
     public:
         // ---- Constructor
         FloatingPointSP(   float Operand): 
-                        _Operand(OperandSP) { }
+                        _OperandSP(Operand) { }
         // ---- Get Functions
         float getOperandSP()           { return _OperandSP; }
 };
 
 class FloatingPointDP {
-    private:
+    protected:
         double _OperandDP;
     public:
         // ---- Constructor
@@ -77,20 +78,21 @@ class FloatingPointDP {
 //--------- Begin Shared Instruction Base -----------------------------------//
 //---------------------------------------------------------------------------//
 class InstructionBase {
-    private:
-        Register* _ReturnRegister;
-        CommInterface* _Comm; // Pointer to add basic block to queues 
+    protected:
+       
         MemoryRequest* _Req; // Pointer for creating a memory access request
         std::string _LLVMLine;
         std::string _OpCode;
         std::string _ReturnType; // Return Type
         std::string _InstructionType; // Terminator, Binary, Etc...
+        Register* _ReturnRegister;
+        uint64_t _MaxCycle;
         std::vector<Register*> _Dependencies;
+        CommInterface* _Comm; // Pointer to add basic block to queues 
         std::vector<InstructionBase*> _Parents; // Parent Nodes
         std::vector<InstructionBase*> _Children; // Child Nodes
         std::vector<bool> _Status; // Ready Indicator, Index Matched To Parent
         uint64_t _Usage; // Counter for times instruction used
-        uint64_t _MaxCycle;
         uint64_t _CurrCycle;
     public:
         // ---- Constructor
@@ -119,7 +121,7 @@ class InstructionBase {
         // ---- Get Functions
         std::string getLLVMLine()      { return _LLVMLine; }
         std::string getOpCode()        { return _OpCode; }
-        std::string getInstrType()     { return _InstrType; }
+        std::string getInstrType()     { return _InstructionType; }
         // ---- Virtual Functions
         virtual bool commit()            = 0;
         virtual void compute()           = 0;  
@@ -141,7 +143,7 @@ class InstructionBase {
 //--------- Begin Terminator Instruction Base -------------------------------//
 //---------------------------------------------------------------------------//
 class Terminator : public InstructionBase {
-    private:
+    protected:
         Register* _Condition;
         // _Condition Usage
         // Br: Boolean, iftrue or iffalse
@@ -152,16 +154,16 @@ class Terminator : public InstructionBase {
         // Br: [0] == iftrue, [1] == iffalse
         // Switch: [0] == default, [1] == case 1, [2] == case 2, etc...
     public:
-        Terminator ( const std::string Destination) : // Unconditional Branch
+        Terminator ( const std::string& Destination) : // Unconditional Branch
                     _Destination(Destination) { }
-        Terminator( std::vector<std::string> Branches,
+        Terminator ( std::vector<std::string> Branches,
                     Register* Condition) : // Conditional Branches
                     _Condition(Condition),
                     _Branches(Branches) { }   
 };
 
 class Ret : public Terminator {
-    private:
+    protected:
 
     public:
         Ret (               const std::string& Line,
@@ -177,13 +179,13 @@ class Ret : public Terminator {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) { }
 };
 
 class Br : public Terminator {
-    private:
+    protected:
         bool _Unconditional;
 
     public:
@@ -203,7 +205,7 @@ class Br : public Terminator {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Terminator (      Destination)
@@ -225,7 +227,7 @@ class Br : public Terminator {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Terminator (      Condition,
@@ -234,7 +236,7 @@ class Br : public Terminator {
 };
 
 class Switch : public Terminator {
-    private:
+    protected:
     // returnType is switch statement Int Type
     std::vector<std::int> _CaseValues;
     public:
@@ -254,7 +256,7 @@ class Switch : public Terminator {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Terminator (      Condition,
@@ -295,7 +297,7 @@ class Unreachable : public Terminator {
 //--------- Begin Binary Instruction Base -----------------------------------//
 //---------------------------------------------------------------------------//
 class Binary : public InstructionBase {
-    private:
+    protected:
         std::vector<Register*> _Operands;
         uint64_t _Result;
         uint64_t _Flags;
@@ -309,7 +311,7 @@ class Binary : public InstructionBase {
 // ---- Binary ---- Integer Instructions
 
 class Add : public Binary, public Integer {
-    private:
+    protected:
 
     public:
         Add (               const std::string& Line,
@@ -328,7 +330,7 @@ class Add : public Binary, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -339,7 +341,7 @@ class Add : public Binary, public Integer {
 };
 
 class Sub : public Binary, public Integer {
-    private:
+    protected:
 
     public:
         Sub (               const std::string& Line,
@@ -358,7 +360,7 @@ class Sub : public Binary, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -369,7 +371,7 @@ class Sub : public Binary, public Integer {
 };
 
 class Mul : public Binary, public Integer {
-    private:
+    protected:
         
     public:
         Mul  (               const std::string& Line,
@@ -388,7 +390,7 @@ class Mul : public Binary, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -399,7 +401,7 @@ class Mul : public Binary, public Integer {
 };
 
 class UDiv : public Binary, public Integer, public Unsigned {
-    private:
+    protected:
 
     public:
         UDiv  (               const std::string& Line,
@@ -418,7 +420,7 @@ class UDiv : public Binary, public Integer, public Unsigned {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -430,7 +432,7 @@ class UDiv : public Binary, public Integer, public Unsigned {
 };
 
 class SDiv : public Binary, public Integer, public Signed {
-    private:
+    protected:
 
     public:
     SDiv  (               const std::string& Line,
@@ -449,7 +451,7 @@ class SDiv : public Binary, public Integer, public Signed {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -461,7 +463,7 @@ class SDiv : public Binary, public Integer, public Signed {
 };
 
 class URem : public Binary, public Integer, public Unsigned {
-    private:
+    protected:
         URem  (               const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
@@ -478,7 +480,7 @@ class URem : public Binary, public Integer, public Unsigned {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -491,7 +493,7 @@ class URem : public Binary, public Integer, public Unsigned {
 };
 
 class SRem : public Binary, public Integer, public Signed {
-    private:
+    protected:
 
     public:
         SRem (              const std::string& Line,
@@ -510,7 +512,7 @@ class SRem : public Binary, public Integer, public Signed {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -524,7 +526,7 @@ class SRem : public Binary, public Integer, public Signed {
 // ---- Binary ---- Floating Point Instructions
 
 class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
-    private:
+    protected:
 
     public:
         FAdd (              const std::string& Line,
@@ -543,7 +545,7 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -555,7 +557,7 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
 };
 
 class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
-    private:
+    protected:
 
     public:
         FSub (              const std::string& Line,
@@ -574,7 +576,7 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -586,7 +588,7 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
 };
 
 class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
-    private:
+    protected:
 
     public:
     FMul (              const std::string& Line,
@@ -605,7 +607,7 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -617,7 +619,7 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
 };
 
 class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
-    private:
+    protected:
 
     public:
     FDiv (              const std::string& Line,
@@ -636,7 +638,7 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -648,7 +650,7 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
 };
 
 class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
-    private:
+    protected:
 
     public:
     FRem (              const std::string& Line,
@@ -667,7 +669,7 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Binary (          RegOps,
@@ -684,7 +686,7 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
 //--------- Begin Bitwise Instruction Base ----------------------------------//
 //---------------------------------------------------------------------------//
 class Bitwise : public InstructionBase {
-    private:
+    protected:
         std::vector<Register*> _Operands;
         uint64_t _Result;
         uint64_t _Flag;
@@ -698,7 +700,7 @@ class Bitwise : public InstructionBase {
 // ---- Bitwise Instructions
 
 class Shl : public Bitwise, public Integer {
-    private:
+    protected:
 
     public:
     Shl (                   const std::string& Line,
@@ -717,7 +719,7 @@ class Shl : public Bitwise, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Bitwise (         RegOps,
@@ -728,7 +730,7 @@ class Shl : public Bitwise, public Integer {
 };
 
 class LShr : public Bitwise, public Integer {
-    private:
+    protected:
 
     public:
     LShr (                   const std::string& Line,
@@ -747,7 +749,7 @@ class LShr : public Bitwise, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Bitwise (         RegOps,
@@ -758,7 +760,7 @@ class LShr : public Bitwise, public Integer {
 };
 
 class AShr : public Bitwise, public Integer {
-    private:
+    protected:
 
     public:
     AShr (                   const std::string& Line,
@@ -777,7 +779,7 @@ class AShr : public Bitwise, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Bitwise (         RegOps,
@@ -788,7 +790,7 @@ class AShr : public Bitwise, public Integer {
 };
 
 class And : public Bitwise, public Integer {
-    private:
+    protected:
 
     public:
         And  (               const std::string& Line,
@@ -807,7 +809,7 @@ class And : public Bitwise, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Bitwise (         RegOps,
@@ -818,7 +820,7 @@ class And : public Bitwise, public Integer {
 };
 
 class Or : public Bitwise, public Integer {
-    private:
+    protected:
 
     public:
         Or (              const std::string& Line,
@@ -837,7 +839,7 @@ class Or : public Bitwise, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Bitwise (         RegOps,
@@ -848,7 +850,7 @@ class Or : public Bitwise, public Integer {
 };
 
 class Xor : public Bitwise, public Integer {
-    private:
+    protected:
 
     public:
     Xor (                  const std::string& Line,
@@ -867,7 +869,7 @@ class Xor : public Bitwise, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Bitwise (         RegOps,
@@ -883,7 +885,7 @@ class Xor : public Bitwise, public Integer {
 //--------- Begin Conversion Instruction Base -------------------------------//
 //---------------------------------------------------------------------------//
 class Conversion : public InstructionBase {
-    private:
+    protected:
         Register* _Operand;
         std::string _OriginalType;
         uint64_t _Result;
@@ -914,7 +916,7 @@ class Trunc : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -938,7 +940,7 @@ class ZExt : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -962,7 +964,7 @@ class SExt : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -986,7 +988,7 @@ class FPToUI : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1010,7 +1012,7 @@ class FPToSI : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1034,7 +1036,7 @@ class UIToFP : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1058,7 +1060,7 @@ class SIToFP : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1082,7 +1084,7 @@ class FPTrunc : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1106,7 +1108,7 @@ class FPExt : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1130,7 +1132,7 @@ class PtrToInt : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1154,7 +1156,7 @@ class IntToPtr : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1178,7 +1180,7 @@ class BitCast : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1202,7 +1204,7 @@ class AddrSpaceCast : public Conversion {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Conversion (      OriginalType,
@@ -1215,25 +1217,45 @@ class AddrSpaceCast : public Conversion {
 //--------- Begin Memory Instruction Base -----------------------------------//
 //---------------------------------------------------------------------------//
 class Memory : public InstructionBase {
-    private:
+    protected:
         // Address
         // alignment
 
     public:
-
+        Memory();
 
 };
 
 class Load : public Memory {
-
+    protected:
+        uint64_t _Align;
+        Register* _Pointer;
+    public:
+        Load();
 };
 
 class Store : public Memory {
-
+    protected:
+        uint64_t _Align;
+        uint64_t _Imm;
+        Register* _Pointer;
+        Register* _Value;
+    public:
+        Store();
 };
 
 class GetElementPtr : public Memory {
+    protected:
+        std::string _Pty;
+        LLVMType* _LLVMType;
+        std::vector<Register*> _Idx;
+        std::vector<std::string> _Type;
+        std::vector<int64_t> _ImmIdx;
+        Register* _PtrVal;
+        uint64_t _Index;
 
+    public:
+        GetElementPtr();
 };
 //---------------------------------------------------------------------------//
 //--------- End Memory Instruction Base -------------------------------------//
@@ -1241,7 +1263,7 @@ class GetElementPtr : public Memory {
 //--------- Begin Other Instruction Base ------------------------------------//
 //---------------------------------------------------------------------------//
 class Other : public InstructionBase {
-    private:
+    protected:
 
 
     public:
@@ -1249,7 +1271,7 @@ class Other : public InstructionBase {
 };
 
 class Phi : public Other, public Integer {
-/*
+/* 
 			std::string ty;
 			std::string ival[MAXPHI];
 			std::string ilabel[MAXPHI];
@@ -1259,6 +1281,13 @@ class Phi : public Other, public Integer {
 			std::string label[MAXPHI];
 			mutable Register *takenVal;
 */
+    protected:
+        std::vector<std::string> _PhiVal; // Value to be loaded
+		std::vector<std::string> _PhiLabel; // If from this BB
+
+    public:
+        Phi();
+
 };
 
 class Select : public Other, public Integer, public FloatingPointSP, public FloatingPointDP {
@@ -1274,12 +1303,18 @@ class Select : public Other, public Integer, public FloatingPointSP, public Floa
 			bool floatTy = false;
 			bool doubleTy = false;
 			bool immediate[2];
-
 */
+    protected:
+        Register* _Condition;
+        std::vector<Register*> _RegValues;
+		std::vector<int64_t> _ImmValues;
+        std::vector<bool> _Imm;
+    public:
+        Select();
 };
 // ---- Other Sub Type ---- Compare
 class Compare : public Other {
-    private:
+    protected:
         std::string _Condition;
         std::vector<Register*> _Operands;
         uint64_t _Flags;
@@ -1310,7 +1345,7 @@ class ICmp : public Compare, public Integer {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Compare (         RegOps,
@@ -1338,7 +1373,7 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
                             ReturnType, 
                             InstructionType, 
                             ReturnRegister, 
-                            MaxCycles, 
+                            MaxCycle, 
                             Dependencies, 
                             Comm) 
         , Compare (         RegOps,
@@ -1360,13 +1395,13 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
 //-----------------------------------------------------//
 class Vector : public InstructionBase {
     //-------------------------------------------------//
-    //----- Begin Private -----------------------------//
-    private:
+    //----- Begin protected -----------------------------//
+    protected:
 
 
 
 
-    //----- End Private -------------------------------//
+    //----- End protected -------------------------------//
     //-------------------------------------------------//
     //----- Begin Public ------------------------------//
     public:
@@ -1384,13 +1419,13 @@ class Vector : public InstructionBase {
 //-----------------------------------------------------//
 class Aggregate : public InstructionBase {
     //-------------------------------------------------//
-    //----- Begin Private -----------------------------//
-    private:
+    //----- Begin protected -----------------------------//
+    protected:
 
 
 
 
-    //----- End Private -------------------------------//
+    //----- End protected -------------------------------//
     //-------------------------------------------------//
     //----- Begin Public ------------------------------//
     public:

@@ -98,7 +98,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 				i += (rightDelimeter - i);
 			} else if (line[i] == '[') {
 				lastInLine = 0;
-				leftDelimeter = i + 1 +instruction.binary line.substr(i + 1).find('[');
+				leftDelimeter = i + 1 + line.substr(i + 1).find('[');
 				rightDelimeter = i + line.substr(i).find(']');
 				lastInLine = rightDelimeter;
 				while ((leftDelimeter < rightDelimeter) && (lastInLine >= 0)) {
@@ -787,22 +787,28 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			// Increment index
 			index++;
 			// Set volatile flag 
-			instruction.memory.load.volatileVar = true;
+			attributeFlags = attributeFlags | VOLATILE;
 		}
 		// Set return type
-		instruction.memory.load.ty = parameters[index];
-		instruction.general.returnType = parameters[index];
+		returnType = parameters[index];
 		
 		// Set return register type and size
-		instruction.general.returnRegister->setSize(instruction.memory.load.ty);
+		ret_reg->setSize(returnType);
 		int align = 0;
 		while (parameters[align].compare("align") != 0)
 		    align++;
 		// Determine if register that contains load address exists
-		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], instruction.memory.load.pointer, dependencies, list, parameters);
+		Register* pointer;
+		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], pointer, dependencies, list, parameters);
 		// Set value for alignment
 		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
-	        instruction.memory.load.align = stoi(parameters[align + 1]);
+	    align = stoi(parameters[align + 1]);
+
+		/*
+			align
+			pointer
+		*/
+
 		break;
 	}
 	case IR_Store: {
@@ -811,27 +817,32 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		instructionType = "Memory";
 		maxCycles = CYCLECOUNTSTORE;
 		int index = 1;
+		int align = 0;
+		int64_t imm;
 		if (parameters[1] == "volatile") {
 			index = 2;
-			instruction.memory.store.volatileVar = true;
+			attributeFlags = attributeFlags | VOLATILE;
 		}
-		instruction.memory.store.ty = parameters[index];
+		returnType = parameters[index];
+		Register* pointer;
+		Register* value;
 		
-		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], instruction.memory.store.pointer, dependencies, list, parameters);
-		else DPRINTF(ComputeNode, "Pointer is an immediate value, not implemented\n");
-		
+		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], pointer, dependencies, list, parameters);
 		if(isRegister(parameters[index + 1])) {
-			setRegister(parameters[index + 1], instruction.memory.store.value, dependencies, list, parameters);
-			instruction.memory.store.value->setSize(instruction.memory.store.ty);
+			setRegister(parameters[index + 1], value, dependencies, list, parameters);
+			value->setSize(returnType;
 		} else {
-			instruction.memory.store.immediate = true;
-			if (instruction.memory.store.ty[0] == 'i') {
-				instruction.memory.store.ival = stoi(parameters[2]);
-			}
+			if (returnType[0] == 'i') imm  = stoi(parameters[2]);
 			else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
+		align = std::stoi(parameters[index + 5]);
+		/*
+			align
+			imm
+			pointer
+			value
+		*/
 
-		instruction.memory.store.align = std::stoi(parameters[index + 5]);
 		break;
 	}
 	case IR_GetElementPtr: {
@@ -843,49 +854,55 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::string customDataType;
 		instructionType = "Memory";
 		maxCycles = CYCLECOUNTGETELEMENTPTR;
-		instruction.general.returnRegister->setSize("pointer");
-		instruction.general.integer = true;
-		instruction.general.multiplier = true;
+		ret_reg->setSize("pointer");
+		std::string pty; //instruction.memory.getptr.pty
+		Register* ptrval; // instruction.memory.getptr.ptrval
+		LLVMType* llvmtype; // instruction.memory.getptr.llvmType
+		std::vector<std::string> ty; // instruction.memory.getptr.ty[j]
+		std::vector<Register*> idx;
+		std::vector<int64_t> immdx;
+		uint64_t indexRet = 0;
+		Register* tempReg;
 		if (parameters[0] == "inbounds") {
-			instruction.memory.getptr.inbounds = true;
-			instruction.memory.getptr.pty = parameters[1];
-			instruction.general.returnType = parameters[1];
+			attributeFlags = attributeFlags | INBOUNDS;
+			pty = parameters[1];
+			returnType = parameters[1];
 			if (list->findRegister(parameters[3].substr(1)) == NULL) {
-				instruction.memory.getptr.ptrval = new Register(parameters[3]);
-				list->addRegister(instruction.memory.getptr.ptrval);
-			} else instruction.memory.getptr.ptrval = list->findRegister(parameters[3].substr(1));
+				ptrval = new Register(parameters[3]);
+				list->addRegister(ptrval);
+			} else ptrval = list->findRegister(parameters[3].substr(1));
 			if(parameters[1].back() != '*')
 			    index = 3;
 		    else
 		        index = 2;
 		} else {
-			instruction.memory.getptr.pty = parameters[0];
+			pty = parameters[0];
 			if (list->findRegister(parameters[2].substr(1)) == NULL) {
-				instruction.memory.getptr.ptrval = new Register(parameters[3]);
-				list->addRegister(instruction.memory.getptr.ptrval);
-			} else instruction.memory.getptr.ptrval = list->findRegister(parameters[2].substr(1));
+				ptrval = new Register(parameters[3]);
+				list->addRegister(ptrval);
+			} else ptrval = list->findRegister(parameters[2].substr(1));
 			
 			if (parameters[0].back() != '*')
 			    index = 2;
 		    else
 		        index = 1;
 		}
-		if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
-				int stringLength = (instruction.memory.getptr.pty.find_first_of(']') - instruction.memory.getptr.pty.find('%')-1);
-				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
-				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
-			if(instruction.memory.getptr.llvmType != NULL) {	
+		if(pty[0] == '[') { // Return type is a struct
+				int stringLength = (pty.find_first_of(']') - pty.find('%')-1);
+				customDataType = pty.substr(pty.find('%')+1, stringLength);
+				llvmtype = typeList->findType(customDataType);
+			if(llvmtype != NULL) {	
 				DPRINTF(LLVMGEP, "Custom Data Type = %s\n", customDataType);
 			} else {
 				customDataType = "none";
 				DPRINTF(LLVMGEP, "No Custom Data Types Found!\n");
 			}
 		}
-		if(instruction.memory.getptr.pty[0] == '%') { // Return type is a custom data type
-				int stringLength = (instruction.memory.getptr.pty.find_first_of(' ') - instruction.memory.getptr.pty.find('%')-1);
-				customDataType = instruction.memory.getptr.pty.substr(instruction.memory.getptr.pty.find('%')+1, stringLength);
-				instruction.memory.getptr.llvmType = typeList->findType(customDataType);
-			if(instruction.memory.getptr.llvmType != NULL) {	
+		if(pty[0] == '%') { // Return type is a custom data type
+				int stringLength = (pty.find_first_of(' ') - pty.find('%')-1);
+				customDataType = pty.substr(pty.find('%')+1, stringLength);
+				llvmtype = typeList->findType(customDataType);
+			if(llvmtype != NULL) {	
 				DPRINTF(LLVMGEP, "Custom Data Type = %s\n", customDataType);
 			} else {
 				customDataType = "none";
@@ -893,22 +910,35 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 			}
 		}
 		for (int i = 1; i + index <= last; i+=2) {
-			instruction.memory.getptr.ty[j] = parameters[index+i];
+			ty.push_back(parameters[index+i]);
 			//if(parameters[index+i+1][0] == '%') {
 			if(isRegister(parameters[index+i+1])) {
-				setRegister(parameters[index+i+1], instruction.memory.getptr.idx[j], dependencies, list, parameters);
-				instruction.memory.getptr.immediate[j] = false;
-				instruction.memory.getptr.immdx[j] = 0;
-				DPRINTF(LLVMGEP, "idx%d = %s\n", j, instruction.memory.getptr.idx[j]);
+				setRegister(parameters[index+i+1], tempReg, dependencies, list, parameters);
+				idx.push_back(tempReg);
+				immdx.push_back(0);
+				DPRINTF(LLVMGEP, "idx%d = %s\n", j, idx.at(j));
 			}
 			else {
-				instruction.memory.getptr.immediate[j] = true;
-				instruction.memory.getptr.immdx[j] = stoi(parameters[index+i+1]);
-				DPRINTF(LLVMGEP, "idx%d = %d\n", j, instruction.memory.getptr.immdx[j]);
+				idx.push_back(NULL);
+				immdx.push_back(stoi(parameters[index+i+1]));
+				DPRINTF(LLVMGEP, "idx%d = %d\n", j, immdx.at(j));
 			}
 			j++;
-			instruction.memory.getptr.index = j;
+			indexRet = j;
 		}
+
+		/*
+		pty
+		llvmtype
+		idx
+		ty
+		immdx
+		ptrval
+		indexret
+		*/
+
+
+		// Null Stored for register if immediate value used in the situation
 		break;
 	}
 	case IR_Fence: {
@@ -1295,42 +1325,74 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 	}
 	case IR_PHI: {
 		// <result> = phi <ty> [ <val0>, <label0>], ...
-		instructionType = "Other";
-		instruction.general.phi = true;
-		
+		instructionType = "Other";		
 		maxCycles = CYCLECOUNTPHI;
-		instruction.other.phi.ty = parameters[0];
-		instruction.general.returnRegister->setSize(instruction.other.phi.ty);
+		returnType = parameters[0];
+		ret_reg->setSize(returnType);
 		std::string *val = new std::string[last];
 		std::string *label = new std::string[last];
-		int labelLength = 0;
+		////////////////////////////////////////
+		std::vector<std::string> phiVal; // Value to be loaded
+		std::vector<std::string> phiLabel; // If from this BB
+		Register* tempReg;
+		////////////////////////////////////////
+		/* Old Phi Code
+			int labelLength = 0;
+			for (int i = 1; i <= last; i++) {
+				instruction.other.phi.ival[i - 1] = parameters[i]; // String
+				labelLength = instruction.other.phi.ival[i - 1].find(',');
+				labelLength = labelLength - instruction.other.phi.ival[i - 1].find('[');
+				val[i - 1] = instruction.other.phi.ival[i - 1].substr(2, (instruction.other.phi.ival[i - 1].find(',')) - 2);
+				labelLength = instruction.other.phi.ival[i - 1].find(',');
+				labelLength = instruction.other.phi.ival[i - 1].find(']') - labelLength;
+				label[i - 1] = instruction.other.phi.ival[i - 1].substr((instruction.other.phi.ival[i - 1].find(',')) + 3, labelLength - 4);
+				if(isRegister(val[i-1])) {
+					setRegister(val[i-1], instruction.other.phi.val[i - 1], dependencies, list, parameters);
+					instruction.other.phi.ival[i - 1].clear();
+					instruction.other.phi.immVal[i - 1] = false;
+					instruction.other.phi.label[i - 1] = label[i - 1];
+					DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
+				} else {
+					if (val[i-1] == "true") {
+						instruction.other.phi.ival[i - 1] = '1';
+					} else if (val[i-1] == "false") {
+						instruction.other.phi.ival[i - 1] = '0';
+					} else {
+						instruction.other.phi.ival[i - 1] = val[i - 1];
+					}
+					instruction.other.phi.immVal[i - 1] = true;
+					instruction.other.phi.label[i - 1] = label[i - 1];
+					DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
+				}
+			}
+		*/
 		for (int i = 1; i <= last; i++) {
-			instruction.other.phi.ival[i - 1] = parameters[i];
-			labelLength = instruction.other.phi.ival[i - 1].find(',');
-			labelLength = labelLength - instruction.other.phi.ival[i - 1].find('[');
-			val[i - 1] = instruction.other.phi.ival[i - 1].substr(2, (instruction.other.phi.ival[i - 1].find(',')) - 2);
-			labelLength = instruction.other.phi.ival[i - 1].find(',');
-			labelLength = instruction.other.phi.ival[i - 1].find(']') - labelLength;
-			label[i - 1] = instruction.other.phi.ival[i - 1].substr((instruction.other.phi.ival[i - 1].find(',')) + 3, labelLength - 4);
+			phiVal.push_back(parameters[i]);
+			labelLength = phiVal.at(i - 1).find(',');
+			labelLength = labelLength - phiVal.at(i - 1).find('[');
+			val[i - 1] = phiVal.at(i - 1).substr(2, (phiVal.at(i - 1).find(',')) - 2);
+			labelLength = phiVal.at(i - 1).find(',');
+			labelLength = phiVal.at(i - 1).find(']') - labelLength;
+			label[i - 1] = phiVal.at(i - 1).substr((phiVal.at(i - 1).find(',')) + 3, labelLength - 4);
 			if(isRegister(val[i-1])) {
-				setRegister(val[i-1], instruction.other.phi.val[i - 1], dependencies, list, parameters);
-				instruction.other.phi.ival[i - 1].clear();
-				instruction.other.phi.immVal[i - 1] = false;
-				instruction.other.phi.label[i - 1] = label[i - 1];
+				setRegister(val[i-1], tempReg, dependencies, list, parameters);				
+				phiVal.at(i - 1);
+				phiLabel.push_back(label[i - 1]);
 				DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			} else {
 				if (val[i-1] == "true") {
-					instruction.other.phi.ival[i - 1] = '1';
+					phiVal.push_back("1");
 				} else if (val[i-1] == "false") {
-					instruction.other.phi.ival[i - 1] = '0';
+					phiVal.push_back("0");
 				} else {
-					instruction.other.phi.ival[i - 1] = val[i - 1];
+					phiVal.push_back(val[i - 1]);
 				}
-				instruction.other.phi.immVal[i - 1] = true;
-				instruction.other.phi.label[i - 1] = label[i - 1];
+				phiLabel.push_back(label[i - 1]);
 				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			}
 		}
+		// Further Testing will be needed for phi for computing
+
 		break;
 	}
 	case IR_Call: {
@@ -1342,47 +1404,52 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// selty is either i1 or {<N x i1>}
 		instructionType = "Other";
 		maxCycles = CYCLECOUNTSELECT;
-		instruction.other.select.ty = parameters[2];
-		instruction.general.returnRegister->setSize(instruction.other.select.ty);
-
-		instruction.other.select.immediate[0] = false;
-		instruction.other.select.immediate[1] = false;
-		
-		if(parameters[2][0] == 'i') {
-			instruction.other.select.intTy = true;
-			DPRINTF(ComputeNode, "Integer Type\n");
-		} else if(parameters[2] == "float") {
-			instruction.other.select.floatTy = true;
-		} else if(parameters[2] == "double") {
-			instruction.other.select.doubleTy = true;
-		} else { }
-		if(isRegister(parameters[1])) setRegister(parameters[1], instruction.other.select.cond, dependencies, list, parameters);
-		else {
-			instruction.other.select.icondFlag = true;
-			if(parameters[1] == "true") instruction.other.select.icond = true;
+		returnType = parameters[2];
+		ret_reg->setSize(returnType);
+		Register* condition;
+		Register* tempReg;
+		std::vector<Register*> regvalues;
+		std::vector<int64_t> immvalues;
+		std::vector<bool> imm;
+		imm.push_back(false);
+		imm.push_back(false);
+		if(isRegister(parameters[1])) {
+			setRegister(parameters[1], condition, dependencies, list, parameters);
+			regvalues.push_back(tempReg);
+		} else {
+			if(parameters[1] == "true") condition = regList.findRegister("alwaysTrue");
+			else condition = regList.findRegister("alwaysFalse");
 		}
-		if(isRegister(parameters[3])) setRegister(parameters[3], instruction.other.select.val1, dependencies, list, parameters);
-		else {
+		if(isRegister(parameters[3])) {
+			setRegister(parameters[3], tempReg, dependencies, list, parameters);
+			regvalues.push_back(tempReg);
+		} else {
 			///////////////////////////////////
-			instruction.other.select.immediate[0] = true;
-			instruction.other.select.immVal[0] = stoi(parameters[3]);
+			immvalues.push_back(stoi(parameters[3]));
+			imm.at(0) = true;
 			///////////////////////////////////
 			if(parameters[2][0] == 'i') {
 			} else if(parameters[2] == "float") {
 			} else if(parameters[2] == "double") {
 			} else { }
 		}
-		if(isRegister(parameters[5])) setRegister(parameters[5], instruction.other.select.val2, dependencies, list, parameters);
-		else {
+		if(isRegister(parameters[5])) { 
+			setRegister(parameters[5], tempReg, dependencies, list, parameters);
+			regvalues.push_back(tempReg);
+		} else {
 			////////////////////////////////
-			instruction.other.select.immediate[1] = true;
-			instruction.other.select.immVal[1] = stoi(parameters[5]);
+			immvalues.push_back(stoi(parameters[5]));
+			imm.at(1) = true;
 			////////////////////////////
 			if(parameters[4][0] == 'i') {
 			} else if(parameters[2] == "float") {
 			} else if(parameters[2] == "double") {
 			} else { }
 		}
+
+
+
+
 		break;
 	}
 	case IR_VAArg: {
@@ -1433,6 +1500,7 @@ BasicBlock::Parse(std::string line, RegisterList *list, std::string prev, CommIn
 
 void
 ComputeNode::dependencyList(std::vector<std::string> &parameters, int dependencies) {
+	/*
 	DPRINTF(ComputeNode, "\n");
 	DPRINTF(ComputeNode, "Dependencies List: \n");
 	if(dependencies == 0) {
@@ -1443,6 +1511,7 @@ ComputeNode::dependencyList(std::vector<std::string> &parameters, int dependenci
 		}
 		DPRINTF(ComputeNode, "\n");
 	}
+	*/
 }
 
 

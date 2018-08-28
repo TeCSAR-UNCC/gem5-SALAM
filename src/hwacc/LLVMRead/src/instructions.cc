@@ -8,29 +8,12 @@ Add::compute() {
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1 = 0;
-	int64_t op2 = 0;
-	int64_t result = 0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else {
-		op1 = instruction.binary.op1->getValue();
-	}
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else {
-		op2 = instruction.binary.op2->getValue();
-	}
-	// Perform arithmetic
-	result = op1 + op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() + _Operand;
+	else _Results = _Operands.at(0)->getValue() + _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	
-	DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -41,24 +24,11 @@ Sub::compute() {
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1 = 0;
-	int64_t op2 = 0;
-	int64_t result = 0;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 - op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() - _Operand;
+	else _Results = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -69,120 +39,57 @@ Mul::compute() {
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1 = 0;
-	int64_t op2 = 0;
-	int64_t result = 0;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 * op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() * _Operand;
+	else _Results = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	// Store result in return register
+	_ReturnRegister->setValue(&result);
+	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
 UDiv::compute() {
 	// Unsigned Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	uint64_t op1 = 0;
-	uint64_t op2 = 0;
-	uint64_t result = 0;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 / op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() / _UOperand;
+	else _Results = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
 SDiv::compute() {
 	// Signed Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1 = 0;
-	int64_t op2 = 0;
-	int64_t result = 0;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 / op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() / _SOperand;
+	else _Results = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
 URem::compute() {
 	//Unsigned modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	uint64_t op1 = 0;
-	uint64_t op2 = 0;
-	uint64_t result = 0;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 % op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() % _UOperand;
+	else _Results = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
 SRem::compute() {
 	//Signed modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1 = 0;
-	int64_t op2 = 0;
-	int64_t result = 0;
-	// If immediate values convert from string, else load from register
-	if (instruction.binary.immediate1) {
-		op1 = stoi(instruction.binary.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.binary.op1->getValue();
-	if (instruction.binary.immediate2) {
-		op2 = stoi(instruction.binary.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.binary.op2->getValue();
-	// Perform arithmetic
-	result = op1 % op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() % _SOperand;
+	else _Results = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -192,52 +99,34 @@ FAdd::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
-	double result;
-	float fresult = 0.0;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) {
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+	if (_ReturnType.find("double") == 0) {
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(double *)&OP1;
+			_Result = op1 + _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(double *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(double *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(double *)&OP1;
+			op2 = *(double *)&OP2;
+			_Result = op1 + op2;
 		}
 	} else {
-		if (instruction.binary.immediate1) {
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(float *)&OP1;
+			_Result = op1 + _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(float *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(float *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(float *)&OP1;
+			op2 = *(float *)&OP2;
+			_Result = op1 + op2;
 		}
 	}
-	// Perform arithmetic
-	result = op1 + op2;
-	// Store result in return register
-	
-	if (instruction.binary.ty.find("float") == 0) {
-		// Typecast to float before returning value
-		fresult = (float)result;
-		instruction.general.returnRegister->setValue(&fresult);
-	} else instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp,"%u\n", fresult);
-	DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -247,49 +136,34 @@ FSub::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
-	double result;
-	float fresult;
-	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) {
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+	// If immediate values convert from string, else load from register
+	if (_ReturnType.find("double") == 0) {
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(double *)&OP1;
+			_Result = op1 - _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(double *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(double *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(double *)&OP1;
+			op2 = *(double *)&OP2;
+			_Result = op1 - op2;
 		}
 	} else {
-		if (instruction.binary.immediate1) {
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(float *)&OP1;
+			_Result = op1 - _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(float *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(float *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(float *)&OP1;
+			op2 = *(float *)&OP2;
+			_Result = op1 - op2;
 		}
 	}
-	// Perform arithmetic
-	result = op1 - op2;
-	// Store result in return register
-	if (instruction.binary.ty.find("float") == 0) {
-		// Typecast to float before returning value
-		fresult = (float)result;
-		instruction.general.returnRegister->setValue(&fresult);
-	} else instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, _ReturnRegister->getName());
 }
 
 void 
@@ -299,54 +173,34 @@ FMul::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
-	double result;
-	float fresult;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) { 
-			DPRINTF(IOAcc, "Gibberish\n");
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+	if (_ReturnType.find("double") == 0) {
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(double *)&OP1;
+			_Result = op1 * _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(double *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			DPRINTF(IOAcc, "Gibberish\n");
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(double *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(double *)&OP1;
+			op2 = *(double *)&OP2;
+			_Result = op1 * op2;
 		}
 	} else {
-		if (instruction.binary.immediate1) {
-			DPRINTF(IOAcc, "Gibberish\n");
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(float *)&OP1;
+			_Result = op1 * _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(float *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			DPRINTF(IOAcc, "Gibberish\n");
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(float *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(float *)&OP1;
+			op2 = *(float *)&OP2;
+			_Result = op1 * op2;
 		}
 	}
-	// Perform arithmetic
-	result = op1 * op2;
-	// Store result in return register
-	if (instruction.binary.ty.find("float") == 0) {
-		// Typecast to float before returning value
-		fresult = (float)result;
-		instruction.general.returnRegister->setValue(&fresult);
-	} else instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -356,50 +210,34 @@ FDiv::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
-	double result;
-	float fresult;
 	// If immediate values convert from string, else load from register
-	if (instruction.binary.ty.find("double") == 0) {
-		if (instruction.binary.immediate1) { 
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+	if (_ReturnType.find("double") == 0) {
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(double *)&OP1;
+			_Result = op1 / _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(double *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(double *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(double *)&OP1;
+			op2 = *(double *)&OP2;
+			_Result = op1 / op2;
 		}
 	} else {
-		if (instruction.binary.immediate1) { 
-			op1 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop1));
-			instruction.general.immediateCount->accessedRead();
+		if (_Operands.size() == 1) {
+			uint64_t OP1 = _Operand.at(0)->getValue();
+			op1 = *(float *)&OP1;
+			_Result = op1 / _OperandDP;
 		} else {
-		    uint64_t temp1 = instruction.binary.op1->getValue();
-		    op1 = *(float *)&temp1;
-		}
-		if (instruction.binary.immediate2) {
-			op2 = stof(convertImmediate(instruction.binary.ty, instruction.binary.iop2));
-			instruction.general.immediateCount->accessedRead();
-		} else {
-		    uint64_t temp2 = instruction.binary.op2->getValue();
-		    op2 = *(float *)&temp2;
+		    uint64_t OP1 = _Operand.at(0)->getValue();
+		    uint64_t OP2 = _Operand.at(1)->getValue();
+			op1 = *(float *)&OP1;
+			op2 = *(float *)&OP2;
+			_Result = op1 / op2;
 		}
 	}
-	// Perform arithmetic
-	result = op1 / op2;
-	// Store result in return register
-	if (instruction.binary.ty.find("float") == 0) {
-		// Typecast to float before returning value
-		fresult = (float)result;
-		instruction.general.returnRegister->setValue(&fresult);
-	} else instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -413,24 +251,11 @@ Shl::compute() {
 	// <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1;
-	int64_t op2;
-	int64_t result;
-	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) {
-		op1 = stoi(instruction.bitwise.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) {
-		op2 = stoi(instruction.bitwise.iop2);
-		instruction.general.immediateCount->accessedRead();	
-	} else op2 = instruction.bitwise.op2->getValue();
-	// Perform arithmetic
-	result = op1 << op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() << _Operand;
+	else _Results = _Operands.at(0)->getValue() << _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u << %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u << %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -439,24 +264,11 @@ LShr::compute() {
 	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
 	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1;
-	int64_t op2;
-	int64_t result;
-	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) {
-		op1 = stoi(instruction.bitwise.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) {
-		op2 = stoi(instruction.bitwise.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.bitwise.op2->getValue();
-	// Perform arithmetic
-	result = ((unsigned) op1) >> op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() >> _Operand;
+	else _Results = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -465,27 +277,11 @@ AShr::compute() {
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1;
-	int64_t op2;
-	int64_t result;
-	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) {
-		op1 = stoi(instruction.bitwise.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) {
-		op2 = stoi(instruction.bitwise.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.bitwise.op2->getValue();
-	// Perform arithmetic
-	if (op1 < 0 && op2 > 0)
-        result = op1 >> op2 | ~(~0U >> op2);
-    else
-        result = op1 >> op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() >> _Operand;
+	else _Results = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -493,24 +289,11 @@ And::compute() {
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1;
-	int64_t op2;
-	int64_t result;
-	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) {
-		op1 = stoi(instruction.bitwise.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) {
-		op2 = stoi(instruction.bitwise.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.bitwise.op2->getValue();
-	// Perform arithmetic
-	result = op1 & op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() & _Operand;
+	else _Results = _Operands.at(0)->getValue() & _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u & %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u & %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -518,24 +301,11 @@ Or::compute() {
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1;
-	int64_t op2;
-	int64_t result;
-	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) {
-		op1 = stoi(instruction.bitwise.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) {
-		op2 = stoi(instruction.bitwise.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.bitwise.op2->getValue();
-	// Perform arithmetic
-	result = op1 | op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() | _Operand;
+	else _Results = _Operands.at(0)->getValue() | _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -543,33 +313,20 @@ Xor::compute() {
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	int64_t op1;
-	int64_t op2;
-	int64_t result;
-	// If immediate values convert from string, else load from register
-	if (instruction.bitwise.immediate1) {
-		op1 = stoi(instruction.bitwise.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.bitwise.op1->getValue();
-	if (instruction.bitwise.immediate2) {
-		op2 = stoi(instruction.bitwise.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.bitwise.op2->getValue();
-	// Perform arithmetic
-	result = op1 ^ op2;
+	if (_Operands.size() == 1) _Results = _Operands.at(0)->getValue() ^ _Operand;
+	else _Results = _Operands.at(0)->getValue() ^ _Operands.at(1)->getValue();
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "%u ^ %u = %u: Stored in Register %s. \n", op1, op2, instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
-
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "%u ^ %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 /*
 void
 Load::compute() {
-    uint64_t src = instruction.memory.load.pointer->value;
-	instruction.general.returnRegister->setSize();
-	DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), instruction.general.returnRegister->size);
-	req = new MemoryRequest((Addr)src, instruction.general.returnRegister->size);
+    uint64_t src = instruction.memory.load.pointer->getValue();
+	_ReturnRegister->setSize();
+	DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), _ReturnRegister->size);
+	req = new MemoryRequest((Addr)src, _ReturnRegister->size);
 	comm->enqueueRead(req);
 	break;  
 }
@@ -578,14 +335,14 @@ void
 Store::compute() {
 	uint64_t data;
 	uint64_t size = 0;
-	uint64_t dst = instruction.memory.store.pointer->value;
+	uint64_t dst = instruction.memory.store.pointer->getValue();
 	if(instruction.memory.store.immediate) {
 		DPRINTF(ComputeNode, "Immediate value store. \n");
 		data = (uint64_t) instruction.memory.store.ival;
 		size = setSize(instruction.memory.store.ty);
 		req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 	} else {
-	    data = instruction.memory.store.value->value;
+	    data = instruction.memory.store.value->getValue();
         req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.memory.store.value->size);
 		DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
 	}
@@ -662,7 +419,7 @@ GetElementPtr::compute {
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-	DPRINTF(LLVMGEP, "Performing %s Operation  (%s)\n", _OpCode, instruction.general.returnRegister->getName());
+	DPRINTF(LLVMGEP, "Performing %s Operation  (%s)\n", _OpCode, _ReturnRegister->getName());
 	uint64_t index = instruction.memory.getptr.index;
 	uint64_t elements[MAXGPE];
 	uint64_t currentValue[MAXGPE];
@@ -709,7 +466,7 @@ GetElementPtr::compute {
 					DPRINTF(LLVMGEP, "Adding Final Offset: (%d)\n", instruction.memory.getptr.idx[i]->getValue());
 				} else {
 				DPRINTF(LLVMGEP, "Register Loaded Value:\n");
-				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d) = (%d)\n", i, dataSize, instruction.memory.getptr.idx[i]->value, dataSize * instruction.memory.getptr.idx[i]->value);				
+				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d) = (%d)\n", i, dataSize, instruction.memory.getptr.idx[i]->getValue(), dataSize * instruction.memory.getptr.idx[i]->getValue());				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 				}
 			}
@@ -722,7 +479,7 @@ GetElementPtr::compute {
 		else finalCount *=4;
 		DPRINTF(LLVMGEP, "Final Offset: %d\n", finalCount);
 		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
-		instruction.general.returnRegister->setValue(&newAddress);
+		_ReturnRegister->setValue(&newAddress);
 		////////////////////////////////////////
 	} else if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
 		for(int i = 0; i < instruction.memory.getptr.pty.size(); i++){
@@ -761,7 +518,7 @@ GetElementPtr::compute {
 					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
 				} else {
 				DPRINTF(LLVMGEP, "Register \n");
-				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->value);				
+				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
 				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
 				}
 			}
@@ -775,7 +532,7 @@ GetElementPtr::compute {
 		else finalCount *=4;
 		DPRINTF(LLVMGEP, "Final Offset: %d\n", finalCount);
 		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
-		instruction.general.returnRegister->setValue(&newAddress);
+		_ReturnRegister->setValue(&newAddress);
 	} else {
 		for(int i = 0; i < MAXGPE; i++) {
 			if (instruction.memory.getptr.pty[i] == 'i') {
@@ -804,12 +561,12 @@ GetElementPtr::compute {
 		}
 		//newAddress *= size[0];
 		newAddress += instruction.memory.getptr.ptrval->getValue();
-		instruction.general.returnRegister->setValue(&newAddress);
+		_ReturnRegister->setValue(&newAddress);
 	}
 	DPRINTF(LLVMGEP, "Global Register Read: (%s)\n",instruction.memory.getptr.ptrval->getName());
 	instruction.memory.getptr.ptrval->accessedRead();
-	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->value);
-	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", instruction.general.returnRegister->value, instruction.general.returnRegister->value);
+	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
+	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", _ReturnRegister->getValue(), _ReturnRegister->getValue());
 
 }
 
@@ -838,7 +595,7 @@ Trunc::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 
 }
 
@@ -859,7 +616,7 @@ ZExt::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	instruction.general.returnRegister->setValue(&result);    
+	_ReturnRegister->setValue(&result);    
 }
 
 void
@@ -879,7 +636,7 @@ SExt::compute() {
 		if(value) result = -1;
 		else result = 0;
 	}
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 }
 ////////////////////////////////////////////////////////
 
@@ -900,7 +657,7 @@ FPtoUI::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 }
 void
 FPtoSI::compute() {
@@ -919,7 +676,7 @@ FPtoSI::compute() {
 		if(value) result = 1;
 		else result = 0;
 	}
-	instruction.general.returnRegister->setValue(&result);	
+	_ReturnRegister->setValue(&result);	
 }
 void
 UItoFP::compute() {
@@ -933,7 +690,7 @@ UItoFP::compute() {
 	if (instruction.conversion.ty2 == "double") result = (double) value;
 	else if (instruction.conversion.ty2 == "float") result = (float) value;
 
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 }
 void
 SItoFP::compute() {
@@ -947,7 +704,7 @@ SItoFP::compute() {
 	if (instruction.conversion.ty2 == "double") result = (double) value;
 	else if (instruction.conversion.ty2 == "float") result = (float) value;
 
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 }
 void 
 FPTrunc::compute() {
@@ -960,7 +717,7 @@ FPTrunc::compute() {
 	
 	if (instruction.conversion.ty2 == "float") result = (float) value;
 
-	instruction.general.returnRegister->setValue(&result);	
+	_ReturnRegister->setValue(&result);	
 }
 void
 FPExt::compute() {
@@ -973,7 +730,7 @@ FPExt::compute() {
 	
 	if (instruction.conversion.ty2 == "double") result = (float) value;
 
-	instruction.general.returnRegister->setValue(&result);		
+	_ReturnRegister->setValue(&result);		
 }
 void
 PtrtoInt::compute() {
@@ -992,7 +749,7 @@ PtrtoInt::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-		instruction.general.returnRegister->setValue(&result);
+		_ReturnRegister->setValue(&result);
 	}
 	else {
 		if(instruction.conversion.immediate) {
@@ -1008,7 +765,7 @@ PtrtoInt::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 	}
 }
 void
@@ -1028,7 +785,7 @@ InttoPtr::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-		instruction.general.returnRegister->setValue(&result);
+		_ReturnRegister->setValue(&result);
 	}
 	else {
 		if(instruction.conversion.immediate) {
@@ -1044,7 +801,7 @@ InttoPtr::compute() {
 			if(value) result = 1;
 			else result = 0;
 		}
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 	}	
 }
 void
@@ -1091,7 +848,7 @@ ICmp::compute() {
 	else if (instruction.other.compare.condition.slt) result = ((int)op1 < (int)op2);
 	else if (instruction.other.compare.condition.sle) result = ((int)op1 <= (int)op2);
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
+	_ReturnRegister->setValue(&result);
 	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
 }
 void
@@ -1167,8 +924,8 @@ FCmp::compute() {
 		DPRINTF(LLVMOp, "Unordered:\n");
 	}
 	// Store result in return register
-	instruction.general.returnRegister->setValue(&result);
-	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, instruction.general.returnRegister->value);
+	_ReturnRegister->setValue(&result);
+	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, _ReturnRegister->getValue());
 }
 void
 Phi::compute() {
@@ -1187,8 +944,8 @@ Phi::compute() {
 		}
 	}
 	// Store val in return register
-	instruction.general.returnRegister->setValue(&val);
-	DPRINTF(LLVMOp, "Storing %u in Register %s\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+	_ReturnRegister->setValue(&val);
+	DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 void 
 Call::compute() { }
@@ -1214,16 +971,16 @@ Select::compute() {
 		} else val2 = instruction.other.select.val2->getValue();		
 		
 		if(instruction.other.select.icondFlag){
-			if(instruction.other.select.icond) instruction.general.returnRegister->setValue(&val1);
-			else instruction.general.returnRegister->setValue(&val2);
+			if(instruction.other.select.icond) _ReturnRegister->setValue(&val1);
+			else _ReturnRegister->setValue(&val2);
 		} else {
 			condition = instruction.other.select.cond->getValue();
-			if(condition) instruction.general.returnRegister->setValue(&val1);
-			else instruction.general.returnRegister->setValue(&val2);
+			if(condition) _ReturnRegister->setValue(&val1);
+			else _ReturnRegister->setValue(&val2);
 		}
-	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, (int) instruction.general.returnRegister->value);
+	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, (int) _ReturnRegister->getValue());
 	}
-	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", instruction.general.returnRegister->value, instruction.general.returnRegister->getName());
+	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 */
@@ -1327,13 +1084,13 @@ InstructionBase::commit() {
     /*
 	// If cycle count is = max cycle count, commit register value to memory
 	DPRINTF(LLVMRegister, "Committing (%s) Compute Node:\n", _OpCode);
-	if (instruction.general.returnRegister != NULL) {
-		DPRINTF(LLVMRegister, "Attempting to Commit Register (%s)\n", instruction.general.returnRegister->getName());
+	if (_ReturnRegister != NULL) {
+		DPRINTF(LLVMRegister, "Attempting to Commit Register (%s)\n", _ReturnRegister->getName());
 		instruction.cycle.current++;
 		DPRINTF(LLVMRegister, "Cycle: Current = (%d) || Max = (%d) || Remaining = (%d)\n", instruction.cycle.current, instruction.cycle.max, instruction.cycle.max - instruction.cycle.current);
 		if (instruction.cycle.current >= instruction.cycle.max) {
-			instruction.general.returnRegister->commit();
-			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", instruction.general.returnRegister->getName(), instruction.general.returnRegister->value);
+			_ReturnRegister->commit();
+			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", _ReturnRegister->getName(), _ReturnRegister->getValue());
 			return true;
 		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
 	}
@@ -1383,9 +1140,9 @@ InstructionBase::checkDependency() {
 	DPRINTF(LLVMRegister, "Checking Dependencies: Finished!\n\n");
 
 	if(!hot) {
-		if((instruction.general.returnRegister != NULL)) {
-			DPRINTF(LLVMRegister, "Writing to Register (%s)!\n",instruction.general.returnRegister->getName());
-			instruction.general.returnRegister->accessedWrite();
+		if((_ReturnRegister != NULL)) {
+			DPRINTF(LLVMRegister, "Writing to Register (%s)!\n",_ReturnRegister->getName());
+			_ReturnRegister->accessedWrite();
 		}
 		if(!instruction.general.terminator) {
 			for(int i = 0; i < dependencies; i++) {

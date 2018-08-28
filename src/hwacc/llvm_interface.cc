@@ -47,15 +47,7 @@ LLVMInterface::tick() {
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue->size(), readQueue->size(), writeQueue->size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
-
-    int intMultiplierCount = 0;
-    int intAdderCount = 0;
-    int fpMultiplierCount = 0;
-    int fpAdderCount = 0;
-    int bitCount = 0;
-    int shiftCount = 0;
-    int fpDivision = 0;
-    pwrUtil->clearAll();
+    /*
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
         if ((*it)->commit()) {
             // If compute node is ready to commit, fetch the updated instruction struct
@@ -65,10 +57,6 @@ LLVMInterface::tick() {
             ++it; // Compute node is not ready, check next node
         }
     }
-    pwrUtil->calculateDynamicPowerUsage(fpDivision);
-    DPRINTF(Hardware, "Integer Units: (%d) Add | (%d) Mul | (%d) Bit | (%d) Shift\n",pwrUtil->currintAdd(), pwrUtil->currintMul(), pwrUtil->currBit(), pwrUtil->currShift());
-    DPRINTF(Hardware, "FP Units: (%d) Add | (%d) Mul\n",pwrUtil->currfpAdd(), pwrUtil->currfpMul());
-   // pwrUtil->clearAll();
 
     if (reservation->empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
@@ -84,13 +72,11 @@ LLVMInterface::tick() {
             if (instr.general.opCode.find("load") == 0) { // Load Instruction
                 DPRINTF(LLVMInterface, "Queueing Load Instruction!\n");
                 scheduled = true;
-                execnodes++;
                 readQueue->push_back(*it); // Interface instruction with gem5 memory management
                 (*it)->compute(); // Send instruction to runtime computation simulator
             } else if (instr.general.opCode.find("store") == 0) { // Store Instruction
                 DPRINTF(LLVMInterface, "Queueing Store Instruction!\n");
                 scheduled = true;
-                execnodes++;
                 writeQueue->push_back(*it); // Interface instruction with gem5 memory management
                 (*it)->compute(); // Send instruction to runtime computation simulator
             } else if (instr.general.opCode.find("phi") == 0) { // Phi Instruction
@@ -101,12 +87,9 @@ LLVMInterface::tick() {
             } else { // General Computation Instruction
                 DPRINTF(LLVMInterface, "Queueing Compute Instruction!\n"); 
                 scheduled = true;
-                execnodes++;
                 computeQueue->push_back(*it); // Interface instruction with runtime computation engine
                 (*it)->compute(); // Send instruction to runtime computation simulator
             }
-            pwrUtil->update(instr);
-            // opCount[instr.general.opCode]++; // Increment instruction use counter
             it = reservation->erase(it); // Remove instruction from reservation table
         } else if ((instr.general.opCode.compare("br") == 0) && !((*it)->checkDependency())) {
             // If instruction is a branch instruction with no hot dependencies
@@ -119,7 +102,6 @@ LLVMInterface::tick() {
                 DPRINTF(LLVMInterface, "Branching to Basic Block: (%s)\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest); // Set pointer to next basic block
                 pwrUtil->update(instr);
-                // opCount[instr.general.opCode]++; // Increment intruction use counter 
                 it = reservation->erase(it); // Remove instruction from reservation table
                 scheduleBB(currBB); // Add next basic block to reservation table
             } else {
@@ -135,8 +117,6 @@ LLVMInterface::tick() {
                 instr = (*it)->getInstruction(); // Update instruction data struct
                 DPRINTF(LLVMInterface, "Branching to Basic Block from Switch Statement: (%s)\n", instr.terminator.dest);
                 currBB = findBB(instr.terminator.dest); // Set pointer to next basic block
-                pwrUtil->update(instr);
-                // opCount[instr.general.opCode]++; // Increment intruction use counter
                 it = reservation->erase(it); // Remove instruction from reservation table
                 scheduleBB(currBB); // Add next basic block to reservation table
             } else {
@@ -147,20 +127,6 @@ LLVMInterface::tick() {
                 // Only execute instruction once all other compute nodes in BB are complete
                 running = false;
                 //We are done!!!!
-                /*
-                DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %d %s",
-                        "\n*******************************************************************************",
-                        "\n   Runtime (Cycles): ", cycle,
-                        "\n   Runtime (Seconds):", (cycle*10*(1e-12)),
-                        "\n   Stalls  (Cycles): ", stalls,
-                        "\n   Executed Nodes: ", execnodes,
-                        "\n   Number of Registers: ", regList->size(),
-                        "\n*******************************************************************************\n");
-                */
-                regList->calculateTotals();
-                pwrUtil->calculateLeakagePowerUsage();
-                pwrUtil->calculateRegisterPowerUsage(regList->getReads(),regList->getWrites(),regList->getCount(),regList->getWordSize());
-                pwrUtil->calculateArea();
                 statistics(); // Prints out instruction use count
                 comm->finish(); // Signal to gem5 simulation is complete
                 break; 
@@ -169,6 +135,7 @@ LLVMInterface::tick() {
             ++it; // Current compute node is not ready to be executed
         }
     }
+    */
     if (!scheduled) stalls++; // No new compute node was scheduled this cycle
     if (running && !tickEvent.scheduled())
     {
@@ -187,6 +154,7 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
  and immediately compute and commit.
 *********************************************************************************************/
     DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
+    /*
     for(auto it=bb->cnList->begin(); it!=bb->cnList->end(); ++it) {
         Instruction instr = (*it)->getInstruction(); // Update instruction data struct
         //if it is a phi and we don't have an unmet dependency -> commit immediately
@@ -195,9 +163,7 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
             if (!(*it)->checkDependency()) { 
                 // Phi should never have runtime dependency once BB is scheduled
                 (*it)->compute(); // Send instruction to runtime computation simulator
-               // (*it)->commit(); // Store Phi 
                pwrUtil->update(instr);
-               // opCount[instr.general.opCode]++; // Increment intruction use counter
             } else {
                 // Phi instruction should never have a dependency when scheduled
                 DPRINTF(IOAcc, "Error: Phi Instruction Scheduled with Dependency!\n");
@@ -219,6 +185,7 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
             reservation->push_back(*it); // Add instruction back to reservation table
         }
     }
+    */
 }
 
 void
@@ -232,6 +199,10 @@ LLVMInterface::constructBBList() {
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
+    Register alwaysTrue = new Register(alwaysTrue, 1);
+    Register alwaysFalse = new Register(alwaysFalse, 0);
+    regList.addRegister(alwaysTrue);
+    regList.addRegister(alwaysFalse);
     //pwrUtil = new Utilization(clock_period/1000);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
@@ -355,11 +326,11 @@ LLVMInterface::readCommit(MemoryRequest * req) {
 *********************************************************************************************/
     for (auto it=readQueue->begin(); it!=readQueue->end(); ++it) {
         if ((*it)->getReq() == req) {
-            Instruction instr = (*it)->getInstruction(); // Update instruction data struct
-            instr.general.returnRegister->setValue(req->buffer); // Store read value into the return register of compute node
-            instr.general.returnRegister->commit(); // Commit the stored value and set register as ready to be read
+          //  Instruction instr = (*it)->getInstruction(); // Update instruction data struct
+          //  instr.general.returnRegister->setValue(req->buffer); // Store read value into the return register of compute node
+          //  instr.general.returnRegister->commit(); // Commit the stored value and set register as ready to be read
             DPRINTF(LLVMInterface, "Read Operation Complete!\n");
-            DPRINTF(LLVMRegister, "Commit Loaded Value Into Register: (%s)\n", instr.general.returnRegister->getName());
+          //  DPRINTF(LLVMRegister, "Commit Loaded Value Into Register: (%s)\n", instr.general.returnRegister->getName());
             it = readQueue->erase(it); // Remove compute node from queue
         }
     }
@@ -372,10 +343,10 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 *********************************************************************************************/    
     for (auto it=writeQueue->begin(); it!=writeQueue->end(); ++it) {
         if ((*it)->getReq() == req) {
-            Instruction instr = (*it)->getInstruction(); // Update instruction data struct
+          //  Instruction instr = (*it)->getInstruction(); // Update instruction data struct
             DPRINTF(LLVMInterface, "Store Operation Complete!\n");
-            if(instr.memory.store.immediate) DPRINTF(LLVMRegister, "Immediate Value Stored Into Memory!\n");
-            else DPRINTF(LLVMRegister, "Value From Register (%s) Stored Into Memory!\n", instr.memory.store.value->getName());
+          //  if(instr.memory.store.immediate) DPRINTF(LLVMRegister, "Immediate Value Stored Into Memory!\n");
+          //  else DPRINTF(LLVMRegister, "Value From Register (%s) Stored Into Memory!\n", instr.memory.store.value->getName());
             it = writeQueue->erase(it); // Remove compute node from queue
         }
     }

@@ -28,8 +28,6 @@ class LLVMInterface : public ComputeUnit {
     int process_delay;
     int cycle;
     int stalls;
-    int execnodes;
-    Utilization *pwrUtil;
     typedef std::map<std::string, int> opCodeCount;
     opCodeCount opCount;
   protected:

@@ -3,6 +3,7 @@
 #include "debugFlags.hh" 
 #include "debug/Hardware.hh"
 #include "power_func.hh"
+#include "macros.hh"
 #include <map>
 #include <vector>
 
@@ -78,7 +79,7 @@ class Utilization {
      void calculateDynamicPowerUsage(int cycle);
      void calculateRegisterPowerUsage(int read, int write, int count, int wordSize);
      void calculateArea();
-     void update(Instruction instr);
+     void update();
      void clearAll();
      float getRegLeak() { return totalPwr.reg_leakage_power; }
      float getRegDyn() { return totalPwr.reg_dynamic_energy; }

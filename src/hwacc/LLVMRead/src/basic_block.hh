@@ -1,6 +1,7 @@
 #ifndef __BASIC_BLOCK_HH__
 #define __BASIC_BLOCK_HH__
 #include "debugFlags.hh"
+#include "instructions.hh"
 
 class BasicBlock {
   friend class LLVMInterface;
@@ -142,7 +143,6 @@ class BasicBlock {
       {"cosine", IR_Cosine} 
     };
     // Previously list * cnList
-    std::vector<InstructionBase*> _Nodes;
     // Previously name
     std::string _PrevBB; // Not stored but should be here I think
     std::string _Name;
