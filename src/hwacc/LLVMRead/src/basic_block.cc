@@ -1669,19 +1669,31 @@ BasicBlock::setRegOperands(RegisterList *list, std::vector<std::string> &paramet
 	if(!(instructionType.compare("Binary"))){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) setRegister(parameters[last], op, dependencies, list, parameters);
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op, dependencies, list, parameters);
+			operands.push_back(op);
+		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], op, dependencies, list, parameters);
-
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op, dependencies, list, parameters);
+			operands.push_back(op);
+		}
 	} else if(!(instructionType.compare("Bitwise"))) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) setRegister(parameters[last], op, dependencies, list, parameters);
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op, dependencies, list, parameters);
+			operands.push_back(op);
+		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) setRegister(parameters[last-1], op, dependencies, list, parameters);
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op, dependencies, list, parameters);
+			operands.push_back(op);
+		}
 	}
+	
 	return operands;
 }
 
@@ -1692,7 +1704,7 @@ BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &paramet
 	if(!(instructionType.compare("Binary"))){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(!(isRegister(parameters[last-1]))) {
+		if(!(isRegister(parameters[last]))) {
 			// Operation uses immediate value
 			// Load string representation of immediate value
 			operands.push_back(parameters[last]);
@@ -1707,7 +1719,7 @@ BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &paramet
 	} else if(!(instructionType.compare("Bitwise"))) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(!(isRegister(parameters[last-1]))) {
+		if(!(isRegister(parameters[last]))) {
 			// Operation uses immediate value
 			// Load string representation of immediate value
 			operands.push_back(parameters[last]);
@@ -1765,6 +1777,10 @@ BasicBlock::printNodes() {
 	// }
 	std::cout << "Nodes for " << _Name << " Size: " << _Nodes.size() << std::endl;
 	for(auto i=0; i<_Nodes.size(); i++) {
-		std::cout << _Nodes.at(i)->_OpCode << std::endl;
+		std::cout << _Nodes.at(i)->_OpCode << " Dependencies" << std::endl;
+		for(auto j = 0; j<_Nodes.at(i)->_Dependencies.size(); j++) {
+			std::cout << _Nodes.at(i)->_Dependencies.at(j)->getName() << std::endl;
+		}
+		
 	}
 }

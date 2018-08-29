@@ -24,6 +24,10 @@ class LLVMInterface : public ComputeUnit {
    // std::list<ComputeNode*> *readQueue;
    // std::list<ComputeNode*> *writeQueue;
    // std::list<ComputeNode*> *computeQueue;
+    std::vector<std::shared_ptr<InstructionBase> > reservation;
+    std::vector<std::shared_ptr<InstructionBase> > readQueue;
+    std::vector<std::shared_ptr<InstructionBase> > writeQueue;
+    std::vector<std::shared_ptr<InstructionBase> > computeQueue;
     int process_delay;
     int cycle;
     int stalls;

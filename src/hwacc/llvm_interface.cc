@@ -28,14 +28,6 @@ LLVMInterface::tick() {
 
  Each tick we must first check our in-flight compute queue. Each node should have its cycle
  count incremented, and should commit if max cycle is reached.
-    currCompNode = NULL;
-
-    currCompNode = NULL;
-le. If all dependencies of a CN
-    currCompNode = NULL;
-it to its respective queue if
-    currCompNode = NULL;
- queue and the reservation table.
 
  New CNs are added to the reservation table whenever a new BB is encountered. This may occur
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
@@ -47,9 +39,17 @@ it to its respective queue if
             "   Cycle", cycle,
             "********************************************************************************");
     cycle++;
-   // DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue->size(), readQueue->size(), writeQueue->size());
+    DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
+
+        for(auto i = 0; i < computeQueue.size();) {
+            if(computeQueue.at(i)->commit()) {
+            computeQueue.at(i)->compute();
+            computeQueue.erase(computeQueue.begin() + i);
+            } else i++;
+        }
+
     /*
     for (auto it = computeQueue->begin(); it != computeQueue->end(); ) {
         if ((*it)->commit()) {
@@ -60,13 +60,35 @@ it to its respective queue if
             ++it; // Compute node is not ready, check next node
         }
     }
-
-    if (reservation->empty()) { // If no compute nodes in reservation queue, load next basic block
+     */
+    if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
     }
-    */
     bool scheduled = false;
+    
+    for (auto i = 0; i <= reservation.size();) {
+        if(!(reservation.at(i)->_Terminator) && !(reservation.at(i)->checkDependencies())) { /* Dont think this is needed now */ 
+            if(reservation.at(i)->_OpCode == "load") readQueue.push_back(reservation.at(i));
+            if(reservation.at(i)->_OpCode == "store") writeQueue.push_back(reservation.at(i));
+            reservation.at(i)->compute();
+            if(reservation.at(i)->_OpCode == "phi")  {
+                reservation.at(i)->_PrevBB = prevBB->_Name;
+                reservation.at(i)->commit();
+            } else computeQueue.push_back(reservation.at(i));
+            scheduled = true;
+            reservation.erase(reservation.begin()+ i);
+        } else if((reservation.at(i)->_OpCode == "br")&& !(reservation.at(i)->checkDependencies())) {
+            if(readQueue.empty() && writeQueue.empty() && computeQueue.empty()) {
+                prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
+                reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
+                currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
+                reservation.erase(reservation.begin() + i); // Remove instruction from reservation table
+                scheduleBB(currBB); // Add next basic block to reservation table
+            } else i++; // If compute nodes still remain in queue, do not branch
+        } else i++;
+    }
+
     /*
     for (auto it=reservation->begin(); it!=reservation->end(); ) {
         Instruction instr = (*it)->getInstruction(); // Update instruction data struct
@@ -159,6 +181,12 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
  and immediately compute and commit.
 *********************************************************************************************/
     DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
+
+    for(auto i = 0; i < currBB->_Nodes.size(); i++) {
+        //std::cout << currBB->_Nodes.at(i)->_OpCode << std::endl;
+        reservation.push_back(currBB->_Nodes.at(i));
+    }
+
     /*
     for(auto it=bb->cnList->begin(); it!=bb->cnList->end(); ++it) {
         Instruction instr = (*it)->getInstruction(); // Update instruction data struct
@@ -168,7 +196,6 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
             if (!(*it)->checkDependency()) { 
                 // Phi should never have runtime dependency once BB is scheduled
                 (*it)->compute(); // Send instruction to runtime computation simulator
-               pwrUtil->update(instr);
             } else {
                 // Phi instruction should never have a dependency when scheduled
                 DPRINTF(IOAcc, "Error: Phi Instruction Scheduled with Dependency!\n");
@@ -250,7 +277,7 @@ LLVMInterface::constructBBList() {
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
                     currBB = new BasicBlock("0", bbnum); // First basic block is always defined as BB 0
-                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
+                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", curBrrBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
                 }
@@ -259,7 +286,7 @@ LLVMInterface::constructBBList() {
                     if (line.find("; <label>:") == 0) { // Found new basic block
                         int labelEnd = line.find(" ", 10);
                         prevBB = currBB; // Set previous basic block
-                        //currBB->printNodes();
+                        currBB->printNodes();  ////////////////////////////////////////////////////////////////////////////////////////////
                         currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum); // Create new basic block
                         DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count

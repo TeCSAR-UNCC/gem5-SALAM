@@ -9,11 +9,13 @@ Add::compute() {
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	// If immediate values convert from string, else load from register
+	DPRINTF(LLVMOp, "Size (%d), Imm (%d)\n", _Operands.size(), _Operand);
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() + _Operand;
 	else _Result = _Operands.at(0)->getValue() + _Operands.at(1)->getValue();
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
-	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	
+	DPRINTF(LLVMOp, "%u: Stored in Register %s. \n", _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -97,33 +99,35 @@ FAdd::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	double op1;
 	double op2;
+	double result;
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(double *)&OP1;
-			_Result = op1 + _OperandDP;
+			result = op1 + _OperandDP;
 		} else {
 		    uint64_t OP1 = _Operands.at(0)->getValue();
 		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
-			_Result = op1 + op2;
+			result = op1 + op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Operands.at(0)->getValue();
 			op1 = *(float *)&OP1;
-			_Result = op1 + _OperandDP;
+			result = op1 + _OperandDP;
 		} else {
 		    uint64_t OP1 = _Operands.at(0)->getValue();
 		    uint64_t OP2 = _Operands.at(1)->getValue();
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
-			_Result = op1 + op2;
+			result = op1 + op2;
 		}
 	}
-	_ReturnRegister->setValue(&_Result);
+	DPRINTF(LLVMOp, "%f + %f = %f \n", op1, op2, result);
+	_ReturnRegister->setValue(&result);
 	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -354,10 +358,8 @@ Ret::compute() {
 
 void
 Br::compute() {
-	//DPRINTF(LLVMOp, "Performing %s Operation!\n", _OpCode);
-
+	DPRINTF(LLVMOp, "Performing %s Operation!\n", _OpCode);
 	unsigned long long int condition = 0;
-
 	if (!(_Unconditional)) {
 		DPRINTF(LLVMOp, "Conditional Branch Operation! \n");
 		condition = _Condition->getValue();
@@ -365,7 +367,8 @@ Br::compute() {
 		else _Destination = _Branches.at(1);
 		//DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
 	}
-	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");    
+	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n"); 
+	_Dest = _Destination;
 
 }
 
@@ -632,6 +635,7 @@ FCmp::compute() {
 }
 void
 ICmp::compute() {
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 		if (_Operands.size() == 1) {
 		if(_Flags & EQ) _Result = (_Operands.at(0)->getValue() == _Operand);
 		else if(_Flags & NE) _Result = (_Operands.at(0)->getValue() != _Operand);
@@ -657,6 +661,7 @@ ICmp::compute() {
 	}
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
+	DPRINTF(LLVMOp, "Result: %d\n", _Result);
 }
 void
 Phi::compute() {
@@ -715,15 +720,13 @@ InstructionBase::commit() {
 
 
 
-std::vector<InstructionBase*> 
+bool 
 InstructionBase::checkDependencies() {
-	/*
     bool hot = false;
-	bool phiBranchDependent = false;
-	DPRINTF(LLVMRegister, "Checking Dependencies for (%s) Compute Node!\n", _OpCode);
-	if(dependencies == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
+//	bool phiBranchDependent = false;
+	if(_Dependencies.size() == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
 	if(_OpCode == "phi"){
-		DPRINTF(LLVMRegister,"Phi Instruction Detected: Previous BB = (%s)\n", prevBB);
+		/*
 		for (int i = 0; i < MAXPHI; i++) {
 			if (prevBB == instruction.other.phi.label[i]) {
 				if(!instruction.other.phi.immVal[i]) {
@@ -740,34 +743,14 @@ InstructionBase::checkDependencies() {
 			}
 		}
 		if(!phiBranchDependent) DPRINTF(LLVMRegister, "No Dependencies!\n");
+		*/
 	} else {
-		for (int i = 0; i < dependencies; i++) {
-			DPRINTF(LLVMRegister, "Checking Dependency #%d:\n", i+1);
+		for (int i = 0; i < _Dependencies.size(); i++) {
 			// Increment counter for register dependency check
-			if (instruction.dependencies.registers[i]->getStatus()) {
-				DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.dependencies.registers[i]->getName());
+			if (_Dependencies.at(i)->getStatus()) {
 				hot = true;
-			} else {
-				DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.dependencies.registers[i]->getName());
-			}
-		}
-	}
-	DPRINTF(LLVMRegister, "Checking Dependencies: Finished!\n\n");
-
-	if(!hot) {
-		if((_ReturnRegister != NULL)) {
-			DPRINTF(LLVMRegister, "Writing to Register (%s)!\n",_ReturnRegister->getName());
-			_ReturnRegister->accessedWrite();
-		}
-		if(!instruction.general.terminator) {
-			for(int i = 0; i < dependencies; i++) {
-				DPRINTF(LLVMRegister, "Reading from register (%s)!\n", instruction.dependencies.registers[i]->getName());
-				instruction.dependencies.registers[i]->accessedRead();
-			}
+			} 
 		}
 	}
 	return hot;
-    */
-   std::vector<InstructionBase*> dependents;
-   return dependents;
 }

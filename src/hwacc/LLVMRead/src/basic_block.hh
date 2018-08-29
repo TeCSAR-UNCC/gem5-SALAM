@@ -143,11 +143,8 @@ class BasicBlock {
       {"sine", IR_Sine},
       {"cosine", IR_Cosine} 
     };
-    // Previously list * cnList
-    // Previously name
-    std::string _PrevBB; // Not stored but should be here I think
+    std::string _PrevBB; 
     std::string _Name;
-    // Previously bbID;
     uint64_t _BBID;
     std::vector<std::shared_ptr<InstructionBase> > _Nodes;
   

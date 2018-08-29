@@ -96,6 +96,8 @@ class InstructionBase {
         uint64_t _Usage; // Counter for times instruction used
         uint64_t _CurrCycle;
         std::string _PrevBB;
+        bool _Terminator = false;
+        std::string _Dest;
    // public:
         // ---- Constructor
         /* Default Compute Node Construction Call
@@ -134,7 +136,7 @@ class InstructionBase {
         void used() { _Usage++; }
         // ---- Dependency Graph Functions
             // Find Parents and Return Register for Previous Instance 
-        std::vector<InstructionBase*> checkDependencies();
+        bool checkDependencies();
         void signalChildren(InstructionBase*); 
         void registerChild(InstructionBase*);
         // ---- General Functions
@@ -147,7 +149,7 @@ class InstructionBase {
 //--------- Begin Terminator Instruction Base -------------------------------//
 //---------------------------------------------------------------------------//
 class Terminator : public InstructionBase {
-    protected:
+    public:
         Register* _Condition;
         // _Condition Usage
         // Br: Boolean, iftrue or iffalse
@@ -157,6 +159,7 @@ class Terminator : public InstructionBase {
         // _Branches Usage
         // Br: [0] == iftrue, [1] == iffalse
         // Switch: [0] == default, [1] == case 1, [2] == case 2, etc...
+        
     public:
         Terminator (        const std::string& Line,
                             const std::string& OpCode,
@@ -175,7 +178,7 @@ class Terminator : public InstructionBase {
                             MaxCycle, 
                             Dependencies, 
                             Comm)            
-        , _Destination(     Destination) { }
+        , _Destination(     Destination) { _Terminator = true; }
         Terminator (        const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
@@ -195,7 +198,7 @@ class Terminator : public InstructionBase {
                             Dependencies, 
                             Comm)                    
         , _Condition(       Condition)
-        , _Branches(        Branches) { }
+        , _Branches(        Branches) { _Terminator = true;}
         Terminator (        const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
@@ -211,7 +214,7 @@ class Terminator : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) { }
+                            Comm) { _Terminator = true;}
           
 };
 
