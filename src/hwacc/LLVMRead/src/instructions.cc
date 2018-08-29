@@ -371,24 +371,7 @@ Br::compute() {
 
 void
 Switch::compute() {
-	/*
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	uint64_t mainValue = instruction.terminator.value->getValue();
-	bool found = false;
-	DPRINTF(LLVMOp, "Register Name: %s\n", instruction.terminator.value->getName());
-	for(int i = 0; i < instruction.terminator.cases.statements; i++) {
-		DPRINTF(LLVMOp, "Comparing main value %d to case value %d: \n", mainValue, instruction.terminator.cases.value[i]);
-		instruction.general.immediateCount->accessedRead();
-		if(mainValue == instruction.terminator.cases.value[i]){
-			instruction.terminator.dest = instruction.terminator.cases.dest[i];
-			DPRINTF(LLVMOp, "Found!\n");
-			found = true;
-			return;
-		}
-	}
-	if(!found) instruction.terminator.dest = instruction.terminator.defaultdest;
-	DPRINTF(LLVMOp, "Switch selected, destination is %s!", instruction.terminator.dest);
-	*/
+	
 }
 
 
@@ -513,260 +496,143 @@ GetElementPtr::compute() {
 
 void
 Trunc::compute() {
-	/*
-	int64_t value;
-	int64_t result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-
-	if (instruction.conversion.ty2 == "i32") result = 0xffffffff & value;
-	else if (instruction.conversion.ty2 == "i16") result = 0xffff & value;
-	else if (instruction.conversion.ty2 == "i8") result = 0xff & value;
-	else if (instruction.conversion.ty2 == "i1") {
-		if(value) result = 1;
-		else result = 0;
+	if (_ReturnType == "i32") _Result = 0xffffffff & _COperand->getValue();
+	else if (_ReturnType == "i16") _Result = 0xffff & _COperand->getValue();
+	else if (_ReturnType == "i8") _Result = 0xff & _COperand->getValue();
+	else if (_ReturnType == "i1") {
+		if(_COperand->getValue()) _Result = 1;
+		else _Result = 0;
 	}
 	_ReturnRegister->setValue(&_Result);
-	*/
 }
 
 void
 ZExt::compute() {
-	/*
-	uint64_t value;
-	uint64_t result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
-	else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
-	else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
-	else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
-	else if (instruction.conversion.ty2 == "i1") {
-		if(value) result = 1;
-		else result = 0;
+	if (_ReturnType == "i64") _Result = (uint64_t) _COperand->getValue();
+	else if (_ReturnType == "i32") _Result = (uint32_t) _COperand->getValue();
+	else if (_ReturnType == "i16") _Result = (uint16_t) _COperand->getValue();
+	else if (_ReturnType == "i8") _Result = (uint8_t) _COperand->getValue();
+	else if (_ReturnType == "i1") {
+		if(_COperand->getValue()) _Result = 1;
+		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result); 
-	*/   
+	_ReturnRegister->setValue(&_Result); 	
 }
 
 void
 SExt::compute() {
-	/*
-	int64_t value;
-	int64_t result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "i64") result = (int64_t) value;
-	else if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
-	else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
-	else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
-	else if (instruction.conversion.ty2 == "i1") {
-		if(value) result = -1;
-		else result = 0;
+	if (_ReturnType == "i64") _Result = (int64_t) _COperand->getValue();
+	else if (_ReturnType == "i32") _Result = (int32_t) _COperand->getValue();
+	else if (_ReturnType == "i16") _Result = (int16_t) _COperand->getValue();
+	else if (_ReturnType == "i8") _Result = (int8_t) _COperand->getValue();
+	else if (_ReturnType == "i1") {
+		if(_COperand->getValue()) _Result = 1;
+		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result);
-	*/
+	_ReturnRegister->setValue(&_Result); 	
 }
-////////////////////////////////////////////////////////
 
 void 
 FPToUI::compute() {
-	/*
-	double value;
-	uint64_t result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
-	else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
-	else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
-	else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
-	else if (instruction.conversion.ty2 == "i1") {
-		if(value) result = 1;
-		else result = 0;
+	if (_ReturnType == "i64") _Result = (uint64_t) _COperand->getValue();
+	else if (_ReturnType == "i32") _Result = (uint32_t) _COperand->getValue();
+	else if (_ReturnType == "i16") _Result = (uint16_t) _COperand->getValue();
+	else if (_ReturnType == "i8") _Result = (uint8_t) _COperand->getValue();
+	else if (_ReturnType == "i1") {
+		if(_COperand->getValue()) _Result = 1;
+		else _Result = 0;
 	}
 	_ReturnRegister->setValue(&_Result);
-	*/
 }
 void
 FPToSI::compute() {
-	/*
-	double value;
-	int64_t result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "i64") result = (int64_t) value;
-	else if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
-	else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
-	else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
-	else if (instruction.conversion.ty2 == "i1") {
-		if(value) result = 1;
-		else result = 0;
+	if (_ReturnType == "i64") _Result = (int64_t) _COperand->getValue();
+	else if (_ReturnType == "i32") _Result = (int32_t) _COperand->getValue();
+	else if (_ReturnType == "i16") _Result = (int16_t) _COperand->getValue();
+	else if (_ReturnType == "i8") _Result = (int8_t) _COperand->getValue();
+	else if (_ReturnType == "i1") {
+		if(_COperand->getValue()) _Result = 1;
+		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result);	
-	*/
+	_ReturnRegister->setValue(&_Result);
 }
 void
 UIToFP::compute() {
-	/*
-	uint64_t value;
-	double result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "double") result = (double) value;
-	else if (instruction.conversion.ty2 == "float") result = (float) value;
-
+	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
+	else if (_ReturnType == "float") _Result = (float) _COperand->getValue();
 	_ReturnRegister->setValue(&_Result);
-	*/
 }
 void
 SIToFP::compute() {
-	/*
-	int64_t value;
-	double result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "double") result = (double) value;
-	else if (instruction.conversion.ty2 == "float") result = (float) value;
-
+	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
+	else if (_ReturnType == "float") _Result = (float) _COperand->getValue();
 	_ReturnRegister->setValue(&_Result);
-	*/
 }
 void 
 FPTrunc::compute() {
-	/*
-	double value;
-	double result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "float") result = (float) value;
-
+	if (_ReturnType == "float") _Result = (float) _COperand->getValue();
 	_ReturnRegister->setValue(&_Result);	
-	*/
 }
 void
 FPExt::compute() {
-	/*
-	double value;
-	double result;
-	if(instruction.conversion.immediate) {
-		value = instruction.conversion.immVal;
-		instruction.general.immediateCount->accessedRead();
-	} else value = instruction.conversion.value->getValue();
-	
-	if (instruction.conversion.ty2 == "double") result = (float) value;
-
-	_ReturnRegister->setValue(&_Result);		
-	*/
+	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
+	_ReturnRegister->setValue(&_Result);
 }
 void
-PtrToInt::compute() {
-	/*
-	int64_t value;
-	int64_t result;
-	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
-		if(instruction.conversion.immediate) {
-			value = instruction.conversion.immVal;
-			instruction.general.immediateCount->accessedRead();
-		} else value = instruction.conversion.value->getValue();
-
-		if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
-		else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
-		else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
-		else if (instruction.conversion.ty2 == "i1") {
-			if(value) result = 1;
-			else result = 0;
-		}
-		_ReturnRegister->setValue(&_Result);
-	}
-	else {
-		if(instruction.conversion.immediate) {
-			value = instruction.conversion.immVal;
-			instruction.general.immediateCount->accessedRead();
-		} else value = instruction.conversion.value->getValue();
-	
-		if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
-		else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
-		else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
-		else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
-		else if (instruction.conversion.ty2 == "i1") {
-			if(value) result = 1;
-			else result = 0;
-		}
-	_ReturnRegister->setValue(&_Result);
-	}
-	*/
-}
+PtrToInt::compute() { }
 void
-IntToPtr::compute() {
-	/*
-	int64_t value;
-	int64_t result;
-	if(instruction.conversion.ty.compare(instruction.conversion.ty2) > 0) {
-		if(instruction.conversion.immediate) {
-			value = instruction.conversion.immVal;
-			instruction.general.immediateCount->accessedRead();
-		} else value = instruction.conversion.value->getValue();
-
-		if (instruction.conversion.ty2 == "i32") result = (int32_t) value;
-		else if (instruction.conversion.ty2 == "i16") result = (int16_t) value;
-		else if (instruction.conversion.ty2 == "i8") result = (int8_t) value;
-		else if (instruction.conversion.ty2 == "i1") {
-			if(value) result = 1;
-			else result = 0;
-		}
-		_ReturnRegister->setValue(&_Result);
-	}
-	else {
-		if(instruction.conversion.immediate) {
-			value = instruction.conversion.immVal;
-			instruction.general.immediateCount->accessedRead();
-		} else value = instruction.conversion.value->getValue();
-	
-		if (instruction.conversion.ty2 == "i64") result = (uint64_t) value;
-		else if (instruction.conversion.ty2 == "i32") result = (uint32_t) value;
-		else if (instruction.conversion.ty2 == "i16") result = (uint16_t) value;
-		else if (instruction.conversion.ty2 == "i8") result = (uint8_t) value;
-		else if (instruction.conversion.ty2 == "i1") {
-			if(value) result = 1;
-			else result = 0;
-		}
-	_ReturnRegister->setValue(&_Result);
-	}	
-	*/
-}
+IntToPtr::compute() { }
 void
 BitCast::compute() { }
 void 
 AddrSpaceCast::compute() { }
 
 void
-ICmp::compute() {
+FCmp::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
 	// Determine if comparison is being made between registers or immediate values
 	if (_Operands.size() == 1) {
+		if(_Flags & CONDFALSE) _Result = 0;
+		else if(_Flags & OEQ) _Result = (_Operands.at(0)->getValue() == _OperandDP);
+		else if(_Flags & OGT) _Result = (_Operands.at(0)->getValue() > _OperandDP);
+		else if(_Flags & OGE) _Result = (_Operands.at(0)->getValue() >= _OperandDP);
+		else if(_Flags & OLT) _Result = (_Operands.at(0)->getValue() < _OperandDP);
+		else if(_Flags & OLE) _Result = (_Operands.at(0)->getValue() <= _OperandDP);
+		else if(_Flags & ONE) _Result = (_Operands.at(0)->getValue() != _OperandDP);
+		else if(_Flags & ORD) _Result = (_Operands.at(0)->getValue() && _OperandDP);
+		else if(_Flags & UEQ) _Result = (_Operands.at(0)->getValue() == _OperandDP);
+		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _OperandDP);
+		else if(_Flags & UGE) _Result = (_Operands.at(0)->getValue() >= _OperandDP);
+		else if(_Flags & ULT) _Result = (_Operands.at(0)->getValue() < _OperandDP);
+		else if(_Flags & ULE) _Result = (_Operands.at(0)->getValue() <= _OperandDP);
+		else if(_Flags & UNE) _Result = (_Operands.at(0)->getValue() != _OperandDP);
+		else if(_Flags & UNO) _Result = (_Operands.at(0)->getValue() && _OperandDP);
+		else if(_Flags & CONDTRUE) _Result = 1;
+	} else {
+		if(_Flags & CONDFALSE) _Result = 0;
+		else if(_Flags & OEQ) _Result = (_Operands.at(0)->getValue() == _Operands.at(1)->getValue());
+		else if(_Flags & OGT) _Result = (_Operands.at(0)->getValue() > _Operands.at(1)->getValue());
+		else if(_Flags & OGE) _Result = (_Operands.at(0)->getValue() >= _Operands.at(1)->getValue());
+		else if(_Flags & OLT) _Result = (_Operands.at(0)->getValue() < _Operands.at(1)->getValue());
+		else if(_Flags & OLE) _Result = (_Operands.at(0)->getValue() <= _Operands.at(1)->getValue());
+		else if(_Flags & ONE) _Result = (_Operands.at(0)->getValue() != _Operands.at(1)->getValue());
+		else if(_Flags & ORD) _Result = (_Operands.at(0)->getValue() && _Operands.at(1)->getValue());
+		else if(_Flags & UEQ) _Result = (_Operands.at(0)->getValue() == _Operands.at(1)->getValue());
+		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _Operands.at(1)->getValue());
+		else if(_Flags & UGE) _Result = (_Operands.at(0)->getValue() >= _Operands.at(1)->getValue());
+		else if(_Flags & ULT) _Result = (_Operands.at(0)->getValue() < _Operands.at(1)->getValue());
+		else if(_Flags & ULE) _Result = (_Operands.at(0)->getValue() <= _Operands.at(1)->getValue());
+		else if(_Flags & UNE) _Result = (_Operands.at(0)->getValue() != _Operands.at(1)->getValue());
+		else if(_Flags & UNO) _Result = (_Operands.at(0)->getValue() && _Operands.at(1)->getValue());
+		else if(_Flags & CONDTRUE) _Result = 1;
+	}
+	// Store result in return register
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
+}
+void
+ICmp::compute() {
+		if (_Operands.size() == 1) {
 		if(_Flags & EQ) _Result = (_Operands.at(0)->getValue() == _Operand);
 		else if(_Flags & NE) _Result = (_Operands.at(0)->getValue() != _Operand);
 		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _UOperand);
@@ -791,90 +657,6 @@ ICmp::compute() {
 	}
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
-	//DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
-	
-}
-void
-FCmp::compute() {
-	/*
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	double op1 = 0.0;
-	double op2 = 0.0;
-	uint64_t result = 0;
-	// Determine if comparison is being made between registers or immediate values
-	if (instruction.other.compare.immediate1) {
-		op1 = stoi(instruction.other.compare.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.other.compare.op1->getValue();
-	if (instruction.other.compare.immediate2) {
-		op2 = stoi(instruction.other.compare.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 = instruction.other.compare.op2->getValue();
-	// Perform Comparison
-	if (instruction.other.compare.condition.condFalse) {
-		result = false;
-		DPRINTF(LLVMOp, "Always false:\n");
-	} else if (instruction.other.compare.condition.condTrue) {
-		result = true;
-		DPRINTF(LLVMOp, "Always true:\n");				
-	} else if (instruction.other.compare.condition.oeq) {
-		if (!(std::isnan(op1) && std::isnan(op2))) 
-		DPRINTF(LLVMOp, "Ordered Equal:\n");
-		result = (op1 == op2);
-	} else if (instruction.other.compare.condition.ogt) { 
-		if (!(std::isnan(op1) && std::isnan(op2))) 
-		result = (op1 > op2); 
-		DPRINTF(LLVMOp, "Ordered Greater Then:\n");
-	} else if (instruction.other.compare.condition.oge) { 
-		if (!(std::isnan(op1) && std::isnan(op2)))  
-		result = (op1 >= op2);  
-		DPRINTF(LLVMOp, "Ordered Greater Than or Equal:\n");
-	} else if (instruction.other.compare.condition.olt) { 
-		if (!(std::isnan(op1) && std::isnan(op2)))  
-		result = (op1 < op2);  
-		DPRINTF(LLVMOp, "Ordered Less Than:\n");
-	} else if (instruction.other.compare.condition.ole) { 
-		if (!(std::isnan(op1) && std::isnan(op2)))  
-		result = (op1 <= op2);  
-		DPRINTF(LLVMOp, "Ordered Less Than or Equal:\n");
-	} else if (instruction.other.compare.condition.one) { 
-		if (!(std::isnan(op1) && std::isnan(op2))) 
-		result = (op1 != op2);  
-		DPRINTF(LLVMOp, "Ordered Not Equal:\n");
-	} else if (instruction.other.compare.condition.ord) { 
-		if (!(std::isnan(op1) && std::isnan(op2))) 
-		 result = true; 
-		 DPRINTF(LLVMOp, "Ordered:\n");
-	} else if (instruction.other.compare.condition.ueq) {
-		result = (op1 == op2);
-		DPRINTF(LLVMOp, "Unordered. Equal to:\n");
- 	} else if (instruction.other.compare.condition.ugt) {
-		result = (op1 > op2);
-		DPRINTF(LLVMOp, "Unordered. Greater Than:\n");
-	} else if (instruction.other.compare.condition.uge) {
-		result = (op1 >= op2);
-		DPRINTF(LLVMOp, "Unordered. Greater or Equal:\n");
-	}else if (instruction.other.compare.condition.ult) {
-		result = (op1 < op2);
-		DPRINTF(LLVMOp, "Unordered. Less than:\n");
-	}else if (instruction.other.comparvoid 
-Call::compute() { }e.condition.ule) {
-		result = (op1 <= op2);void 
-Call::compute() { }
-		DPRINTF(LLVMOp, "Unordered. Levoid 
-Call::compute() { }ss than or equal:\n");
-	}else if (instruction.other.comparvoid 
-Call::compute() { }e.condition.une) {
-		result = (op1 != op2);
-		DPRINTF(LLVMOp, "Unordered. Not equal:\n");
-	}else if (instruction.other.compare.condition.uno) {
-		result = (op1 != op2);
-		DPRINTF(LLVMOp, "Unordered:\n");
-	}
-	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
-	DPRINTF(LLVMOp, "Comparing %f and %f, result is %u.\n", op1, op2, _ReturnRegister->getValue());
-	*/
 }
 void
 Phi::compute() {
@@ -892,37 +674,29 @@ Phi::compute() {
 
 void
 Select::compute() {
-	/*
 	// Currently only supports integer types but the framework for doubles and floats
 	// exists within compute_node.cc and instruction.hh already
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if(instruction.other.select.intTy) {
-		int val1 = 0;
-		int val2 = 0;
-		int condition = 0;
-		if(instruction.other.select.immediate[0]) {
-			val1 = instruction.other.select.immVal[0];
-			instruction.general.immediateCount->accessedRead();
-		} else {
-			val1 = instruction.other.select.val1->getValue();
+	if(_ReturnType[0] == 'i') {
+		if(_Imm.at(0)) {
+			if(_Imm.at(1)) {
+				if(_Condition->getValue()) _Result = (_ImmValues.at(0));
+				else _Result = (_ImmValues.at(1));
+			} else {
+				if(_Condition->getValue()) _Result = (_ImmValues.at(0));
+				else _Result = (_RegValues.at(1)->getValue());
+			}
+		} else { 		
+			if(_Imm.at(1)) {
+				if(_Condition->getValue()) _Result = (_RegValues.at(0)->getValue());
+				else _Result = (_ImmValues.at(1));
+			} else {
+				if(_Condition->getValue()) _Result = (_RegValues.at(0)->getValue());
+				else _Result = (_RegValues.at(1)->getValue());
+			}
 		}
-		if(instruction.other.select.immediate[1]) {
-			val2 = instruction.other.select.immVal[1];
-			instruction.general.immediateCount->accessedRead();
-		} else val2 = instruction.other.select.val2->getValue();		
-		
-		if(instruction.other.select.icondFlag){
-			if(instruction.other.select.icond) _ReturnRegister->setValue(&val1);
-			else _ReturnRegister->setValue(&val2);
-		} else {
-			condition = instruction.other.select.cond->getValue();
-			if(condition) _ReturnRegister->setValue(&val1);
-			else _ReturnRegister->setValue(&val2);
-		}
-	DPRINTF(LLVMOp, "Selecting between [true] %d and [false] %d, based on condition [%d], %d chosen.\n", val1, val2, condition, (int) _ReturnRegister->getValue());
-	}
-	DPRINTF(LLVMOp, "Storing %u in Register '%s'\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
-	*/
+	}	
+	_ReturnRegister->setValue(&_Result);		
 }
 
 

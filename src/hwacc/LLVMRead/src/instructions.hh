@@ -1543,6 +1543,7 @@ class Select : public Other {
         std::vector<Register*> _RegValues;
 		std::vector<int64_t> _ImmValues;
         std::vector<bool> _Imm;
+        int64_t _Result;
     public:
         // ---- Constructor
         Select (            const std::string& Line,
