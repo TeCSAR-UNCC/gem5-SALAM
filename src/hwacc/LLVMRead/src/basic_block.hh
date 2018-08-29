@@ -168,7 +168,7 @@ class BasicBlock {
     void initializeReturnRegister(std::vector<std::string> &parameters, Register *&reg , std::string &returnType, const std::string &instructionType );
     int setSize(std::string dataType);
     void parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
-  
+    void printNodes();
 };
 
 #endif //__BASIC_BLOCK_HH__

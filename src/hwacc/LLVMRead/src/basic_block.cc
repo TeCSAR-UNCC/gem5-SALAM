@@ -1,5 +1,6 @@
 #include "basic_block.hh"
 #include <memory>
+#include <iostream>
 
 // ////////////////////////////////////////////////////////////////////
 // Compute Node Constructor 
@@ -1355,38 +1356,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		////////////////////////////////////////
 		std::vector<std::string> phiVal; // Value to be loaded
 		std::vector<std::string> phiLabel; // If from this BB
+		std::vector<Register*> phiReg;
 		Register* tempReg;
 		////////////////////////////////////////
-		/* Old Phi Code
-			int labelLength = 0;
-			for (int i = 1; i <= last; i++) {
-				instruction.other.phi.ival[i - 1] = parameters[i]; // String
-				labelLength = instruction.other.phi.ival[i - 1].find(',');
-				labelLength = labelLength - instruction.other.phi.ival[i - 1].find('[');
-				val[i - 1] = instruction.other.phi.ival[i - 1].substr(2, (instruction.other.phi.ival[i - 1].find(',')) - 2);
-				labelLength = instruction.other.phi.ival[i - 1].find(',');
-				labelLength = instruction.other.phi.ival[i - 1].find(']') - labelLength;
-				label[i - 1] = instruction.other.phi.ival[i - 1].substr((instruction.other.phi.ival[i - 1].find(',')) + 3, labelLength - 4);
-				if(isRegister(val[i-1])) {
-					setRegister(val[i-1], instruction.other.phi.val[i - 1], dependencies, list, parameters);
-					instruction.other.phi.ival[i - 1].clear();
-					instruction.other.phi.immVal[i - 1] = false;
-					instruction.other.phi.label[i - 1] = label[i - 1];
-					DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
-				} else {
-					if (val[i-1] == "true") {
-						instruction.other.phi.ival[i - 1] = '1';
-					} else if (val[i-1] == "false") {
-						instruction.other.phi.ival[i - 1] = '0';
-					} else {
-						instruction.other.phi.ival[i - 1] = val[i - 1];
-					}
-					instruction.other.phi.immVal[i - 1] = true;
-					instruction.other.phi.label[i - 1] = label[i - 1];
-					DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
-				}
-			}
-		*/
 		for (int i = 1; i <= last; i++) {
 			phiVal.push_back(parameters[i]);
 			labelLength = phiVal.at(i - 1).find(',');
@@ -1397,7 +1369,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			label[i - 1] = phiVal.at(i - 1).substr((phiVal.at(i - 1).find(',')) + 3, labelLength - 4);
 			if(isRegister(val[i-1])) {
 				setRegister(val[i-1], tempReg, dependencies, list, parameters);				
-				phiVal.at(i - 1);
+				phiVal.at(i - 1) = "reg";
+				phiReg.push_back(tempReg);
 				phiLabel.push_back(label[i - 1]);
 				DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			} else {
@@ -1409,6 +1382,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 					phiVal.at(i-1) = (val[i - 1]);
 				}
 				phiLabel.push_back(label[i - 1]);
+				phiReg.push_back(NULL);
 				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			}
 		}
@@ -1422,6 +1396,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											dependencies, 
 											co,
 											phiVal,
+											phiReg,
 											phiLabel);
 		addNode(phi);
 		DPRINTF(ComputeNode, "Registration Complete: (%s)\n", opCode);
@@ -1781,4 +1756,15 @@ BasicBlock::setSize(std::string dataType) {
     // Unknown dataType
     else { }
 	return size;
+}
+
+void
+BasicBlock::printNodes() {
+	// for(auto it = _Nodes.begin(); it != _Nodes.end(); ++it) {
+	// 	std::cout << it.at(0) << std::endl;
+	// }
+	std::cout << "Nodes for " << _Name << " Size: " << _Nodes.size() << std::endl;
+	for(auto i=0; i<_Nodes.size(); i++) {
+		std::cout << _Nodes.at(i)->_OpCode << std::endl;
+	}
 }

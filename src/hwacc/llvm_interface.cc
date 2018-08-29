@@ -259,6 +259,7 @@ LLVMInterface::constructBBList() {
                     if (line.find("; <label>:") == 0) { // Found new basic block
                         int labelEnd = line.find(" ", 10);
                         prevBB = currBB; // Set previous basic block
+                        //currBB->printNodes();
                         currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum); // Create new basic block
                         DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
@@ -308,7 +309,6 @@ LLVMInterface::constructBBList() {
         panic("Unable to open LLVM file!\n");
     }
     regList->printRegNames();
-    
 }
 
 BasicBlock*

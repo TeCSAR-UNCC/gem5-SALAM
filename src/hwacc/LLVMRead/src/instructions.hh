@@ -79,7 +79,7 @@ class FloatingPointDP {
 //--------- Begin Shared Instruction Base -----------------------------------//
 //---------------------------------------------------------------------------//
 class InstructionBase {
-    protected:
+    public:
        
         MemoryRequest* _Req; // Pointer for creating a memory access request
         std::string _LLVMLine;
@@ -95,7 +95,8 @@ class InstructionBase {
         std::vector<bool> _Status; // Ready Indicator, Index Matched To Parent
         uint64_t _Usage; // Counter for times instruction used
         uint64_t _CurrCycle;
-    public:
+        std::string _PrevBB;
+   // public:
         // ---- Constructor
         /* Default Compute Node Construction Call
         (lineCpy, opCode, returnType, instructionType, ret_reg, maxCycles, dependencies, co)
@@ -214,11 +215,10 @@ class Terminator : public InstructionBase {
           
 };
 
-class Ret : public Terminator {
-    protected:
-
+class BadInstruction : public InstructionBase {
+    // Used to draw hard dependencies, ie: ret
     public:
-        Ret (               const std::string& Line,
+        BadInstruction(     const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -226,7 +226,7 @@ class Ret : public Terminator {
                             uint64_t MaxCycle,
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm)
-        : Terminator (      Line, 
+        : InstructionBase ( Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
@@ -234,7 +234,7 @@ class Ret : public Terminator {
                             MaxCycle, 
                             Dependencies, 
                             Comm) { }
-        void compute() override;
+        void compute() override { }
 };
 
 class Br : public Terminator {
@@ -286,6 +286,39 @@ class Br : public Terminator {
                             Condition,
                             Branches)
         , _Unconditional(   Unconditional) { }
+        void compute() override;
+};
+
+
+class Ret : public Terminator {
+    protected:
+
+    public:
+        Ret (               const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm)
+        : Terminator (      Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm) { 
+                                _Parents.push_back(new BadInstruction(Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm));
+                            }
         void compute() override;
 };
 
@@ -957,7 +990,7 @@ class Xor : public Bitwise, public Integer {
 class Conversion : public InstructionBase {
     protected:
         std::string _OriginalType;
-        Register* _Operand;
+        Register* _COperand;
         uint64_t _Result;
 
     public:
@@ -981,7 +1014,7 @@ class Conversion : public InstructionBase {
                             Dependencies, 
                             Comm) 
         , _OriginalType(    OriginalType)
-        , _Operand(         Operand) { }
+        , _COperand(        Operand) { }
 };
 // ---- Conversion Instructions
 
@@ -1162,7 +1195,7 @@ class SIToFP : public Conversion {
 
 class FPTrunc : public Conversion {
     public:
-        FPTrunc (             const std::string& Line,
+        FPTrunc (           const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -1475,8 +1508,9 @@ class Other : public InstructionBase {
 class Phi : public Other {
     protected:
         std::vector<std::string> _PhiVal; // Value to be loaded
+        std::vector<Register*> _PhiReg;
 		std::vector<std::string> _PhiLabel; // If from this BB
-
+        int64_t _Result;
     public:
          Phi (              const std::string& Line,
                             const std::string& OpCode,
@@ -1487,6 +1521,7 @@ class Phi : public Other {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::vector<std::string> PhiVal,
+                            std::vector<Register*> PhiReg,
                             std::vector<std::string> PhiLabel)
         : Other (           Line, 
                             OpCode, 
@@ -1497,6 +1532,7 @@ class Phi : public Other {
                             Dependencies, 
                             Comm) 
         , _PhiVal(          PhiVal)
+        , _PhiReg(          PhiReg)
         , _PhiLabel(        PhiLabel) { }
         void compute() override;
 };
@@ -1566,7 +1602,7 @@ class Compare : public Other {
         , _Flags (          Flags) { }
 };
 
-class ICmp : public Compare, public Integer {
+class ICmp : public Compare, public Integer, public Unsigned, public Signed {
     public:
         ICmp (              const std::string& Line,
                             const std::string& OpCode,
@@ -1589,7 +1625,9 @@ class ICmp : public Compare, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
+        , Integer (         ImmOp) 
+        , Unsigned(         ImmOp)
+        , Signed(           ImmOp) { }
         void compute() override;
 };
 

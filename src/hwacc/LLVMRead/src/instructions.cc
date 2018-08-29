@@ -321,35 +321,29 @@ Xor::compute() {
 
 void
 Load::compute() {
-	/*
-    uint64_t src = instruction.memory.load.pointer->getValue();
-	_ReturnRegister->setSize();
-	DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), _ReturnRegister->size);
-	req = new MemoryRequest((Addr)src, _ReturnRegister->size);
-	comm->enqueueRead(req);
-	break;
-	*/  
+    uint64_t src = _Pointer->getValue();
+	_ReturnRegister->setSize(_ReturnType);
+	//DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), _ReturnRegister->size);
+	_Req = new MemoryRequest((Addr)src, _ReturnRegister->getSize());
+	_Comm->enqueueRead(_Req);
 }
 
 void
 Store::compute() {
-	/*
 	uint64_t data;
 	uint64_t size = 0;
-	uint64_t dst = instruction.memory.store.pointer->getValue();
-	if(instruction.memory.store.immediate) {
-		DPRINTF(ComputeNode, "Immediate value store. \n");
-		data = (uint64_t) instruction.memory.store.ival;
-		size = setSize(instruction.memory.store.ty);
-		req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
+	uint64_t dst = _Pointer->getValue();
+	if(_Imm != 0) {
+		data = (uint64_t) _Imm;
+		//size = getSize(_ReturnType);
+		size = 8;
+		_Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 	} else {
-	    data = instruction.memory.store.value->getValue();
-        req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), instruction.memory.store.value->size);
-		DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
+	    data = _Value->getValue();
+        _Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), _Value->getSize());
+		//DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
 	}
-	comm->enqueueWrite(req);
-	break;
-	*/    
+	_Comm->enqueueWrite(_Req);
 }
 
 
@@ -360,22 +354,19 @@ Ret::compute() {
 
 void
 Br::compute() {
-	/*
-	DPRINTF(LLVMOp, "Performing %s Operation!\n", _OpCode);
+	//DPRINTF(LLVMOp, "Performing %s Operation!\n", _OpCode);
 
 	unsigned long long int condition = 0;
 
-	if (!(instruction.terminator.unconditional)) {
+	if (!(_Unconditional)) {
 		DPRINTF(LLVMOp, "Conditional Branch Operation! \n");
-		condition = instruction.terminator.cond->getValue();
-		instruction.general.labelCount->accessedRead();
-		if (condition != 0) instruction.terminator.dest = instruction.terminator.iftrue;
-		else instruction.terminator.dest = instruction.terminator.iffalse;
-		DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
-		instruction.terminator.cond->accessedRead();
+		condition = _Condition->getValue();
+		if (condition != 0) _Destination = _Branches.at(0);
+		else _Destination = _Branches.at(1);
+		//DPRINTF(LLVMOp, " True: %s, False: %s, Reg: %s, Condition: %d\n", instruction.terminator.iftrue, instruction.terminator.iffalse, instruction.terminator.cond->getName(), condition);
 	}
 	else DPRINTF(LLVMOp, "Unconditonal Branch Operation! \n");    
-	*/
+
 }
 
 void
@@ -403,15 +394,13 @@ Switch::compute() {
 
 void
 GetElementPtr::compute() {
-	/*
 	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-	DPRINTF(LLVMGEP, "Performing %s Operation  (%s)\n", _OpCode, _ReturnRegister->getName());
-	uint64_t index = instruction.memory.getptr.index;
-	uint64_t elements[MAXGPE];
-	uint64_t currentValue[MAXGPE];
-	uint64_t size[MAXGPE];
+	DPRINTF(LLVMGEP, "Performing %s Operation (%s)\n", _OpCode, _ReturnRegister->getName());
+	uint64_t elements[_Idx.size()];
+	uint64_t currentValue[_Idx.size()];
+	uint64_t size[_Idx.size()];
 	uint64_t newAddress = 0;
 	uint64_t dataSize = 0;
 	uint64_t totalElements = 1;
@@ -419,143 +408,106 @@ GetElementPtr::compute() {
 	
 	int j = 0;
 	// Initialize array values
-	for(int i = 0; i<MAXGPE; i++) {
+	for(int i = 0; i<_Idx.size(); i++) {
 		currentValue[i] = 0;
 		size[i] = 1;
 		elements[i] = 1;
 	}
 
-	if(instruction.memory.getptr.pty[0] == '%') { // Return Type is a custom data type
-		if(instruction.memory.getptr.llvmType != NULL) {
-			dataSize = instruction.memory.getptr.llvmType->getSize();
-			DPRINTF(LLVMGEP, "Custom Data Type: (%s), Number of Elements = (%d)\n", instruction.memory.getptr.llvmType->getName(), dataSize);
+	if(_Pty[0] == '%') { // Return Type is a custom data type
+		if(_LLVMType != NULL) {
+			dataSize = _LLVMType->getSize();
 			j++;
-		} else {
-			DPRINTF(LLVMGEP, "Unknown Case - Custom Data Type!\n", dataSize);
-		}
-
+		} 
 	for(int i = 0; i <= j; i++){
-			if(instruction.memory.getptr.immediate[i]) {  // Immediate Values
-				instruction.general.immediateCount->accessedRead();
+			if(_Idx.at(i) == NULL) {  // Immediate Values
 				if(i == j) {
 					// Final offset variable
-					totalElements*=(instruction.memory.getptr.immdx[i]);
-					DPRINTF(LLVMGEP, "Adding Final Offset: (%d)\n", instruction.memory.getptr.immdx[i]);
+					totalElements*=(_ImmIdx.at(i));
 				} else {				
 					// Total data size in memory offset variable 
-				DPRINTF(LLVMGEP, "Immediate Values Offset:\n");
-				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d)  =  (%d)\n", i, dataSize, instruction.memory.getptr.immdx[i],  dataSize * instruction.memory.getptr.immdx[i]);
-				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
+				totalElements*=(dataSize*_ImmIdx.at(i));
 				}
 			} else { // Register loaded values
 				if(i == j) {
 					// Final offset variable
-					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
-					DPRINTF(LLVMGEP, "Adding Final Offset: (%d)\n", instruction.memory.getptr.idx[i]->getValue());
+					totalElements*=(_Idx.at(i)->getValue());
 				} else {
-				DPRINTF(LLVMGEP, "Register Loaded Value:\n");
-				DPRINTF(LLVMGEP, "Total Elements * idx[%d]: (%d) * (%d) = (%d)\n", i, dataSize, instruction.memory.getptr.idx[i]->getValue(), dataSize * instruction.memory.getptr.idx[i]->getValue());				
-				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
+				totalElements*=(dataSize*_Idx.at(i)->getValue());
 				}
 			}
 			finalCount += totalElements;
-			DPRINTF(LLVMGEP, " Final Count = %d\n", finalCount);
 			totalElements = 1;
 		}
-
-		if(instruction.memory.getptr.llvmType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
+		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
 		else finalCount *=4;
-		DPRINTF(LLVMGEP, "Final Offset: %d\n", finalCount);
-		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
+		newAddress += (_PtrVal->getValue() + finalCount);
 		_ReturnRegister->setValue(&newAddress);
 		////////////////////////////////////////
-	} else if(instruction.memory.getptr.pty[0] == '[') { // Return type is a struct
-		for(int i = 0; i < instruction.memory.getptr.pty.size(); i++){
-			if(instruction.memory.getptr.pty[i] == '[') {
+	} else if(_Pty[0] == '[') { // Return type is a struct
+		for(int i = 0; i < _Pty.size(); i++){
+			if(_Pty[i] == '[') {
 				// Find the next integer value Ex: [A x [B x [C x dataSize]]] returns A, B, C
-				elements[j] = stoi(instruction.memory.getptr.pty.substr(i+1, instruction.memory.getptr.pty.find(' ', i)-i-1));
-				DPRINTF(LLVMGEP, "Element Size = %d\n", elements[j]);
+				elements[j] = stoi(_Pty.substr(i+1, _Pty.find(' ', i)-i-1));
 				j++;
 			}
-			if(instruction.memory.getptr.pty[i] == ']') break;
+			if(_Pty[i] == ']') break;
 		}
-		
-		if(instruction.memory.getptr.llvmType != NULL) {
-		dataSize = instruction.memory.getptr.llvmType->getSize();
+		if(_LLVMType != NULL) {
+		dataSize = _LLVMType->getSize();
 		j++;
-		DPRINTF(LLVMGEP, "Custom Data Type: %s, Size = %d\n", instruction.memory.getptr.llvmType->getName(), dataSize);
 		} else {
 			dataSize = 1;
-			DPRINTF(LLVMGEP, "Data Type Size = %d\n", dataSize);
 		}
 		for(int i = 0; i <= j; i++){
 			for(int k = 0; k <= j; k++){
 				totalElements*=elements[k];
 			}
-			if(instruction.memory.getptr.immediate[i]) {
-				instruction.general.immediateCount->accessedRead();
+			if(_Idx.at(i) == NULL) {
 				if(i == j) {
-					totalElements*=(instruction.memory.getptr.immdx[i]);
+					totalElements*=(_ImmIdx.at(i));
 				} else {				
-				DPRINTF(LLVMGEP, "Immediate \n");
-				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.immdx[i]);
-				totalElements*=(dataSize*instruction.memory.getptr.immdx[i]);
+				totalElements*=(dataSize*_ImmIdx.at(i));
 				}
 			} else {
 				if(i == j) {
-					totalElements*=(instruction.memory.getptr.idx[i]->getValue());
+					totalElements*=(_Idx.at(i)->getValue());
 				} else {
-				DPRINTF(LLVMGEP, "Register \n");
-				DPRINTF(LLVMGEP, "Total Elements * dataSize * idx[%d]: %d * %d * %d = \n", i, totalElements, dataSize, instruction.memory.getptr.idx[i]->getValue());				
-				totalElements*=(dataSize*instruction.memory.getptr.idx[i]->getValue());
+				totalElements*=(dataSize*_Idx.at(i)->getValue());
 				}
 			}
 			finalCount += totalElements;
-			DPRINTF(LLVMGEP, " Final Count = %d\n", finalCount);
 			totalElements = 1;
 			elements[i] = 1;
 		}
 
-		if(instruction.memory.getptr.llvmType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
+		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
 		else finalCount *=4;
-		DPRINTF(LLVMGEP, "Final Offset: %d\n", finalCount);
-		newAddress += (instruction.memory.getptr.ptrval->getValue() + finalCount);
+		newAddress += (_PtrVal->getValue() + finalCount);
 		_ReturnRegister->setValue(&newAddress);
 	} else {
-		for(int i = 0; i < MAXGPE; i++) {
-			if (instruction.memory.getptr.pty[i] == 'i') {
-				size[i] = (stoi(instruction.memory.getptr.pty.substr(1))) / 8;
-			} else if (instruction.memory.getptr.pty.find("double") == 0) {
+		for(int i = 0; i < _Idx.size(); i++) {
+			if (_Pty[i] == 'i') {
+				size[i] = (stoi(_Pty.substr(1))) / 8;
+			} else if (_Pty.find("double") == 0) {
 				size[i] = 8;
-			} else if (instruction.memory.getptr.pty.find("float") == 0) {
+			} else if (_Pty.find("float") == 0) {
 				size[i] = 4;
 			}
 		}
-	
-		DPRINTF(LLVMGEP, "Size of data type: %d\n", size[0]);
-
-		for (int i = 0; i < index; i++) {
-			if(!instruction.memory.getptr.immediate[i]) currentValue[i] = instruction.memory.getptr.idx[i]->getValue();
+		for (int i = 0; i < _Index; i++) {
+			if(_Idx.at(i) != NULL) currentValue[i] = _Idx.at(i)->getValue();
 			else {
-				currentValue[i] = instruction.memory.getptr.immdx[i];
-				instruction.general.immediateCount->accessedRead();
+				currentValue[i] = _ImmIdx.at(i);
 			}
-			DPRINTF(LLVMGEP, "Size: %d, Current Value: %d\n", size[i], currentValue[i]);
 		}
 
-		for (int i = 0; i < index; i++) {
-			instruction.memory.getptr.reference[i] = currentValue[i];
-			newAddress = newAddress + instruction.memory.getptr.reference[i]*size[i];
+		for (int i = 0; i < _Index; i++) {
+			newAddress = newAddress + currentValue[i]*size[i];
 		}
-		//newAddress *= size[0];
-		newAddress += instruction.memory.getptr.ptrval->getValue();
+		newAddress += _PtrVal->getValue();
 		_ReturnRegister->setValue(&newAddress);
 	}
-	DPRINTF(LLVMGEP, "Global Register Read: (%s)\n",instruction.memory.getptr.ptrval->getName());
-	instruction.memory.getptr.ptrval->accessedRead();
-	DPRINTF(LLVMGEP, "Base Address in Register %s: %X\n", instruction.memory.getptr.ptrval->getName(), instruction.memory.getptr.ptrval->getValue());
-	DPRINTF(LLVMGEP, "Memory Location =  %X (%d)\n\n", _ReturnRegister->getValue(), _ReturnRegister->getValue());
-	*/
 }
 
 
@@ -812,47 +764,35 @@ AddrSpaceCast::compute() { }
 
 void
 ICmp::compute() {
-	/*
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	// uint64_t op1 = 0;
-	// uint64_t op2 = 0;
-	uint64_t result = 0;
-	int64_t op1 = 0;
-	int64_t op2 = 0;
-	
 	// Determine if comparison is being made between registers or immediate values
-	if (instruction.other.compare.immediate1) {
-		op1 = stoi(instruction.other.compare.iop1);
-		instruction.general.immediateCount->accessedRead();
-	} else op1 = instruction.other.compare.op1->getValue();
-	if (instruction.other.compare.immediate2) {
-		op2 = stoi(instruction.other.compare.iop2);
-		instruction.general.immediateCount->accessedRead();
-	} else op2 =  instruction.other.compare.op2->getValue();
-	// Perform Comparison
-	
-	if (op1 > MAXINT) {
-		op1 = ((op1 ^ 0xFFFFFFFF)+1)*-1;
+	if (_Operands.size() == 1) {
+		if(_Flags & EQ) _Result = (_Operands.at(0)->getValue() == _Operand);
+		else if(_Flags & NE) _Result = (_Operands.at(0)->getValue() != _Operand);
+		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _UOperand);
+		else if(_Flags & UGE) _Result = (_Operands.at(0)->getValue() >= _UOperand);
+		else if(_Flags & ULT) _Result = (_Operands.at(0)->getValue() < _UOperand);
+		else if(_Flags & ULE) _Result = (_Operands.at(0)->getValue() <= _UOperand);
+		else if(_Flags & SGT) _Result = (_Operands.at(0)->getValue() > _SOperand);
+		else if(_Flags & SGE) _Result = (_Operands.at(0)->getValue() >= _SOperand);
+		else if(_Flags & SLT) _Result = (_Operands.at(0)->getValue() < _SOperand);
+		else if(_Flags & SLE) _Result = (_Operands.at(0)->getValue() <= _SOperand);
+	} else {
+		if(_Flags & EQ) _Result = (_Operands.at(0)->getValue() == _Operands.at(1)->getValue());
+		else if(_Flags & NE) _Result = (_Operands.at(0)->getValue() != _Operands.at(1)->getValue());
+		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _Operands.at(1)->getValue());
+		else if(_Flags & UGE) _Result = (_Operands.at(0)->getValue() >= _Operands.at(1)->getValue());
+		else if(_Flags & ULT) _Result = (_Operands.at(0)->getValue() < _Operands.at(1)->getValue());
+		else if(_Flags & ULE) _Result = (_Operands.at(0)->getValue() <= _Operands.at(1)->getValue());
+		else if(_Flags & SGT) _Result = (_Operands.at(0)->getValue() > _Operands.at(1)->getValue());
+		else if(_Flags & SGE) _Result = (_Operands.at(0)->getValue() >= _Operands.at(1)->getValue());
+		else if(_Flags & SLT) _Result = (_Operands.at(0)->getValue() < _Operands.at(1)->getValue());
+		else if(_Flags & SLE) _Result = (_Operands.at(0)->getValue() <= _Operands.at(1)->getValue());
 	}
-	if (op2 > MAXINT) {
-		op2 = ((op2 ^ 0xFFFFFFFF)+1)*-1;
-	}
-	DPRINTF(LLVMOp, "Op1 = %d, Op2 = %d\n", op1, op2);	
-	
-	if (instruction.other.compare.condition.eq) result = (op1 == op2);
-	else if (instruction.other.compare.condition.ne) result = (op1 != op2);
-	else if (instruction.other.compare.condition.ugt) result = (op1 > op2);
-	else if (instruction.other.compare.condition.uge) result = (op1 >= op2);
-	else if (instruction.other.compare.condition.ult) result = (op1 < op2);
-	else if (instruction.other.compare.condition.ule) result = (op1 <= op2);
-	else if (instruction.other.compare.condition.sgt) result = ((int)op1 > (int)op2);
-	else if (instruction.other.compare.condition.sge) result = ((int)op1 >= (int)op2);
-	else if (instruction.other.compare.condition.slt) result = ((int)op1 < (int)op2);
-	else if (instruction.other.compare.condition.sle) result = ((int)op1 <= (int)op2);
 	// Store result in return register
 	_ReturnRegister->setValue(&_Result);
-	DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
-	*/
+	//DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
+	
 }
 void
 FCmp::compute() {
@@ -938,25 +878,16 @@ Call::compute() { }e.condition.une) {
 }
 void
 Phi::compute() {
-	/*
 	// <result> = phi <ty> [ <val0>, <label0>], ...
-	DPRINTF(LLVMOp, "Performing %s Operation, Previous BB was #%s\n", _OpCode, prevBB);
-	uint64_t val;
-	for (int i = 0; i < MAXPHI; i++) {
-		// Look for phi label that matches the previous basic block
-		if (prevBB == instruction.other.phi.label[i]) {
-			// Store the value associated with the label into val
-			if (instruction.other.phi.immVal[i]) {
-				val = stoi(instruction.other.phi.ival[i]);
-				instruction.general.immediateCount->accessedRead();
-			} else val = instruction.other.phi.val[i]->getValue();
-			break;
+	DPRINTF(LLVMOp, "Performing %s Operation, Previous BB was #%s\n", _OpCode, _PrevBB);
+	for(auto i = 0; i < _PhiVal.size(); ++i) {
+		if (_PhiLabel.at(i) == _PrevBB) {
+			if(_PhiVal.at(i) == "reg") _Result = _PhiReg.at(i)->getValue();
+			if(_ReturnType[0] == 'i') _Result = stoi(_PhiVal.at(i));
 		}
 	}
-	// Store val in return register
-	_ReturnRegister->setValue(&val);
-	DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
-	*/
+	_ReturnRegister->setValue(&_Result);
+	//DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void
@@ -997,22 +928,15 @@ Select::compute() {
 
 bool 
 InstructionBase::commit() {
-    /*
 	// If cycle count is = max cycle count, commit register value to memory
-	DPRINTF(LLVMRegister, "Committing (%s) Compute Node:\n", _OpCode);
 	if (_ReturnRegister != NULL) {
-		DPRINTF(LLVMRegister, "Attempting to Commit Register (%s)\n", _ReturnRegister->getName());
-		instruction.cycle.current++;
-		DPRINTF(LLVMRegister, "Cycle: Current = (%d) || Max = (%d) || Remaining = (%d)\n", instruction.cycle.current, instruction.cycle.max, instruction.cycle.max - instruction.cycle.current);
-		if (instruction.cycle.current >= instruction.cycle.max) {
+		_CurrCycle++;
+		if (_CurrCycle >= _MaxCycle) {
 			_ReturnRegister->commit();
-			DPRINTF(LLVMRegister, "Cycle Complete! Register (%s) = (%.16x)\n\n", _ReturnRegister->getName(), _ReturnRegister->getValue());
 			return true;
 		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
 	}
-	*/
 	return false;
-    
 }
 
 
