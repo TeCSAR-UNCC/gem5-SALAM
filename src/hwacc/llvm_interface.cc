@@ -307,6 +307,8 @@ LLVMInterface::constructBBList() {
     } else { // Could not find LLVM file
         panic("Unable to open LLVM file!\n");
     }
+    regList->printRegNames();
+    
 }
 
 BasicBlock*

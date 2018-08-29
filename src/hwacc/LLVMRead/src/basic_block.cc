@@ -45,7 +45,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		    list->addRegister(ret_reg);
 		    DPRINTF(LLVMRegister, "Creating Return Register: (%s)\n", ret_reg->getName());
 		} else {
-			DPRINTF(LLVMRegister, "Error: Trying to Create Duplicate Return Register!\n");
+			DPRINTF(LLVMRegister, "Register Already Initialized!\n");
 		}
 		// In all instances where a return register is the first component, the next component is
 		// the opcode, which is parsed and removed from line
@@ -329,7 +329,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto add = std::make_shared<Add>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -349,11 +349,18 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFADD;
 		computeFlags = setFlags(parameters);
+		DPRINTF(ComputeNode, "TestPoint 1 \n");
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
+		DPRINTF(ComputeNode, "TestPoint 2 \n");
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
+		DPRINTF(ComputeNode, "TestPoint 3 \n");
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) {
+			DPRINTF(ComputeNode, "TestPoint 4 \n");
+			immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		}
+		DPRINTF(ComputeNode, "TestPoint 5 \n");
 		auto fadd = std::make_shared<FAdd>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -366,6 +373,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											computeFlags,
 											immOp );
 		addNode(fadd);
+		DPRINTF(ComputeNode, "Fadd Done\n");
 		break;
 	}
 	case IR_Sub: {
@@ -380,7 +388,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto sub = std::make_shared<Sub>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -404,7 +412,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fsub = std::make_shared<FSub>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -431,7 +439,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto mul = std::make_shared<Mul>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -455,7 +463,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fmul = std::make_shared<FMul>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -480,7 +488,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto udiv = std::make_shared<UDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -505,7 +513,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto sdiv = std::make_shared<SDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -529,7 +537,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto fdiv = std::make_shared<FDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -553,7 +561,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto urem = std::make_shared<URem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -577,7 +585,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto srem = std::make_shared<SRem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -601,7 +609,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		auto frem = std::make_shared<FRem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -628,7 +636,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto shl = std::make_shared<Shl>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -653,7 +661,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto lshr = std::make_shared<LShr>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -678,7 +686,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto ashr = std::make_shared<AShr>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -702,7 +710,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto andoc = std::make_shared<And>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -726,7 +734,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto oroc = std::make_shared<Or>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -750,7 +758,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		int64_t immOp = 0;
-		if(!(immOps.at(0).empty())) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto xoroc = std::make_shared<Xor>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -1383,7 +1391,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			phiVal.push_back(parameters[i]);
 			labelLength = phiVal.at(i - 1).find(',');
 			labelLength = labelLength - phiVal.at(i - 1).find('[');
-			val[i - 1] = phiVal.at(i - 1).substr(2, (phiVal.at(i - 1).find(',')) - 2);
+			val[i - 1] = (phiVal.at(i - 1)).substr(2, ((phiVal.at(i - 1)).find(',')) - 2);
 			labelLength = phiVal.at(i - 1).find(',');
 			labelLength = phiVal.at(i - 1).find(']') - labelLength;
 			label[i - 1] = phiVal.at(i - 1).substr((phiVal.at(i - 1).find(',')) + 3, labelLength - 4);
@@ -1394,16 +1402,17 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 				DPRINTF(ComputeNode, "Loading value stored in %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			} else {
 				if (val[i-1] == "true") {
-					phiVal.push_back("1");
+					phiVal.at(i-1) = ("1");
 				} else if (val[i-1] == "false") {
-					phiVal.push_back("0");
+					phiVal.at(i-1) = ("0");
 				} else {
-					phiVal.push_back(val[i - 1]);
+					phiVal.at(i-1) = (val[i - 1]);
 				}
 				phiLabel.push_back(label[i - 1]);
 				DPRINTF(ComputeNode, "Loading immediate value %s if called from BB %s. \n", val[i - 1], label[i - 1]);
 			}
 		}
+		DPRINTF(ComputeNode, "Registering Instruction: (%s)\n", opCode);
 		auto phi = std::make_shared<Phi>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -1415,6 +1424,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											phiVal,
 											phiLabel);
 		addNode(phi);
+		DPRINTF(ComputeNode, "Registration Complete: (%s)\n", opCode);
 		// Further Testing will be needed for phi for computing
 
 		break;

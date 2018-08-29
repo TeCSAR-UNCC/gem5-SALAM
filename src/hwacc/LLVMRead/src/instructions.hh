@@ -126,6 +126,7 @@ class InstructionBase {
         // ---- Virtual Functions
         virtual bool commit();
         // Each commit increments cycle count once, broadcast once complete
+        // If memory type, commit request and broadcast
         virtual void compute()           = 0;  
         //virtual void powerCycle()        = 0;
         // ---- Hardware Usage Functions
