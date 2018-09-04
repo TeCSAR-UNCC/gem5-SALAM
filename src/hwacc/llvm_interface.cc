@@ -2,6 +2,7 @@
 #include <fstream>
 #include "hwacc/llvm_interface.hh"
 
+
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
@@ -277,7 +278,7 @@ LLVMInterface::constructBBList() {
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
                     currBB = new BasicBlock("0", bbnum); // First basic block is always defined as BB 0
-                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", curBrrBB->_Name);
+                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
                 }

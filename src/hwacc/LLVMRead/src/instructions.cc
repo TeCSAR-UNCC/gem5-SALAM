@@ -8,14 +8,11 @@ Add::compute() {
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	// If immediate values convert from string, else load from register
-	DPRINTF(LLVMOp, "Size (%d), Imm (%d)\n", _Operands.size(), _Operand);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() + _Operand;
-	else _Result = _Operands.at(0)->getValue() + _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) + _Operand;
+	else _Result = _Ops.at(0) + _Ops.at(1);
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
-	
-	DPRINTF(LLVMOp, "%u: Stored in Register %s. \n", _ReturnRegister->getValue(), _ReturnRegister->getName());
+	setResult(&_Result);
+	//DPRINTF(LLVMOp, "%u: Stored in Register %s. \n", _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -29,7 +26,7 @@ Sub::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() - _Operand;
 	else _Result = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	//_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -44,7 +41,7 @@ Mul::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() * _Operand;
 	else _Result = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	//_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -55,7 +52,7 @@ UDiv::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _UOperand;
 	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	//_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -66,7 +63,7 @@ SDiv::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _SOperand;
 	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	//_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -77,7 +74,7 @@ URem::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _UOperand;
 	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	//_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -88,7 +85,7 @@ SRem::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _SOperand;
 	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	//_ReturnRegister->setValue(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -103,31 +100,31 @@ FAdd::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
 			result = op1 + _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			result = op1 + op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
 			result = op1 + _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			result = op1 + op2;
 		}
 	}
 	DPRINTF(LLVMOp, "%f + %f = %f \n", op1, op2, result);
-	_ReturnRegister->setValue(&result);
+	setResult(&result);
 	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -663,6 +660,7 @@ ICmp::compute() {
 	_ReturnRegister->setValue(&_Result);
 	DPRINTF(LLVMOp, "Result: %d\n", _Result);
 }
+
 void
 Phi::compute() {
 	// <result> = phi <ty> [ <val0>, <label0>], ...
@@ -704,53 +702,3 @@ Select::compute() {
 	_ReturnRegister->setValue(&_Result);		
 }
 
-
-bool 
-InstructionBase::commit() {
-	// If cycle count is = max cycle count, commit register value to memory
-	if (_ReturnRegister != NULL) {
-		_CurrCycle++;
-		if (_CurrCycle >= _MaxCycle) {
-			_ReturnRegister->commit();
-			return true;
-		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
-	}
-	return false;
-}
-
-
-
-bool 
-InstructionBase::checkDependencies() {
-    bool hot = false;
-//	bool phiBranchDependent = false;
-	if(_Dependencies.size() == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
-	if(_OpCode == "phi"){
-		/*
-		for (int i = 0; i < MAXPHI; i++) {
-			if (prevBB == instruction.other.phi.label[i]) {
-				if(!instruction.other.phi.immVal[i]) {
-					phiBranchDependent = true;
-					if(instruction.other.phi.val[i]->getStatus()){
-						DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.other.phi.val[i]->getName());
-						hot = true;
-					} else {
-						DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
-					}
-				} else {
-					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded!\n", instruction.other.phi.val[i]);
-				}
-			}
-		}
-		if(!phiBranchDependent) DPRINTF(LLVMRegister, "No Dependencies!\n");
-		*/
-	} else {
-		for (int i = 0; i < _Dependencies.size(); i++) {
-			// Increment counter for register dependency check
-			if (_Dependencies.at(i)->getStatus()) {
-				hot = true;
-			} 
-		}
-	}
-	return hot;
-}

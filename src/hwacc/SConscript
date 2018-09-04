@@ -22,6 +22,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('stream_dma.cc')
     Source('LLVMRead/src/instructions.cc')
     Source('LLVMRead/src/registers.cc')
+    Source('LLVMRead/src/base_instruction.cc')
+
 
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')

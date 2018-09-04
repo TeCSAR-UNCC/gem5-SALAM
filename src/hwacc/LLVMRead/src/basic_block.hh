@@ -2,6 +2,7 @@
 #define __BASIC_BLOCK_HH__
 #include "debugFlags.hh"
 #include "instructions.hh"
+#include "base_instruction.hh"
 #include <memory>
 
 class BasicBlock {

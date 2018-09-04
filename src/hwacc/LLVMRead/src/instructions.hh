@@ -6,6 +6,7 @@
 #include "llvm_types.hh"
 #include "debugFlags.hh"
 #include "registers.hh"
+#include "base_instruction.hh"
 #include "power.hh"
 #include <string>
 #include <vector>
@@ -13,139 +14,6 @@
 // counter type in parser 0 cycle
 
 
-//---------------------------------------------------------------------------//
-//--------- Begin Immediate Value Sub Classes -------------------------------//
-//---------------------------------------------------------------------------//
-class Signed {
-    protected: 
-        int64_t _SOperand;
-    public:
-        // ---- Constructor
-        Signed(           int64_t Operand):           
-                        _SOperand((int64_t)Operand) { }
-        // ---- Get Functions
-        int64_t getSigned() { return _SOperand; }
-};
-
-class Unsigned {
-    protected:
-        uint64_t _UOperand;
-    public:
-            // ---- Constructorbuild/ARM/hwacc/LLVMRead/src/instructions.cc:831:2: error: "/*" within comment [-Werror=comment]
-
-        Unsigned(        uint64_t Operand):           
-                        _UOperand((uint64_t)Operand) { }
-        // ---- Get Functions
-        int64_t getUnsigned() { return _UOperand; }
-};
-
-class Integer {
-    protected:
-        int64_t _Operand;
-    public:
-        // ---- Constructor
-        Integer(         int64_t Operand):           
-                        _Operand(Operand) { }
-        // ---- Get Functions
-        int64_t getOperand()           { return _Operand; }
-};
-
-class FloatingPointSP {
-    protected:
-        float _OperandSP;
-    public:
-        // ---- Constructor
-        FloatingPointSP(   float Operand): 
-                        _OperandSP(Operand) { }
-        // ---- Get Functions
-        float getOperandSP()           { return _OperandSP; }
-};
-
-class FloatingPointDP {
-    protected:
-        double _OperandDP;
-    public:
-        // ---- Constructor
-        FloatingPointDP(  double Operand): 
-                        _OperandDP(Operand) { }
-        // ---- Get Functions
-        double getOperandDP()           { return _OperandDP; }
-};
-//---------------------------------------------------------------------------//
-//--------- End Immediate Value Sub Classes ---------------------------------//
-//---------------------------------------------------------------------------//
-
-//---------------------------------------------------------------------------//
-//--------- Begin Shared Instruction Base -----------------------------------//
-//---------------------------------------------------------------------------//
-class InstructionBase {
-    public:
-       
-        MemoryRequest* _Req; // Pointer for creating a memory access request
-        std::string _LLVMLine;
-        std::string _OpCode;
-        std::string _ReturnType; // Return Type
-        std::string _InstructionType; // Terminator, Binary, Etc...
-        Register* _ReturnRegister;
-        uint64_t _MaxCycle;
-        std::vector<Register*> _Dependencies;
-        CommInterface* _Comm; // Pointer to add basic block to queues 
-        std::vector<InstructionBase*> _Parents; // Parent Nodes
-        std::vector<InstructionBase*> _Children; // Child Nodes
-        std::vector<bool> _Status; // Ready Indicator, Index Matched To Parent
-        uint64_t _Usage; // Counter for times instruction used
-        uint64_t _CurrCycle;
-        std::string _PrevBB;
-        bool _Terminator = false;
-        std::string _Dest;
-   // public:
-        // ---- Constructor
-        /* Default Compute Node Construction Call
-        (lineCpy, opCode, returnType, instructionType, ret_reg, maxCycles, dependencies, co)
-        */
-        InstructionBase( const std::string& LLVMLine,
-                         const std::string& OpCode,
-                         const std::string& ReturnType,
-                         const std::string& InstructionType,
-                         Register* ReturnRegister,
-                         uint64_t MaxCycle,
-                         std::vector<Register*> Dependencies,
-                         CommInterface* Comm):
-                         _LLVMLine(LLVMLine),
-                         _OpCode(OpCode), 
-                         _ReturnType(ReturnType),
-                         _InstructionType(InstructionType),
-                         _ReturnRegister(ReturnRegister),
-                         _MaxCycle(MaxCycle),
-                         _Dependencies(Dependencies),
-                         _Comm(Comm) 
-                        { _Req = NULL;
-                          _CurrCycle = 0; 
-                          _Usage = 0; }
-        // ---- Get Functions
-        std::string getLLVMLine()      { return _LLVMLine; }
-        std::string getOpCode()        { return _OpCode; }
-        std::string getInstrType()     { return _InstructionType; }
-        // ---- Virtual Functions
-        virtual bool commit();
-        // Each commit increments cycle count once, broadcast once complete
-        // If memory type, commit request and broadcast
-        virtual void compute()           = 0;  
-        //virtual void powerCycle()        = 0;
-        // ---- Hardware Usage Functions
-        void used() { _Usage++; }
-        // ---- Dependency Graph Functions
-            // Find Parents and Return Register for Previous Instance 
-        bool checkDependencies();
-        void signalChildren(InstructionBase*); 
-        void registerChild(InstructionBase*);
-        // ---- General Functions
-        void setCommInterface(CommInterface *newComm) { _Comm = newComm; }
-        MemoryRequest * getReq() { return _Req; }
-};
-//---------------------------------------------------------------------------//
-//--------- End Shared Instruction Base -------------------------------------//
-//---------------------------------------------------------------------------//
 //--------- Begin Terminator Instruction Base -------------------------------//
 //---------------------------------------------------------------------------//
 class Terminator : public InstructionBase {
@@ -215,7 +83,9 @@ class Terminator : public InstructionBase {
                             MaxCycle, 
                             Dependencies, 
                             Comm) { _Terminator = true;}
-          
+       // virtual Terminator* clone() const { return new Terminator(*this); }
+       // void compute() { }
+
 };
 
 class BadInstruction : public InstructionBase {
@@ -238,6 +108,7 @@ class BadInstruction : public InstructionBase {
                             Dependencies, 
                             Comm) { }
         void compute() override { }
+       // virtual BadInstruction* clone() const { return new BadInstruction(*this); }
 };
 
 class Br : public Terminator {
@@ -290,6 +161,7 @@ class Br : public Terminator {
                             Branches)
         , _Unconditional(   Unconditional) { }
         void compute() override;
+      //  virtual Br* clone() const { return new Br(*this); }
 };
 
 
@@ -323,6 +195,7 @@ class Ret : public Terminator {
                             Comm));
                             }
         void compute() override;
+       // virtual Ret* clone() const { return new Ret(*this); }
 };
 
 class Switch : public Terminator {
@@ -353,6 +226,7 @@ class Switch : public Terminator {
                             Branches)
         , _CaseValues(      CaseValues) { }
         void compute() override;
+       // virtual Switch* clone() const { return new Switch(*this); }
 };
 
 class IndirectBr : public Terminator {
@@ -444,6 +318,7 @@ class Add : public Binary, public Integer {
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
+        virtual Add* clone() const { return new Add(*this); }
 };
 
 class Sub : public Binary, public Integer {
@@ -473,6 +348,7 @@ class Sub : public Binary, public Integer {
                             Flags)
         , Integer (         ImmOp) { }
         void compute() override;
+        virtual Sub* clone() const { return new Sub(*this); }
 };
 
 class Mul : public Binary, public Integer {
