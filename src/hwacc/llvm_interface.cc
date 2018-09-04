@@ -17,6 +17,14 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
+
+InstructionBase* copy_me(const std::shared_ptr<InstructionBase>& b) {
+    InstructionBase* clone = b->clone();
+    return clone;
+}
+
+
+
 void
 LLVMInterface::tick() {
 /*********************************************************************************************
@@ -40,6 +48,29 @@ LLVMInterface::tick() {
             "   Cycle", cycle,
             "********************************************************************************");
     cycle++;
+
+    /////////// Test Area
+
+
+    if(currBB->getName() == "1") {
+    std::vector<InstructionBase*> queue;
+        for( auto i = 0; i < reservation.size(); i++) {
+           std::cout <<  reservation.at(i)->_OpCode << std::endl;
+           queue.push_back(copy_me(reservation.at(i)));
+        }
+
+        for( auto i = 0; i < queue.size(); i++ ){
+            std::cout << queue.at(i)->_OpCode << std::endl;
+            queue.at(i)->compute();
+        }
+
+        std::cout << "Made It" << std::endl << std::endl;
+
+    }
+
+
+    /////////// Test Area
+
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
@@ -72,11 +103,12 @@ LLVMInterface::tick() {
         if(!(reservation.at(i)->_Terminator) && !(reservation.at(i)->checkDependencies())) { /* Dont think this is needed now */ 
             if(reservation.at(i)->_OpCode == "load") readQueue.push_back(reservation.at(i));
             if(reservation.at(i)->_OpCode == "store") writeQueue.push_back(reservation.at(i));
-            reservation.at(i)->compute();
             if(reservation.at(i)->_OpCode == "phi")  {
-                reservation.at(i)->_PrevBB = prevBB->_Name;
-                reservation.at(i)->commit();
+                DPRINTF(LLVMInterface, "Phi Interface\n");
+                reservation.at(i)->_PrevBB = prevBB->getName();
             } else computeQueue.push_back(reservation.at(i));
+            reservation.at(i)->compute();
+            if(reservation.at(i)->commit())     
             scheduled = true;
             reservation.erase(reservation.begin()+ i);
         } else if((reservation.at(i)->_OpCode == "br")&& !(reservation.at(i)->checkDependencies())) {
@@ -85,7 +117,9 @@ LLVMInterface::tick() {
                 reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
                 currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
                 reservation.erase(reservation.begin() + i); // Remove instruction from reservation table
+                currBB->prevBB(prevBB->getName());
                 scheduleBB(currBB); // Add next basic block to reservation table
+                break;
             } else i++; // If compute nodes still remain in queue, do not branch
         } else i++;
     }
@@ -101,7 +135,7 @@ LLVMInterface::tick() {
                 DPRINTF(LLVMInterface, "Queueing Load Instruction!\n");
                 scheduled = true;
                 readQueue->push_back(*it); // Interface instruction with gem5 memory management
-                (*it)->compute(); // Send instruction to runtime computation simulator
+                (*it)->compute(); // Send instruction  to runtime computation simulator
             } else if (instr.general.opCode.find("store") == 0) { // Store Instruction
                 DPRINTF(LLVMInterface, "Queueing Store Instruction!\n");
                 scheduled = true;
@@ -199,7 +233,7 @@ LLVMInterface::scheduleBB(BasicBlock * bb) {
                 (*it)->compute(); // Send instruction to runtime computation simulator
             } else {
                 // Phi instruction should never have a dependency when scheduled
-                DPRINTF(IOAcc, "Error: Phi Instruction Scheduled with Dependency!\n");
+                DPRINTF(IOAcc, "Error: Phi Instructionreservation.at(i)->compute(); Scheduled with Dependency!\n");
                 (*it)->reset(); // Set return registers back to hot 
                 reservation->push_back(*it); // Add instruction back to reservation table
             } 
