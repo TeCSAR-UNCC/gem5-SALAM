@@ -92,6 +92,7 @@ class InstructionBase {
         std::vector<InstructionBase*> _Parents; // Parent Nodes
         std::vector<InstructionBase*> _Children; // Child Nodes
         std::vector<bool> _Status; // Ready Indicator, Index Matched To Parent
+        int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
         uint64_t _Usage; // Counter for times instruction used
         uint64_t _CurrCycle;
         std::string _PrevBB;
@@ -122,7 +123,8 @@ class InstructionBase {
                          _Comm(Comm) 
                         { _Req = NULL;
                           _CurrCycle = 0; 
-                          _Usage = 0; }
+                          _Usage = 0;
+                          _ActiveParents = 0; }
         // ---- Get Functions
         std::string getLLVMLine()      { return _LLVMLine; }
         std::string getOpCode()        { return _OpCode; }
@@ -141,13 +143,15 @@ class InstructionBase {
         // ---- Dependency Graph Functions
             // Find Parents and Return Register for Previous Instance 
         bool checkDependencies();
-        void signalChildren(InstructionBase*); 
+        void fetchDependency(Register*);
+        void fetchDependency(int);
+        void signalChildren();
         void registerChild(InstructionBase*);
+        void registerParent(InstructionBase*);
         // ---- General Functions
         void setCommInterface(CommInterface *newComm) { _Comm = newComm; }
         MemoryRequest * getReq() { return _Req; }
         void setResult(void *Data);
-
 };
 //---------------------------------------------------------------------------//
 //--------- End Shared Instruction Base -------------------------------------//
