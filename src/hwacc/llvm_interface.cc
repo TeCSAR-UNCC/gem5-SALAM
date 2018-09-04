@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include "hwacc/llvm_interface.hh"
 
 
@@ -18,7 +19,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
 }
 
 
-InstructionBase* copy_me(const std::shared_ptr<InstructionBase>& b) {
+InstructionBase* createClone(const std::shared_ptr<InstructionBase>& b) {
     InstructionBase* clone = b->clone();
     return clone;
 }
@@ -56,7 +57,7 @@ LLVMInterface::tick() {
     std::vector<InstructionBase*> queue;
         for( auto i = 0; i < reservation.size(); i++) {
            std::cout <<  reservation.at(i)->_OpCode << std::endl;
-           queue.push_back(copy_me(reservation.at(i)));
+           queue.push_back(createClone(reservation.at(i)));
         }
 
         for( auto i = 0; i < queue.size(); i++ ){
