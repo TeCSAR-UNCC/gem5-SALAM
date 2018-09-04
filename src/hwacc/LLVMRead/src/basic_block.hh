@@ -2,7 +2,6 @@
 #define __BASIC_BLOCK_HH__
 #include "debugFlags.hh"
 #include "instructions.hh"
-#include "base_instruction.hh"
 #include <memory>
 
 class BasicBlock {
@@ -153,6 +152,7 @@ class BasicBlock {
     BasicBlock(const std::string& Name, uint64_t BBID);
     ~BasicBlock();
     void addNode(std::shared_ptr<InstructionBase> Node);
+    void prevBB(std::string prevBB) { _PrevBB = prevBB; }
     std::string getName() { return _Name; }
     std::string convertImmediate(std::string dataType, std::string immediateValue);
     std::string sciToDecimal(std::string immediateValue);

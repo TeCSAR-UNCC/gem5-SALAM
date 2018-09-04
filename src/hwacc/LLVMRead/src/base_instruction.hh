@@ -135,7 +135,7 @@ class InstructionBase {
         // If memory type, commit request and broadcast
         virtual void compute()           = 0;  
         //virtual void powerCycle()        = 0;
-      //  virtual InstructionBase* clone() const = 0;
+        virtual InstructionBase* clone() const = 0;
         virtual ~InstructionBase() { }
         
         // ---- Hardware Usage Functions
