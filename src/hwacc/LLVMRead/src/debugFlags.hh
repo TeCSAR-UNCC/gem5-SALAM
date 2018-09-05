@@ -10,5 +10,6 @@
 #include "debug/LLVMParse.hh"
 #include "debug/LLVMGEP.hh"
 #include "debug/Hardware.hh"
+#include "debug/ClassDetail.hh"
 
 #endif //__LLVMREAD_DEBUG_HH__

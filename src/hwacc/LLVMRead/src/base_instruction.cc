@@ -1,4 +1,5 @@
 #include "base_instruction.hh"
+#include "instructions.hh"
 
 void
 InstructionBase::setResult(void *Data) { // memcpy shortcut method
@@ -22,40 +23,11 @@ InstructionBase::commit() {
 
 
 
-bool 
-InstructionBase::checkDependencies() {
-    bool hot = false;
-//	bool phiBranchDependent = false;
-	if(_Dependencies.size() == 0) DPRINTF(LLVMRegister, "No Dependencies!\n");
-	if(_OpCode == "phi"){
-		/*
-		for (int i = 0; i < MAXPHI; i++) {
-			if (prevBB == instruction.other.phi.label[i]) {
-				if(!instruction.other.phi.immVal[i]) {
-					phiBranchDependent = true;
-					if(instruction.other.phi.val[i]->getStatus()){
-						DPRINTF(LLVMRegister, "Register (%s) is Hot:\n", instruction.other.phi.val[i]->getName());
-						hot = true;
-					} else {
-						DPRINTF(LLVMRegister, "Register (%s) is Ready:\n", instruction.other.phi.val[i]->getName());
-					}
-				} else {
-					DPRINTF(LLVMRegister, "Immediate Value (%d) Loaded!\n", instruction.other.phi.val[i]);
-				}
-			}
-		}
-		if(!phiBranchDependent) DPRINTF(LLVMRegister, "No Dependencies!\n");
-		*/
-	} else {
-		for (int i = 0; i < _Dependencies.size(); i++) {
-			// Increment counter for register dependency check
-			if (_Dependencies.at(i)->getStatus()) {
-				hot = true;
-			} 
-		}
-	}
-	return hot;
+std::vector<Register*> 
+InstructionBase::runtimeDependencies(std::string PrevBB) {
+	return _Dependencies;
 }
+
 
 // Used by parents to signal children to fetch associated register after commit
 void

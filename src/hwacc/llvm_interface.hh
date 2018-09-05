@@ -20,14 +20,10 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock *currBB;
     BasicBlock *prevBB;
     TypeList *typeList;
-   // std::list<ComputeNode*> *reservation;
-   // std::list<ComputeNode*> *readQueue;
-   // std::list<ComputeNode*> *writeQueue;
-   // std::list<ComputeNode*> *computeQueue;
-    std::vector<std::shared_ptr<InstructionBase> > reservation;
-    std::vector<std::shared_ptr<InstructionBase> > readQueue;
-    std::vector<std::shared_ptr<InstructionBase> > writeQueue;
-    std::vector<std::shared_ptr<InstructionBase> > computeQueue;
+    std::vector<InstructionBase*> reservation;
+    std::vector<InstructionBase*> readQueue;
+    std::vector<InstructionBase*> writeQueue;
+    std::vector<InstructionBase*> computeQueue;
     int process_delay;
     int cycle;
     int stalls;
@@ -38,13 +34,14 @@ class LLVMInterface : public ComputeUnit {
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
     void constructBBList();
-    BasicBlock * findBB(std::string bbname);
+    BasicBlock* findBB(std::string bbname);
     void startup();
     void initialize();
     void statistics();
     void scheduleBB(BasicBlock *bb);
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
+    void detectEdges();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

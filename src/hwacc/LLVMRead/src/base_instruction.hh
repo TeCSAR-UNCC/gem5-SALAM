@@ -11,7 +11,8 @@
 #include <string>
 #include <vector>
 
-
+#define Details(name) DPRINTF(ClassDetail, "Creating Instance of %s!\n", name)
+#define Destruct(name) DPRINTF(ClassDetail, "Deleting Instance of %s!\n", name)
 //---------------------------------------------------------------------------//
 //--------- Begin Immediate Value Sub Classes -------------------------------//
 //---------------------------------------------------------------------------//
@@ -20,22 +21,25 @@ class Signed {
         int64_t _SOperand;
     public:
         // ---- Constructor
-        Signed(           int64_t Operand):           
-                        _SOperand((int64_t)Operand) { }
+        Signed(                     int64_t Operand)       
+        : _SOperand(                (int64_t)Operand) 
+                                    { Details("Signed"); }
+        virtual ~Signed()           { Destruct("Signed"); }
         // ---- Get Functions
-        int64_t getSigned() { return _SOperand; }
+        int64_t getSigned()         { return _SOperand; }
 };
 
 class Unsigned {
     protected:
         uint64_t _UOperand;
     public:
-            // ---- Constructorbuild/ARM/hwacc/LLVMRead/src/instructions.cc:831:2: error: "/*" within comment [-Werror=comment]
 
-        Unsigned(        uint64_t Operand):           
-                        _UOperand((uint64_t)Operand) { }
+        Unsigned(                   uint64_t Operand)         
+        : _UOperand(                (uint64_t)Operand) 
+                                    { Details("Unsigned"); }
+        virtual ~Unsigned()         { Destruct("Unsigned"); }
         // ---- Get Functions
-        int64_t getUnsigned() { return _UOperand; }
+        int64_t getUnsigned()       { return _UOperand; }
 };
 
 class Integer {
@@ -43,10 +47,12 @@ class Integer {
         int64_t _Operand;
     public:
         // ---- Constructor
-        Integer(         int64_t Operand):           
-                        _Operand(Operand) { }
+        Integer(                    int64_t Operand)         
+        : _Operand(                 Operand) 
+                                    { Details("Integer"); }
+        virtual ~Integer()          { Destruct("Integer"); }
         // ---- Get Functions
-        int64_t getOperand()           { return _Operand; }
+        int64_t getOperand()        { return _Operand; }
 };
 
 class FloatingPointSP {
@@ -54,10 +60,12 @@ class FloatingPointSP {
         float _OperandSP;
     public:
         // ---- Constructor
-        FloatingPointSP(   float Operand): 
-                        _OperandSP(Operand) { }
+        FloatingPointSP(            float Operand)
+        : _OperandSP(               Operand) 
+                                    { Details("FloatingPointSP"); }
+        virtual ~FloatingPointSP()  { Destruct("FloatingPointSP"); }
         // ---- Get Functions
-        float getOperandSP()           { return _OperandSP; }
+        float getOperandSP()        { return _OperandSP; }
 };
 
 class FloatingPointDP {
@@ -65,8 +73,10 @@ class FloatingPointDP {
         double _OperandDP;
     public:
         // ---- Constructor
-        FloatingPointDP(  double Operand): 
-                        _OperandDP(Operand) { }
+        FloatingPointDP(            double Operand)
+        : _OperandDP(               Operand) 
+                                    { Details("FloatingPointDP"); }
+        virtual ~FloatingPointDP()  { Destruct("FloatingPointDP"); }
         // ---- Get Functions
         double getOperandDP()           { return _OperandDP; }
 };
@@ -91,7 +101,6 @@ class InstructionBase {
         CommInterface* _Comm; // Pointer to add basic block to queues 
         std::vector<InstructionBase*> _Parents; // Parent Nodes
         std::vector<InstructionBase*> _Children; // Child Nodes
-        std::vector<bool> _Status; // Ready Indicator, Index Matched To Parent
         int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
         uint64_t _Usage; // Counter for times instruction used
         uint64_t _CurrCycle;
@@ -100,11 +109,7 @@ class InstructionBase {
         std::string _Dest;
         uint64_t _FinalResult;
         std::vector<uint64_t> _Ops; 
-   // public:
         // ---- Constructor
-        /* Default Compute Node Construction Call
-        (lineCpy, opCode, returnType, instructionType, ret_reg, maxCycles, dependencies, co)
-        */
         InstructionBase( const std::string& LLVMLine,
                          const std::string& OpCode,
                          const std::string& ReturnType,
@@ -124,25 +129,28 @@ class InstructionBase {
                         { _Req = NULL;
                           _CurrCycle = 0; 
                           _Usage = 0;
-                          _ActiveParents = 0; }
+                          _ActiveParents = 0; 
+                          Details("Instruction Base"); 
+                          while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
+                          }
         // ---- Get Functions
         std::string getLLVMLine()      { return _LLVMLine; }
         std::string getOpCode()        { return _OpCode; }
         std::string getInstrType()     { return _InstructionType; }
         // ---- Virtual Functions
+        virtual ~InstructionBase()     { Destruct("Instruction Base"); }
         virtual bool commit();
         // Each commit increments cycle count once, broadcast once complete
         // If memory type, commit request and broadcast
         virtual void compute()           = 0;  
         //virtual void powerCycle()        = 0;
         virtual InstructionBase* clone() const = 0;
-        virtual ~InstructionBase() { }
         
         // ---- Hardware Usage Functions
         void used() { _Usage++; }
         // ---- Dependency Graph Functions
             // Find Parents and Return Register for Previous Instance 
-        bool checkDependencies();
+        std::vector<Register*> runtimeDependencies(std::string PrevBB);
         void fetchDependency(Register*);
         void fetchDependency(int);
         void signalChildren();

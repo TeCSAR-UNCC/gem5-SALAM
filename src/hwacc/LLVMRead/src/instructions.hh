@@ -46,7 +46,9 @@ class Terminator : public InstructionBase {
                             MaxCycle, 
                             Dependencies, 
                             Comm)            
-        , _Destination(     Destination) { _Terminator = true; }
+        , _Destination(     Destination) { 
+                            _Terminator = true; 
+                            Details("Terminator"); }
         Terminator (        const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
@@ -66,7 +68,9 @@ class Terminator : public InstructionBase {
                             Dependencies, 
                             Comm)                    
         , _Condition(       Condition)
-        , _Branches(        Branches) { _Terminator = true;}
+        , _Branches(        Branches) { 
+                            _Terminator = true;
+                            Details("Terminator"); }
         Terminator (        const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
@@ -82,9 +86,12 @@ class Terminator : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) { _Terminator = true;}
+                            Comm) { 
+                            _Terminator = true;
+                            Details("Terminator"); }
+        virtual ~Terminator() { Destruct("Terminator"); }
         virtual Terminator* clone() const { return new Terminator(*this); }
-        void compute() { }
+        virtual void compute() { }
 
 };
 
@@ -106,8 +113,10 @@ class BadInstruction : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) { }
-        void compute() override { }
+                            Comm) { 
+                            Details("Bad Instruction"); }
+        ~BadInstruction() { Destruct("Bad Instruction"); }
+        void compute()      override { }
         virtual BadInstruction* clone() const { return new BadInstruction(*this); }
 };
 
@@ -136,7 +145,8 @@ class Br : public Terminator {
                             Dependencies, 
                             Comm, 
                             Destination)
-        , _Unconditional(   Unconditional) { }
+        , _Unconditional(   Unconditional) {
+                            Details("Br"); }
         // Conditional Branch Constructor
         Br (                const std::string& Line,
                             const std::string& OpCode,
@@ -159,8 +169,10 @@ class Br : public Terminator {
                             Comm, 
                             Condition,
                             Branches)
-        , _Unconditional(   Unconditional) { }
-        void compute() override;
+        , _Unconditional(   Unconditional) {
+                            Details("Br"); }
+        ~Br()             { Destruct("Br"); }
+        void compute()      override;
         virtual Br* clone() const { return new Br(*this); }
 };
 
@@ -185,7 +197,7 @@ class Ret : public Terminator {
                             MaxCycle, 
                             Dependencies, 
                             Comm) { 
-                                _Parents.push_back(new BadInstruction(Line, 
+                            _Parents.push_back(new BadInstruction(Line, 
                             OpCode, 
                             ReturnType, 
                             InstructionType, 
@@ -193,8 +205,9 @@ class Ret : public Terminator {
                             MaxCycle, 
                             Dependencies, 
                             Comm));
-                            }
-        void compute() override;
+                            Details("Ret"); }
+        ~Ret()            { Destruct("Ret"); }
+        void compute()      override;
         virtual Ret* clone() const { return new Ret(*this); }
 };
 
@@ -224,8 +237,10 @@ class Switch : public Terminator {
                             Comm,
                             Condition,
                             Branches)
-        , _CaseValues(      CaseValues) { }
-        void compute() override;
+        , _CaseValues(      CaseValues) { 
+                            Details("Switch"); }
+        ~Switch()         { Destruct("Switch"); }
+        void compute()      override;
         virtual Switch* clone() const { return new Switch(*this); }
 };
 
@@ -287,8 +302,10 @@ class Binary : public InstructionBase {
                             Dependencies, 
                             Comm)
         , _Operands(        Operands)
-        , _Flags(           Flags) { }
-        void compute() { }
+        , _Flags(           Flags) { 
+                            Details("Binary"); }
+        virtual ~Binary() { Destruct("Binary"); }
+        virtual void compute() { }
         virtual Binary* clone() const { return new Binary(*this); }
 };
 // ---- Binary ---- Integer Instructions
@@ -318,8 +335,10 @@ class Add : public Binary, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("Add"); }
+        ~Add()            { Destruct("Add"); }
+        void compute()      override;
         virtual Add* clone() const { return new Add(*this); }
 };
 
@@ -348,8 +367,10 @@ class Sub : public Binary, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("Sub"); }
+        ~Sub()            { Destruct("Sub"); }
+        void compute()      override;
         virtual Sub* clone() const { return new Sub(*this); }
 };
 
@@ -378,8 +399,10 @@ class Mul : public Binary, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("Mul"); }
+        ~Mul()            { Destruct("Mul"); }
+        void compute()      override;
         virtual Mul* clone() const { return new Mul(*this); }
 };
 
@@ -409,8 +432,10 @@ class UDiv : public Binary, public Integer, public Unsigned {
                             RegOps,
                             Flags)
         , Integer (         ImmOp) 
-        , Unsigned (        ImmOp) { }
-        void compute() override;
+        , Unsigned (        ImmOp) { 
+                            Details("UDiv"); }
+        ~UDiv()           { Destruct("UDiv"); }
+        void compute()      override;
         virtual UDiv* clone() const { return new UDiv(*this); }
 };
 
@@ -440,8 +465,10 @@ class SDiv : public Binary, public Integer, public Signed {
                             RegOps,
                             Flags)
         , Integer (         ImmOp) 
-        , Signed (          ImmOp) { }
-        void compute() override;
+        , Signed (          ImmOp) { 
+                            Details("SDiv"); }
+        ~SDiv()           { Destruct("SDiv"); }
+        void compute()      override;
         virtual SDiv* clone() const { return new SDiv(*this); }
 };
 
@@ -471,8 +498,10 @@ class URem : public Binary, public Integer, public Unsigned {
                             RegOps,
                             Flags)
         , Integer (         ImmOp) 
-        , Unsigned (        ImmOp) { }
-        void compute() override;
+        , Unsigned (        ImmOp) { 
+                            Details("URem"); }
+        ~URem()           { Destruct("URem"); }
+        void compute()      override;
         virtual URem* clone() const { return new URem(*this); }
 };
 
@@ -502,8 +531,10 @@ class SRem : public Binary, public Integer, public Signed {
                             RegOps,
                             Flags)
         , Integer (         ImmOp) 
-        , Signed (          ImmOp) { }
-        void compute() override;
+        , Signed (          ImmOp) { 
+                            Details("SRem"); }
+        ~SRem()           { Destruct("SRem"); }
+        void compute()      override;
         virtual SRem* clone() const { return new SRem(*this); }
 };
 
@@ -535,8 +566,10 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
                             RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOp) { }
-        void compute() override;
+        , FloatingPointDP ( ImmOp) {
+                            Details("FAdd"); }
+        ~FAdd()           { Destruct("FAdd"); }
+        void compute()      override;
         virtual FAdd* clone() const { return new FAdd(*this); }
 };
 
@@ -566,8 +599,10 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
                             RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOp) { }
-        void compute() override;
+        , FloatingPointDP ( ImmOp) { 
+                            Details("FSub"); }
+        ~FSub()           { Destruct("FSub"); }
+        void compute()      override;
         virtual FSub* clone() const { return new FSub(*this); }
 };
 
@@ -597,8 +632,10 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
                             RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOp) { }
-        void compute() override;
+        , FloatingPointDP ( ImmOp) { 
+                            Details("FMul"); }
+        ~FMul()           { Destruct("FMul"); }
+        void compute()      override;
         virtual FMul* clone() const { return new FMul(*this); }
 };
 
@@ -628,8 +665,10 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
                             RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOp) { }
-        void compute() override;
+        , FloatingPointDP ( ImmOp) { 
+                            Details("FDiv"); }
+        ~FDiv()           { Destruct("FDiv"); }
+        void compute()      override;
         virtual FDiv* clone() const { return new FDiv(*this); }
 };
 
@@ -659,8 +698,10 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
                             RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOp) { }
-        void compute() override;
+        , FloatingPointDP ( ImmOp) { 
+                            Details("FRem"); }
+        ~FRem()           { Destruct("FRem"); }
+        void compute()      override;
         virtual FRem* clone() const { return new FRem(*this); }
 };
 
@@ -694,9 +735,11 @@ class Bitwise : public InstructionBase {
                             MaxCycle, 
                             Dependencies, 
                             Comm)
-        ,           _Operands(Operands),
-                    _Flags(Flags) { }
-        void compute() { }
+        , _Operands(        Operands)
+        , _Flags(           Flags) { 
+                            Details("Bitwise"); }
+        virtual ~Bitwise(){ Destruct("Bitwise"); }
+        virtual void compute() { }
         virtual Bitwise* clone() const { return new Bitwise(*this); }
 };
 // ---- Bitwise Instructions
@@ -726,8 +769,10 @@ class Shl : public Bitwise, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("Shl"); }
+        ~Shl()            { Destruct("Shl"); }
+        void compute()      override;
         virtual Shl* clone() const { return new Shl(*this); }
 };
 
@@ -756,8 +801,10 @@ class LShr : public Bitwise, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("LShr"); }
+        ~LShr()           { Destruct("LShr"); }
+        void compute()      override;
         virtual LShr* clone() const { return new LShr(*this); }
 };
 
@@ -786,8 +833,10 @@ class AShr : public Bitwise, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("AShr"); }
+        ~AShr()           { Destruct("AShr"); }
+        void compute()      override;
         virtual AShr* clone() const { return new AShr(*this); }
 };
 
@@ -816,8 +865,10 @@ class And : public Bitwise, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("And"); }
+        ~And()            { Destruct("And"); }
+        void compute()      override;
         virtual And* clone() const { return new And(*this); }
 };
 
@@ -846,8 +897,10 @@ class Or : public Bitwise, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("Or"); }
+        ~Or()             { Destruct("Or"); }
+        void compute()      override;
         virtual Or* clone() const { return new Or(*this); }
 };
 
@@ -876,8 +929,10 @@ class Xor : public Bitwise, public Integer {
                             Comm,
                             RegOps,
                             Flags)
-        , Integer (         ImmOp) { }
-        void compute() override;
+        , Integer (         ImmOp) { 
+                            Details("Xor"); }
+        ~Xor()            { Destruct("Xor"); }
+        void compute()      override;
         virtual Xor* clone() const { return new Xor(*this); }
 };
 
@@ -913,8 +968,10 @@ class Conversion : public InstructionBase {
                             Dependencies, 
                             Comm) 
         , _OriginalType(    OriginalType)
-        , _COperand(        Operand) { }
-        void compute() { }
+        , _COperand(        Operand) { 
+                            Details("Conversion"); }
+        virtual ~Conversion() { Destruct("Conversion"); }
+        virtual void compute() { }
         virtual Conversion* clone() const { return new Conversion(*this); }
 };
 // ---- Conversion Instructions
@@ -940,8 +997,10 @@ class Trunc : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;  
+                            Operand) { 
+                            Details("Trunc"); }
+        ~Trunc()          { Destruct("Trunc"); }
+        void compute()      override;  
         virtual Trunc* clone() const { return new Trunc(*this); } 
 };
 
@@ -966,8 +1025,10 @@ class ZExt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("ZExt"); }
+        ~ZExt()           { Destruct("ZExt"); }
+        void compute()      override;
         virtual ZExt* clone() const { return new ZExt(*this); }
 };
 
@@ -992,8 +1053,10 @@ class SExt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("SExt"); }
+        ~SExt()           { Destruct("SExt"); }
+        void compute()      override;
         virtual SExt* clone() const { return new SExt(*this); }
 };
 
@@ -1018,8 +1081,10 @@ class FPToUI : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) {
+                            Details("FPToUI"); }
+        ~FPToUI()         { Destruct("FPToUI"); }
+        void compute()      override;
         virtual FPToUI* clone() const { return new FPToUI(*this); }
 };
 
@@ -1044,8 +1109,10 @@ class FPToSI : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("FPToSI"); }
+        ~FPToSI()         { Destruct("FPToSI"); }
+        void compute()      override;
         virtual FPToSI* clone() const { return new FPToSI(*this); }
 };
 
@@ -1070,8 +1137,10 @@ class UIToFP : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("UIToFP"); }
+        ~UIToFP()         { Destruct("UIToFP"); }
+        void compute()      override;
         virtual UIToFP* clone() const { return new UIToFP(*this); }
 };
 
@@ -1096,8 +1165,10 @@ class SIToFP : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("SIToFP"); }
+        ~SIToFP()         { Destruct("SIToFP"); }
+        void compute()      override;
         virtual SIToFP* clone() const { return new SIToFP(*this); }
 };
 
@@ -1122,8 +1193,10 @@ class FPTrunc : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("FPTrunc"); }
+        ~FPTrunc()        { Destruct("FPTrunc"); }
+        void compute()      override;
         virtual FPTrunc* clone() const { return new FPTrunc(*this); }
 };
 
@@ -1148,8 +1221,10 @@ class FPExt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("FPExt"); }
+        ~FPExt()          { Destruct("FPExt"); }
+        void compute()      override;
         virtual FPExt* clone() const { return new FPExt(*this); }
 };
 
@@ -1174,8 +1249,10 @@ class PtrToInt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("PtrToInt"); }
+        ~PtrToInt()       { Destruct("PtrToInt"); }
+        void compute()      override;
         virtual PtrToInt* clone() const { return new PtrToInt(*this); }
 };
 
@@ -1200,8 +1277,10 @@ class IntToPtr : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("IntToPtr"); }
+        ~IntToPtr()       { Destruct("IntToPtr"); }
+        void compute()      override;
         virtual IntToPtr* clone() const { return new IntToPtr(*this); }
 };
 
@@ -1226,8 +1305,10 @@ class BitCast : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) { 
+                            Details("BitCast"); }
+        ~BitCast()        { Destruct("BitCast"); }
+        void compute()      override;
         virtual BitCast* clone() const { return new BitCast(*this); }
 };
 
@@ -1252,8 +1333,10 @@ class AddrSpaceCast : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { }
-        void compute() override;
+                            Operand) {
+                            Details("AddrSpaceCast"); }
+        ~AddrSpaceCast()  { Destruct("AddrSpaceCast"); }
+        void compute()      override;
         virtual AddrSpaceCast* clone() const { return new AddrSpaceCast(*this); }
 };
 
@@ -1283,9 +1366,11 @@ class Memory : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) { }
-        void compute() { }
+                            Comm) {
+                            Details("Memory"); }
+        virtual ~Memory()   { Destruct("Memory"); }
         virtual Memory* clone() const { return new Memory(*this); }
+        virtual void compute () { }
 };
 
 class Load : public Memory {
@@ -1312,8 +1397,10 @@ class Load : public Memory {
                             Dependencies, 
                             Comm) 
         , _Align(           Align)
-        , _Pointer(         Pointer) { }
-        void compute() override;
+        , _Pointer(         Pointer) { 
+                            Details("Load"); }
+        ~Load()           { Destruct("Load"); }
+        void compute()      override;
         virtual Load* clone() const { return new Load(*this); }
 };
 
@@ -1347,8 +1434,10 @@ class Store : public Memory {
         , _Align(           Align)
         , _Imm(             Imm)
         , _Pointer(         Pointer)
-        , _Value(           Value) { } 
-        void compute() override;
+        , _Value(           Value) { 
+                            Details("Store"); } 
+        ~Store()          { Destruct("Store"); }
+        void compute()      override;
         virtual Store* clone() const { return new Store(*this); }
 };
 
@@ -1392,8 +1481,10 @@ class GetElementPtr : public Memory {
         , _Type(            Type)
         , _ImmIdx(          ImmIdx)
         , _PtrVal(          PtrVal)
-        , _Index(           Index) { }
-        void compute() override; 
+        , _Index(           Index) { 
+                            Details("GetElementPtr"); }
+        ~GetElementPtr()  { Destruct("GetElementPtr"); }
+        void compute()      override; 
         virtual GetElementPtr* clone() const { return new GetElementPtr(*this); }
 };
 //---------------------------------------------------------------------------//
@@ -1421,9 +1512,11 @@ class Other : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) { }
-        void compute () { }
+                            Comm) { 
+                            Details("Other"); }
+        virtual ~Other()  { Destruct("Other"); }
         virtual Other* clone() const { return new Other(*this); }
+        virtual void compute () { }
 };
 
 class Phi : public Other {
@@ -1454,9 +1547,12 @@ class Phi : public Other {
                             Comm) 
         , _PhiVal(          PhiVal)
         , _PhiReg(          PhiReg)
-        , _PhiLabel(        PhiLabel) { }
-        void compute() override;
+        , _PhiLabel(        PhiLabel) { 
+                            Details("Phi"); }
+        ~Phi()            { Destruct("Phi"); }
+        void compute()      override;
         virtual Phi* clone() const { return new Phi(*this); }
+        std::vector<Register*> runtimeDependencies(std::string PrevBB);
 };
 
 class Select : public Other {
@@ -1491,8 +1587,10 @@ class Select : public Other {
         , _Condition (      Condition)
         , _RegValues (      RegValues) 
         , _ImmValues (      ImmValues)
-        , _Imm (            Imm) { }
-        void compute() override;
+        , _Imm (            Imm) { 
+                            Details("Select"); }
+        ~Select()         { Destruct("Select"); }
+        void compute()      override;
         virtual Select* clone() const { return new Select(*this); }
 };
 // ---- Other Sub Type ---- Compare
@@ -1523,9 +1621,11 @@ class Compare : public Other {
                             Dependencies, 
                             Comm)
         , _Operands (       Operands)
-        , _Flags (          Flags) { }
-        void compute() { }
+        , _Flags (          Flags) { 
+                            Details("Compare"); }
+        virtual ~Compare(){ Destruct("Compare"); }
         virtual Compare* clone() const { return new Compare(*this); }
+        virtual void compute() { }
 };
 
 class ICmp : public Compare, public Integer, public Unsigned, public Signed {
@@ -1553,8 +1653,10 @@ class ICmp : public Compare, public Integer, public Unsigned, public Signed {
                             Flags)
         , Integer (         ImmOp) 
         , Unsigned(         ImmOp)
-        , Signed(           ImmOp) { }
-        void compute() override;
+        , Signed(           ImmOp) { 
+                            Details("ICmp"); }
+        ~ICmp()           { Destruct("ICmp"); }
+        void compute()      override;
         virtual ICmp* clone() const { return new ICmp(*this); }
 };
 
@@ -1582,8 +1684,10 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
                             RegOps,
                             Flags)
         , FloatingPointSP ( ImmOp) 
-        , FloatingPointDP ( ImmOp) { }
-        void compute() override;
+        , FloatingPointDP ( ImmOp) { 
+                            Details("FCmp"); }
+        ~FCmp()           { Destruct("FCmp"); }
+        void compute()      override;
         virtual FCmp* clone() const { return new FCmp(*this); }
 };
 //---------------------------------------------------------------------------//

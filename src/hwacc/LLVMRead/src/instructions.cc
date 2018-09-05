@@ -491,6 +491,7 @@ GetElementPtr::compute() {
 		newAddress += _PtrVal->getValue();
 		_ReturnRegister->setValue(&newAddress);
 	}
+	DPRINTF(LLVMGEP, "New Address: %x\n", newAddress);
 }
 
 
@@ -672,7 +673,19 @@ Phi::compute() {
 		}
 	}
 	_ReturnRegister->setValue(&_Result);
-	//DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
+}
+
+std::vector<Register*>
+Phi::runtimeDependencies(std::string PrevBB) {
+	std::vector<Register*> dependencies;
+	_PrevBB = PrevBB;
+	for(auto i = 0; i < _PhiVal.size(); ++i) {
+		if (_PhiLabel.at(i) == _PrevBB) {
+			if(_PhiVal.at(i) == "reg") dependencies.push_back(_PhiReg.at(i));
+		}
+	}
+	return dependencies;
 }
 
 void
@@ -701,4 +714,3 @@ Select::compute() {
 	}	
 	_ReturnRegister->setValue(&_Result);		
 }
-
