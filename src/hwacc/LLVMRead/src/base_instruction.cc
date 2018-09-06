@@ -10,14 +10,13 @@ InstructionBase::setResult(void *Data) { // memcpy shortcut method
 bool 
 InstructionBase::commit() {
 	// If cycle count is = max cycle count, commit register value to memory
-	if (_ReturnRegister != NULL) {
-		_CurrCycle++;
+	assert(_ReturnRegister != NULL);
 		if (_CurrCycle >= _MaxCycle) {
 			_ReturnRegister->setValue(&_FinalResult);
 			_ReturnRegister->commit();
 			return true;
 		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
-	}
+        _CurrCycle++;
 	return false;
 }
 
