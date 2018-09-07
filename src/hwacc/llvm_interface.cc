@@ -108,13 +108,15 @@ LLVMInterface::tick() {
                     auto it = reservation.erase(reservation.begin()+i);
                     i = std::distance(reservation.begin(), it);
             } else if ((reservation.at(i)->_OpCode == "br")) {
-                prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
-                reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
-                currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
-                auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
-                i = std::distance(reservation.begin(), it);
-                //currBB->prevBB(prevBB->getName());
-                scheduleBB(currBB);
+                if (reservation.size() < 100) {
+                    prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
+                    reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
+                    currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
+                    auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
+                    i = std::distance(reservation.begin(), it);
+                    //currBB->prevBB(prevBB->getName());
+                    scheduleBB(currBB);
+                } else i++;
             }
         } else {
             if (reservation.at(i)->_OpCode == "ret"){

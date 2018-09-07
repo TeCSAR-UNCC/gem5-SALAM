@@ -34,21 +34,27 @@
  */
 
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "gemm.h"
-
+#include "../../common/dma.h"
 
 gemm_struct ges;
 
 int main(void) {
     uint64_t base = 0x80c00000;
-    //uint64_t base = 0x2f100000;
+    uint64_t spm_base = 0x2f100000;
 	TYPE *m1 = (TYPE *)base;
 	TYPE *m2 = (TYPE *)(base+8*ROW*COL);
 	TYPE *m3 = (TYPE *)(base+16*ROW*COL);
 	TYPE *check = (TYPE *)(base+24*ROW*COL);
 	int row_size = ROW;
     int col_size = COL;
-
+#ifdef SPM
+    TYPE *spm1 = (TYPE *)spm_base;
+    TYPE *spm2 = (TYPE *)(spm_base+8*ROW*COL);
+    TYPE *spm3 = (TYPE *)(spm_base+16*ROW*COL);
+#endif
 	common_val = 0;
 
     ges.a = m1;
@@ -65,12 +71,34 @@ int main(void) {
     val_b = (uint64_t)(base+8*ROW*COL);
     val_c = (uint64_t)(base+16*ROW*COL);
 
+#ifndef SPM
+    val_a = (uint64_t)base;
+    val_b = (uint64_t)(base+8*ROW*COL);
+    val_c = (uint64_t)(base+16*ROW*COL);
+#else
+    val_a = (uint64_t)spm_base;
+    val_b = (uint64_t)(spm_base+8*ROW*COL);
+    val_c = (uint64_t)(spm_base+16*ROW*COL);
+
+    dmacpy(spm1, m1, sizeof(TYPE)*ROW*COL);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spm2, m2, sizeof(TYPE)*ROW*COL);
+    while(!pollDma());
+    resetDma();
+#endif
+
     printf("%d\n", acc);
     acc = 0x01;
     printf("%d\n", acc);
 	while(acc != 0x4) {
         printf("%d\n", acc);
 	}
+
+#ifdef SPM
+    dmacpy(m3, spm3, sizeof(TYPE)*ROW*COL);
+    while(!pollDma());
+#endif
 	bool fail = false;
 	int i, j, k, k_col, i_col;
 	TYPE sum = 0;

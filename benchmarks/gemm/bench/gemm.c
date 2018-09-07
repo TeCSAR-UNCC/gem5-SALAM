@@ -10,9 +10,11 @@ void gemm( TYPE m1[N], TYPE m2[N], TYPE prod[N] ){
     TYPE mult;
 
     for(i=0;i<row_size;i++) {
+        #pragma clang loop unroll(full)
         for(j=0;j<col_size;j++) {
             i_col = i * col_size;
             TYPE sum = 0;
+            #pragma clang loop unroll(full)
             for(k=0;k<row_size;k++) {
                 k_col = k * col_size;
                 mult = m1[i_col + k] * m2[k_col + j];

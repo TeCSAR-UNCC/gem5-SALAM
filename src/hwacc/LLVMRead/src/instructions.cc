@@ -26,7 +26,7 @@ Sub::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() - _Operand;
 	else _Result = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
 	// Store result in return register
-	//setResult(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -41,7 +41,7 @@ Mul::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() * _Operand;
 	else _Result = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
 	// Store result in return register
-	//setResult(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -52,7 +52,7 @@ UDiv::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _UOperand;
 	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	//setResult(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -63,7 +63,7 @@ SDiv::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _SOperand;
 	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	//setResult(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -74,7 +74,7 @@ URem::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _UOperand;
 	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	//setResult(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -85,7 +85,7 @@ SRem::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _SOperand;
 	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	//setResult(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -138,24 +138,24 @@ FSub::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
 			_Result = op1 - _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 - op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
 			_Result = op1 - _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 - op2;
@@ -175,31 +175,31 @@ FMul::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
 			_Result = op1 * _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 * op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
 			_Result = op1 * _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 * op2;
 		}
 	}
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister, _ReturnRegister->getName());
 }
 
 void 
@@ -212,24 +212,24 @@ FDiv::compute() {
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
 			_Result = op1 / _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			_Result = op1 / op2;
 		}
 	} else {
 		if (_Operands.size() == 1) {
-			uint64_t OP1 = _Operands.at(0)->getValue();
+			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
 			_Result = op1 / _OperandDP;
 		} else {
-		    uint64_t OP1 = _Operands.at(0)->getValue();
-		    uint64_t OP2 = _Operands.at(1)->getValue();
+		    uint64_t OP1 = _Ops.at(0);
+		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			_Result = op1 / op2;
