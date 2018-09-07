@@ -156,7 +156,7 @@ CommInterface::tick() {
     if (!dramPort->isStalled() || !spmPort->isStalled()) {
         DPRINTF(CommInterface, "Checking read requests\n");
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
-            DPRINTF(CommInterface, "Request Address: %lx ", (*it)->address);
+            DPRINTF(CommInterface, "Request Address: %lx\n", (*it)->address);
             if (dramRange.contains((*it)->address)) {
                 DPRINTF(CommInterface, "In DRAM\n");
                 if (dramPort->isStalled()) {

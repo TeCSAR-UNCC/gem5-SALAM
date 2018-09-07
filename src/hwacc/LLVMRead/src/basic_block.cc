@@ -942,6 +942,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			j++;
 			indexRet = j;
 		}
+		//std::cout << "PTRVAL value: " << ptrval->getValue() << "\n";
 		auto gep = std::make_shared<GetElementPtr>(	lineCpy, 
 													opCode, 
 													returnType, 

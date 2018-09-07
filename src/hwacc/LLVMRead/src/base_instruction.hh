@@ -139,6 +139,7 @@ class InstructionBase {
         std::string getInstrType()     { return _InstructionType; }
         // ---- Virtual Functions
         virtual ~InstructionBase()     { Destruct("Instruction Base"); }
+        void signalChildren();
         virtual bool commit();
         // Each commit increments cycle count once, broadcast once complete
         // If memory type, commit request and broadcast
@@ -150,10 +151,9 @@ class InstructionBase {
         void used() { _Usage++; }
         // ---- Dependency Graph Functions
             // Find Parents and Return Register for Previous Instance 
-        std::vector<Register*> runtimeDependencies(std::string PrevBB);
+        virtual std::vector<Register*> runtimeDependencies(std::string PrevBB);
         void fetchDependency(Register*);
         void fetchDependency(int);
-        void signalChildren();
         void registerChild(InstructionBase*);
         void registerParent(InstructionBase*);
         // ---- General Functions

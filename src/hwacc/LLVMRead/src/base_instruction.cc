@@ -14,8 +14,10 @@ InstructionBase::commit() {
 		if (_CurrCycle >= _MaxCycle) {
 			_ReturnRegister->setValue(&_FinalResult);
 			_ReturnRegister->commit();
+			signalChildren();
+			DPRINTF(LLVMOp, "Completed\n\n");
 			return true;
-		} else DPRINTF(LLVMRegister, "Cycle Incomplete!\n\n");
+		} else DPRINTF(LLVMOp, "Incomplete!\n\n");
         _CurrCycle++;
 	return false;
 }

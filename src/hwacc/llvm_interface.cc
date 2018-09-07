@@ -52,9 +52,10 @@ LLVMInterface::tick() {
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
 
     for(auto i = 0; i < computeQueue.size();) {
+        DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
         if(computeQueue.at(i)->commit()) {
-            computeQueue.at(i)->compute();
-            computeQueue.erase(computeQueue.begin() + i);
+            auto it = computeQueue.erase(computeQueue.begin() + i);
+            i = std::distance(computeQueue.begin(), it);
         } else i++;
     }
 
@@ -63,31 +64,57 @@ LLVMInterface::tick() {
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
-        detectEdges();
     }
-    
-    for (auto i = 0; i <= reservation.size();) {
-        if(!(reservation.at(i)->_Terminator)) { 
-            if(reservation.at(i)->_OpCode == "load") readQueue.push_back(reservation.at(i));
-            if(reservation.at(i)->_OpCode == "store") writeQueue.push_back(reservation.at(i));
-            if(reservation.at(i)->_OpCode == "phi")  {
-                DPRINTF(LLVMInterface, "Phi Interface\n");
-                reservation.at(i)->_PrevBB = prevBB->getName();
-            } else computeQueue.push_back(reservation.at(i));
-            reservation.at(i)->compute();
-            if(reservation.at(i)->commit())     
-            scheduled = true;
-            reservation.erase(reservation.begin()+ i);
-        } else if((reservation.at(i)->_OpCode == "br")) {
-            if(readQueue.empty() && writeQueue.empty() && computeQueue.empty()) {
+
+    for (auto i = 0; i < reservation.size();) {
+        DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+        if (reservation.at(i)->_ActiveParents == 0) {
+            if(!(reservation.at(i)->_Terminator)) { 
+    //            if(reservation.at(i)->_OpCode == "load") readQueue.push_back(reservation.at(i));
+    //            if(reservation.at(i)->_OpCode == "store") writeQueue.push_back(reservation.at(i));
+    //            if(reservation.at(i)->_OpCode == "phi")  {
+    //                DPRINTF(LLVMInterface, "Phi Interface\n");
+    //                reservation.at(i)->_PrevBB = prevBB->getName();
+    //            } else computeQueue.push_back(reservation.at(i));
+    //            reservation.at(i)->compute();
+    //            if(reservation.at(i)->commit())     
+    //            scheduled = true;
+    //            reservation.erase(reservation.begin()+ i);
+                    if(reservation.at(i)->_OpCode == "load") {
+                        readQueue.push_back(reservation.at(i));
+                        reservation.at(i)->compute();
+                    } else if(reservation.at(i)->_OpCode == "store") {
+                        writeQueue.push_back(reservation.at(i));
+                        reservation.at(i)->compute();
+                    } else if(reservation.at(i)->_OpCode == "phi" || reservation.at(i)->_OpCode == "icmp") {
+                        reservation.at(i)->compute();
+                        reservation.at(i)->commit();
+                    } else {
+                        computeQueue.push_back(reservation.at(i));
+                        reservation.at(i)->compute();
+                        reservation.at(i)->commit();
+                    }
+                    scheduled = true;
+                    auto it = reservation.erase(reservation.begin()+i);
+                    i = std::distance(reservation.begin(), it);
+            } else if ((reservation.at(i)->_OpCode == "br")) {
                 prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
                 reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
                 currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
-                reservation.erase(reservation.begin() + i); // Remove instruction from reservation table
-                currBB->prevBB(prevBB->getName());
-                break;
-            } else i++; // If compute nodes still remain in queue, do not branch
-        } else i++;
+                auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
+                i = std::distance(reservation.begin(), it);
+                //currBB->prevBB(prevBB->getName());
+                scheduleBB(currBB);
+            }
+        } else {
+            if (reservation.at(i)->_OpCode == "ret"){
+                if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
+                    running = false;
+                    comm->finish();
+                }
+            }
+            i++;
+        }
     }
 
     if (!scheduled) stalls++; // No new compute node was scheduled this cycle
@@ -108,10 +135,53 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
  and immediately compute and commit.
 *********************************************************************************************/
     DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
-    for(auto i = 0; i < bb->_Nodes.size(); i++) {
+    for (auto i = 0; i < bb->_Nodes.size(); i++) {
+        DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
         reservation.push_back(createClone(bb->_Nodes.at(i)));
+        if (reservation.back()->_OpCode == "getelementptr")
+            std::cout << "_PtrVal:" << dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal << "\n";
+        if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
+            InstructionBase * parent = findParent(reservation.back()->_ReturnRegister);
+            if (parent) {
+                DPRINTF(LLVMOp, "Previous instance found\n");
+                reservation.back()->registerParent(parent);
+                parent->registerChild(reservation.back());
+            } else {
+                DPRINTF(LLVMOp, "No previous instance found\n");
+            }
+        }
+        std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
+        if (depList.size() > 0) {
+            for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
+                InstructionBase * parent = findParent(depList.at(j));
+                if (parent) {
+                    DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());
+                    reservation.back()->registerParent(parent);
+                    parent->registerChild(reservation.back());
+                } else {
+                    DPRINTF(LLVMOp, "No parent returning to register:%s found\n", depList.at(j)->getName());
+                    reservation.back()->fetchDependency(j);
+                }
+            }
+        }
     }
     DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
+}
+
+InstructionBase *
+LLVMInterface::findParent(Register* reg) {
+    //Search queues with return registers for last instance of a node with the same return register as our target reg
+    //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
+    for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
+        if (reservation.at(i)->_ReturnRegister == reg) return reservation.at(i);
+    }
+    for(int i = computeQueue.size()-1; i >= 0; i--) {
+        if (computeQueue.at(i)->_ReturnRegister == reg) return computeQueue.at(i);
+    }
+    for(int i = readQueue.size()-1; i >= 0; i--) {
+        if (readQueue.at(i)->_ReturnRegister == reg) return readQueue.at(i);
+    }
+    return NULL;
 }
 
 void
@@ -246,11 +316,12 @@ LLVMInterface::constructBBList() {
                 }
             }
         }
-        currBB = findBB("0"); // 
+        currBB = findBB("0"); //
+        prevBB = currBB; 
     } else { // Could not find LLVM file
         panic("Unable to open LLVM file!\n");
     }
-    // regList->printRegNames();
+    //regList->printRegNames();
 }
 
 BasicBlock*

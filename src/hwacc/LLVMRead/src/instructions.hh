@@ -205,6 +205,7 @@ class Ret : public Terminator {
                             MaxCycle, 
                             Dependencies, 
                             Comm));
+                            _ActiveParents++;
                             Details("Ret"); }
         ~Ret()            { Destruct("Ret"); }
         void compute()      override;
@@ -1442,7 +1443,7 @@ class Store : public Memory {
 };
 
 class GetElementPtr : public Memory {
-    protected:
+    public:
         std::string _Pty;
         LLVMType* _LLVMType;
         std::vector<Register*> _Idx;
@@ -1552,7 +1553,7 @@ class Phi : public Other {
         ~Phi()            { Destruct("Phi"); }
         void compute()      override;
         virtual Phi* clone() const { return new Phi(*this); }
-        std::vector<Register*> runtimeDependencies(std::string PrevBB);
+        std::vector<Register*> runtimeDependencies(std::string PrevBB) override;
 };
 
 class Select : public Other {

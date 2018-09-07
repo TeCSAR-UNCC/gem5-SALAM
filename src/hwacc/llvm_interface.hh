@@ -29,7 +29,7 @@ class LLVMInterface : public ComputeUnit {
     int stalls;
     int execnodes;
   protected:
-
+    InstructionBase* findParent(Register*);
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();

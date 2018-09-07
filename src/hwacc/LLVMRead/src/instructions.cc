@@ -26,7 +26,7 @@ Sub::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() - _Operand;
 	else _Result = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
 	// Store result in return register
-	//_ReturnRegister->setValue(&_Result);
+	//setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -41,7 +41,7 @@ Mul::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() * _Operand;
 	else _Result = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
 	// Store result in return register
-	//_ReturnRegister->setValue(&_Result);
+	//setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -52,7 +52,7 @@ UDiv::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _UOperand;
 	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	//_ReturnRegister->setValue(&_Result);
+	//setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -63,7 +63,7 @@ SDiv::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _SOperand;
 	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
 	// Store result in return register
-	//_ReturnRegister->setValue(&_Result);
+	//setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -74,7 +74,7 @@ URem::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _UOperand;
 	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	//_ReturnRegister->setValue(&_Result);
+	//setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -85,7 +85,7 @@ SRem::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _SOperand;
 	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
 	// Store result in return register
-	//_ReturnRegister->setValue(&_Result);
+	//setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -161,7 +161,7 @@ FSub::compute() {
 			_Result = op1 - op2;
 		}
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, _ReturnRegister->getName());
 }
 
@@ -198,7 +198,7 @@ FMul::compute() {
 			_Result = op1 * op2;
 		}
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -235,7 +235,7 @@ FDiv::compute() {
 			_Result = op1 / op2;
 		}
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -253,7 +253,7 @@ Shl::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() << _Operand;
 	else _Result = _Operands.at(0)->getValue() << _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u << %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -266,7 +266,7 @@ LShr::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() >> _Operand;
 	else _Result = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -279,7 +279,7 @@ AShr::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() >> _Operand;
 	else _Result = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -291,7 +291,7 @@ And::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() & _Operand;
 	else _Result = _Operands.at(0)->getValue() & _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u & %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -303,7 +303,7 @@ Or::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() | _Operand;
 	else _Result = _Operands.at(0)->getValue() | _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -315,7 +315,7 @@ Xor::compute() {
 	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() ^ _Operand;
 	else _Result = _Operands.at(0)->getValue() ^ _Operands.at(1)->getValue();
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "%u ^ %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -425,7 +425,7 @@ GetElementPtr::compute() {
 		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
 		else finalCount *=4;
 		newAddress += (_PtrVal->getValue() + finalCount);
-		_ReturnRegister->setValue(&newAddress);
+		setResult(&newAddress);
 		////////////////////////////////////////
 	} else if(_Pty[0] == '[') { // Return type is a struct
 		for(int i = 0; i < _Pty.size(); i++){
@@ -467,7 +467,7 @@ GetElementPtr::compute() {
 		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
 		else finalCount *=4;
 		newAddress += (_PtrVal->getValue() + finalCount);
-		_ReturnRegister->setValue(&newAddress);
+		setResult(&newAddress);
 	} else {
 		for(int i = 0; i < _Idx.size(); i++) {
 			if (_Pty[i] == 'i') {
@@ -489,7 +489,7 @@ GetElementPtr::compute() {
 			newAddress = newAddress + currentValue[i]*size[i];
 		}
 		newAddress += _PtrVal->getValue();
-		_ReturnRegister->setValue(&newAddress);
+		setResult(&newAddress);
 	}
 	DPRINTF(LLVMGEP, "New Address: %x\n", newAddress);
 }
@@ -504,7 +504,7 @@ Trunc::compute() {
 		if(_COperand->getValue()) _Result = 1;
 		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 }
 
 void
@@ -517,7 +517,7 @@ ZExt::compute() {
 		if(_COperand->getValue()) _Result = 1;
 		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result); 	
+	setResult(&_Result); 	
 }
 
 void
@@ -530,7 +530,7 @@ SExt::compute() {
 		if(_COperand->getValue()) _Result = 1;
 		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result); 	
+	setResult(&_Result); 	
 }
 
 void 
@@ -543,7 +543,7 @@ FPToUI::compute() {
 		if(_COperand->getValue()) _Result = 1;
 		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 }
 void
 FPToSI::compute() {
@@ -555,29 +555,29 @@ FPToSI::compute() {
 		if(_COperand->getValue()) _Result = 1;
 		else _Result = 0;
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 }
 void
 UIToFP::compute() {
 	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
 	else if (_ReturnType == "float") _Result = (float) _COperand->getValue();
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 }
 void
 SIToFP::compute() {
 	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
 	else if (_ReturnType == "float") _Result = (float) _COperand->getValue();
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 }
 void 
 FPTrunc::compute() {
 	if (_ReturnType == "float") _Result = (float) _COperand->getValue();
-	_ReturnRegister->setValue(&_Result);	
+	setResult(&_Result);	
 }
 void
 FPExt::compute() {
 	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 }
 void
 PtrToInt::compute() { }
@@ -628,38 +628,38 @@ FCmp::compute() {
 		else if(_Flags & CONDTRUE) _Result = 1;
 	}
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	//DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
 }
 void
 ICmp::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-		if (_Operands.size() == 1) {
-		if(_Flags & EQ) _Result = (_Operands.at(0)->getValue() == _Operand);
-		else if(_Flags & NE) _Result = (_Operands.at(0)->getValue() != _Operand);
-		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _UOperand);
-		else if(_Flags & UGE) _Result = (_Operands.at(0)->getValue() >= _UOperand);
-		else if(_Flags & ULT) _Result = (_Operands.at(0)->getValue() < _UOperand);
-		else if(_Flags & ULE) _Result = (_Operands.at(0)->getValue() <= _UOperand);
-		else if(_Flags & SGT) _Result = (_Operands.at(0)->getValue() > _SOperand);
-		else if(_Flags & SGE) _Result = (_Operands.at(0)->getValue() >= _SOperand);
-		else if(_Flags & SLT) _Result = (_Operands.at(0)->getValue() < _SOperand);
-		else if(_Flags & SLE) _Result = (_Operands.at(0)->getValue() <= _SOperand);
+	if (_Ops.size() == 1) {
+		if(_Flags & EQ) _Result = (_Ops.at(0) == _Operand);
+		else if(_Flags & NE) _Result = (_Ops.at(0) != _Operand);
+		else if(_Flags & UGT) _Result = (_Ops.at(0) > _UOperand);
+		else if(_Flags & UGE) _Result = (_Ops.at(0) >= _UOperand);
+		else if(_Flags & ULT) _Result = (_Ops.at(0) < _UOperand);
+		else if(_Flags & ULE) _Result = (_Ops.at(0) <= _UOperand);
+		else if(_Flags & SGT) _Result = (_Ops.at(0) > _SOperand);
+		else if(_Flags & SGE) _Result = (_Ops.at(0) >= _SOperand);
+		else if(_Flags & SLT) _Result = (_Ops.at(0) < _SOperand);
+		else if(_Flags & SLE) _Result = (_Ops.at(0) <= _SOperand);
 	} else {
-		if(_Flags & EQ) _Result = (_Operands.at(0)->getValue() == _Operands.at(1)->getValue());
-		else if(_Flags & NE) _Result = (_Operands.at(0)->getValue() != _Operands.at(1)->getValue());
-		else if(_Flags & UGT) _Result = (_Operands.at(0)->getValue() > _Operands.at(1)->getValue());
-		else if(_Flags & UGE) _Result = (_Operands.at(0)->getValue() >= _Operands.at(1)->getValue());
-		else if(_Flags & ULT) _Result = (_Operands.at(0)->getValue() < _Operands.at(1)->getValue());
-		else if(_Flags & ULE) _Result = (_Operands.at(0)->getValue() <= _Operands.at(1)->getValue());
-		else if(_Flags & SGT) _Result = (_Operands.at(0)->getValue() > _Operands.at(1)->getValue());
-		else if(_Flags & SGE) _Result = (_Operands.at(0)->getValue() >= _Operands.at(1)->getValue());
-		else if(_Flags & SLT) _Result = (_Operands.at(0)->getValue() < _Operands.at(1)->getValue());
-		else if(_Flags & SLE) _Result = (_Operands.at(0)->getValue() <= _Operands.at(1)->getValue());
+		if(_Flags & EQ) _Result = (_Ops.at(0) == _Ops.at(1));
+		else if(_Flags & NE) _Result = (_Ops.at(0) != _Ops.at(1));
+		else if(_Flags & UGT) _Result = (_Ops.at(0) > _Ops.at(1));
+		else if(_Flags & UGE) _Result = (_Ops.at(0) >= _Ops.at(1));
+		else if(_Flags & ULT) _Result = (_Ops.at(0) < _Ops.at(1));
+		else if(_Flags & ULE) _Result = (_Ops.at(0) <= _Ops.at(1));
+		else if(_Flags & SGT) _Result = (_Ops.at(0) > _Ops.at(1));
+		else if(_Flags & SGE) _Result = (_Ops.at(0) >= _Ops.at(1));
+		else if(_Flags & SLT) _Result = (_Ops.at(0) < _Ops.at(1));
+		else if(_Flags & SLE) _Result = (_Ops.at(0) <= _Ops.at(1));
 	}
 	// Store result in return register
-	_ReturnRegister->setValue(&_Result);
-	DPRINTF(LLVMOp, "Result: %d\n", _Result);
+	setResult(&_Result);
+	DPRINTF(LLVMOp, "Result: %d\n", _FinalResult);
 }
 
 void
@@ -669,10 +669,10 @@ Phi::compute() {
 	for(auto i = 0; i < _PhiVal.size(); ++i) {
 		if (_PhiLabel.at(i) == _PrevBB) {
 			if(_PhiVal.at(i) == "reg") _Result = _PhiReg.at(i)->getValue();
-			if(_ReturnType[0] == 'i') _Result = stoi(_PhiVal.at(i));
+			else if(_ReturnType[0] == 'i') _Result = stoi(_PhiVal.at(i));
 		}
 	}
-	_ReturnRegister->setValue(&_Result);
+	setResult(&_Result);
 	DPRINTF(LLVMOp, "Storing %u in Register %s\n", _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -712,5 +712,5 @@ Select::compute() {
 			}
 		}
 	}	
-	_ReturnRegister->setValue(&_Result);		
+	setResult(&_Result);		
 }
