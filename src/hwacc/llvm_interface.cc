@@ -66,8 +66,18 @@ LLVMInterface::tick() {
         scheduleBB(currBB);
     }
 
+    for (auto i = 0; i < reservation.size(); i++) {
+        if (reservation.at(i)->_ReturnRegister == NULL)
+            DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
+        else
+            DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+    }
+
     for (auto i = 0; i < reservation.size();) {
-        DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+        if (reservation.at(i)->_ReturnRegister == NULL)
+            DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+        else
+            DPRINTF(LLVMOp, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
         if (reservation.at(i)->_ActiveParents == 0) {
             if(!(reservation.at(i)->_Terminator)) { 
     //            if(reservation.at(i)->_OpCode == "load") readQueue.push_back(reservation.at(i));
@@ -86,7 +96,7 @@ LLVMInterface::tick() {
                     } else if(reservation.at(i)->_OpCode == "store") {
                         writeQueue.push_back(reservation.at(i));
                         reservation.at(i)->compute();
-                    } else if(reservation.at(i)->_OpCode == "phi" || reservation.at(i)->_OpCode == "icmp") {
+                    } else if(reservation.at(i)->_MaxCycle==0) {
                         reservation.at(i)->compute();
                         reservation.at(i)->commit();
                     } else {
@@ -138,16 +148,25 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
     for (auto i = 0; i < bb->_Nodes.size(); i++) {
         DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
         reservation.push_back(createClone(bb->_Nodes.at(i)));
-        if (reservation.back()->_OpCode == "getelementptr")
-            std::cout << "_PtrVal:" << dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal << "\n";
         if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
-            InstructionBase * parent = findParent(reservation.back()->_ReturnRegister);
+            InstructionBase * parent = findParent(reservation.back()->_LLVMLine);
             if (parent) {
                 DPRINTF(LLVMOp, "Previous instance found\n");
                 reservation.back()->registerParent(parent);
                 parent->registerChild(reservation.back());
             } else {
                 DPRINTF(LLVMOp, "No previous instance found\n");
+            }
+        }
+        if (reservation.back()->_OpCode == "getelementptr") {
+            InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
+            if (parent) {
+                DPRINTF(LLVMOp, "Parent returning to register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                reservation.back()->registerParent(parent);
+                parent->registerChild(reservation.back());
+            } else {
+                DPRINTF(LLVMOp, "No parent returning to register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                dynamic_cast<GetElementPtr*>(reservation.back())->_ActivePtr = dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getValue();
             }
         }
         std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
@@ -184,25 +203,20 @@ LLVMInterface::findParent(Register* reg) {
     return NULL;
 }
 
-void
-LLVMInterface::detectEdges() {
-    for(auto i = 0; i < reservation.size(); i++) {
-        for(auto j = 0; j < (reservation.at((reservation.size()-1)-i)->_Dependencies.size()); j++) {
-            for(auto k = 0; k < reservation.size(); k++) {
-                if(reservation.at(k)->_ReturnRegister != NULL) {
-                    if(reservation.at((reservation.size()-1)-i)->_Dependencies.at(j)->getName() == reservation.at(k)->_ReturnRegister->getName()) {
-                        DPRINTF(LLVMInterface, "Child: %s (%s) || Parent: %s (%s)\n", 
-                        reservation.at((reservation.size()-1)-i)->_OpCode,
-                        reservation.at((reservation.size()-1)-i)->_Dependencies.at(j)->getName(),
-                        reservation.at(k)->_OpCode,
-                        reservation.at(k)->_ReturnRegister->getName());
-                        reservation.at(k)->registerChild(reservation.at((reservation.size()-1)-i));
-                        reservation.at((reservation.size()-1)-i)->registerParent(reservation.at(k));
-                    }
-                }
-            }
-        }
+InstructionBase *
+LLVMInterface::findParent(std::string line) {
+    //Search queues with return registers for last instance of a node with the same instruction
+    //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
+    for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
+        if (reservation.at(i)->_LLVMLine == line) return reservation.at(i);
     }
+    for(int i = computeQueue.size()-1; i >= 0; i--) {
+        if (computeQueue.at(i)->_LLVMLine == line) return computeQueue.at(i);
+    }
+    for(int i = readQueue.size()-1; i >= 0; i--) {
+        if (readQueue.at(i)->_LLVMLine == line) return readQueue.at(i);
+    }
+    return NULL;
 }
 
 void
@@ -238,7 +252,6 @@ LLVMInterface::constructBBList() {
                         if(line[i] == ',') size++; // Elements delimeted by commas, counts number of elements
                     }
                     typeList->addType(new LLVMType(size, name)); // Add custom data type to typeList
-                    
                 } else if (!line.find("define")) { //Found a function. Need to parse its header
                     DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
                     inFunction = true;
@@ -360,6 +373,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 *********************************************************************************************/    
    for (auto i = 0; i < writeQueue.size(); i++ ) {
         if(writeQueue.at(i)->getReq() == req) {
+            writeQueue.at(i)->commit();
             writeQueue.erase(writeQueue.begin() + i);
         }
     }

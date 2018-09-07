@@ -38,5 +38,6 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('NoncoherentDma')
     DebugFlag('StreamDma')
     DebugFlag('ClassDetail')
+    DebugFlag('RuntimeQueues')
 
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])

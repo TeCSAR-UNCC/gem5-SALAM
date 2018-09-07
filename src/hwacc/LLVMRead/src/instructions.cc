@@ -381,9 +381,9 @@ GetElementPtr::compute() {
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 	DPRINTF(LLVMGEP, "Performing %s Operation (%s)\n", _OpCode, _ReturnRegister->getName());
-	uint64_t elements[_Idx.size()];
-	uint64_t currentValue[_Idx.size()];
-	uint64_t size[_Idx.size()];
+	uint64_t elements[_Dependencies.size()];
+	uint64_t currentValue[_Dependencies.size()];
+	uint64_t size[_Dependencies.size()];
 	uint64_t newAddress = 0;
 	uint64_t dataSize = 0;
 	uint64_t totalElements = 1;
@@ -391,7 +391,7 @@ GetElementPtr::compute() {
 	
 	int j = 0;
 	// Initialize array values
-	for(int i = 0; i<_Idx.size(); i++) {
+	for(int i = 0; i<_Dependencies.size(); i++) {
 		currentValue[i] = 0;
 		size[i] = 1;
 		elements[i] = 1;
@@ -403,7 +403,7 @@ GetElementPtr::compute() {
 			j++;
 		} 
 	for(int i = 0; i <= j; i++){
-			if(_Idx.at(i) == NULL) {  // Immediate Values
+			if(_Dependencies.at(i) == NULL) {  // Immediate Values
 				if(i == j) {
 					// Final offset variable
 					totalElements*=(_ImmIdx.at(i));
@@ -414,9 +414,9 @@ GetElementPtr::compute() {
 			} else { // Register loaded values
 				if(i == j) {
 					// Final offset variable
-					totalElements*=(_Idx.at(i)->getValue());
+					totalElements*=(_Ops.at(i));
 				} else {
-				totalElements*=(dataSize*_Idx.at(i)->getValue());
+				totalElements*=(dataSize*_Ops.at(i));
 				}
 			}
 			finalCount += totalElements;
@@ -424,7 +424,7 @@ GetElementPtr::compute() {
 		}
 		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
 		else finalCount *=4;
-		newAddress += (_PtrVal->getValue() + finalCount);
+		newAddress += (_ActivePtr + finalCount);
 		setResult(&newAddress);
 		////////////////////////////////////////
 	} else if(_Pty[0] == '[') { // Return type is a struct
@@ -446,7 +446,7 @@ GetElementPtr::compute() {
 			for(int k = 0; k <= j; k++){
 				totalElements*=elements[k];
 			}
-			if(_Idx.at(i) == NULL) {
+			if(_Dependencies.at(i) == NULL) {
 				if(i == j) {
 					totalElements*=(_ImmIdx.at(i));
 				} else {				
@@ -454,9 +454,9 @@ GetElementPtr::compute() {
 				}
 			} else {
 				if(i == j) {
-					totalElements*=(_Idx.at(i)->getValue());
+					totalElements*=(_Ops.at(i));
 				} else {
-				totalElements*=(dataSize*_Idx.at(i)->getValue());
+				totalElements*=(dataSize*_Ops.at(i));
 				}
 			}
 			finalCount += totalElements;
@@ -466,10 +466,10 @@ GetElementPtr::compute() {
 
 		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
 		else finalCount *=4;
-		newAddress += (_PtrVal->getValue() + finalCount);
+		newAddress += (_ActivePtr + finalCount);
 		setResult(&newAddress);
 	} else {
-		for(int i = 0; i < _Idx.size(); i++) {
+		for(int i = 0; i < _Dependencies.size(); i++) {
 			if (_Pty[i] == 'i') {
 				size[i] = (stoi(_Pty.substr(1))) / 8;
 			} else if (_Pty.find("double") == 0) {
@@ -479,7 +479,7 @@ GetElementPtr::compute() {
 			}
 		}
 		for (int i = 0; i < _Index; i++) {
-			if(_Idx.at(i) != NULL) currentValue[i] = _Idx.at(i)->getValue();
+			if(_Dependencies.at(i) != NULL) currentValue[i] = _Ops.at(i);
 			else {
 				currentValue[i] = _ImmIdx.at(i);
 			}
@@ -488,7 +488,7 @@ GetElementPtr::compute() {
 		for (int i = 0; i < _Index; i++) {
 			newAddress = newAddress + currentValue[i]*size[i];
 		}
-		newAddress += _PtrVal->getValue();
+		newAddress += _ActivePtr;
 		setResult(&newAddress);
 	}
 	DPRINTF(LLVMGEP, "New Address: %x\n", newAddress);
@@ -659,7 +659,7 @@ ICmp::compute() {
 	}
 	// Store result in return register
 	setResult(&_Result);
-	DPRINTF(LLVMOp, "Result: %d\n", _FinalResult);
+	DPRINTF(LLVMOp, "Result: %d\n", _FinalResult&&0x1);
 }
 
 void

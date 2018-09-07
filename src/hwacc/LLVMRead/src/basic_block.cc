@@ -1264,7 +1264,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		if(isRegister(parameters[last])) {
 			setRegister(parameters[last], op1, dependencies, list, parameters);	
 			regOps.push_back(op1);
-		} 
+		} else immOp = stoi(parameters[last]);
 		// Check if value is from register or immediate value
 		if(isRegister(parameters[last-1])) {
 			setRegister(parameters[last-1], op2, dependencies, list, parameters);

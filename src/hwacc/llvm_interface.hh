@@ -30,6 +30,7 @@ class LLVMInterface : public ComputeUnit {
     int execnodes;
   protected:
     InstructionBase* findParent(Register*);
+    InstructionBase* findParent(std::string);
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();

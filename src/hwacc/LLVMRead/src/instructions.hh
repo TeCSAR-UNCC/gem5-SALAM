@@ -1450,6 +1450,7 @@ class GetElementPtr : public Memory {
         std::vector<std::string> _Type;
         std::vector<int64_t> _ImmIdx;
         Register* _PtrVal;
+        uint64_t _ActivePtr;
         uint64_t _Index;
 
     public:

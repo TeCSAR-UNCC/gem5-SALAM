@@ -11,5 +11,6 @@
 #include "debug/LLVMGEP.hh"
 #include "debug/Hardware.hh"
 #include "debug/ClassDetail.hh"
+#include "debug/RuntimeQueues.hh"
 
 #endif //__LLVMREAD_DEBUG_HH__

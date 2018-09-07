@@ -10,15 +10,18 @@ InstructionBase::setResult(void *Data) { // memcpy shortcut method
 bool 
 InstructionBase::commit() {
 	// If cycle count is = max cycle count, commit register value to memory
-	assert(_ReturnRegister != NULL);
+	if(_ReturnRegister != NULL) {
 		if (_CurrCycle >= _MaxCycle) {
 			_ReturnRegister->setValue(&_FinalResult);
 			_ReturnRegister->commit();
 			signalChildren();
-			DPRINTF(LLVMOp, "Completed\n\n");
+			DPRINTF(LLVMOp, "Committed\n\n");
 			return true;
-		} else DPRINTF(LLVMOp, "Incomplete!\n\n");
+		} else DPRINTF(LLVMOp, "Will commit in future cycle\n\n");
         _CurrCycle++;
+    } else {
+        signalChildren();
+    }
 	return false;
 }
 
@@ -54,9 +57,14 @@ InstructionBase::fetchDependency(int depidx) {
 // Tell all children nodes to fetch the new value in _ReturnRegister
 void
 InstructionBase::signalChildren() {
-    assert(_ReturnRegister);
-    for (int i = 0; i < _Children.size(); i++) {
-        _Children.at(i)->fetchDependency(_ReturnRegister);
+    if(_ReturnRegister) {
+        for (int i = 0; i < _Children.size(); i++) {
+            _Children.at(i)->fetchDependency(_ReturnRegister);
+        }
+    } else {
+        for (int i = 0; i < _Children.size(); i++) {
+            _Children.at(i)->_ActiveParents--;
+        }
     }
 }
 
