@@ -12,7 +12,7 @@ Add::compute() {
 	else _Result = _Ops.at(0) + _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u: Stored in Register %s. \n", _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
@@ -23,11 +23,11 @@ Sub::compute() {
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() - _Operand;
-	else _Result = _Operands.at(0)->getValue() - _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) - _Operand;
+	else _Result = _Ops.at(0) - _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u - %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
@@ -37,56 +37,56 @@ Mul::compute() {
 	// <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() * _Operand;
-	else _Result = _Operands.at(0)->getValue() * _Operands.at(1)->getValue();
+		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if (_Operands.size() == 1) _Result = _Ops.at(0) * _Operand;
+	else _Result = _Ops.at(0) * _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
 UDiv::compute() {
 	// Unsigned Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _UOperand;
-	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) / _UOperand;
+	else _Result = _Ops.at(0) / _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
 SDiv::compute() {
 	// Signed Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() / _SOperand;
-	else _Result = _Operands.at(0)->getValue() / _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) / _SOperand;
+	else _Result = _Ops.at(0) / _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
 URem::compute() {
 	//Unsigned modulo division
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _UOperand;
-	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
+		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if (_Operands.size() == 1) _Result = _Ops.at(0) % _UOperand;
+	else _Result = _Ops.at(0) % _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
-}
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
+	}
 
 void 
 SRem::compute() {
 	//Signed modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() % _SOperand;
-	else _Result = _Operands.at(0)->getValue() % _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) % _SOperand;
+	else _Result = _Ops.at(0) % _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u %% %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
@@ -249,25 +249,22 @@ Shl::compute() {
 	// <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() << _Operand;
-	else _Result = _Operands.at(0)->getValue() << _Operands.at(1)->getValue();
+		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if (_Operands.size() == 1) _Result = _Ops.at(0) << _Operand;
+	else _Result = _Ops.at(0) << _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u << %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
 LShr::compute() {
-	// Logical Shift Right Operation
-	// <result> = lshr <ty> <op1>, <op2>; yields ty : result
-	// <result> = lshr exact <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() >> _Operand;
-	else _Result = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
+		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if (_Operands.size() == 1) _Result = _Ops.at(0) >> _Operand;
+	else _Result = _Ops.at(0) >> _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
@@ -276,35 +273,35 @@ AShr::compute() {
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() >> _Operand;
-	else _Result = _Operands.at(0)->getValue() >> _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) >> _Operand;
+	else _Result = _Ops.at(0) >> _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u >> %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
 And::compute() {
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() & _Operand;
-	else _Result = _Operands.at(0)->getValue() & _Operands.at(1)->getValue();
+		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if (_Operands.size() == 1) _Result = _Ops.at(0) & _Operand;
+	else _Result = _Ops.at(0) & _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u & %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
 Or::compute() {
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() | _Operand;
-	else _Result = _Operands.at(0)->getValue() | _Operands.at(1)->getValue();
+		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if (_Operands.size() == 1) _Result = _Ops.at(0) | _Operand;
+	else _Result = _Ops.at(0) | _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u | %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 void 
@@ -312,19 +309,20 @@ Xor::compute() {
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operands.at(0)->getValue() ^ _Operand;
-	else _Result = _Operands.at(0)->getValue() ^ _Operands.at(1)->getValue();
+	if (_Operands.size() == 1) _Result = _Ops.at(0) ^ _Operand;
+	else _Result = _Ops.at(0) ^ _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
-	//DPRINTF(LLVMOp, "%u ^ %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
+	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
 }
 
 
 void
 Load::compute() {
-    uint64_t src = _Pointer->getValue();
+    //uint64_t src = _Pointer->getValue();
+	uint64_t src = _Ops.at(0);
 	_ReturnRegister->setSize(_ReturnType);
-	//DPRINTF(LLVMGEP,"Load Operation: Name = %s, Size = %d\n", instruction.memory.load.pointer->getName(), _ReturnRegister->size);
+	DPRINTF(LLVMOp, "Load Check: Ops.at(0) = %u, Pointer = %u\n", _Ops.at(0), _Pointer->getValue());
 	_Req = new MemoryRequest((Addr)src, _ReturnRegister->getSize());
 	_Comm->enqueueRead(_Req);
 }
@@ -333,16 +331,17 @@ void
 Store::compute() {
 	uint64_t data;
 	uint64_t size = 0;
-	uint64_t dst = _Pointer->getValue();
+	//uint64_t dst = _Pointer->getValue();
+	uint64_t dst = _Ops.at(0);
 	if(_Imm != 0) {
 		data = (uint64_t) _Imm;
 		//size = getSize(_ReturnType);
 		size = 8;
 		_Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 	} else {
-	    data = _Value->getValue();
-        _Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), _Value->getSize());
-		//DPRINTF(LLVMGEP,"Store Operation: Type = %s, Size = %d\n", instruction.memory.store.value->getType(), instruction.memory.store.value->size);
+	    data = _Ops.at(1);
+        _Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), _Value->getSize());		
+		DPRINTF(LLVMOp,"Store Operation: Addr = %u Data = %u, Size = %u\n",dst, data, _Value->getSize());
 	}
 	_Comm->enqueueWrite(_Req);
 }
@@ -491,7 +490,7 @@ GetElementPtr::compute() {
 		newAddress += _ActivePtr;
 		setResult(&newAddress);
 	}
-	DPRINTF(LLVMGEP, "New Address: %x\n", newAddress);
+	DPRINTF(LLVMOp, "New Address: %x\n", newAddress);
 }
 
 

@@ -350,18 +350,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFADD;
 		computeFlags = setFlags(parameters);
-		DPRINTF(ComputeNode, "TestPoint 1 \n");
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
-		DPRINTF(ComputeNode, "TestPoint 2 \n");
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
-		DPRINTF(ComputeNode, "TestPoint 3 \n");
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		double immOp = 0;
 		if(immOps.size() != 0) {
-			DPRINTF(ComputeNode, "TestPoint 4 \n");
 			immOp = stof(convertImmediate(returnType, immOps.at(0)));
 		}
-		DPRINTF(ComputeNode, "TestPoint 5 \n");
 		auto fadd = std::make_shared<FAdd>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -724,6 +719,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											computeFlags,
 											immOp );
 		addNode(andoc);
+		DPRINTF(ComputeNode, "And Created!\n");
 		break;
 	}
 	case IR_Or: {
