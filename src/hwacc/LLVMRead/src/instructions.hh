@@ -1411,6 +1411,7 @@ class Store : public Memory {
         uint64_t _Imm;
         Register* _Pointer;
         Register* _Value;
+        bool _ImmVal = false;
     public:
         Store (             const std::string& Line,
                             const std::string& OpCode,
@@ -1423,7 +1424,8 @@ class Store : public Memory {
                             uint64_t Align,
                             uint64_t Imm,
                             Register* Pointer,
-                            Register* Value)
+                            Register* Value,
+                            bool ImmVal)
         : Memory (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -1435,7 +1437,8 @@ class Store : public Memory {
         , _Align(           Align)
         , _Imm(             Imm)
         , _Pointer(         Pointer)
-        , _Value(           Value) { 
+        , _Value(           Value) 
+        , _ImmVal(          ImmVal) { 
                             Details("Store"); } 
         ~Store()          { Destruct("Store"); }
         void compute()      override;

@@ -826,6 +826,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		int index = 1;
 		int align = 0;
 		int64_t imm;
+		bool immVal = false;
 		if (parameters[1] == "volatile") {
 			index = 2;
 			attributeFlags = attributeFlags | VOLATILE;
@@ -838,8 +839,10 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			setRegister(parameters[index + 1], value, dependencies, list, parameters);
 			value->setSize(returnType);
 		} else {
-			if (returnType[0] == 'i') imm  = stoi(parameters[2]);
-			else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
+			if (returnType[0] == 'i') {
+				imm  = stoi(parameters[2]);
+				immVal = true;
+			} else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
 		align = std::stoi(parameters[index + 5]);
 		auto storeoc = std::make_shared<Store>(	lineCpy, 
@@ -853,7 +856,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												align,
 												imm,
 												pointer,
-												value);
+												value,
+												immVal);
 		addNode(storeoc);
 		break;
 	}
@@ -932,6 +936,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			}
 			else {
 				idx.push_back(NULL);
+				dependencies.push_back(NULL);
 				immdx.push_back(stoi(parameters[index+i+1]));
 				DPRINTF(LLVMGEP, "idx%d = %d\n", j, immdx.at(j));
 			}
@@ -1666,27 +1671,27 @@ BasicBlock::setRegOperands(RegisterList *list, std::vector<std::string> &paramet
 	if(!(instructionType.compare("Binary"))){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) {
-			setRegister(parameters[last], op, dependencies, list, parameters);
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op, dependencies, list, parameters);
 			operands.push_back(op);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) {
-			setRegister(parameters[last-1], op, dependencies, list, parameters);
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op, dependencies, list, parameters);
 			operands.push_back(op);
 		}
 	} else if(!(instructionType.compare("Bitwise"))) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) {
-			setRegister(parameters[last], op, dependencies, list, parameters);
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op, dependencies, list, parameters);
 			operands.push_back(op);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) {
-			setRegister(parameters[last-1], op, dependencies, list, parameters);
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op, dependencies, list, parameters);
 			operands.push_back(op);
 		}
 	}
@@ -1723,7 +1728,7 @@ BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &paramet
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1]))  {
+		if(!(isRegister(parameters[last-1])))  {
 			// Operation uses immediate value
 			// Load string representation of immediate value
 			operands.push_back(parameters[last - 1]);
