@@ -8,4 +8,4 @@ class LLVMInterface(ComputeUnit):
     cxx_header = "hwacc/llvm_interface.hh"
 
     in_file = Param.String("LLVM Trace File")
-    proc_elem = Param.UInt32(1, "The number of processing elements available in the device")
+    sched_threshold = Param.UInt32(1000, "Scheduling window threshold. Prevents scheduling windows size from exploding during regions of high loop parallelism")

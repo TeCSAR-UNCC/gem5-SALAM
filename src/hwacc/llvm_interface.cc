@@ -6,7 +6,7 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
-    numPE(p->proc_elem) {
+    scheduling_threshold(p->sched_threshold) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -80,16 +80,6 @@ LLVMInterface::tick() {
             DPRINTF(LLVMOp, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
         if (reservation.at(i)->_ActiveParents == 0) {
             if(!(reservation.at(i)->_Terminator)) { 
-    //            if(reservation.at(i)->_OpCode == "load") readQueue.push_back(reservation.at(i));
-    //            if(reservation.at(i)->_OpCode == "store") writeQueue.push_back(reservation.at(i));
-    //            if(reservation.at(i)->_OpCode == "phi")  {
-    //                DPRINTF(LLVMInterface, "Phi Interface\n");
-    //                reservation.at(i)->_PrevBB = prevBB->getName();
-    //            } else computeQueue.push_back(reservation.at(i));
-    //            reservation.at(i)->compute();
-    //            if(reservation.at(i)->commit())     
-    //            scheduled = true;
-    //            reservation.erase(reservation.begin()+ i);
                     if(reservation.at(i)->_OpCode == "load") {
                         readQueue.push_back(reservation.at(i));
                         reservation.at(i)->compute();
@@ -108,7 +98,7 @@ LLVMInterface::tick() {
                     auto it = reservation.erase(reservation.begin()+i);
                     i = std::distance(reservation.begin(), it);
             } else if ((reservation.at(i)->_OpCode == "br")) {
-                if (reservation.size() < 100) {
+                if (reservation.size() < scheduling_threshold) {
                     prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
                     reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
                     currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block

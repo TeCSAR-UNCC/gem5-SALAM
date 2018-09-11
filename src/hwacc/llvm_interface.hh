@@ -13,7 +13,7 @@
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
-    uint32_t numPE;
+    uint32_t scheduling_threshold;
     bool running;
     std::list<BasicBlock*> *bbList;
     RegisterList *regList;
