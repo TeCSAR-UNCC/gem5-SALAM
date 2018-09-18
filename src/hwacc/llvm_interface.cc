@@ -74,10 +74,10 @@ LLVMInterface::tick() {
     }
 
     for (auto i = 0; i < reservation.size();) {
-      //  if (reservation.at(i)->_ReturnRegister == NULL)
-            //DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
-      //  else
-            //DPRINTF(LLVMOp, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+        if (reservation.at(i)->_ReturnRegister == NULL)
+            DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+        else
+            DPRINTF(LLVMOp, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
         if (reservation.at(i)->_ActiveParents == 0) {
             if(!(reservation.at(i)->_Terminator)) { 
                     if(reservation.at(i)->_OpCode == "load") {
@@ -118,7 +118,6 @@ LLVMInterface::tick() {
             i++;
         }
     }
-
     if (!scheduled) stalls++; // No new compute node was scheduled this cycle
     if (running && !tickEvent.scheduled())
     {
@@ -164,8 +163,9 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
         std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
 
         if (depList.size() > 0) {
-            if(!((depList.size() == 1) && (depList.at(0) == NULL))) { // Special case for GEP with global and Imm only values
-                for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
+            //if(!((depList.size() == 1) && (depList.at(0) == NULL))) { // Special case for GEP with global and Imm only values
+            for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
+                if (depList.at(j)!=NULL) {
                     InstructionBase * parent = findParent(depList.at(j));
                     if (parent) {
                         DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());

@@ -202,6 +202,7 @@ class CommInterface : public BasicPioDevice
                 }
             }
         }
+		panic("Could not find memory request in request queues");
         return NULL;
     }
 

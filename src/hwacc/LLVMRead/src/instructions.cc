@@ -97,6 +97,7 @@ FAdd::compute() {
 	double op1;
 	double op2;
 	double result;
+	float fresult;
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
@@ -110,6 +111,7 @@ FAdd::compute() {
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			result = op1 + op2;
+			setResult(&result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
@@ -122,10 +124,11 @@ FAdd::compute() {
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			result = op1 + op2;
+			fresult = (float) result;
+			setResult(&fresult);
 		}
 	}
 	DPRINTF(LLVMOp, "%f + %f = %f \n", op1, op2, result);
-	setResult(&result);
 	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -137,6 +140,7 @@ FSub::compute() {
 	double op1;
 	double op2;
 	double result;
+	float fresult;
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
@@ -149,6 +153,7 @@ FSub::compute() {
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			result = op1 - op2;
+			setResult(&result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
@@ -161,9 +166,10 @@ FSub::compute() {
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			result = op1 - op2;
+			fresult = (float) result;
+			setResult(&fresult);
 		}
 	}
-	setResult(&result);
 	//DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, _ReturnRegister->getName());
 }
 
@@ -175,6 +181,7 @@ FMul::compute() {
 	double op1;
 	double op2;
 	double result;
+	float fresult;
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
@@ -187,6 +194,7 @@ FMul::compute() {
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			result = op1 * op2;
+			setResult(&result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
@@ -199,9 +207,10 @@ FMul::compute() {
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
 			result = op1 * op2;
+			fresult = (float) result;
+			setResult(&fresult);
 		}
 	}
-	setResult(&result);
 	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister, _ReturnRegister->getName());
 }
 
@@ -213,6 +222,7 @@ FDiv::compute() {
 	double op1;
 	double op2;
 	double result;
+	float fresult;
 	// If immediate values convert from string, else load from register
 	if (_ReturnType.find("double") == 0) {
 		if (_Operands.size() == 1) {
@@ -225,6 +235,8 @@ FDiv::compute() {
 			op1 = *(double *)&OP1;
 			op2 = *(double *)&OP2;
 			result = op1 / op2;
+			setResult(&result);
+			DPRINTF(LLVMOp, "Double: %f / %f = %f\n", op1, op2, result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
@@ -236,10 +248,12 @@ FDiv::compute() {
 		    uint64_t OP2 = _Ops.at(1);
 			op1 = *(float *)&OP1;
 			op2 = *(float *)&OP2;
-			result = op1 / op2;
+			result =  op1 / op2;
+			fresult = (float) result;
+			setResult(&fresult);
+			DPRINTF(LLVMOp, "Float: %f / %f = %f\n", op1, op2, result);
 		}
 	}
-	setResult(&result);
 	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
@@ -341,7 +355,7 @@ Store::compute() {
 	if(_ImmVal) {
 		data = (uint64_t) _Imm;
 		//size = getSize(_ReturnType);
-		size = std::stoi(_ReturnType.substr(1));
+		size = ((std::stoi(_ReturnType.substr(1))-1)/8)+1;
 		_Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 	} else {
 	    data = _Ops.at(1);
@@ -392,7 +406,7 @@ GetElementPtr::compute() {
 	uint64_t dataSize = 0;
 	uint64_t totalElements = 1;
 	uint64_t finalCount = 0;
-	
+	DPRINTF(LLVMOp, "Base Address: %x\n", _ActivePtr);
 	int j = 0;
 	// Initialize array values
 	for(int i = 0; i<_Dependencies.size(); i++) {
@@ -404,6 +418,7 @@ GetElementPtr::compute() {
 	if(_Pty[0] == '%') { // Return Type is a custom data type
 		if(_LLVMType != NULL) {
 			dataSize = _LLVMType->getSize();
+			DPRINTF(LLVMOp, "Custom Return Type: Size = %d\n", dataSize);
 			j++;
 		} 
 	for(int i = 0; i <= j; i++){
@@ -502,25 +517,25 @@ GetElementPtr::compute() {
 
 void
 Trunc::compute() {
-	if (_ReturnType == "i32") _Result = 0xffffffff & _Ops.at(0);
-	else if (_ReturnType == "i16") _Result = 0xffff & _Ops.at(0);
-	else if (_ReturnType == "i8") _Result = 0xff & _Ops.at(0);
-	else if (_ReturnType == "i1") {
+	if (_OriginalType == "i32") _Result = 0xffffffff & _Ops.at(0);
+	else if (_OriginalType == "i16") _Result = 0xffff & _Ops.at(0);
+	else if (_OriginalType == "i8") _Result = 0xff & _Ops.at(0);
+	else if (_OriginalType == "i1") {
 		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
 	setResult(&_Result);
+	DPRINTF(LLVMOp, "Trunc:(%s) %d from %d\n", _ReturnType, _Result, _Ops.at(0));
 }
 
 void
 ZExt::compute() {
-	DPRINTF(LLVMOp, "ZEXT\n");
-	if (_ReturnType == "i64") _Result = (uint64_t) _COperand->getValue();
-	else if (_ReturnType == "i32") _Result = (uint32_t) _COperand->getValue();
-	else if (_ReturnType == "i16") _Result = (uint16_t) _COperand->getValue();
-	else if (_ReturnType == "i8") _Result = (uint8_t) _COperand->getValue();
-	else if (_ReturnType == "i1") {
-		if(_COperand->getValue()) _Result = 1;
+	if (_OriginalType == "i64") _Result = (uint64_t) _Ops.at(0);
+	else if (_OriginalType == "i32") _Result = (uint32_t) _Ops.at(0);
+	else if (_OriginalType == "i16") _Result = (uint16_t) _Ops.at(0);
+	else if (_OriginalType == "i8") _Result = (uint8_t) _Ops.at(0);
+	else if (_OriginalType == "i1") {
+		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
 	setResult(&_Result); 	
@@ -528,12 +543,12 @@ ZExt::compute() {
 
 void
 SExt::compute() {
-	if (_ReturnType == "i64") _Result = (int64_t) _COperand->getValue();
-	else if (_ReturnType == "i32") _Result = (int32_t) _COperand->getValue();
-	else if (_ReturnType == "i16") _Result = (int16_t) _COperand->getValue();
-	else if (_ReturnType == "i8") _Result = (int8_t) _COperand->getValue();
-	else if (_ReturnType == "i1") {
-		if(_COperand->getValue()) _Result = 1;
+	if (_OriginalType == "i64") _Result = (int64_t) _Ops.at(0);
+	else if (_OriginalType == "i32") _Result = (int32_t) _Ops.at(0);
+	else if (_OriginalType == "i16") _Result = (int16_t) _Ops.at(0);
+	else if (_OriginalType == "i8") _Result = (int8_t) _Ops.at(0);
+	else if (_OriginalType == "i1") {
+		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
 	setResult(&_Result); 	
@@ -541,48 +556,48 @@ SExt::compute() {
 
 void 
 FPToUI::compute() {
-	if (_ReturnType == "i64") _Result = (uint64_t) _COperand->getValue();
-	else if (_ReturnType == "i32") _Result = (uint32_t) _COperand->getValue();
-	else if (_ReturnType == "i16") _Result = (uint16_t) _COperand->getValue();
-	else if (_ReturnType == "i8") _Result = (uint8_t) _COperand->getValue();
-	else if (_ReturnType == "i1") {
-		if(_COperand->getValue()) _Result = 1;
+	if (_OriginalType == "i64") _Result = (uint64_t) _Ops.at(0);
+	else if (_OriginalType == "i32") _Result = (uint32_t) _Ops.at(0);
+	else if (_OriginalType == "i16") _Result = (uint16_t) _Ops.at(0);
+	else if (_OriginalType == "i8") _Result = (uint8_t) _Ops.at(0);
+	else if (_OriginalType == "i1") {
+		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
 	setResult(&_Result);
 }
 void
 FPToSI::compute() {
-	if (_ReturnType == "i64") _Result = (int64_t) _COperand->getValue();
-	else if (_ReturnType == "i32") _Result = (int32_t) _COperand->getValue();
-	else if (_ReturnType == "i16") _Result = (int16_t) _COperand->getValue();
-	else if (_ReturnType == "i8") _Result = (int8_t) _COperand->getValue();
-	else if (_ReturnType == "i1") {
-		if(_COperand->getValue()) _Result = 1;
+	if (_OriginalType == "i64") _Result = (int64_t) _Ops.at(0);
+	else if (_OriginalType == "i32") _Result = (int32_t) _Ops.at(0);
+	else if (_OriginalType == "i16") _Result = (int16_t) _Ops.at(0);
+	else if (_OriginalType == "i8") _Result = (int8_t) _Ops.at(0);
+	else if (_OriginalType == "i1") {
+		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
 	setResult(&_Result);
 }
 void
 UIToFP::compute() {
-	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
-	else if (_ReturnType == "float") _Result = (float) _COperand->getValue();
+	if (_OriginalType == "double") _Result = (double) _Ops.at(0);
+	else if (_OriginalType == "float") _Result = (float) _Ops.at(0);
 	setResult(&_Result);
 }
 void
 SIToFP::compute() {
-	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
-	else if (_ReturnType == "float") _Result = (float) _COperand->getValue();
+	if (_OriginalType == "double") _Result = (double) _Ops.at(0);
+	else if (_OriginalType == "float") _Result = (float) _Ops.at(0);
 	setResult(&_Result);
 }
 void 
 FPTrunc::compute() {
-	if (_ReturnType == "float") _Result = (float) _COperand->getValue();
+	if (_OriginalType == "float") _Result = (float) _Ops.at(0);
 	setResult(&_Result);	
 }
 void
 FPExt::compute() {
-	if (_ReturnType == "double") _Result = (double) _COperand->getValue();
+	if (_OriginalType == "double") _Result = (double) _Ops.at(0);
 	setResult(&_Result);
 }
 void
@@ -639,7 +654,7 @@ FCmp::compute() {
 }
 void
 ICmp::compute() {
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	DPRINTF(LLVMOp, "Performing %s Operation (%x)\n", _OpCode, _Flags);
 	if (_Ops.size() == 1) {
 		if(_Flags & EQ) _Result = (_Ops.at(0) == _Operand);
 		else if(_Flags & NE) _Result = (_Ops.at(0) != _Operand);
@@ -668,7 +683,7 @@ ICmp::compute() {
 	// Store result in return register
 	setResult(&_Result);
 
-	DPRINTF(LLVMOp, "Result: %d\n", _FinalResult&&0x1);
+	DPRINTF(LLVMOp, "Result: %d\n", _Result&&0x1);
 }
 
 void

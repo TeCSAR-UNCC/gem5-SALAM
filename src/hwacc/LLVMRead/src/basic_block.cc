@@ -1262,15 +1262,15 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		Register* op1;
 		Register* op2;
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) {
-			setRegister(parameters[last], op1, dependencies, list, parameters);	
-			regOps.push_back(op1);
-		} else immOp = stoi(parameters[last]);
-		// Check if value is from register or immediate value
 		if(isRegister(parameters[last-1])) {
-			setRegister(parameters[last-1], op2, dependencies, list, parameters);
+			setRegister(parameters[last-1], op1, dependencies, list, parameters);	
+			regOps.push_back(op1);
+		} else immOp = stoi(parameters[last-1]);
+		// Check if value is from register or immediate value
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op2, dependencies, list, parameters);
 			regOps.push_back(op2);
-		} else immOp = stoi(parameters[last - 1]);
+		} else immOp = stoi(parameters[last]);
 		if (condition == "eq") computeFlags = EQ;
 		else if (condition == "ne") computeFlags = NE;
 		else if (condition == "ugt") computeFlags = UGT;
@@ -1306,15 +1306,15 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		Register* op1;
 		Register* op2;
 		// Check if adding from register or immediate value
-		if(isRegister(parameters[last])) {
-			setRegister(parameters[last], op1, dependencies, list, parameters);	
+		if(isRegister(parameters[last-1])) {
+			setRegister(parameters[last-1], op1, dependencies, list, parameters);	
 			regOps.push_back(op1);
 		} 
 		// Check if value is from register or immediate value
-		if(isRegister(parameters[last-1])) {
-			setRegister(parameters[last-1], op2, dependencies, list, parameters);
+		if(isRegister(parameters[last])) {
+			setRegister(parameters[last], op2, dependencies, list, parameters);
 			regOps.push_back(op2);
-		} else immOp = stof(convertImmediate(returnType, parameters[last - 1]));
+		} else immOp = stof(convertImmediate(returnType, parameters[last]));
 		
 		if (condition == "false") computeFlags = CONDFALSE;
 		else if (condition == "oeq") computeFlags = OEQ;
@@ -1706,32 +1706,32 @@ BasicBlock::setImmOperands(RegisterList *list, std::vector<std::string> &paramet
 	if(!(instructionType.compare("Binary"))){
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(!(isRegister(parameters[last]))) {
+		if(!(isRegister(parameters[last-1]))) {
 			// Operation uses immediate value
 			// Load string representation of immediate value
-			operands.push_back(parameters[last]);
+			operands.push_back(parameters[last-1]);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(!(isRegister(parameters[last-1])))  {
+		if(!(isRegister(parameters[last])))  {
 			// Operation uses immediate value
 			// Load string representation of immediate value
-			operands.push_back(parameters[last - 1]);
+			operands.push_back(parameters[last]);
 		}
 	} else if(!(instructionType.compare("Bitwise"))) {
 		// Operand 2
 		// Check if adding from register or immediate value
-		if(!(isRegister(parameters[last]))) {
+		if(!(isRegister(parameters[last-1]))) {
 			// Operation uses immediate value
 			// Load string representation of immediate value
-			operands.push_back(parameters[last]);
+			operands.push_back(parameters[last-1]);
 		}
 		// Operand 1
 		// Check if value is from register or immediate value
-		if(!(isRegister(parameters[last-1])))  {
+		if(!(isRegister(parameters[last])))  {
 			// Operation uses immediate value
 			// Load string representation of immediate value
-			operands.push_back(parameters[last - 1]);
+			operands.push_back(parameters[last]);
 		}
 	}
 	return operands;

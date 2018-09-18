@@ -82,12 +82,10 @@ CommInterface::MemSidePort::sendPacket(PacketPtr pkt) {
 
 void
 CommInterface::recvPacket(PacketPtr pkt) {
-    if (pkt->isRead()) {
+	if (pkt->isRead()) {
         MemoryRequest * readReq = findMemRequest(pkt, true);
-        DPRINTF(LLVMGEP, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         pkt->writeData(readReq->buffer + (pkt->req->getPaddr() - readReq->beginAddr));
-        DPRINTF(LLVMGEP, "Read:0x%016lx\n", *(uint64_t *)readReq->buffer);
         DPRINTF(CommInterface, "Read:0x%016lx\n", *(uint64_t *)readReq->buffer);
         for (int i = pkt->req->getPaddr() - readReq->beginAddr;
              i < pkt->req->getPaddr() - readReq->beginAddr + pkt->getSize(); i++)
@@ -110,7 +108,6 @@ CommInterface::recvPacket(PacketPtr pkt) {
         }
     } else if (pkt->isWrite()) {
         MemoryRequest * writeReq = findMemRequest(pkt, false);
-        DPRINTF(LLVMGEP, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         writeReq->writeDone += pkt->getSize();
         if (!(writeReq->needToWrite)) {
