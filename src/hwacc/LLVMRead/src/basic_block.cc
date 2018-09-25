@@ -33,7 +33,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	uint64_t maxCycles = 0;
 	uint64_t computeFlags = 0;
 	uint64_t attributeFlags = 0;
-
+	bool immFirst = false;
+	uint64_t functionalUnit = 0;
 	// ////////////////////////////////////////////////////////////////////
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
@@ -227,6 +228,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			addNode(br);
 		} else {
 			// Conditional Branch
+			functionalUnit = COMPARE;
 			returnType = parameters[1];
 			std::vector<std::string> branches;
 			Register* condition;
@@ -244,7 +246,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											condition,
 											branches,
-											false);
+											false,
+											functionalUnit);
 			addNode(br);
 		}
 		break;
@@ -253,6 +256,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
 		instructionType = "Terminator";
 		maxCycles = CYCLECOUNTSWITCH;
+		functionalUnit = COMPARE;
 		returnType = parameters[1];
 		std::vector<std::string> branches;
 		std::vector<int>caseValues;
@@ -281,7 +285,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			DPRINTF(ComputeNode, "Value %d, Dest: %s\n", caseValues.at(i), branches.at(i));
 			i++;
 		}
-		auto swtch = std::make_shared<Switch>(	lineCpy, 
+		auto llswtch = std::make_shared<LLVMSwitch>(	lineCpy, 
 												opCode, 
 												returnType, 
 												instructionType, 
@@ -291,8 +295,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												co,
 												condition,
 												branches,
-												caseValues);
-		addNode(swtch);
+												caseValues,
+												functionalUnit);
+		addNode(llswtch);
 		break;
 	}
 	case IR_IndirectBr: {
@@ -324,13 +329,20 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		maxCycles = CYCLECOUNTADD;
+		functionalUnit = INTADDER;
 		instructionType = "Binary";
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) {
+			immOp = stoi(immOps.at(0));
+			maxCycles = CYCLECOUNTER;
+			functionalUnit = COUNTER;
+		}
+		
 		auto add = std::make_shared<Add>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -341,7 +353,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(add);
 		break;
 	}
@@ -349,13 +363,16 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFADD;
+		if(returnType == "double") functionalUnit = FPDPADDER;
+		else functionalUnit = FPSPADDER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		double immOp = 0;
 		if(immOps.size() != 0) {
-			immOp = stof(convertImmediate(returnType, immOps.at(0)));
+			immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		}
 		auto fadd = std::make_shared<FAdd>(	lineCpy, 
 											opCode, 
@@ -367,7 +384,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(fadd);
 		DPRINTF(ComputeNode, "Fadd Done\n");
 		break;
@@ -379,10 +398,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTSUB;
+		functionalUnit = INTADDER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto sub = std::make_shared<Sub>(	lineCpy, 
@@ -395,7 +416,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(sub);
 		break;
 	}
@@ -403,12 +426,15 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFSUB;
+		if(returnType == "double") functionalUnit = FPDPADDER;
+		else functionalUnit = FPSPADDER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		double immOp = 0;
-		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto fsub = std::make_shared<FSub>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -419,7 +445,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp);
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(fsub);
 		break;
 	}
@@ -430,10 +458,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTMUL;
+		functionalUnit = INTMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto mul = std::make_shared<Mul>(	lineCpy, 
@@ -446,7 +476,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(mul);
 		break;
 	}
@@ -454,12 +486,17 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result.
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFMUL;
+		if(returnType == "double") functionalUnit = FPDPMULTI;
+		else functionalUnit = FPSPMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		double immOp = 0;
-		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) {
+			immOp = stod(convertImmediate(returnType, immOps.at(0)));
+		}
 		auto fmul = std::make_shared<FMul>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -470,7 +507,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(fmul);
 		break;
 	}
@@ -479,10 +518,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTUDIV;
+		functionalUnit = INTMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto udiv = std::make_shared<UDiv>(	lineCpy, 
@@ -495,7 +536,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(udiv);
 		break;
 	}
@@ -504,10 +547,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTSDIV;
+		functionalUnit = INTMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto sdiv = std::make_shared<SDiv>(	lineCpy, 
@@ -520,7 +565,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(sdiv);
 		break;
 	}
@@ -528,12 +575,15 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFDIV;
+		if(returnType == "double") functionalUnit = FPDPMULTI;
+		else functionalUnit = FPSPMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		double immOp = 0;
-		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto fdiv = std::make_shared<FDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -544,7 +594,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(fdiv);
 		break;
 	}
@@ -556,6 +608,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto urem = std::make_shared<URem>(	lineCpy, 
@@ -568,7 +621,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp);
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(urem);
 		break;
 	}
@@ -580,6 +635,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto srem = std::make_shared<SRem>(	lineCpy, 
@@ -592,7 +648,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(srem);
 		break;
 	}
@@ -600,12 +658,15 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFREM;
+		if(returnType == "double") functionalUnit = FPDPMULTI;
+		else functionalUnit = FPSPMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		double immOp = 0;
-		if(immOps.size() != 0) immOp = stof(convertImmediate(returnType, immOps.at(0)));
+		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto frem = std::make_shared<FRem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -616,7 +677,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(frem);
 		break;
 	}
@@ -627,10 +690,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Bitwise";
+		functionalUnit = INTSHIFTER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto shl = std::make_shared<Shl>(	lineCpy, 
@@ -643,7 +708,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(shl);
 		break;
 	}
@@ -652,10 +719,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Bitwise";
 		maxCycles = CYCLECOUNTLSHR;
+		functionalUnit = INTSHIFTER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto lshr = std::make_shared<LShr>(	lineCpy, 
@@ -668,7 +737,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(lshr);
 		break;
 	}
@@ -677,10 +748,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result.
 		instructionType = "Bitwise";
 		maxCycles = CYCLECOUNTASHR;
+		functionalUnit = INTSHIFTER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto ashr = std::make_shared<AShr>(	lineCpy, 
@@ -693,7 +766,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(ashr);
 		break;
 	}
@@ -701,10 +776,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Bitwise";
 		maxCycles = CYCLECOUNTAND;
+		functionalUnit = INTBITWISE;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto andoc = std::make_shared<And>(	lineCpy, 
@@ -717,7 +794,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(andoc);
 		DPRINTF(ComputeNode, "And Created!\n");
 		break;
@@ -726,10 +805,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Bitwise";
 		maxCycles = CYCLECOUNTOR;
+		functionalUnit = INTBITWISE;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto oroc = std::make_shared<Or>(	lineCpy, 
@@ -742,7 +823,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(oroc);
 		break;
 	}
@@ -750,10 +833,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Bitwise";
 		maxCycles = CYCLECOUNTXOR;
+		functionalUnit = INTBITWISE;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
+		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
 		auto xoroc = std::make_shared<Xor>(	lineCpy, 
@@ -766,7 +851,9 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp );
+											immOp,
+											immFirst,
+											functionalUnit );
 		addNode(xoroc);
 		break;
 	}
@@ -870,6 +957,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::string customDataType;
 		instructionType = "Memory";
 		maxCycles = CYCLECOUNTGETELEMENTPTR;
+		functionalUnit = GETELEMENTPTR;
 		ret_reg->setSize("pointer");
 		std::string pty; //instruction.memory.getptr.pty
 		Register* ptrval; // instruction.memory.getptr.ptrval
@@ -958,7 +1046,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 													ty,
 													immdx,
 													ptrval,
-													indexRet);
+													indexRet,
+													functionalUnit);
 		addNode(gep);
 
 		// Null Stored for register if immediate value used in the situation
@@ -980,6 +1069,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Trunc: {
 		// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
+		functionalUnit = CONVERSION;
 		maxCycles = CYCLECOUNTTRUNC;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -994,7 +1084,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(trnc);
 		break;
 	}
@@ -1002,6 +1093,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTZEXT;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1015,7 +1107,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(zext);
 		break;
 	}
@@ -1023,6 +1116,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTSEXT;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1036,7 +1130,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(sext);
 		break;
 	}
@@ -1044,6 +1139,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fptoui <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTFPTOUI;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1057,7 +1153,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(fptoui);
 		break;
 	}
@@ -1065,6 +1162,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fptosi <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTFPTOSI;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1078,7 +1176,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(fptosi);
 		break;
 	}
@@ -1086,6 +1185,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = uitofp <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTUITOFP;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1099,7 +1199,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(uitofp);
 		break;
 	}
@@ -1107,6 +1208,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sitofp <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTSITOFP;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1120,7 +1222,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(sitofp);
 		break;
 	}
@@ -1128,6 +1231,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fptrunc <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTFPTRUNC;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1141,7 +1245,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(fptrunc);
 		break;
 	}
@@ -1149,6 +1254,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fpext <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTFPEXT;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1162,7 +1268,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(fpext);
 		break;
 	}
@@ -1170,6 +1277,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = ptrtoint <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTPTRTOINT;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1183,7 +1291,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(ptrtoint);
 		break;
 	}
@@ -1191,6 +1300,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = inttoptr <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTINTTOPTR;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1204,7 +1314,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(inttoptr);
 		break;
 	}
@@ -1212,6 +1323,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = bitcast <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTBITCAST;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1225,7 +1337,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												dependencies, 
 												co,
 												originalType,
-												operand);
+												operand,
+												functionalUnit);
 		addNode(bitcast);
 		break;
 	}
@@ -1233,6 +1346,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = addrspacecast <pty> <ptrval> to <pty2>       ; yields pty2
 		instructionType = "Conversion";
 		maxCycles = CYCLECOUNTADDRSPACECAST;
+		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1246,7 +1360,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 																dependencies, 
 																co,
 																originalType,
-																operand);
+																operand,
+																functionalUnit);
 		addNode(addrspacecast);
 		break;
 	}
@@ -1255,6 +1370,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = icmp <cond> <ty> <op1>, <op2>   ; yields {i1} or {<N x i1>}:result
 		instructionType = "Compare";
 		std::string condition = parameters[0];
+		functionalUnit = COMPARE;
 		maxCycles = CYCLECOUNTICMP;
 		returnType = parameters[1];
 		std::vector<Register*> regOps;
@@ -1291,7 +1407,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp);
+											immOp,
+											functionalUnit);
 		addNode(icmp);
 		break;
 	}
@@ -1300,6 +1417,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		instructionType = "Compare";
 		std::string condition = parameters[0];
 		maxCycles = CYCLECOUNTFCMP;
+		functionalUnit = COMPARE;
 		returnType = parameters[1];
 		std::vector<Register*> regOps;
 		double immOp = 0;
@@ -1314,7 +1432,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		if(isRegister(parameters[last])) {
 			setRegister(parameters[last], op2, dependencies, list, parameters);
 			regOps.push_back(op2);
-		} else immOp = stof(convertImmediate(returnType, parameters[last]));
+		} else immOp = stod(convertImmediate(returnType, parameters[last]));
 		
 		if (condition == "false") computeFlags = CONDFALSE;
 		else if (condition == "oeq") computeFlags = OEQ;
@@ -1342,7 +1460,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											regOps,
 											computeFlags,
-											immOp);
+											immOp,
+											functionalUnit);
 		addNode(fcmp);
 		break;
 	}
@@ -1351,6 +1470,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		int labelLength = 0;
 		instructionType = "Other";		
 		maxCycles = CYCLECOUNTPHI;
+		functionalUnit = COMPARE;
 		returnType = parameters[0];
 		ret_reg->setSize(returnType);
 		std::string *val = new std::string[last];
@@ -1399,7 +1519,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											co,
 											phiVal,
 											phiReg,
-											phiLabel);
+											phiLabel,
+											functionalUnit);
 		addNode(phi);
 		DPRINTF(ComputeNode, "Registration Complete: (%s)\n", opCode);
 		// Further Testing will be needed for phi for computing
@@ -1415,6 +1536,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// selty is either i1 or {<N x i1>}
 		instructionType = "Other";
 		maxCycles = CYCLECOUNTSELECT;
+		functionalUnit = COMPARE;
 		returnType = parameters[2];
 		ret_reg->setSize(returnType);
 		Register* condition;
@@ -1468,7 +1590,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												condition,
 												regvalues,
 												immvalues,
-												imm);
+												imm,
+												functionalUnit);
 		addNode(select);
 		break;
 	}
@@ -1785,4 +1908,11 @@ BasicBlock::printNodes() {
 		}
 		
 	}
+}
+
+// Returns true if the first operand is an immediate value, false if its the second.
+bool BasicBlock::immPosition(std::vector<std::string> &parameters) {
+	int last = parameters.size()-1;
+	if(parameters[last-1][0] != '%') return true;
+	return false;
 }

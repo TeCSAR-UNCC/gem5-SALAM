@@ -167,6 +167,7 @@ class BasicBlock {
     int setSize(std::string dataType);
     void parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
     void printNodes();
+    bool immPosition(std::vector<std::string> &parameters);
 };
 
 #endif //__BASIC_BLOCK_HH__

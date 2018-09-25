@@ -28,6 +28,7 @@ class Terminator : public InstructionBase {
         // Br: [0] == iftrue, [1] == iffalse
         // Switch: [0] == default, [1] == case 1, [2] == case 2, etc...
         
+        
     public:
         Terminator (        const std::string& Line,
                             const std::string& OpCode,
@@ -58,7 +59,8 @@ class Terminator : public InstructionBase {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             Register* Condition,
-                            std::vector<std::string> Branches )  // Conditional Branches
+                            std::vector<std::string> Branches,
+                            int8_t FunctionalUnit )  // Conditional Branches
         : InstructionBase ( Line, 
                             OpCode, 
                             ReturnType, 
@@ -66,7 +68,8 @@ class Terminator : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm)                    
+                            Comm,
+                            FunctionalUnit)                    
         , _Condition(       Condition)
         , _Branches(        Branches) { 
                             _Terminator = true;
@@ -78,7 +81,7 @@ class Terminator : public InstructionBase {
                             Register* ReturnRegister,
                             uint64_t MaxCycle,
                             std::vector<Register*> Dependencies,
-                            CommInterface* Comm)
+                            CommInterface* Comm) // Return Instruction
         : InstructionBase ( Line, 
                             OpCode, 
                             ReturnType, 
@@ -158,7 +161,8 @@ class Br : public Terminator {
                             CommInterface* Comm,
                             Register* Condition,
                             std::vector<std::string> Branches,
-                            bool Unconditional)
+                            bool Unconditional,
+                            int8_t FunctionalUnit)
         : Terminator (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -168,7 +172,8 @@ class Br : public Terminator {
                             Dependencies, 
                             Comm, 
                             Condition,
-                            Branches)
+                            Branches,
+                            FunctionalUnit)
         , _Unconditional(   Unconditional) {
                             Details("Br"); }
         ~Br()             { Destruct("Br"); }
@@ -212,12 +217,12 @@ class Ret : public Terminator {
         virtual Ret* clone() const { return new Ret(*this); }
 };
 
-class Switch : public Terminator {
+class LLVMSwitch : public Terminator {
     protected:
     // returnType is switch statement Int Type
     std::vector<int> _CaseValues;
     public:
-        Switch (            const std::string& Line,
+        LLVMSwitch (            const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -227,7 +232,8 @@ class Switch : public Terminator {
                             CommInterface* Comm,
                             Register* Condition,
                             std::vector<std::string> Branches,
-                            std::vector<int> CaseValues)
+                            std::vector<int> CaseValues,
+                            int8_t FunctionalUnit)
         : Terminator (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -237,12 +243,19 @@ class Switch : public Terminator {
                             Dependencies, 
                             Comm,
                             Condition,
-                            Branches)
+                            Branches,
+                            FunctionalUnit)
         , _CaseValues(      CaseValues) { 
-                            Details("Switch"); }
-        ~Switch()         { Destruct("Switch"); }
+                            Details("Switch"); 
+                            for(int i = 0; i < _CaseValues.size(); i++) std::cout << _CaseValues.at(i) << "\n" ;
+                            
+                            
+                            
+                            
+                            }
+        ~LLVMSwitch()         { Destruct("Switch"); }
         void compute()      override;
-        virtual Switch* clone() const { return new Switch(*this); }
+        virtual LLVMSwitch* clone() const {  std::cout << "cloned\n"; return new LLVMSwitch(*this); }
 };
 
 class IndirectBr : public Terminator {
@@ -280,8 +293,9 @@ class Unreachable : public Terminator {
 class Binary : public InstructionBase {
     protected:
         std::vector<Register*> _Operands;
-        uint64_t _Result;
+        int64_t _Result;
         uint64_t _Flags;
+        bool _ImmFirst;
     public:
         // ---- Constructor
         Binary(             const std::string& Line,
@@ -293,7 +307,9 @@ class Binary : public InstructionBase {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,     
                             std::vector<Register*> Operands,
-                            uint64_t Flags)
+                            uint64_t Flags,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : InstructionBase ( Line, 
                             OpCode, 
                             ReturnType, 
@@ -301,9 +317,11 @@ class Binary : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm)
+                            Comm,
+                            FunctionalUnit)
         , _Operands(        Operands)
-        , _Flags(           Flags) { 
+        , _Flags(           Flags) 
+        , _ImmFirst(        ImmFirst) { 
                             Details("Binary"); }
         virtual ~Binary() { Destruct("Binary"); }
         virtual void compute() { }
@@ -325,7 +343,9 @@ class Add : public Binary, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -335,7 +355,9 @@ class Add : public Binary, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("Add"); }
         ~Add()            { Destruct("Add"); }
@@ -357,7 +379,9 @@ class Sub : public Binary, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -367,7 +391,9 @@ class Sub : public Binary, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("Sub"); }
         ~Sub()            { Destruct("Sub"); }
@@ -389,7 +415,9 @@ class Mul : public Binary, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -399,7 +427,9 @@ class Mul : public Binary, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("Mul"); }
         ~Mul()            { Destruct("Mul"); }
@@ -421,7 +451,9 @@ class UDiv : public Binary, public Integer, public Unsigned {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -431,7 +463,9 @@ class UDiv : public Binary, public Integer, public Unsigned {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) 
         , Unsigned (        ImmOp) { 
                             Details("UDiv"); }
@@ -454,7 +488,9 @@ class SDiv : public Binary, public Integer, public Signed {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -464,7 +500,9 @@ class SDiv : public Binary, public Integer, public Signed {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) 
         , Signed (          ImmOp) { 
                             Details("SDiv"); }
@@ -487,7 +525,9 @@ class URem : public Binary, public Integer, public Unsigned {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -497,7 +537,9 @@ class URem : public Binary, public Integer, public Unsigned {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) 
         , Unsigned (        ImmOp) { 
                             Details("URem"); }
@@ -520,7 +562,9 @@ class SRem : public Binary, public Integer, public Signed {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -530,7 +574,9 @@ class SRem : public Binary, public Integer, public Signed {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) 
         , Signed (          ImmOp) { 
                             Details("SRem"); }
@@ -555,7 +601,9 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            double ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -565,7 +613,9 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) {
                             Details("FAdd"); }
@@ -588,7 +638,9 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            double ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -598,7 +650,9 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { 
                             Details("FSub"); }
@@ -621,7 +675,9 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            double ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -631,7 +687,9 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { 
                             Details("FMul"); }
@@ -654,7 +712,9 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            double ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -664,7 +724,9 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { 
                             Details("FDiv"); }
@@ -687,7 +749,9 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            double ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Binary (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -697,7 +761,9 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { 
                             Details("FRem"); }
@@ -716,6 +782,7 @@ class Bitwise : public InstructionBase {
         std::vector<Register*> _Operands;
         uint64_t _Result;
         uint64_t _Flags;
+        bool _ImmFirst;
    public:
         // ---- Constructor
         Bitwise(            const std::string& Line,
@@ -727,7 +794,9 @@ class Bitwise : public InstructionBase {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,     
                             std::vector<Register*> Operands,
-                            uint64_t Flags)
+                            uint64_t Flags,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : InstructionBase ( Line, 
                             OpCode, 
                             ReturnType, 
@@ -735,9 +804,11 @@ class Bitwise : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm)
+                            Comm,
+                            FunctionalUnit)
         , _Operands(        Operands)
-        , _Flags(           Flags) { 
+        , _Flags(           Flags)
+        , _ImmFirst(        ImmFirst) { 
                             Details("Bitwise"); }
         virtual ~Bitwise(){ Destruct("Bitwise"); }
         virtual void compute() { }
@@ -759,7 +830,9 @@ class Shl : public Bitwise, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -769,7 +842,9 @@ class Shl : public Bitwise, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("Shl"); }
         ~Shl()            { Destruct("Shl"); }
@@ -791,7 +866,9 @@ class LShr : public Bitwise, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -801,7 +878,9 @@ class LShr : public Bitwise, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("LShr"); }
         ~LShr()           { Destruct("LShr"); }
@@ -823,7 +902,9 @@ class AShr : public Bitwise, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -833,7 +914,9 @@ class AShr : public Bitwise, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("AShr"); }
         ~AShr()           { Destruct("AShr"); }
@@ -855,7 +938,9 @@ class And : public Bitwise, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -865,7 +950,9 @@ class And : public Bitwise, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("And"); }
         ~And()            { Destruct("And"); }
@@ -887,7 +974,9 @@ class Or : public Bitwise, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -897,7 +986,9 @@ class Or : public Bitwise, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("Or"); }
         ~Or()             { Destruct("Or"); }
@@ -919,7 +1010,9 @@ class Xor : public Bitwise, public Integer {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            bool ImmFirst,
+                            int8_t FunctionalUnit)
         : Bitwise (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -929,7 +1022,9 @@ class Xor : public Bitwise, public Integer {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            ImmFirst,
+                            FunctionalUnit)
         , Integer (         ImmOp) { 
                             Details("Xor"); }
         ~Xor()            { Destruct("Xor"); }
@@ -959,7 +1054,8 @@ class Conversion : public InstructionBase {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,         
                             const std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : InstructionBase ( Line, 
                             OpCode, 
                             ReturnType, 
@@ -967,7 +1063,8 @@ class Conversion : public InstructionBase {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
+                            Comm,
+                            FunctionalUnit) 
         , _OriginalType(    OriginalType)
         , _COperand(        Operand) { 
                             Details("Conversion"); }
@@ -988,7 +1085,8 @@ class Trunc : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             const std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -998,7 +1096,8 @@ class Trunc : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("Trunc"); }
         ~Trunc()          { Destruct("Trunc"); }
         void compute()      override;  
@@ -1007,7 +1106,7 @@ class Trunc : public Conversion {
 
 class ZExt : public Conversion {
     public:
-        ZExt (             const std::string& Line,
+        ZExt (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -1016,7 +1115,8 @@ class ZExt : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1026,7 +1126,8 @@ class ZExt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("ZExt"); }
         ~ZExt()           { Destruct("ZExt"); }
         void compute()      override;
@@ -1035,7 +1136,7 @@ class ZExt : public Conversion {
 
 class SExt : public Conversion {
     public:
-        SExt (             const std::string& Line,
+        SExt (              const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -1044,7 +1145,8 @@ class SExt : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1054,7 +1156,8 @@ class SExt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("SExt"); }
         ~SExt()           { Destruct("SExt"); }
         void compute()      override;
@@ -1063,7 +1166,7 @@ class SExt : public Conversion {
 
 class FPToUI : public Conversion {
     public:
-        FPToUI (             const std::string& Line,
+        FPToUI (            const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -1072,7 +1175,8 @@ class FPToUI : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1082,7 +1186,8 @@ class FPToUI : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) {
+                            Operand,
+                            FunctionalUnit) {
                             Details("FPToUI"); }
         ~FPToUI()         { Destruct("FPToUI"); }
         void compute()      override;
@@ -1091,7 +1196,7 @@ class FPToUI : public Conversion {
 
 class FPToSI : public Conversion {
     public:
-        FPToSI (             const std::string& Line,
+        FPToSI (            const std::string& Line,
                             const std::string& OpCode,
                             const std::string& ReturnType,
                             const std::string& InstructionType,
@@ -1100,7 +1205,8 @@ class FPToSI : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1110,7 +1216,8 @@ class FPToSI : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("FPToSI"); }
         ~FPToSI()         { Destruct("FPToSI"); }
         void compute()      override;
@@ -1128,7 +1235,8 @@ class UIToFP : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1138,7 +1246,8 @@ class UIToFP : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("UIToFP"); }
         ~UIToFP()         { Destruct("UIToFP"); }
         void compute()      override;
@@ -1156,7 +1265,8 @@ class SIToFP : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1166,7 +1276,8 @@ class SIToFP : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("SIToFP"); }
         ~SIToFP()         { Destruct("SIToFP"); }
         void compute()      override;
@@ -1184,7 +1295,8 @@ class FPTrunc : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1194,7 +1306,8 @@ class FPTrunc : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("FPTrunc"); }
         ~FPTrunc()        { Destruct("FPTrunc"); }
         void compute()      override;
@@ -1212,7 +1325,8 @@ class FPExt : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1222,7 +1336,8 @@ class FPExt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("FPExt"); }
         ~FPExt()          { Destruct("FPExt"); }
         void compute()      override;
@@ -1240,7 +1355,8 @@ class PtrToInt : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1250,7 +1366,8 @@ class PtrToInt : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("PtrToInt"); }
         ~PtrToInt()       { Destruct("PtrToInt"); }
         void compute()      override;
@@ -1268,7 +1385,8 @@ class IntToPtr : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1278,7 +1396,8 @@ class IntToPtr : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("IntToPtr"); }
         ~IntToPtr()       { Destruct("IntToPtr"); }
         void compute()      override;
@@ -1296,7 +1415,8 @@ class BitCast : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1306,7 +1426,8 @@ class BitCast : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) { 
+                            Operand,
+                            FunctionalUnit) { 
                             Details("BitCast"); }
         ~BitCast()        { Destruct("BitCast"); }
         void compute()      override;
@@ -1324,7 +1445,8 @@ class AddrSpaceCast : public Conversion {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,
                             std::string& OriginalType,
-                            Register* Operand)
+                            Register* Operand,
+                            int8_t FunctionalUnit)
         : Conversion (      Line, 
                             OpCode, 
                             ReturnType, 
@@ -1334,7 +1456,8 @@ class AddrSpaceCast : public Conversion {
                             Dependencies, 
                             Comm,
                             OriginalType,
-                            Operand) {
+                            Operand,
+                            FunctionalUnit) {
                             Details("AddrSpaceCast"); }
         ~AddrSpaceCast()  { Destruct("AddrSpaceCast"); }
         void compute()      override;
@@ -1368,6 +1491,25 @@ class Memory : public InstructionBase {
                             MaxCycle, 
                             Dependencies, 
                             Comm) {
+                            Details("Memory"); }
+        Memory (            const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            uint8_t FunctionalUnit)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm,
+                            FunctionalUnit) {
                             Details("Memory"); }
         virtual ~Memory()   { Destruct("Memory"); }
         virtual Memory* clone() const { return new Memory(*this); }
@@ -1471,7 +1613,8 @@ class GetElementPtr : public Memory {
                             std::vector<std::string> Type,
                             std::vector<int64_t> ImmIdx,
                             Register* PtrVal,
-                            uint64_t Index)
+                            uint64_t Index,
+                            uint8_t FunctionalUnit)
         : Memory (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -1479,7 +1622,8 @@ class GetElementPtr : public Memory {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm)
+                            Comm,
+                            FunctionalUnit)
         , _Pty(             Pty)
         , _LLVMType(        LLVMType)
         , _Idx(             Idx)
@@ -1519,6 +1663,25 @@ class Other : public InstructionBase {
                             Dependencies, 
                             Comm) { 
                             Details("Other"); }
+        Other (             const std::string& Line,
+                            const std::string& OpCode,
+                            const std::string& ReturnType,
+                            const std::string& InstructionType,
+                            Register* ReturnRegister,
+                            uint64_t MaxCycle,
+                            std::vector<Register*> Dependencies,
+                            CommInterface* Comm,
+                            uint8_t FunctionalUnit)
+        : InstructionBase ( Line, 
+                            OpCode, 
+                            ReturnType, 
+                            InstructionType, 
+                            ReturnRegister, 
+                            MaxCycle, 
+                            Dependencies, 
+                            Comm,
+                            FunctionalUnit) { 
+                            Details("Other"); }
         virtual ~Other()  { Destruct("Other"); }
         virtual Other* clone() const { return new Other(*this); }
         virtual void compute () { }
@@ -1541,7 +1704,8 @@ class Phi : public Other {
                             CommInterface* Comm,
                             std::vector<std::string> PhiVal,
                             std::vector<Register*> PhiReg,
-                            std::vector<std::string> PhiLabel)
+                            std::vector<std::string> PhiLabel,
+                            int8_t FunctionalUnit)
         : Other (           Line, 
                             OpCode, 
                             ReturnType, 
@@ -1549,7 +1713,8 @@ class Phi : public Other {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm) 
+                            Comm,
+                            FunctionalUnit) 
         , _PhiVal(          PhiVal)
         , _PhiReg(          PhiReg)
         , _PhiLabel(        PhiLabel) { 
@@ -1580,7 +1745,8 @@ class Select : public Other {
                             Register* Condition,
                             std::vector<Register*> RegValues,
 		                    std::vector<int64_t> ImmValues,
-                            std::vector<bool> Imm )
+                            std::vector<bool> Imm ,
+                            int8_t FunctionalUnit)
         : Other (           Line, 
                             OpCode, 
                             ReturnType, 
@@ -1588,7 +1754,8 @@ class Select : public Other {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm)
+                            Comm,
+                            FunctionalUnit)
         , _Condition (      Condition)
         , _RegValues (      RegValues) 
         , _ImmValues (      ImmValues)
@@ -1616,7 +1783,8 @@ class Compare : public Other {
                             std::vector<Register*> Dependencies,
                             CommInterface* Comm,            
                             std::vector<Register*> Operands,
-                            uint64_t Flags )
+                            uint64_t Flags ,
+                            int8_t FunctionalUnit)
         : Other (           Line, 
                             OpCode, 
                             ReturnType, 
@@ -1624,7 +1792,8 @@ class Compare : public Other {
                             ReturnRegister, 
                             MaxCycle, 
                             Dependencies, 
-                            Comm)
+                            Comm,
+                            FunctionalUnit)
         , _Operands (       Operands)
         , _Flags (          Flags) { 
                             Details("Compare"); }
@@ -1645,7 +1814,8 @@ class ICmp : public Compare, public Integer, public Unsigned, public Signed {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            int64_t ImmOp)
+                            int64_t ImmOp,
+                            int8_t FunctionalUnit)
         : Compare (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -1655,7 +1825,8 @@ class ICmp : public Compare, public Integer, public Unsigned, public Signed {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            FunctionalUnit)
         , Integer (         ImmOp) 
         , Unsigned(         ImmOp)
         , Signed(           ImmOp) { 
@@ -1677,7 +1848,8 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
                             CommInterface* Comm,
                             std::vector<Register*> RegOps,
                             uint64_t Flags,
-                            double ImmOp)
+                            double ImmOp,
+                            int8_t FunctionalUnit)
         : Compare (         Line, 
                             OpCode, 
                             ReturnType, 
@@ -1687,7 +1859,8 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
                             Dependencies, 
                             Comm,
                             RegOps,
-                            Flags)
+                            Flags,
+                            FunctionalUnit)
         , FloatingPointSP ( ImmOp) 
         , FloatingPointDP ( ImmOp) { 
                             Details("FCmp"); }

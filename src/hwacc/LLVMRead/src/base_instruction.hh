@@ -108,7 +108,8 @@ class InstructionBase {
         bool _Terminator = false;
         std::string _Dest;
         uint64_t _FinalResult;
-        std::vector<uint64_t> _Ops; 
+        std::vector<int64_t> _Ops; 
+        int8_t _FunctionalUnit;
         // ---- Constructor
         InstructionBase( const std::string& LLVMLine,
                          const std::string& OpCode,
@@ -132,7 +133,33 @@ class InstructionBase {
                           _ActiveParents = 0; 
                           Details("Instruction Base"); 
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
+                          _FunctionalUnit = -1;
                           }
+        InstructionBase( const std::string& LLVMLine,
+                         const std::string& OpCode,
+                         const std::string& ReturnType,
+                         const std::string& InstructionType,
+                         Register* ReturnRegister,
+                         uint64_t MaxCycle,
+                         std::vector<Register*> Dependencies,
+                         CommInterface* Comm,
+                         int8_t FunctionalUnit):
+                         _LLVMLine(LLVMLine),
+                         _OpCode(OpCode), 
+                         _ReturnType(ReturnType),
+                         _InstructionType(InstructionType),
+                         _ReturnRegister(ReturnRegister),
+                         _MaxCycle(MaxCycle),
+                         _Dependencies(Dependencies),
+                         _Comm(Comm),
+                         _FunctionalUnit(FunctionalUnit) 
+                        { _Req = NULL;
+                          _CurrCycle = 0; 
+                          _Usage = 0;
+                          _ActiveParents = 0; 
+                          Details("Instruction Base"); 
+                          while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
+                          }                  
         // ---- Get Functions
         std::string getLLVMLine()      { return _LLVMLine; }
         std::string getOpCode()        { return _OpCode; }

@@ -7,9 +7,21 @@ Add::compute() {
 	// <result> = add nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operand + _Ops.at(0);
-	else _Result = _Ops.at(0) + _Ops.at(1);
+	DPRINTF(LLVMOp, "Performing %s Operation (%s)\n", _OpCode, _ReturnRegister->getName());
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand + _Ops.at(0);
+		else _Result = _Ops.at(0) + _Operand;
+	} else _Result = _Ops.at(0) + _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %i \n", _OpCode, _Result);
@@ -23,7 +35,19 @@ Sub::compute() {
 	// <result> = sub nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = sub nuw nsw <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Operand - _Ops.at(0);
+		if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand - _Ops.at(0);
+		else _Result = _Ops.at(0) - _Operand;
+	}
 	else _Result = _Ops.at(0) - _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
@@ -38,7 +62,19 @@ Mul::compute() {
 	// <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
 		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) * _Operand;
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand * _Ops.at(0);
+		else _Result = _Ops.at(0) * _Operand;
+	}
 	else _Result = _Ops.at(0) * _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
@@ -49,7 +85,19 @@ void
 UDiv::compute() {
 	// Unsigned Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _UOperand / _Ops.at(0);
+		if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (uint32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (uint32_t) _Ops.at(0);
+			_Ops.at(1) = (uint32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _UOperand / _Ops.at(0);
+		else _Result = _Ops.at(0) / _UOperand;
+	}
 	else _Result = _Ops.at(0) / _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
@@ -60,7 +108,20 @@ void
 SDiv::compute() {
 	// Signed Division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) / _SOperand;
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	DPRINTF(LLVMOp, "Op1: %d, Op2: %d\n", _Ops.at(0), _Ops.at(1));
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand / _Ops.at(0);
+		else _Result = _Ops.at(0) / _Operand;
+	}
 	else _Result = _Ops.at(0) / _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
@@ -70,8 +131,20 @@ SDiv::compute() {
 void 
 URem::compute() {
 	//Unsigned modulo division
-		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) % _UOperand;
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (uint32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (uint32_t) _Ops.at(0);
+			_Ops.at(1) = (uint32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand % _Ops.at(0);
+		else _Result = _Ops.at(0) % _Operand;
+	}
 	else _Result = _Ops.at(0) % _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
@@ -82,7 +155,19 @@ void
 SRem::compute() {
 	//Signed modulo division
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) % _SOperand;
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand % _Ops.at(0);
+		else _Result = _Ops.at(0) % _Operand;
+	}
 	else _Result = _Ops.at(0) % _Ops.at(1);
 	// Store result in return register
 	setResult(&_Result);
@@ -103,8 +188,11 @@ FAdd::compute() {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
-			result = op1 + _OperandDP;
-			DPRINTF(LLVMOp, "Imm FP: %f\n", _OperandDP);
+			if(_ImmFirst) result = _OperandDP + op1;
+			else result = op1 + _OperandDP;
+			setResult(&result);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -112,12 +200,18 @@ FAdd::compute() {
 			op2 = *(double *)&OP2;
 			result = op1 + op2;
 			setResult(&result);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
-			result = op1 + _OperandDP;
+			if(_ImmFirst) result = _OperandSP + op1;
+			else result = op1 + _OperandSP;
+			fresult = (float) result;
+			setResult(&fresult);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -126,10 +220,9 @@ FAdd::compute() {
 			result = op1 + op2;
 			fresult = (float) result;
 			setResult(&fresult);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, fresult);
 		}
 	}
-	DPRINTF(LLVMOp, "%f + %f = %f \n", op1, op2, result);
-	//DPRINTF(LLVMOp, "%u + %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -146,7 +239,11 @@ FSub::compute() {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
-			result = _OperandDP - op1;
+			if(_ImmFirst) result = _OperandDP - op1;
+			else result = op1 - _OperandDP;
+			setResult(&result);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -154,12 +251,18 @@ FSub::compute() {
 			op2 = *(double *)&OP2;
 			result = op1 - op2;
 			setResult(&result);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
-			result = _OperandDP - op1;
+			if(_ImmFirst) result = _OperandSP - op1;
+			else result = op1 - _OperandSP;
+			fresult = (float) result;
+			setResult(&fresult);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -168,9 +271,9 @@ FSub::compute() {
 			result = op1 - op2;
 			fresult = (float) result;
 			setResult(&fresult);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, fresult);
 		}
 	}
-	//DPRINTF(LLVMOp, "%f - %f = %f: Stored in Register %s. \n", op1, op2, result, _ReturnRegister->getName());
 }
 
 void 
@@ -187,7 +290,11 @@ FMul::compute() {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
-			result = op1 * _OperandDP;
+			if(_ImmFirst) result = _OperandDP * op1;
+			else result = op1 * _OperandDP;
+			setResult(&result);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -195,12 +302,18 @@ FMul::compute() {
 			op2 = *(double *)&OP2;
 			result = op1 * op2;
 			setResult(&result);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
-			result = op1 * _OperandDP;
+			if(_ImmFirst) result = _OperandSP * op1;
+			else result = op1 * _OperandSP;
+			fresult = (float) result;
+			setResult(&fresult);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -209,9 +322,9 @@ FMul::compute() {
 			result = op1 * op2;
 			fresult = (float) result;
 			setResult(&fresult);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, fresult);
 		}
 	}
-	//DPRINTF(LLVMOp, "%u * %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister, _ReturnRegister->getName());
 }
 
 void 
@@ -228,7 +341,11 @@ FDiv::compute() {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(double *)&OP1;
-			result = _OperandDP / op1;
+			if(_ImmFirst) result = _OperandDP / op1;
+			else result = op1 / _OperandDP;
+			setResult(&result);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandDP, op1, result);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -236,13 +353,18 @@ FDiv::compute() {
 			op2 = *(double *)&OP2;
 			result = op1 / op2;
 			setResult(&result);
-			DPRINTF(LLVMOp, "Double: %f / %f = %f\n", op1, op2, result);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, result);
 		}
 	} else {
 		if (_Operands.size() == 1) {
 			uint64_t OP1 = _Ops.at(0);
 			op1 = *(float *)&OP1;
-			result = _OperandDP / op1;
+			if(_ImmFirst) result = _OperandSP / op1;
+			else result = op1 / _OperandSP;
+			fresult = (float) result;
+			setResult(&fresult);
+			if(_ImmFirst) DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
+			else DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", _OperandSP, op1, fresult);
 		} else {
 		    uint64_t OP1 = _Ops.at(0);
 		    uint64_t OP2 = _Ops.at(1);
@@ -251,10 +373,9 @@ FDiv::compute() {
 			result =  op1 / op2;
 			fresult = (float) result;
 			setResult(&fresult);
-			DPRINTF(LLVMOp, "Float: %f / %f = %f\n", op1, op2, result);
+			DPRINTF(LLVMOp, "Op1: %f, Op2: %f, Result: %f\n", op1, op2, fresult);
 		}
 	}
-	//DPRINTF(LLVMOp, "%u / %u = %u: Stored in Register %s. \n", op1, op2, _ReturnRegister->getValue(), _ReturnRegister->getName());
 }
 
 void 
@@ -267,19 +388,48 @@ Shl::compute() {
 	// <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
 	// <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
-		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result =  _Ops.at(0) << _Operand;
-	else _Result = _Ops.at(0) << _Ops.at(1);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand << _Ops.at(0);
+		else _Result = _Ops.at(0) << _Operand;
+		DPRINTF(LLVMOp, "%d << %d\n", _Ops.at(0), _Operand);
+	} else {
+		_Result = _Ops.at(0) << _Ops.at(1);
+		DPRINTF(LLVMOp, "%d << %d\n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
+	
 }
 
 void 
 LShr::compute() {
-		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result =  _Ops.at(0) >> _Operand;
-	else _Result = _Ops.at(0) >> _Ops.at(1);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand >> _Ops.at(0);
+		else _Result = _Ops.at(0) >> _Operand;
+		DPRINTF(LLVMOp, "%d >> %d\n", _Ops.at(0), _Operand);
+	} else {
+		_Result = _Ops.at(0) >> _Ops.at(1);
+		DPRINTF(LLVMOp, "%d >> %d\n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
@@ -291,8 +441,22 @@ AShr::compute() {
 	// <result> = ashr <ty> <op1>, <op2>; yields ty : result
 	// <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) >> _Operand;
-	else _Result = _Ops.at(0) >> _Ops.at(1);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand >> _Ops.at(0);
+		else _Result = _Ops.at(0) >> _Operand;
+		DPRINTF(LLVMOp, "%d >> %d\n", _Ops.at(0), _Operand);
+	} else {
+		_Result = _Ops.at(0) >> _Ops.at(1);
+		DPRINTF(LLVMOp, "%d >> %d\n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
@@ -302,9 +466,23 @@ void
 And::compute() {
 	// And Operation
 	// <result> = and <ty> <op1>, <op2>; yields ty : result
-		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) & _Operand;
-	else _Result = _Ops.at(0) & _Ops.at(1);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand & _Ops.at(0);
+		else _Result = _Ops.at(0) & _Operand;
+		DPRINTF(LLVMOp, "%d & %d\n", _Ops.at(0), _Operand);
+	} else {
+		_Result = _Ops.at(0) & _Ops.at(1);
+		DPRINTF(LLVMOp, "%d & %d\n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
@@ -314,9 +492,23 @@ void
 Or::compute() {
 	// Or Operation
 	// <result> = or <ty> <op1>, <op2>; yields ty : result
-		DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) | _Operand;
-	else _Result = _Ops.at(0) | _Ops.at(1);
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand | _Ops.at(0);
+		else _Result = _Ops.at(0) | _Operand;
+		DPRINTF(LLVMOp, "%d | %d\n", _Ops.at(0), _Operand);
+	} else {
+		_Result = _Ops.at(0) | _Ops.at(1);
+		DPRINTF(LLVMOp, "%d | %d\n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
@@ -327,8 +519,22 @@ Xor::compute() {
 	// Xor Operation
 	// <result> = xor <ty> <op1>, <op2>; yields ty : result
 	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	if (_Operands.size() == 1) _Result = _Ops.at(0) ^ _Operand;
-	else _Result = _Ops.at(0) ^ _Ops.at(1);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
+	if (_Operands.size() == 1) {
+		if(_ImmFirst) _Result = _Operand ^ _Ops.at(0);
+		else _Result = _Ops.at(0) ^ _Operand;
+		DPRINTF(LLVMOp, "%d ^ %d\n", _Ops.at(0), _Operand);
+	} else {
+		_Result = _Ops.at(0) ^ _Ops.at(1);
+		DPRINTF(LLVMOp, "%d ^ %d\n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %u \n", _OpCode, _Result);
@@ -360,7 +566,7 @@ Store::compute() {
 	} else {
 	    data = _Ops.at(1);
         _Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), _Value->getSize());		
-		DPRINTF(LLVMOp,"Store Operation: Addr = %u Data = %u, Size = %u\n",dst, data, _Value->getSize());
+		DPRINTF(LLVMOp,"Store Operation:(%s) Addr = %x Data = %x, Size = %u\n",_Pointer->getName(), dst, data, _Value->getSize());
 	}
 	_Comm->enqueueWrite(_Req);
 }
@@ -388,8 +594,22 @@ Br::compute() {
 }
 
 void
-Switch::compute() {
-	
+LLVMSwitch::compute() {
+	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	uint64_t mainValue = _Ops.at(0);
+	bool found = false;
+	DPRINTF(LLVMOp, "Register Name: %s\n", _Condition->getName());
+	for(int i = 1; i < _Branches.size(); i++) {
+		DPRINTF(LLVMOp, "Comparing main value %d to case value %d: \n", mainValue, _CaseValues.at(i));
+		if(mainValue == _CaseValues.at(i)){
+			_Dest = _Branches.at(i);
+			DPRINTF(LLVMOp, "Found!\n");
+			found = true;
+			return;
+		}
+	}
+	if(!found) _Dest = _Branches.at(0);
+	DPRINTF(LLVMOp, "Switch selected, destination is %s!\n",_Dest);
 }
 
 
@@ -493,6 +713,7 @@ GetElementPtr::compute() {
 			if (_Pty[0] == 'i') {
 				size[i] = (stoi(_Pty.substr(1))) / 8;
 			} else if (_Pty.find("double") == 0) {
+				DPRINTF(LLVMOp, "Double Pointer\n");
 				size[i] = 8;
 			} else if (_Pty.find("float") == 0) {
 				size[i] = 4;
@@ -538,7 +759,8 @@ ZExt::compute() {
 		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
-	setResult(&_Result); 	
+	setResult(&_Result); 
+	DPRINTF(LLVMOp, "ZExt:(%s) %d from %d\n", _OriginalType, _Result, _Ops.at(0));	
 }
 
 void
@@ -551,7 +773,8 @@ SExt::compute() {
 		if(_Ops.at(0)) _Result = 1;
 		else _Result = 0;
 	}
-	setResult(&_Result); 	
+	setResult(&_Result);
+	DPRINTF(LLVMOp, "SExt:(%s) %d from %d\n", _OriginalType, _Result, _Ops.at(0)); 	
 }
 
 void 
@@ -655,6 +878,15 @@ FCmp::compute() {
 void
 ICmp::compute() {
 	DPRINTF(LLVMOp, "Performing %s Operation (%x)\n", _OpCode, _Flags);
+	if(_ReturnType == "i32") {
+		if (_Operands.size() == 1) {
+			//if(0x80000000 & _Ops.at(0)) { }
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+		} else {
+			_Ops.at(0) = (int32_t) _Ops.at(0);
+			_Ops.at(1) = (int32_t) _Ops.at(1);
+		}
+	}
 	if (_Ops.size() == 1) {
 		if(_Flags & EQ) _Result = (_Ops.at(0) == _Operand);
 		else if(_Flags & NE) _Result = (_Ops.at(0) != _Operand);
@@ -721,26 +953,20 @@ void
 Select::compute() {
 	// Currently only supports integer types but the framework for doubles and floats
 	// exists within compute_node.cc and instruction.hh already
-	DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+	DPRINTF(LLVMOp, "Performing %s Operation (%s)\n", _OpCode, _ReturnRegister->getName());
+	
 	if(_ReturnType[0] == 'i') {
-		if(_Imm.at(0)) {
-			if(_Imm.at(1)) {
-				if(_Ops.at(0)) _Result = (_ImmValues.at(0));
-				else _Result = (_ImmValues.at(1));
-			} else {
-				if(_Ops.at(0)) _Result = (_ImmValues.at(0));
-				else _Result = (_Ops.at(1));
-			}
-		} else { 		
-			if(_Imm.at(1)) {
-				if(_Ops.at(0)) _Result = (_Ops.at(1));
-				else _Result = (_ImmValues.at(1));
-			} else {
-				if(_Ops.at(0)) _Result = (_Ops.at(1));
-				else _Result = (_Ops.at(2));
-			}
+		if(_Ops.at(0)) {
+			DPRINTF(LLVMOp, "True Condition!\n");
+			if(_Imm.at(0))  _Result = _ImmValues.at(0);
+			else _Result = _Ops.at(1);
+		} else {
+			DPRINTF(LLVMOp, "False Condition!\n"); 		
+			if(_Imm.at(1)) _Result = _ImmValues.at(1);
+			else if(_Imm.at(0)) _Result = _Ops.at(1);
+			else _Result = _Ops.at(2);
 		}
 	}
-	DPRINTF(LLVMOp, "Selected Value: %u\n", _Result);	
+	DPRINTF(LLVMOp, "Selected Value: %i\n", _Result);	
 	setResult(&_Result);		
 }

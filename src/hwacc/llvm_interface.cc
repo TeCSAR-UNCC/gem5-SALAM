@@ -6,7 +6,16 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
-    scheduling_threshold(p->sched_threshold) {
+    scheduling_threshold(p->sched_threshold),
+    counter_units(p->FU_counter),
+    int_adder_units(p->FU_int_adder),
+    int_multiply_units(p->FU_int_multiplier),
+    int_shifter_units(p->FU_int_shifter),
+    int_bit_units(p->FU_int_bit),
+    fp_sp_adder(p->FU_fp_sp_adder),
+    fp_dp_adder(p->FU_fp_dp_adder),
+    fp_sp_multiply(p->FU_fp_sp_multiplier),
+    fp_dp_multiply(p->FU_fp_dp_multiplier) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -46,12 +55,13 @@ LLVMInterface::tick() {
             "   Cycle", cycle,
             "********************************************************************************");
     cycle++;
-
+    clearFU();
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
 
     for(auto i = 0; i < computeQueue.size();) {
+        updateFU(reservation.at(i)->_FunctionalUnit);
         DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
         if(computeQueue.at(i)->commit()) {
             auto it = computeQueue.erase(computeQueue.begin() + i);
@@ -74,10 +84,10 @@ LLVMInterface::tick() {
     }
 
     for (auto i = 0; i < reservation.size();) {
-        if (reservation.at(i)->_ReturnRegister == NULL)
-            DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
-        else
-            DPRINTF(LLVMOp, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+        // if (reservation.at(i)->_ReturnRegister == NULL)
+        //      DPRINTF(LLVMOp, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+        //  else
+        //      DPRINTF(LLVMOp, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
         if (reservation.at(i)->_ActiveParents == 0) {
             if(!(reservation.at(i)->_Terminator)) { 
                     if(reservation.at(i)->_OpCode == "load") {
@@ -94,10 +104,11 @@ LLVMInterface::tick() {
                         reservation.at(i)->compute();
                         reservation.at(i)->commit();
                     }
+                    updateFU(reservation.at(i)->_FunctionalUnit);
                     scheduled = true;
                     auto it = reservation.erase(reservation.begin()+i);
                     i = std::distance(reservation.begin(), it);
-            } else if ((reservation.at(i)->_OpCode == "br")) {
+            } else if ((reservation.at(i)->_OpCode != "ret")) {
                 if (reservation.size() < scheduling_threshold) {
                     prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
                     reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
@@ -107,11 +118,12 @@ LLVMInterface::tick() {
                     //currBB->prevBB(prevBB->getName());
                     scheduleBB(currBB);
                 } else i++;
-            }
+            } 
         } else {
             if (reservation.at(i)->_OpCode == "ret"){
                 if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
                     running = false;
+                    statistics();
                     comm->finish();
                 }
             }
@@ -161,7 +173,6 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
             }
         }
         std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
-
         if (depList.size() > 0) {
             //if(!((depList.size() == 1) && (depList.at(0) == NULL))) { // Special case for GEP with global and Imm only values
             for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
@@ -180,6 +191,13 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
         }
     }
     DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
+    DPRINTF(RuntimeQueues, "Active Scheduling Window\n");
+    for (auto i = 0; i < reservation.size(); i++) {
+        if (reservation.at(i)->_ReturnRegister == NULL)
+            DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
+        else
+            DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+    }
 }
 
 InstructionBase *
@@ -468,27 +486,95 @@ LLVMInterface::statistics() {
     "\n*******************************************************************************\n");
 
     double divisor = cycle * (clock_period / 1000);
-
-    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d  %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
+    */
+    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
     "\n*******************************************************************************",
     "\n   Runtime (Cycles): ", cycle,
     "\n   Runtime (Seconds):", (cycle*10*(1e-12)),
     "\n   Stalls  (Cycles): ", stalls,
     "\n   Executed Nodes: ", execnodes,
+    "\n   Counter FU's: ", _MaxFU.counter_units,
+    "\n   Integer Add/Sub FU's: ", _MaxFU.int_adder_units,
+    "\n   Integer Mul/Div FU's: ", _MaxFU.int_multiply_units,
+    "\n   Integer Shifter FU's: ", _MaxFU.int_shifter_units,
+    "\n   Integer Bitwise FU's: ", _MaxFU.int_bit_units,
+    "\n   Floating Point Float Add/Sub: ", _MaxFU.fp_sp_adder,
+    "\n   Floating Point Double Add/Sub: ", _MaxFU.fp_dp_adder,
+    "\n   Floating Point Float Mul/Div: ", _MaxFU.fp_sp_multiply,
+    "\n   Floating Point Double Mul/Div: ", _MaxFU.fp_dp_multiply,
+    "\n   0 Cycle Compare FU's: ", _MaxFU.compare,
+    "\n   GEP Instruction FU's: ", _MaxFU.gep,
+    "\n   Type Conversion FU's: ", _MaxFU.conversion,
+    "\n   Number of Registers: ", regList->size(),
+    "\n*******************************************************************************\n");
+    
+/*
+    %s %f %s 
+    %s %f %s 
+    %s %f %s 
+    %s %f %s 
+    %s %f %s 
+    %s %f %s %f %s",
     "\n   Average Power: ", (pwrUtil->getLeakage()+ pwrUtil->getDynEnergy()/divisor+pwrUtil->getRegLeak()+pwrUtil->getRegDyn()/divisor), "mW",
     "\n   FU Leakage Power: ", pwrUtil->getLeakage(), "mW",
     "\n   FU Dynamic Power: ", pwrUtil->getDynEnergy()/divisor, "mW",
     "\n   Register Leakage Power: ", pwrUtil->getRegLeak(), "mW",
     "\n   Register Dynamic Power: ", pwrUtil->getRegDyn()/divisor, "mW",
     "\n   FU Area = ",pwrUtil->getArea()," um^2, (", pwrUtil->getArea()/1000000, " mm^2)",
-    "\n   Number of Double Precision FP Multipliers: ", pwrUtil->fpMaxMul(),
-    "\n   Number of Double Precision FP Adders: ", pwrUtil->fpMaxAdd(),
-    "\n   Number of Bit-Wise Operator: ", pwrUtil->maxBit(),
-    "\n   Number of Shifters: ", pwrUtil->maxShift(),
-    "\n   Number of Integer Adders: ", pwrUtil->intMaxAdd(),
-    "\n   Number of Integer Multipliers: ", pwrUtil->intMaxMul(),
-    "\n   Number of Registers: ", regList->size(),
-    "\n*******************************************************************************\n");
-    */
+*/
+
 }
 
+
+
+void
+LLVMInterface::clearFU() {
+    maxFU(_FunctionalUnits);
+    _FunctionalUnits.counter_units = 0;
+    _FunctionalUnits.int_adder_units = 0;
+    _FunctionalUnits.int_multiply_units = 0;
+    _FunctionalUnits.int_shifter_units = 0;
+    _FunctionalUnits.int_bit_units = 0;
+    _FunctionalUnits.fp_sp_adder = 0;
+    _FunctionalUnits.fp_dp_adder = 0;
+    _FunctionalUnits.fp_sp_multiply = 0;
+    _FunctionalUnits.fp_dp_multiply = 0;
+    _FunctionalUnits.compare = 0;
+    _FunctionalUnits.gep = 0;
+    _FunctionalUnits.conversion = 0;
+}
+
+void
+LLVMInterface::updateFU(int8_t FU) {
+    switch(FU) {
+        case COUNTER: _FunctionalUnits.counter_units++; break;
+        case INTADDER: _FunctionalUnits.int_adder_units++; break;
+        case INTMULTI: _FunctionalUnits.int_multiply_units++; break;
+        case INTSHIFTER:  _FunctionalUnits.int_shifter_units++; break;
+        case INTBITWISE: _FunctionalUnits.int_bit_units++; break;
+        case FPSPADDER: _FunctionalUnits.fp_sp_adder++; break;
+        case FPDPADDER: _FunctionalUnits.fp_dp_adder++; break;
+        case FPSPMULTI: _FunctionalUnits.fp_sp_multiply++; break;
+        case FPDPMULTI: _FunctionalUnits.fp_dp_multiply++; break;
+        case COMPARE: _FunctionalUnits.compare++; break;
+        case GETELEMENTPTR: _FunctionalUnits.gep++; break;
+        case CONVERSION: _FunctionalUnits.conversion++; break;
+        default: break;
+    }
+}
+
+void
+LLVMInterface::maxFU(FunctionalUnits FU) {
+    if(FU.counter_units > _MaxFU.counter_units) _MaxFU.counter_units = FU.counter_units;
+    if(FU.int_adder_units > _MaxFU.int_adder_units) _MaxFU.int_adder_units = FU.int_adder_units;
+    if(FU.int_multiply_units > _MaxFU.int_multiply_units) _MaxFU.int_multiply_units = FU.int_multiply_units;
+    if(FU.int_shifter_units > _MaxFU.int_shifter_units) _MaxFU.int_shifter_units = FU.int_shifter_units;
+    if(FU.int_bit_units > _MaxFU.int_bit_units) _MaxFU.int_bit_units = FU.int_bit_units;
+    if(FU.fp_sp_adder > _MaxFU.fp_sp_adder) _MaxFU.fp_sp_adder = FU.fp_sp_adder;
+    if(FU.fp_dp_adder > _MaxFU.fp_dp_adder) _MaxFU.fp_dp_adder = FU.fp_dp_adder;
+    if(FU.fp_sp_multiply > _MaxFU.fp_sp_multiply) _MaxFU.fp_sp_multiply = FU.fp_sp_multiply;
+    if(FU.fp_dp_multiply > _MaxFU.fp_dp_multiply) _MaxFU.fp_dp_multiply = FU.fp_dp_multiply;
+    if(FU.compare > _MaxFU.compare) _MaxFU.compare = FU.compare;
+    if(FU.gep > _MaxFU.gep) _MaxFU.gep = FU.gep;
+    if(FU.conversion > _MaxFU.conversion) _MaxFU.conversion = FU.conversion;
+}

@@ -18,14 +18,18 @@
 
 // Keyword Definition
 // Hardware Units
-#define    INTADDER 0
-#define    INTMULTI 1
-#define    BITWISE 2
-#define    SHIFTER 3
-#define    FPSPADDER 4
-#define    FPSPMULTI 5
+#define    COUNTER  0
+#define    INTADDER 1
+#define    INTMULTI 2
+#define    INTSHIFTER 3
+#define    INTBITWISE 4
+#define    FPSPADDER 5
 #define    FPDPADDER 6
-#define    FPDPMULTI 7
+#define    FPSPMULTI 7
+#define    FPDPMULTI 8
+#define    COMPARE   9
+#define    GETELEMENTPTR 10
+#define    CONVERSION  11
 
 #define ADDUNIT 0
 #define MULUNIT 1
@@ -48,6 +52,8 @@
 
 
 //Cycle Counts
+#define CYCLECOUNTER                0
+
 #define CYCLECOUNTRET				1
 #define CYCLECOUNTBR				1
 #define CYCLECOUNTSWITCH			1
@@ -109,7 +115,7 @@
 #define CYCLECOUNTICMP				1
 #define CYCLECOUNTFCMP				1
 #define CYCLECOUNTPHI				0
-#define CYCLECOUNTSELECT			1
+#define CYCLECOUNTSELECT			0
 #define CYCLECOUNTCALL				1
 #define CYCLECOUNTVAARG				1
 #define CYCLECOUNTLANDINGPAD		1
