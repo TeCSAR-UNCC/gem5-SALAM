@@ -24,14 +24,13 @@ def makeHWAcc(options, system):
     system.acc.spm_side = system.iobus.slave
     system.acc.dram_ranges = [AddrRange(0x80000000, '4GB')]
     system.acc.llvm_interface = LLVMInterface()
+    #system.acc.llvm_interface.FU_fp_dp_adder = 10
+    #system.acc.llvm_interface.FU_fp_sp_adder = 10
+    #system.acc.llvm_interface.FU_fp_dp_multiplier = 10
+    #system.acc.llvm_interface.FU_fp_dp_multiplier = 10
+    #system.acc.llvm_interface.FU_counter = 2
     system.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/fft/bench/fft.ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/nw/bench/nw.ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/spmv/bench/spmv.ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/gemm/bench/gemm.ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/stencil2d/bench/stencil.ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/stencil3d/bench/stencil.ll"
-#    system.acc.llvm_interface.in_file = options.accpath + "/acc/bench/acc.ll"
+
     system.acc.int_num = 68
     system.acc.clock_period = 10
 

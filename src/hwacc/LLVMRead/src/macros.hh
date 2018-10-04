@@ -52,7 +52,7 @@
 
 
 //Cycle Counts
-#define CYCLECOUNTER                0
+#define CYCLECOUNTER                1
 
 #define CYCLECOUNTRET				1
 #define CYCLECOUNTBR				1
@@ -114,8 +114,8 @@
 
 #define CYCLECOUNTICMP				1
 #define CYCLECOUNTFCMP				1
-#define CYCLECOUNTPHI				0
-#define CYCLECOUNTSELECT			0
+#define CYCLECOUNTPHI				1
+#define CYCLECOUNTSELECT			1
 #define CYCLECOUNTCALL				1
 #define CYCLECOUNTVAARG				1
 #define CYCLECOUNTLANDINGPAD		1

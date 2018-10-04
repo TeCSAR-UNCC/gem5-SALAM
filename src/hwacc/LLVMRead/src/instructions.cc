@@ -21,7 +21,10 @@ Add::compute() {
 	if (_Operands.size() == 1) {
 		if(_ImmFirst) _Result = _Operand + _Ops.at(0);
 		else _Result = _Ops.at(0) + _Operand;
-	} else _Result = _Ops.at(0) + _Ops.at(1);
+	} else {
+		_Result = _Ops.at(0) + _Ops.at(1);
+		DPRINTF(LLVMOp, "%i + %i \n", _Ops.at(0), _Ops.at(1));
+	}
 	// Store result in return register
 	setResult(&_Result);
 	DPRINTF(LLVMOp, "%s Complete. Result = %i \n", _OpCode, _Result);
@@ -546,7 +549,7 @@ Load::compute() {
     //uint64_t src = _Pointer->getValue();
 	uint64_t src = _Ops.at(0);
 	_ReturnRegister->setSize(_ReturnType);
-	DPRINTF(LLVMOp, "Load Check: Ops.at(0) = %u, Pointer = %u\n", _Ops.at(0), _Pointer->getValue());
+	DPRINTF(LLVMOp, "Load From: %x\n", _Ops.at(0));
 	_Req = new MemoryRequest((Addr)src, _ReturnRegister->getSize());
 	_Comm->enqueueRead(_Req);
 }
@@ -563,8 +566,9 @@ Store::compute() {
 		//size = getSize(_ReturnType);
 		size = ((std::stoi(_ReturnType.substr(1))-1)/8)+1;
 		_Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
+		DPRINTF(LLVMOp,"Store (Imm) Operation:(%s) Addr = %x Data = %x, Size = %u\n",_Pointer->getName(), dst, data, size);
 	} else {
-	    data = _Ops.at(1);
+	    data = (uint64_t) _Ops.at(1);
         _Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), _Value->getSize());		
 		DPRINTF(LLVMOp,"Store Operation:(%s) Addr = %x Data = %x, Size = %u\n",_Pointer->getName(), dst, data, _Value->getSize());
 	}
@@ -890,29 +894,30 @@ ICmp::compute() {
 	if (_Ops.size() == 1) {
 		if(_Flags & EQ) _Result = (_Ops.at(0) == _Operand);
 		else if(_Flags & NE) _Result = (_Ops.at(0) != _Operand);
-		else if(_Flags & UGT) _Result = (_Ops.at(0) > _UOperand);
-		else if(_Flags & UGE) _Result = (_Ops.at(0) >= _UOperand);
-		else if(_Flags & ULT) _Result = (_Ops.at(0) < _UOperand);
-		else if(_Flags & ULE) _Result = (_Ops.at(0) <= _UOperand);
-		else if(_Flags & SGT) _Result = ((signed)_Ops.at(0) > _SOperand);
-		else if(_Flags & SGE) _Result = ((signed)_Ops.at(0) >= _SOperand);
-		else if(_Flags & SLT) _Result = ((signed)_Ops.at(0) < _SOperand);
-		else if(_Flags & SLE) _Result = ((signed)_Ops.at(0) <= _SOperand);
+		else if(_Flags & UGT) _Result = ((uint64_t)_Ops.at(0) > _UOperand);
+		else if(_Flags & UGE) _Result = ((uint64_t)_Ops.at(0) >= _UOperand);
+		else if(_Flags & ULT) _Result = ((uint64_t)_Ops.at(0) < _UOperand);
+		else if(_Flags & ULE) _Result = ((uint64_t)_Ops.at(0) <= _UOperand);
+		else if(_Flags & SGT) _Result = (_Ops.at(0) > _SOperand);
+		else if(_Flags & SGE) _Result = (_Ops.at(0) >= _SOperand);
+		else if(_Flags & SLT) _Result = (_Ops.at(0) < _SOperand);
+		else if(_Flags & SLE) _Result = (_Ops.at(0) <= _SOperand);
 		DPRINTF(LLVMOp, "%u compared to %u\n", _Ops.at(0), _Operand);
 	} else {
 		if(_Flags & EQ) _Result = (_Ops.at(0) == _Ops.at(1));
 		else if(_Flags & NE) _Result = (_Ops.at(0) != _Ops.at(1));
-		else if(_Flags & UGT) _Result = (_Ops.at(0) > _Ops.at(1));
-		else if(_Flags & UGE) _Result = (_Ops.at(0) >= _Ops.at(1));
-		else if(_Flags & ULT) _Result = (_Ops.at(0) < _Ops.at(1));
-		else if(_Flags & ULE) _Result = (_Ops.at(0) <= _Ops.at(1));
-		else if(_Flags & SGT) _Result = ((signed)_Ops.at(0) > _Ops.at(1));
-		else if(_Flags & SGE) _Result = ((signed)_Ops.at(0) >= _Ops.at(1));
-		else if(_Flags & SLT) _Result = ((signed)_Ops.at(0) < _Ops.at(1));
-		else if(_Flags & SLE) _Result = ((signed)_Ops.at(0) <= _Ops.at(1));
+		else if(_Flags & UGT) _Result = ((uint64_t)_Ops.at(0) > (uint64_t)_Ops.at(1));
+		else if(_Flags & UGE) _Result = ((uint64_t)_Ops.at(0) >= (uint64_t)_Ops.at(1));
+		else if(_Flags & ULT) _Result = ((uint64_t)_Ops.at(0) < (uint64_t)_Ops.at(1));
+		else if(_Flags & ULE) _Result = ((uint64_t)_Ops.at(0) <= (uint64_t)_Ops.at(1));
+		else if(_Flags & SGT) _Result = (_Ops.at(0) > _Ops.at(1));
+		else if(_Flags & SGE) _Result = (_Ops.at(0) >= _Ops.at(1));
+		else if(_Flags & SLT) _Result = (_Ops.at(0) < _Ops.at(1));
+		else if(_Flags & SLE) _Result = (_Ops.at(0) <= _Ops.at(1));
 		DPRINTF(LLVMOp, "%u compared to %u\n", _Ops.at(0), _Ops.at(1));
 	}
 	// Store result in return register
+	//uint64_t finalResult = (uint64_t) _Result;
 	setResult(&_Result);
 
 	DPRINTF(LLVMOp, "Result: %d\n", _Result&&0x1);
