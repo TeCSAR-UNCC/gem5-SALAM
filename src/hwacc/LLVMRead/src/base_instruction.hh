@@ -110,6 +110,8 @@ class InstructionBase {
         uint64_t _FinalResult;
         std::vector<int64_t> _Ops; 
         int8_t _FunctionalUnit;
+        Register* _RawCheck = NULL;
+        bool _Stall = false;
         // ---- Constructor
         InstructionBase( const std::string& LLVMLine,
                          const std::string& OpCode,

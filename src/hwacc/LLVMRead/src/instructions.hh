@@ -1541,7 +1541,8 @@ class Load : public Memory {
                             Comm) 
         , _Align(           Align)
         , _Pointer(         Pointer) { 
-                            Details("Load"); }
+                            Details("Load"); 
+                            _RawCheck = _Pointer;}
         ~Load()           { Destruct("Load"); }
         void compute()      override;
         virtual Load* clone() const { return new Load(*this); }
@@ -1581,7 +1582,8 @@ class Store : public Memory {
         , _Pointer(         Pointer)
         , _Value(           Value) 
         , _ImmVal(          ImmVal) { 
-                            Details("Store"); } 
+                            Details("Store"); 
+                            _RawCheck = _Pointer;} 
         ~Store()          { Destruct("Store"); }
         void compute()      override;
         virtual Store* clone() const { return new Store(*this); }
@@ -1771,7 +1773,7 @@ class Compare : public Other {
         std::string _Condition;
         std::vector<Register*> _Operands;
         uint64_t _Flags;
-        uint64_t _Result;
+        int64_t _Result;
     public:
         // ---- Constructor
         Compare (           const std::string& Line,

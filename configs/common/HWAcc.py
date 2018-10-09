@@ -30,6 +30,7 @@ def makeHWAcc(options, system):
     system.acc_cluster.llvm_interface = LLVMInterface()
     system.acc_cluster.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
 
+
     system.acc_cluster.acc.int_num = 68
     system.acc_cluster.acc.clock_period = 10
 

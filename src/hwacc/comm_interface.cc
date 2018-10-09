@@ -314,7 +314,7 @@ CommInterface::tryWrite(MemSidePort * port) {
 
 
     DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
-    DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%x\n",
+    DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%08x\n",
         writeReq->currentWriteAddr, size, *((uint64_t*)(&(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]))));
 
     PacketPtr pkt = new Packet(req, MemCmd::WriteReq);

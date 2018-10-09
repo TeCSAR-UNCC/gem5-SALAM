@@ -38,6 +38,10 @@ class LLVMInterface : public ComputeUnit {
     int32_t fp_dp_adder;
     int32_t fp_sp_multiply;
     int32_t fp_dp_multiply;
+    int32_t compare = -1;
+    int32_t gep = -1;
+    int32_t conversion = -1;
+    bool unlimitedFU;
     bool running;
     std::list<BasicBlock*> *bbList;
     RegisterList *regList;
@@ -72,6 +76,7 @@ class LLVMInterface : public ComputeUnit {
     void clearFU();
     void updateFU(int8_t FU);
     void maxFU(FunctionalUnits FU);
+    bool limitedFU(int8_t FU);
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
