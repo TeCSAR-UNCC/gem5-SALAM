@@ -865,7 +865,7 @@ Interrupts:
         # CS1-CS5
         AddrRange(0x0c000000, 0x1fffffff),
         # External AXI interface (PCI)
-        AddrRange(0x2f000000, 0x7fffffff),
+        #AddrRange(0x2f000000, 0x7fffffff),
     ]
 
     # Platform control device (off-chip)

@@ -3,57 +3,36 @@ from m5.objects import *
 from m5.util import *
 
 def makeHWAcc(options, system):
-    system.acc = CommInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
-    system.acc.pio = system.iobus.master
-    system.acc.flags_size = 1;
-    system.acc.config_size = 0;
-    if options.acc_cache:
-        system.acc_cache = Cache(assoc=4, tag_latency=1, data_latency=1, response_latency=1, mshrs=16, size='1kB', tgts_per_mshr=20)
-#        system.acc_cache.prefetch_on_access = 'true'
-#        system.acc_cache.prefetcher = TaggedPrefetcher(degree=8, latency=1)
-        if options.l2cache:
-            system.acc_cache.mem_side = system.tol2bus.slave
-        else:
-            system.acc_cache.mem_side = system.membus.slave
-        system.acc.dram_side = system.acc_cache.cpu_side
-    else:
-        if options.l2cache:
-            system.acc.dram_side = system.tol2bus.slave
-        else:
-            system.acc.dram_side = system.membus.slave
-    system.acc.spm_side = system.iobus.slave
-    system.acc.dram_ranges = [AddrRange(0x80000000, '4GB')]
-    system.acc.llvm_interface = LLVMInterface()
-    system.acc.llvm_interface.FU_fp_sp_adder = -1
-    system.acc.llvm_interface.FU_fp_dp_adder = -1
-    system.acc.llvm_interface.FU_fp_sp_multiplier = -1
-    system.acc.llvm_interface.FU_fp_dp_multiplier = -1
-    system.acc.llvm_interface.FU_counter = -1
-    system.acc.llvm_interface.FU_compare = -1
-    system.acc.llvm_interface.FU_GEP = -1
-    system.acc.llvm_interface.FU_pipelined = 0
-    system.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
 
-    system.acc.int_num = 68
-    system.acc.clock_period = 10
+    # Construct our Accelerator Cluster and add a SPM of size 128kB
+    system.acc_cluster = AccCluster()
+    system.acc_cluster._attach_bridges(system, AddrRange(0x2f000000, 0x7fffffff), [AddrRange(0x00000000, 0x2effffff), AddrRange(0x80000000, 0xffffffff)])
+    system.acc_cluster._add_spm(AddrRange(0x2f100000, size='128kB'), '2ns')
+    system.acc_cluster._connect_caches(system, options, '1kB')
 
-    system.acc.spad = SimpleMemory(range=AddrRange(0x2f100000, size='128kB'),
-                                  conf_table_reported=False, latency='2ns')
-    system.acc.spad.port = system.iobus.master
+    # Add an accelerator to the cluster and connect it
+    system.acc_cluster.acc = CommInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
+    system.acc_cluster.acc.flags_size = 1
+    system.acc_cluster.acc.config_size = 0
+    system.acc_cluster.acc.dram_ranges = [AddrRange(0x80000000, '4GB')]
+    system.acc_cluster.llvm_interface = LLVMInterface()
+    system.acc_cluster.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
+    system.acc_cluster.acc.int_num = 68
+    system.acc_cluster.acc.clock_period = 10
+    system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
 
-    system.accdma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32)
-    system.accdma.pio = system.iobus.master
-    system.accdma.dma = system.iobus.slave
+    # Add DMA devices to the cluster and connect them
+    system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster._connect_dma(system, system.acc_cluster.dma)
 
-    system.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=40, gic=system.realview.gic, max_pending=32)
-    system.stream_dma_0.pio_delay = '1ns'
-    system.stream_dma_0.pio = system.iobus.master
-    system.stream_dma_0.dma = system.iobus.slave
-    system.stream_dma_0.rd_int = 210
-    system.stream_dma_0.wr_int = 211
-    system.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=40, gic=system.realview.gic, max_pending=32)
-    system.stream_dma_1.pio_delay = '1ns'
-    system.stream_dma_1.pio = system.iobus.master
-    system.stream_dma_1.dma = system.iobus.slave
-    system.stream_dma_1.rd_int = 212
-    system.stream_dma_1.wr_int = 213
+    system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_0.pio_delay = '1ns'
+    system.acc_cluster.stream_dma_0.rd_int = 210
+    system.acc_cluster.stream_dma_0.wr_int = 211
+    system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_0)
+
+    system.acc_cluster.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_1.pio_delay = '1ns'
+    system.acc_cluster.stream_dma_1.rd_int = 212
+    system.acc_cluster.stream_dma_1.wr_int = 213
+    system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_1)
