@@ -18,3 +18,7 @@ class LLVMInterface(ComputeUnit):
     FU_fp_dp_adder = Param.Int32(-1, "Available floating point double precision addition/subtraction functional units. -1 indicates unlimited resources")
     FU_fp_sp_multiplier = Param.Int32(-1, "Available floating point single precision multiply/divide functional units. -1 indicates unlimited resources")
     FU_fp_dp_multiplier = Param.Int32(-1, "Available floating point double precision multiply/divide functional units. -1 indicates unlimited resources")
+    FU_compare = Param.Int32(-1, "Available comparison functional units. -1 indicates unlimited resources")
+    FU_GEP = Param.Int32(-1, "Available equivalent getelementptr functional units. -1 indicates unlimited resources")
+    FU_conversion = Param.Int32(-1, "Available type conversion functional units. -1 indicates unlimited resources")
+    FU_pipelined = Param.Int32(1, "Sets functional units to operate as pipelined (1) or not pipelined (0)")

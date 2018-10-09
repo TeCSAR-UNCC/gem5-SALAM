@@ -16,7 +16,7 @@ class Register {
         std::string _Name;      // Name of reg in reg list
         std::string _Data_Type; // Data type to be stored in reg
         Reg_Usage _Reg_Usage;   // Read/Write Usage
-        uint64_t _Value = 0;        // Register value (reflects memory)
+        uint64_t _Value = 0;    // Register value (reflects memory)
         uint64_t _Size;         // Reg size in bytes
         bool _Hot;              // Register is ready/not ready
 

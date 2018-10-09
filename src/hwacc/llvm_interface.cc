@@ -15,7 +15,11 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     fp_sp_adder(p->FU_fp_sp_adder),
     fp_dp_adder(p->FU_fp_dp_adder),
     fp_sp_multiply(p->FU_fp_sp_multiplier),
-    fp_dp_multiply(p->FU_fp_dp_multiplier) {
+    fp_dp_multiply(p->FU_fp_dp_multiplier),
+    compare(p->FU_compare),
+    gep(p->FU_GEP),
+    conversion(p->FU_conversion),
+    pipelined(p->FU_pipelined) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -32,7 +36,9 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
         (fp_sp_adder == -1) &&
         (fp_dp_adder == -1) &&
         (fp_sp_multiply == -1) &&
-        (fp_dp_multiply == -1)) unlimitedFU = true;
+        (fp_dp_multiply == -1) &&
+        (compare == -1) &&
+        (gep == -1)) unlimitedFU = true;
     else unlimitedFU = false;
 }
 
@@ -69,22 +75,29 @@ LLVMInterface::tick() {
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
-
     for(auto i = 0; i < computeQueue.size();) {
         DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
-        if(unlimitedFU) {
-            updateFU(reservation.at(i)->_FunctionalUnit);
+        if(pipelined) {
             if(computeQueue.at(i)->commit()) {
                 auto it = computeQueue.erase(computeQueue.begin() + i);
                 i = std::distance(computeQueue.begin(), it);
             }
             else i++;
-        } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
-            if(computeQueue.at(i)->commit()) {
-                auto it = computeQueue.erase(computeQueue.begin() + i);
-                i = std::distance(computeQueue.begin(), it);
+        } else { 
+            if(unlimitedFU) {
+                updateFU(reservation.at(i)->_FunctionalUnit);
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                }
+                else i++;
+            } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                } else i++;
             } else i++;
-        } else i++;
+        }
     }
 
 
@@ -400,10 +413,11 @@ LLVMInterface::constructBBList() {
                         DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
-                            currBB->parse(line, regList, prevBB->getName(), comm, typeList);
+                            updateParsedFU(currBB->parse(line, regList, prevBB->getName(), comm, typeList));
                         } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            currBB->parse(line, regList, "NULL", comm, typeList);
+                            updateParsedFU(currBB->parse(line, regList, "NULL", comm, typeList));
                         }
+
                     }
                 }
             }
@@ -553,25 +567,40 @@ LLVMInterface::statistics() {
 
     double divisor = cycle * (clock_period / 1000);
     */
-    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
+    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
     "\n*******************************************************************************",
-    "\n   Runtime (Cycles): ", cycle,
-    "\n   Runtime (Seconds):", (cycle*10*(1e-12)),
-    "\n   Stalls  (Cycles): ", stalls,
-    "\n   Executed Nodes: ", execnodes,
-    "\n   Counter FU's: ", _MaxFU.counter_units,
-    "\n   Integer Add/Sub FU's: ", _MaxFU.int_adder_units,
-    "\n   Integer Mul/Div FU's: ", _MaxFU.int_multiply_units,
-    "\n   Integer Shifter FU's: ", _MaxFU.int_shifter_units,
-    "\n   Integer Bitwise FU's: ", _MaxFU.int_bit_units,
-    "\n   Floating Point Float Add/Sub: ", _MaxFU.fp_sp_adder,
-    "\n   Floating Point Double Add/Sub: ", _MaxFU.fp_dp_adder,
-    "\n   Floating Point Float Mul/Div: ", _MaxFU.fp_sp_multiply,
-    "\n   Floating Point Double Mul/Div: ", _MaxFU.fp_dp_multiply,
-    "\n   0 Cycle Compare FU's: ", _MaxFU.compare,
-    "\n   GEP Instruction FU's: ", _MaxFU.gep,
-    "\n   Type Conversion FU's: ", _MaxFU.conversion,
-    "\n   Number of Registers: ", regList->size(),
+    "\n   Runtime (Cycles):                ", cycle,
+    "\n   Runtime (Seconds):               ", (cycle*10*(1e-12)),
+    "\n   Stalls  (Cycles):                ", stalls,
+    "\n   Executed Nodes:                  ", execnodes,
+    "\n   ========= Runtime Functional Units ========="
+    "\n   Counter FU's:                    ", _MaxFU.counter_units,
+    "\n   Integer Add/Sub FU's:            ", _MaxFU.int_adder_units,
+    "\n   Integer Mul/Div FU's:            ", _MaxFU.int_multiply_units,
+    "\n   Integer Shifter FU's:            ", _MaxFU.int_shifter_units,
+    "\n   Integer Bitwise FU's:            ", _MaxFU.int_bit_units,
+    "\n   Floating Point Float Add/Sub:    ", _MaxFU.fp_sp_adder,
+    "\n   Floating Point Double Add/Sub:   ", _MaxFU.fp_dp_adder,
+    "\n   Floating Point Float Mul/Div:    ", _MaxFU.fp_sp_multiply,
+    "\n   Floating Point Double Mul/Div:   ", _MaxFU.fp_dp_multiply,
+    "\n   0 Cycle Compare FU's:            ", _MaxFU.compare,
+    "\n   GEP Instruction FU's:            ", _MaxFU.gep,
+    "\n   Type Conversion FU's:            ", _MaxFU.conversion,
+    "\n   ========= Static Functional Units ========="
+    "\n   Counter FU's:                    ", _MaxParsed.counter_units,
+    "\n   Integer Add/Sub FU's:            ", _MaxParsed.int_adder_units,
+    "\n   Integer Mul/Div FU's:            ", _MaxParsed.int_multiply_units,
+    "\n   Integer Shifter FU's:            ", _MaxParsed.int_shifter_units,
+    "\n   Integer Bitwise FU's:            ", _MaxParsed.int_bit_units,
+    "\n   Floating Point Float Add/Sub:    ", _MaxParsed.fp_sp_adder,
+    "\n   Floating Point Double Add/Sub:   ", _MaxParsed.fp_dp_adder,
+    "\n   Floating Point Float Mul/Div:    ", _MaxParsed.fp_sp_multiply,
+    "\n   Floating Point Double Mul/Div:   ", _MaxParsed.fp_dp_multiply,
+    "\n   0 Cycle Compare FU's:            ", _MaxParsed.compare,
+    "\n   GEP Instruction FU's:            ", _MaxParsed.gep,
+    "\n   Type Conversion FU's:            ", _MaxParsed.conversion,
+    "\n   Other:                           ", _MaxParsed.other,
+    "\n   Number of Registers:             ", regList->size(),
     "\n*******************************************************************************\n");
     
 /*
@@ -625,6 +654,25 @@ LLVMInterface::updateFU(int8_t FU) {
         case GETELEMENTPTR: _FunctionalUnits.gep++; break;
         case CONVERSION: _FunctionalUnits.conversion++; break;
         default: break;
+    }
+}
+
+void
+LLVMInterface::updateParsedFU(int8_t FU) {
+    switch(FU) {
+        case COUNTER: _MaxParsed.counter_units++; break;
+        case INTADDER: _MaxParsed.int_adder_units++; break;
+        case INTMULTI: _MaxParsed.int_multiply_units++; break;
+        case INTSHIFTER:  _MaxParsed.int_shifter_units++; break;
+        case INTBITWISE: _MaxParsed.int_bit_units++; break;
+        case FPSPADDER: _MaxParsed.fp_sp_adder++; break;
+        case FPDPADDER: _MaxParsed.fp_dp_adder++; break;
+        case FPSPMULTI: _MaxParsed.fp_sp_multiply++; break;
+        case FPDPMULTI: _MaxParsed.fp_dp_multiply++; break;
+        case COMPARE: _MaxParsed.compare++; break;
+        case GETELEMENTPTR: _MaxParsed.gep++; break;
+        case CONVERSION: _MaxParsed.conversion++; break;
+        default: _MaxParsed.other++; break;
     }
 }
 

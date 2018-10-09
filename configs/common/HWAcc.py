@@ -24,11 +24,14 @@ def makeHWAcc(options, system):
     system.acc.spm_side = system.iobus.slave
     system.acc.dram_ranges = [AddrRange(0x80000000, '4GB')]
     system.acc.llvm_interface = LLVMInterface()
-    #system.acc.llvm_interface.FU_fp_dp_adder = 10
-    #system.acc.llvm_interface.FU_fp_sp_adder = 10
-    #system.acc.llvm_interface.FU_fp_dp_multiplier = 10
-    #system.acc.llvm_interface.FU_fp_dp_multiplier = 10
-    #system.acc.llvm_interface.FU_counter = 2
+    system.acc.llvm_interface.FU_fp_sp_adder = -1
+    system.acc.llvm_interface.FU_fp_dp_adder = -1
+    system.acc.llvm_interface.FU_fp_sp_multiplier = -1
+    system.acc.llvm_interface.FU_fp_dp_multiplier = -1
+    system.acc.llvm_interface.FU_counter = -1
+    system.acc.llvm_interface.FU_compare = -1
+    system.acc.llvm_interface.FU_GEP = -1
+    system.acc.llvm_interface.FU_pipelined = 0
     system.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
 
     system.acc.int_num = 68

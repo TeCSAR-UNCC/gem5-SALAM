@@ -16,7 +16,7 @@
 // parsed from the passed LLVM instruction line.
 // ////////////////////////////////////////////////////////////////////
 
-void
+int64_t
 BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
 	// ////////////////////////////////////////////////////////////////////
 	// Local Variables
@@ -34,7 +34,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	uint64_t computeFlags = 0;
 	uint64_t attributeFlags = 0;
 	bool immFirst = false;
-	uint64_t functionalUnit = 0;
+	int64_t functionalUnit = -1;
 	// ////////////////////////////////////////////////////////////////////
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
@@ -363,13 +363,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFADD;
-		if(returnType == "double") functionalUnit = FPDPADDER;
-		else functionalUnit = FPSPADDER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
+		if(returnType == "double") functionalUnit = FPDPADDER;
+		else functionalUnit = FPSPADDER;
 		double immOp = 0;
 		if(immOps.size() != 0) {
 			immOp = stod(convertImmediate(returnType, immOps.at(0)));
@@ -426,13 +426,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFSUB;
-		if(returnType == "double") functionalUnit = FPDPADDER;
-		else functionalUnit = FPSPADDER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
+		if(returnType == "double") functionalUnit = FPDPADDER;
+		else functionalUnit = FPSPADDER;
 		double immOp = 0;
 		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto fsub = std::make_shared<FSub>(	lineCpy, 
@@ -486,14 +486,14 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result.
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFMUL;
-		if(returnType == "double") functionalUnit = FPDPMULTI;
-		else functionalUnit = FPSPMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		double immOp = 0;
+		if(returnType == "double") functionalUnit = FPDPMULTI;
+		else functionalUnit = FPSPMULTI;
 		if(immOps.size() != 0) {
 			immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		}
@@ -575,13 +575,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFDIV;
-		if(returnType == "double") functionalUnit = FPDPMULTI;
-		else functionalUnit = FPSPMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
+		if(returnType == "double") functionalUnit = FPDPMULTI;
+		else functionalUnit = FPSPMULTI;
 		double immOp = 0;
 		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto fdiv = std::make_shared<FDiv>(	lineCpy, 
@@ -658,13 +658,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
 		maxCycles = CYCLECOUNTFREM;
-		if(returnType == "double") functionalUnit = FPDPMULTI;
-		else functionalUnit = FPSPMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
+		if(returnType == "double") functionalUnit = FPDPMULTI;
+		else functionalUnit = FPSPMULTI;
 		double immOp = 0;
 		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto frem = std::make_shared<FRem>(	lineCpy, 
@@ -1638,7 +1638,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	}
 	//dependencyList(parameters, dependencies);
 
-
+	return functionalUnit;
 }
 
 void
