@@ -36,3 +36,13 @@ def makeHWAcc(options, system):
     system.acc_cluster.stream_dma_1.rd_int = 212
     system.acc_cluster.stream_dma_1.wr_int = 213
     system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_1)
+
+    # Set functional unit constraits for accelerator
+    system.acc_cluster.llvm_interface.FU_fp_sp_adder = -1
+    system.acc_cluster.llvm_interface.FU_fp_dp_adder = 5
+    system.acc_cluster.llvm_interface.FU_fp_sp_multiplier = -1
+    system.acc_cluster.llvm_interface.FU_fp_dp_multiplier = -1
+    system.acc_cluster.llvm_interface.FU_counter = -1
+    system.acc_cluster.llvm_interface.FU_compare = -1
+    system.acc_cluster.llvm_interface.FU_GEP = -1
+    system.acc_cluster.llvm_interface.FU_pipelined = 0
