@@ -64,6 +64,7 @@ class LLVMInterface : public ComputeUnit {
   protected:
     InstructionBase* findParent(Register*);
     InstructionBase* findParent(std::string);
+    InstructionBase* detectRAW(Register*);
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();

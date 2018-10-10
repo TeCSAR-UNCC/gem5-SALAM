@@ -122,6 +122,7 @@ LLVMInterface::tick() {
         if (reservation.at(i)->_ActiveParents == 0) {
             if(!(reservation.at(i)->_Terminator)) { 
                     if(reservation.at(i)->_OpCode == "load") {
+                        /*
                         bool raw = false;
                         for(auto j = 0; j < i; j++) {
                             if(reservation.at(j)->_OpCode == "store") {
@@ -146,6 +147,13 @@ LLVMInterface::tick() {
                                 i++;
                             }
                         } else i++;
+                        */
+                        readQueue.push_back(reservation.at(i));
+                        reservation.at(i)->compute();
+                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                        scheduled = true;
+                        auto it = reservation.erase(reservation.begin()+i);
+                        i = std::distance(reservation.begin(), it);
                     } else if(reservation.at(i)->_OpCode == "store") {
                         writeQueue.push_back(reservation.at(i));
                         reservation.at(i)->compute();
@@ -240,6 +248,16 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
                 DPRINTF(LLVMOp, "No previous instance found\n");
             }
         }
+        if (reservation.back()->_OpCode == "load") {
+            InstructionBase * parent = detectRAW(dynamic_cast<Load*>(reservation.back())->_RawCheck);
+            if (parent) {
+                DPRINTF(LLVMOp, "Memory RAW dependency corrected!\n");
+                reservation.back()->registerParent(parent);
+                parent->registerChild(reservation.back());
+            } else {
+                DPRINTF(LLVMOp, "No RAW dependency found\n");
+            }
+        }
         if (reservation.back()->_OpCode == "getelementptr") {
             InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
             if (parent) {
@@ -277,6 +295,19 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
         else
             DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
     }
+}
+
+InstructionBase *
+LLVMInterface::detectRAW(Register* reg) {
+    for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
+        if(reservation.at(i)->_OpCode == "store") {
+            if(reservation.at(i)->_RawCheck == reg) return reservation.at(i);
+        }
+    }
+    for(int i = writeQueue.size()-1; i >= 0; i--) {
+        if (writeQueue.at(i)->_RawCheck == reg) return writeQueue.at(i);
+    }
+    return NULL;
 }
 
 InstructionBase *
