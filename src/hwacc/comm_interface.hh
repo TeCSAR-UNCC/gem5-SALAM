@@ -116,7 +116,7 @@ class CommInterface : public BasicPioDevice
     MemSidePort *dramPort;
     MemSidePort *spmPort;
 
-    AddrRange dramRange;
+    AddrRange localRange;
 
     CommInterface *comm;
     MasterID masterId;

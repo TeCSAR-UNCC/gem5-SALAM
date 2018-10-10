@@ -6,7 +6,9 @@ def makeHWAcc(options, system):
 
     # Construct our Accelerator Cluster and add a SPM of size 128kB
     system.acc_cluster = AccCluster()
-    system.acc_cluster._attach_bridges(system, AddrRange(0x2f000000, 0x7fffffff), [AddrRange(0x00000000, 0x2effffff), AddrRange(0x80000000, 0xffffffff)])
+    local_range = AddrRange(0x2f000000, 0x7fffffff)
+    external_range = [AddrRange(0x00000000, 0x2effffff), AddrRange(0x80000000, 0xffffffff)]
+    system.acc_cluster._attach_bridges(system, local_range, external_range)
     system.acc_cluster._add_spm(AddrRange(0x2f100000, size='128kB'), '2ns')
     system.acc_cluster._connect_caches(system, options, '1kB')
 
@@ -14,9 +16,9 @@ def makeHWAcc(options, system):
     system.acc_cluster.acc = CommInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
     system.acc_cluster.acc.flags_size = 1
     system.acc_cluster.acc.config_size = 0
-    system.acc_cluster.acc.dram_ranges = [AddrRange(0x80000000, '4GB')]
-    system.acc_cluster.llvm_interface = LLVMInterface()
-    system.acc_cluster.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
+    system.acc_cluster.acc.local_range = local_range
+    system.acc_cluster.acc.llvm_interface = LLVMInterface()
+    system.acc_cluster.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
     system.acc_cluster.acc.int_num = 68
     system.acc_cluster.acc.clock_period = 10
     system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
@@ -38,11 +40,11 @@ def makeHWAcc(options, system):
     system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_1)
 
     # Set functional unit constraits for accelerator
-    system.acc_cluster.llvm_interface.FU_fp_sp_adder = -1
-    system.acc_cluster.llvm_interface.FU_fp_dp_adder = 5
-    system.acc_cluster.llvm_interface.FU_fp_sp_multiplier = -1
-    system.acc_cluster.llvm_interface.FU_fp_dp_multiplier = -1
-    system.acc_cluster.llvm_interface.FU_counter = -1
-    system.acc_cluster.llvm_interface.FU_compare = -1
-    system.acc_cluster.llvm_interface.FU_GEP = -1
-    system.acc_cluster.llvm_interface.FU_pipelined = 0
+    system.acc_cluster.acc.llvm_interface.FU_fp_sp_adder = -1
+    system.acc_cluster.acc.llvm_interface.FU_fp_dp_adder = -1
+    system.acc_cluster.acc.llvm_interface.FU_fp_sp_multiplier = -1
+    system.acc_cluster.acc.llvm_interface.FU_fp_dp_multiplier = -1
+    system.acc_cluster.acc.llvm_interface.FU_counter = -1
+    system.acc_cluster.acc.llvm_interface.FU_compare = -1
+    system.acc_cluster.acc.llvm_interface.FU_GEP = -1
+    system.acc_cluster.acc.llvm_interface.FU_pipelined = 0

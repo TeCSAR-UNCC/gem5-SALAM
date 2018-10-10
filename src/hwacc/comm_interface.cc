@@ -22,7 +22,7 @@ CommInterface::CommInterface(Params *p) :
     int_num(p->int_num),
     dramSide(p->name + ".dram_side", this),
     spmSide(p->name + ".spm_side", this),
-    dramRange(p->dram_ranges),
+    localRange(p->local_range),
     masterId(p->system->getMasterId(name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
@@ -154,7 +154,7 @@ CommInterface::tick() {
         DPRINTF(CommInterface, "Checking read requests\n");
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
             DPRINTF(CommInterface, "Request Address: %lx\n", (*it)->address);
-            if (dramRange.contains((*it)->address)) {
+            if (!localRange.contains((*it)->address)) {
                 DPRINTF(CommInterface, "In DRAM\n");
                 if (dramPort->isStalled()) {
                     DPRINTF(CommInterface, "System Memory Port Stalled\n");
@@ -199,7 +199,7 @@ CommInterface::tick() {
         DPRINTF(CommInterface, "Checking write requests\n");
         for (auto it=writeQueue->begin(); it!=writeQueue->end(); ) {
             DPRINTF(CommInterface, "Request Address: %lx ", (*it)->address);
-            if (dramRange.contains((*it)->address)) {
+            if (!localRange.contains((*it)->address)) {
                 DPRINTF(CommInterface, "In DRAM\n");
                 if (dramPort->isStalled()) {
                     DPRINTF(CommInterface, "System Memory Port Stalled\n");
@@ -509,7 +509,7 @@ CommInterface::getMasterPort(const std::string& if_name, PortID idx) {
 void
 CommInterface::clearMemRequest(MemoryRequest * req, bool isRead) {
     if (isRead) {
-        if (dramRange.contains(req->address)) {
+        if (!localRange.contains(req->address)) {
             for (auto it=dramRdQ->begin(); it!=dramRdQ->end(); ++it) {
                 if ((*it)==req) {
                     it=dramRdQ->erase(it);
@@ -525,7 +525,7 @@ CommInterface::clearMemRequest(MemoryRequest * req, bool isRead) {
             }
         }
     } else {
-        if (dramRange.contains(req->address)) {
+        if (!localRange.contains(req->address)) {
             for (auto it=dramWrQ->begin(); it!=dramWrQ->end(); ++it) {
                 if ((*it) == req) {
                     it=dramWrQ->erase(it);
