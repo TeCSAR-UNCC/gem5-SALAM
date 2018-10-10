@@ -23,6 +23,9 @@ class AccCluster(Platform):
         self.spm = SimpleMemory(range=spm_range, conf_table_reported=False, latency=spm_latency)
         self.spm.port = self.local_bus.master
 
+    def _connect_spm(self, spm):
+        spm.port = self.local_bus.master
+
     def _attach_bridges(self, system, mem_range, ext_ranges):
         system.mem_to_hwacc = Bridge(delay='1ns', ranges = mem_range)
         system.mem_to_hwacc.master = self.local_bus.slave

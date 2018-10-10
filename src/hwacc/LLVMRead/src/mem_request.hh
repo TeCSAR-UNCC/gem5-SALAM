@@ -5,6 +5,7 @@
 
 class MemoryRequest {
   friend class CommInterface;
+  friend class CommMemInterface;
   friend class LLVMInterface;
   private:
     Addr address;

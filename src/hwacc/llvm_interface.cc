@@ -71,6 +71,7 @@ LLVMInterface::tick() {
             "   Cycle", cycle,
             "********************************************************************************");
     cycle++;
+    comm->refreshMemPorts();
     clearFU();
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit

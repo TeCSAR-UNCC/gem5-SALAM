@@ -1,6 +1,7 @@
 from m5.params import *
 from m5.proxy import *
 from Device import BasicPioDevice
+from SimpleMemory import SimpleMemory
 
 class CommInterface(BasicPioDevice):
     type = 'CommInterface'
@@ -18,3 +19,16 @@ class CommInterface(BasicPioDevice):
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
     int_num = Param.UInt32(320, "Interrupt number that connects to GIC")
     clock_period = Param.Int(10, "Clock period in ns")
+
+class PrivateMemory(SimpleMemory):
+    type = 'PrivateMemory'
+    cxx_header = 'hwacc/comm_interface.hh'
+
+class CommMemInterface(CommInterface):
+    type = 'CommMemInterface'
+    cxx_header = 'hwacc/comm_interface.hh'
+
+    private_memory = Param.PrivateMemory("Private scratchpad memory for the device")
+    private_range = Param.AddrRange("Address range of private memory")
+    private_read_ports = Param.Int("The number of internal Read ports for the private SPM")
+    private_write_ports = Param.Int("The number of internal Write ports for the private SPM")

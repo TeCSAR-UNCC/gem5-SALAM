@@ -460,52 +460,6 @@ CommInterface::getMasterPort(const std::string& if_name, PortID idx) {
     }
 }
 
-//CommInterface::MemoryRequest::MemoryRequest(Addr add, size_t len) {
-//    address = add;
-//    length = len;
-//    currentReadAddr = address;
-//    needToRead = true;
-//    beginAddr = address;
-//    readLeft = length;
-//    writeLeft = 0;
-//    totalLength = length;
-//    readDone = 0;
-//    buffer = new uint8_t[length];
-//    std::memset(buffer, 0, sizeof(length));
-//    readsDone = new bool[length];
-//    for (int i = 0; i < length; i++) {
-//        buffer[i] = 0;
-//        readsDone[i] = false;
-//    }
-
-//    pkt = NULL;
-//}
-//CommInterface::MemoryRequest::MemoryRequest(Addr add, uint8_t *data, size_t len) {
-//    address = add;
-//    length = len;
-//    needToWrite = true;
-
-//    currentWriteAddr = address;
-
-//    readLeft = 0;
-//    writeLeft = length;
-
-//    totalLength = length;
-//    writeLeft = totalLength;
-
-//    readDone = length;
-//    writeDone = 0;
-
-//    buffer = new uint8_t[length];
-//    readsDone = new bool[length];
-//    for (int i = 0; i < length; i++) {
-//        buffer[i] = *(data + i);
-//        readsDone[i] = true;
-//    }
-
-//    pkt = NULL;
-//}
-
 void
 CommInterface::clearMemRequest(MemoryRequest * req, bool isRead) {
     if (isRead) {
@@ -541,4 +495,299 @@ CommInterface::clearMemRequest(MemoryRequest * req, bool isRead) {
             }
         }
     }
+}
+
+/***************************************************************************************
+ * Private Scratchpad Device for Accelerators using CommMemInterface
+ * Acts as a simple memory for external devices
+ * Enables specialization of access for parent device
+ **************************************************************************************/
+#include "debug/MemoryAccess.hh"
+
+PrivateMemory::PrivateMemory(const PrivateMemoryParams *p) :
+    SimpleMemory(p) {}
+
+void
+PrivateMemory::privateAccess(PacketPtr pkt) {
+    assert(AddrRange(pkt->getAddr(),
+                     pkt->getAddr() + (pkt->getSize() - 1)).isSubset(range));
+
+    uint8_t *hostAddr = pmemAddr + pkt->getAddr() - range.start();
+
+    if (pkt->isRead()) {
+        assert(!pkt->isWrite());
+        if (pkt->isLLSC()) {
+            assert(!pkt->fromCache());
+            // if the packet is not coming from a cache then we have
+            // to do the LL/SC tracking here
+            trackLoadLocked(pkt);
+        }
+        if (pmemAddr)
+            memcpy(pkt->getPtr<uint8_t>(), hostAddr, pkt->getSize());
+        numReads[pkt->req->masterId()]++;
+        bytesRead[pkt->req->masterId()] += pkt->getSize();
+    } else if (pkt->isWrite()) {
+        if (writeOK(pkt)) {
+            if (pmemAddr) {
+                memcpy(hostAddr, pkt->getConstPtr<uint8_t>(), pkt->getSize());
+                DPRINTF(MemoryAccess, "%s wrote %i bytes to address %x\n",
+                        __func__, pkt->getSize(), pkt->getAddr());
+            }
+            assert(!pkt->req->isInstFetch());
+            numWrites[pkt->req->masterId()]++;
+            bytesWritten[pkt->req->masterId()] += pkt->getSize();
+        }
+    } else {
+        panic("Unexpected packet %s", pkt->print());
+    }
+}
+
+PrivateMemory*
+PrivateMemoryParams::create()
+{
+    return new PrivateMemory(this);
+}
+
+/***************************************************************************************
+ * CommInterface device with a private scratchpad
+ **************************************************************************************/
+CommMemInterface::CommMemInterface(Params *p) :
+    CommInterface(p),
+    pmem(p->private_memory),
+    pmemRange(p->private_range),
+    readPorts(p->private_read_ports),
+    writePorts(p->private_write_ports) {
+        avReadPorts = readPorts;
+        avWritePorts = writePorts;
+    }
+
+void
+CommMemInterface::tick() {
+    DPRINTF(CommInterface, "Tick!\n");
+
+    availablePorts = avReadPorts + avWritePorts;
+
+    if (!computationNeeded) {
+        DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
+        if (*mmreg & 0x01) {
+            *mmreg &= 0xfe;
+            *mmreg |= 0x02;
+            computationNeeded = true;
+            cu->initialize();
+        }
+
+        if (processingDone && !tickEvent.scheduled()) {
+            processingDone = false;
+            //schedule(tickEvent, curTick() + processDelay);
+            schedule(tickEvent, nextCycle());
+        }
+
+        return;
+    }
+    if (!dramPortStalled() || !spmPortStalled() || availablePorts>0) {
+        DPRINTF(CommInterface, "Checking read requests\n");
+        for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
+            DPRINTF(CommInterface, "Request Address: %lx\n", (*it)->address);
+            if (pmemRange.contains((*it)->address)) {
+                DPRINTF(CommInterface, "In Private Memory\n");
+                if (avReadPorts <= 0) {
+                    DPRINTF(CommInterface, "No available internal read ports\n");
+                    ++it;
+                } else {
+                    avReadPorts--;
+                    Request::Flags flags;
+                    if ((*it)->readLeft <= 0) {
+                        DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
+                        return;
+                    }
+                    int size;
+                    if ((*it)->currentReadAddr % cacheLineSize) {
+                        size = cacheLineSize - ((*it)->currentReadAddr % cacheLineSize);
+                        DPRINTF(CommInterface, "Aligning\n");
+                    } else {
+                        size = cacheLineSize;
+                    }
+                    size = (*it)->readLeft > (size - 1) ? size : (*it)->readLeft;
+                    RequestPtr req = new Request((*it)->currentReadAddr, size, flags, masterId);
+                    DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes\n",
+                        req->getPaddr(), size);
+
+                    PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
+                    pkt->allocate();
+                    (*it)->pkt = pkt;
+
+                    pmem->privateAccess(pkt);
+
+                    (*it)->currentReadAddr += size;
+
+                    (*it)->readLeft -= size;
+
+                    DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
+                    pkt->writeData((*it)->buffer + (pkt->req->getPaddr() - (*it)->beginAddr));
+                    DPRINTF(CommInterface, "Read:0x%016lx\n", *(uint64_t *)(*it)->buffer);
+                    for (int i = pkt->req->getPaddr() - (*it)->beginAddr;
+                         i < pkt->req->getPaddr() - (*it)->beginAddr + pkt->getSize(); i++)
+                    {
+                        (*it)->readsDone[i] = true;
+                    }
+
+                    // mark readDone as only the contiguous region
+                    while ((*it)->readDone < (*it)->totalLength && (*it)->readsDone[(*it)->readDone])
+                    {
+                        (*it)->readDone++;
+                    }
+
+                    if ((*it)->readDone == (*it)->totalLength)
+                    {
+                        DPRINTF(CommInterface, "Done reading\n");
+                        cu->readCommit((*it));
+                        it = readQueue->erase(it);
+                    }
+                }
+            } else if (localRange.contains((*it)->address)) {
+                DPRINTF(CommInterface, "In Local Memory\n");
+                if (spmPortStalled()) {
+                    DPRINTF(CommInterface, "SPM Port Stalled\n");
+                    ++it;
+                } else {
+                    if (!getSpmReadReq()) {
+                        setSpmReadReq(*it);
+                        it = readQueue->erase(it);
+                    } else {
+                        ++it;
+                    }
+                    if (getSpmReadReq() && getSpmReadReq()->needToRead) {
+                        DPRINTF(CommInterface, "Trying read on SPM Port\n");
+                        tryRead(spmPort);
+                        spmRdQ->push_back(getSpmReadReq());
+                        if (!getSpmReadReq()->needToRead)
+                            setSpmReadReq(NULL);
+                    }
+                }
+            } else {
+                DPRINTF(CommInterface, "In System Memory\n");
+                if (dramPortStalled()) {
+                    DPRINTF(CommInterface, "System Memory Port Stalled\n");
+                    ++it;
+                } else {
+                    if (!getDramReadReq()) {
+                        setDramReadReq(*it);
+                        it = readQueue->erase(it);
+                    } else {
+                        ++it;
+                    }
+                    if (getDramReadReq() && getDramReadReq()->needToRead) {
+                        DPRINTF(CommInterface, "Trying read on System Memory Port\n");
+                        tryRead(dramPort);
+                        dramRdQ->push_back(getDramReadReq());
+                        if (!getDramReadReq()->needToRead)
+                            setDramReadReq(NULL);
+                    }
+                }
+            }
+        }
+        DPRINTF(CommInterface, "Checking write requests\n");
+        for (auto it=writeQueue->begin(); it!=writeQueue->end(); ) {
+            DPRINTF(CommInterface, "Request Address: %lx ", (*it)->address);
+            if (pmemRange.contains((*it)->address)) {
+                DPRINTF(CommInterface, "In Private Memory\n");
+                if (avWritePorts <= 0) {
+                    DPRINTF(CommInterface, "No available internal read ports\n");
+                    ++it;
+                } else {
+                    avWritePorts--;
+
+                    if ((*it)->writeLeft <= 0) {
+                        DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
+                        return;
+                    }
+
+                    int size;
+                    if ((*it)->currentWriteAddr % cacheLineSize) {
+                        size = cacheLineSize - ((*it)->currentWriteAddr % cacheLineSize);
+                        DPRINTF(CommInterface, "Aligning\n");
+                    } else {
+                        size = cacheLineSize;
+                    }
+                    size = (*it)->writeLeft > size - 1 ? size : (*it)->writeLeft;
+
+                    Request::Flags flags;
+                    uint8_t *data = new uint8_t[size];
+                    std::memcpy(data, &((*it)->buffer[(*it)->totalLength-(*it)->writeLeft]), size);
+                    RequestPtr req = new Request((*it)->currentWriteAddr, size, flags, masterId);
+                    req->setExtraData((uint64_t)data);
+
+
+                    DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", (*it)->totalLength, (*it)->writeLeft);
+                    DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%08x\n",
+                        (*it)->currentWriteAddr, size, *((uint64_t*)(&((*it)->buffer[(*it)->totalLength-(*it)->writeLeft]))));
+
+                    PacketPtr pkt = new Packet(req, MemCmd::WriteReq);
+                    uint8_t *pkt_data = (uint8_t *)req->getExtraData();
+                    pkt->dataDynamic(pkt_data);
+                    (*it)->pkt = pkt;
+                    pmem->privateAccess(pkt);
+
+                    (*it)->currentWriteAddr += size;
+                    (*it)->writeLeft -= size;
+
+                    DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
+                    (*it)->writeDone += pkt->getSize();
+                    if ((*it)->writeDone == (*it)->totalLength) {
+                        DPRINTF(CommInterface, "Done writing\n");
+                        cu->writeCommit((*it));
+                        delete[] (*it)->buffer;
+                        delete[] (*it)->readsDone;
+                        it = writeQueue->erase(it);
+                    }
+                }
+            } else if (localRange.contains((*it)->address)) {
+                DPRINTF(CommInterface, "In Local Memory\n");
+                if (spmPortStalled()) {
+                    DPRINTF(CommInterface, "SPM Port Stalled\n");
+                    ++it;
+                } else {
+                    if (!getSpmWriteReq()) {
+                        setSpmWriteReq(*it);
+                        it = writeQueue->erase(it);;
+                    } else {
+                        ++it;
+                    }
+                    if (getSpmWriteReq() && getSpmWriteReq()->needToWrite) {
+                        DPRINTF(CommInterface, "Trying write on SPM Port\n");
+                        tryWrite(spmPort);
+                        spmWrQ->push_back(getSpmWriteReq());
+                        if (!getSpmWriteReq()->needToWrite)
+                            setSpmWriteReq(NULL);
+                    }
+                }
+            } else {
+                DPRINTF(CommInterface, "In System Memory\n");
+                if (dramPortStalled()) {
+                    DPRINTF(CommInterface, "System Memory Port Stalled\n");
+                    ++it;
+                } else {
+                    if (!getDramWriteReq()) {
+                        setDramWriteReq(*it);
+                        it = writeQueue->erase(it);
+                    } else {
+                        ++it;
+                    }
+                    if (getDramWriteReq() && getDramWriteReq()->needToWrite) {
+                        DPRINTF(CommInterface, "Trying write on System Memory Port\n");
+                        tryWrite(dramPort);
+                        dramWrQ->push_back(getDramWriteReq());
+                        if (!getDramWriteReq()->needToWrite)
+                            setDramWriteReq(NULL);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+CommMemInterface *
+CommMemInterfaceParams::create() {
+    return new CommMemInterface(this);
 }

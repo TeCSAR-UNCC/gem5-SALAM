@@ -12,11 +12,9 @@
 #include <list>
 #include <queue>
 
-#define NUM_PORTS 4
-
 class CommInterface : public BasicPioDevice
 {
-  private:
+  protected:
     Addr io_addr;
     Addr io_size;
     Addr flag_size;
@@ -79,31 +77,6 @@ class CommInterface : public BasicPioDevice
         virtual const char *description() const { return "CommInterface tick"; }
     };
 
-//    class MemoryRequest {
-//      friend class CommInterface;
-//      private:
-//        Addr address;
-//        size_t length;
-//        bool needToRead;
-//        bool needToWrite;
-//        Addr currentReadAddr;
-//        Addr currentWriteAddr;
-//        Addr beginAddr;
-//        Tick writeLeft;
-//        Tick writeDone;
-//        Tick readLeft;
-//        Tick readDone;
-//        Tick totalLength;
-
-//        uint8_t *buffer;
-//        bool *readsDone;
-
-//        PacketPtr pkt;
-//      public:
-//        MemoryRequest(Addr add, size_t len);
-//        MemoryRequest(Addr add, uint8_t *data, size_t len);
-//    };
-
     std::list<MemoryRequest*> *readQueue;
     std::list<MemoryRequest*> *writeQueue;
     std::list<MemoryRequest*> *dramRdQ;
@@ -116,6 +89,17 @@ class CommInterface : public BasicPioDevice
     MemSidePort *dramPort;
     MemSidePort *spmPort;
 
+    bool dramPortStalled() { return dramPort->isStalled(); }
+    bool spmPortStalled() { return spmPort->isStalled(); }
+    void setSpmReadReq(MemoryRequest *req) { spmPort->readReq = req; }
+    void setSpmWriteReq(MemoryRequest *req) { spmPort->writeReq = req; }
+    void setDramReadReq(MemoryRequest *req) { dramPort->readReq = req; }
+    void setDramWriteReq(MemoryRequest *req) { dramPort->writeReq = req; }
+    MemoryRequest * getSpmReadReq() { return spmPort->readReq; }
+    MemoryRequest * getSpmWriteReq() { return spmPort->writeReq; }
+    MemoryRequest * getDramReadReq() { return dramPort->readReq; }
+    MemoryRequest * getDramWriteReq() { return dramPort->writeReq; }
+
     AddrRange localRange;
 
     CommInterface *comm;
@@ -123,7 +107,7 @@ class CommInterface : public BasicPioDevice
     TickEvent tickEvent;
     unsigned cacheLineSize;
 
-    void tick();
+    virtual void tick();
 
     bool running;
     bool computationNeeded;
@@ -207,7 +191,49 @@ class CommInterface : public BasicPioDevice
     }
 
     void clearMemRequest(MemoryRequest * req, bool isRead);
+    virtual void refreshMemPorts() {}
   protected:
+};
+
+#include "mem/simple_mem.hh"
+#include "params/PrivateMemory.hh"
+
+class PrivateMemory : public SimpleMemory
+{
+  public:
+    PrivateMemory(const PrivateMemoryParams *p);
+    void privateAccess(PacketPtr pkt);
+};
+
+#include "params/CommMemInterface.hh"
+
+class CommMemInterface : public CommInterface
+{
+  protected:
+    PrivateMemory * pmem;
+    AddrRange pmemRange;
+    int readPorts;
+    int writePorts;
+    int availablePorts;
+    int avReadPorts;
+    int avWritePorts;
+
+  public:
+    typedef CommMemInterfaceParams Params;
+    const Params *
+    params() const
+    {
+      return dynamic_cast<const Params *>(_params);
+    }
+
+    CommMemInterface(Params *p);
+    virtual void refreshMemPorts() {
+      avReadPorts = readPorts;
+      avWritePorts = writePorts;
+    }
+
+  protected:
+    virtual void tick() override;
 };
 
 #endif //__HWACC_COMM_INTERFACE_HH__
