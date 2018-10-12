@@ -5,6 +5,7 @@
 #include "debug/LLVMRegister.hh"
 #include "debug/IOAcc.hh"
 #include "debug/CommInterface.hh"
+#include "debug/CommInterfaceQueues.hh"
 #include "debug/LLVMInterface.hh"
 #include "debug/LLVMOp.hh"
 #include "debug/LLVMParse.hh"

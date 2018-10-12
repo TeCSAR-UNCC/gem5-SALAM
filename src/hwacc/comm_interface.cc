@@ -151,13 +151,13 @@ CommInterface::tick() {
         return;
     }
     if (!dramPort->isStalled() || !spmPort->isStalled()) {
-        DPRINTF(CommInterface, "Checking read requests\n");
+        DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue->size());
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
-            DPRINTF(CommInterface, "Request Address: %lx\n", (*it)->address);
+            DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", (*it)->address);
             if (!localRange.contains((*it)->address)) {
-                DPRINTF(CommInterface, "In DRAM\n");
+                DPRINTF(CommInterfaceQueues, "In DRAM\n");
                 if (dramPort->isStalled()) {
-                    DPRINTF(CommInterface, "System Memory Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "System Memory Port Stalled\n");
                     ++it;
                 } else {
                     if (!dramPort->readReq) {
@@ -167,7 +167,7 @@ CommInterface::tick() {
                         ++it;
                     }
                     if (dramPort->readReq && dramPort->readReq->needToRead) {
-                        DPRINTF(CommInterface, "Trying read on System Memory Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying read on System Memory Port\n");
                         tryRead(dramPort);
                         dramRdQ->push_back(dramPort->readReq);
                         if (!dramPort->readReq->needToRead)
@@ -175,9 +175,9 @@ CommInterface::tick() {
                     }
                 }
             } else {
-                DPRINTF(CommInterface, "In SPM\n");
+                DPRINTF(CommInterfaceQueues, "In SPM\n");
                 if (spmPort->isStalled()) {
-                    DPRINTF(CommInterface, "SPM Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "SPM Port Stalled\n");
                     ++it;
                 } else {
                     if (!spmPort->readReq) {
@@ -187,7 +187,7 @@ CommInterface::tick() {
                         ++it;
                     }
                     if (spmPort->readReq && spmPort->readReq->needToRead) {
-                        DPRINTF(CommInterface, "Trying read on SPM Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying read on SPM Port\n");
                         tryRead(spmPort);
                         spmRdQ->push_back(spmPort->readReq);
                         if (!spmPort->readReq->needToRead)
@@ -196,13 +196,13 @@ CommInterface::tick() {
                 }
             }
         }
-        DPRINTF(CommInterface, "Checking write requests\n");
+        DPRINTF(CommInterface, "Checking write requests. %d requests in queue.\n", writeQueue->size());
         for (auto it=writeQueue->begin(); it!=writeQueue->end(); ) {
-            DPRINTF(CommInterface, "Request Address: %lx ", (*it)->address);
+            DPRINTF(CommInterfaceQueues, "Request Address: %lx ", (*it)->address);
             if (!localRange.contains((*it)->address)) {
-                DPRINTF(CommInterface, "In DRAM\n");
+                DPRINTF(CommInterfaceQueues, "In DRAM\n");
                 if (dramPort->isStalled()) {
-                    DPRINTF(CommInterface, "System Memory Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "System Memory Port Stalled\n");
                     ++it;
                 } else {
                     if (!dramPort->writeReq) {
@@ -212,7 +212,7 @@ CommInterface::tick() {
                         ++it;
                     }
                     if (dramPort->writeReq && dramPort->writeReq->needToWrite) {
-                        DPRINTF(CommInterface, "Trying write on System Memory Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying write on System Memory Port\n");
                         tryWrite(dramPort);
                         dramWrQ->push_back(dramPort->writeReq);
                         if (!dramPort->writeReq->needToWrite)
@@ -220,9 +220,9 @@ CommInterface::tick() {
                     }
                 }
             } else {
-                DPRINTF(CommInterface, "In SPM\n");
+                DPRINTF(CommInterfaceQueues, "In SPM\n");
                 if (spmPort->isStalled()) {
-                    DPRINTF(CommInterface, "SPM Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "SPM Port Stalled\n");
                     ++it;
                 } else {
                     if (!spmPort->writeReq) {
@@ -232,7 +232,7 @@ CommInterface::tick() {
                         ++it;
                     }
                     if (spmPort->writeReq && spmPort->writeReq->needToWrite) {
-                        DPRINTF(CommInterface, "Trying write on SPM Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying write on SPM Port\n");
                         tryWrite(spmPort);
                         spmWrQ->push_back(spmPort->writeReq);
                         if (!spmPort->writeReq->needToWrite)
@@ -342,9 +342,9 @@ void
 CommInterface::enqueueRead(MemoryRequest * req) {
     DPRINTF(CommInterface, "Read from 0x%lx of Size:%d Bytes Enqueued:\n", req->address, req->length);
     readQueue->push_back(req);
-    DPRINTF(CommInterface, "Current Queue:\n");
+    DPRINTF(CommInterfaceQueues, "Current Queue:\n");
     for (auto it=readQueue->begin(); it!=readQueue->end(); ++it) {
-        DPRINTF(CommInterface, "Read Request: %lx\n", (*it)->address);
+        DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
         //schedule(tickEvent, curTick() + processDelay);
@@ -356,9 +356,9 @@ void
 CommInterface::enqueueWrite(MemoryRequest * req) {
     DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", req->address, req->length);
     writeQueue->push_back(req);
-    DPRINTF(CommInterface, "Current Queue:\n");
+    DPRINTF(CommInterfaceQueues, "Current Queue:\n");
     for (auto it=writeQueue->begin(); it!=writeQueue->end(); ++it) {
-        DPRINTF(CommInterface, "Write Request: %lx\n", (*it)->address);
+        DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
         //schedule(tickEvent, curTick() + processDelay);
@@ -585,13 +585,13 @@ CommMemInterface::tick() {
         return;
     }
     if (!dramPortStalled() || !spmPortStalled() || availablePorts>0) {
-        DPRINTF(CommInterface, "Checking read requests\n");
+        DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue->size());
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
-            DPRINTF(CommInterface, "Request Address: %lx\n", (*it)->address);
+            DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", (*it)->address);
             if (pmemRange.contains((*it)->address)) {
-                DPRINTF(CommInterface, "In Private Memory\n");
+                DPRINTF(CommInterfaceQueues, "In Private Memory\n");
                 if (avReadPorts <= 0) {
-                    DPRINTF(CommInterface, "No available internal read ports\n");
+                    DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
                 } else {
                     avReadPorts--;
@@ -645,9 +645,9 @@ CommMemInterface::tick() {
                     }
                 }
             } else if (localRange.contains((*it)->address)) {
-                DPRINTF(CommInterface, "In Local Memory\n");
+                DPRINTF(CommInterfaceQueues, "In Local Memory\n");
                 if (spmPortStalled()) {
-                    DPRINTF(CommInterface, "SPM Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "SPM Port Stalled\n");
                     ++it;
                 } else {
                     if (!getSpmReadReq()) {
@@ -657,7 +657,7 @@ CommMemInterface::tick() {
                         ++it;
                     }
                     if (getSpmReadReq() && getSpmReadReq()->needToRead) {
-                        DPRINTF(CommInterface, "Trying read on SPM Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying read on SPM Port\n");
                         tryRead(spmPort);
                         spmRdQ->push_back(getSpmReadReq());
                         if (!getSpmReadReq()->needToRead)
@@ -665,9 +665,9 @@ CommMemInterface::tick() {
                     }
                 }
             } else {
-                DPRINTF(CommInterface, "In System Memory\n");
+                DPRINTF(CommInterfaceQueues, "In System Memory\n");
                 if (dramPortStalled()) {
-                    DPRINTF(CommInterface, "System Memory Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "System Memory Port Stalled\n");
                     ++it;
                 } else {
                     if (!getDramReadReq()) {
@@ -677,7 +677,7 @@ CommMemInterface::tick() {
                         ++it;
                     }
                     if (getDramReadReq() && getDramReadReq()->needToRead) {
-                        DPRINTF(CommInterface, "Trying read on System Memory Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying read on System Memory Port\n");
                         tryRead(dramPort);
                         dramRdQ->push_back(getDramReadReq());
                         if (!getDramReadReq()->needToRead)
@@ -686,13 +686,13 @@ CommMemInterface::tick() {
                 }
             }
         }
-        DPRINTF(CommInterface, "Checking write requests\n");
+        DPRINTF(CommInterface, "Checking write requests. %d requests in queue.\n", writeQueue->size());
         for (auto it=writeQueue->begin(); it!=writeQueue->end(); ) {
-            DPRINTF(CommInterface, "Request Address: %lx ", (*it)->address);
+            DPRINTF(CommInterfaceQueues, "Request Address: %lx ", (*it)->address);
             if (pmemRange.contains((*it)->address)) {
-                DPRINTF(CommInterface, "In Private Memory\n");
+                DPRINTF(CommInterfaceQueues, "In Private Memory\n");
                 if (avWritePorts <= 0) {
-                    DPRINTF(CommInterface, "No available internal read ports\n");
+                    DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
                 } else {
                     avWritePorts--;
@@ -742,9 +742,9 @@ CommMemInterface::tick() {
                     }
                 }
             } else if (localRange.contains((*it)->address)) {
-                DPRINTF(CommInterface, "In Local Memory\n");
+                DPRINTF(CommInterfaceQueues, "In Local Memory\n");
                 if (spmPortStalled()) {
-                    DPRINTF(CommInterface, "SPM Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "SPM Port Stalled\n");
                     ++it;
                 } else {
                     if (!getSpmWriteReq()) {
@@ -754,7 +754,7 @@ CommMemInterface::tick() {
                         ++it;
                     }
                     if (getSpmWriteReq() && getSpmWriteReq()->needToWrite) {
-                        DPRINTF(CommInterface, "Trying write on SPM Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying write on SPM Port\n");
                         tryWrite(spmPort);
                         spmWrQ->push_back(getSpmWriteReq());
                         if (!getSpmWriteReq()->needToWrite)
@@ -762,9 +762,9 @@ CommMemInterface::tick() {
                     }
                 }
             } else {
-                DPRINTF(CommInterface, "In System Memory\n");
+                DPRINTF(CommInterfaceQueues, "In System Memory\n");
                 if (dramPortStalled()) {
-                    DPRINTF(CommInterface, "System Memory Port Stalled\n");
+                    DPRINTF(CommInterfaceQueues, "System Memory Port Stalled\n");
                     ++it;
                 } else {
                     if (!getDramWriteReq()) {
@@ -774,7 +774,7 @@ CommMemInterface::tick() {
                         ++it;
                     }
                     if (getDramWriteReq() && getDramWriteReq()->needToWrite) {
-                        DPRINTF(CommInterface, "Trying write on System Memory Port\n");
+                        DPRINTF(CommInterfaceQueues, "Trying write on System Memory Port\n");
                         tryWrite(dramPort);
                         dramWrQ->push_back(getDramWriteReq());
                         if (!getDramWriteReq()->needToWrite)
@@ -783,6 +783,11 @@ CommMemInterface::tick() {
                 }
             }
         }
+    }
+    int requestsInQueues = readQueue->size() + writeQueue->size();
+    if (!tickEvent.scheduled() && requestsInQueues>0) {
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
     }
 }
 

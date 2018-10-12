@@ -351,6 +351,7 @@ LLVMInterface::constructBBList() {
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine. 
 *********************************************************************************************/
     DPRINTF(LLVMInterface, "Constructing Dependency Graph!\n");
+    initFU();
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
@@ -650,6 +651,48 @@ LLVMInterface::statistics() {
     "\n   FU Area = ",pwrUtil->getArea()," um^2, (", pwrUtil->getArea()/1000000, " mm^2)",
 */
 
+}
+
+
+void
+LLVMInterface::initFU() {
+    maxFU(_FunctionalUnits);
+    _FunctionalUnits.counter_units = 0;
+    _FunctionalUnits.int_adder_units = 0;
+    _FunctionalUnits.int_multiply_units = 0;
+    _FunctionalUnits.int_shifter_units = 0;
+    _FunctionalUnits.int_bit_units = 0;
+    _FunctionalUnits.fp_sp_adder = 0;
+    _FunctionalUnits.fp_dp_adder = 0;
+    _FunctionalUnits.fp_sp_multiply = 0;
+    _FunctionalUnits.fp_dp_multiply = 0;
+    _FunctionalUnits.compare = 0;
+    _FunctionalUnits.gep = 0;
+    _FunctionalUnits.conversion = 0;
+    _MaxParsed.counter_units = 0;
+    _MaxParsed.int_adder_units = 0;
+    _MaxParsed.int_multiply_units = 0;
+    _MaxParsed.int_shifter_units = 0;
+    _MaxParsed.int_bit_units = 0;
+    _MaxParsed.fp_sp_adder = 0;
+    _MaxParsed.fp_dp_adder = 0;
+    _MaxParsed.fp_sp_multiply = 0;
+    _MaxParsed.fp_dp_multiply = 0;
+    _MaxParsed.compare = 0;
+    _MaxParsed.gep = 0;
+    _MaxParsed.conversion = 0;
+    _MaxFU.counter_units = 0;
+    _MaxFU.int_adder_units = 0;
+    _MaxFU.int_multiply_units = 0;
+    _MaxFU.int_shifter_units = 0;
+    _MaxFU.int_bit_units = 0;
+    _MaxFU.fp_sp_adder = 0;
+    _MaxFU.fp_dp_adder = 0;
+    _MaxFU.fp_sp_multiply = 0;
+    _MaxFU.fp_dp_multiply = 0;
+    _MaxFU.compare = 0;
+    _MaxFU.gep = 0;
+    _MaxFU.conversion = 0;
 }
 
 

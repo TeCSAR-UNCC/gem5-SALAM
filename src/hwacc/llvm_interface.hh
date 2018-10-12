@@ -77,6 +77,7 @@ class LLVMInterface : public ComputeUnit {
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
     void detectEdges();
+    void initFU();
     void clearFU();
     void updateFU(int8_t FU);
     void maxFU(FunctionalUnits FU);

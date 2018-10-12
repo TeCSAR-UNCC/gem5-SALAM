@@ -9,11 +9,11 @@ def makeHWAcc(options, system):
     local_range = AddrRange(0x2f000000, 0x7fffffff)
     external_range = [AddrRange(0x00000000, 0x2effffff), AddrRange(0x80000000, 0xffffffff)]
     system.acc_cluster._attach_bridges(system, local_range, external_range)
-    system.acc_cluster._add_spm(AddrRange(0x2f100000, size='128kB'), '2ns')
+    #system.acc_cluster._add_spm(AddrRange(0x2f100000, size='128kB'), '2ns')
     system.acc_cluster._connect_caches(system, options, '1kB')
 
     # Add an accelerator to the cluster and connect it
-    system.acc_cluster.acc = CommInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
+    system.acc_cluster.acc = CommMemInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
     system.acc_cluster.acc.flags_size = 1
     system.acc_cluster.acc.config_size = 0
     system.acc_cluster.acc.local_range = local_range
@@ -21,7 +21,12 @@ def makeHWAcc(options, system):
     system.acc_cluster.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
     system.acc_cluster.acc.int_num = 68
     system.acc_cluster.acc.clock_period = 10
+    system.acc_cluster.acc.private_range = AddrRange(0x2f100000, size='128kB')
+    system.acc_cluster.acc.private_memory = PrivateMemory(range=system.acc_cluster.acc.private_range, conf_table_reported=False, latency='2ns')
+    system.acc_cluster.acc.private_read_ports = 6
+    system.acc_cluster.acc.private_write_ports = 6
     system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
+    system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
 
     # Add DMA devices to the cluster and connect them
     system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32)
@@ -47,4 +52,4 @@ def makeHWAcc(options, system):
     system.acc_cluster.acc.llvm_interface.FU_counter = -1
     system.acc_cluster.acc.llvm_interface.FU_compare = -1
     system.acc_cluster.acc.llvm_interface.FU_GEP = -1
-    system.acc_cluster.acc.llvm_interface.FU_pipelined = 0
+    system.acc_cluster.acc.llvm_interface.FU_pipelined = 1
