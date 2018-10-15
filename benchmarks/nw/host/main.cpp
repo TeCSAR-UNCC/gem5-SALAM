@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstring>
 #include "nw.h"
+#include "../../common/dma.h"
+#include "../../common/m5ops.h"
 
 nw_struct nws;
 
@@ -25,6 +27,12 @@ int main(void) {
 	char * ptr      = (char *)(BASE+PTR_OFF);
 	char * checkA   = (char *)(BASE+CHECKA_OFF);
 	char * checkB   = (char *)(BASE+CHECKB_OFF);
+#ifdef SPM
+	char *spmsA		= (char *)(SPM_BASE+SEQA_OFF);
+	char *spmsB		= (char *)(SPM_BASE+SEQB_OFF);
+	char *spmaA		= (char *)(SPM_BASE+ALIA_OFF);
+	char *spmaB		= (char *)(SPM_BASE+ALIB_OFF);
+#endif
 
 	common_val = 0;
     nws.seqA = seqA;
@@ -54,8 +62,12 @@ int main(void) {
     val_M      = (uint64_t)(SPM_BASE+M_OFF);
     val_ptr    = (uint64_t)(SPM_BASE+PTR_OFF);
 
-    std::memcpy((void *)(SPM_BASE+SEQA_OFF), (void *)seqA, ALEN);
-    std::memcpy((void *)(SPM_BASE+SEQB_OFF), (void *)seqB, BLEN);
+    dmacpy(spmsA, seqA, ALEN);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmsB, seqB, BLEN);
+    while(!pollDma());
+    resetDma();
 #endif
     int i;
     printf("%d\n", acc);
@@ -67,8 +79,11 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)alignedA, (void *)(SPM_BASE+ALIA_OFF), (ALEN+BLEN));
-    std::memcpy((void *)alignedB, (void *)(SPM_BASE+ALIB_OFF), (ALEN+BLEN));
+    dmacpy(alignedA, spmaA, (ALEN+BLEN));
+    while(!pollDma());
+    resetDma();
+    dmacpy(alignedB, spmaB, (ALEN+BLEN));
+    while(!pollDma());
 #endif
     acc = 0x00;
 	if(!checkData(&nws)) {
@@ -92,5 +107,6 @@ int main(void) {
 			printf("%c", checkB[i]);
 		}
 	}
-	*(char *)0x7fffffff = 1;
+//	*(char *)0x7fffffff = 1;
+	m5_exit();
 }

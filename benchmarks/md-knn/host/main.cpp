@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstring>
 #include "md.h"
+#include "../../common/dma.h"
+#include "../../common/m5ops.h"
 
 #define BASE            0x80c00000
 #define SPM_BASE        0x2f100000
@@ -31,6 +33,15 @@ int main(void) {
 	TYPE *check_x       = (TYPE     *)(BASE+CHKX_OFFSET);
 	TYPE *check_y       = (TYPE     *)(BASE+CHKY_OFFSET);
 	TYPE *check_z       = (TYPE     *)(BASE+CHKZ_OFFSET);
+#ifdef SPM
+	TYPE *spmfx			= (TYPE		*)(SPM_BASE+FRCX_OFFSET);
+	TYPE *spmfy			= (TYPE		*)(SPM_BASE+FRCY_OFFSET);
+	TYPE *spmfz			= (TYPE		*)(SPM_BASE+FRCZ_OFFSET);
+	TYPE *spmpx			= (TYPE		*)(SPM_BASE+POSX_OFFSET);
+	TYPE *spmpy			= (TYPE		*)(SPM_BASE+POSY_OFFSET);
+	TYPE *spmpz			= (TYPE		*)(SPM_BASE+POSZ_OFFSET);
+	TYPE *spmnl			= (TYPE		*)(SPM_BASE+NL_OFFSET);
+#endif
 
 	common_val = 0;
 
@@ -66,10 +77,23 @@ int main(void) {
     loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
     loc_NL          = (uint64_t)(BASE+NL_OFFSET);
 
-    std::memcpy((void *)(SPM_BASE+POSX_OFFSET), (void *)position_x,   sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+POSY_OFFSET), (void *)position_y,   sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+POSZ_OFFSET), (void *)position_z,   sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)(SPM_BASE+NL_OFFSET),   (void *)NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
+//    std::memcpy((void *)(SPM_BASE+POSX_OFFSET), (void *)position_x,   sizeof(TYPE)*nAtoms);
+//    std::memcpy((void *)(SPM_BASE+POSY_OFFSET), (void *)position_y,   sizeof(TYPE)*nAtoms);
+//    std::memcpy((void *)(SPM_BASE+POSZ_OFFSET), (void *)position_z,   sizeof(TYPE)*nAtoms);
+//    std::memcpy((void *)(SPM_BASE+NL_OFFSET),   (void *)NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
+
+    dmacpy(spmpx, position_x,	sizeof(TYPE)*nAtoms);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmpy, position_y,   sizeof(TYPE)*nAtoms);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmpz, position_z,   sizeof(TYPE)*nAtoms);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmnl, NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
+    while(!pollDma());
+    resetDma();
 #endif
     int i;
     printf("%d\n", acc);
@@ -81,9 +105,14 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)force_x,    (void *)(SPM_BASE+FRCX_OFFSET),     sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)force_y,    (void *)(SPM_BASE+FRCY_OFFSET),     sizeof(TYPE)*nAtoms);
-    std::memcpy((void *)force_z,    (void *)(SPM_BASE+FRCZ_OFFSET),     sizeof(TYPE)*nAtoms);
+    dmacpy(force_x,	spmfx,	sizeof(TYPE)*nAtoms);
+    while(!pollDma());
+    resetDma();
+    dmacpy(force_y,	spmfy,	sizeof(TYPE)*nAtoms);
+    while(!pollDma());
+    resetDma();
+    dmacpy(force_z,	spmfz,	sizeof(TYPE)*nAtoms);
+    while(!pollDma());
 #endif
     acc = 0x00;
     if(!checkData(&mds)) {
@@ -122,5 +151,6 @@ int main(void) {
         printf("                               \n");
         printf("Errors: %d \n Total Checks: %d \n", errors, checkvals);
     }
-	*(char *)0x7fffffff = 1; //Kill the simulation
+//	*(char *)0x7fffffff = 1; //Kill the simulation
+	m5_exit();
 }

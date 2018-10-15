@@ -2,7 +2,7 @@
 #define __DEFINES_H__
 
 #include "stdint.h"
-//#define SPM
+#define SPM
 //#define TEST
 
 #ifdef TEST

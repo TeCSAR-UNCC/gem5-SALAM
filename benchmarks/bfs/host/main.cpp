@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstring>
 #include "bfs.h"
+#include "../../common/dma.h"
+#include "../../common/m5ops.h"
 
 bfs_struct bfs;
 
@@ -16,12 +18,18 @@ bfs_struct bfs;
 #define CHECK_OFFSET COUNT_OFFSET + sizeof(edge_index_t) * N_LEVELS
 
 int main(void) {
-    node_index_t * nodes =         (node_index_t *)(BASE + NODES_OFFSET);
-    edge_index_t * edges =         (edge_index_t *)(BASE + EDGES_OFFSET);
-    node_index_t * starting_node = (node_index_t *)(BASE + START_OFFSET);
-    level_t      * level =         (level_t      *)(BASE + LEVEL_OFFSET);
-    edge_index_t * level_counts =  (edge_index_t *)(BASE + COUNT_OFFSET);
-    edge_index_t * check =         (edge_index_t *)(BASE + CHECK_OFFSET);
+    node_index_t * nodes 			= (node_index_t *)(BASE + NODES_OFFSET);
+    edge_index_t * edges 			= (edge_index_t *)(BASE + EDGES_OFFSET);
+    node_index_t * starting_node 	= (node_index_t *)(BASE + START_OFFSET);
+    level_t      * level 			= (level_t      *)(BASE + LEVEL_OFFSET);
+    edge_index_t * level_counts 	= (edge_index_t *)(BASE + COUNT_OFFSET);
+    edge_index_t * check 			= (edge_index_t *)(BASE + CHECK_OFFSET);
+#ifdef SPM
+    node_index_t * spmn 			= (node_index_t *)(SPM_BASE + NODES_OFFSET);
+    edge_index_t * spme 			= (edge_index_t *)(SPM_BASE + EDGES_OFFSET);
+    level_t      * spml 			= (level_t      *)(SPM_BASE + LEVEL_OFFSET);
+    edge_index_t * spmlc		 	= (edge_index_t *)(SPM_BASE + COUNT_OFFSET);
+#endif
 
     bfs.nodes = nodes;
     bfs.edges = edges;
@@ -47,8 +55,16 @@ int main(void) {
     LEVEL_ADDR = (uint64_t)(SPM_BASE + LEVEL_OFFSET);
     COUNT_ADDR = (uint64_t)(SPM_BASE + COUNT_OFFSET);
 
-    std::memcpy((void *)(SPM_BASE + NODES_OFFSET), (void *)nodes, sizeof(node_index_t) * N_NODES * 2);
-    std::memcpy((void *)(SPM_BASE + EDGES_OFFSET), (void *)edges, sizeof(edge_index_t) * N_EDGES);
+    dmacpy(spmn,		nodes,	sizeof(node_index_t) * N_NODES * 2);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spme, 		edges, 	sizeof(edge_index_t) * N_EDGES);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spml,		level,	sizeof(level_t) * N_NODES);
+    while(!pollDma());
+    resetDma();
+
 #endif
     int i;
     printf("%d\n", ACC);
@@ -58,8 +74,8 @@ int main(void) {
         printf("%d\n", ACC);
 	}
 #ifdef SPM
-    std::memcpy((void *)level, (void *)(SPM_BASE + LEVEL_OFFSET), sizeof(level_t));
-    std::memcpy((void *)level_counts, (void *)(SPM_BASE + COUNT_OFFSET), sizeof(edge_index_t) * N_LEVELS);
+    dmacpy(level_counts,	spmlc,	sizeof(edge_index_t) * N_LEVELS);
+    while(!pollDma());
 #endif
 	if(!checkData(&bfs)) {
 	    for (i = 0; i < N_LEVELS; i++) {
@@ -68,5 +84,6 @@ int main(void) {
 	        //}
 	    }
 	}
-	*(char *)(0x7fffffff) = 0;
+//	*(char *)(0x7fffffff) = 0;
+  m5_exit();
 }

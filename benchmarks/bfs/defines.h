@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-
+#define SPM
 #ifndef TEST
 // Terminology (but not values) from graph500 spec
 //   graph density = 2^-(2*SCALE - EDGE_FACTOR)

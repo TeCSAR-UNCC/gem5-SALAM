@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstring>
 #include "fft.h"
+#include "../../common/dma.h"
+#include "../../common/m5ops.h"
 
 fft_struct ffts;
 
@@ -16,12 +18,18 @@ fft_struct ffts;
 #define ICHK_OFFSET     32*FFT_SIZE
 
 int main(void) {
-	double *real       = (double *)(BASE+REAL_OFFSET);
-	double *img        = (double *)(BASE+IMG_OFFSET);
-	double *real_twid  = (double *)(BASE+RTWID_OFFSET);
-	double *img_twid   = (double *)(BASE+ITWID_OFFSET);
-	double *real_check = (double *)(BASE+RCHK_OFFSET);
-	double *img_check  = (double *)(BASE+ICHK_OFFSET);
+	double *real       	= (double *)(BASE+REAL_OFFSET);
+	double *img        	= (double *)(BASE+IMG_OFFSET);
+	double *real_twid  	= (double *)(BASE+RTWID_OFFSET);
+	double *img_twid   	= (double *)(BASE+ITWID_OFFSET);
+	double *real_check 	= (double *)(BASE+RCHK_OFFSET);
+	double *img_check  	= (double *)(BASE+ICHK_OFFSET);
+#ifdef SPM
+	double *spmr 		= (double *)(SPM_BASE+REAL_OFFSET);
+	double *spmi       	= (double *)(SPM_BASE+IMG_OFFSET);
+	double *spmrt  		= (double *)(SPM_BASE+RTWID_OFFSET);
+	double *spmit   	= (double *)(SPM_BASE+ITWID_OFFSET);
+#endif
 
 	common_val      = 0;
     ffts.real       = real;
@@ -46,10 +54,18 @@ int main(void) {
 	loc_real_twid  = (uint64_t)(SPM_BASE+RTWID_OFFSET);
 	loc_img_twid   = (uint64_t)(SPM_BASE+ITWID_OFFSET);
 
-    std::memcpy((void *)(SPM_BASE+REAL_OFFSET),  (void *)real,      sizeof(double)*FFT_SIZE);
-    std::memcpy((void *)(SPM_BASE+IMG_OFFSET),   (void *)img,       sizeof(double)*FFT_SIZE);
-    std::memcpy((void *)(SPM_BASE+RTWID_OFFSET), (void *)real_twid, sizeof(double)*FFT_SIZE/2);
-    std::memcpy((void *)(SPM_BASE+ITWID_OFFSET), (void *)img_twid,  sizeof(double)*FFT_SIZE/2);
+    dmacpy(spmr,	real,		sizeof(double)*FFT_SIZE);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmi,	img,       	sizeof(double)*FFT_SIZE);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmrt, 	real_twid, 	sizeof(double)*FFT_SIZE/2);
+    while(!pollDma());
+    resetDma();
+    dmacpy(spmit, 	img_twid,  	sizeof(double)*FFT_SIZE/2);
+    while(!pollDma());
+    resetDma();
 #endif
     int i;
     printf("%d\n", acc);
@@ -61,8 +77,11 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void *)real, (void *)(SPM_BASE+REAL_OFFSET), sizeof(double)*FFT_SIZE);
-    std::memcpy((void *)img,  (void *)(SPM_BASE+IMG_OFFSET),  sizeof(double)*FFT_SIZE);
+    dmacpy(real, 	spmr, 	sizeof(double)*FFT_SIZE);
+    while(!pollDma());
+    resetDma();
+    dmacpy(img,  	spmi,	sizeof(double)*FFT_SIZE);
+	while(!pollDma());
 #endif
     acc = 0x00;
 	if(!checkData(&ffts)) {
@@ -75,5 +94,6 @@ int main(void) {
 	            printf("img[%2d]=%f expected[%d]=%f\n", i, img[i], i, img_check[i]);
 	    }
 	}
-	*(char *)0x7fffffff = 1; //Kill the simulation
+//	*(char *)0x7fffffff = 1; //Kill the simulation
+	m5_exit();
 }

@@ -38,6 +38,7 @@
 #include <cstring>
 #include "gemm.h"
 #include "../../common/dma.h"
+#include "../../common/m5ops.h"
 
 gemm_struct ges;
 
@@ -127,5 +128,6 @@ int main(void) {
         printf("Check Failed\n");
     else
         printf("Check Passed\n");
-    *(char *)0x2FFFFFFF = 1;
+//    *(char *)0x2FFFFFFF = 1;
+	m5_exit();
 }
