@@ -3,6 +3,7 @@
 #include <cstring>
 #include "vadd.h"
 #include "../../common/dma.h"
+#include "../../common/m5ops.h"
 
 vadd_struct vas;
 
@@ -64,5 +65,5 @@ int main(void) {
 	    }
 	}
 	printf("%d", acc);
-	*(char *)0x2FFFFFFF = 1;
+	m5_exit();
 }
