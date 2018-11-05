@@ -61,7 +61,7 @@ def makeHWAcc(options, system):
 
 
     # Add DMA devices to the cluster and connect them
-    system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32, int_num=95)
     system.acc_cluster._connect_dma(system, system.acc_cluster.dma)
 
     system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=40, gic=system.realview.gic, max_pending=32)
