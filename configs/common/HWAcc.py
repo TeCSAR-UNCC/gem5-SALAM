@@ -59,6 +59,7 @@ def makeHWAcc(options, system):
         system.acc_cluster._connect_hwacc(system.acc_cluster.fir)
         system.acc_cluster._connect_spm(system.acc_cluster.fir.private_memory)
 
+
     # Add DMA devices to the cluster and connect them
     system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32)
     system.acc_cluster._connect_dma(system, system.acc_cluster.dma)
@@ -85,3 +86,6 @@ def makeHWAcc(options, system):
         system.acc_cluster.acc.llvm_interface.FU_compare = -1
         system.acc_cluster.acc.llvm_interface.FU_GEP = -1
         system.acc_cluster.acc.llvm_interface.FU_pipelined = 1
+        system.acc_cluster.acc.llvm_interface.sched_threshold = 1000
+        system.acc_cluster.acc.llvm_interface.FU_clock_period = 10000
+

@@ -10,24 +10,6 @@
 #include <list>
 #include <queue>
 
-// Random Code
-
-struct FunctionalUnits {
-  int32_t counter_units;
-  int32_t int_adder_units;
-  int32_t int_multiply_units;
-  int32_t int_shifter_units;
-  int32_t int_bit_units;
-  int32_t fp_sp_adder;
-  int32_t fp_dp_adder;
-  int32_t fp_sp_multiply;
-  int32_t fp_dp_multiply;  
-  int32_t compare;
-  int32_t gep;
-  int32_t conversion;
-  int32_t other;  
-};
-
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
@@ -60,6 +42,7 @@ class LLVMInterface : public ComputeUnit {
     int cycle;
     int stalls;
     int execnodes;
+    int clock_period;
     FunctionalUnits _FunctionalUnits;
     FunctionalUnits _MaxFU;
     FunctionalUnits _MaxParsed;
@@ -67,6 +50,7 @@ class LLVMInterface : public ComputeUnit {
     InstructionBase* findParent(Register*);
     InstructionBase* findParent(std::string);
     InstructionBase* detectRAW(Register*);
+    Utilization* pwrUtil;
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();

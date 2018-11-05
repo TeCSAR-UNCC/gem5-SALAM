@@ -19,7 +19,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     compare(p->FU_compare),
     gep(p->FU_GEP),
     conversion(p->FU_conversion),
-    pipelined(p->FU_pipelined) {
+    pipelined(p->FU_pipelined) ,
+    clock_period(p->FU_clock_period){
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -72,6 +73,7 @@ LLVMInterface::tick() {
             "********************************************************************************");
     cycle++;
     comm->refreshMemPorts();
+    pwrUtil->updatePowerConsumption(_FunctionalUnits);
     clearFU();
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
@@ -123,32 +125,6 @@ LLVMInterface::tick() {
         if (reservation.at(i)->_ActiveParents == 0) {
             if(!(reservation.at(i)->_Terminator)) { 
                     if(reservation.at(i)->_OpCode == "load") {
-                        /*
-                        bool raw = false;
-                        for(auto j = 0; j < i; j++) {
-                            if(reservation.at(j)->_OpCode == "store") {
-                                if((reservation.at(i)->_RawCheck->getName()) == (reservation.at(j)->_RawCheck->getName())) { 
-                                    raw = true; 
-                                    reservation.at(i)->_Stall = true;
-                                    DPRINTF(LLVMInterface, "Load Pointer: (%s), Store Pointer: (%s)\n",reservation.at(i)->_RawCheck->getName(), reservation.at(j)->_RawCheck->getName());
-                                    DPRINTF(LLVMInterface, "RAW Dependency (%s) \n", reservation.at(i)->_ReturnRegister->getName());
-                                }
-                            }
-                        }
-                        if(!raw) {
-                            if(!(reservation.at(i)->_Stall)) {
-                                readQueue.push_back(reservation.at(i));
-                                reservation.at(i)->compute();
-                                if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                                scheduled = true;
-                                auto it = reservation.erase(reservation.begin()+i);
-                                i = std::distance(reservation.begin(), it);
-                            } else {
-                                reservation.at(i)->_Stall = false;
-                                i++;
-                            }
-                        } else i++;
-                        */
                         readQueue.push_back(reservation.at(i));
                         reservation.at(i)->compute();
                         if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
@@ -172,10 +148,10 @@ LLVMInterface::tick() {
                     } else { // Computation Units
                         if(!unlimitedFU){
                             if(limitedFU(reservation.at(i)->_FunctionalUnit)){
+                                if(reservation.at(i)->_OpCode == "fdiv") _FunctionalUnits.fpDivision++;
                                 computeQueue.push_back(reservation.at(i));
                                 reservation.at(i)->compute();
                                 reservation.at(i)->commit();
-                                if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                                 scheduled = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
@@ -191,10 +167,6 @@ LLVMInterface::tick() {
                             i = std::distance(reservation.begin(), it);
                         }
                     }
-                    // if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                    // scheduled = true;
-                    // auto it = reservation.erase(reservation.begin()+i);
-                    // i = std::distance(reservation.begin(), it);
             } else if ((reservation.at(i)->_OpCode != "ret")) {
                 if (reservation.size() < scheduling_threshold) {
                     if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
@@ -203,7 +175,6 @@ LLVMInterface::tick() {
                     currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
                     auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
                     i = std::distance(reservation.begin(), it);
-                    //currBB->prevBB(prevBB->getName());
                     scheduleBB(currBB);
                 } else i++;
             } 
@@ -272,7 +243,6 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
         }
         std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
         if (depList.size() > 0) {
-            //if(!((depList.size() == 1) && (depList.at(0) == NULL))) { // Special case for GEP with global and Imm only values
             for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
                 if (depList.at(j)!=NULL) {
                     InstructionBase * parent = findParent(depList.at(j));
@@ -359,7 +329,7 @@ LLVMInterface::constructBBList() {
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
-    //pwrUtil = new Utilization(clock_period/1000);
+    pwrUtil = new Utilization(clock_period);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
     bool inFunction = false; // Parse Variable
@@ -551,55 +521,8 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    /*
-    for(auto it = opCount.begin(); it != opCount.end(); ++it)  {
-        DPRINTF(IOAcc, "Instruction (Count): %s  (%d)\n", it->first, it->second);
-    }
-    */
-   /*
-    DPRINTF(Hardware, "%s %s %s",
-    "\n*******************************************************************************",
-    "\n******************************* Instruction Usage *****************************",
-    "\n*******************************************************************************\n");
-    DPRINTF(Hardware, "Floating Point Instructions:\n");
-    for(auto it = pwrUtil->floats.begin(); it != pwrUtil->floats.end(); ++it)  {
-        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
-    }
-    DPRINTF(Hardware, "Integer Instructions:\n");
-    for(auto it = pwrUtil->integer.begin(); it != pwrUtil->integer.end(); ++it)  {
-        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
-    }
-    DPRINTF(Hardware, "Custom Instructions:\n");
-    for(auto it = pwrUtil->others.begin(); it != pwrUtil->others.end(); ++it)  {
-        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
-    }
-    DPRINTF(Hardware, "Bitwise Instructions:\n");
-    for(auto it = pwrUtil->bitCount.begin(); it != pwrUtil->bitCount.end(); ++it)  {
-        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
-    }
-    DPRINTF(Hardware, "Shift Instructions:\n");
-    for(auto it = pwrUtil->shiftCount.begin(); it != pwrUtil->shiftCount.end(); ++it)  {
-        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
-    }
-    DPRINTF(Hardware, "Other Instructions:\n");
-    for(auto it = pwrUtil->opCount.begin(); it != pwrUtil->opCount.end(); ++it)  {
-        DPRINTF(Hardware, "[%s]-(%d)\n", it->first, it->second);
-    }
-    DPRINTF(Hardware, "%s %s %s",
-    "\n*******************************************************************************",
-    "\n*******************************  Register Usage   *****************************",
-    "\n*******************************************************************************\n");
-
-    for (auto it=regList->beginit(); it!=regList->endit(); ++it) {
-        DPRINTF(Hardware, "[%s] Reads-(%d) Writes-(%d)\n", (*it)->getName(),(*it)->getRead(), (*it)->getWrite());
-    }
-    DPRINTF(Hardware, "%s %s %s",
-    "\n*******************************************************************************",
-    "\n*******************************   Final Results   *****************************",
-    "\n*******************************************************************************\n");
-
-    double divisor = cycle * (clock_period / 1000);
-    */
+    //double divisor = cycle * (clock_period / 1000);
+    
     DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
     "\n*******************************************************************************",
     "\n   Runtime (Cycles):                ", cycle,
@@ -669,6 +592,7 @@ LLVMInterface::initFU() {
     _FunctionalUnits.compare = 0;
     _FunctionalUnits.gep = 0;
     _FunctionalUnits.conversion = 0;
+    _FunctionalUnits.fpDivision = 0;
     _MaxParsed.counter_units = 0;
     _MaxParsed.int_adder_units = 0;
     _MaxParsed.int_multiply_units = 0;
@@ -711,6 +635,7 @@ LLVMInterface::clearFU() {
     _FunctionalUnits.compare = 0;
     _FunctionalUnits.gep = 0;
     _FunctionalUnits.conversion = 0;
+    _FunctionalUnits.fpDivision = 0;
 }
 
 void
