@@ -1,15 +1,24 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "vadd.h"
-#include "../../common/dma.h"
+#include "main.h"
 #include "../../common/m5ops.h"
+//#include "../../common/dma.h"
 
 vadd_struct vas;
+
+extern "C" int dmacpy(void*, void*, int);
+extern "C" int pollDma();
+extern "C" int resetDma();
 
 int main(void) {
 	uint64_t base = 0x80c00000;
     uint64_t spm_base = 0x2f100000;
+    uint8_t * acc = (uint8_t *)0x2f000000;
+    uint64_t * val_a = (uint64_t *)0x2f000001;
+    uint64_t * val_b = (uint64_t *)0x2f000009;
+    uint64_t * val_c = (uint64_t *)0x2f000011;
+    int junk = 0;
 
 	TYPE *a = (TYPE *)(base+0);
 	TYPE *b = (TYPE *)(base+sizeof(TYPE)*LENGTH);
@@ -19,7 +28,6 @@ int main(void) {
 	TYPE *spm_b = (TYPE *)(spm_base+sizeof(TYPE)*LENGTH);
 	TYPE *spm_c = (TYPE *)(spm_base+2*sizeof(TYPE)*LENGTH);
 
-	common_val = 0;
     vas.a = a;
     vas.b = b;
     vas.c = c;
@@ -30,40 +38,43 @@ int main(void) {
     genData(&vas);
     printf("Data generated\n");
 #ifndef SPM
-    val_a = (uint64_t)base;
-    val_b = (uint64_t)(base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(base+2*sizeof(TYPE)*LENGTH);
+    *val_a = (uint64_t)base;
+    *val_b = (uint64_t)(base+sizeof(TYPE)*LENGTH);
+    *val_c = (uint64_t)(base+2*sizeof(TYPE)*LENGTH);
 #else
-    val_a = (uint64_t)spm_base;
-    val_b = (uint64_t)(spm_base+sizeof(TYPE)*LENGTH);
-    val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
-
+    dma_signal = 0;
+    *val_a = (uint64_t)spm_base;
+    *val_b = (uint64_t)(spm_base+sizeof(TYPE)*LENGTH);
+    *val_c = (uint64_t)(spm_base+2*sizeof(TYPE)*LENGTH);
+    printf("Starting DMA Xfer\n");
     dmacpy(spm_a, a, sizeof(TYPE)*LENGTH);
-    while(!pollDma());
-    resetDma();
     dmacpy(spm_b, b, sizeof(TYPE)*LENGTH);
-    while(!pollDma());
-    resetDma();
+    while(dma_signal==0) { junk++; }
 #endif
+    dev_signal = 0;
+    printf("Launching Accelerator\n");
     int i;
-    printf("%d\n", acc);
+    *acc = 0x01;
+    printf("%d\n", *acc);
 
-    acc = 0x01;
-    printf("%d\n", acc);
-
-	while(acc != 0x4) {
-        printf("%d\n", acc);
-	}
+	while(dev_signal==0) { junk++; }
 #ifdef SPM
+    printf("Reading data from device\n");
+    dma_signal = 0;
     dmacpy(c, spm_c, sizeof(TYPE)*LENGTH);
-    while(!pollDma());
+    while(dma_signal==0) { junk++; }
 #endif
-    acc = 0x00;
 	if(!checkData(&vas)) {
 	    for (i = 0; i < LENGTH; i++) {
 	        printf("C[%2d]=%f\n", i, vas.c[i]);
 	    }
 	}
-	printf("%d", acc);
 	m5_exit();
+}
+
+void hostStep(int test) {
+    if (test == -1) {
+        printf("Done xfers\n");
+        dma_signal = 1;
+    }
 }

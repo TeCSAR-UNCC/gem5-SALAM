@@ -35,6 +35,10 @@ CROSS_COMPILE_DIR = /usr/bin
 
 ARCH          ?= arm
 CROSS_COMPILE ?= arm-none-eabi-
+#CROSS_COMPILE_DIR = /home/samerogers/aarch64-toolchain/bin
+
+#ARCH          ?= aarch64
+#CROSS_COMPILE ?= aarch64-elf-
 
 AS           = $(CROSS_COMPILE_DIR)/$(CROSS_COMPILE)as
 LD           = $(CROSS_COMPILE_DIR)/$(CROSS_COMPILE)ld
@@ -52,4 +56,5 @@ CXXFLAGS     = -g -O3 -lunistd -I . -fno-exceptions
 ASFLAGS      = -EL
 LNK_OPT      = -nostartfiles
 LNK_SCRIPT   = boot.ld
+#LNK_SCRIPT   = start64.ld
 LNK_FILE_OPT = -nostartfiles -Xlinker -T$(LNK_SCRIPT)

@@ -32,7 +32,9 @@
 #			Frederik Lauer
 include ../../common/Makefile
 
-OBJS         = boot.o ../../common/syscalls.o main.o isr.o
+#OBJS         = start64.o ../../common/syscalls.o main.o isr.o
+#OBJS         = boot.o ../../common/syscalls.o main.o isr.o
+OBJS         = boot.o ../../common/syscalls.o ../../common/queue_dma.o main.o isr.o
 
 all: clean main.elf
 
@@ -42,5 +44,9 @@ main.elf: $(OBJS) $(LNK_SCRIPT) Makefile
 boot.o: Makefile
 	$(CPP) boot.s $(CFLAGS) | $(AS) $(ASFLAGS) -o boot.o
 
+start64.o: Makefile
+	$(CPP) start64.s $(CFLAGS) | $(AS) $(ASFLAGS) -o start64.o
+
 clean:
 	rm -f *.o *.elf
+	rm -f ../../common/*.o
