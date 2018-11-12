@@ -131,8 +131,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
 }
 
 void
-CommInterface::tick() {
-    DPRINTF(CommInterface, "Tick!\n");
+CommInterface::checkMMR() {
     if (!computationNeeded) {
         DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
@@ -147,9 +146,11 @@ CommInterface::tick() {
             //schedule(tickEvent, curTick() + processDelay);
             schedule(tickEvent, nextCycle());
         }
-
-        return;
     }
+}
+
+void
+CommInterface::processMemoryRequests() {
     if (!dramPort->isStalled() || !spmPort->isStalled()) {
         DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue->size());
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
@@ -242,6 +243,20 @@ CommInterface::tick() {
             }
         }
     }
+    requestsInQueues = readQueue->size() + writeQueue->size();
+    if (!tickEvent.scheduled() && requestsInQueues>0) {
+        //schedule(tickEvent, curTick() + processDelay);
+        schedule(tickEvent, nextCycle());
+    }
+}
+
+void
+CommInterface::tick() {
+    DPRINTF(CommInterface, "Tick!\n");
+    checkMMR();
+    requestsInQueues = readQueue->size() + writeQueue->size();
+    if (requestsInQueues > 0)
+        processMemoryRequests();
 }
 
 void
@@ -562,28 +577,9 @@ CommMemInterface::CommMemInterface(Params *p) :
     }
 
 void
-CommMemInterface::tick() {
-    DPRINTF(CommInterface, "Tick!\n");
-
+CommMemInterface::processMemoryRequests() {
     availablePorts = avReadPorts + avWritePorts;
 
-    if (!computationNeeded) {
-        DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
-        if (*mmreg & 0x01) {
-            *mmreg &= 0xfe;
-            *mmreg |= 0x02;
-            computationNeeded = true;
-            cu->initialize();
-        }
-
-        if (processingDone && !tickEvent.scheduled()) {
-            processingDone = false;
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
-        }
-
-        return;
-    }
     if (!dramPortStalled() || !spmPortStalled() || availablePorts>0) {
         DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue->size());
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
@@ -784,11 +780,27 @@ CommMemInterface::tick() {
             }
         }
     }
-    int requestsInQueues = readQueue->size() + writeQueue->size();
+    requestsInQueues = readQueue->size() + writeQueue->size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
         //schedule(tickEvent, curTick() + processDelay);
         schedule(tickEvent, nextCycle());
     }
+}
+
+void
+CommMemInterface::refreshMemPorts() {
+      avReadPorts = readPorts;
+      avWritePorts = writePorts;
+}
+
+void
+CommMemInterface::tick() {
+    DPRINTF(CommInterface, "Tick!\n");
+    checkMMR();
+    refreshMemPorts();
+    requestsInQueues = readQueue->size() + writeQueue->size();
+    if (requestsInQueues>0)
+        processMemoryRequests();
 }
 
 

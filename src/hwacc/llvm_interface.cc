@@ -233,11 +233,11 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
         if (reservation.back()->_OpCode == "getelementptr") {
             InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
             if (parent) {
-                DPRINTF(LLVMOp, "Parent returning to register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
                 reservation.back()->registerParent(parent);
                 parent->registerChild(reservation.back());
             } else {
-                DPRINTF(LLVMOp, "No parent returning to register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
                 dynamic_cast<GetElementPtr*>(reservation.back())->_ActivePtr = dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getValue();
             }
         }

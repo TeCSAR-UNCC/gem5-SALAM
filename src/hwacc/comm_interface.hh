@@ -84,6 +84,8 @@ class CommInterface : public BasicPioDevice
     std::list<MemoryRequest*> *spmRdQ;
     std::list<MemoryRequest*> *spmWrQ;
 
+    int requestsInQueues;
+
     MemSidePort dramSide;
     MemSidePort spmSide;
     MemSidePort *dramPort;
@@ -107,6 +109,8 @@ class CommInterface : public BasicPioDevice
     TickEvent tickEvent;
     unsigned cacheLineSize;
 
+    virtual void checkMMR();
+    virtual void processMemoryRequests();
     virtual void tick();
 
     bool running;
@@ -227,10 +231,8 @@ class CommMemInterface : public CommInterface
     }
 
     CommMemInterface(Params *p);
-    virtual void refreshMemPorts() {
-      avReadPorts = readPorts;
-      avWritePorts = writePorts;
-    }
+    virtual void processMemoryRequests() override;
+    virtual void refreshMemPorts() override;
 
   protected:
     virtual void tick() override;
