@@ -71,9 +71,7 @@ class LSQ {
 
     /** Constructs an LSQ with the given parameters. */
     LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
-    ~LSQ() {
-        if (thread) delete [] thread;
-    }
+    ~LSQ() { }
 
     /** Returns the name of the LSQ. */
     std::string name() const;
@@ -106,15 +104,15 @@ class LSQ {
     { thread[tid].tick(); }
 
     /** Inserts a load into the LSQ. */
-    void insertLoad(DynInstPtr &load_inst);
+    void insertLoad(const DynInstPtr &load_inst);
     /** Inserts a store into the LSQ. */
-    void insertStore(DynInstPtr &store_inst);
+    void insertStore(const DynInstPtr &store_inst);
 
     /** Executes a load. */
-    Fault executeLoad(DynInstPtr &inst);
+    Fault executeLoad(const DynInstPtr &inst);
 
     /** Executes a store. */
-    Fault executeStore(DynInstPtr &inst);
+    Fault executeStore(const DynInstPtr &inst);
 
     /**
      * Commits loads up until the given sequence number for a specific thread.
@@ -274,13 +272,15 @@ class LSQ {
     /** Executes a read operation, using the load specified at the load
      * index.
      */
-    Fault read(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
+    Fault read(const RequestPtr &req,
+               RequestPtr &sreqLow, RequestPtr &sreqHigh,
                int load_idx);
 
     /** Executes a store operation, using the store specified at the store
      * index.
      */
-    Fault write(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
+    Fault write(const RequestPtr &req,
+                const RequestPtr &sreqLow, const RequestPtr &sreqHigh,
                 uint8_t *data, int store_idx);
 
     /**
@@ -308,8 +308,45 @@ class LSQ {
     /** The LSQ policy for SMT mode. */
     LSQPolicy lsqPolicy;
 
-    /** The LSQ units for individual threads. */
-    LSQUnit *thread;
+    /** Transform a SMT sharing policy string into a LSQPolicy value. */
+    static LSQPolicy readLSQPolicy(const std::string& policy) {
+        std::string policy_ = policy;
+        std::transform(policy_.begin(), policy_.end(), policy_.begin(),
+                   (int(*)(int)) tolower);
+        if (policy_ == "dynamic") {
+            return Dynamic;
+        } else if (policy_ == "partitioned") {
+            return Partitioned;
+        } else if (policy_ == "threshold") {
+            return Threshold;
+        }
+        assert(0 && "Invalid LSQ Sharing Policy.Options Are:{Dynamic,"
+                    "Partitioned, Threshold}");
+
+        // Some compilers complain if there is no return.
+        return Dynamic;
+    }
+
+    /** Auxiliary function to calculate per-thread max LSQ allocation limit.
+     * Depending on a policy, number of entries and possibly number of threads
+     * and threshold, this function calculates how many resources each thread
+     * can occupy at most.
+     */
+    static uint32_t maxLSQAllocation(const LSQPolicy& pol, uint32_t entries,
+            uint32_t numThreads, uint32_t SMTThreshold) {
+        if (pol == Dynamic) {
+            return entries;
+        } else if (pol == Partitioned) {
+            //@todo:make work if part_amt doesnt divide evenly.
+            return entries / numThreads;
+        } else if (pol == Threshold) {
+            //Divide up by threshold amount
+            //@todo: Should threads check the max and the total
+            //amount of the LSQ
+            return SMTThreshold;
+        }
+        return 0;
+    }
 
     /** List of Active Threads in System. */
     std::list<ThreadID> *activeThreads;
@@ -325,13 +362,17 @@ class LSQ {
     /** Max SQ Size - Used to Enforce Sharing Policies. */
     unsigned maxSQEntries;
 
+    /** The LSQ units for individual threads. */
+    std::vector<LSQUnit> thread;
+
     /** Number of Threads. */
     ThreadID numThreads;
 };
 
 template <class Impl>
 Fault
-LSQ<Impl>::read(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
+LSQ<Impl>::read(const RequestPtr &req,
+                RequestPtr &sreqLow, RequestPtr &sreqHigh,
                 int load_idx)
 {
     ThreadID tid = cpu->contextToThread(req->contextId());
@@ -341,7 +382,8 @@ LSQ<Impl>::read(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
 
 template <class Impl>
 Fault
-LSQ<Impl>::write(RequestPtr req, RequestPtr sreqLow, RequestPtr sreqHigh,
+LSQ<Impl>::write(const RequestPtr &req,
+                 const RequestPtr &sreqLow, const RequestPtr &sreqHigh,
                  uint8_t *data, int store_idx)
 {
     ThreadID tid = cpu->contextToThread(req->contextId());

@@ -52,8 +52,8 @@ public:
     virtual const char* kind() const
         { return "sc_prim_channel"; }
 
-    inline bool update_requested()
-        { return m_update_next_p != (sc_prim_channel*)list_end; }
+    inline bool update_requested() 
+	{ return m_update_next_p != (sc_prim_channel*)list_end; }
 
     // request the update method to be executed during the update phase
     inline void request_update();
@@ -102,10 +102,10 @@ protected:
         { sc_core::wait( e, simcontext() ); }
 
     void wait( const sc_event_or_list& el )
-        { sc_core::wait( el, simcontext() ); }
+	{ sc_core::wait( el, simcontext() ); }
 
     void wait( const sc_event_and_list& el )
-        { sc_core::wait( el, simcontext() ); }
+	{ sc_core::wait( el, simcontext() ); }
 
     void wait( const sc_time& t )
         { sc_core::wait( t, simcontext() ); }
@@ -138,7 +138,7 @@ protected:
     // static sensitivity for SC_METHODs
 
     void next_trigger()
-        { sc_core::next_trigger( simcontext() ); }
+	{ sc_core::next_trigger( simcontext() ); }
 
 
     // dynamic sensitivity for SC_METHODs
@@ -162,34 +162,34 @@ protected:
         { sc_core::next_trigger( t, e, simcontext() ); }
 
     void next_trigger( double v, sc_time_unit tu, const sc_event& e )
-        { sc_core::next_trigger(
-            sc_time( v, tu, simcontext() ), e, simcontext() ); }
+        { sc_core::next_trigger( 
+	    sc_time( v, tu, simcontext() ), e, simcontext() ); }
 
     void next_trigger( const sc_time& t, const sc_event_or_list& el )
         { sc_core::next_trigger( t, el, simcontext() ); }
 
     void next_trigger( double v, sc_time_unit tu, const sc_event_or_list& el )
-        { sc_core::next_trigger(
-            sc_time( v, tu, simcontext() ), el, simcontext() ); }
+        { sc_core::next_trigger( 
+	    sc_time( v, tu, simcontext() ), el, simcontext() ); }
 
     void next_trigger( const sc_time& t, const sc_event_and_list& el )
         { sc_core::next_trigger( t, el, simcontext() ); }
 
     void next_trigger( double v, sc_time_unit tu, const sc_event_and_list& el )
-        { sc_core::next_trigger(
-            sc_time( v, tu, simcontext() ), el, simcontext() ); }
+        { sc_core::next_trigger( 
+	    sc_time( v, tu, simcontext() ), el, simcontext() ); }
 
 
     // for SC_METHODs and SC_THREADs and SC_CTHREADs
 
     bool timed_out()
-        { return sc_core::timed_out( simcontext() ); }
+	{ return sc_core::timed_out( simcontext() ); }
 
 
 #if 0 // @@@@####
     // delta count maintenance
     sc_dt::uint64 delta_count()
-        { return simcontext()->m_delta_count; }
+	{ return simcontext()->m_delta_count; }
 #endif
 
 private:
@@ -244,10 +244,10 @@ public:
     void async_request_update( sc_prim_channel& );
 
     bool pending_updates() const
-    {
-        return m_update_list_p != (sc_prim_channel*)sc_prim_channel::list_end
+    { 
+        return m_update_list_p != (sc_prim_channel*)sc_prim_channel::list_end 
                || pending_async_updates();
-    }
+    }   
 
     bool pending_async_updates() const;
 
@@ -280,7 +280,7 @@ private:
     sc_prim_channel_registry& operator = ( const sc_prim_channel_registry& );
 
 private:
-    class async_update_list;
+    class async_update_list;   
 
     async_update_list*            m_async_update_list_p; // external updates.
     int                           m_construction_done;   // # of constructs.
@@ -319,12 +319,12 @@ inline
 void
 sc_prim_channel::request_update()
 {
-    if ( ! m_update_next_p ) {
-        m_registry->request_update( *this );
+    if( ! m_update_next_p ) {
+	m_registry->request_update( *this );
     }
 }
 
-// request the update method from external to the simulator (to be executed
+// request the update method from external to the simulator (to be executed 
 // during the update phase)
 
 inline
@@ -358,7 +358,7 @@ sc_prim_channel::perform_update()
                                Bishnupriya Bhattacharya, Cadence Design Systems,
                                25 August, 2003
   Description of Modification: phase callbacks
-
+    
  *****************************************************************************/
 //$Log: sc_prim_channel.h,v $
 //Revision 1.10  2011/08/26 21:38:32  acg

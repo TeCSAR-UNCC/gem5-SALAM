@@ -30,14 +30,13 @@
 #define SC_FIFO_H
 
 
-#include <typeinfo>
-
 #include "sysc/communication/sc_communication_ids.h"
-#include "sysc/communication/sc_fifo_ifs.h"
 #include "sysc/communication/sc_prim_channel.h"
+#include "sysc/communication/sc_fifo_ifs.h"
 #include "sysc/kernel/sc_event.h"
 #include "sysc/kernel/sc_simcontext.h"
 #include "sysc/tracing/sc_trace.h"
+#include <typeinfo>
 
 namespace sc_core {
 
@@ -58,26 +57,26 @@ public:
     // constructors
 
     explicit sc_fifo( int size_ = 16 )
-        : sc_prim_channel( sc_gen_unique_name( "fifo" ) ),
-          m_data_read_event(
-              (std::string(SC_KERNEL_EVENT_PREFIX)+"_read_event").c_str()),
-          m_data_written_event(
-              (std::string(SC_KERNEL_EVENT_PREFIX)+"_write_event").c_str())
-        { init( size_ ); }
+	: sc_prim_channel( sc_gen_unique_name( "fifo" ) ),
+	  m_data_read_event(
+	      (std::string(SC_KERNEL_EVENT_PREFIX)+"_read_event").c_str()),
+	  m_data_written_event(
+	      (std::string(SC_KERNEL_EVENT_PREFIX)+"_write_event").c_str())
+	{ init( size_ ); }
 
     explicit sc_fifo( const char* name_, int size_ = 16 )
-        : sc_prim_channel( name_ ),
-          m_data_read_event(
-              (std::string(SC_KERNEL_EVENT_PREFIX)+"_read_event").c_str()),
-          m_data_written_event(
-              (std::string(SC_KERNEL_EVENT_PREFIX)+"_write_event").c_str())
-        { init( size_ ); }
+	: sc_prim_channel( name_ ),
+	  m_data_read_event(
+	      (std::string(SC_KERNEL_EVENT_PREFIX)+"_read_event").c_str()),
+	  m_data_written_event(
+	      (std::string(SC_KERNEL_EVENT_PREFIX)+"_write_event").c_str())
+	{ init( size_ ); }
 
 
     // destructor
 
     virtual ~sc_fifo()
-        { delete [] m_buf; }
+	{ delete [] m_buf; }
 
 
     // interface methods
@@ -96,13 +95,13 @@ public:
     // get the number of available samples
 
     virtual int num_available() const
-        { return ( m_num_readable - m_num_read ); }
+	{ return ( m_num_readable - m_num_read ); }
 
 
     // get the data written event
 
     virtual const sc_event& data_written_event() const
-        { return m_data_written_event; }
+	{ return m_data_written_event; }
 
 
     // blocking write
@@ -115,19 +114,19 @@ public:
     // get the number of free spaces
 
     virtual int num_free() const
-        { return ( m_size - m_num_readable - m_num_written ); }
+	{ return ( m_size - m_num_readable - m_num_written ); }
 
 
     // get the data read event
 
     virtual const sc_event& data_read_event() const
-        { return m_data_read_event; }
+	{ return m_data_read_event; }
 
 
     // other methods
 
     operator T ()
-        { return read(); }
+	{ return read(); }
 
 
     sc_fifo<T>& operator = ( const T& a )
@@ -187,30 +186,30 @@ template <class T>
 inline
 void
 sc_fifo<T>::register_port( sc_port_base& port_,
-                            const char* if_typename_ )
+			    const char* if_typename_ )
 {
     std::string nm( if_typename_ );
-    if ( nm == typeid( sc_fifo_in_if<T> ).name() ||
-        nm == typeid( sc_fifo_blocking_in_if<T> ).name()
+    if( nm == typeid( sc_fifo_in_if<T> ).name() ||
+        nm == typeid( sc_fifo_blocking_in_if<T> ).name() 
     ) {
-        // only one reader can be connected
-        if ( m_reader != 0 ) {
-            SC_REPORT_ERROR( SC_ID_MORE_THAN_ONE_FIFO_READER_, 0 );
-        }
-        m_reader = &port_;
-    } else if ( nm == typeid( sc_fifo_out_if<T> ).name() ||
+	// only one reader can be connected
+	if( m_reader != 0 ) {
+	    SC_REPORT_ERROR( SC_ID_MORE_THAN_ONE_FIFO_READER_, 0 );
+	}
+	m_reader = &port_;
+    } else if( nm == typeid( sc_fifo_out_if<T> ).name() ||
                nm == typeid( sc_fifo_blocking_out_if<T> ).name()
     ) {
-        // only one writer can be connected
-        if ( m_writer != 0 ) {
-            SC_REPORT_ERROR( SC_ID_MORE_THAN_ONE_FIFO_WRITER_, 0 );
-        }
-        m_writer = &port_;
+	// only one writer can be connected
+	if( m_writer != 0 ) {
+	    SC_REPORT_ERROR( SC_ID_MORE_THAN_ONE_FIFO_WRITER_, 0 );
+	}
+	m_writer = &port_;
     }
     else
     {
-        SC_REPORT_ERROR( SC_ID_BIND_IF_TO_PORT_,
-                         "sc_fifo<T> port not recognized" );
+        SC_REPORT_ERROR( SC_ID_BIND_IF_TO_PORT_, 
+	                 "sc_fifo<T> port not recognized" );
     }
 }
 
@@ -222,8 +221,8 @@ inline
 void
 sc_fifo<T>::read( T& val_ )
 {
-    while ( num_available() == 0 ) {
-        sc_core::wait( m_data_written_event );
+    while( num_available() == 0 ) {
+	sc_core::wait( m_data_written_event );
     }
     m_num_read ++;
     buf_read( val_ );
@@ -247,8 +246,8 @@ inline
 bool
 sc_fifo<T>::nb_read( T& val_ )
 {
-    if ( num_available() == 0 ) {
-        return false;
+    if( num_available() == 0 ) {
+	return false;
     }
     m_num_read ++;
     buf_read( val_ );
@@ -264,8 +263,8 @@ inline
 void
 sc_fifo<T>::write( const T& val_ )
 {
-    while ( num_free() == 0 ) {
-        sc_core::wait( m_data_read_event );
+    while( num_free() == 0 ) {
+	sc_core::wait( m_data_read_event );
     }
     m_num_written ++;
     buf_write( val_ );
@@ -279,8 +278,8 @@ inline
 bool
 sc_fifo<T>::nb_write( const T& val_ )
 {
-    if ( num_free() == 0 ) {
-        return false;
+    if( num_free() == 0 ) {
+	return false;
     }
     m_num_written ++;
     buf_write( val_ );
@@ -297,9 +296,9 @@ sc_fifo<T>::trace( sc_trace_file* tf ) const
 #if defined(DEBUG_SYSTEMC)
     char buf[32];
     std::string nm = name();
-    for ( int i = 0; i < m_size; ++ i ) {
-        std::sprintf( buf, "_%d", i );
-        sc_trace( tf, m_buf[i], nm + buf );
+    for( int i = 0; i < m_size; ++ i ) {
+	std::sprintf( buf, "_%d", i );
+	sc_trace( tf, m_buf[i], nm + buf );
     }
 #endif
 }
@@ -310,12 +309,12 @@ inline
 void
 sc_fifo<T>::print( ::std::ostream& os ) const
 {
-    if ( m_free != m_size ) {
+    if( m_free != m_size ) {
         int i = m_ri;
         do {
             os << m_buf[i] << ::std::endl;
             i = ( i + 1 ) % m_size;
-        } while ( i != m_wi );
+        } while( i != m_wi );
     }
 }
 
@@ -325,14 +324,14 @@ void
 sc_fifo<T>::dump( ::std::ostream& os ) const
 {
     os << "name = " << name() << ::std::endl;
-    if ( m_free != m_size ) {
+    if( m_free != m_size ) {
         int i = m_ri;
         int j = 0;
         do {
-            os << "value[" << i << "] = " << m_buf[i] << ::std::endl;
-            i = ( i + 1 ) % m_size;
-            j ++;
-        } while ( i != m_wi );
+	    os << "value[" << i << "] = " << m_buf[i] << ::std::endl;
+	    i = ( i + 1 ) % m_size;
+	    j ++;
+        } while( i != m_wi );
     }
 }
 
@@ -342,12 +341,12 @@ inline
 void
 sc_fifo<T>::update()
 {
-    if ( m_num_read > 0 ) {
-        m_data_read_event.notify(SC_ZERO_TIME);
+    if( m_num_read > 0 ) {
+	m_data_read_event.notify(SC_ZERO_TIME);
     }
 
-    if ( m_num_written > 0 ) {
-        m_data_written_event.notify(SC_ZERO_TIME);
+    if( m_num_written > 0 ) {
+	m_data_written_event.notify(SC_ZERO_TIME);
     }
 
     m_num_readable = m_size - m_free;
@@ -379,8 +378,8 @@ inline
 void
 sc_fifo<T>::buf_init( int size_ )
 {
-    if ( size_ <= 0 ) {
-        SC_REPORT_ERROR( SC_ID_INVALID_FIFO_SIZE_, 0 );
+    if( size_ <= 0 ) {
+	SC_REPORT_ERROR( SC_ID_INVALID_FIFO_SIZE_, 0 );
     }
     m_size = size_;
     m_buf = new T[m_size];
@@ -394,8 +393,8 @@ inline
 bool
 sc_fifo<T>::buf_write( const T& val_ )
 {
-    if ( m_free == 0 ) {
-        return false;
+    if( m_free == 0 ) {
+	return false;
     }
     m_buf[m_wi] = val_;
     m_wi = ( m_wi + 1 ) % m_size;
@@ -408,8 +407,8 @@ inline
 bool
 sc_fifo<T>::buf_read( T& val_ )
 {
-    if ( m_free == m_size ) {
-        return false;
+    if( m_free == m_size ) {
+	return false;
     }
     val_ = m_buf[m_ri];
     m_buf[m_ri] = T(); // clear entry for boost::shared_ptr, et al.

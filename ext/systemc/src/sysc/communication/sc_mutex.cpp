@@ -65,8 +65,8 @@ int
 sc_mutex::lock()
 {
     if ( m_owner == sc_get_current_process_b()) return 0;
-    while ( in_use() ) {
-        sc_core::wait( m_free, sc_get_curr_simcontext() );
+    while( in_use() ) {
+	sc_core::wait( m_free, sc_get_curr_simcontext() );
     }
     m_owner = sc_get_current_process_b();
     return 0;
@@ -79,8 +79,8 @@ int
 sc_mutex::trylock()
 {
     if ( m_owner == sc_get_current_process_b()) return 0;
-    if ( in_use() ) {
-        return -1;
+    if( in_use() ) {
+	return -1;
     }
     m_owner = sc_get_current_process_b();
     return 0;
@@ -92,8 +92,8 @@ sc_mutex::trylock()
 int
 sc_mutex::unlock()
 {
-    if ( m_owner != sc_get_current_process_b() ) {
-        return -1;
+    if( m_owner != sc_get_current_process_b() ) {
+	return -1;
     }
     m_owner = 0;
     m_free.notify();

@@ -57,12 +57,12 @@ public:
     // constructors
 
     sc_buffer()
-        : base_type( sc_gen_unique_name( "buffer" ) )
-        {}
+	: base_type( sc_gen_unique_name( "buffer" ) )
+	{}
 
     explicit sc_buffer( const char* name_ )
-        : base_type( name_ )
-        {}
+	: base_type( name_ )
+	{}
 
     sc_buffer( const char* name_, const T& initial_value_ )
       : base_type( name_, initial_value_ )
@@ -77,13 +77,13 @@ public:
     // other methods
 
     this_type& operator = ( const T& a )
-        { write( a ); return *this; }
+	{ write( a ); return *this; }
 
     this_type& operator = ( const sc_signal_in_if<T>& a )
-        { write( a.read() ); return *this; }
+	{ write( a.read() ); return *this; }
 
     this_type& operator = ( const this_type& a )
-        { write( a.read() ); return *this; }
+	{ write( a.read() ); return *this; }
 
     virtual const char* kind() const
         { return "sc_buffer"; }
@@ -108,7 +108,7 @@ inline
 void
 sc_buffer<T,POL>::write( const T& value_ )
 {
-    if ( !base_type::policy_type::check_write(this,true) )
+    if( !base_type::policy_type::check_write(this,true) )
       return;
 
     this->m_new_val = value_;

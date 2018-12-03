@@ -23,7 +23,7 @@ CommInterface::CommInterface(Params *p) :
     dramSide(p->name + ".dram_side", this),
     spmSide(p->name + ".spm_side", this),
     localRange(p->local_range),
-    masterId(p->system->getMasterId(name())),
+    masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period) {
@@ -126,7 +126,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
         //schedule(tickEvent, curTick() + processDelay);
         schedule(tickEvent, nextCycle());
     }
-    if (pkt->req) delete pkt->req;
+    //if (pkt->req) delete pkt->req;
     delete pkt;
 }
 
@@ -261,7 +261,6 @@ CommInterface::tick() {
 
 void
 CommInterface::tryRead(MemSidePort * port) {
-    //RequestPtr req = new Request();
     MemoryRequest * readReq = port->readReq;
     Request::Flags flags;
     if (readReq->readLeft <= 0) {
@@ -276,7 +275,7 @@ CommInterface::tryRead(MemSidePort * port) {
         size = cacheLineSize;
     }
     size = readReq->readLeft > (size - 1) ? size : readReq->readLeft;
-    RequestPtr req = new Request(readReq->currentReadAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(readReq->currentReadAddr, size, flags, masterId);
     DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes\n",
         req->getPaddr(), size);
 
@@ -324,7 +323,7 @@ CommInterface::tryWrite(MemSidePort * port) {
     Request::Flags flags;
     uint8_t *data = new uint8_t[size];
     std::memcpy(data, &(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]), size);
-    RequestPtr req = new Request(writeReq->currentWriteAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(writeReq->currentWriteAddr, size, flags, masterId);
     req->setExtraData((uint64_t)data);
 
 
@@ -402,13 +401,16 @@ CommInterface::read(PacketPtr pkt) {
 
     switch(pkt->getSize()) {
       case 1:
-        pkt->set<uint8_t>(data);
+        pkt->setLE<uint8_t>(data);
         break;
       case 2:
-        pkt->set<uint16_t>(data);
+        pkt->setLE<uint16_t>(data);
         break;
       case 4:
-        pkt->set<uint32_t>(data);
+        pkt->setLE<uint32_t>(data);
+        break;
+      case 8:
+        pkt->setLE<uint64_t>(data);
         break;
       default:
         panic("Read size too big?\n");
@@ -604,7 +606,7 @@ CommMemInterface::processMemoryRequests() {
                         size = cacheLineSize;
                     }
                     size = (*it)->readLeft > (size - 1) ? size : (*it)->readLeft;
-                    RequestPtr req = new Request((*it)->currentReadAddr, size, flags, masterId);
+                    RequestPtr req = make_shared<Request>((*it)->currentReadAddr, size, flags, masterId);
                     DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes\n",
                         req->getPaddr(), size);
 
@@ -710,7 +712,7 @@ CommMemInterface::processMemoryRequests() {
                     Request::Flags flags;
                     uint8_t *data = new uint8_t[size];
                     std::memcpy(data, &((*it)->buffer[(*it)->totalLength-(*it)->writeLeft]), size);
-                    RequestPtr req = new Request((*it)->currentWriteAddr, size, flags, masterId);
+                    RequestPtr req = make_shared<Request>((*it)->currentWriteAddr, size, flags, masterId);
                     req->setExtraData((uint64_t)data);
 
 

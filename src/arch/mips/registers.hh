@@ -278,11 +278,11 @@ const int NumMiscRegs = MISCREG_NUMREGS;
 
 const int TotalNumRegs = NumIntRegs + NumFloatRegs + NumMiscRegs;
 
-typedef uint32_t IntReg;
+typedef uint64_t IntReg;
 
 // floating point register file entry type
-typedef uint32_t FloatRegBits;
-typedef float FloatReg;
+typedef uint64_t FloatRegBits;
+typedef double FloatReg;
 
 // cop-0/cop-1 system control register
 typedef uint64_t MiscReg;
@@ -298,12 +298,6 @@ using ConstVecReg = ::VecRegT<VecElem, NumVecElemPerVecReg, true>;
 using VecRegContainer = VecReg::Container;
 // This has to be one to prevent warnings that are treated as errors
 constexpr unsigned NumVecRegs = 1;
-
-typedef union {
-    IntReg   intreg;
-    FloatReg fpreg;
-    MiscReg  ctrlreg;
-} AnyReg;
 
 } // namespace MipsISA
 

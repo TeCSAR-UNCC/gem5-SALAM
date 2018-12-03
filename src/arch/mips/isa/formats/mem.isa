@@ -54,8 +54,8 @@ output header {{
         {
         }
 
-        std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+        std::string generateDisassembly(
+                Addr pc, const SymbolTable *symtab) const override;
     };
 
      /**
@@ -71,8 +71,8 @@ output header {{
         {
         }
 
-        std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+        std::string generateDisassembly(
+                Addr pc, const SymbolTable *symtab) const override;
     };
 }};
 
@@ -109,21 +109,19 @@ output exec {{
         switch (packet->getSize())
         {
           case 1:
-            return packet->get<uint8_t>();
+            return packet->getLE<uint8_t>();
 
           case 2:
-            return packet->get<uint16_t>();
+            return packet->getLE<uint16_t>();
 
           case 4:
-            return packet->get<uint32_t>();
+            return packet->getLE<uint32_t>();
 
           case 8:
-            return packet->get<uint64_t>();
+            return packet->getLE<uint64_t>();
 
           default:
-            std::cerr << "bad store data size = " << packet->getSize() << std::endl;
-
-            assert(0);
+            panic("bad store data size = %d", packet->getSize());
             return 0;
         }
     }
@@ -142,10 +140,10 @@ def template LoadStoreDeclare {{
         /// Constructor.
         %(class_name)s(ExtMachInst machInst);
 
-        Fault execute(ExecContext *, Trace::InstRecord *) const;
-        Fault eaComp(ExecContext *, Trace::InstRecord *) const;
-        Fault initiateAcc(ExecContext *, Trace::InstRecord *) const;
-        Fault completeAcc(Packet *, ExecContext *, Trace::InstRecord *) const;
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+        Fault initiateAcc(ExecContext *, Trace::InstRecord *) const override;
+        Fault completeAcc(Packet *, ExecContext *,
+                          Trace::InstRecord *) const override;
     };
 }};
 
@@ -155,34 +153,6 @@ def template LoadStoreConstructor {{
          : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
     {
         %(constructor)s;
-    }
-}};
-
-
-def template EACompExecute {{
-    Fault
-    %(class_name)s::eaComp(ExecContext *xc, Trace::InstRecord *traceData) const
-    {
-        Addr EA;
-        Fault fault = NoFault;
-
-        if (this->isFloating()) {
-            %(fp_enable_check)s;
-
-            if(fault != NoFault)
-                return fault;
-        }
-
-        %(op_decl)s;
-        %(op_rd)s;
-        %(ea_code)s;
-
-        // NOTE: Trace Data is written using execute or completeAcc templates
-        if (fault == NoFault) {
-            xc->setEA(EA);
-        }
-
-        return fault;
     }
 }};
 

@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  scfx_mant.h -
+  scfx_mant.h - 
 
   Original Author: Robert Graulich, Synopsys, Inc.
                    Martin Janssen,  Synopsys, Inc.
@@ -55,6 +55,7 @@
 #include "sysc/datatypes/fx/scfx_ieee.h"
 #include "sysc/datatypes/fx/scfx_utils.h"
 #include "sysc/kernel/sc_macros.h"
+
 
 namespace sc_dt
 {
@@ -182,7 +183,7 @@ scfx_mant::scfx_mant( const scfx_mant& rhs )
 : m_array(0), m_size(rhs.m_size)
 {
     m_array = alloc( m_size );
-    for ( int i = 0; i < m_size; i ++ )
+    for( int i = 0; i < m_size; i ++ )
     {
         (*this)[i] = rhs[i];
     }
@@ -192,18 +193,18 @@ inline
 scfx_mant&
 scfx_mant::operator = ( const scfx_mant& rhs )
 {
-    if ( &rhs != this )
+    if( &rhs != this )
     {
-        if ( m_size != rhs.m_size )
-        {
-            free( m_array, m_size );
-            m_array = alloc( m_size = rhs.m_size );
-        }
+        if( m_size != rhs.m_size )
+	{
+	    free( m_array, m_size );
+	    m_array = alloc( m_size = rhs.m_size );
+	}
 
-        for ( int i = 0; i < m_size; i ++ )
-        {
-            (*this)[i] = rhs[i];
-        }
+	for( int i = 0; i < m_size; i ++ )
+	{
+	    (*this)[i] = rhs[i];
+	}
     }
     return *this;
 }
@@ -211,7 +212,7 @@ scfx_mant::operator = ( const scfx_mant& rhs )
 inline
 scfx_mant::~scfx_mant()
 {
-    if ( m_array != 0 )
+    if( m_array != 0 )
     {
         free( m_array, m_size );
     }
@@ -221,7 +222,7 @@ inline
 void
 scfx_mant::clear()
 {
-    for ( int i = 0; i < m_size; i ++ )
+    for( int i = 0; i < m_size; i ++ )
     {
         (*this)[i] = 0;
     }
@@ -231,12 +232,12 @@ inline
 void
 scfx_mant::resize_to( int size, int restore )
 {
-    if ( size == m_size )
+    if( size == m_size )
     {
         return;
     }
 
-    if ( ! m_array )
+    if( ! m_array )
     {
         m_array = alloc( m_size = size );
     }
@@ -244,58 +245,58 @@ scfx_mant::resize_to( int size, int restore )
     {
         word* p = alloc( size );
 
-        if ( restore )
-        {
-            int end = sc_min( size, m_size );
-            if ( restore == 1 )		// msb resized -> align at 0
-            {
-                for ( int i = 0; i < size; i ++ )
-                {
-                    if ( i < end )
-                    {
+	if( restore )
+	{
+	    int end = sc_min( size, m_size );
+	    if( restore == 1 )		// msb resized -> align at 0
+	    {
+	        for( int i = 0; i < size; i ++ )
+		{
+		    if( i < end )
+		    {
 #if defined( SC_BIG_ENDIAN )
-                        p[-i] = m_array[-i];
+		        p[-i] = m_array[-i];
 #elif defined( SC_LITTLE_ENDIAN )
-                        p[i] = m_array[i];
+			p[i] = m_array[i];
 #endif
-                    }
-                    else
-                    {
+		    }
+		    else
+		    {
 #if defined( SC_BIG_ENDIAN )
-                        p[-i] = 0;
+		        p[-i] = 0;
 #elif defined( SC_LITTLE_ENDIAN )
-                        p[i] = 0;
+			p[i] = 0;
 #endif
-                    }
-                }
-            }
-            else			// lsb resized -> align at size-1
-            {
-                for ( int i = 0; i < size; i ++ )
-                {
-                    if ( i < end )
-                    {
+		    }
+		}
+	    }
+	    else			// lsb resized -> align at size-1
+	    {
+	        for( int i = 0; i < size; i ++ )
+		{
+		    if( i < end )
+		    {
 #if defined( SC_BIG_ENDIAN )
-                        p[-size+1+i] = m_array[-m_size+1+i];
+		        p[-size+1+i] = m_array[-m_size+1+i];
 #elif defined( SC_LITTLE_ENDIAN )
-                        p[size-1-i] = m_array[m_size-1-i];
+			p[size-1-i] = m_array[m_size-1-i];
 #endif
-                    }
-                    else
-                    {
+		    }
+		    else
+		    {
 #if defined( SC_BIG_ENDIAN )
-                        p[-size+1+i] = 0;
+		        p[-size+1+i] = 0;
 #elif defined( SC_LITTLE_ENDIAN )
-                        p[size-1-i] = 0;
+			p[size-1-i] = 0;
 #endif
-                    }
-                }
-            }
-        }
+		    }
+		}
+	    }
+	}
 
-        free( m_array, m_size );
-        m_array = p;
-        m_size = size;
+	free( m_array, m_size );
+	m_array = p;
+	m_size = size;
     }
 }
 
@@ -304,7 +305,7 @@ half_word
 scfx_mant::half_at( int i ) const
 {
     SC_ASSERT_( ( i >> 1 ) >= 0 && ( i >> 1 ) < m_size,
-                "mantissa index out of range" );
+		"mantissa index out of range" );
 #if defined( SC_BIG_ENDIAN )
     return reinterpret_cast<half_word*>( m_array )[-i];
 #elif defined( SC_LITTLE_ENDIAN )
@@ -317,7 +318,7 @@ half_word&
 scfx_mant::half_at( int i )
 {
     SC_ASSERT_( ( i >> 1 ) >= 0 && ( i >> 1 ) < m_size,
-                "mantissa index out of range" );
+		"mantissa index out of range" );
 #if defined( SC_BIG_ENDIAN )
     return reinterpret_cast<half_word*>( m_array )[-i];
 #elif defined( SC_LITTLE_ENDIAN )
@@ -346,7 +347,7 @@ inline
 void
 complement( scfx_mant& target, const scfx_mant& source, int size )
 {
-    for ( int i = 0; i < size; i ++ )
+    for( int i = 0; i < size; i ++ )
     {
         target[i] = ~source[i];
     }
@@ -361,12 +362,12 @@ inline
 void
 inc( scfx_mant& mant )
 {
-    for ( int i = 0; i < mant.size(); i ++ )
+    for( int i = 0; i < mant.size(); i ++ )
     {
-        if ( ++ mant[i] )
-        {
-            break;
-        }
+        if( ++ mant[i] )
+	{
+	    break;
+	}
     }
 }
 
@@ -416,7 +417,7 @@ inline
 void
 scfx_mant_ref::remove_it()
 {
-    if ( m_not_const )
+    if( m_not_const )
     {
         delete m_mant;
     }

@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxval.cpp -
+  sc_fxval.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -45,12 +45,13 @@
 // the source.
 //
 
-#include <cctype>
-#include <cfloat>
-#include <cmath>
-#include <cstdlib>
+#include <ctype.h>
+#include <stdlib.h>
+#include <math.h>
+#include <float.h>
 
 #include "sysc/datatypes/fx/sc_fxval.h"
+
 
 namespace sc_dt
 {
@@ -151,7 +152,7 @@ sc_fxval::dump( ::std::ostream& os ) const
     // TO BE COMPLETED
     // os << "r_flag   = " << m_r_flag << ::std::endl;
     // os << "observer = ";
-    // if ( m_observer != 0 )
+    // if( m_observer != 0 )
     //     m_observer->dump( os );
     // else
     //     os << "0" << ::std::endl;
@@ -188,20 +189,20 @@ static
 void
 print_dec( scfx_string& s, scfx_ieee_double id, int w_prefix, sc_fmt fmt )
 {
-    if ( id.negative() != 0 )
+    if( id.negative() != 0 )
     {
-        id.negative( 0 );
-        s += '-';
+	id.negative( 0 );
+	s += '-';
     }
 
-    if ( w_prefix == 1 ) {
-        scfx_print_prefix( s, SC_DEC );
+    if( w_prefix == 1 ) {
+	scfx_print_prefix( s, SC_DEC );
     }
 
-    if ( id.is_zero() )
+    if( id.is_zero() )
     {
-        s += '0';
-        return;
+	s += '0';
+	return;
     }
 
     // split 'id' into its integer and fractional part
@@ -215,41 +216,41 @@ print_dec( scfx_string& s, scfx_ieee_double id, int w_prefix, sc_fmt fmt )
 
     int int_digits = 0;
     int int_zeros  = 0;
-
-    if ( int_part != 0.0 )
+    
+    if( int_part != 0.0 )
     {
-        int_digits = (int) ceil( log10( int_part + 1.0 ) );
+	int_digits = (int) ceil( log10( int_part + 1.0 ) );
 
-        int len = s.length();
-        s.append( int_digits );
+	int len = s.length();
+	s.append( int_digits );
 
-        bool zero_digits = ( frac_part == 0.0 && fmt != SC_F );
+	bool zero_digits = ( frac_part == 0.0 && fmt != SC_F );
 
-        for ( i = int_digits + len - 1; i >= len; i-- )
-        {
-            unsigned int remainder = (unsigned int) fmod( int_part, 10.0 );
-            s[i] = static_cast<char>( '0' + remainder );
+	for( i = int_digits + len - 1; i >= len; i-- )
+	{
+	    unsigned int remainder = (unsigned int) fmod( int_part, 10.0 );
+	    s[i] = static_cast<char>( '0' + remainder );
+	    
+	    if( zero_digits )
+	    {
+		if( remainder == 0 )
+		    int_zeros ++;
+		else
+		    zero_digits = false;
+	    }
 
-            if ( zero_digits )
-            {
-                if ( remainder == 0 )
-                    int_zeros ++;
-                else
-                    zero_digits = false;
-            }
+	    int_part /= 10.0;
+	}
 
-            int_part /= 10.0;
-        }
+	// discard trailing zeros from int_part
+	s.discard( int_zeros );
 
-        // discard trailing zeros from int_part
-        s.discard( int_zeros );
-
-        if ( s[len] == '0' )
-        {
-            // int_digits was overestimated by one
-            s.remove( len );
-            -- int_digits;
-        }
+	if( s[len] == '0' )
+	{
+	    // int_digits was overestimated by one
+	    s.remove( len );
+	    -- int_digits;
+	}
     }
 
     // print fractional part
@@ -257,53 +258,53 @@ print_dec( scfx_string& s, scfx_ieee_double id, int w_prefix, sc_fmt fmt )
     int frac_digits = 0;
     int frac_zeros  = 0;
 
-    if ( frac_part != 0.0 )
+    if( frac_part != 0.0 )
     {
-        s += '.';
+	s += '.';
 
-        bool zero_digits = ( int_digits == 0 && fmt != SC_F );
+	bool zero_digits = ( int_digits == 0 && fmt != SC_F );
 
-        frac_zeros = (int) floor( - log10( frac_part + DBL_EPSILON ) );
+	frac_zeros = (int) floor( - log10( frac_part + DBL_EPSILON ) );
 
-        frac_part *= pow( 10.0, frac_zeros );
+	frac_part *= pow( 10.0, frac_zeros );
+	
+	frac_digits = frac_zeros;
+	if( ! zero_digits )
+	{
+	    for( i = 0; i < frac_zeros; i ++ )
+		s += '0';
+	    frac_zeros = 0;
+	}
 
-        frac_digits = frac_zeros;
-        if ( ! zero_digits )
-        {
-            for ( i = 0; i < frac_zeros; i ++ )
-                s += '0';
-            frac_zeros = 0;
-        }
+	while( frac_part != 0.0 )
+	{
+	    frac_part *= 10.0;
+	    int n = static_cast<int>( frac_part );
+	
+	    if( zero_digits )
+	    {
+		if( n == 0 )
+		    frac_zeros ++;
+		else
+		    zero_digits = false;
+	    }
+	
+	    if( ! zero_digits )
+		s += static_cast<char>( '0' + n );
 
-        while ( frac_part != 0.0 )
-        {
-            frac_part *= 10.0;
-            int n = static_cast<int>( frac_part );
-
-            if ( zero_digits )
-            {
-                if ( n == 0 )
-                    frac_zeros ++;
-                else
-                    zero_digits = false;
-            }
-
-            if ( ! zero_digits )
-                s += static_cast<char>( '0' + n );
-
-            frac_part -= n;
-            frac_digits ++;
-        }
+	    frac_part -= n;
+	    frac_digits ++;
+	}
     }
 
     // print exponent
-
-    if ( fmt != SC_F )
+    
+    if( fmt != SC_F )
     {
-        if ( frac_digits == 0 )
-            scfx_print_exp( s, int_zeros );
-        else if ( int_digits == 0 )
-            scfx_print_exp( s, - frac_zeros );
+        if( frac_digits == 0 )
+	    scfx_print_exp( s, int_zeros );
+	else if( int_digits == 0 )
+	    scfx_print_exp( s, - frac_zeros );
     }
 }
 
@@ -311,41 +312,41 @@ print_dec( scfx_string& s, scfx_ieee_double id, int w_prefix, sc_fmt fmt )
 static
 void
 print_other( scfx_string& s, const scfx_ieee_double& id, sc_numrep numrep,
-             int w_prefix, sc_fmt fmt, const scfx_params* params )
+	     int w_prefix, sc_fmt fmt, const scfx_params* params )
 {
     scfx_ieee_double id2 = id;
 
     sc_numrep numrep2 = numrep;
 
     bool numrep_is_sm = ( numrep == SC_BIN_SM ||
-                          numrep == SC_OCT_SM ||
-                          numrep == SC_HEX_SM );
+			  numrep == SC_OCT_SM ||
+			  numrep == SC_HEX_SM );
 
-    if ( numrep_is_sm )
+    if( numrep_is_sm )
     {
-        if ( id2.negative() != 0 )
-        {
-            s += '-';
-            id2.negative( 0 );
-        }
-        switch( numrep )
-        {
-            case SC_BIN_SM:
-                numrep2 = SC_BIN_US;
-                break;
-            case SC_OCT_SM:
-                numrep2 = SC_OCT_US;
-                break;
-            case SC_HEX_SM:
-                numrep2 = SC_HEX_US;
-                break;
-            default:
-                ;
-        }
+	if( id2.negative() != 0 )
+	{
+	    s += '-';
+	    id2.negative( 0 );
+	}
+	switch( numrep )
+	{
+	    case SC_BIN_SM:
+		numrep2 = SC_BIN_US;
+		break;
+	    case SC_OCT_SM:
+		numrep2 = SC_OCT_US;
+		break;
+	    case SC_HEX_SM:
+		numrep2 = SC_HEX_US;
+		break;
+	    default:
+		;
+	}
     }
 
-    if ( w_prefix != 0 ) {
-        scfx_print_prefix( s, numrep );
+    if( w_prefix != 0 ) {
+	scfx_print_prefix( s, numrep );
     }
 
     numrep = numrep2;
@@ -354,147 +355,147 @@ print_other( scfx_string& s, const scfx_ieee_double& id, sc_numrep numrep,
 
     int msb, lsb;
 
-    if ( params != 0 )
+    if( params != 0 )
     {
-        msb = params->iwl() - 1;
-        lsb = params->iwl() - params->wl();
+	msb = params->iwl() - 1;
+	lsb = params->iwl() - params->wl();
 
-        if ( params->enc() == SC_TC_ &&
-            ( numrep == SC_BIN_US ||
-              numrep == SC_OCT_US ||
-              numrep == SC_HEX_US ) &&
-            ! numrep_is_sm &&
-            params->wl() > 1 )
-            -- msb;
-        else if ( params->enc() == SC_US_ &&
-            ( numrep == SC_BIN ||
-              numrep == SC_OCT ||
-              numrep == SC_HEX ||
-              numrep == SC_CSD ) )
-            ++ msb;
+	if( params->enc() == SC_TC_ &&
+	    ( numrep == SC_BIN_US ||
+	      numrep == SC_OCT_US ||
+	      numrep == SC_HEX_US ) &&
+	    ! numrep_is_sm &&
+	    params->wl() > 1 )
+	    -- msb;
+	else if( params->enc() == SC_US_ &&
+	    ( numrep == SC_BIN ||
+	      numrep == SC_OCT ||
+	      numrep == SC_HEX ||
+	      numrep == SC_CSD ) )
+	    ++ msb;
     }
     else
     {
-        if ( a.is_zero() )
-        {
-            msb = 0;
-            lsb = 0;
-        }
-        else
-        {
-            msb = id2.exponent() + 1;
-            while ( a.get_bit( msb ) == a.get_bit( msb - 1 ) )
-                -- msb;
+	if( a.is_zero() )
+	{
+	    msb = 0;
+	    lsb = 0;
+	}
+	else
+	{
+	    msb = id2.exponent() + 1;
+	    while( a.get_bit( msb ) == a.get_bit( msb - 1 ) )
+		-- msb;
 
-            if ( numrep == SC_BIN_US ||
-                numrep == SC_OCT_US ||
-                numrep == SC_HEX_US )
-                -- msb;
+	    if( numrep == SC_BIN_US ||
+		numrep == SC_OCT_US ||
+		numrep == SC_HEX_US )
+		-- msb;
 
-            lsb = id2.exponent() - 52;
-            while ( ! a.get_bit( lsb ) )
-                ++ lsb;
-        }
+	    lsb = id2.exponent() - 52;
+	    while( ! a.get_bit( lsb ) )
+		++ lsb;
+	}
     }
 
     int step;
 
     switch( numrep )
     {
-        case SC_BIN:
-        case SC_BIN_US:
-        case SC_CSD:
-            step = 1;
-           break;
-        case SC_OCT:
-        case SC_OCT_US:
-            step = 3;
-            break;
-        case SC_HEX:
-        case SC_HEX_US:
-            step = 4;
-            break;
-        default:
-            step = 0;
+	case SC_BIN:
+	case SC_BIN_US:
+	case SC_CSD:
+	    step = 1;
+	   break;
+	case SC_OCT:
+	case SC_OCT_US:
+	    step = 3;
+	    break;
+	case SC_HEX:
+	case SC_HEX_US:
+	    step = 4;
+	    break;
+	default:
+	    step = 0;
     }
 
     msb = (int) ceil( double( msb + 1 ) / step ) * step - 1;
 
     lsb = (int) floor( double( lsb ) / step ) * step;
 
-    if ( msb < 0 )
+    if( msb < 0 )
     {
-        s += '.';
-        if ( fmt == SC_F )
-        {
-            int sign = ( id2.negative() != 0 ) ? ( 1 << step ) - 1 : 0;
-            for ( int i = ( msb + 1 ) / step; i < 0; i ++ )
-            {
-                if ( sign < 10 )
-                    s += static_cast<char>( sign + '0' );
-                else
-                    s += static_cast<char>( sign + 'a' - 10 );
-            }
-        }
+	s += '.';
+	if( fmt == SC_F )
+	{
+	    int sign = ( id2.negative() != 0 ) ? ( 1 << step ) - 1 : 0;
+	    for( int i = ( msb + 1 ) / step; i < 0; i ++ )
+	    {
+		if( sign < 10 )
+		    s += static_cast<char>( sign + '0' );
+		else
+		    s += static_cast<char>( sign + 'a' - 10 );
+	    }
+	}
     }
 
     int i = msb;
-    while ( i >= lsb )
+    while( i >= lsb )
     {
         int value = 0;
-        for ( int j = step - 1; j >= 0; -- j )
-        {
+        for( int j = step - 1; j >= 0; -- j )
+	{
             value += static_cast<int>( a.get_bit( i ) ) << j;
             -- i;
         }
-        if ( value < 10 )
+        if( value < 10 )
             s += static_cast<char>( value + '0' );
-        else
+	else
             s += static_cast<char>( value + 'a' - 10 );
-        if ( i == -1 )
-            s += '.';
+	if( i == -1 )
+	    s += '.';
     }
 
-    if ( lsb > 0 && fmt == SC_F )
+    if( lsb > 0 && fmt == SC_F )
     {
-        for ( int i = lsb / step; i > 0; i -- )
-            s += '0';
+	for( int i = lsb / step; i > 0; i -- )
+	    s += '0';
     }
 
-    if ( s[s.length() - 1] == '.' )
-        s.discard( 1 );
+    if( s[s.length() - 1] == '.' )
+	s.discard( 1 );
 
-    if ( fmt != SC_F )
+    if( fmt != SC_F )
     {
-        if ( msb < 0 )
-            scfx_print_exp( s, ( msb + 1 ) / step );
-        else if ( lsb > 0 )
-            scfx_print_exp( s, lsb / step );
+	if( msb < 0 )
+	    scfx_print_exp( s, ( msb + 1 ) / step );
+	else if( lsb > 0 )
+	    scfx_print_exp( s, lsb / step );
     }
 
-    if ( numrep == SC_CSD )
-        scfx_tc2csd( s, w_prefix );
+    if( numrep == SC_CSD )
+	scfx_tc2csd( s, w_prefix );
 }
 
 
 const char*
 to_string( const scfx_ieee_double& id, sc_numrep numrep, int w_prefix,
-           sc_fmt fmt, const scfx_params* params = 0 )
+	   sc_fmt fmt, const scfx_params* params = 0 )
 {
     static scfx_string s;
 
     s.clear();
 
-    if ( id.is_nan() )
+    if( id.is_nan() )
         scfx_print_nan( s );
-    else if ( id.is_inf() )
+    else if( id.is_inf() )
         scfx_print_inf( s, static_cast<bool>( id.negative() ) );
-    else if ( id.negative() && ! id.is_zero() &&
-             ( numrep == SC_BIN_US ||
-               numrep == SC_OCT_US ||
-               numrep == SC_HEX_US ) )
+    else if( id.negative() && ! id.is_zero() &&
+	     ( numrep == SC_BIN_US ||
+	       numrep == SC_OCT_US ||
+	       numrep == SC_HEX_US ) )
         s += "negative";
-    else if ( numrep == SC_DEC )
+    else if( numrep == SC_DEC )
         sc_dt::print_dec( s, id, w_prefix, fmt );
     else
         sc_dt::print_other( s, id, numrep, w_prefix, fmt, params );
@@ -521,7 +522,7 @@ const std::string
 sc_fxval_fast::to_string( sc_numrep numrep, bool w_prefix ) const
 {
     return std::string( sc_dt::to_string( m_val, numrep, (w_prefix ? 1 : 0),
-                                        SC_E ) );
+					SC_E ) );
 }
 
 const std::string
@@ -540,7 +541,7 @@ const std::string
 sc_fxval_fast::to_string( sc_numrep numrep, bool w_prefix, sc_fmt fmt ) const
 {
     return std::string( sc_dt::to_string( m_val, numrep, (w_prefix ? 1 : 0),
-                                        fmt ) );
+					fmt ) );
 }
 
 
@@ -594,7 +595,7 @@ sc_fxval_fast::dump( ::std::ostream& os ) const
     // TO BE COMPLETED
     // os << "r_flag   = " << m_r_flag << ::std::endl;
     // os << "observer = ";
-    // if ( m_observer != 0 )
+    // if( m_observer != 0 )
     //     m_observer->dump( os );
     // else
     //     os << "0" << ::std::endl;
@@ -607,7 +608,7 @@ bool
 sc_fxval_fast::get_bit( int i ) const
 {
     scfx_ieee_double id( m_val );
-    if ( id.is_zero() || id.is_nan() || id.is_inf() )
+    if( id.is_zero() || id.is_nan() || id.is_inf() )
         return false;
 
     // convert to two's complement
@@ -615,27 +616,27 @@ sc_fxval_fast::get_bit( int i ) const
     unsigned int m0 = id.mantissa0();
     unsigned int m1 = id.mantissa1();
 
-    if ( id.is_normal() )
+    if( id.is_normal() )
         m0 += 1U << 20;
 
-    if ( id.negative() != 0 )
+    if( id.negative() != 0 )
     {
-        m0 = ~ m0;
-        m1 = ~ m1;
-        unsigned int tmp = m1;
-        m1 += 1U;
-        if ( m1 <= tmp )
-            m0 += 1U;
+	m0 = ~ m0;
+	m1 = ~ m1;
+	unsigned int tmp = m1;
+	m1 += 1U;
+	if( m1 <= tmp )
+	    m0 += 1U;
     }
 
     // get the right bit
 
     int j = i - id.exponent();
-    if ( ( j += 20 ) >= 32 )
+    if( ( j += 20 ) >= 32 )
         return ( ( m0 & 1U << 31 ) != 0 );
-    else if ( j >= 0 )
+    else if( j >= 0 )
         return ( ( m0 & 1U << j ) != 0 );
-    else if ( ( j += 32 ) >= 0 )
+    else if( ( j += 32 ) >= 0 )
         return ( ( m1 & 1U << j ) != 0 );
     else
         return false;
@@ -663,7 +664,7 @@ sc_fxval_fast::unlock_observer( sc_fxval_fast_observer* observer_ ) const
 
 #define SCFX_FAIL_IF_(cnd)                                                    \
 {                                                                             \
-    if ( ( cnd ) )                                                             \
+    if( ( cnd ) )                                                             \
         return static_cast<double>( scfx_ieee_double::nan() );                \
 }
 
@@ -685,61 +686,61 @@ sc_fxval_fast::from_string( const char* s )
 
     switch( numrep )
     {
-        case SC_DEC:
-        {
-            base = 10;
-            if ( scfx_is_nan( s ) )  // special case: NaN
-                return static_cast<double>( scfx_ieee_double::nan() );
-            if ( scfx_is_inf( s ) )  // special case: Infinity
-                return static_cast<double>( scfx_ieee_double::inf( sign ) );
-            break;
-        }
-        case SC_BIN:
-        case SC_BIN_US:
-        {
-            SCFX_FAIL_IF_( sign_char );
-            base = 2;
-            break;
-        }
-
-        case SC_BIN_SM:
-        {
-            base = 2;
-            break;
-        }
-        case SC_OCT:
-        case SC_OCT_US:
-        {
-            SCFX_FAIL_IF_( sign_char );
-            base = 8;
-            break;
-        }
-        case SC_OCT_SM:
-        {
-            base = 8;
-            break;
-        }
-        case SC_HEX:
-        case SC_HEX_US:
-        {
-            SCFX_FAIL_IF_( sign_char );
-            base = 16;
-            break;
-        }
-        case SC_HEX_SM:
-        {
-            base = 16;
-            break;
-        }
-        case SC_CSD:
-        {
-            SCFX_FAIL_IF_( sign_char );
-            base = 2;
-            scfx_csd2tc( s2 );
-            s = (const char*) s2 + 4;
-            numrep = SC_BIN;
-            break;
-        }
+	case SC_DEC:
+	{
+	    base = 10;
+	    if( scfx_is_nan( s ) )  // special case: NaN
+		return static_cast<double>( scfx_ieee_double::nan() );
+	    if( scfx_is_inf( s ) )  // special case: Infinity
+		return static_cast<double>( scfx_ieee_double::inf( sign ) );
+	    break;
+	}
+	case SC_BIN:
+	case SC_BIN_US:
+	{
+	    SCFX_FAIL_IF_( sign_char );
+	    base = 2;
+	    break;
+	}
+	
+	case SC_BIN_SM:
+	{
+	    base = 2;
+	    break;
+	}
+	case SC_OCT:
+	case SC_OCT_US:
+	{
+	    SCFX_FAIL_IF_( sign_char );
+	    base = 8;
+	    break;
+	}
+	case SC_OCT_SM:
+	{
+	    base = 8;
+	    break;
+	}
+	case SC_HEX:
+	case SC_HEX_US:
+	{
+	    SCFX_FAIL_IF_( sign_char );
+	    base = 16;
+	    break;
+	}
+	case SC_HEX_SM:
+	{
+	    base = 16;
+	    break;
+	}
+	case SC_CSD:
+	{
+	    SCFX_FAIL_IF_( sign_char );
+	    base = 2;
+	    scfx_csd2tc( s2 );
+	    s = (const char*) s2 + 4;
+	    numrep = SC_BIN;
+	    break;
+	}
        default:;// Martin, what is default???
     }
 
@@ -752,39 +753,39 @@ sc_fxval_fast::from_string( const char* s )
     int int_digits = 0;
     int frac_digits = 0;
 
-    while ( *end )
+    while( *end )
     {
-        if ( scfx_exp_start( end ) )
-            break;
+	if( scfx_exp_start( end ) )
+	    break;
+	
+	if( *end == '.' )
+	{
+	    SCFX_FAIL_IF_( based_point );
+	    based_point = true;
+	}
+	else
+	{
+	    SCFX_FAIL_IF_( ! scfx_is_digit( *end, numrep ) );
+	    if( based_point )
+		frac_digits ++;
+	    else
+		int_digits ++;
+	}
 
-        if ( *end == '.' )
-        {
-            SCFX_FAIL_IF_( based_point );
-            based_point = true;
-        }
-        else
-        {
-            SCFX_FAIL_IF_( ! scfx_is_digit( *end, numrep ) );
-            if ( based_point )
-                frac_digits ++;
-            else
-                int_digits ++;
-        }
-
-        end ++;
+	end ++;
     }
 
     SCFX_FAIL_IF_( int_digits == 0 && frac_digits == 0 );
 
     // [ exponent ]
-
+    
     int exponent = 0;
 
-    if ( *end )
+    if( *end )
     {
-        for ( const char *e = end + 2; *e; e ++ )
-            SCFX_FAIL_IF_( ! scfx_is_digit( *e, SC_DEC ) );
-        exponent = atoi( end + 1 );
+	for( const char *e = end + 2; *e; e ++ )
+	    SCFX_FAIL_IF_( ! scfx_is_digit( *e, SC_DEC ) );
+	exponent = atoi( end + 1 );
     }
 
     //
@@ -793,84 +794,84 @@ sc_fxval_fast::from_string( const char* s )
 
     double integer = 0.0;
 
-    if ( int_digits != 0 )
+    if( int_digits != 0 )
     {
 
-        bool first_digit = true;
+	bool first_digit = true;
 
-        for ( ; s < end; s ++ )
-        {
-            if ( *s == '.' )
-                break;
-
-            if ( first_digit )
-            {
-                integer = scfx_to_digit( *s, numrep );
-                switch( numrep )
-                {
-                    case SC_BIN:
-                    case SC_OCT:
-                    case SC_HEX:
-                    {
-                        if ( integer >= ( base >> 1 ) )
-                            integer -= base;  // two's complement
-                        break;
-                    }
-                    default:
-                        ;
-                }
-                first_digit = false;
-            }
+	for( ; s < end; s ++ )
+	{
+	    if( *s == '.' )
+		break;
+	    
+	    if( first_digit )
+	    {
+		integer = scfx_to_digit( *s, numrep );
+		switch( numrep )
+		{
+		    case SC_BIN:
+		    case SC_OCT:
+		    case SC_HEX:
+		    {
+			if( integer >= ( base >> 1 ) )
+			    integer -= base;  // two's complement
+			break;
+		    }
+		    default:
+			;
+		}
+		first_digit = false;
+	    }
             else
-            {
-                integer *= base;
-                integer += scfx_to_digit( *s, numrep );
-            }
-        }
+	    {
+		integer *= base;
+		integer += scfx_to_digit( *s, numrep );
+	    }
+	}
     }
 
     // [ . fraction ]
 
     double fraction = 0.0;
-
-    if ( frac_digits != 0 )
+    
+    if( frac_digits != 0 )
     {
-        s ++;  // skip '.'
+	s ++;  // skip '.'
 
-        bool first_digit = ( int_digits == 0 );
+	bool first_digit = ( int_digits == 0 );
 
-        double scale = 1.0;
+	double scale = 1.0;
 
-        for ( ; s < end; s ++ )
-        {
-            scale /= base;
-
-            if ( first_digit )
-            {
-                fraction = scfx_to_digit( *s, numrep );
-                switch( numrep )
-                {
-                    case SC_BIN:
-                    case SC_OCT:
-                    case SC_HEX:
-                    {
-                        if ( fraction >= ( base >> 1 ) )
-                            fraction -= base;  // two's complement
-                        break;
-                    }
-                    default:
-                        ;
-                }
-                fraction *= scale;
-                first_digit = false;
-            }
-            else
-                fraction += scfx_to_digit( *s, numrep ) * scale;
-        }
+	for( ; s < end; s ++ )
+	{
+	    scale /= base;
+	    
+	    if( first_digit )
+	    {
+		fraction = scfx_to_digit( *s, numrep );
+		switch( numrep )
+		{
+		    case SC_BIN:
+		    case SC_OCT:
+		    case SC_HEX:
+		    {
+			if( fraction >= ( base >> 1 ) )
+			    fraction -= base;  // two's complement
+			break;
+		    }
+		    default:
+			;
+		}
+		fraction *= scale;
+		first_digit = false;
+	    }
+	    else
+		fraction += scfx_to_digit( *s, numrep ) * scale;
+	}
     }
 
     double exp = ( exponent != 0 ) ? pow( (double) base, (double) exponent )
-                                   : 1;
+	                           : 1;
 
     return ( sign * ( integer + fraction ) * exp );
 }

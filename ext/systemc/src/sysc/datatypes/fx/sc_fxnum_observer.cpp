@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxnum_observer.cpp -
+  sc_fxnum_observer.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -46,6 +46,7 @@
 //
 
 #include "sysc/datatypes/fx/sc_fxnum_observer.h"
+
 
 namespace sc_dt
 {

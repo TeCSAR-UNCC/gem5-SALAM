@@ -19,7 +19,7 @@ IOAcc::IOAcc(Params *p) :
     gic(p->gic),
     int_num(p->int_num),
     memPort(p->name + ".mem_side", this),
-    masterId(p->system->getMasterId(name())),
+    masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period) {
@@ -108,7 +108,7 @@ IOAcc::recvPacket(PacketPtr pkt) {
             }
         }
     }
-    if (pkt->req) delete pkt->req;
+    //if (pkt->req) delete pkt->req;
     delete pkt;
 }
 
@@ -163,7 +163,8 @@ IOAcc::tryRead() {
         size = cacheLineSize;
     }
     size = readLeft > (size - 1) ? size : readLeft;
-    RequestPtr req = new Request(currentReadAddr, size, flags, masterId);
+    //RequestPtr req = new Request(currentReadAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(currentReadAddr, size, flags, masterId);
 
     DPRINTF(IOAcc, "Trying to read addr: 0x%x, %d bytes\n",
         req->getPaddr(), size);
@@ -208,7 +209,8 @@ IOAcc::tryWrite() {
     Request::Flags flags;
     uint8_t *data = new uint8_t[size];
     std::memcpy(data, &curData[totalLength-writeLeft], size);
-    RequestPtr req = new Request(currentWriteAddr, size, flags, masterId);
+    //RequestPtr req = new Request(currentWriteAddr, size, flags, masterId);
+    RequestPtr req = make_shared<Request>(currentWriteAddr, size, flags, masterId);
     req->setExtraData((uint64_t)data);
 
 

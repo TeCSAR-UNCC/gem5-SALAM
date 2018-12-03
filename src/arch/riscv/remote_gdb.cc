@@ -148,19 +148,16 @@
 using namespace std;
 using namespace RiscvISA;
 
-RemoteGDB::RemoteGDB(System *_system, ThreadContext *tc)
-    : BaseRemoteGDB(_system, tc), regCache(this)
+RemoteGDB::RemoteGDB(System *_system, ThreadContext *tc, int _port)
+    : BaseRemoteGDB(_system, tc, _port), regCache(this)
 {
 }
 
 bool
 RemoteGDB::acc(Addr va, size_t len)
 {
-    TlbEntry entry;
-    if (FullSystem)
-        panic("acc not implemented for RISCV FS!");
-    else
-        return context->getProcessPtr()->pTable->lookup(va, entry);
+    panic_if(FullSystem, "acc not implemented for RISCV FS!");
+    return context()->getProcessPtr()->pTable->lookup(va) != nullptr;
 }
 
 void
@@ -174,9 +171,9 @@ RemoteGDB::RiscvGdbRegCache::getRegs(ThreadContext *context)
         r.fpr[i] = context->readFloatRegBits(i);
 
     r.csr_base = context->readMiscReg(0);
-    r.fflags = context->readMiscReg(MISCREG_FFLAGS);
-    r.frm = context->readMiscReg(MISCREG_FRM);
-    r.fcsr = context->readMiscReg(MISCREG_FCSR);
+    r.fflags = context->readMiscReg(CSR_FFLAGS);
+    r.frm = context->readMiscReg(CSR_FRM);
+    r.fcsr = context->readMiscReg(CSR_FCSR);
     for (int i = ExplicitCSRs; i < NumMiscRegs; i++)
         r.csr[i - ExplicitCSRs] = context->readMiscReg(i);
 }
@@ -192,14 +189,15 @@ RemoteGDB::RiscvGdbRegCache::setRegs(ThreadContext *context) const
         context->setFloatRegBits(i, r.fpr[i]);
 
     context->setMiscReg(0, r.csr_base);
-    context->setMiscReg(MISCREG_FFLAGS, r.fflags);
-    context->setMiscReg(MISCREG_FRM, r.frm);
-    context->setMiscReg(MISCREG_FCSR, r.fcsr);
+    context->setMiscReg(CSR_FFLAGS, r.fflags);
+    context->setMiscReg(CSR_FRM, r.frm);
+    context->setMiscReg(CSR_FCSR, r.fcsr);
     for (int i = ExplicitCSRs; i < NumMiscRegs; i++)
         context->setMiscReg(i, r.csr[i - ExplicitCSRs]);
 }
 
-RemoteGDB::BaseGdbRegCache*
-RemoteGDB::gdbRegs() {
+BaseGdbRegCache*
+RemoteGDB::gdbRegs()
+{
     return &regCache;
 }

@@ -51,6 +51,7 @@
 #include "sysc/datatypes/bit/sc_bit_ids.h"
 #include "sysc/datatypes/bit/sc_lv_base.h"
 
+
 namespace sc_dt
 {
 
@@ -71,8 +72,8 @@ void
 sc_lv_base::init( int length_, const sc_logic& init_value )
 {
     // check the length
-    if ( length_ <= 0 ) {
-        SC_REPORT_ERROR( sc_core::SC_ID_ZERO_LENGTH_, 0 );
+    if( length_ <= 0 ) {
+	SC_REPORT_ERROR( sc_core::SC_ID_ZERO_LENGTH_, 0 );
     }
     // allocate memory for the data and control words
     m_len = length_;
@@ -83,9 +84,9 @@ sc_lv_base::init( int length_, const sc_logic& init_value )
     sc_digit dw = data_array[init_value.value()];
     sc_digit cw = ctrl_array[init_value.value()];
     int sz = m_size;
-    for ( int i = 0; i < sz; ++ i ) {
-        m_data[i] = dw;
-        m_ctrl[i] = cw;
+    for( int i = 0; i < sz; ++ i ) {
+	m_data[i] = dw;
+	m_ctrl[i] = cw;
     }
     clean_tail();
 }
@@ -99,15 +100,15 @@ sc_lv_base::assign_from_string( const std::string& s )
     int s_len = s.length() - 1;
     int min_len = sc_min( len, s_len );
     int i = 0;
-    for ( ; i < min_len; ++ i ) {
-        char c = s[s_len - i - 1];
-        set_bit( i, sc_logic::char_to_logic[(int)c] );
+    for( ; i < min_len; ++ i ) {
+	char c = s[s_len - i - 1];
+	set_bit( i, sc_logic::char_to_logic[(int)c] );
     }
     // if formatted, fill the rest with sign(s), otherwise fill with zeros
     sc_logic_value_t fill = (s[s_len] == 'F' ? sc_logic_value_t( s[0] - '0' )
-                                             : sc_logic_value_t( 0 ));
-    for ( ; i < len; ++ i ) {
-        set_bit( i, fill );
+		                             : sc_logic_value_t( 0 ));
+    for( ; i < len; ++ i ) {
+	set_bit( i, fill );
     }
 }
 
@@ -138,9 +139,9 @@ sc_lv_base::sc_lv_base( const sc_lv_base& a )
 {
     // copy the bits
     int sz = m_size;
-    for ( int i = 0; i < sz; ++ i ) {
-        m_data[i] = a.m_data[i];
-        m_ctrl[i] = a.m_ctrl[i];
+    for( int i = 0; i < sz; ++ i ) {
+	m_data[i] = a.m_data[i];
+	m_ctrl[i] = a.m_ctrl[i];
     }
 }
 
@@ -161,10 +162,10 @@ bool
 sc_lv_base::is_01() const
 {
     int sz = m_size;
-    for ( int i = 0; i < sz; ++ i ) {
-        if ( m_ctrl[i] != 0 ) {
-            return false;
-        }
+    for( int i = 0; i < sz; ++ i ) {
+	if( m_ctrl[i] != 0 ) {
+	    return false;
+	}
     }
     return true;
 }

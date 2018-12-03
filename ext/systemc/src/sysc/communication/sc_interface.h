@@ -48,7 +48,7 @@ public:
 
     // register a port with this interface (does nothing by default)
     virtual void register_port( sc_port_base& port_,
-                                const char*    if_typename_ );
+				const char*    if_typename_ );
 
     // get the default event
     virtual const sc_event& default_event() const;

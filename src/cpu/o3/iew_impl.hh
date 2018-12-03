@@ -76,6 +76,8 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
       issueToExecuteDelay(params->issueToExecuteDelay),
       dispatchWidth(params->dispatchWidth),
       issueWidth(params->issueWidth),
+      wbNumInst(0),
+      wbCycle(0),
       wbWidth(params->wbWidth),
       numThreads(params->numThreads)
 {
@@ -102,7 +104,7 @@ DefaultIEW<Impl>::DefaultIEW(O3CPU *_cpu, DerivO3CPUParams *params)
     // Instruction queue needs the queue between issue and execute.
     instQueue.setIssueToExecuteQueue(&issueToExecQueue);
 
-    for (ThreadID tid = 0; tid < numThreads; tid++) {
+    for (ThreadID tid = 0; tid < Impl::MaxThreads; tid++) {
         dispatchStatus[tid] = Running;
         fetchRedirect[tid] = false;
     }
@@ -478,7 +480,7 @@ DefaultIEW<Impl>::squash(ThreadID tid)
 
 template<class Impl>
 void
-DefaultIEW<Impl>::squashDueToBranch(DynInstPtr &inst, ThreadID tid)
+DefaultIEW<Impl>::squashDueToBranch(const DynInstPtr& inst, ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%i]: Squashing from a specific instruction, PC: %s "
             "[sn:%i].\n", tid, inst->pcState(), inst->seqNum);
@@ -503,7 +505,7 @@ DefaultIEW<Impl>::squashDueToBranch(DynInstPtr &inst, ThreadID tid)
 
 template<class Impl>
 void
-DefaultIEW<Impl>::squashDueToMemOrder(DynInstPtr &inst, ThreadID tid)
+DefaultIEW<Impl>::squashDueToMemOrder(const DynInstPtr& inst, ThreadID tid)
 {
     DPRINTF(IEW, "[tid:%i]: Memory violation, squashing violator and younger "
             "insts, PC: %s [sn:%i].\n", tid, inst->pcState(), inst->seqNum);
@@ -566,28 +568,28 @@ DefaultIEW<Impl>::unblock(ThreadID tid)
 
 template<class Impl>
 void
-DefaultIEW<Impl>::wakeDependents(DynInstPtr &inst)
+DefaultIEW<Impl>::wakeDependents(const DynInstPtr& inst)
 {
     instQueue.wakeDependents(inst);
 }
 
 template<class Impl>
 void
-DefaultIEW<Impl>::rescheduleMemInst(DynInstPtr &inst)
+DefaultIEW<Impl>::rescheduleMemInst(const DynInstPtr& inst)
 {
     instQueue.rescheduleMemInst(inst);
 }
 
 template<class Impl>
 void
-DefaultIEW<Impl>::replayMemInst(DynInstPtr &inst)
+DefaultIEW<Impl>::replayMemInst(const DynInstPtr& inst)
 {
     instQueue.replayMemInst(inst);
 }
 
 template<class Impl>
 void
-DefaultIEW<Impl>::blockMemInst(DynInstPtr& inst)
+DefaultIEW<Impl>::blockMemInst(const DynInstPtr& inst)
 {
     instQueue.blockMemInst(inst);
 }
@@ -601,7 +603,7 @@ DefaultIEW<Impl>::cacheUnblocked()
 
 template<class Impl>
 void
-DefaultIEW<Impl>::instToCommit(DynInstPtr &inst)
+DefaultIEW<Impl>::instToCommit(const DynInstPtr& inst)
 {
     // This function should not be called after writebackInsts in a
     // single cycle.  That will cause problems with an instruction
@@ -1100,7 +1102,7 @@ DefaultIEW<Impl>::dispatchInsts(ThreadID tid)
             add_to_iq = true;
         }
 
-        if (inst->isNonSpeculative()) {
+        if (add_to_iq && inst->isNonSpeculative()) {
             DPRINTF(IEW, "[tid:%i]: Issue: Nonspeculative instruction "
                     "encountered, skipping.\n", tid);
 
@@ -1578,7 +1580,7 @@ DefaultIEW<Impl>::tick()
 
 template <class Impl>
 void
-DefaultIEW<Impl>::updateExeInstStats(DynInstPtr &inst)
+DefaultIEW<Impl>::updateExeInstStats(const DynInstPtr& inst)
 {
     ThreadID tid = inst->threadNumber;
 
@@ -1610,7 +1612,7 @@ DefaultIEW<Impl>::updateExeInstStats(DynInstPtr &inst)
 
 template <class Impl>
 void
-DefaultIEW<Impl>::checkMisprediction(DynInstPtr &inst)
+DefaultIEW<Impl>::checkMisprediction(const DynInstPtr& inst)
 {
     ThreadID tid = inst->threadNumber;
 

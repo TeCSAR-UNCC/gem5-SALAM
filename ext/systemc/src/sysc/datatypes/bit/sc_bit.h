@@ -66,6 +66,7 @@
 #include "sysc/datatypes/int/sc_nbdefs.h"
 #include "sysc/utils/sc_iostream.h"
 
+
 namespace sc_dt
 {
 
@@ -92,20 +93,20 @@ class sc_bit
     static void invalid_value( int );
 
     static bool to_value( char c )
-        {
-            if ( c != '0' && c != '1' ) {
-                invalid_value( c );
-            }
-            return ( c == '0' ? false : true );
-        }
+	{
+	    if( c != '0' && c != '1' ) {
+		invalid_value( c );
+	    }
+	    return ( c == '0' ? false : true );
+	}
 
     static bool to_value( int i )
-        {
-            if ( i != 0 && i != 1 ) {
-                invalid_value( i );
-            }
-            return ( i == 0 ? false : true );
-        }
+	{
+	    if( i != 0 && i != 1 ) {
+		invalid_value( i );
+	    }
+	    return ( i == 0 ? false : true );
+	}
     static bool to_value( bool b )
        { return b; }
 
@@ -127,10 +128,10 @@ public:
     // MANDATORY
 
     sc_bit()
-        : m_val( false )
-        {
-            sc_deprecated_sc_bit();
-        }
+	: m_val( false )
+	{
+	    sc_deprecated_sc_bit();
+	}
 
 #define DEFN_CTOR_T(tp)              \
     explicit sc_bit( tp a )          \
@@ -155,22 +156,22 @@ public:
     // MANDATORY
 
     sc_bit( const sc_bit& a )
-        : m_val( a.m_val )
-        {}
+	: m_val( a.m_val )
+	{}
 
 
     // destructor
     // MANDATORY
 
     ~sc_bit()
-        {}
+	{}
 
 
     // assignment operators
     // MANDATORY
 
     sc_bit& operator = ( const sc_bit& b )
-        { m_val = b.m_val; return *this; }
+	{ m_val = b.m_val; return *this; }
 
 #define DEFN_ASN_OP_T(op,tp) \
     sc_bit& operator op( tp b ) \
@@ -192,13 +193,13 @@ public:
     // bitwise assignment operators
 
     sc_bit& operator &= ( const sc_bit& b )
-        { m_val = ( m_val && b.m_val ); return *this; }
+	{ m_val = ( m_val && b.m_val ); return *this; }
 
     sc_bit& operator |= ( const sc_bit& b )
-        { m_val = ( m_val || b.m_val ); return *this; }
+	{ m_val = ( m_val || b.m_val ); return *this; }
 
     sc_bit& operator ^= ( const sc_bit& b )
-        { m_val = ( m_val != b.m_val ); return *this; }
+	{ m_val = ( m_val != b.m_val ); return *this; }
 
     DEFN_ASN_OP(&=)
     DEFN_ASN_OP(|=)
@@ -213,19 +214,19 @@ public:
     // implicit conversion to bool
 
     operator bool () const
-        { return m_val; }
+	{ return m_val; }
 
     bool operator ! () const  // non-VSIA
-        { return ! m_val; }
+	{ return ! m_val; }
 
 
     // explicit conversions
 
     bool to_bool() const  // non-VSIA
-        { return m_val; }
+	{ return m_val; }
 
     char to_char() const
-        { return ( m_val ? '1' : '0' ); }
+	{ return ( m_val ? '1' : '0' ); }
 
 
     // relational operators and functions

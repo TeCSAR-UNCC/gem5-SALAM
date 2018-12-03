@@ -60,7 +60,11 @@ CSROp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     ss << mnemonic << ' ' << registerName(_destRegIdx[0]) << ", ";
     if (_numSrcRegs > 0)
         ss << registerName(_srcRegIdx[0]) << ", ";
-    ss << MiscRegNames.at(csr);
+    auto data = CSRData.find(csr);
+    if (data != CSRData.end())
+        ss << data->second.name;
+    else
+        ss << "?? (" << hex << "0x" << csr << ")";
     return ss.str();
 }
 

@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxcast_switch.h -
+  sc_fxcast_switch.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -53,6 +53,7 @@
 
 #include "sysc/datatypes/fx/sc_context.h"
 
+
 namespace sc_dt
 {
 
@@ -79,9 +80,9 @@ public:
     sc_fxcast_switch& operator = ( const sc_fxcast_switch& );
 
     friend bool operator == ( const sc_fxcast_switch&,
-                              const sc_fxcast_switch& );
+			      const sc_fxcast_switch& );
     friend bool operator != ( const sc_fxcast_switch&,
-                              const sc_fxcast_switch& );
+			      const sc_fxcast_switch& );
 
     const std::string to_string() const;
 
@@ -107,7 +108,7 @@ typedef sc_context<sc_fxcast_switch> sc_fxcast_context;
 // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 
 inline
-sc_fxcast_switch::sc_fxcast_switch()
+sc_fxcast_switch::sc_fxcast_switch() 
 : m_sw()
 {
     *this = sc_fxcast_context::default_value();
@@ -133,7 +134,7 @@ inline
 sc_fxcast_switch&
 sc_fxcast_switch::operator = ( const sc_fxcast_switch& a )
 {
-    if ( &a != this )
+    if( &a != this )
     {
         m_sw = a.m_sw;
     }

@@ -52,7 +52,9 @@
 #include "sysc/datatypes/fx/sc_fxcast_switch.h"
 #include "sysc/datatypes/fx/sc_fxtype_params.h"
 #include "sysc/datatypes/fx/sc_ufixed.h"
+
 #include "sysc/datatypes/fx/scfx_other_defs.h"
+
 
 #endif
 

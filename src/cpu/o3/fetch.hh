@@ -83,7 +83,6 @@ class DefaultFetch
 
     /** Typedefs from ISA. */
     typedef TheISA::MachInst MachInst;
-    typedef TheISA::ExtMachInst ExtMachInst;
 
     class FetchTranslation : public BaseTLB::Translation
     {
@@ -100,7 +99,7 @@ class DefaultFetch
         {}
 
         void
-        finish(const Fault &fault, RequestPtr req, ThreadContext *tc,
+        finish(const Fault &fault, const RequestPtr &req, ThreadContext *tc,
                BaseTLB::Mode mode)
         {
             assert(mode == BaseTLB::Execute);
@@ -122,7 +121,7 @@ class DefaultFetch
 
       public:
         FinishTranslationEvent(DefaultFetch<Impl> *_fetch)
-            : fetch(_fetch)
+            : fetch(_fetch), req(nullptr)
         {}
 
         void setFault(Fault _fault)
@@ -130,7 +129,7 @@ class DefaultFetch
             fault = _fault;
         }
 
-        void setReq(RequestPtr _req)
+        void setReq(const RequestPtr &_req)
         {
             req = _req;
         }
@@ -282,7 +281,7 @@ class DefaultFetch
      * @param next_NPC Used for ISAs which use delay slots.
      * @return Whether or not a branch was predicted as taken.
      */
-    bool lookupAndUpdateNextPC(DynInstPtr &inst, TheISA::PCState &pc);
+    bool lookupAndUpdateNextPC(const DynInstPtr &inst, TheISA::PCState &pc);
 
     /**
      * Fetches the cache line that contains the fetch PC.  Returns any
@@ -296,7 +295,7 @@ class DefaultFetch
      * @return Any fault that occured.
      */
     bool fetchCacheLine(Addr vaddr, ThreadID tid, Addr pc);
-    void finishTranslation(const Fault &fault, RequestPtr mem_req);
+    void finishTranslation(const Fault &fault, const RequestPtr &mem_req);
 
 
     /** Check if an interrupt is pending and that we need to handle

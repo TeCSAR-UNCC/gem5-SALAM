@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012-2013, 2017 ARM Limited
+ * Copyright (c) 2010, 2012-2013, 2017-2018 ARM Limited
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved
  *
@@ -153,7 +153,7 @@ MrrcOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     ss << ", ";
     printIntReg(ss, dest2);
     ss << ", ";
-    printIntReg(ss, op1);
+    printMiscReg(ss, op1);
     return ss.str();
 }
 
@@ -162,7 +162,7 @@ McrrOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
-    printIntReg(ss, dest);
+    printMiscReg(ss, dest);
     ss << ", ";
     printIntReg(ss, op1);
     ss << ", ";
@@ -322,17 +322,7 @@ RegImmRegShiftOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MiscRegRegImmMemOp::generateDisassembly(Addr pc,
-                                        const SymbolTable *symtab) const
-{
-    std::stringstream ss;
-    printMnemonic(ss);
-    printIntReg(ss, op1);
-    return ss.str();
-}
-
-std::string
 UnknownOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 {
-    return csprintf("%-10s (inst %#08x)", "unknown", machInst);
+    return csprintf("%-10s (inst %#08x)", "unknown", machInst & mask(32));
 }

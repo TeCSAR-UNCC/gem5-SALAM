@@ -49,6 +49,7 @@
 #include "sysc/datatypes/bit/sc_bit_ids.h"
 #include "sysc/datatypes/bit/sc_logic.h"
 
+
 namespace sc_dt
 {
 
@@ -88,10 +89,10 @@ sc_logic::invalid_value( int i )
 void
 sc_logic::invalid_01() const
 {
-    if ( (int) m_val == Log_Z ) {
-        SC_REPORT_WARNING( sc_core::SC_ID_LOGIC_Z_TO_BOOL_, 0 );
+    if( (int) m_val == Log_Z ) {
+	SC_REPORT_WARNING( sc_core::SC_ID_LOGIC_Z_TO_BOOL_, 0 );
     } else {
-        SC_REPORT_WARNING( sc_core::SC_ID_LOGIC_X_TO_BOOL_, 0 );
+	SC_REPORT_WARNING( sc_core::SC_ID_LOGIC_X_TO_BOOL_, 0 );
     }
 }
 

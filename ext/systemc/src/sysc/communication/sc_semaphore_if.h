@@ -63,7 +63,7 @@ protected:
     // constructor
 
     sc_semaphore_if()
-        {}
+	{}
 
 private:
 

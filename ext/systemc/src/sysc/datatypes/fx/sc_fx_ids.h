@@ -32,7 +32,7 @@
 
       Name, Affiliation, Date:
   Description of Modification:
-
+    
  *****************************************************************************/
 
 // $Log: sc_fx_ids.h,v $
@@ -50,6 +50,7 @@
 
 #include "sysc/utils/sc_report.h"
 
+
 // ----------------------------------------------------------------------------
 //  Report ids (datatypes/fx)
 //
@@ -66,27 +67,27 @@ namespace sc_core {
 
 
 SC_DEFINE_MESSAGE( SC_ID_INVALID_WL_, 300,
-        "total wordlength <= 0 is not valid" )
+	"total wordlength <= 0 is not valid" )
 SC_DEFINE_MESSAGE( SC_ID_INVALID_N_BITS_, 301,
-        "number of bits < 0 is not valid" )
+	"number of bits < 0 is not valid" )
 SC_DEFINE_MESSAGE( SC_ID_INVALID_DIV_WL_, 302,
-        "division wordlength <= 0 is not valid" )
+	"division wordlength <= 0 is not valid" )
 SC_DEFINE_MESSAGE( SC_ID_INVALID_CTE_WL_, 303,
-        "constant wordlength <= 0 is not valid" )
+	"constant wordlength <= 0 is not valid" )
 SC_DEFINE_MESSAGE( SC_ID_INVALID_MAX_WL_, 304,
-        "maximum wordlength <= 0 and != -1 is not valid" )
+	"maximum wordlength <= 0 and != -1 is not valid" )
 SC_DEFINE_MESSAGE( SC_ID_INVALID_FX_VALUE_, 305,
     "invalid fixed-point value" )
 SC_DEFINE_MESSAGE( SC_ID_INVALID_O_MODE_, 306,
-        "invalid overflow mode" )
+	"invalid overflow mode" )
 SC_DEFINE_MESSAGE( SC_ID_OUT_OF_RANGE_, 307,
-        "index out of range" )
+	"index out of range" )
 SC_DEFINE_MESSAGE( SC_ID_CONTEXT_BEGIN_FAILED_, 308,
-        "context begin failed" )
-SC_DEFINE_MESSAGE( SC_ID_CONTEXT_END_FAILED_, 309,
-        "context end failed" )
-SC_DEFINE_MESSAGE( SC_ID_WRAP_SM_NOT_DEFINED_, 310,
-        "SC_WRAP_SM not defined for unsigned numbers" )
+	"context begin failed" )  
+SC_DEFINE_MESSAGE( SC_ID_CONTEXT_END_FAILED_, 309, 
+	"context end failed" )
+SC_DEFINE_MESSAGE( SC_ID_WRAP_SM_NOT_DEFINED_, 310, 
+	"SC_WRAP_SM not defined for unsigned numbers" )
 
 
 

@@ -33,6 +33,7 @@
 #define __CPU_STATIC_INST_HH__
 
 #include <bitset>
+#include <memory>
 #include <string>
 
 #include "arch/registers.hh"
@@ -43,10 +44,10 @@
 #include "config/the_isa.hh"
 #include "cpu/op_class.hh"
 #include "cpu/reg_class.hh"
-#include "cpu/reg_class_impl.hh"
 #include "cpu/static_inst_fwd.hh"
 #include "cpu/thread_context.hh"
 #include "enums/StaticInstFlags.hh"
+#include "sim/byteswap.hh"
 
 // forward declarations
 class Packet;
@@ -142,6 +143,7 @@ class StaticInst : public RefCounted, public StaticInstFlags
     bool isMemRef()       const { return flags[IsMemRef]; }
     bool isLoad()         const { return flags[IsLoad]; }
     bool isStore()        const { return flags[IsStore]; }
+    bool isAtomic()       const { return flags[IsAtomic]; }
     bool isStoreConditional()     const { return flags[IsStoreConditional]; }
     bool isInstPrefetch() const { return flags[IsInstPrefetch]; }
     bool isDataPrefetch() const { return flags[IsDataPrefetch]; }
@@ -203,27 +205,10 @@ class StaticInst : public RefCounted, public StaticInstFlags
     const RegId& srcRegIdx(int i)  const { return _srcRegIdx[i]; }
 
     /// Pointer to a statically allocated "null" instruction object.
-    /// Used to give eaCompInst() and memAccInst() something to return
-    /// when called on non-memory instructions.
     static StaticInstPtr nullStaticInstPtr;
 
-    /**
-     * Memory references only: returns "fake" instruction representing
-     * the effective address part of the memory operation.  Used to
-     * obtain the dependence info (numSrcRegs and srcRegIdx[]) for
-     * just the EA computation.
-     */
-    virtual const
-    StaticInstPtr &eaCompInst() const { return nullStaticInstPtr; }
-
-    /**
-     * Memory references only: returns "fake" instruction representing
-     * the memory access part of the memory operation.  Used to
-     * obtain the dependence info (numSrcRegs and srcRegIdx[]) for
-     * just the memory access (not the EA computation).
-     */
-    virtual const
-    StaticInstPtr &memAccInst() const { return nullStaticInstPtr; }
+    /// Pointer to a statically allocated generic "nop" instruction object.
+    static StaticInstPtr nopStaticInstPtr;
 
     /// The binary machine instruction.
     const ExtMachInst machInst;
@@ -272,11 +257,6 @@ class StaticInst : public RefCounted, public StaticInstFlags
 
     virtual Fault execute(ExecContext *xc,
                           Trace::InstRecord *traceData) const = 0;
-    virtual Fault eaComp(ExecContext *xc,
-                         Trace::InstRecord *traceData) const
-    {
-        panic("eaComp not defined!");
-    }
 
     virtual Fault initiateAcc(ExecContext *xc,
                               Trace::InstRecord *traceData) const
@@ -339,6 +319,31 @@ class StaticInst : public RefCounted, public StaticInstFlags
 
     /// Return name of machine instruction
     std::string getName() { return mnemonic; }
+
+  protected:
+    template<typename T>
+    size_t
+    simpleAsBytes(void *buf, size_t max_size, const T &t)
+    {
+        size_t size = sizeof(T);
+        if (size <= max_size)
+            *reinterpret_cast<T *>(buf) = htole<T>(t);
+        return size;
+    }
+
+  public:
+    /**
+     * Instruction classes can override this function to return a
+     * a representation of themselves as a blob of bytes, generally assumed to
+     * be that instructions ExtMachInst.
+     *
+     * buf is a buffer to hold the bytes.
+     * max_size is the size allocated for that buffer by the caller.
+     * The return value is how much data was actually put into the buffer,
+     * zero if no data was put in the buffer, or the necessary size of the
+     * buffer if there wasn't enough space.
+     */
+    virtual size_t asBytes(void *buf, size_t max_size) { return 0; }
 };
 
 #endif // __CPU_STATIC_INST_HH__

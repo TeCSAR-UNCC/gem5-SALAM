@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxnum_observer.h -
+  sc_fxnum_observer.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -49,6 +49,7 @@
 
 
 #include "sysc/datatypes/fx/sc_fxdefs.h"
+
 
 namespace sc_dt
 {
@@ -113,7 +114,7 @@ class sc_fxnum_observer
 {
 
 protected:
-
+    
     sc_fxnum_observer() {}
     virtual ~sc_fxnum_observer() {}
 
@@ -139,7 +140,7 @@ class sc_fxnum_fast_observer
 {
 
 protected:
-
+    
     sc_fxnum_fast_observer() {}
     virtual ~sc_fxnum_fast_observer() {}
 

@@ -26,16 +26,16 @@
  CHANGE LOG AT THE END OF THE FILE
  *****************************************************************************/
 
+#include "sysc/kernel/sc_simcontext.h"
+#include "sysc/kernel/sc_module.h"
+#include "sysc/kernel/sc_object_int.h"
+#include "sysc/kernel/sc_method_process.h"
+#include "sysc/kernel/sc_thread_process.h"
 #include "sysc/communication/sc_communication_ids.h"
+#include "sysc/utils/sc_utils_ids.h"
 #include "sysc/communication/sc_event_finder.h"
 #include "sysc/communication/sc_port.h"
 #include "sysc/communication/sc_signal_ifs.h"
-#include "sysc/kernel/sc_method_process.h"
-#include "sysc/kernel/sc_module.h"
-#include "sysc/kernel/sc_object_int.h"
-#include "sysc/kernel/sc_simcontext.h"
-#include "sysc/kernel/sc_thread_process.h"
-#include "sysc/utils/sc_utils_ids.h"
 
 namespace sc_core {
 
@@ -97,7 +97,7 @@ struct sc_bind_ef
 // constructor
 
 sc_bind_ef::sc_bind_ef( sc_process_b* handle_,
-                        sc_event_finder* event_finder_ )
+			sc_event_finder* event_finder_ )
 : handle( handle_ ),
   event_finder( event_finder_ )
 {}
@@ -117,14 +117,14 @@ sc_bind_ef::~sc_bind_ef()
 struct sc_bind_info
 {
     // constructor
-    explicit sc_bind_info( int max_size_,
-        sc_port_policy policy_=SC_ONE_OR_MORE_BOUND );
+    explicit sc_bind_info( int max_size_, 
+	sc_port_policy policy_=SC_ONE_OR_MORE_BOUND );
 
     // destructor
     ~sc_bind_info();
 
     int            max_size() const;
-    sc_port_policy policy() const;
+    sc_port_policy policy() const; 
     int            size() const;
 
     int                        m_max_size;
@@ -161,8 +161,8 @@ sc_bind_info::sc_bind_info( int max_size_, sc_port_policy policy_ )
 
 sc_bind_info::~sc_bind_info()
 {
-    for ( int i = size() - 1; i >= 0; -- i ) {
-        delete vec[i];
+    for( int i = size() - 1; i >= 0; -- i ) {
+	delete vec[i];
     }
 }
 
@@ -173,7 +173,7 @@ sc_bind_info::max_size() const
     return m_max_size ? m_max_size : (int) vec.size();
 }
 
-sc_port_policy
+sc_port_policy 
 sc_bind_info::policy() const
 {
     return m_policy;
@@ -214,9 +214,9 @@ void sc_port_base::add_static_event(
 int sc_port_base::bind_count()
 {
     if ( m_bind_info )
-        return m_bind_info->size();
-    else
-        return interface_count();
+	return m_bind_info->size();
+    else 
+	return interface_count();
 }
 
 // error reporting
@@ -225,10 +225,10 @@ void
 sc_port_base::report_error( const char* id, const char* add_msg ) const
 {
     char msg[BUFSIZ];
-    if ( add_msg != 0 ) {
-        std::sprintf( msg, "%s: port '%s' (%s)", add_msg, name(), kind() );
+    if( add_msg != 0 ) {
+	std::sprintf( msg, "%s: port '%s' (%s)", add_msg, name(), kind() );
     } else {
-        std::sprintf( msg, "port '%s' (%s)", name(), kind() );
+	std::sprintf( msg, "port '%s' (%s)", name(), kind() );
     }
     SC_REPORT_ERROR( id, msg );
 }
@@ -236,9 +236,9 @@ sc_port_base::report_error( const char* id, const char* add_msg ) const
 
 // constructors
 
-sc_port_base::sc_port_base(
-    int max_size_, sc_port_policy policy
-) :
+sc_port_base::sc_port_base( 
+    int max_size_, sc_port_policy policy 
+) : 
     sc_object( sc_gen_unique_name( "port" ) ),
     m_bind_info(NULL)
 {
@@ -246,9 +246,9 @@ sc_port_base::sc_port_base(
     m_bind_info = new sc_bind_info( max_size_, policy );
 }
 
-sc_port_base::sc_port_base(
-    const char* name_, int max_size_, sc_port_policy policy
-) :
+sc_port_base::sc_port_base( 
+    const char* name_, int max_size_, sc_port_policy policy 
+) : 
     sc_object( name_ ),
     m_bind_info(NULL)
 {
@@ -271,17 +271,17 @@ sc_port_base::~sc_port_base()
 void
 sc_port_base::bind( sc_interface& interface_ )
 {
-    if ( m_bind_info == 0 ) {
-        // cannot bind an interface after elaboration
-        report_error( SC_ID_BIND_IF_TO_PORT_, "simulation running" );
+    if( m_bind_info == 0 ) {
+	// cannot bind an interface after elaboration
+	report_error( SC_ID_BIND_IF_TO_PORT_, "simulation running" );
     }
 
     m_bind_info->vec.push_back( new sc_bind_elem( &interface_ ) );
-
-    if ( ! m_bind_info->has_parent ) {
-        // add (cache) the interface
-        add_interface( &interface_ );
-        m_bind_info->last_add ++;
+    
+    if( ! m_bind_info->has_parent ) {
+	// add (cache) the interface
+	add_interface( &interface_ );
+	m_bind_info->last_add ++;
     }
 }
 
@@ -291,23 +291,23 @@ sc_port_base::bind( sc_interface& interface_ )
 void
 sc_port_base::bind( this_type& parent_ )
 {
-    if ( m_bind_info == 0 ) {
-        // cannot bind a parent port after elaboration
-        report_error( SC_ID_BIND_PORT_TO_PORT_, "simulation running" );
+    if( m_bind_info == 0 ) {
+	// cannot bind a parent port after elaboration
+	report_error( SC_ID_BIND_PORT_TO_PORT_, "simulation running" );
     }
 
-    if ( &parent_ == this ) {
-        report_error( SC_ID_BIND_PORT_TO_PORT_, "same port" );
+    if( &parent_ == this ) {
+	report_error( SC_ID_BIND_PORT_TO_PORT_, "same port" );
     }
 
     // check if parent port is already bound to this port
 #if 0
-    for ( int i = m_bind_info->size() - 1; i >= 0; -- i ) {
-        if ( &parent_ == m_bind_info->vec[i]->parent ) {
-            report_error( SC_ID_BIND_PORT_TO_PORT_, "already bound" );
-        }
+    for( int i = m_bind_info->size() - 1; i >= 0; -- i ) {
+	if( &parent_ == m_bind_info->vec[i]->parent ) {
+	    report_error( SC_ID_BIND_PORT_TO_PORT_, "already bound" );
+	}
     }
-#endif //
+#endif // 
 
     m_bind_info->vec.push_back( new sc_bind_elem( &parent_ ) );
     m_bind_info->has_parent = true;
@@ -316,7 +316,7 @@ sc_port_base::bind( this_type& parent_ )
 
 // called by construction_done (null by default)
 
-void sc_port_base::before_end_of_elaboration()
+void sc_port_base::before_end_of_elaboration() 
 {}
 
 // called by elaboration_done (does nothing)
@@ -341,14 +341,14 @@ void sc_port_base::end_of_simulation()
 int
 sc_port_base::pbind( sc_interface& interface_ )
 {
-    if ( m_bind_info == 0 ) {
-        // cannot bind an interface after elaboration
-        report_error( SC_ID_BIND_IF_TO_PORT_, "simulation running" );
+    if( m_bind_info == 0 ) {
+	// cannot bind an interface after elaboration
+	report_error( SC_ID_BIND_IF_TO_PORT_, "simulation running" );
     }
-
-    if ( m_bind_info->size() != 0 ) {
-        // first interface already bound
-        return 1;
+    
+    if( m_bind_info->size() != 0 ) {
+	// first interface already bound
+	return 1;
     }
 
     return vbind( interface_ );
@@ -357,14 +357,14 @@ sc_port_base::pbind( sc_interface& interface_ )
 int
 sc_port_base::pbind( sc_port_base& parent_ )
 {
-    if ( m_bind_info == 0 ) {
-        // cannot bind a parent port after elaboration
-        report_error( SC_ID_BIND_PORT_TO_PORT_, "simulation running" );
+    if( m_bind_info == 0 ) {
+	// cannot bind a parent port after elaboration
+	report_error( SC_ID_BIND_PORT_TO_PORT_, "simulation running" );
     }
-
-    if ( m_bind_info->size() != 0 ) {
-        // first interface already bound
-        return 1;
+    
+    if( m_bind_info->size() != 0 ) {
+	// first interface already bound
+	return 1;
     }
 
     return vbind( parent_ );
@@ -375,20 +375,20 @@ sc_port_base::pbind( sc_port_base& parent_ )
 
 void
 sc_port_base::make_sensitive( sc_thread_handle handle_,
-                              sc_event_finder* event_finder_ ) const
+			      sc_event_finder* event_finder_ ) const
 {
     assert( m_bind_info != 0 );
-    m_bind_info->thread_vec.push_back(
-        new sc_bind_ef( (sc_process_b*)handle_, event_finder_ ) );
+    m_bind_info->thread_vec.push_back( 
+	new sc_bind_ef( (sc_process_b*)handle_, event_finder_ ) );
 }
 
 void
 sc_port_base::make_sensitive( sc_method_handle handle_,
-                              sc_event_finder* event_finder_ ) const
+			      sc_event_finder* event_finder_ ) const
 {
     assert( m_bind_info != 0 );
-    m_bind_info->method_vec.push_back(
-        new sc_bind_ef( (sc_process_b*)handle_, event_finder_ ) );
+    m_bind_info->method_vec.push_back( 
+	new sc_bind_ef( (sc_process_b*)handle_, event_finder_ ) );
 }
 
 
@@ -397,10 +397,10 @@ sc_port_base::make_sensitive( sc_method_handle handle_,
 int
 sc_port_base::first_parent()
 {
-    for ( int i = 0; i < m_bind_info->size(); ++ i ) {
-        if ( m_bind_info->vec[i]->parent != 0 ) {
-            return i;
-        }
+    for( int i = 0; i < m_bind_info->size(); ++ i ) {
+	if( m_bind_info->vec[i]->parent != 0 ) {
+	    return i;
+	}
     }
     return -1;
 }
@@ -423,21 +423,21 @@ sc_port_base::insert_parent( int i )
 
     vec[i]->iface = parent->m_bind_info->vec[0]->iface;
     int n = parent->m_bind_info->size() - 1;
-    if ( n > 0 ) {
-        // resize the bind vector (by adding new elements)
-        for ( int k = 0; k < n; ++ k ) {
-            vec.push_back( new sc_bind_elem() );
-        }
-        // move elements in the bind vector
-        for ( int k = m_bind_info->size() - n - 1; k > i; -- k ) {
-            vec[k + n]->iface = vec[k]->iface;
-            vec[k + n]->parent = vec[k]->parent;
-        }
-        // insert parent interfaces into the bind vector
-        for ( int k = i + 1; k <= i + n; ++ k ) {
-            vec[k]->iface = parent->m_bind_info->vec[k - i]->iface;
-            vec[k]->parent = 0;
-        }
+    if( n > 0 ) {
+	// resize the bind vector (by adding new elements)
+	for( int k = 0; k < n; ++ k ) {
+	    vec.push_back( new sc_bind_elem() );
+	}
+	// move elements in the bind vector
+	for( int k = m_bind_info->size() - n - 1; k > i; -- k ) {
+	    vec[k + n]->iface = vec[k]->iface;
+	    vec[k + n]->parent = vec[k]->parent;
+	}
+	// insert parent interfaces into the bind vector
+	for( int k = i + 1; k <= i + n; ++ k ) {
+	    vec[k]->iface = parent->m_bind_info->vec[k - i]->iface;
+	    vec[k]->parent = 0;
+	}
     }
 }
 
@@ -452,14 +452,14 @@ sc_port_base::complete_binding()
     // IF BINDING HAS ALREADY BEEN COMPLETED IGNORE THIS CALL:
 
     assert( m_bind_info != 0 );
-    if ( m_bind_info->complete ) {
+    if( m_bind_info->complete ) {
         return;
     }
 
     // COMPLETE BINDING OF OUR PARENT PORTS SO THAT WE CAN USE THAT INFORMATION:
 
     int i = first_parent();
-    while ( i >= 0 ) {
+    while( i >= 0 ) {
         m_bind_info->vec[i]->parent->complete_binding();
         insert_parent( i );
         i = first_parent();
@@ -468,25 +468,25 @@ sc_port_base::complete_binding()
     // LOOP OVER BINDING INFORMATION TO COMPLETE THE BINDING PROCESS:
 
     int size;
-    for ( int j = 0; j < m_bind_info->size(); ++ j ) {
+    for( int j = 0; j < m_bind_info->size(); ++ j ) {
         sc_interface* iface = m_bind_info->vec[j]->iface;
 
-        // if the interface is zero this was for an unbound port.
-        if ( iface == 0 ) continue;
+	// if the interface is zero this was for an unbound port.
+	if ( iface == 0 ) continue;
 
-        // add (cache) the interface
-        if ( j > m_bind_info->last_add ) {
+	// add (cache) the interface
+        if( j > m_bind_info->last_add ) {
             add_interface( iface );
         }
-
-        // only register "leaf" ports (ports without children)
-        if ( m_bind_info->is_leaf ) {
+        
+	// only register "leaf" ports (ports without children)
+        if( m_bind_info->is_leaf ) {
             iface->register_port( *this, if_typename() );
         }
 
         // complete static sensitivity for methods
         size = m_bind_info->method_vec.size();
-        for ( int k = 0; k < size; ++ k ) {
+        for( int k = 0; k < size; ++ k ) {
             sc_bind_ef* p = m_bind_info->method_vec[k];
             const sc_event& event = ( p->event_finder != 0 )
                                   ? p->event_finder->find_event(iface)
@@ -496,7 +496,7 @@ sc_port_base::complete_binding()
 
         // complete static sensitivity for threads
         size = m_bind_info->thread_vec.size();
-        for ( int k = 0; k < size; ++ k ) {
+        for( int k = 0; k < size; ++ k ) {
             sc_bind_ef* p = m_bind_info->thread_vec[k];
             const sc_event& event = ( p->event_finder != 0 )
                                   ? p->event_finder->find_event(iface)
@@ -514,9 +514,9 @@ sc_port_base::complete_binding()
 
     if ( actual_binds > m_bind_info->max_size() )
     {
-        sprintf(msg_buffer, "%d binds exceeds maximum of %d allowed",
-            actual_binds, m_bind_info->max_size() );
-        report_error( SC_ID_COMPLETE_BINDING_, msg_buffer );
+	sprintf(msg_buffer, "%d binds exceeds maximum of %d allowed",
+	    actual_binds, m_bind_info->max_size() );
+	report_error( SC_ID_COMPLETE_BINDING_, msg_buffer );
     }
     switch ( m_bind_info->policy() )
     {
@@ -527,8 +527,8 @@ sc_port_base::complete_binding()
         break;
       case SC_ALL_BOUND:
         if ( actual_binds < m_bind_info->max_size() || actual_binds < 1 ) {
-            sprintf(msg_buffer, "%d actual binds is less than required %d",
-                actual_binds, m_bind_info->max_size() );
+	    sprintf(msg_buffer, "%d actual binds is less than required %d",
+	        actual_binds, m_bind_info->max_size() ); 
             report_error( SC_ID_COMPLETE_BINDING_, msg_buffer );
         }
         break;
@@ -540,13 +540,13 @@ sc_port_base::complete_binding()
     // CLEAN UP: FREE BINDING STORAGE:
 
     size = m_bind_info->method_vec.size();
-    for ( int k = 0; k < size; ++ k ) {
+    for( int k = 0; k < size; ++ k ) {
         delete m_bind_info->method_vec[k];
     }
     m_bind_info->method_vec.resize(0);
 
     size = m_bind_info->thread_vec.size();
-    for ( int k = 0; k < size; ++ k ) {
+    for( int k = 0; k < size; ++ k ) {
         delete m_bind_info->thread_vec[k];
     }
     m_bind_info->thread_vec.resize(0);
@@ -601,27 +601,27 @@ sc_port_base::simulation_done()
 void
 sc_port_registry::insert( sc_port_base* port_ )
 {
-    if ( sc_is_running() ) {
-        port_->report_error( SC_ID_INSERT_PORT_, "simulation running" );
+    if( sc_is_running() ) {
+	port_->report_error( SC_ID_INSERT_PORT_, "simulation running" );
     }
 
-    if ( m_simc->elaboration_done()  ) {
+    if( m_simc->elaboration_done()  ) {
        port_->report_error( SC_ID_INSERT_PORT_, "elaboration done" );
     }
 
 #if defined(DEBUG_SYSTEMC)
     // check if port_ is already inserted
-    for ( int i = size() - 1; i >= 0; -- i ) {
-        if ( port_ == m_port_vec[i] ) {
-            port_->report_error( SC_ID_INSERT_PORT_, "port already inserted" );
-        }
+    for( int i = size() - 1; i >= 0; -- i ) {
+	if( port_ == m_port_vec[i] ) {
+	    port_->report_error( SC_ID_INSERT_PORT_, "port already inserted" );
+	}
     }
 #endif
 
     // append the port to the current module's vector of ports
     sc_module* curr_module = m_simc->hierarchy_curr();
-    if ( curr_module == 0 ) {
-        port_->report_error( SC_ID_PORT_OUTSIDE_MODULE_ );
+    if( curr_module == 0 ) {
+	port_->report_error( SC_ID_PORT_OUTSIDE_MODULE_ );
     }
     curr_module->append_port( port_ );
 
@@ -633,13 +633,13 @@ void
 sc_port_registry::remove( sc_port_base* port_ )
 {
     int i;
-    for ( i = size() - 1; i >= 0; -- i ) {
-        if ( port_ == m_port_vec[i] ) {
-            break;
-        }
+    for( i = size() - 1; i >= 0; -- i ) {
+	if( port_ == m_port_vec[i] ) {
+	    break;
+	}
     }
-    if ( i == -1 ) {
-        port_->report_error( SC_ID_REMOVE_PORT_, "port not registered" );
+    if( i == -1 ) {
+	port_->report_error( SC_ID_REMOVE_PORT_, "port not registered" );
     }
 
     // remove
@@ -669,11 +669,11 @@ sc_port_registry::~sc_port_registry()
 bool
 sc_port_registry::construction_done()
 {
-    if ( size() == m_construction_done )
+    if( size() == m_construction_done )
         // nothing has been updated
         return true;
 
-    for ( int i = size()-1; i >= m_construction_done; --i ) {
+    for( int i = size()-1; i >= m_construction_done; --i ) {
         m_port_vec[i]->construction_done();
     }
 
@@ -686,7 +686,7 @@ sc_port_registry::construction_done()
 void
 sc_port_registry::complete_binding()
 {
-    for ( int i = size() - 1; i >= 0; -- i ) {
+    for( int i = size() - 1; i >= 0; -- i ) {
         m_port_vec[i]->complete_binding();
     }
 }
@@ -699,7 +699,7 @@ sc_port_registry::elaboration_done()
 {
     complete_binding();
 
-    for ( int i = size() - 1; i >= 0; -- i ) {
+    for( int i = size() - 1; i >= 0; -- i ) {
         m_port_vec[i]->elaboration_done();
     }
 }
@@ -709,7 +709,7 @@ sc_port_registry::elaboration_done()
 void
 sc_port_registry::start_simulation()
 {
-    for ( int i = size() - 1; i >= 0; -- i ) {
+    for( int i = size() - 1; i >= 0; -- i ) {
         m_port_vec[i]->start_simulation();
     }
 }
@@ -719,7 +719,7 @@ sc_port_registry::start_simulation()
 void
 sc_port_registry::simulation_done()
 {
-    for ( int i = size() - 1; i >= 0; -- i ) {
+    for( int i = size() - 1; i >= 0; -- i ) {
         m_port_vec[i]->simulation_done();
     }
 }
@@ -737,9 +737,9 @@ void sc_warn_port_constructor()
     if ( warn_port_constructor )
     {
         warn_port_constructor = false;
-        SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
-            "interface and/or port binding in port constructors is deprecated"
-        );
+        SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_, 
+	    "interface and/or port binding in port constructors is deprecated" 
+	);
     }
 }
 
@@ -757,9 +757,9 @@ void sc_warn_port_constructor()
   Description of Modification: phase callbacks
 
       Name, Affiliation, Date: Andy Goodrich, Forte Design Systems
-                                                           12 December, 2005
+	  						   12 December, 2005
   Description of Modification: multiport binding policy changes
-
+    
  *****************************************************************************/
 
 

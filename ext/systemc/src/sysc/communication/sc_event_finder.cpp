@@ -43,11 +43,11 @@ void
 sc_event_finder::report_error( const char* id, const char* add_msg ) const
 {
     char msg[BUFSIZ];
-    if ( add_msg != 0 ) {
-        std::sprintf( msg, "%s: port '%s' (%s)",
-                 add_msg, m_port.name(), m_port.kind() );
+    if( add_msg != 0 ) {
+	std::sprintf( msg, "%s: port '%s' (%s)",
+		 add_msg, m_port.name(), m_port.kind() );
     } else {
-        std::sprintf( msg, "port '%s' (%s)", m_port.name(), m_port.kind() );
+	std::sprintf( msg, "port '%s' (%s)", m_port.name(), m_port.kind() );
     }
     SC_REPORT_ERROR( id, msg );
 }

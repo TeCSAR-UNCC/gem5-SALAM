@@ -45,7 +45,6 @@
 
 #include "arch/kernel_stats.hh"
 #include "arch/stacktrace.hh"
-#include "arch/tlb.hh"
 #include "arch/utility.hh"
 #include "arch/vtophys.hh"
 #include "base/cp_annotate.hh"
@@ -469,7 +468,7 @@ BaseSimpleCPU::checkForInterrupts()
 
 
 void
-BaseSimpleCPU::setupFetchRequest(Request *req)
+BaseSimpleCPU::setupFetchRequest(const RequestPtr &req)
 {
     SimpleExecContext &t_info = *threadInfo[curThread];
     SimpleThread* thread = t_info.thread;
