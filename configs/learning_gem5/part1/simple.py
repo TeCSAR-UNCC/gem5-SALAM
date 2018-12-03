@@ -88,7 +88,8 @@ system.system_port = system.membus.slave
 isa = str(m5.defines.buildEnv['TARGET_ISA']).lower()
 
 # Run 'hello' and use the compiled ISA to find the binary
-binary = 'tests/test-progs/hello/bin/' + isa + '/linux/hello'
+#binary = 'tests/test-progs/hello/bin/' + isa + '/linux/hello'
+binary = 'tests/test-progs/linpack'
 
 # Create a process for a simple "Hello World" application
 process = Process()
