@@ -59,8 +59,8 @@ struct sc_trace_params
     std::string      name;
 
     sc_trace_params( sc_trace_file* tf_, const std::string& name_ )
-        : tf( tf_ ), name( name_ )
-        {}
+	: tf( tf_ ), name( name_ )
+	{}
 };
 
 
@@ -98,75 +98,75 @@ public:
     // constructors
 
     sc_in()
-        : base_type(), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type(), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_in( const char* name_ )
-        : base_type( name_ ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_ ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_in( const in_if_type& interface_ )
         : base_type( CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
-          m_change_finder_p(0)
+	  m_change_finder_p(0)
         {}
 
     sc_in( const char* name_, const in_if_type& interface_ )
-        : base_type( name_, CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_, CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_in( in_port_type& parent_ )
-        : base_type( parent_ ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     sc_in( const char* name_, in_port_type& parent_ )
-        : base_type( name_, parent_ ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_in( inout_port_type& parent_ )
-        : base_type(), m_traces( 0 ),
-          m_change_finder_p(0)
-        { sc_port_base::bind( parent_ ); }
+	: base_type(), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{ sc_port_base::bind( parent_ ); }
 
     sc_in( const char* name_, inout_port_type& parent_ )
-        : base_type( name_ ), m_traces( 0 ),
-          m_change_finder_p(0)
-        { sc_port_base::bind( parent_ ); }
+	: base_type( name_ ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{ sc_port_base::bind( parent_ ); }
 
     sc_in( this_type& parent_ )
-        : base_type( parent_ ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     sc_in( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
 
     // destructor
 
     virtual ~sc_in()
-        {
-            remove_traces();
-            delete m_change_finder_p;
-        }
+	{
+	    remove_traces();
+	    delete m_change_finder_p;
+	}
 
 
     // bind to in interface
 
     SC_VIRTUAL_ void bind( const in_if_type& interface_ )
-        { sc_port_base::bind( CCAST<in_if_type&>( interface_ ) ); }
+	{ sc_port_base::bind( CCAST<in_if_type&>( interface_ ) ); }
 
     SC_VIRTUAL_ void bind( in_if_type& interface_ )
-        { this->bind( CCAST<const in_if_type&>( interface_ ) ); }
+	{ this->bind( CCAST<const in_if_type&>( interface_ ) ); }
 
     void operator () ( const in_if_type& interface_ )
-        { this->bind( interface_ ); }
+	{ this->bind( interface_ ); }
 
 
     // bind to parent in port
@@ -181,10 +181,10 @@ public:
     // bind to parent inout port
 
     SC_VIRTUAL_ void bind( inout_port_type& parent_ )
-        { sc_port_base::bind( parent_ ); }
+	{ sc_port_base::bind( parent_ ); }
 
     void operator () ( inout_port_type& parent_ )
-        { this->bind( parent_ ); }
+	{ this->bind( parent_ ); }
 
 
     // interface access shortcut methods
@@ -192,28 +192,28 @@ public:
     // get the default event
 
     const sc_event& default_event() const
-        { return (*this)->default_event(); }
+	{ return (*this)->default_event(); }
 
 
     // get the value changed event
 
     const sc_event& value_changed_event() const
-        { return (*this)->value_changed_event(); }
+	{ return (*this)->value_changed_event(); }
 
 
     // read the current value
 
     const data_type& read() const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
     operator const data_type& () const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
 
     // was there a value changed event?
 
     bool event() const
-        { return (*this)->event(); }
+	{ return (*this)->event(); }
 
 
     // (other) event finder method(s)
@@ -221,11 +221,11 @@ public:
     sc_event_finder& value_changed() const
     {
         if ( !m_change_finder_p )
-        {
-            m_change_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::value_changed_event );
-        }
-        return *m_change_finder_p;
+	{
+	    m_change_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::value_changed_event );
+	}
+	return *m_change_finder_p;
     }
 
 
@@ -299,13 +299,13 @@ inline
 void
 sc_in<T>::end_of_elaboration()
 {
-    if ( m_traces != 0 ) {
-        for ( int i = 0; i < (int)m_traces->size(); ++ i ) {
-            sc_trace_params* p = (*m_traces)[i];
-            in_if_type* iface = DCAST<in_if_type*>( this->get_interface() );
-            sc_trace( p->tf, iface->read(), p->name );
-        }
-        remove_traces();
+    if( m_traces != 0 ) {
+	for( int i = 0; i < (int)m_traces->size(); ++ i ) {
+	    sc_trace_params* p = (*m_traces)[i];
+	    in_if_type* iface = DCAST<in_if_type*>( this->get_interface() );
+	    sc_trace( p->tf, iface->read(), p->name );
+	}
+	remove_traces();
     }
 }
 
@@ -315,21 +315,21 @@ sc_in<T>::end_of_elaboration()
 template <class T>
 inline
 void
-sc_in<T>::add_trace_internal( sc_trace_file* tf_, const std::string& name_ )
+sc_in<T>::add_trace_internal( sc_trace_file* tf_, const std::string& name_ ) 
 const
 {
-    if ( tf_ != 0 ) {
-        if ( m_traces == 0 ) {
-            m_traces = new sc_trace_params_vec;
-        }
-        m_traces->push_back( new sc_trace_params( tf_, name_ ) );
+    if( tf_ != 0 ) {
+	if( m_traces == 0 ) {
+	    m_traces = new sc_trace_params_vec;
+	}
+	m_traces->push_back( new sc_trace_params( tf_, name_ ) );
     }
 }
 
 template <class T>
 inline
 void
-sc_in<T>::add_trace( sc_trace_file* tf_, const std::string& name_ )
+sc_in<T>::add_trace( sc_trace_file* tf_, const std::string& name_ ) 
 const
 {
     sc_deprecated_add_trace();
@@ -341,12 +341,12 @@ inline
 void
 sc_in<T>::remove_traces() const
 {
-    if ( m_traces != 0 ) {
-        for ( int i = (int)m_traces->size() - 1; i >= 0; -- i ) {
-            delete (*m_traces)[i];
-        }
-        delete m_traces;
-        m_traces = 0;
+    if( m_traces != 0 ) {
+	for( int i = (int)m_traces->size() - 1; i >= 0; -- i ) {
+	    delete (*m_traces)[i];
+	}
+	delete m_traces;
+	m_traces = 0;
     }
 }
 
@@ -367,14 +367,14 @@ int
 sc_in<T>::vbind( sc_port_base& parent_ )
 {
     in_port_type* in_parent = DCAST<in_port_type*>( &parent_ );
-    if ( in_parent != 0 ) {
-        sc_port_base::bind( *in_parent );
-        return 0;
+    if( in_parent != 0 ) {
+	sc_port_base::bind( *in_parent );
+	return 0;
     }
     inout_port_type* inout_parent = DCAST<inout_port_type*>( &parent_ );
-    if ( inout_parent != 0 ) {
-        sc_port_base::bind( *inout_parent );
-        return 0;
+    if( inout_parent != 0 ) {
+	sc_port_base::bind( *inout_parent );
+	return 0;
     }
     // type mismatch
     return 2;
@@ -388,7 +388,7 @@ sc_in<T>::vbind( sc_port_base& parent_ )
 // ----------------------------------------------------------------------------
 
 template <>
-class sc_in<bool> :
+class sc_in<bool> : 
     public sc_port<sc_signal_in_if<bool>,1,SC_ONE_OR_MORE_BOUND>
 {
 public:
@@ -412,84 +412,84 @@ public:
     // constructors
 
     sc_in()
-        : base_type(), m_traces( 0 ), m_change_finder_p(0),
-          m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type(), m_traces( 0 ), m_change_finder_p(0), 
+	  m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( const char* name_ )
-        : base_type( name_ ), m_traces( 0 ), m_change_finder_p(0),
-          m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_ ), m_traces( 0 ), m_change_finder_p(0), 
+	  m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( const in_if_type& interface_ )
-        : base_type( CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ), 
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_in( const char* name_, const in_if_type& interface_ )
-        : base_type( name_, CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( in_port_type& parent_ )
-        : base_type( parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_in( const char* name_, in_port_type& parent_ )
-        : base_type( name_, parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( inout_port_type& parent_ )
-        : base_type(), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        { sc_port_base::bind( parent_ ); }
+	: base_type(), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{ sc_port_base::bind( parent_ ); }
 
     sc_in( const char* name_, inout_port_type& parent_ )
-        : base_type( name_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        { sc_port_base::bind( parent_ ); }
+	: base_type( name_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{ sc_port_base::bind( parent_ ); }
 
     sc_in( this_type& parent_ )
-        : base_type( parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
 #if defined(TESTING)
     sc_in( const this_type& parent_ )
-        : base_type( *(in_if_type*)parent_.get_interface() ) , m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
-#endif
+	: base_type( *(in_if_type*)parent_.get_interface() ) , m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
+#endif 
 
     sc_in( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
 
     // destructor
 
     virtual ~sc_in()
-        {
-            remove_traces();
-            delete m_change_finder_p;
-            delete m_neg_finder_p;
-            delete m_pos_finder_p;
-        }
+	{
+	    remove_traces();
+	    delete m_change_finder_p;
+	    delete m_neg_finder_p;
+	    delete m_pos_finder_p;
+	}
 
 
     // bind to in interface
 
     SC_VIRTUAL_ void bind( const in_if_type& interface_ )
-        { sc_port_base::bind( CCAST<in_if_type&>( interface_ ) ); }
+	{ sc_port_base::bind( CCAST<in_if_type&>( interface_ ) ); }
 
     SC_VIRTUAL_ void bind( in_if_type& interface_ )
-        { this->bind( CCAST<const in_if_type&>( interface_ ) ); }
+	{ this->bind( CCAST<const in_if_type&>( interface_ ) ); }
 
     void operator () ( const in_if_type& interface_ )
-        { this->bind( interface_ ); }
+	{ this->bind( interface_ ); }
 
 
     // bind to parent in port
@@ -504,10 +504,10 @@ public:
     // bind to parent inout port
 
     SC_VIRTUAL_ void bind( inout_port_type& parent_ )
-        { sc_port_base::bind( parent_ ); }
+	{ sc_port_base::bind( parent_ ); }
 
     void operator () ( inout_port_type& parent_ )
-        { this->bind( parent_ ); }
+	{ this->bind( parent_ ); }
 
 
     // interface access shortcut methods
@@ -515,32 +515,32 @@ public:
     // get the default event
 
     const sc_event& default_event() const
-        { return (*this)->default_event(); }
+	{ return (*this)->default_event(); }
 
 
     // get the value changed event
 
     const sc_event& value_changed_event() const
-        { return (*this)->value_changed_event(); }
+	{ return (*this)->value_changed_event(); }
 
     // get the positive edge event
 
     const sc_event& posedge_event() const
-        { return (*this)->posedge_event(); }
+	{ return (*this)->posedge_event(); }
 
     // get the negative edge event
 
     const sc_event& negedge_event() const
-        { return (*this)->negedge_event(); }
+	{ return (*this)->negedge_event(); }
 
 
     // read the current value
 
     const data_type& read() const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
     operator const data_type& () const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
 
     // use for positive edge sensitivity
@@ -548,11 +548,11 @@ public:
     sc_event_finder& pos() const
     {
         if ( !m_pos_finder_p )
-        {
-            m_pos_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::posedge_event );
-        }
-        return *m_pos_finder_p;
+	{
+	    m_pos_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::posedge_event );
+	} 
+	return *m_pos_finder_p;
     }
 
     // use for negative edge sensitivity
@@ -560,18 +560,18 @@ public:
     sc_event_finder& neg() const
     {
         if ( !m_neg_finder_p )
-        {
-            m_neg_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::negedge_event );
-        }
-        return *m_neg_finder_p;
+	{
+	    m_neg_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::negedge_event );
+	} 
+	return *m_neg_finder_p;
     }
 
 
     // was there a value changed event?
 
     bool event() const
-        { return (*this)->event(); }
+	{ return (*this)->event(); }
 
     // was there a positive edge event?
 
@@ -588,11 +588,11 @@ public:
     sc_event_finder& value_changed() const
     {
         if ( !m_change_finder_p )
-        {
-            m_change_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::value_changed_event );
-        }
-        return *m_change_finder_p;
+	{
+	    m_change_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::value_changed_event );
+	}
+	return *m_change_finder_p;
     }
 
 
@@ -642,7 +642,7 @@ private:
 #if defined(TESTING)
 #else
     sc_in( const this_type& );
-#endif
+#endif 
     this_type& operator = ( const this_type& );
 
 #ifdef __GNUC__
@@ -686,77 +686,77 @@ public:
     // constructors
 
     sc_in()
-        : base_type(), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type(), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( const char* name_ )
-        : base_type( name_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( const in_if_type& interface_ )
-        : base_type( CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_in( const char* name_, const in_if_type& interface_ )
-        : base_type( name_, CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, CCAST<in_if_type&>( interface_ ) ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( in_port_type& parent_ )
-        : base_type( parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_in( const char* name_, in_port_type& parent_ )
-        : base_type( name_, parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_in( inout_port_type& parent_ )
-        : base_type(), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        { sc_port_base::bind( parent_ ); }
+	: base_type(), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{ sc_port_base::bind( parent_ ); }
 
     sc_in( const char* name_, inout_port_type& parent_ )
-        : base_type( name_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        { sc_port_base::bind( parent_ ); }
+	: base_type( name_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{ sc_port_base::bind( parent_ ); }
 
     sc_in( this_type& parent_ )
-        : base_type( parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_in( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
 
     // destructor
 
     virtual ~sc_in()
-        {
-            remove_traces();
-            delete m_change_finder_p;
-            delete m_neg_finder_p;
-            delete m_pos_finder_p;
-        }
+	{
+	    remove_traces();
+	    delete m_change_finder_p;
+	    delete m_neg_finder_p;
+	    delete m_pos_finder_p;
+	}
 
 
     // bind to in interface
 
     SC_VIRTUAL_ void bind( const in_if_type& interface_ )
-        { sc_port_base::bind( CCAST<in_if_type&>( interface_ ) ); }
+	{ sc_port_base::bind( CCAST<in_if_type&>( interface_ ) ); }
 
     SC_VIRTUAL_ void bind( in_if_type& interface_ )
-        { this->bind( CCAST<const in_if_type&>( interface_ ) ); }
+	{ this->bind( CCAST<const in_if_type&>( interface_ ) ); }
 
     void operator () ( const in_if_type& interface_ )
-        { this->bind( interface_ ); }
+	{ this->bind( interface_ ); }
 
 
     // bind to parent in port
@@ -771,10 +771,10 @@ public:
     // bind to parent inout port
 
     SC_VIRTUAL_ void bind( inout_port_type& parent_ )
-        { sc_port_base::bind( parent_ ); }
+	{ sc_port_base::bind( parent_ ); }
 
     void operator () ( inout_port_type& parent_ )
-        { this->bind( parent_ ); }
+	{ this->bind( parent_ ); }
 
 
     // interface access shortcut methods
@@ -782,32 +782,32 @@ public:
     // get the default event
 
     const sc_event& default_event() const
-        { return (*this)->default_event(); }
+	{ return (*this)->default_event(); }
 
 
     // get the value changed event
 
     const sc_event& value_changed_event() const
-        { return (*this)->value_changed_event(); }
+	{ return (*this)->value_changed_event(); }
 
     // get the positive edge event
 
     const sc_event& posedge_event() const
-        { return (*this)->posedge_event(); }
+	{ return (*this)->posedge_event(); }
 
     // get the negative edge event
 
     const sc_event& negedge_event() const
-        { return (*this)->negedge_event(); }
+	{ return (*this)->negedge_event(); }
 
 
     // read the current value
 
     const data_type& read() const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
     operator const data_type& () const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
 
     // use for positive edge sensitivity
@@ -815,11 +815,11 @@ public:
     sc_event_finder& pos() const
     {
         if ( !m_pos_finder_p )
-        {
-            m_pos_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::posedge_event );
-        }
-        return *m_pos_finder_p;
+	{
+	    m_pos_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::posedge_event );
+	} 
+	return *m_pos_finder_p;
     }
 
     // use for negative edge sensitivity
@@ -827,18 +827,18 @@ public:
     sc_event_finder& neg() const
     {
         if ( !m_neg_finder_p )
-        {
-            m_neg_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::negedge_event );
-        }
-        return *m_neg_finder_p;
+	{
+	    m_neg_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::negedge_event );
+	} 
+	return *m_neg_finder_p;
     }
 
 
     // was there a value changed event?
 
     bool event() const
-        { return (*this)->event(); }
+	{ return (*this)->event(); }
 
     // was there a positive edge event?
 
@@ -855,11 +855,11 @@ public:
     sc_event_finder& value_changed() const
     {
         if ( !m_change_finder_p )
-        {
-            m_change_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::value_changed_event );
-        }
-        return *m_change_finder_p;
+	{
+	    m_change_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::value_changed_event );
+	}
+	return *m_change_finder_p;
     }
 
 
@@ -949,44 +949,44 @@ public:
     // constructors
 
     sc_inout()
-        : base_type(), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type(), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_inout( const char* name_ )
-        : base_type( name_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_inout( inout_if_type& interface_ )
-        : base_type( interface_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( interface_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     sc_inout( const char* name_, inout_if_type& interface_ )
-        : base_type( name_, interface_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_, interface_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     explicit sc_inout( inout_port_type& parent_ )
-        : base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     sc_inout( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     sc_inout( this_type& parent_ )
-        : base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
     sc_inout( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0)
+	{}
 
 
     // destructor
@@ -999,49 +999,49 @@ public:
     // get the default event
 
     const sc_event& default_event() const
-        { return (*this)->default_event(); }
+	{ return (*this)->default_event(); }
 
 
     // get the value changed event
 
     const sc_event& value_changed_event() const
-        { return (*this)->value_changed_event(); }
+	{ return (*this)->value_changed_event(); }
 
 
     // read the current value
 
     const data_type& read() const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
     operator const data_type& () const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
 
     // was there a value changed event?
 
     bool event() const
-        { return (*this)->event(); }
+	{ return (*this)->event(); }
 
 
     // write the new value
 
     void write( const data_type& value_ )
-        { (*this)->write( value_ ); }
+	{ (*this)->write( value_ ); }
 
     this_type& operator = ( const data_type& value_ )
-        { (*this)->write( value_ ); return *this; }
+	{ (*this)->write( value_ ); return *this; }
 
     this_type& operator = ( const in_if_type& interface_ )
-        { (*this)->write( interface_.read() ); return *this; }
+	{ (*this)->write( interface_.read() ); return *this; }
 
     this_type& operator = ( const in_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const inout_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const this_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
 
     // set initial value (can also be called when port is not bound yet)
@@ -1049,7 +1049,7 @@ public:
     void initialize( const data_type& value_ );
 
     void initialize( const in_if_type& interface_ )
-        { initialize( interface_.read() ); }
+	{ initialize( interface_.read() ); }
 
 
     // called when elaboration is done
@@ -1064,11 +1064,11 @@ public:
     sc_event_finder& value_changed() const
     {
         if ( !m_change_finder_p )
-        {
-            m_change_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::value_changed_event );
-        }
-        return *m_change_finder_p;
+	{
+	    m_change_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::value_changed_event );
+	}
+	return *m_change_finder_p;
     }
 
     virtual const char* kind() const
@@ -1137,13 +1137,13 @@ void
 sc_inout<T>::initialize( const data_type& value_ )
 {
     inout_if_type* iface = DCAST<inout_if_type*>( this->get_interface() );
-    if ( iface != 0 ) {
-        iface->write( value_ );
+    if( iface != 0 ) {
+	iface->write( value_ );
     } else {
-        if ( m_init_val == 0 ) {
-            m_init_val = new data_type;
-        }
-        *m_init_val = value_;
+	if( m_init_val == 0 ) {
+	    m_init_val = new data_type;
+	}
+	*m_init_val = value_;
     }
 }
 
@@ -1155,18 +1155,18 @@ inline
 void
 sc_inout<T>::end_of_elaboration()
 {
-    if ( m_init_val != 0 ) {
-        write( *m_init_val );
-        delete m_init_val;
-        m_init_val = 0;
+    if( m_init_val != 0 ) {
+	write( *m_init_val );
+	delete m_init_val;
+	m_init_val = 0;
     }
-    if ( m_traces != 0 ) {
-        for ( int i = 0; i < (int)m_traces->size(); ++ i ) {
-            sc_trace_params* p = (*m_traces)[i];
-            in_if_type* iface = DCAST<in_if_type*>( this->get_interface() );
-            sc_trace( p->tf, iface->read(), p->name );
-        }
-        remove_traces();
+    if( m_traces != 0 ) {
+	for( int i = 0; i < (int)m_traces->size(); ++ i ) {
+	    sc_trace_params* p = (*m_traces)[i];
+	    in_if_type* iface = DCAST<in_if_type*>( this->get_interface() );
+	    sc_trace( p->tf, iface->read(), p->name );
+	}
+	remove_traces();
     }
 }
 
@@ -1176,14 +1176,14 @@ sc_inout<T>::end_of_elaboration()
 template <class T>
 inline
 void
-sc_inout<T>::add_trace_internal( sc_trace_file* tf_, const std::string& name_)
+sc_inout<T>::add_trace_internal( sc_trace_file* tf_, const std::string& name_) 
 const
 {
-    if ( tf_ != 0 ) {
-            if ( m_traces == 0 ) {
-                m_traces = new sc_trace_params_vec;
-            }
-            m_traces->push_back( new sc_trace_params( tf_, name_ ) );
+    if( tf_ != 0 ) {
+	    if( m_traces == 0 ) {
+	        m_traces = new sc_trace_params_vec;
+	    }
+	    m_traces->push_back( new sc_trace_params( tf_, name_ ) );
     }
 }
 
@@ -1201,12 +1201,12 @@ inline
 void
 sc_inout<T>::remove_traces() const
 {
-    if ( m_traces != 0 ) {
-                for ( int i = m_traces->size() - 1; i >= 0; -- i ) {
-                delete (*m_traces)[i];
-                }
-                delete m_traces;
-                m_traces = 0;
+    if( m_traces != 0 ) {
+		for( int i = m_traces->size() - 1; i >= 0; -- i ) {
+	        delete (*m_traces)[i];
+		}
+		delete m_traces;
+		m_traces = 0;
     }
 }
 
@@ -1218,7 +1218,7 @@ sc_inout<T>::remove_traces() const
 // ----------------------------------------------------------------------------
 
 template <>
-class sc_inout<bool> :
+class sc_inout<bool> : 
     public sc_port<sc_signal_inout_if<bool>,1,SC_ONE_OR_MORE_BOUND>
 {
 public:
@@ -1241,44 +1241,44 @@ public:
     // constructors
 
     sc_inout()
-        : base_type(), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type(), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_inout( const char* name_ )
-        : base_type( name_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_inout( inout_if_type& interface_ )
-        : base_type( interface_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( interface_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( const char* name_, inout_if_type& interface_ )
-        : base_type( name_, interface_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, interface_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_inout( inout_port_type& parent_ )
-        : base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( this_type& parent_ )
-        : base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
 
     // destructor
@@ -1291,32 +1291,32 @@ public:
     // get the default event
 
     const sc_event& default_event() const
-        { return (*this)->default_event(); }
+	{ return (*this)->default_event(); }
 
 
     // get the value changed event
 
     const sc_event& value_changed_event() const
-        { return (*this)->value_changed_event(); }
+	{ return (*this)->value_changed_event(); }
 
     // get the positive edge event
 
     const sc_event& posedge_event() const
-        { return (*this)->posedge_event(); }
+	{ return (*this)->posedge_event(); }
 
     // get the negative edge event
 
     const sc_event& negedge_event() const
-        { return (*this)->negedge_event(); }
+	{ return (*this)->negedge_event(); }
 
 
     // read the current value
 
     const data_type& read() const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
     operator const data_type& () const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
 
     // use for positive edge sensitivity
@@ -1324,11 +1324,11 @@ public:
     sc_event_finder& pos() const
     {
         if ( !m_pos_finder_p )
-        {
-            m_pos_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::posedge_event );
-        }
-        return *m_pos_finder_p;
+	{
+	    m_pos_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::posedge_event );
+	} 
+	return *m_pos_finder_p;
     }
 
     // use for negative edge sensitivity
@@ -1336,18 +1336,18 @@ public:
     sc_event_finder& neg() const
     {
         if ( !m_neg_finder_p )
-        {
-            m_neg_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::negedge_event );
-        }
-        return *m_neg_finder_p;
+	{
+	    m_neg_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::negedge_event );
+	} 
+	return *m_neg_finder_p;
     }
 
 
     // was there a value changed event?
 
     bool event() const
-        { return (*this)->event(); }
+	{ return (*this)->event(); }
 
     // was there a positive edge event?
 
@@ -1362,22 +1362,22 @@ public:
     // write the new value
 
     void write( const data_type& value_ )
-        { (*this)->write( value_ ); }
+	{ (*this)->write( value_ ); }
 
     this_type& operator = ( const data_type& value_ )
-        { (*this)->write( value_ ); return *this; }
+	{ (*this)->write( value_ ); return *this; }
 
     this_type& operator = ( const in_if_type& interface_ )
-        { (*this)->write( interface_.read() ); return *this; }
+	{ (*this)->write( interface_.read() ); return *this; }
 
     this_type& operator = ( const in_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const inout_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const this_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
 
     // set initial value (can also be called when port is not bound yet)
@@ -1385,7 +1385,7 @@ public:
     void initialize( const data_type& value_ );
 
     void initialize( const in_if_type& interface_ )
-        { initialize( interface_.read() ); }
+	{ initialize( interface_.read() ); }
 
 
     // called when elaboration is done
@@ -1400,11 +1400,11 @@ public:
     sc_event_finder& value_changed() const
     {
         if ( !m_change_finder_p )
-        {
-            m_change_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::value_changed_event );
-        }
-        return *m_change_finder_p;
+	{
+	    m_change_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::value_changed_event );
+	}
+	return *m_change_finder_p;
     }
 
     virtual const char* kind() const
@@ -1477,44 +1477,44 @@ public:
     // constructors
 
     sc_inout()
-        : base_type(), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type(), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_inout( const char* name_ )
-        : base_type( name_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_inout( inout_if_type& interface_ )
-        : base_type( interface_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( interface_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( const char* name_, inout_if_type& interface_ )
-        : base_type( name_, interface_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, interface_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     explicit sc_inout( inout_port_type& parent_ )
-        : base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( this_type& parent_ )
-        : base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
     sc_inout( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
-          m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
-        {}
+	: base_type( name_, parent_ ), m_init_val( 0 ), m_traces( 0 ),
+	  m_change_finder_p(0), m_neg_finder_p(0), m_pos_finder_p(0)
+	{}
 
 
     // destructor
@@ -1527,32 +1527,32 @@ public:
     // get the default event
 
     const sc_event& default_event() const
-        { return (*this)->default_event(); }
+	{ return (*this)->default_event(); }
 
 
     // get the value changed event
 
     const sc_event& value_changed_event() const
-        { return (*this)->value_changed_event(); }
+	{ return (*this)->value_changed_event(); }
 
     // get the positive edge event
 
     const sc_event& posedge_event() const
-        { return (*this)->posedge_event(); }
+	{ return (*this)->posedge_event(); }
 
     // get the negative edge event
 
     const sc_event& negedge_event() const
-        { return (*this)->negedge_event(); }
+	{ return (*this)->negedge_event(); }
 
 
     // read the current value
 
     const data_type& read() const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
     operator const data_type& () const
-        { return (*this)->read(); }
+	{ return (*this)->read(); }
 
 
     // use for positive edge sensitivity
@@ -1560,11 +1560,11 @@ public:
     sc_event_finder& pos() const
     {
         if ( !m_pos_finder_p )
-        {
-            m_pos_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::posedge_event );
-        }
-        return *m_pos_finder_p;
+	{
+	    m_pos_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::posedge_event );
+	} 
+	return *m_pos_finder_p;
     }
 
     // use for negative edge sensitivity
@@ -1572,18 +1572,18 @@ public:
     sc_event_finder& neg() const
     {
         if ( !m_neg_finder_p )
-        {
-            m_neg_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::negedge_event );
-        }
-        return *m_neg_finder_p;
+	{
+	    m_neg_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::negedge_event );
+	} 
+	return *m_neg_finder_p;
     }
 
 
     // was there a value changed event?
 
     bool event() const
-        { return (*this)->event(); }
+	{ return (*this)->event(); }
 
     // was there a positive edge event?
 
@@ -1598,22 +1598,22 @@ public:
     // write the new value
 
     void write( const data_type& value_ )
-        { (*this)->write( value_ ); }
+	{ (*this)->write( value_ ); }
 
     this_type& operator = ( const data_type& value_ )
-        { (*this)->write( value_ ); return *this; }
+	{ (*this)->write( value_ ); return *this; }
 
     this_type& operator = ( const in_if_type& interface_ )
-        { (*this)->write( interface_.read() ); return *this; }
+	{ (*this)->write( interface_.read() ); return *this; }
 
     this_type& operator = ( const in_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const inout_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const this_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
 
     // set initial value (can also be called when port is not bound yet)
@@ -1621,7 +1621,7 @@ public:
     void initialize( const data_type& value_ );
 
     void initialize( const in_if_type& interface_ )
-        { initialize( interface_.read() ); }
+	{ initialize( interface_.read() ); }
 
 
     // called when elaboration is done
@@ -1636,10 +1636,10 @@ public:
     sc_event_finder& value_changed() const
     {
         if ( !m_change_finder_p )
-        {
-            m_change_finder_p = new sc_event_finder_t<in_if_type>(
-                *this, &in_if_type::value_changed_event );
-        }
+	{
+	    m_change_finder_p = new sc_event_finder_t<in_if_type>(
+	        *this, &in_if_type::value_changed_event );
+	}
         return *m_change_finder_p;
     }
 
@@ -1715,60 +1715,60 @@ public:
     // constructors
 
     sc_out()
-        : base_type()
-        {}
+	: base_type()
+	{}
 
     explicit sc_out( const char* name_ )
-        : base_type( name_ )
-        {}
+	: base_type( name_ )
+	{}
 
     explicit sc_out( inout_if_type& interface_ )
-        : base_type( interface_ )
-        {}
+	: base_type( interface_ )
+	{}
 
     sc_out( const char* name_, inout_if_type& interface_ )
-        : base_type( name_, interface_ )
-        {}
+	: base_type( name_, interface_ )
+	{}
 
     explicit sc_out( inout_port_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_out( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
     sc_out( this_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_out( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
 
     // destructor (does nothing)
 
     virtual ~sc_out()
-        {}
+	{}
 
 
     // write the new value
 
     this_type& operator = ( const data_type& value_ )
-        { (*this)->write( value_ ); return *this; }
+	{ (*this)->write( value_ ); return *this; }
 
     this_type& operator = ( const in_if_type& interface_ )
-        { (*this)->write( interface_.read() ); return *this; }
+	{ (*this)->write( interface_.read() ); return *this; }
 
     this_type& operator = ( const in_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const inout_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const this_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     virtual const char* kind() const
         { return "sc_out"; }
@@ -1795,31 +1795,31 @@ sc_trace(sc_trace_file* tf, const sc_in<T>& port, const std::string& name)
     const sc_signal_in_if<T>* iface = 0;
     if (sc_get_curr_simcontext()->elaboration_done() )
     {
-        iface = DCAST<const sc_signal_in_if<T>*>( port.get_interface() );
+	iface = DCAST<const sc_signal_in_if<T>*>( port.get_interface() );
     }
 
     if ( iface )
-        sc_trace( tf, iface->read(), name );
+	sc_trace( tf, iface->read(), name );
     else
-        port.add_trace_internal( tf, name );
+	port.add_trace_internal( tf, name );
 }
 
 template <class T>
 inline
 void
-sc_trace( sc_trace_file* tf, const sc_inout<T>& port,
+sc_trace( sc_trace_file* tf, const sc_inout<T>& port, 
     const std::string& name )
 {
     const sc_signal_in_if<T>* iface = 0;
     if (sc_get_curr_simcontext()->elaboration_done() )
     {
-        iface =DCAST<const sc_signal_in_if<T>*>( port.get_interface() );
+	iface =DCAST<const sc_signal_in_if<T>*>( port.get_interface() );
     }
 
     if ( iface )
-        sc_trace( tf, iface->read(), name );
+	sc_trace( tf, iface->read(), name );
     else
-        port.add_trace_internal( tf, name );
+	port.add_trace_internal( tf, name );
 }
 
 } // namespace sc_core

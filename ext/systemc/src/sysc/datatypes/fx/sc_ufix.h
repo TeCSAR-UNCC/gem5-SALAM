@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_ufix.h -
+  sc_ufix.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -53,6 +53,7 @@
 
 #include "sysc/datatypes/fx/sc_fxnum.h"
 
+
 namespace sc_dt
 {
 
@@ -76,93 +77,93 @@ public:
 
     explicit sc_ufix( sc_fxnum_observer* = 0 );
              sc_ufix( int, int,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
              sc_ufix( sc_q_mode, sc_o_mode,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
              sc_ufix( sc_q_mode, sc_o_mode, int,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
              sc_ufix( int, int, sc_q_mode, sc_o_mode,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
              sc_ufix( int, int, sc_q_mode, sc_o_mode, int,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
     explicit sc_ufix( const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
              sc_ufix( int, int,
-                      const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxcast_switch&,
+		      sc_fxnum_observer* = 0 );
              sc_ufix( sc_q_mode, sc_o_mode,
-                      const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxcast_switch&,
+		      sc_fxnum_observer* = 0 );
              sc_ufix( sc_q_mode, sc_o_mode, int,
-                      const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxcast_switch&,
+		      sc_fxnum_observer* = 0 );
              sc_ufix( int, int, sc_q_mode, sc_o_mode,
-                      const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxcast_switch&,
+		      sc_fxnum_observer* = 0 );
              sc_ufix( int, int, sc_q_mode, sc_o_mode, int,
-                      const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxcast_switch&,
+		      sc_fxnum_observer* = 0 );
     explicit sc_ufix( const sc_fxtype_params&,
-                      sc_fxnum_observer* = 0 );
+		      sc_fxnum_observer* = 0 );
              sc_ufix( const sc_fxtype_params&,
-                      const sc_fxcast_switch&,
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxcast_switch&,
+		      sc_fxnum_observer* = 0 );
 
 #define DECL_CTORS_T(tp)                                                      \
              sc_ufix( tp,                                                     \
-                      int, int,                                               \
-                      sc_fxnum_observer* = 0 );                               \
+		      int, int,                                               \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      sc_q_mode, sc_o_mode,                                   \
-                      sc_fxnum_observer* = 0 );                               \
+		      sc_q_mode, sc_o_mode,                                   \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      sc_q_mode, sc_o_mode, int,                              \
-                      sc_fxnum_observer* = 0 );                               \
+		      sc_q_mode, sc_o_mode, int,                              \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      int, int, sc_q_mode, sc_o_mode,                         \
-                      sc_fxnum_observer* = 0 );                               \
+		      int, int, sc_q_mode, sc_o_mode,                         \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      int, int, sc_q_mode, sc_o_mode, int,                    \
-                      sc_fxnum_observer* = 0 );                               \
+		      int, int, sc_q_mode, sc_o_mode, int,                    \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      int, int,                                               \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      int, int,                                               \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      sc_q_mode, sc_o_mode,                                   \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      sc_q_mode, sc_o_mode,                                   \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      sc_q_mode, sc_o_mode, int,                              \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      sc_q_mode, sc_o_mode, int,                              \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      int, int, sc_q_mode, sc_o_mode,                         \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      int, int, sc_q_mode, sc_o_mode,                         \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      int, int, sc_q_mode, sc_o_mode, int,                    \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      int, int, sc_q_mode, sc_o_mode, int,                    \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      const sc_fxtype_params&,                                \
-                      sc_fxnum_observer* = 0 );                               \
+		      const sc_fxtype_params&,                                \
+		      sc_fxnum_observer* = 0 );                               \
              sc_ufix( tp,                                                     \
-                      const sc_fxtype_params&,                                \
-                      const sc_fxcast_switch&,                                \
-                      sc_fxnum_observer* = 0 );
+		      const sc_fxtype_params&,                                \
+		      const sc_fxcast_switch&,                                \
+		      sc_fxnum_observer* = 0 );
 
 #define DECL_CTORS_T_A(tp)                                                    \
              sc_ufix( tp,                                                     \
-                      sc_fxnum_observer* = 0 );                               \
+	              sc_fxnum_observer* = 0 );                               \
     DECL_CTORS_T(tp)
 
 #define DECL_CTORS_T_B(tp)                                                    \
     explicit sc_ufix( tp,                                                     \
-                      sc_fxnum_observer* = 0 );                               \
+	              sc_fxnum_observer* = 0 );                               \
     DECL_CTORS_T(tp)
 
     DECL_CTORS_T_A(int)
@@ -311,93 +312,93 @@ public:
 
     explicit sc_ufix_fast( sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( int, int,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( sc_q_mode, sc_o_mode,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( sc_q_mode, sc_o_mode, int,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( int, int, sc_q_mode, sc_o_mode,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( int, int, sc_q_mode, sc_o_mode, int,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
     explicit sc_ufix_fast( const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( int, int,
-                           const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxcast_switch&,
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( sc_q_mode, sc_o_mode,
-                           const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxcast_switch&,
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( sc_q_mode, sc_o_mode, int,
-                           const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxcast_switch&,
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( int, int, sc_q_mode, sc_o_mode,
-                           const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxcast_switch&,
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( int, int, sc_q_mode, sc_o_mode, int,
-                           const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxcast_switch&,
+			   sc_fxnum_fast_observer* = 0 );
     explicit sc_ufix_fast( const sc_fxtype_params&,
-                           sc_fxnum_fast_observer* = 0 );
+			   sc_fxnum_fast_observer* = 0 );
              sc_ufix_fast( const sc_fxtype_params&,
-                           const sc_fxcast_switch&,
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxcast_switch&,
+			   sc_fxnum_fast_observer* = 0 );
 
 #define DECL_CTORS_T(tp)                                                      \
              sc_ufix_fast( tp,                                                \
-                           int, int,                                          \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   int, int,                                          \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           sc_q_mode, sc_o_mode,                              \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   sc_q_mode, sc_o_mode,                              \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           sc_q_mode, sc_o_mode, int,                         \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   sc_q_mode, sc_o_mode, int,                         \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           int, int, sc_q_mode, sc_o_mode,                    \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   int, int, sc_q_mode, sc_o_mode,                    \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           int, int, sc_q_mode, sc_o_mode, int,               \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   int, int, sc_q_mode, sc_o_mode, int,               \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           int, int,                                          \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   int, int,                                          \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           sc_q_mode, sc_o_mode,                              \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   sc_q_mode, sc_o_mode,                              \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           sc_q_mode, sc_o_mode, int,                         \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   sc_q_mode, sc_o_mode, int,                         \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           int, int, sc_q_mode, sc_o_mode,                    \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   int, int, sc_q_mode, sc_o_mode,                    \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           int, int, sc_q_mode, sc_o_mode, int,               \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   int, int, sc_q_mode, sc_o_mode, int,               \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           const sc_fxtype_params&,                           \
-                           sc_fxnum_fast_observer* = 0 );                     \
+			   const sc_fxtype_params&,                           \
+			   sc_fxnum_fast_observer* = 0 );                     \
              sc_ufix_fast( tp,                                                \
-                           const sc_fxtype_params&,                           \
-                           const sc_fxcast_switch&,                           \
-                           sc_fxnum_fast_observer* = 0 );
+			   const sc_fxtype_params&,                           \
+			   const sc_fxcast_switch&,                           \
+			   sc_fxnum_fast_observer* = 0 );
 
 #define DECL_CTORS_T_A(tp)                                                    \
              sc_ufix_fast( tp,                                                \
-                           sc_fxnum_fast_observer* = 0 );                     \
+		           sc_fxnum_fast_observer* = 0 );                     \
     DECL_CTORS_T(tp)
 
 #define DECL_CTORS_T_B(tp)                                                    \
     explicit sc_ufix_fast( tp,                                                \
-                           sc_fxnum_fast_observer* = 0 );                     \
+		           sc_fxnum_fast_observer* = 0 );                     \
     DECL_CTORS_T(tp)
 
     DECL_CTORS_T_A(int)
@@ -442,21 +443,21 @@ public:
     // binary bitwise operators
 
     friend const sc_ufix_fast operator & ( const sc_ufix_fast&,
-                                           const sc_ufix_fast& );
+					   const sc_ufix_fast& );
     friend const sc_ufix_fast operator ^ ( const sc_ufix_fast&,
-                                           const sc_ufix_fast& );
+					   const sc_ufix_fast& );
     friend const sc_ufix_fast operator | ( const sc_ufix_fast&,
-                                           const sc_ufix_fast& );
+					   const sc_ufix_fast& );
 
 
     // binary bitwise functions
 
     friend void b_and( sc_ufix_fast&, const sc_ufix_fast&,
-                                      const sc_ufix_fast& );
+		                      const sc_ufix_fast& );
     friend void b_or ( sc_ufix_fast&, const sc_ufix_fast&,
-                                      const sc_ufix_fast& );
+		                      const sc_ufix_fast& );
     friend void b_xor( sc_ufix_fast&, const sc_ufix_fast&,
-                                      const sc_ufix_fast& );
+		                      const sc_ufix_fast& );
 
 
     // assignment operators
@@ -538,452 +539,452 @@ public:
 inline
 sc_ufix::sc_ufix( sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params(),
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( int wl_, int iwl_,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( wl_, iwl_ ),
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( sc_q_mode qm, sc_o_mode om,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( qm, om ),
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( sc_q_mode qm, sc_o_mode om, int nb,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( qm, om, nb ),
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( wl_, iwl_, qm, om ),
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( wl_, iwl_, qm, om, nb ),
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params(),
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( int wl_, int iwl_,
-                  const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  const sc_fxcast_switch& cast_sw,
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( wl_, iwl_ ),
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( sc_q_mode qm, sc_o_mode om,
-                  const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  const sc_fxcast_switch& cast_sw,
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( qm, om ),
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( sc_q_mode qm, sc_o_mode om, int nb,
-                  const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  const sc_fxcast_switch& cast_sw,
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( qm, om, nb ),
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,
-                  const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  const sc_fxcast_switch& cast_sw,
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( wl_, iwl_, qm, om ),
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,
-                  const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  const sc_fxcast_switch& cast_sw,
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( sc_fxtype_params( wl_, iwl_, qm, om, nb ),
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( const sc_fxtype_params& type_params,
-                  sc_fxnum_observer* observer_ )
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( type_params,
-            SC_US_,
-            sc_fxcast_switch(),
-            observer_ )
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    observer_ )
 {}
 
 inline
 sc_ufix::sc_ufix( const sc_fxtype_params& type_params,
-                  const sc_fxcast_switch& cast_sw,
-                  sc_fxnum_observer* observer_ )
+		  const sc_fxcast_switch& cast_sw,
+		  sc_fxnum_observer* observer_ )
 : sc_fxnum( type_params,
-            SC_US_,
-            cast_sw,
-            observer_ )
+	    SC_US_,
+	    cast_sw,
+	    observer_ )
 {}
 
 #define DEFN_CTORS_T_A(tp)                                                    \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params(),                                               \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params(),                                               \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_,                                          \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_,                                          \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_ ),                                    \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_ ),                                    \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om,                                 \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om,                                 \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( qm, om ),                                       \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( qm, om ),                                       \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om, int nb,                         \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om, int nb,                         \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( qm, om, nb ),                                   \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( qm, om, nb ),                                   \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om ),                            \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om ),                            \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params(),                                               \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params(),                                               \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_,                                          \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_,                                          \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_ ),                                    \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_ ),                                    \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om,                                 \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om,                                 \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( qm, om ),                                       \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( qm, om ),                                       \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om, int nb,                         \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om, int nb,                         \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( qm, om, nb ),                                   \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( qm, om, nb ),                                   \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om ),                            \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om ),                            \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  const sc_fxtype_params& type_params,                        \
-                  sc_fxnum_observer* observer_ )                              \
+		  const sc_fxtype_params& type_params,                        \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            type_params,                                                      \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    type_params,                                                      \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  const sc_fxtype_params& type_params,                        \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  const sc_fxtype_params& type_params,                        \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            type_params,                                                      \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    type_params,                                                      \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}
 
 #define DEFN_CTORS_T_B(tp)                                                    \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            a.type_params(),                                                  \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    a.type_params(),                                                  \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_,                                          \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_,                                          \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( a.type_params(), wl_, iwl_ ),                   \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( a.type_params(), wl_, iwl_ ),                   \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om,                                 \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om,                                 \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( a.type_params(), qm, om ),                      \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( a.type_params(), qm, om ),                      \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om, int nb,                         \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om, int nb,                         \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( a.type_params(), qm, om, nb ),                  \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( a.type_params(), qm, om, nb ),                  \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om ),                            \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om ),                            \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            a.type_params(),                                                  \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    a.type_params(),                                                  \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_,                                          \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_,                                          \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( a.type_params(), wl_, iwl_ ),                   \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( a.type_params(), wl_, iwl_ ),                   \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om,                                 \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om,                                 \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( a.type_params(), qm, om ),                      \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( a.type_params(), qm, om ),                      \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  sc_q_mode qm, sc_o_mode om, int nb,                         \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  sc_q_mode qm, sc_o_mode om, int nb,                         \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( a.type_params(), qm, om, nb ),                  \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( a.type_params(), qm, om, nb ),                  \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,              \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om ),                            \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om ),                            \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  int wl_, int iwl_, sc_q_mode qm, sc_o_mode om, int nb,      \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    sc_fxtype_params( wl_, iwl_, qm, om, nb ),                        \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  const sc_fxtype_params& type_params,                        \
-                  sc_fxnum_observer* observer_ )                              \
+		  const sc_fxtype_params& type_params,                        \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            type_params,                                                      \
-            SC_US_,                                                           \
-            sc_fxcast_switch(),                                               \
-            observer_ )                                                       \
+	    type_params,                                                      \
+	    SC_US_,                                                           \
+	    sc_fxcast_switch(),                                               \
+	    observer_ )                                                       \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix::sc_ufix( tp a,                                                       \
-                  const sc_fxtype_params& type_params,                        \
-                  const sc_fxcast_switch& cast_sw,                            \
-                  sc_fxnum_observer* observer_ )                              \
+		  const sc_fxtype_params& type_params,                        \
+		  const sc_fxcast_switch& cast_sw,                            \
+		  sc_fxnum_observer* observer_ )                              \
 : sc_fxnum( a,                                                                \
-            type_params,                                                      \
-            SC_US_,                                                           \
-            cast_sw,                                                          \
-            observer_ )                                                       \
+	    type_params,                                                      \
+	    SC_US_,                                                           \
+	    cast_sw,                                                          \
+	    observer_ )                                                       \
 {}
 
 DEFN_CTORS_T_A(int)
@@ -1014,10 +1015,10 @@ DEFN_CTORS_T_A(const sc_unsigned&)
 inline
 sc_ufix::sc_ufix( const sc_ufix& a )
 : sc_fxnum( a,
-            a.type_params(),
-            SC_US_,
-            sc_fxcast_switch(),
-            0 )
+	    a.type_params(),
+	    SC_US_,
+	    sc_fxcast_switch(),
+	    0 )
 {}
 
 
@@ -1031,8 +1032,8 @@ sc_ufix::operator ~ () const
     int iwl_c = iwl();
     int wl_c = wl();
     sc_ufix c( wl_c, iwl_c );
-    for ( int i = iwl_c - wl_c; i < iwl_c; ++ i )
-        c.set_bit( i, ! get_bit( i ) );
+    for( int i = iwl_c - wl_c; i < iwl_c; ++ i )
+	c.set_bit( i, ! get_bit( i ) );
     return sc_ufix( c, wl_c, iwl_c );
 }
 
@@ -1045,8 +1046,8 @@ b_not( sc_ufix& c, const sc_ufix& a )
 {
     SC_FXNUM_OBSERVER_READ_( a )
     int iwl_c = c.iwl();
-    for ( int i = iwl_c - c.wl(); i < iwl_c; ++ i )
-        c.set_bit( i, ! a.get_bit( i ) );
+    for( int i = iwl_c - c.wl(); i < iwl_c; ++ i )
+	c.set_bit( i, ! a.get_bit( i ) );
     c.cast();
     SC_FXNUM_OBSERVER_WRITE_( c )
 }
@@ -1066,8 +1067,8 @@ operator op ( const tp1& a, const tp2& b )                                    \
     int iwl_c = sc_max( iwl_a, iwl_b );                                       \
     int fwl_c = sc_max( a.wl() - iwl_a, b.wl() - iwl_b );                     \
     sc_ufix c( iwl_c + fwl_c, iwl_c );                                        \
-    for ( int i = -fwl_c; i < iwl_c; ++ i )                                    \
-        c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
+    for( int i = -fwl_c; i < iwl_c; ++ i )                                    \
+	c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
     return sc_ufix( c, iwl_c + fwl_c, iwl_c );                                \
 }
 
@@ -1096,8 +1097,8 @@ fnc ( sc_ufix& c, const tp1& a, const tp2& b )                                \
     a.observer_read();                                                        \
     b.observer_read();                                                        \
     int iwl_c = c.iwl();                                                      \
-    for ( int i = iwl_c - c.wl(); i < iwl_c; ++ i )                            \
-        c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
+    for( int i = iwl_c - c.wl(); i < iwl_c; ++ i )                            \
+	c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
     c.cast();                                                                 \
     SC_FXNUM_OBSERVER_WRITE_( c )                                             \
 }
@@ -1185,8 +1186,8 @@ sc_ufix::operator op ( const tp& b )                                          \
     SC_FXNUM_OBSERVER_READ_( *this )                                          \
     b.observer_read();                                                        \
     int iwl_c = iwl();                                                        \
-    for ( int i = iwl_c - wl(); i < iwl_c; ++ i )                              \
-        set_bit( i, get_bit( i ) op2 b.get_bit( i ) );                        \
+    for( int i = iwl_c - wl(); i < iwl_c; ++ i )                              \
+	set_bit( i, get_bit( i ) op2 b.get_bit( i ) );                        \
     cast();                                                                   \
     SC_FXNUM_OBSERVER_WRITE_( *this )                                         \
     return *this;                                                             \
@@ -1246,458 +1247,458 @@ sc_ufix::operator -- ()
 inline
 sc_ufix_fast::sc_ufix_fast( sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params(),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( int wl_, int iwl_,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( wl_, iwl_ ),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( sc_q_mode qm, sc_o_mode om,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( qm, om ),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( sc_q_mode qm, sc_o_mode om, int nb,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( qm, om, nb ),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( wl_, iwl_, qm, om ),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( int wl_, int iwl_,
-                            sc_q_mode qm, sc_o_mode om, int nb,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_q_mode qm, sc_o_mode om, int nb,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( wl_, iwl_, qm, om, nb ),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params(),
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( int wl_, int iwl_,
-                            const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    const sc_fxcast_switch& cast_sw,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( wl_, iwl_ ),
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( sc_q_mode qm, sc_o_mode om,
-                            const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    const sc_fxcast_switch& cast_sw,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( qm, om ),
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( sc_q_mode qm, sc_o_mode om, int nb,
-                            const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    const sc_fxcast_switch& cast_sw,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( qm, om, nb ),
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,
-                            const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    const sc_fxcast_switch& cast_sw,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( wl_, iwl_, qm, om ),
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( int wl_, int iwl_,
-                            sc_q_mode qm, sc_o_mode om, int nb,
-                            const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_q_mode qm, sc_o_mode om, int nb,
+			    const sc_fxcast_switch& cast_sw,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( sc_fxtype_params( wl_, iwl_, qm, om, nb ),
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( const sc_fxtype_params& type_params,
-                            sc_fxnum_fast_observer* observer_ )
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( type_params,
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 observer_ )
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 observer_ )
 {}
 
 inline
 sc_ufix_fast::sc_ufix_fast( const sc_fxtype_params& type_params,
-                            const sc_fxcast_switch& cast_sw,
-                            sc_fxnum_fast_observer* observer_ )
+			    const sc_fxcast_switch& cast_sw,
+			    sc_fxnum_fast_observer* observer_ )
 : sc_fxnum_fast( type_params,
-                 SC_US_,
-                 cast_sw,
-                 observer_ )
+		 SC_US_,
+		 cast_sw,
+		 observer_ )
 {}
 
 #define DEFN_CTORS_T_A(tp)                                                    \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params(),                                          \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params(),                                          \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_ ),                               \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_ ),                               \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om,                       \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om,                       \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( qm, om ),                                  \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( qm, om ),                                  \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( qm, om, nb ),                              \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( qm, om, nb ),                              \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params(),                                          \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params(),                                          \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_ ),                               \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_ ),                               \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om,                       \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om,                       \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( qm, om ),                                  \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( qm, om ),                                  \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( qm, om, nb ),                              \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( qm, om, nb ),                              \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            const sc_fxtype_params& type_params,              \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    const sc_fxtype_params& type_params,              \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 type_params,                                                 \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 type_params,                                                 \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            const sc_fxtype_params& type_params,              \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    const sc_fxtype_params& type_params,              \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 type_params,                                                 \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 type_params,                                                 \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}
 
 #define DEFN_CTORS_T_B(tp)                                                    \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 a.type_params(),                                             \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 a.type_params(),                                             \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( a.type_params(), wl_, iwl_ ),              \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( a.type_params(), wl_, iwl_ ),              \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om,                       \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om,                       \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( a.type_params(), qm, om ),                 \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( a.type_params(), qm, om ),                 \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( a.type_params(), qm, om, nb ),             \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( a.type_params(), qm, om, nb ),             \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 a.type_params(),                                             \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 a.type_params(),                                             \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( a.type_params(), wl_, iwl_ ),              \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( a.type_params(), wl_, iwl_ ),              \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om,                       \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om,                       \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( a.type_params(), qm, om ),                 \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( a.type_params(), qm, om ),                 \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( a.type_params(), qm, om, nb ),             \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( a.type_params(), qm, om, nb ),             \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_, sc_q_mode qm, sc_o_mode om,    \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om ),                       \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            int wl_, int iwl_,                                \
-                            sc_q_mode qm, sc_o_mode om, int nb,               \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    int wl_, int iwl_,                                \
+			    sc_q_mode qm, sc_o_mode om, int nb,               \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 sc_fxtype_params( wl_, iwl_, qm, om, nb ),                   \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            const sc_fxtype_params& type_params,              \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    const sc_fxtype_params& type_params,              \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 type_params,                                                 \
-                 SC_US_,                                                      \
-                 sc_fxcast_switch(),                                          \
-                 observer_ )                                                  \
+		 type_params,                                                 \
+		 SC_US_,                                                      \
+		 sc_fxcast_switch(),                                          \
+		 observer_ )                                                  \
 {}                                                                            \
                                                                               \
 inline                                                                        \
 sc_ufix_fast::sc_ufix_fast( tp a,                                             \
-                            const sc_fxtype_params& type_params,              \
-                            const sc_fxcast_switch& cast_sw,                  \
-                            sc_fxnum_fast_observer* observer_ )               \
+			    const sc_fxtype_params& type_params,              \
+			    const sc_fxcast_switch& cast_sw,                  \
+			    sc_fxnum_fast_observer* observer_ )               \
 : sc_fxnum_fast( a,                                                           \
-                 type_params,                                                 \
-                 SC_US_,                                                      \
-                 cast_sw,                                                     \
-                 observer_ )                                                  \
+		 type_params,                                                 \
+		 SC_US_,                                                      \
+		 cast_sw,                                                     \
+		 observer_ )                                                  \
 {}
 
 DEFN_CTORS_T_A(int)
@@ -1728,10 +1729,10 @@ DEFN_CTORS_T_A(const sc_unsigned&)
 inline
 sc_ufix_fast::sc_ufix_fast( const sc_ufix_fast& a )
 : sc_fxnum_fast( a,
-                 a.type_params(),
-                 SC_US_,
-                 sc_fxcast_switch(),
-                 0 )
+		 a.type_params(),
+		 SC_US_,
+		 sc_fxcast_switch(),
+		 0 )
 {}
 
 
@@ -1745,8 +1746,8 @@ sc_ufix_fast::operator ~ () const
     int iwl_c = iwl();
     int wl_c = wl();
     sc_ufix_fast c( wl_c, iwl_c );
-    for ( int i = iwl_c - wl_c; i < iwl_c; ++ i )
-        c.set_bit( i, ! get_bit( i ) );
+    for( int i = iwl_c - wl_c; i < iwl_c; ++ i )
+	c.set_bit( i, ! get_bit( i ) );
     return sc_ufix_fast( c, wl_c, iwl_c );
 }
 
@@ -1759,8 +1760,8 @@ b_not( sc_ufix_fast& c, const sc_ufix_fast& a )
 {
     SC_FXNUM_FAST_OBSERVER_READ_( a )
     int iwl_c = c.iwl();
-    for ( int i = iwl_c - c.wl(); i < iwl_c; ++ i )
-        c.set_bit( i, ! a.get_bit( i ) );
+    for( int i = iwl_c - c.wl(); i < iwl_c; ++ i )
+	c.set_bit( i, ! a.get_bit( i ) );
     c.cast();
     SC_FXNUM_FAST_OBSERVER_WRITE_( c )
 }
@@ -1780,8 +1781,8 @@ operator op ( const tp1& a, const tp2& b )                                    \
     int iwl_c = sc_max( iwl_a, iwl_b );                                       \
     int fwl_c = sc_max( a.wl() - iwl_a, b.wl() - iwl_b );                     \
     sc_ufix_fast c( iwl_c + fwl_c, iwl_c );                                   \
-    for ( int i = -fwl_c; i < iwl_c; ++ i )                                    \
-        c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
+    for( int i = -fwl_c; i < iwl_c; ++ i )                                    \
+	c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
     return sc_ufix_fast( c, iwl_c + fwl_c, iwl_c );                           \
 }
 
@@ -1802,8 +1803,8 @@ fnc ( sc_ufix_fast& c, const tp1& a, const tp2& b )                           \
     a.observer_read();                                                        \
     b.observer_read();                                                        \
     int iwl_c = c.iwl();                                                      \
-    for ( int i = iwl_c - c.wl(); i < iwl_c; ++ i )                            \
-        c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
+    for( int i = iwl_c - c.wl(); i < iwl_c; ++ i )                            \
+	c.set_bit( i, a.get_bit( i ) op2 b.get_bit( i ) );                    \
     c.cast();                                                                 \
     SC_FXNUM_FAST_OBSERVER_WRITE_( c )                                        \
 }
@@ -1883,8 +1884,8 @@ sc_ufix_fast::operator op ( const tp& b )                                     \
     SC_FXNUM_FAST_OBSERVER_READ_( *this )                                     \
     b.observer_read();                                                        \
     int iwl_c = iwl();                                                        \
-    for ( int i = iwl_c - wl(); i < iwl_c; ++ i )                              \
-        set_bit( i, get_bit( i ) op2 b.get_bit( i ) );                        \
+    for( int i = iwl_c - wl(); i < iwl_c; ++ i )                              \
+	set_bit( i, get_bit( i ) op2 b.get_bit( i ) );                        \
     cast();                                                                   \
     SC_FXNUM_FAST_OBSERVER_WRITE_( *this )                                    \
     return *this;                                                             \

@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxval_observer.cpp -
+  sc_fxval_observer.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -46,6 +46,7 @@
 //
 
 #include "sysc/datatypes/fx/sc_fxval_observer.h"
+
 
 namespace sc_dt
 {

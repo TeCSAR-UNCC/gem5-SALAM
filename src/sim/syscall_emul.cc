@@ -32,10 +32,12 @@
 #include "sim/syscall_emul.hh"
 
 #include <fcntl.h>
+#include <syscall.h>
 #include <unistd.h>
 
 #include <csignal>
 #include <iostream>
+#include <mutex>
 #include <string>
 
 #include "arch/utility.hh"
@@ -43,7 +45,9 @@
 #include "base/trace.hh"
 #include "config/the_isa.hh"
 #include "cpu/thread_context.hh"
+#include "dev/net/dist_iface.hh"
 #include "mem/page_table.hh"
+#include "sim/byteswap.hh"
 #include "sim/process.hh"
 #include "sim/sim_exit.hh"
 #include "sim/syscall_debug_macros.hh"
@@ -102,6 +106,20 @@ exitImpl(SyscallDesc *desc, int callnum, Process *p, ThreadContext *tc,
     for (auto &system: sys->systemList)
         activeContexts += system->numRunningContexts();
     if (activeContexts == 1) {
+        /**
+         * Even though we are terminating the final thread context, dist-gem5
+         * requires the simulation to remain active and provide
+         * synchronization messages to the switch process. So we just halt
+         * the last thread context and return. The simulation will be
+         * terminated by dist-gem5 in a coordinated manner once all nodes
+         * have signaled their readiness to exit. For non dist-gem5
+         * simulations, readyToExit() always returns true.
+         */
+        if (!DistIface::readyToExit(0)) {
+            tc->halt();
+            return status;
+        }
+
         exitSimLoop("exiting with last active thread context", status & 0xff);
         return status;
     }
@@ -497,13 +515,51 @@ unlinkHelper(SyscallDesc *desc, int num, Process *p, ThreadContext *tc,
     if (!tc->getMemProxy().tryReadString(path, p->getSyscallArg(tc, index)))
         return -EFAULT;
 
-    // Adjust path for current working directory
     path = p->fullPath(path);
 
     int result = unlink(path.c_str());
     return (result == -1) ? -errno : result;
 }
 
+SyscallReturn
+linkFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
+{
+    string path;
+    string new_path;
+
+    int index = 0;
+    auto &virt_mem = tc->getMemProxy();
+    if (!virt_mem.tryReadString(path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+    if (!virt_mem.tryReadString(new_path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+
+    path = p->fullPath(path);
+    new_path = p->fullPath(new_path);
+
+    int result = link(path.c_str(), new_path.c_str());
+    return (result == -1) ? -errno : result;
+}
+
+SyscallReturn
+symlinkFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
+{
+    string path;
+    string new_path;
+
+    int index = 0;
+    auto &virt_mem = tc->getMemProxy();
+    if (!virt_mem.tryReadString(path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+    if (!virt_mem.tryReadString(new_path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+
+    path = p->fullPath(path);
+    new_path = p->fullPath(new_path);
+
+    int result = symlink(path.c_str(), new_path.c_str());
+    return (result == -1) ? -errno : result;
+}
 
 SyscallReturn
 mkdirFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
@@ -1051,3 +1107,96 @@ accessFunc(SyscallDesc *desc, int callnum, Process *p, ThreadContext *tc)
     return accessFunc(desc, callnum, p, tc, 0);
 }
 
+SyscallReturn
+mknodFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
+{
+    int index = 0;
+    std::string path;
+    if (!tc->getMemProxy().tryReadString(path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+
+    path = p->fullPath(path);
+    mode_t mode = p->getSyscallArg(tc, index);
+    dev_t dev = p->getSyscallArg(tc, index);
+
+    auto result = mknod(path.c_str(), mode, dev);
+    return (result == -1) ? -errno : result;
+}
+
+SyscallReturn
+chdirFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
+{
+    int index = 0;
+    std::string path;
+    if (!tc->getMemProxy().tryReadString(path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+
+    path = p->fullPath(path);
+
+    auto result = chdir(path.c_str());
+    return (result == -1) ? -errno : result;
+}
+
+SyscallReturn
+rmdirFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
+{
+    int index = 0;
+    std::string path;
+    if (!tc->getMemProxy().tryReadString(path, p->getSyscallArg(tc, index)))
+        return -EFAULT;
+
+    path = p->fullPath(path);
+
+    auto result = rmdir(path.c_str());
+    return (result == -1) ? -errno : result;
+}
+
+#if defined(SYS_getdents)
+SyscallReturn
+getdentsFunc(SyscallDesc *desc, int callnum, Process *p, ThreadContext *tc)
+{
+    int index = 0;
+    int tgt_fd = p->getSyscallArg(tc, index);
+    Addr buf_ptr = p->getSyscallArg(tc, index);
+    unsigned count = p->getSyscallArg(tc, index);
+
+    auto hbfdp = std::dynamic_pointer_cast<HBFDEntry>((*p->fds)[tgt_fd]);
+    if (!hbfdp)
+        return -EBADF;
+    int sim_fd = hbfdp->getSimFD();
+
+    BufferArg buf_arg(buf_ptr, count);
+    auto status = syscall(SYS_getdents, sim_fd, buf_arg.bufferPtr(), count);
+
+    if (status == -1)
+        return -errno;
+
+    typedef struct linux_dirent {
+        unsigned long d_ino;
+        unsigned long d_off;
+        unsigned short d_reclen;
+        char dname[];
+    } LinDent;
+
+    unsigned traversed = 0;
+    while (traversed < status) {
+        LinDent *buffer = (LinDent*)((Addr)buf_arg.bufferPtr() + traversed);
+
+        auto host_reclen = buffer->d_reclen;
+
+        /**
+         * Convert the byte ordering from the host to the target before
+         * passing the data back into the target's address space to preserve
+         * endianness.
+         */
+        buffer->d_ino = htog(buffer->d_ino);
+        buffer->d_off = htog(buffer->d_off);
+        buffer->d_reclen = htog(buffer->d_reclen);
+
+        traversed += host_reclen;
+    }
+
+    buf_arg.copyOut(tc->getMemProxy());
+    return status;
+}
+#endif

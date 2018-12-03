@@ -29,10 +29,10 @@
 #ifndef SC_MUTEX_H
 #define SC_MUTEX_H
 
-#include "sysc/communication/sc_mutex_if.h"
 #include "sysc/kernel/sc_event.h"
 #include "sysc/kernel/sc_object.h"
 #include "sysc/kernel/sc_wait.h"
+#include "sysc/communication/sc_mutex_if.h"
 
 namespace sc_core {
 
@@ -52,7 +52,7 @@ public:
 
     sc_mutex();
     explicit sc_mutex( const char* name_ );
-        virtual ~sc_mutex();
+	virtual ~sc_mutex();
 
 
     // interface methods
@@ -74,7 +74,7 @@ protected:
     // support methods
 
     bool in_use() const
-        { return ( m_owner != 0 ); }
+	{ return ( m_owner != 0 ); }
 
 protected:
 

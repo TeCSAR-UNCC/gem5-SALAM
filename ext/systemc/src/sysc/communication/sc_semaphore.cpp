@@ -45,10 +45,10 @@ void
 sc_semaphore::report_error( const char* id, const char* add_msg ) const
 {
     char msg[BUFSIZ];
-    if ( add_msg != 0 ) {
-        std::sprintf( msg, "%s: semaphore '%s'", add_msg, name() );
+    if( add_msg != 0 ) {
+	std::sprintf( msg, "%s: semaphore '%s'", add_msg, name() );
     } else {
-        std::sprintf( msg, "semaphore '%s'", name() );
+	std::sprintf( msg, "semaphore '%s'", name() );
     }
     SC_REPORT_ERROR( id, msg );
 }
@@ -61,18 +61,18 @@ sc_semaphore::sc_semaphore( int init_value_ )
   m_free( (std::string(SC_KERNEL_EVENT_PREFIX)+"_free_event").c_str() ),
   m_value( init_value_ )
 {
-    if ( m_value < 0 ) {
-        report_error( SC_ID_INVALID_SEMAPHORE_VALUE_ );
+    if( m_value < 0 ) {
+	report_error( SC_ID_INVALID_SEMAPHORE_VALUE_ );
     }
 }
 
 sc_semaphore::sc_semaphore( const char* name_, int init_value_ )
-: sc_object( name_ ),
+: sc_object( name_ ), 
   m_free( (std::string(SC_KERNEL_EVENT_PREFIX)+"_free_event").c_str() ),
   m_value( init_value_ )
 {
-    if ( m_value < 0 ) {
-        report_error( SC_ID_INVALID_SEMAPHORE_VALUE_ );
+    if( m_value < 0 ) {
+	report_error( SC_ID_INVALID_SEMAPHORE_VALUE_ );
     }
 }
 
@@ -84,8 +84,8 @@ sc_semaphore::sc_semaphore( const char* name_, int init_value_ )
 int
 sc_semaphore::wait()
 {
-    while ( in_use() ) {
-        sc_core::wait( m_free, sc_get_curr_simcontext() );
+    while( in_use() ) {
+	sc_core::wait( m_free, sc_get_curr_simcontext() );
     }
     -- m_value;
     return 0;
@@ -97,8 +97,8 @@ sc_semaphore::wait()
 int
 sc_semaphore::trywait()
 {
-    if ( in_use() ) {
-        return -1;
+    if( in_use() ) {
+	return -1;
     }
     -- m_value;
     return 0;

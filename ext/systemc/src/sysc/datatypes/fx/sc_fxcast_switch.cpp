@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxcast_switch.cpp -
+  sc_fxcast_switch.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -32,9 +32,9 @@
 
       Name, Affiliation, Date: Gene Bushuyev, Synopsys, Inc.
   Description of Modification: - fix explicit instantiation syntax.
-
+    
       Name, Affiliation, Date:
-  Description of Modification:
+  Description of Modification: 
 
  *****************************************************************************/
 
@@ -49,6 +49,7 @@
 //
 
 #include "sysc/datatypes/fx/sc_fxcast_switch.h"
+
 
 namespace sc_dt
 {

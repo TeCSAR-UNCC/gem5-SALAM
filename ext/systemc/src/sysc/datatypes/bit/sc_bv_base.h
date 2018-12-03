@@ -59,6 +59,7 @@
 #include "sysc/datatypes/bit/sc_proxy.h"
 #include "sysc/datatypes/int/sc_length_param.h"
 
+
 namespace sc_dt
 {
 
@@ -81,7 +82,7 @@ class sc_bv_base
     void init( int length_, bool init_value = false );
 
     void assign_from_string( const std::string& );
-
+  
 public:
 
     // typedefs
@@ -92,13 +93,13 @@ public:
     // constructors
 
     explicit sc_bv_base( int length_ = sc_length_param().len() )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( length_ ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( length_ ); }
 
     explicit sc_bv_base( bool a,
-                         int length_ = sc_length_param().len() )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( length_, a ); }
+			 int length_ = sc_length_param().len() )
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( length_, a ); }
 
     sc_bv_base( const char* a );
 
@@ -106,28 +107,28 @@ public:
 
     template <class X>
     sc_bv_base( const sc_proxy<X>& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( a.back_cast().length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( a.back_cast().length() ); base_type::assign_( a ); }
 
     sc_bv_base( const sc_bv_base& a );
 
 #ifdef SC_DT_DEPRECATED
 
     explicit sc_bv_base( const sc_unsigned& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
     explicit sc_bv_base( const sc_signed& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
     explicit sc_bv_base( const sc_uint_base& a)
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
     explicit sc_bv_base( const sc_int_base& a)
-        : m_len( 0 ), m_size( 0 ), m_data( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
 #endif
 
@@ -135,55 +136,55 @@ public:
     // destructor
 
     virtual ~sc_bv_base()
-        { delete [] m_data; }
+	{ delete [] m_data; }
 
 
     // assignment operators
 
     template <class X>
     sc_bv_base& operator = ( const sc_proxy<X>& a )
-        { assign_p_( *this, a ); return *this; }
+	{ assign_p_( *this, a ); return *this; }
 
     sc_bv_base& operator = ( const sc_bv_base& a )
-        { assign_p_( *this, a ); return *this; }
+	{ assign_p_( *this, a ); return *this; }
 
     sc_bv_base& operator = ( const char* a );
 
     sc_bv_base& operator = ( const bool* a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( const sc_logic* a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( const sc_unsigned& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( const sc_signed& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( const sc_uint_base& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( const sc_int_base& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( unsigned long a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( long a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( unsigned int a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( int a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( uint64 a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_bv_base& operator = ( int64 a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
 
 #if 0
@@ -193,7 +194,7 @@ public:
     sc_bv_base& b_not();
 
     const sc_bv_base operator ~ () const
-        { sc_bv_base a( *this ); return a.b_not(); }
+	{ sc_bv_base a( *this ); return a.b_not(); }
 
 
     // bitwise left shift
@@ -201,7 +202,7 @@ public:
     sc_bv_base& operator <<= ( int n );
 
     const sc_bv_base operator << ( int n ) const
-        { sc_bv_base a( *this ); return ( a <<= n ); }
+	{ sc_bv_base a( *this ); return ( a <<= n ); }
 
 
     // bitwise right shift
@@ -209,7 +210,7 @@ public:
     sc_bv_base& operator >>= ( int n );
 
     const sc_bv_base operator >> ( int n ) const
-        { sc_bv_base a( *this ); return ( a >>= n ); }
+	{ sc_bv_base a( *this ); return ( a >>= n ); }
 
 
     // bitwise left rotate
@@ -227,22 +228,22 @@ public:
     // common methods
 
     int length() const
-        { return m_len; }
+	{ return m_len; }
 
     int size() const
-        { return m_size; }
+	{ return m_size; }
 
     sc_logic_value_t get_bit( int i ) const;
     void set_bit( int i, sc_logic_value_t value );
 
     sc_digit get_word( int i ) const
-        { return m_data[i]; }
+	{ return m_data[i]; }
 
     void set_word( int i, sc_digit w )
-        { m_data[i] = w; }
+	{ m_data[i] = w; }
 
     sc_digit get_cword( int /*i*/ ) const
-        { return SC_DIGIT_ZERO; }
+	{ return SC_DIGIT_ZERO; }
 
     void set_cword( int i, sc_digit w );
 
@@ -252,7 +253,7 @@ public:
     // other methods
 
     bool is_01() const
-        { return true; }
+	{ return true; }
 
 protected:
 
@@ -317,8 +318,8 @@ inline
 void
 sc_bv_base::set_cword( int /*i*/, sc_digit w )
 {
-    if ( w ) {
-        SC_REPORT_WARNING( sc_core::SC_ID_SC_BV_CANNOT_CONTAIN_X_AND_Z_, 0 );
+    if( w ) {
+	SC_REPORT_WARNING( sc_core::SC_ID_SC_BV_CANNOT_CONTAIN_X_AND_Z_, 0 );
     }
 }
 
@@ -329,7 +330,7 @@ sc_bv_base::clean_tail()
 {
     int wi = m_size - 1;
     int bi = m_len % SC_DIGIT_SIZE;
-        if ( bi != 0 ) m_data[wi] &= ~SC_DIGIT_ZERO >> (SC_DIGIT_SIZE - bi);
+	if ( bi != 0 ) m_data[wi] &= ~SC_DIGIT_ZERO >> (SC_DIGIT_SIZE - bi);
 }
 
 } // namespace sc_dt

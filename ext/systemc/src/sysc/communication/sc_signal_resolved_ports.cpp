@@ -28,11 +28,11 @@
 
 #include <cstdio>
 
+#include "sysc/kernel/sc_simcontext.h"
+#include "sysc/kernel/sc_process_handle.h"
 #include "sysc/communication/sc_communication_ids.h"
 #include "sysc/communication/sc_signal_resolved.h"
 #include "sysc/communication/sc_signal_resolved_ports.h"
-#include "sysc/kernel/sc_process_handle.h"
-#include "sysc/kernel/sc_simcontext.h"
 
 namespace sc_core {
 
@@ -49,10 +49,10 @@ sc_in_resolved::end_of_elaboration()
 {
     base_type::end_of_elaboration();
     // check if bound channel is a resolved signal
-    if ( DCAST<sc_signal_resolved*>( get_interface() ) == 0 ) {
-        char msg[BUFSIZ];
-        std::sprintf( msg, "%s (%s)", name(), kind() );
-        SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
+    if( DCAST<sc_signal_resolved*>( get_interface() ) == 0 ) {
+	char msg[BUFSIZ];
+	std::sprintf( msg, "%s (%s)", name(), kind() );
+	SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
     }
 }
 
@@ -70,10 +70,10 @@ sc_inout_resolved::end_of_elaboration()
 {
     base_type::end_of_elaboration();
     // check if bound channel is a resolved signal
-    if ( DCAST<sc_signal_resolved*>( get_interface() ) == 0 ) {
-        char msg[BUFSIZ];
-        std::sprintf( msg, "%s (%s)", name(), kind() );
-        SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
+    if( DCAST<sc_signal_resolved*>( get_interface() ) == 0 ) {
+	char msg[BUFSIZ];
+	std::sprintf( msg, "%s (%s)", name(), kind() );
+	SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
     }
 }
 

@@ -62,13 +62,13 @@ public:
     // constructors
 
     sc_signal_resolved() :
-        base_type( sc_gen_unique_name( "signal_resolved" ) ), m_proc_vec(),
-        m_val_vec()
+        base_type( sc_gen_unique_name( "signal_resolved" ) ), m_proc_vec(), 
+	m_val_vec()
         {}
 
-    explicit sc_signal_resolved( const char* name_ ):
+    explicit sc_signal_resolved( const char* name_ ): 
         base_type( name_ ), m_proc_vec(), m_val_vec()
-        {}
+	{}
 
     sc_signal_resolved( const char* name_, const data_type & initial_value_ )
       : base_type( name_, initial_value_ )
@@ -79,7 +79,7 @@ public:
     // interface methods
 
     virtual void register_port( sc_port_base&, const char* )
-        {}
+	{}
 
 
     // write the new value

@@ -30,13 +30,12 @@
 #define SC_PORT_H
 
 
-#include <typeinfo>
-
 #include "sysc/communication/sc_communication_ids.h"
 #include "sysc/communication/sc_interface.h"
 #include "sysc/kernel/sc_event.h"
 #include "sysc/kernel/sc_object.h"
 #include "sysc/kernel/sc_process.h"
+#include <typeinfo>
 
 #if ! defined( SC_DISABLE_VIRTUAL_BIND )
 #  define SC_VIRTUAL_ virtual
@@ -50,12 +49,12 @@ class sc_event_finder;
 
 struct sc_bind_info;
 
-enum sc_port_policy
-{
-    SC_ONE_OR_MORE_BOUND,   // Default
-    SC_ZERO_OR_MORE_BOUND,
-    SC_ALL_BOUND
-};
+enum sc_port_policy 
+{ 
+    SC_ONE_OR_MORE_BOUND,   // Default 
+    SC_ZERO_OR_MORE_BOUND, 
+    SC_ALL_BOUND  
+}; 
 
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -98,10 +97,10 @@ public:
 protected:
 
     // constructors
-    explicit sc_port_base( int max_size_,
-            sc_port_policy policy=SC_ONE_OR_MORE_BOUND );
-    sc_port_base( const char* name_, int max_size_,
-                  sc_port_policy policy=SC_ONE_OR_MORE_BOUND );
+    explicit sc_port_base( int max_size_, 
+	    sc_port_policy policy=SC_ONE_OR_MORE_BOUND );
+    sc_port_base( const char* name_, int max_size_, 
+		  sc_port_policy policy=SC_ONE_OR_MORE_BOUND );
 
     // destructor
     virtual ~sc_port_base();
@@ -118,7 +117,7 @@ protected:
 
     // called by complete_binding (for internal use only)
     virtual void add_interface( sc_interface* ) = 0;
-        virtual int interface_count() = 0;
+	virtual int interface_count() = 0;
     virtual const char* if_typename() const = 0;
 
     // called by construction_done (does nothing by default)
@@ -141,9 +140,9 @@ protected:
     virtual void make_sensitive( sc_thread_handle, sc_event_finder* = 0 ) const;
     virtual void make_sensitive( sc_method_handle, sc_event_finder* = 0 ) const;
     void add_static_event(
-                sc_method_handle process_p, const sc_event& event) const;
+		sc_method_handle process_p, const sc_event& event) const;
     void add_static_event(
-                sc_thread_handle process_p, const sc_event& event) const;
+		sc_thread_handle process_p, const sc_event& event) const;
 
 private:
 
@@ -268,25 +267,25 @@ public:
     // bind an interface of type IF to this port
 
     SC_VIRTUAL_ void bind( IF& interface_ )
-        { base_type::bind( interface_ ); }
+	{ base_type::bind( interface_ ); }
 
     void operator () ( IF& interface_ )
-        { this->bind( interface_ ); }
+	{ this->bind( interface_ ); }
 
 
     // bind a parent port with type IF to this port
 
     SC_VIRTUAL_ void bind( port_type& parent_ )
-        { base_type::bind( parent_ ); }
+	{ base_type::bind( parent_ ); }
 
     void operator () ( port_type& parent_ )
-        { this->bind( parent_ ); }
+	{ this->bind( parent_ ); }
 
 
     // number of connected interfaces
 
     int size() const
-        { return m_interface_vec.size(); }
+	{ return m_interface_vec.size(); }
 
 
     // allow to call methods provided by the first interface
@@ -315,22 +314,22 @@ protected:
 
     // constructors
 
-    explicit sc_port_b( int max_size_,
-                        sc_port_policy policy=SC_ONE_OR_MORE_BOUND ) :
-        base_type( max_size_, policy ), m_interface( 0 ), m_interface_vec()
-        {}
+    explicit sc_port_b( int max_size_, 
+	                sc_port_policy policy=SC_ONE_OR_MORE_BOUND ) :
+	base_type( max_size_, policy ), m_interface( 0 ), m_interface_vec()
+	{}
 
-    sc_port_b( const char* name_, int max_size_,
+    sc_port_b( const char* name_, int max_size_, 
                sc_port_policy policy=SC_ONE_OR_MORE_BOUND ) :
-        base_type( name_, max_size_, policy ), m_interface( 0 ),
-        m_interface_vec()
-        {}
+	base_type( name_, max_size_, policy ), m_interface( 0 ), 
+	m_interface_vec()
+	{}
 
 
     // destructor (does nothing)
 
     virtual ~sc_port_b()
-        {}
+	{}
 
 
     // called by pbind (for internal use only)
@@ -348,7 +347,7 @@ private:
     // called by complete_binding (for internal use only)
     virtual void add_interface( sc_interface* );
     virtual const char* if_typename() const;
-        virtual int interface_count();
+	virtual int interface_count();
 
     // disabled
     sc_port_b();
@@ -386,42 +385,42 @@ public:
     // constructors
 
     sc_port()
-        : base_type( N, P )
-        {}
+	: base_type( N, P )
+	{}
 
     explicit sc_port( const char* name_ )
-        : base_type( name_, N, P )
-        {}
+	: base_type( name_, N, P )
+	{}
 
     explicit sc_port( IF& interface_ )
-        : base_type( N, P )
-        { sc_warn_port_constructor(); base_type::bind( interface_ ); }
+	: base_type( N, P )
+	{ sc_warn_port_constructor(); base_type::bind( interface_ ); }
 
     sc_port( const char* name_, IF& interface_ )
-        : base_type( name_, N, P )
-        { sc_warn_port_constructor(); base_type::bind( interface_ ); }
+	: base_type( name_, N, P )
+	{ sc_warn_port_constructor(); base_type::bind( interface_ ); }
 
     explicit sc_port( base_type& parent_ )
-        : base_type( N, P )
-        { sc_warn_port_constructor(); base_type::bind( parent_ ); }
+	: base_type( N, P )
+	{ sc_warn_port_constructor(); base_type::bind( parent_ ); }
 
     sc_port( const char* name_, base_type& parent_ )
-        : base_type( name_, N, P )
-        { sc_warn_port_constructor(); base_type::bind( parent_ ); }
+	: base_type( name_, N, P )
+	{ sc_warn_port_constructor(); base_type::bind( parent_ ); }
 
     sc_port( this_type& parent_ )
-        : base_type( N, P )
-        { sc_warn_port_constructor(); base_type::bind( parent_ ); }
+	: base_type( N, P )
+	{ sc_warn_port_constructor(); base_type::bind( parent_ ); }
 
     sc_port( const char* name_, this_type& parent_ )
-        : base_type( name_, N, P )
-        { sc_warn_port_constructor(); base_type::bind( parent_ ); }
+	: base_type( name_, N, P )
+	{ sc_warn_port_constructor(); base_type::bind( parent_ ); }
 
 
     // destructor (does nothing)
 
     virtual ~sc_port()
-        {}
+	{}
 
     virtual const char* kind() const
         { return "sc_port"; }
@@ -449,8 +448,8 @@ inline
 IF*
 sc_port_b<IF>::operator -> ()
 {
-    if ( m_interface == 0 ) {
-        report_error( SC_ID_GET_IF_, "port is not bound" );
+    if( m_interface == 0 ) {
+	report_error( SC_ID_GET_IF_, "port is not bound" );
     }
     return m_interface;
 }
@@ -460,8 +459,8 @@ inline
 const IF*
 sc_port_b<IF>::operator -> () const
 {
-    if ( m_interface == 0 ) {
-        report_error( SC_ID_GET_IF_, "port is not bound" );
+    if( m_interface == 0 ) {
+	report_error( SC_ID_GET_IF_, "port is not bound" );
     }
     return m_interface;
 }
@@ -479,10 +478,10 @@ IF*
 sc_port_b<IF>::get_interface( int index_ )
 {
     if ( index_ == 0 ) {
-        return m_interface;
+    	return m_interface;
     }
-    else if ( index_ < 0 || index_ >= size() ) {
-        report_error( SC_ID_GET_IF_, "index out of range" );
+    else if( index_ < 0 || index_ >= size() ) {
+	report_error( SC_ID_GET_IF_, "index out of range" );
     }
     return m_interface_vec[index_];
 }
@@ -493,10 +492,10 @@ const IF*
 sc_port_b<IF>::get_interface( int index_ ) const
 {
     if ( index_ == 0 ) {
-        return m_interface;
+    	return m_interface;
     }
-    else if ( index_ < 0 || index_ >= size() ) {
-        report_error( SC_ID_GET_IF_, "index out of range" );
+    else if( index_ < 0 || index_ >= size() ) {
+	report_error( SC_ID_GET_IF_, "index out of range" );
     }
     return m_interface_vec[index_];
 }
@@ -510,9 +509,9 @@ int
 sc_port_b<IF>::vbind( sc_interface& interface_ )
 {
     IF* iface = DCAST<IF*>( &interface_ );
-    if ( iface == 0 ) {
-        // type mismatch
-        return 2;
+    if( iface == 0 ) {
+	// type mismatch
+	return 2;
     }
     base_type::bind( *iface );
     return 0;
@@ -524,9 +523,9 @@ int
 sc_port_b<IF>::vbind( sc_port_base& parent_ )
 {
     this_type* parent = DCAST<this_type*>( &parent_ );
-    if ( parent == 0 ) {
-        // type mismatch
-        return 2;
+    if( parent == 0 ) {
+	// type mismatch
+	return 2;
     }
     base_type::bind( *parent );
     return 0;
@@ -548,17 +547,17 @@ sc_port_b<IF>::add_interface( sc_interface* interface_ )
     int size = m_interface_vec.size();
     for ( int i = 0; i < size; i++ )
     {
-        if ( iface == m_interface_vec[i] )
-        {
-            report_error( SC_ID_BIND_IF_TO_PORT_,
-                "interface already bound to port" );
-        }
+    	if ( iface == m_interface_vec[i] )
+	{
+	    report_error( SC_ID_BIND_IF_TO_PORT_, 
+	    	"interface already bound to port" );
+	}
     }
 
     // "bind" the interface and make sure our short cut for 0 is set up.
 
     m_interface_vec.push_back( iface );
-    m_interface = m_interface_vec[0];
+    m_interface = m_interface_vec[0]; 
 }
 
 template <class IF>
@@ -574,7 +573,7 @@ inline
 int
 sc_port_b<IF>::interface_count()
 {
-        return m_interface_vec.size();
+	return m_interface_vec.size();
 }
 
 template <class IF>
@@ -586,11 +585,11 @@ sc_port_b<IF>::make_sensitive( sc_thread_handle handle_p,
     {
         int if_n = m_interface_vec.size();
         for ( int if_i = 0; if_i < if_n; if_i++ )
-        {
-            IF* iface_p = m_interface_vec[if_i];
-            assert( iface_p != 0 );
-            add_static_event( handle_p, iface_p->default_event() );
-        }
+	{
+	    IF* iface_p = m_interface_vec[if_i];
+	    assert( iface_p != 0 );
+	    add_static_event( handle_p, iface_p->default_event() );
+	}
     }
     else
     {
@@ -607,11 +606,11 @@ sc_port_b<IF>::make_sensitive( sc_method_handle handle_p,
     {
         int if_n = m_interface_vec.size();
         for ( int if_i = 0; if_i < if_n; if_i++ )
-        {
-            IF* iface_p = m_interface_vec[if_i];
-            assert( iface_p != 0 );
-            add_static_event( handle_p, iface_p->default_event() );
-        }
+	{
+	    IF* iface_p = m_interface_vec[if_i];
+	    assert( iface_p != 0 );
+	    add_static_event( handle_p, iface_p->default_event() );
+	}
     }
     else
     {
@@ -645,10 +644,10 @@ sc_port_b<IF>::make_sensitive( sc_method_handle handle_p,
                                12 December, 2005
   Description of Modification: multiport binding policy changes
 
-
+    
  *****************************************************************************/
 
-/*
+/* 
 $Log: sc_port.h,v $
 Revision 1.10  2011/08/26 20:45:41  acg
  Andy Goodrich: moved the modification log to the end of the file to
@@ -696,7 +695,7 @@ Revision 1.4  2006/05/08 17:52:47  acg
        methods, and operators to keep the Microsoft compiler happy.
    (2) Added delta_count() method to sc_prim_channel for use by
        sc_signal so that the friend declaration in sc_simcontext.h
-           can be for a non-templated class (i.e., sc_prim_channel.)
+	   can be for a non-templated class (i.e., sc_prim_channel.)
 
 Revision 1.3  2006/01/24 20:46:31  acg
 Andy Goodrich: changes to eliminate use of deprecated features. For instance,

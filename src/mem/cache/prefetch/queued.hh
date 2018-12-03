@@ -40,10 +40,16 @@
 #ifndef __MEM_CACHE_PREFETCH_QUEUED_HH__
 #define __MEM_CACHE_PREFETCH_QUEUED_HH__
 
+#include <cstdint>
 #include <list>
+#include <utility>
 
+#include "base/statistics.hh"
+#include "base/types.hh"
 #include "mem/cache/prefetch/base.hh"
-#include "params/QueuedPrefetcher.hh"
+#include "mem/packet.hh"
+
+struct QueuedPrefetcherParams;
 
 class QueuedPrefetcher : public BasePrefetcher
 {
@@ -92,11 +98,9 @@ class QueuedPrefetcher : public BasePrefetcher
     const bool tagPrefetch;
 
     using const_iterator = std::list<DeferredPacket>::const_iterator;
-    std::list<DeferredPacket>::const_iterator inPrefetch(Addr address,
-            bool is_secure) const;
+    const_iterator inPrefetch(Addr address, bool is_secure) const;
     using iterator = std::list<DeferredPacket>::iterator;
-    std::list<DeferredPacket>::iterator inPrefetch(Addr address,
-            bool is_secure);
+    iterator inPrefetch(Addr address, bool is_secure);
 
     // STATS
     Stats::Scalar pfIdentified;
@@ -109,20 +113,20 @@ class QueuedPrefetcher : public BasePrefetcher
     QueuedPrefetcher(const QueuedPrefetcherParams *p);
     virtual ~QueuedPrefetcher();
 
-    Tick notify(const PacketPtr &pkt);
+    void notify(const PacketPtr &pkt) override;
+
     PacketPtr insert(AddrPriority& info, bool is_secure);
 
-    // Note: This should really be pure virtual, but doesnt go well with params
     virtual void calculatePrefetch(const PacketPtr &pkt,
                                    std::vector<AddrPriority> &addresses) = 0;
-    PacketPtr getPacket();
+    PacketPtr getPacket() override;
 
-    Tick nextPrefetchReadyTime() const
+    Tick nextPrefetchReadyTime() const override
     {
         return pfq.empty() ? MaxTick : pfq.front().tick;
     }
 
-    void regStats();
+    void regStats() override;
 };
 
 #endif //__MEM_CACHE_PREFETCH_QUEUED_HH__

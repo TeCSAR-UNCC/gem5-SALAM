@@ -51,8 +51,8 @@
 #include <map>
 #include <queue>
 
+#include "arch/generic/tlb.hh"
 #include "arch/isa_traits.hh"
-#include "arch/tlb.hh"
 #include "arch/utility.hh"
 #include "arch/vtophys.hh"
 #include "base/random.hh"
@@ -80,6 +80,7 @@ using namespace std;
 template<class Impl>
 DefaultFetch<Impl>::DefaultFetch(O3CPU *_cpu, DerivO3CPUParams *params)
     : cpu(_cpu),
+      branchPred(nullptr),
       decodeToFetchDelay(params->decodeToFetchDelay),
       renameToFetchDelay(params->renameToFetchDelay),
       iewToFetchDelay(params->iewToFetchDelay),
@@ -143,10 +144,19 @@ DefaultFetch<Impl>::DefaultFetch(O3CPU *_cpu, DerivO3CPUParams *params)
     instSize = sizeof(TheISA::MachInst);
 
     for (int i = 0; i < Impl::MaxThreads; i++) {
-        decoder[i] = NULL;
+        fetchStatus[i] = Idle;
+        decoder[i] = nullptr;
+        pc[i] = 0;
+        fetchOffset[i] = 0;
+        macroop[i] = nullptr;
+        delayedCommit[i] = false;
+        memReq[i] = nullptr;
+        stalls[i] = {false, false};
         fetchBuffer[i] = NULL;
         fetchBufferPC[i] = 0;
         fetchBufferValid[i] = false;
+        lastIcacheStall[i] = 0;
+        issuePipelinedIfetch[i] = false;
     }
 
     branchPred = params->branchPred;
@@ -388,7 +398,6 @@ DefaultFetch<Impl>::processCacheCompletion(PacketPtr pkt)
     if (fetchStatus[tid] != IcacheWaitResponse ||
         pkt->req != memReq[tid]) {
         ++fetchIcacheSquashes;
-        delete pkt->req;
         delete pkt;
         return;
     }
@@ -415,7 +424,6 @@ DefaultFetch<Impl>::processCacheCompletion(PacketPtr pkt)
     pkt->req->setAccessLatency();
     cpu->ppInstAccessComplete->notify(pkt);
     // Reset the mem req to NULL.
-    delete pkt->req;
     delete pkt;
     memReq[tid] = NULL;
 }
@@ -548,7 +556,7 @@ DefaultFetch<Impl>::deactivateThread(ThreadID tid)
 template <class Impl>
 bool
 DefaultFetch<Impl>::lookupAndUpdateNextPC(
-        DynInstPtr &inst, TheISA::PCState &nextPC)
+        const DynInstPtr &inst, TheISA::PCState &nextPC)
 {
     // Do branch prediction check here.
     // A bit of a misnomer...next_PC is actually the current PC until
@@ -621,10 +629,10 @@ DefaultFetch<Impl>::fetchCacheLine(Addr vaddr, ThreadID tid, Addr pc)
     // Setup the memReq to do a read of the first instruction's address.
     // Set the appropriate read size and flags as well.
     // Build request here.
-    RequestPtr mem_req =
-        new Request(tid, fetchBufferBlockPC, fetchBufferSize,
-                    Request::INST_FETCH, cpu->instMasterId(), pc,
-                    cpu->thread[tid]->contextId());
+    RequestPtr mem_req = std::make_shared<Request>(
+        tid, fetchBufferBlockPC, fetchBufferSize,
+        Request::INST_FETCH, cpu->instMasterId(), pc,
+        cpu->thread[tid]->contextId());
 
     mem_req->taskId(cpu->taskId());
 
@@ -640,7 +648,8 @@ DefaultFetch<Impl>::fetchCacheLine(Addr vaddr, ThreadID tid, Addr pc)
 
 template <class Impl>
 void
-DefaultFetch<Impl>::finishTranslation(const Fault &fault, RequestPtr mem_req)
+DefaultFetch<Impl>::finishTranslation(const Fault &fault,
+                                      const RequestPtr &mem_req)
 {
     ThreadID tid = cpu->contextToThread(mem_req->contextId());
     Addr fetchBufferBlockPC = mem_req->getVaddr();
@@ -655,7 +664,6 @@ DefaultFetch<Impl>::finishTranslation(const Fault &fault, RequestPtr mem_req)
         DPRINTF(Fetch, "[tid:%i] Ignoring itlb completed after squash\n",
                 tid);
         ++fetchTlbSquashes;
-        delete mem_req;
         return;
     }
 
@@ -669,7 +677,6 @@ DefaultFetch<Impl>::finishTranslation(const Fault &fault, RequestPtr mem_req)
             warn("Address %#x is outside of physical memory, stopping fetch\n",
                     mem_req->getPaddr());
             fetchStatus[tid] = NoGoodAddr;
-            delete mem_req;
             memReq[tid] = NULL;
             return;
         }
@@ -717,7 +724,6 @@ DefaultFetch<Impl>::finishTranslation(const Fault &fault, RequestPtr mem_req)
         DPRINTF(Fetch, "[tid:%i] Got back req with addr %#x but expected %#x\n",
                 tid, mem_req->getVaddr(), memReq[tid]->getVaddr());
         // Translation faulted, icache request won't be sent.
-        delete mem_req;
         memReq[tid] = NULL;
 
         // Send the fault to commit.  This thread will not do anything
@@ -727,9 +733,9 @@ DefaultFetch<Impl>::finishTranslation(const Fault &fault, RequestPtr mem_req)
 
         DPRINTF(Fetch, "[tid:%i]: Translation faulted, building noop.\n", tid);
         // We will use a nop in ordier to carry the fault.
-        DynInstPtr instruction = buildInst(tid,
-                decoder[tid]->decode(TheISA::NoopMachInst, fetchPC.instAddr()),
-                NULL, fetchPC, fetchPC, false);
+        DynInstPtr instruction = buildInst(tid, StaticInst::nopStaticInstPtr,
+                                           NULL, fetchPC, fetchPC, false);
+        instruction->setNotAnInst();
 
         instruction->setPredTarg(fetchPC);
         instruction->fault = fault;
@@ -778,7 +784,6 @@ DefaultFetch<Impl>::doSquash(const TheISA::PCState &newPC,
     if (retryTid == tid) {
         assert(cacheBlocked);
         if (retryPkt) {
-            delete retryPkt->req;
             delete retryPkt;
         }
         retryPkt = NULL;
@@ -958,7 +963,7 @@ DefaultFetch<Impl>::tick()
     while (available_insts != 0 && insts_to_decode < decodeWidth) {
         ThreadID tid = *tid_itr;
         if (!stalls[tid].decode && !fetchQueue[tid].empty()) {
-            auto inst = fetchQueue[tid].front();
+            const auto& inst = fetchQueue[tid].front();
             toDecode->insts[toDecode->size++] = inst;
             DPRINTF(Fetch, "[tid:%i][sn:%i]: Sending instruction to decode from "
                     "fetch queue. Fetch queue size: %i.\n",
@@ -1275,17 +1280,6 @@ DefaultFetch<Impl>::fetch(bool &status_change)
                 // We need to process more memory, but we've run out of the
                 // current block.
                 break;
-            }
-
-            if (ISA_HAS_DELAY_SLOT && pcOffset == 0) {
-                // Walk past any annulled delay slot instructions.
-                Addr pcAddr = thisPC.instAddr() & BaseCPU::PCMask;
-                while (fetchAddr != pcAddr && blkOffset < numInsts) {
-                    blkOffset++;
-                    fetchAddr += instSize;
-                }
-                if (blkOffset >= numInsts)
-                    break;
             }
 
             MachInst inst = TheISA::gtoh(cacheInsts[blkOffset]);

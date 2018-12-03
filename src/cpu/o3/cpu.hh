@@ -123,8 +123,8 @@ class FullO3CPU : public BaseO3CPU
         SwitchedOut
     };
 
-    TheISA::TLB * itb;
-    TheISA::TLB * dtb;
+    BaseTLB *itb;
+    BaseTLB *dtb;
 
     /** Overall CPU status. */
     Status _status;
@@ -537,15 +537,15 @@ class FullO3CPU : public BaseO3CPU
     /** Function to add instruction onto the head of the list of the
      *  instructions.  Used when new instructions are fetched.
      */
-    ListIt addInst(DynInstPtr &inst);
+    ListIt addInst(const DynInstPtr &inst);
 
     /** Function to tell the CPU that an instruction has completed. */
-    void instDone(ThreadID tid, DynInstPtr &inst);
+    void instDone(ThreadID tid, const DynInstPtr &inst);
 
     /** Remove an instruction from the front end of the list.  There's
      *  no restriction on location of the instruction.
      */
-    void removeFrontInst(DynInstPtr &inst);
+    void removeFrontInst(const DynInstPtr &inst);
 
     /** Remove all instructions that are not currently in the ROB.
      *  There's also an option to not squash delay slot instructions.*/
@@ -744,14 +744,16 @@ class FullO3CPU : public BaseO3CPU
     std::vector<ThreadID> tids;
 
     /** CPU read function, forwards read to LSQ. */
-    Fault read(RequestPtr &req, RequestPtr &sreqLow, RequestPtr &sreqHigh,
+    Fault read(const RequestPtr &req,
+               RequestPtr &sreqLow, RequestPtr &sreqHigh,
                int load_idx)
     {
         return this->iew.ldstQueue.read(req, sreqLow, sreqHigh, load_idx);
     }
 
     /** CPU write function, forwards write to LSQ. */
-    Fault write(RequestPtr &req, RequestPtr &sreqLow, RequestPtr &sreqHigh,
+    Fault write(const RequestPtr &req,
+                const RequestPtr &sreqLow, const RequestPtr &sreqHigh,
                 uint8_t *data, int store_idx)
     {
         return this->iew.ldstQueue.write(req, sreqLow, sreqHigh,

@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_context.h -
+  sc_context.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -63,8 +63,9 @@
 #include "sysc/kernel/sc_simcontext.h"
 #include "sysc/utils/sc_hash.h"
 
+
 namespace sc_core {
-        class sc_process_b;
+	class sc_process_b;
 }
 
 using sc_core::default_ptr_hash_fn; // To keep HP aCC happy.
@@ -189,10 +190,10 @@ void
 sc_global<T>::update()
 {
     void* p = sc_core::sc_get_current_process_b();
-    if ( p != m_proc )
+    if( p != m_proc )
     {
         const T* vp = m_map[p];
-        if ( vp == 0 )
+        if( vp == 0 )
         {
             vp = new T( sc_without_context() );
             m_map.insert( p, vp );
@@ -208,7 +209,7 @@ inline
 sc_global<T>*
 sc_global<T>::instance()
 {
-    if ( m_instance == 0 )
+    if( m_instance == 0 )
     {
         m_instance = new sc_global<T>;
     }
@@ -239,10 +240,10 @@ sc_context<T>::sc_context( const T& value_, sc_context_begin begin )
   m_def_value_ptr( sc_global<T>::instance()->value_ptr() ),
   m_old_value_ptr( 0 )
 {
-    if ( begin == SC_NOW )
+    if( begin == SC_NOW )
     {
-        m_old_value_ptr = m_def_value_ptr;
-        m_def_value_ptr = &m_value;
+	m_old_value_ptr = m_def_value_ptr;
+	m_def_value_ptr = &m_value;
     }
 }
 
@@ -250,10 +251,10 @@ template <class T>
 inline
 sc_context<T>::~sc_context()
 {
-    if ( m_old_value_ptr != 0 )
+    if( m_old_value_ptr != 0 )
     {
         m_def_value_ptr = m_old_value_ptr;
-        m_old_value_ptr = 0;
+	m_old_value_ptr = 0;
     }
 }
 
@@ -263,10 +264,10 @@ inline
 void
 sc_context<T>::begin()
 {
-    if ( m_old_value_ptr == 0 )
+    if( m_old_value_ptr == 0 )
     {
-        m_old_value_ptr = m_def_value_ptr;
-        m_def_value_ptr = &m_value;
+	m_old_value_ptr = m_def_value_ptr;
+	m_def_value_ptr = &m_value;
     }
     else
     {
@@ -279,10 +280,10 @@ inline
 void
 sc_context<T>::end()
 {
-    if ( m_old_value_ptr != 0 )
+    if( m_old_value_ptr != 0 )
     {
         m_def_value_ptr = m_old_value_ptr;
-        m_old_value_ptr = 0;
+	m_old_value_ptr = 0;
     }
     else
     {

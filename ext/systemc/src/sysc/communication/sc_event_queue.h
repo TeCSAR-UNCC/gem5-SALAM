@@ -36,23 +36,23 @@
   A queue that can contain any number of pending notifications.
   The queue has a similiar interface like an sc_event but has different
   semantics: it can carry any number of pending notification. The
-  general rule is that _every_ call to notify() will cause a
+  general rule is that _every_ call to notify() will cause a 
   corresponding trigger at the specified wall-clock time that can be
   observed (the only exception is when notifications are explicitly
-  cancelled).
+  cancelled). 
 
   If multiple notifications are pending at the same wall-clock
   time, then the event queue will trigger in different delta cycles
   in order to ensure that sensitive processes can notice each
   trigger. The first trigger happens in the earliest delta cycle
   possible which is the same behavior as a normal timed event.
-
+  
 */
 
 #include "sysc/communication/sc_interface.h"
-#include "sysc/communication/sc_port.h"
-#include "sysc/kernel/sc_event.h"
 #include "sysc/kernel/sc_module.h"
+#include "sysc/kernel/sc_event.h"
+#include "sysc/communication/sc_port.h"
 
 namespace sc_core {
 
@@ -70,11 +70,11 @@ public:
 };
 
 // ---------------------------------------------------------------------------
-// sc_event_queue: a queue that can contain any number of pending
+// sc_event_queue: a queue that can contain any number of pending 
 // delta, or timed events.
 // ---------------------------------------------------------------------------
 
-class sc_event_queue:
+class sc_event_queue: 
   public sc_event_queue_if,
   public sc_module
 {
@@ -106,7 +106,7 @@ class sc_event_queue:
     //
     // Possible extensions:
     //
-
+    
     // Cancel an events at a specific time
     void cancel (const sc_time& when);
     void cancel (double when, sc_time_unit base);
@@ -132,13 +132,13 @@ class sc_event_queue:
 inline
 void sc_event_queue::notify (double when, sc_time_unit base )
 {
-        notify( sc_time(when,base) );
+	notify( sc_time(when,base) );
 }
-
+    
 inline
 const sc_event& sc_event_queue::default_event() const
-{
-  return m_e;
+{ 
+  return m_e; 
 }
 
 

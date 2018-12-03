@@ -292,7 +292,7 @@ class ExecContext : public ::ExecContext
     }
 
     bool
-    readPredicate() override
+    readPredicate() const override
     {
         return thread.readPredicate();
     }
@@ -424,19 +424,7 @@ class ExecContext : public ::ExecContext
         thread.getDTBPtr()->demapPage(vaddr, asn);
     }
 
-    /* ALPHA/POWER: Effective address storage */
-    void setEA(Addr ea) override
-    {
-        inst->ea = ea;
-    }
-
     BaseCPU *getCpuPtr() { return &cpu; }
-
-    /* POWER: Effective address storage */
-    Addr getEA() const override
-    {
-        return inst->ea;
-    }
 
     /* MIPS: other thread register reading/writing */
     uint64_t

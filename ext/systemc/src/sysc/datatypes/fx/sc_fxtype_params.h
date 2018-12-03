@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxtype_params.h -
+  sc_fxtype_params.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -53,6 +53,7 @@
 
 #include "sysc/datatypes/fx/sc_context.h"
 
+
 namespace sc_dt
 {
 
@@ -75,10 +76,10 @@ public:
              sc_fxtype_params(           sc_q_mode, sc_o_mode, int = 0 );
              sc_fxtype_params( int, int, sc_q_mode, sc_o_mode, int = 0 );
              sc_fxtype_params( const sc_fxtype_params& );
-             sc_fxtype_params( const sc_fxtype_params&,
-                               int, int );
-             sc_fxtype_params( const sc_fxtype_params&,
-                                         sc_q_mode, sc_o_mode, int = 0 );
+	     sc_fxtype_params( const sc_fxtype_params&,
+			       int, int );
+	     sc_fxtype_params( const sc_fxtype_params&,
+			                 sc_q_mode, sc_o_mode, int = 0 );
     explicit sc_fxtype_params( sc_without_context );
 
     sc_fxtype_params& operator = ( const sc_fxtype_params& );
@@ -86,7 +87,7 @@ public:
     friend bool operator == ( const sc_fxtype_params&,
                               const sc_fxtype_params& );
     friend bool operator != ( const sc_fxtype_params&,
-                              const sc_fxtype_params& );
+			      const sc_fxtype_params& );
 
     int wl() const;
     void wl( int );
@@ -130,7 +131,7 @@ typedef sc_context<sc_fxtype_params> sc_fxtype_context;
 // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 
 inline
-sc_fxtype_params::sc_fxtype_params()
+sc_fxtype_params::sc_fxtype_params() 
 : m_wl(), m_iwl(), m_q_mode(), m_o_mode(), m_n_bits()
 {
     *this = sc_fxtype_context::default_value();
@@ -184,7 +185,7 @@ sc_fxtype_params::sc_fxtype_params( const sc_fxtype_params& a )
 
 inline
 sc_fxtype_params::sc_fxtype_params( const sc_fxtype_params& a,
-                                    int wl_, int iwl_ )
+				    int wl_, int iwl_ )
 : m_wl( wl_ ), m_iwl( iwl_ ),
   m_q_mode( a.m_q_mode ),
   m_o_mode( a.m_o_mode ), m_n_bits( a.m_n_bits )
@@ -192,8 +193,8 @@ sc_fxtype_params::sc_fxtype_params( const sc_fxtype_params& a,
 
 inline
 sc_fxtype_params::sc_fxtype_params( const sc_fxtype_params& a,
-                                    sc_q_mode q_mode_,
-                                    sc_o_mode o_mode_, int n_bits_ )
+				    sc_q_mode q_mode_,
+				    sc_o_mode o_mode_, int n_bits_ )
 : m_wl( a.m_wl ), m_iwl( a.m_iwl ),
   m_q_mode( q_mode_ ),
   m_o_mode( o_mode_ ), m_n_bits( n_bits_ )
@@ -213,13 +214,13 @@ inline
 sc_fxtype_params&
 sc_fxtype_params::operator = ( const sc_fxtype_params& a )
 {
-    if ( &a != this )
+    if( &a != this )
     {
         m_wl     = a.m_wl;
-        m_iwl    = a.m_iwl;
-        m_q_mode = a.m_q_mode;
-        m_o_mode = a.m_o_mode;
-        m_n_bits = a.m_n_bits;
+	m_iwl    = a.m_iwl;
+	m_q_mode = a.m_q_mode;
+	m_o_mode = a.m_o_mode;
+	m_n_bits = a.m_n_bits;
     }
     return *this;
 }
@@ -230,10 +231,10 @@ bool
 operator == ( const sc_fxtype_params& a, const sc_fxtype_params& b )
 {
     return ( a.m_wl     == b.m_wl     &&
-             a.m_iwl    == b.m_iwl    &&
-             a.m_q_mode == b.m_q_mode &&
-             a.m_o_mode == b.m_o_mode &&
-             a.m_n_bits == b.m_n_bits );
+	     a.m_iwl    == b.m_iwl    &&
+	     a.m_q_mode == b.m_q_mode &&
+	     a.m_o_mode == b.m_o_mode &&
+	     a.m_n_bits == b.m_n_bits );
 }
 
 inline
@@ -241,10 +242,10 @@ bool
 operator != ( const sc_fxtype_params& a, const sc_fxtype_params& b )
 {
     return ( a.m_wl     != b.m_wl     ||
-             a.m_iwl    != b.m_iwl    ||
-             a.m_q_mode != b.m_q_mode ||
-             a.m_o_mode != b.m_o_mode ||
-             a.m_n_bits != b.m_n_bits );
+	     a.m_iwl    != b.m_iwl    ||
+	     a.m_q_mode != b.m_q_mode ||
+	     a.m_o_mode != b.m_o_mode ||
+	     a.m_n_bits != b.m_n_bits );
 }
 
 

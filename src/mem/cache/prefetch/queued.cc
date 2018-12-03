@@ -39,8 +39,13 @@
 
 #include "mem/cache/prefetch/queued.hh"
 
+#include <cassert>
+
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "debug/HWPrefetch.hh"
-#include "mem/cache/base.hh"
+#include "mem/request.hh"
+#include "params/QueuedPrefetcher.hh"
 
 QueuedPrefetcher::QueuedPrefetcher(const QueuedPrefetcherParams *p)
     : BasePrefetcher(p), queueSize(p->queue_size), latency(p->latency),
@@ -54,12 +59,11 @@ QueuedPrefetcher::~QueuedPrefetcher()
 {
     // Delete the queued prefetch packets
     for (DeferredPacket &p : pfq) {
-        delete p.pkt->req;
         delete p.pkt;
     }
 }
 
-Tick
+void
 QueuedPrefetcher::notify(const PacketPtr &pkt)
 {
     // Verify this access type is observed by prefetcher
@@ -73,7 +77,6 @@ QueuedPrefetcher::notify(const PacketPtr &pkt)
             while (itr != pfq.end()) {
                 if (itr->pkt->getAddr() == blk_addr &&
                     itr->pkt->isSecure() == is_secure) {
-                    delete itr->pkt->req;
                     delete itr->pkt;
                     itr = pfq.erase(itr);
                 } else {
@@ -88,9 +91,8 @@ QueuedPrefetcher::notify(const PacketPtr &pkt)
 
         // Queue up generated prefetches
         for (AddrPriority& pf_info : addresses) {
-
             // Block align prefetch address
-            pf_info.first &= ~(Addr)(blkSize - 1);
+            pf_info.first = blockAddress(pf_info.first);
 
             pfIdentified++;
             DPRINTF(HWPrefetch, "Found a pf candidate addr: %#x, "
@@ -107,8 +109,6 @@ QueuedPrefetcher::notify(const PacketPtr &pkt)
             }
         }
     }
-
-    return pfq.empty() ? MaxTick : pfq.front().tick;
 }
 
 PacketPtr
@@ -130,7 +130,7 @@ QueuedPrefetcher::getPacket()
     return pkt;
 }
 
-std::list<QueuedPrefetcher::DeferredPacket>::const_iterator
+QueuedPrefetcher::const_iterator
 QueuedPrefetcher::inPrefetch(Addr address, bool is_secure) const
 {
     for (const_iterator dp = pfq.begin(); dp != pfq.end(); dp++) {
@@ -218,8 +218,8 @@ QueuedPrefetcher::insert(AddrPriority &pf_info, bool is_secure)
     }
 
     /* Create a prefetch memory request */
-    Request *pf_req =
-        new Request(pf_info.first, blkSize, 0, masterId);
+    RequestPtr pf_req =
+        std::make_shared<Request>(pf_info.first, blkSize, 0, masterId);
 
     if (is_secure) {
         pf_req->setFlags(Request::SECURE);
@@ -250,7 +250,6 @@ QueuedPrefetcher::insert(AddrPriority &pf_info, bool is_secure)
         }
         DPRINTF(HWPrefetch, "Prefetch queue full, removing lowest priority "
                             "oldest packet, addr: %#x", it->pkt->getAddr());
-        delete it->pkt->req;
         delete it->pkt;
         pfq.erase(it);
     }
@@ -266,8 +265,9 @@ QueuedPrefetcher::insert(AddrPriority &pf_info, bool is_secure)
         pfq.emplace_back(dpp);
     } else {
         iterator it = pfq.end();
-        while (it != pfq.begin() && dpp > *it)
+        do {
             --it;
+        } while (it != pfq.begin() && dpp > *it);
         /* If we reach the head, we have to see if the new element is new head
          * or not */
         if (it == pfq.begin() && dpp <= *it)

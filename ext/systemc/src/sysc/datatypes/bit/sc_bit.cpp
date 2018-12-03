@@ -56,12 +56,13 @@
 // the source.
 //
 
-#include <cstdio>
-
 #include "sysc/datatypes/bit/sc_bit.h"
 #include "sysc/datatypes/bit/sc_bit_ids.h"
-#include "sysc/datatypes/bit/sc_logic.h"
 #include "sysc/utils/sc_utils_ids.h"
+#include "sysc/datatypes/bit/sc_logic.h"
+
+#include <cstdio>
+
 
 namespace sc_dt
 {
@@ -126,8 +127,8 @@ void sc_deprecated_sc_bit()
     if ( warn_sc_bit_deprecated )
     {
         warn_sc_bit_deprecated=false;
-        SC_REPORT_INFO(sc_core::SC_ID_IEEE_1666_DEPRECATION_,
-            "sc_bit is deprecated, use bool instead");
+	SC_REPORT_INFO(sc_core::SC_ID_IEEE_1666_DEPRECATION_,
+	    "sc_bit is deprecated, use bool instead");
     }
 }
 

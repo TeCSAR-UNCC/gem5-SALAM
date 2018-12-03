@@ -67,50 +67,50 @@ public:
     // constructors
 
     sc_in_rv()
-        : base_type()
-        {}
+	: base_type()
+	{}
 
     explicit sc_in_rv( const char* name_ )
-        : base_type( name_ )
-        {}
+	: base_type( name_ )
+	{}
 
     explicit sc_in_rv( const in_if_type& interface_ )
-        : base_type( interface_ )
-        {}
+	: base_type( interface_ )
+	{}
 
     sc_in_rv( const char* name_, const in_if_type& interface_ )
-        : base_type( name_, interface_ )
-        {}
+	: base_type( name_, interface_ )
+	{}
 
     explicit sc_in_rv( in_port_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_in_rv( const char* name_, in_port_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
     explicit sc_in_rv( inout_port_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_in_rv( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
     sc_in_rv( this_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_in_rv( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
 
     // destructor (does nothing)
 
     virtual ~sc_in_rv()
-        {}
+	{}
 
 
     // called when elaboration is done
@@ -141,10 +141,10 @@ sc_in_rv<W>::end_of_elaboration()
 {
     base_type::end_of_elaboration();
     // check if bound channel is a resolved signal
-    if ( DCAST<sc_signal_rv<W>*>( this->get_interface() ) == 0 ) {
-        char msg[BUFSIZ];
-        std::sprintf( msg, "%s (%s)", this->name(), kind() );
-        SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
+    if( DCAST<sc_signal_rv<W>*>( this->get_interface() ) == 0 ) {
+	char msg[BUFSIZ];
+	std::sprintf( msg, "%s (%s)", this->name(), kind() );
+	SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
     }
 }
 
@@ -178,60 +178,60 @@ public:
     // constructors
 
     sc_inout_rv()
-        : base_type()
-        {}
+	: base_type()
+	{}
 
     explicit sc_inout_rv( const char* name_ )
-        : base_type( name_ )
-        {}
+	: base_type( name_ )
+	{}
 
     explicit sc_inout_rv( inout_if_type& interface_ )
-        : base_type( interface_ )
-        {}
+	: base_type( interface_ )
+	{}
 
     sc_inout_rv( const char* name_, inout_if_type& interface_ )
-        : base_type( name_, interface_ )
-        {}
+	: base_type( name_, interface_ )
+	{}
 
     explicit sc_inout_rv( inout_port_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_inout_rv( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
     sc_inout_rv( this_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_inout_rv( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
 
     // destructor (does nothing)
 
     virtual ~sc_inout_rv()
-        {}
+	{}
 
 
     // write the new value
 
     this_type& operator = ( const data_type& value_ )
-        { (*this)->write( value_ ); return *this; }
+	{ (*this)->write( value_ ); return *this; }
 
     this_type& operator = ( const in_if_type& interface_ )
-        { (*this)->write( interface_.read() ); return *this; }
+	{ (*this)->write( interface_.read() ); return *this; }
 
     this_type& operator = ( const in_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const inout_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const this_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
 
     // called when elaboration is done
@@ -261,10 +261,10 @@ sc_inout_rv<W>::end_of_elaboration()
 {
     base_type::end_of_elaboration();
     // check if bound channel is a resolved signal
-    if ( DCAST<sc_signal_rv<W>*>( this->get_interface() ) == 0 ) {
-        char msg[BUFSIZ];
-        std::sprintf( msg, "%s (%s)", this->name(), kind() );
-        SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
+    if( DCAST<sc_signal_rv<W>*>( this->get_interface() ) == 0 ) {
+	char msg[BUFSIZ];
+	std::sprintf( msg, "%s (%s)", this->name(), kind() );
+	SC_REPORT_ERROR( SC_ID_RESOLVED_PORT_NOT_BOUND_, msg );
     }
 }
 
@@ -302,60 +302,60 @@ public:
     // constructors
 
     sc_out_rv()
-        : base_type()
-        {}
+	: base_type()
+	{}
 
     explicit sc_out_rv( const char* name_ )
-        : base_type( name_ )
-        {}
+	: base_type( name_ )
+	{}
 
     explicit sc_out_rv( inout_if_type& interface_ )
-        : base_type( interface_ )
-        {}
+	: base_type( interface_ )
+	{}
 
     sc_out_rv( const char* name_, inout_if_type& interface_ )
-        : base_type( name_, interface_ )
-        {}
+	: base_type( name_, interface_ )
+	{}
 
     explicit sc_out_rv( inout_port_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_out_rv( const char* name_, inout_port_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
     sc_out_rv( this_type& parent_ )
-        : base_type( parent_ )
-        {}
+	: base_type( parent_ )
+	{}
 
     sc_out_rv( const char* name_, this_type& parent_ )
-        : base_type( name_, parent_ )
-        {}
+	: base_type( name_, parent_ )
+	{}
 
 
     // destructor (does nothing)
 
     virtual ~sc_out_rv()
-        {}
+	{}
 
 
     // write the new value
 
     this_type& operator = ( const data_type& value_ )
-        { (*this)->write( value_ ); return *this; }
+	{ (*this)->write( value_ ); return *this; }
 
     this_type& operator = ( const in_if_type& interface_ )
-        { (*this)->write( interface_.read() ); return *this; }
+	{ (*this)->write( interface_.read() ); return *this; }
 
     this_type& operator = ( const in_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const inout_port_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     this_type& operator = ( const this_type& port_ )
-        { (*this)->write( port_->read() ); return *this; }
+	{ (*this)->write( port_->read() ); return *this; }
 
     virtual const char* kind() const
         { return "sc_out_rv"; }

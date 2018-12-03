@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  scfx_ieee.h -
+  scfx_ieee.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -56,6 +56,7 @@
 
 
 #include "sysc/datatypes/fx/sc_fxdefs.h"
+
 
 namespace sc_dt
 {
@@ -122,14 +123,14 @@ class scfx_ieee_double
     ieee_double m_id;
 
 public:
-
+    
     scfx_ieee_double();
     scfx_ieee_double( double );
     scfx_ieee_double( const scfx_ieee_double& );
-
+    
     scfx_ieee_double& operator = ( double );
     scfx_ieee_double& operator = ( const scfx_ieee_double& );
-
+    
     operator double() const;
 
     unsigned int negative() const;
@@ -160,7 +161,7 @@ public:
 
 
 // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-
+    
 inline
 scfx_ieee_double::scfx_ieee_double() : m_id()
 {
@@ -178,7 +179,7 @@ scfx_ieee_double::scfx_ieee_double( const scfx_ieee_double& a ) : m_id(a.m_id)
 {
     // m_id.d = a.m_id.d;
 }
-
+    
 
 inline
 scfx_ieee_double&
@@ -195,7 +196,7 @@ scfx_ieee_double::operator = ( const scfx_ieee_double& a )
     m_id.d = a.m_id.d;
     return *this;
 }
-
+    
 
 inline
 scfx_ieee_double::operator double() const
@@ -322,7 +323,7 @@ scfx_ieee_double::set_nan()
 }
 
 
-#define MSB_STATEMENT(x,n) if ( x >> n ) { x >>= n; i += n; }
+#define MSB_STATEMENT(x,n) if( x >> n ) { x >>= n; i += n; }
 
 inline
 int
@@ -330,7 +331,7 @@ scfx_ieee_double::msb() const
 {
     unsigned int m0 = mantissa0();
     unsigned int m1 = mantissa1();
-    if ( m0 != 0 )
+    if( m0 != 0 )
     {
         int i = 0;
         MSB_STATEMENT(m0,16);
@@ -340,7 +341,7 @@ scfx_ieee_double::msb() const
         MSB_STATEMENT(m0,1);
         return ( i - 20 );
     }
-    else if ( m1 != 0 )
+    else if( m1 != 0 )
     {
         int i = 0;
         MSB_STATEMENT(m1,16);
@@ -358,7 +359,7 @@ scfx_ieee_double::msb() const
 
 #undef MSB_STATEMENT
 
-#define LSB_STATEMENT(x,n) if ( x << n ) { x <<= n; i -= n; }
+#define LSB_STATEMENT(x,n) if( x << n ) { x <<= n; i -= n; }
 
 inline
 int
@@ -366,7 +367,7 @@ scfx_ieee_double::lsb() const
 {
     unsigned int m0 = mantissa0();
     unsigned int m1 = mantissa1();
-    if ( m1 != 0 )
+    if( m1 != 0 )
     {
         int i = 31;
         LSB_STATEMENT(m1,16);
@@ -376,7 +377,7 @@ scfx_ieee_double::lsb() const
         LSB_STATEMENT(m1,1);
         return ( i - 52 );
     }
-    else if ( m0 != 0 )
+    else if( m0 != 0 )
     {
         int i = 31;
         LSB_STATEMENT(m0,16);
@@ -419,7 +420,7 @@ scfx_ieee_double::inf( int sign )
 //
 //  IEEE 754 single-precision format.
 // ----------------------------------------------------------------------------
-
+    
 union ieee_float
 {
 
@@ -492,7 +493,7 @@ public:
 
 
 // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-
+    
 inline
 scfx_ieee_float::scfx_ieee_float() : m_if()
 {
@@ -527,7 +528,7 @@ scfx_ieee_float::operator = ( const scfx_ieee_float& a )
     m_if.f = a.m_if.f;
     return *this;
 }
-
+    
 
 inline
 scfx_ieee_float::operator float() const
@@ -644,21 +645,21 @@ inline
 double scfx_pow2( int exp )
 {
     scfx_ieee_double r;
-    if ( exp < SCFX_IEEE_DOUBLE_E_MIN )
+    if( exp < SCFX_IEEE_DOUBLE_E_MIN )
     {
         r = 0.0;
         // handle subnormal case
         exp -= SCFX_IEEE_DOUBLE_E_MIN;
-        if ( ( exp += 20 ) >= 0 )
-        {
+        if( ( exp += 20 ) >= 0 )
+	{
             r.mantissa0( 1U << exp );
         }
-        else if ( ( exp += 32 ) >= 0 )
-        {
+	else if( ( exp += 32 ) >= 0 )
+	{
             r.mantissa1( 1U << exp );
         }
     }
-    else if ( exp > SCFX_IEEE_DOUBLE_E_MAX )
+    else if( exp > SCFX_IEEE_DOUBLE_E_MAX )
     {
         r.set_inf();
     }

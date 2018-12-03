@@ -145,7 +145,7 @@ ISA::readMiscReg(int miscReg, ThreadContext * tc)
     if (miscReg == MISCREG_FSW) {
         MiscReg fsw = regVal[MISCREG_FSW];
         MiscReg top = regVal[MISCREG_X87_TOP];
-        return insertBits(fsw, 11, 13, top);
+        return insertBits(fsw, 13, 11, top);
     }
 
     return readMiscRegNoEffect(miscReg);
@@ -216,8 +216,8 @@ ISA::setMiscReg(int miscReg, MiscReg val, ThreadContext * tc)
                 }
             }
             if (toggled.pg) {
-                tc->getITBPtr()->flushAll();
-                tc->getDTBPtr()->flushAll();
+                dynamic_cast<TLB *>(tc->getITBPtr())->flushAll();
+                dynamic_cast<TLB *>(tc->getDTBPtr())->flushAll();
             }
             //This must always be 1.
             newCR0.et = 1;
@@ -233,15 +233,15 @@ ISA::setMiscReg(int miscReg, MiscReg val, ThreadContext * tc)
       case MISCREG_CR2:
         break;
       case MISCREG_CR3:
-        tc->getITBPtr()->flushNonGlobal();
-        tc->getDTBPtr()->flushNonGlobal();
+        dynamic_cast<TLB *>(tc->getITBPtr())->flushNonGlobal();
+        dynamic_cast<TLB *>(tc->getDTBPtr())->flushNonGlobal();
         break;
       case MISCREG_CR4:
         {
             CR4 toggled = regVal[miscReg] ^ val;
             if (toggled.pae || toggled.pse || toggled.pge) {
-                tc->getITBPtr()->flushAll();
-                tc->getDTBPtr()->flushAll();
+                dynamic_cast<TLB *>(tc->getITBPtr())->flushAll();
+                dynamic_cast<TLB *>(tc->getDTBPtr())->flushAll();
             }
         }
         break;
@@ -316,7 +316,7 @@ ISA::setMiscReg(int miscReg, MiscReg val, ThreadContext * tc)
         break;
       case MISCREG_DR4:
         miscReg = MISCREG_DR6;
-        /* Fall through to have the same effects as DR6. */
+        M5_FALLTHROUGH;
       case MISCREG_DR6:
         {
             DR6 dr6 = regVal[MISCREG_DR6];
@@ -333,7 +333,7 @@ ISA::setMiscReg(int miscReg, MiscReg val, ThreadContext * tc)
         break;
       case MISCREG_DR5:
         miscReg = MISCREG_DR7;
-        /* Fall through to have the same effects as DR7. */
+        M5_FALLTHROUGH;
       case MISCREG_DR7:
         {
             DR7 dr7 = regVal[MISCREG_DR7];

@@ -60,8 +60,64 @@ class BaseTLB : public SimObject
   public:
     enum Mode { Read, Write, Execute };
 
+    class Translation
+    {
+      public:
+        virtual ~Translation()
+        {}
+
+        /**
+         * Signal that the translation has been delayed due to a hw page table
+         * walk.
+         */
+        virtual void markDelayed() = 0;
+
+        /*
+         * The memory for this object may be dynamically allocated, and it may
+         * be responsible for cleaning itself up which will happen in this
+         * function. Once it's called, the object is no longer valid.
+         */
+        virtual void finish(const Fault &fault, const RequestPtr &req,
+                            ThreadContext *tc, Mode mode) = 0;
+
+        /** This function is used by the page table walker to determine if it
+         * should translate the a pending request or if the underlying request
+         * has been squashed.
+         * @ return Is the instruction that requested this translation squashed?
+         */
+        virtual bool squashed() const { return false; }
+    };
+
   public:
     virtual void demapPage(Addr vaddr, uint64_t asn) = 0;
+
+    virtual Fault translateAtomic(
+            const RequestPtr &req, ThreadContext *tc, Mode mode) = 0;
+    virtual void translateTiming(
+            const RequestPtr &req, ThreadContext *tc,
+            Translation *translation, Mode mode) = 0;
+    virtual Fault
+    translateFunctional(const RequestPtr &req, ThreadContext *tc, Mode mode)
+    {
+        panic("Not implemented.\n");
+    }
+
+    /**
+     * Do post-translation physical address finalization.
+     *
+     * This method is used by some architectures that need
+     * post-translation massaging of physical addresses. For example,
+     * X86 uses this to remap physical addresses in the APIC range to
+     * a range of physical memory not normally available to real x86
+     * implementations.
+     *
+     * @param req Request to updated in-place.
+     * @param tc Thread context that created the request.
+     * @param mode Request type (read/write/execute).
+     * @return A fault on failure, NoFault otherwise.
+     */
+    virtual Fault finalizePhysical(
+            const RequestPtr &req, ThreadContext *tc, Mode mode) const = 0;
 
     /**
      * Remove all entries from the TLB
@@ -85,34 +141,6 @@ class BaseTLB : public SimObject
     virtual BaseMasterPort* getMasterPort() { return NULL; }
 
     void memInvalidate() { flushAll(); }
-
-    class Translation
-    {
-      public:
-        virtual ~Translation()
-        {}
-
-        /**
-         * Signal that the translation has been delayed due to a hw page table
-         * walk.
-         */
-        virtual void markDelayed() = 0;
-
-        /*
-         * The memory for this object may be dynamically allocated, and it may
-         * be responsible for cleaning itself up which will happen in this
-         * function. Once it's called, the object is no longer valid.
-         */
-        virtual void finish(const Fault &fault, RequestPtr req,
-                            ThreadContext *tc, Mode mode) = 0;
-
-        /** This function is used by the page table walker to determine if it
-         * should translate the a pending request or if the underlying request
-         * has been squashed.
-         * @ return Is the instruction that requested this translation squashed?
-         */
-        virtual bool squashed() const { return false; }
-    };
 };
 
 class GenericTLB : public BaseTLB
@@ -125,26 +153,14 @@ class GenericTLB : public BaseTLB
   public:
     void demapPage(Addr vaddr, uint64_t asn) override;
 
-    Fault translateAtomic(RequestPtr req, ThreadContext *tc, Mode mode);
-    void translateTiming(RequestPtr req, ThreadContext *tc,
-                         Translation *translation, Mode mode);
+    Fault translateAtomic(
+        const RequestPtr &req, ThreadContext *tc, Mode mode) override;
+    void translateTiming(
+        const RequestPtr &req, ThreadContext *tc,
+        Translation *translation, Mode mode) override;
 
-
-    /**
-     * Do post-translation physical address finalization.
-     *
-     * This method is used by some architectures that need
-     * post-translation massaging of physical addresses. For example,
-     * X86 uses this to remap physical addresses in the APIC range to
-     * a range of physical memory not normally available to real x86
-     * implementations.
-     *
-     * @param req Request to updated in-place.
-     * @param tc Thread context that created the request.
-     * @param mode Request type (read/write/execute).
-     * @return A fault on failure, NoFault otherwise.
-     */
-    Fault finalizePhysical(RequestPtr req, ThreadContext *tc, Mode mode) const;
+    Fault finalizePhysical(
+        const RequestPtr &req, ThreadContext *tc, Mode mode) const override;
 };
 
 #endif // __ARCH_GENERIC_TLB_HH__

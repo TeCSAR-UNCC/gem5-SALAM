@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxval.h -
+  sc_fxval.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -55,13 +55,11 @@
 
 
 #include "sysc/datatypes/fx/scfx_rep.h"
-
 #ifndef SC_FX_EXCLUDE_OTHER
 #include "sysc/datatypes/int/sc_int_base.h"
-#include "sysc/datatypes/int/sc_signed.h"
 #include "sysc/datatypes/int/sc_uint_base.h"
+#include "sysc/datatypes/int/sc_signed.h"
 #include "sysc/datatypes/int/sc_unsigned.h"
-
 #endif
 #include "sysc/datatypes/fx/sc_fxval_observer.h"
 
@@ -398,7 +396,7 @@ public:
     bool is_nan() const;
     bool is_inf() const;
     bool is_normal() const;
-
+    
     bool rounding_flag() const;
 
 
@@ -508,7 +506,7 @@ public:
 
 #define DECL_BIN_OP(op,dummy)                                                 \
     friend const sc_fxval_fast operator op ( const sc_fxval_fast&,            \
-                                             const sc_fxval_fast& );          \
+					     const sc_fxval_fast& );          \
     DECL_BIN_OP_T(op,int)                                                     \
     DECL_BIN_OP_T(op,unsigned int)                                            \
     DECL_BIN_OP_T(op,long)                                                    \
@@ -524,7 +522,7 @@ public:
 // don't use macro
 //    DECL_BIN_OP(/,div)
     friend const sc_fxval_fast operator / ( const sc_fxval_fast&,
-                                             const sc_fxval_fast& );
+					     const sc_fxval_fast& );
     DECL_BIN_OP_T(/,int)
     DECL_BIN_OP_T(/,unsigned int)
     DECL_BIN_OP_T(/,long)
@@ -802,7 +800,7 @@ sc_fxval::sc_fxval( sc_fxval_observer* observer_ )
 
 inline
 sc_fxval::sc_fxval( const sc_fxval& a,
-                    sc_fxval_observer* observer_ )
+		    sc_fxval_observer* observer_ )
 : m_rep( new scfx_rep( *a.m_rep ) ),
   m_observer( observer_ )
 {
@@ -1182,11 +1180,11 @@ inline
 sc_fxval&
 sc_fxval::operator = ( const sc_fxval& a )
 {
-    if ( &a != this )
+    if( &a != this )
     {
-        SC_FXVAL_OBSERVER_READ_( a )
-        *m_rep = *a.m_rep;
-        SC_FXVAL_OBSERVER_WRITE_( *this )
+	SC_FXVAL_OBSERVER_READ_( a )
+	*m_rep = *a.m_rep;
+	SC_FXVAL_OBSERVER_WRITE_( *this )
     }
     return *this;
 }
@@ -1564,7 +1562,7 @@ sc_fxval_fast::sc_fxval_fast( sc_fxval_fast_observer* observer_ )
 
 inline
 sc_fxval_fast::sc_fxval_fast( const sc_fxval_fast& a,
-                              sc_fxval_fast_observer* observer_ )
+			      sc_fxval_fast_observer* observer_ )
 : m_val( a.m_val ),
   m_observer( observer_ )
 {
@@ -1931,11 +1929,11 @@ inline
 sc_fxval_fast&
 sc_fxval_fast::operator = ( const sc_fxval_fast& a )
 {
-    if ( &a != this )
+    if( &a != this )
     {
-        SC_FXVAL_FAST_OBSERVER_READ_( a )
-        m_val = a.m_val;
-        SC_FXVAL_FAST_OBSERVER_WRITE_( *this )
+	SC_FXVAL_FAST_OBSERVER_READ_( a )
+	m_val = a.m_val;
+	SC_FXVAL_FAST_OBSERVER_WRITE_( *this )
     }
     return *this;
 }

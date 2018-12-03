@@ -223,19 +223,6 @@ class ExecContext {
      * @name Memory Interface
      */
     /**
-     * Record the effective address of the instruction.
-     *
-     * @note Only valid for memory ops.
-     */
-    virtual void setEA(Addr EA) = 0;
-    /**
-     * Get the effective address of the instruction.
-     *
-     * @note Only valid for memory ops.
-     */
-    virtual Addr getEA() const = 0;
-
-    /**
      * Perform an atomic memory read operation.  Must be overridden
      * for exec contexts that support atomic memory mode.  Not pure
      * virtual since exec contexts that only support timing memory
@@ -319,7 +306,7 @@ class ExecContext {
      * @name ARM-Specific Interfaces
      */
 
-    virtual bool readPredicate() = 0;
+    virtual bool readPredicate() const = 0;
     virtual void setPredicate(bool val) = 0;
 
     /** @} */

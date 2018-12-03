@@ -31,19 +31,19 @@
 
 namespace sc_core {
 
-static int
+static int 
 sc_time_compare( const void* p1, const void* p2 )
 {
     const sc_time* t1 = static_cast<const sc_time*>( p1 );
     const sc_time* t2 = static_cast<const sc_time*>( p2 );
 
-    if ( *t1 < *t2 ) {
-        return 1;
-    } else if ( *t1 > *t2 ) {
-        return -1;
+    if( *t1 < *t2 ) {
+	return 1;
+    } else if( *t1 > *t2 ) {
+	return -1;
     } else {
-        return 0;
-    }
+	return 0;
+    }  
 }
 
 sc_event_queue::sc_event_queue( sc_module_name name_ )
@@ -68,8 +68,8 @@ sc_event_queue::~sc_event_queue()
 void sc_event_queue::cancel_all()
 {
     m_pending_delta = 0;
-    while ( m_ppq.size() > 0 )
-        delete m_ppq.extract_top();
+    while( m_ppq.size() > 0 )
+	delete m_ppq.extract_top();
     m_e.cancel();
 }
 
@@ -78,11 +78,11 @@ void sc_event_queue::notify (const sc_time& when)
     m_change_stamp = simcontext()->change_stamp();
     sc_time* t = new sc_time( when+sc_time_stamp() );
     if ( m_ppq.size()==0 || *t < *m_ppq.top() ) {
-        m_e.notify( when );
+	m_e.notify( when );
     }
     m_ppq.insert( t );
 }
-
+    
 void sc_event_queue::fire_event()
 {
     if ( m_ppq.empty() ) { // event has been cancelled
@@ -93,7 +93,7 @@ void sc_event_queue::fire_event()
     delete t;
 
     if ( m_ppq.size() > 0 ) {
-        m_e.notify( *m_ppq.top() - sc_time_stamp() );
+	m_e.notify( *m_ppq.top() - sc_time_stamp() );
     }
 }
 

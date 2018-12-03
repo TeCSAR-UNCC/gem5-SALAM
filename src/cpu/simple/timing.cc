@@ -46,7 +46,6 @@
 #include "arch/locked_mem.hh"
 #include "arch/mmapped_ipr.hh"
 #include "arch/utility.hh"
-#include "base/bigint.hh"
 #include "config/the_isa.hh"
 #include "cpu/exetrace.hh"
 #include "debug/Config.hh"
@@ -262,7 +261,7 @@ TimingSimpleCPU::handleReadPacket(PacketPtr pkt)
     SimpleExecContext &t_info = *threadInfo[curThread];
     SimpleThread* thread = t_info.thread;
 
-    RequestPtr req = pkt->req;
+    const RequestPtr &req = pkt->req;
 
     // We're about the issues a locked load, so tell the monitor
     // to start caring about this address
@@ -286,7 +285,7 @@ TimingSimpleCPU::handleReadPacket(PacketPtr pkt)
 }
 
 void
-TimingSimpleCPU::sendData(RequestPtr req, uint8_t *data, uint64_t *res,
+TimingSimpleCPU::sendData(const RequestPtr &req, uint8_t *data, uint64_t *res,
                           bool read)
 {
     SimpleExecContext &t_info = *threadInfo[curThread];
@@ -322,8 +321,8 @@ TimingSimpleCPU::sendData(RequestPtr req, uint8_t *data, uint64_t *res,
 }
 
 void
-TimingSimpleCPU::sendSplitData(RequestPtr req1, RequestPtr req2,
-                               RequestPtr req, uint8_t *data, bool read)
+TimingSimpleCPU::sendSplitData(const RequestPtr &req1, const RequestPtr &req2,
+                               const RequestPtr &req, uint8_t *data, bool read)
 {
     PacketPtr pkt1, pkt2;
     buildSplitPacket(pkt1, pkt2, req1, req2, req, data, read);
@@ -378,14 +377,14 @@ TimingSimpleCPU::translationFault(const Fault &fault)
 }
 
 PacketPtr
-TimingSimpleCPU::buildPacket(RequestPtr req, bool read)
+TimingSimpleCPU::buildPacket(const RequestPtr &req, bool read)
 {
     return read ? Packet::createRead(req) : Packet::createWrite(req);
 }
 
 void
 TimingSimpleCPU::buildSplitPacket(PacketPtr &pkt1, PacketPtr &pkt2,
-        RequestPtr req1, RequestPtr req2, RequestPtr req,
+        const RequestPtr &req1, const RequestPtr &req2, const RequestPtr &req,
         uint8_t *data, bool read)
 {
     pkt1 = pkt2 = NULL;
@@ -439,8 +438,9 @@ TimingSimpleCPU::initiateMemRead(Addr addr, unsigned size,
     if (traceData)
         traceData->setMem(addr, size, flags);
 
-    RequestPtr req = new Request(asid, addr, size, flags, dataMasterId(), pc,
-                                 thread->contextId());
+    RequestPtr req = std::make_shared<Request>(
+        asid, addr, size, flags, dataMasterId(), pc,
+        thread->contextId());
 
     req->taskId(taskId());
 
@@ -480,7 +480,7 @@ TimingSimpleCPU::handleWritePacket()
     SimpleExecContext &t_info = *threadInfo[curThread];
     SimpleThread* thread = t_info.thread;
 
-    RequestPtr req = dcache_pkt->req;
+    const RequestPtr &req = dcache_pkt->req;
     if (req->isMmappedIpr()) {
         Cycles delay = TheISA::handleIprWrite(thread->getTC(), dcache_pkt);
         new IprEvent(dcache_pkt, this, clockEdge(delay));
@@ -520,8 +520,9 @@ TimingSimpleCPU::writeMem(uint8_t *data, unsigned size,
     if (traceData)
         traceData->setMem(addr, size, flags);
 
-    RequestPtr req = new Request(asid, addr, size, flags, dataMasterId(), pc,
-                                 thread->contextId());
+    RequestPtr req = std::make_shared<Request>(
+        asid, addr, size, flags, dataMasterId(), pc,
+        thread->contextId());
 
     req->taskId(taskId());
 
@@ -621,7 +622,7 @@ TimingSimpleCPU::fetch()
 
     if (needToFetch) {
         _status = BaseSimpleCPU::Running;
-        Request *ifetch_req = new Request();
+        RequestPtr ifetch_req = std::make_shared<Request>();
         ifetch_req->taskId(taskId());
         ifetch_req->setContext(thread->contextId());
         setupFetchRequest(ifetch_req);
@@ -639,7 +640,7 @@ TimingSimpleCPU::fetch()
 
 
 void
-TimingSimpleCPU::sendFetch(const Fault &fault, RequestPtr req,
+TimingSimpleCPU::sendFetch(const Fault &fault, const RequestPtr &req,
                            ThreadContext *tc)
 {
     if (fault == NoFault) {
@@ -660,7 +661,6 @@ TimingSimpleCPU::sendFetch(const Fault &fault, RequestPtr req,
         }
     } else {
         DPRINTF(SimpleCPU, "Translation of addr %#x faulted\n", req->getVaddr());
-        delete req;
         // fetch fault: advance directly to next instruction (fault handler)
         _status = BaseSimpleCPU::Running;
         advanceInst(fault);
@@ -680,25 +680,32 @@ TimingSimpleCPU::advanceInst(const Fault &fault)
         return;
 
     if (fault != NoFault) {
-        DPRINTF(SimpleCPU, "Fault occured, scheduling fetch event\n");
+        DPRINTF(SimpleCPU, "Fault occured. Handling the fault\n");
 
         advancePC(fault);
 
-        Tick stall = dynamic_pointer_cast<SyscallRetryFault>(fault) ?
-                     clockEdge(syscallRetryLatency) : clockEdge();
+        // A syscall fault could suspend this CPU (e.g., futex_wait)
+        // If the _status is not Idle, schedule an event to fetch the next
+        // instruction after 'stall' ticks.
+        // If the cpu has been suspended (i.e., _status == Idle), another
+        // cpu will wake this cpu up later.
+        if (_status != Idle) {
+            DPRINTF(SimpleCPU, "Scheduling fetch event after the Fault\n");
 
-        reschedule(fetchEvent, stall, true);
+            Tick stall = dynamic_pointer_cast<SyscallRetryFault>(fault) ?
+                         clockEdge(syscallRetryLatency) : clockEdge();
+            reschedule(fetchEvent, stall, true);
+            _status = Faulting;
+        }
 
-        _status = Faulting;
         return;
     }
-
 
     if (!t_info.stayAtPC)
         advancePC(fault);
 
     if (tryCompleteDrain())
-            return;
+        return;
 
     if (_status == BaseSimpleCPU::Running) {
         // kick off fetch of next instruction... callback from icache
@@ -776,7 +783,6 @@ TimingSimpleCPU::completeIfetch(PacketPtr pkt)
     }
 
     if (pkt) {
-        delete pkt->req;
         delete pkt;
     }
 }
@@ -832,7 +838,6 @@ TimingSimpleCPU::completeDataAccess(PacketPtr pkt)
         SplitFragmentSenderState * send_state =
             dynamic_cast<SplitFragmentSenderState *>(pkt->senderState);
         assert(send_state);
-        delete pkt->req;
         delete pkt;
         PacketPtr big_pkt = send_state->bigPkt;
         delete send_state;
@@ -867,7 +872,6 @@ TimingSimpleCPU::completeDataAccess(PacketPtr pkt)
         traceData = NULL;
     }
 
-    delete pkt->req;
     delete pkt;
 
     postExecute();

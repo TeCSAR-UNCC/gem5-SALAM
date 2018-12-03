@@ -38,6 +38,7 @@
 #include "cpu/thread_context.hh"
 #include "debug/Loader.hh"
 #include "mem/page_table.hh"
+#include "params/Process.hh"
 #include "sim/aux_vector.hh"
 #include "sim/byteswap.hh"
 #include "sim/process_impl.hh"
@@ -48,8 +49,11 @@ using namespace AlphaISA;
 using namespace std;
 
 AlphaProcess::AlphaProcess(ProcessParams *params, ObjectFile *objFile)
-    : Process(params, objFile)
+    : Process(params,
+              new EmulationPageTable(params->name, params->pid, PageBytes),
+      objFile)
 {
+    fatal_if(params->useArchPT, "Arch page tables not implemented.");
     Addr brk_point = objFile->dataBase() + objFile->dataSize() +
                      objFile->bssSize();
     brk_point = roundUp(brk_point, PageBytes);
@@ -166,9 +170,9 @@ AlphaProcess::argsInit(int intSize, int pageSize)
     //Copy the aux stuff
     for (vector<auxv_t>::size_type x = 0; x < auxv.size(); x++) {
         initVirtMem.writeBlob(auxv_array_base + x * 2 * intSize,
-                (uint8_t*)&(auxv[x].a_type), intSize);
+                (uint8_t*)&(auxv[x].getAuxType()), intSize);
         initVirtMem.writeBlob(auxv_array_base + (x * 2 + 1) * intSize,
-                (uint8_t*)&(auxv[x].a_val), intSize);
+                (uint8_t*)&(auxv[x].getAuxVal()), intSize);
     }
 
     ThreadContext *tc = system->getThreadContext(contextIds[0]);

@@ -40,18 +40,18 @@ namespace sc_core {
 //  The sc_fifo<T> input nonblocking interface class.
 // ----------------------------------------------------------------------------
 
-template <class T>
-class sc_fifo_nonblocking_in_if
-: virtual public sc_interface
-{
-public:
+template <class T> 
+class sc_fifo_nonblocking_in_if 
+: virtual public sc_interface 
+{ 
+public: 
 
-    // non-blocking read
-    virtual bool nb_read( T& ) = 0;
+    // non-blocking read 
+    virtual bool nb_read( T& ) = 0; 
 
-    // get the data written event
-    virtual const sc_event& data_written_event() const = 0;
-};
+    // get the data written event 
+    virtual const sc_event& data_written_event() const = 0; 
+}; 
 
 // ----------------------------------------------------------------------------
 //  CLASS : sc_fifo_blocking_in_if<T>
@@ -59,16 +59,16 @@ public:
 //  The sc_fifo<T> input blocking interface class.
 // ----------------------------------------------------------------------------
 
-template <class T>
-class sc_fifo_blocking_in_if
-: virtual public sc_interface
-{
-public:
+template <class T> 
+class sc_fifo_blocking_in_if 
+: virtual public sc_interface 
+{ 
+public: 
 
-    // blocking read
-    virtual void read( T& ) = 0;
-    virtual T read() = 0;
-};
+    // blocking read 
+    virtual void read( T& ) = 0; 
+    virtual T read() = 0; 
+}; 
 
 // ----------------------------------------------------------------------------
 //  CLASS : sc_fifo_in_if<T>
@@ -76,29 +76,29 @@ public:
 //  The sc_fifo<T> input interface class.
 // ----------------------------------------------------------------------------
 
-template <class T>
-class sc_fifo_in_if
-: public sc_fifo_nonblocking_in_if<T>,
-  public sc_fifo_blocking_in_if<T>
-{
-public:
+template <class T> 
+class sc_fifo_in_if 
+: public sc_fifo_nonblocking_in_if<T>, 
+  public sc_fifo_blocking_in_if<T> 
+{ 
+public: 
 
-    // get the number of available samples
-    virtual int num_available() const = 0;
+    // get the number of available samples 
+    virtual int num_available() const = 0; 
 
-protected:
+protected: 
 
-    // constructor
+    // constructor 
 
-    sc_fifo_in_if()
-        {}
+    sc_fifo_in_if() 
+        {} 
 
-private:
+private: 
 
-    // disabled
-    sc_fifo_in_if( const sc_fifo_in_if<T>& );
-    sc_fifo_in_if<T>& operator = ( const sc_fifo_in_if<T>& );
-};
+    // disabled 
+    sc_fifo_in_if( const sc_fifo_in_if<T>& ); 
+    sc_fifo_in_if<T>& operator = ( const sc_fifo_in_if<T>& ); 
+}; 
 
 
 // ----------------------------------------------------------------------------
@@ -107,18 +107,18 @@ private:
 //  The sc_fifo<T> nonblocking output interface class.
 // ----------------------------------------------------------------------------
 
-template <class T>
-class sc_fifo_nonblocking_out_if
-: virtual public sc_interface
-{
-public:
+template <class T> 
+class sc_fifo_nonblocking_out_if 
+: virtual public sc_interface 
+{ 
+public: 
 
-    // non-blocking write
-    virtual bool nb_write( const T& ) = 0;
+    // non-blocking write 
+    virtual bool nb_write( const T& ) = 0; 
 
-    // get the data read event
-    virtual const sc_event& data_read_event() const = 0;
-};
+    // get the data read event 
+    virtual const sc_event& data_read_event() const = 0; 
+}; 
 
 // ----------------------------------------------------------------------------
 //  CLASS : sc_fifo_blocking_out_if<T>
@@ -126,16 +126,16 @@ public:
 //  The sc_fifo<T> blocking output interface class.
 // ----------------------------------------------------------------------------
 
-template <class T>
-class sc_fifo_blocking_out_if
-: virtual public sc_interface
-{
-public:
+template <class T> 
+class sc_fifo_blocking_out_if 
+: virtual public sc_interface 
+{ 
+public: 
 
-    // blocking write
-    virtual void write( const T& ) = 0;
+    // blocking write 
+    virtual void write( const T& ) = 0; 
 
-};
+}; 
 
 // ----------------------------------------------------------------------------
 //  CLASS : sc_fifo_out_if<T>
@@ -143,29 +143,29 @@ public:
 //  The sc_fifo<T> output interface class.
 // ----------------------------------------------------------------------------
 
-template <class T>
-class sc_fifo_out_if
-: public sc_fifo_nonblocking_out_if<T>,
-  public sc_fifo_blocking_out_if<T>
-{
-public:
+template <class T> 
+class sc_fifo_out_if 
+: public sc_fifo_nonblocking_out_if<T>, 
+  public sc_fifo_blocking_out_if<T> 
+{ 
+public: 
 
-    // get the number of free spaces
-    virtual int num_free() const = 0;
+    // get the number of free spaces 
+    virtual int num_free() const = 0; 
 
-protected:
+protected: 
 
-    // constructor
+    // constructor 
 
-    sc_fifo_out_if()
-        {}
+    sc_fifo_out_if() 
+        {} 
 
-private:
+private: 
 
-    // disabled
-    sc_fifo_out_if( const sc_fifo_out_if<T>& );
-    sc_fifo_out_if<T>& operator = ( const sc_fifo_out_if<T>& );
-};
+    // disabled 
+    sc_fifo_out_if( const sc_fifo_out_if<T>& ); 
+    sc_fifo_out_if<T>& operator = ( const sc_fifo_out_if<T>& ); 
+}; 
 
 /*****************************************************************************
 
@@ -174,11 +174,11 @@ private:
 
       Name, Affiliation, Date: Bishnupriya Bhattacharye, Cadence Design Systems,
                                30 Jan, 2004
-  Description of Modification: Split up the interfaces into blocking and
+  Description of Modification: Split up the interfaces into blocking and 
                                non blocking parts
-
-      Name, Affiliation, Date:
-  Description of Modification:
+    
+      Name, Affiliation, Date: 
+  Description of Modification: 
 
  *****************************************************************************/
 //$Log: sc_fifo_ifs.h,v $

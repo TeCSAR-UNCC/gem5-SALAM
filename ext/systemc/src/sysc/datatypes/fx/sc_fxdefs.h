@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxdefs.h -
+  sc_fxdefs.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -48,9 +48,10 @@
 #define SC_FXDEFS_H
 
 
+#include "sysc/utils/sc_machine.h"
 #include "sysc/datatypes/fx/sc_fx_ids.h"
 #include "sysc/datatypes/int/sc_nbutils.h"
-#include "sysc/utils/sc_machine.h"
+
 
 namespace sc_dt
 {
@@ -248,7 +249,7 @@ const int SC_DEFAULT_MAX_WL_ = SC_BUILTIN_MAX_WL_;
 #ifdef DEBUG_SYSTEMC
 #define SC_ASSERT_(cnd,msg)                                                   \
 {                                                                             \
-    if ( ! (cnd) )                                                             \
+    if( ! (cnd) )                                                             \
         SC_REPORT_ERROR( sc_core::SC_ID_INTERNAL_ERROR_, msg );                        \
 }
 #else
@@ -257,7 +258,7 @@ const int SC_DEFAULT_MAX_WL_ = SC_BUILTIN_MAX_WL_;
 
 #define SC_ERROR_IF_(cnd,id)                                                  \
 {                                                                             \
-    if ( cnd )                                                                 \
+    if( cnd )                                                                 \
         SC_REPORT_ERROR( id, 0 );                                             \
 }
 
@@ -276,7 +277,7 @@ const int SC_DEFAULT_MAX_WL_ = SC_BUILTIN_MAX_WL_;
 
 #define SC_CHECK_MAX_WL_(max_wl)                                              \
     SC_ERROR_IF_( (max_wl) <= 0 && (max_wl) != -1,                            \
-            sc_core::SC_ID_INVALID_MAX_WL_ )
+	    sc_core::SC_ID_INVALID_MAX_WL_ )
 
 
 // ----------------------------------------------------------------------------
@@ -285,17 +286,17 @@ const int SC_DEFAULT_MAX_WL_ = SC_BUILTIN_MAX_WL_;
 
 #define SC_OBSERVER_(object,observer_type,event)                              \
 {                                                                             \
-    if ( (object).observer() != 0 )                                            \
+    if( (object).observer() != 0 )                                            \
     {                                                                         \
-        observer_type observer = (object).lock_observer();                    \
-        observer->event( (object) );                                          \
-        (object).unlock_observer( observer );                                 \
+	observer_type observer = (object).lock_observer();                    \
+	observer->event( (object) );                                          \
+	(object).unlock_observer( observer );                                 \
     }                                                                         \
 }
 
 #define SC_OBSERVER_DEFAULT_(observer_type)                                   \
 {                                                                             \
-    if ( m_observer == 0 && observer_type ## ::default_observer != 0 )         \
+    if( m_observer == 0 && observer_type ## ::default_observer != 0 )         \
         m_observer = (* ## observer_type ## ::default_observer)();            \
 }
 

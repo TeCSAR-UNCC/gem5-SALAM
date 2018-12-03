@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  scfx_pow10.h -
+  scfx_pow10.h - 
 
   Original Author: Robert Graulich, Synopsys, Inc.
                    Martin Janssen,  Synopsys, Inc.
@@ -50,6 +50,7 @@
 
 
 #include "sysc/datatypes/fx/scfx_rep.h"
+
 
 namespace sc_dt
 {

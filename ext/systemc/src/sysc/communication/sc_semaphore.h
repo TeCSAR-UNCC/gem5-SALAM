@@ -30,9 +30,9 @@
 #define SC_SEMAPHORE_H
 
 
-#include "sysc/communication/sc_semaphore_if.h"
 #include "sysc/kernel/sc_event.h"
 #include "sysc/kernel/sc_object.h"
+#include "sysc/communication/sc_semaphore_if.h"
 
 namespace sc_core {
 
@@ -67,7 +67,7 @@ public:
 
     // get the value of the semaphore
     virtual int get_value() const
-        { return m_value; }
+	{ return m_value; }
 
     virtual const char* kind() const
         { return "sc_semaphore"; }
@@ -77,7 +77,7 @@ protected:
     // support methods
 
     bool in_use() const
-        { return ( m_value <= 0 ); }
+	{ return ( m_value <= 0 ); }
 
 
     // error reporting

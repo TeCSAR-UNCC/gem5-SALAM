@@ -45,6 +45,8 @@
 # between system construction and run control may allow better
 # debugging.
 
+from __future__ import print_function
+
 import argparse
 import ConfigParser
 import inspect
@@ -82,8 +84,12 @@ def tick_parser(cast=lambda i: i):
 
 def addr_range_parser(cls, flags, param):
     sys.stdout.flush()
-    low, high = param.split(':')
-    return m5.objects.AddrRange(long(low), long(high))
+    (low, high, intlv_high_bit, xor_high_bit,
+     intlv_bits, intlv_match) = param.split(':')
+    return m5.objects.AddrRange(
+        start=long(low), end=long(high),
+        intlvHighBit=long(intlv_high_bit), xorHighBit=long(xor_high_bit),
+        intlvBits=long(intlv_bits), intlvMatch=long(intlv_match))
 
 def memory_bandwidth_parser(cls, flags, param):
     # The string will be in tick/byte
@@ -211,8 +217,10 @@ class ConfigManager(object):
                     param_values = self.config.get_param_vector(object_name,
                         param_name)
 
-                    setattr(obj, param_name, [ self.objects_by_name[name]
-                        for name in param_values ])
+                    setattr(obj, param_name,
+                            [ self.objects_by_name[name]
+                                  if name != 'Null' else m5.params.NULL
+                              for name in param_values ])
                 else:
                     param_value = self.config.get_param(object_name,
                         param_name)
@@ -231,6 +239,8 @@ class ConfigManager(object):
 
         for child_name, child_paths in children:
             param = obj.__class__._params.get(child_name, None)
+            if child_name == 'Null':
+                continue
 
             if isinstance(child_paths, list):
                 child_list = [ self.objects_by_name[path]
@@ -510,6 +520,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('config_file', metavar='config-file.ini',
     help='.ini configuration file to load and run')
+parser.add_argument('--checkpoint-dir', type=str, default=None,
+                    help='A checkpoint to directory to restore when starting '
+                         'the simulation')
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -526,8 +539,7 @@ mgr = ConfigManager(config)
 
 mgr.find_all_objects()
 
-m5.instantiate()
+m5.instantiate(args.checkpoint_dir)
 
 exit_event = m5.simulate()
-print 'Exiting @ tick %i because %s' % (
-    m5.curTick(), exit_event.getCause())
+print('Exiting @ tick %i because %s' % (m5.curTick(), exit_event.getCause()))

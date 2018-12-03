@@ -62,12 +62,7 @@
 #include "params/CheckerCPU.hh"
 #include "sim/eventq.hh"
 
-// forward declarations
-namespace TheISA
-{
-    class TLB;
-}
-
+class BaseTLB;
 template <class>
 class BaseDynInst;
 class ThreadContext;
@@ -140,17 +135,14 @@ class CheckerCPU : public BaseCPU, public ExecContext
 
     ThreadContext *tc;
 
-    TheISA::TLB *itb;
-    TheISA::TLB *dtb;
+    BaseTLB *itb;
+    BaseTLB *dtb;
 
     Addr dbg_vtophys(Addr addr);
 
     // ISAs like ARM can have multiple destination registers to check,
     // keep them all in a std::queue
     std::queue<InstResult> result;
-
-    // Pointer to the one memory request.
-    RequestPtr memReq;
 
     StaticInstPtr curStaticInst;
     StaticInstPtr curMacroStaticInst;
@@ -166,8 +158,8 @@ class CheckerCPU : public BaseCPU, public ExecContext
     // Primary thread being run.
     SimpleThread *thread;
 
-    TheISA::TLB* getITBPtr() { return itb; }
-    TheISA::TLB* getDTBPtr() { return dtb; }
+    BaseTLB* getITBPtr() { return itb; }
+    BaseTLB* getDTBPtr() { return dtb; }
 
     virtual Counter totalInsts() const override
     {
@@ -185,13 +177,6 @@ class CheckerCPU : public BaseCPU, public ExecContext
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
-
-    // These functions are only used in CPU models that split
-    // effective address computation from the actual memory access.
-    void setEA(Addr EA) override
-    { panic("CheckerCPU::setEA() not implemented\n"); }
-    Addr getEA() const  override
-    { panic("CheckerCPU::getEA() not implemented\n"); }
 
     // The register accessor methods provide the index of the
     // instruction's operand (e.g., 0 or 1), not the architectural
@@ -412,7 +397,8 @@ class CheckerCPU : public BaseCPU, public ExecContext
         setVecElemResult(val);
     }
 
-    bool readPredicate() override { return thread->readPredicate(); }
+    bool readPredicate() const override { return thread->readPredicate(); }
+
     void setPredicate(bool val) override
     {
         thread->setPredicate(val);
@@ -543,7 +529,7 @@ class CheckerCPU : public BaseCPU, public ExecContext
             dumpAndExit();
     }
 
-    bool checkFlags(Request *unverified_req, Addr vAddr,
+    bool checkFlags(const RequestPtr &unverified_req, Addr vAddr,
                     Addr pAddr, int flags);
 
     void dumpAndExit();
@@ -552,7 +538,7 @@ class CheckerCPU : public BaseCPU, public ExecContext
     SimpleThread *threadBase() { return thread; }
 
     InstResult unverifiedResult;
-    Request *unverifiedReq;
+    RequestPtr unverifiedReq;
     uint8_t *unverifiedMemData;
 
     bool changedPC;
@@ -587,18 +573,18 @@ class Checker : public CheckerCPU
 
     void advancePC(const Fault &fault);
 
-    void verify(DynInstPtr &inst);
+    void verify(const DynInstPtr &inst);
 
-    void validateInst(DynInstPtr &inst);
-    void validateExecution(DynInstPtr &inst);
+    void validateInst(const DynInstPtr &inst);
+    void validateExecution(const DynInstPtr &inst);
     void validateState();
 
-    void copyResult(DynInstPtr &inst, const InstResult& mismatch_val,
+    void copyResult(const DynInstPtr &inst, const InstResult& mismatch_val,
                     int start_idx);
     void handlePendingInt();
 
   private:
-    void handleError(DynInstPtr &inst)
+    void handleError(const DynInstPtr &inst)
     {
         if (exitOnError) {
             dumpAndExit(inst);
@@ -607,7 +593,7 @@ class Checker : public CheckerCPU
         }
     }
 
-    void dumpAndExit(DynInstPtr &inst);
+    void dumpAndExit(const DynInstPtr &inst);
 
     bool updateThisCycle;
 

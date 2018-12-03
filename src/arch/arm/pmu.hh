@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, 2017 ARM Limited
+ * Copyright (c) 2011-2014, 2017-2018 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -58,6 +58,7 @@
 class ArmPMUParams;
 class Platform;
 class ThreadContext;
+class ArmInterruptPin;
 
 namespace ArmISA {
 
@@ -112,6 +113,8 @@ class PMU : public SimObject, public ArmISA::BaseISADevice {
     void regProbeListeners() override;
 
   public: // ISA Device interface
+    void setThreadContext(ThreadContext *tc) override;
+
     /**
      * Set a register within the PMU.
      *
@@ -216,6 +219,11 @@ class PMU : public SimObject, public ArmISA::BaseISADevice {
     void raiseInterrupt();
 
     /**
+     * Clear a PMU interrupt.
+     */
+    void clearInterrupt();
+
+    /**
      * Get the value of a performance counter.
      *
      * This method returns the value of a general purpose performance
@@ -265,6 +273,18 @@ class PMU : public SimObject, public ArmISA::BaseISADevice {
      * @param type Performance counter type and filter configuration..
      */
     void setCounterTypeRegister(CounterId id, PMEVTYPER_t type);
+
+    /**
+     * Used for writing the Overflow Flag Status Register (SET/CLR)
+     *
+     * This method implements a write to the PMOVSSET/PMOVSCLR registers.
+     * It is capturing change of state in the register bits so that
+     * the overflow interrupt can be raised/cleared as a side effect
+     * of the write.
+     *
+     * @param new_val New value of the Overflow Status Register
+     */
+    void setOverflowStatus(MiscReg new_val);
 
   protected: /* Probe handling and counter state */
     struct CounterState;
@@ -599,9 +619,7 @@ class PMU : public SimObject, public ArmISA::BaseISADevice {
     static const MiscReg reg_pmcr_wr_mask;
 
     /** Performance monitor interrupt number */
-    const unsigned int pmuInterrupt;
-    /** Platform this device belongs to */
-    Platform *const platform;
+    ArmInterruptPin *const interrupt;
 
     /**
      * List of event types supported by this PMU.

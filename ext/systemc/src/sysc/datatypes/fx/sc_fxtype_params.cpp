@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxtype_params.cpp -
+  sc_fxtype_params.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -46,6 +46,7 @@
 //
 
 #include "sysc/datatypes/fx/sc_fxtype_params.h"
+
 
 namespace sc_dt
 {
