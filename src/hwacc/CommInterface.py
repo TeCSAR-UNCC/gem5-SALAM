@@ -24,6 +24,8 @@ class PrivateMemory(SimpleMemory):
     type = 'PrivateMemory'
     cxx_header = 'hwacc/comm_interface.hh'
 
+    ready_mode = Param.Bool(False, "Use ready mode for private memory")
+
 class CommMemInterface(CommInterface):
     type = 'CommMemInterface'
     cxx_header = 'hwacc/comm_interface.hh'

@@ -300,7 +300,7 @@ class AbstractMemory : public MemObject
      *
      * @param pkt Packet performing the access
      */
-    void access(PacketPtr pkt);
+    virtual void access(PacketPtr pkt);
 
     /**
      * Perform an untimed memory read or write without changing

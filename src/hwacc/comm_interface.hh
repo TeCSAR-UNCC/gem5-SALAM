@@ -164,7 +164,7 @@ class CommInterface : public BasicPioDevice
 
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
 
-    void finish();
+    virtual void finish();
 
     MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead) {
         if (isRead) {
@@ -204,9 +204,15 @@ class CommInterface : public BasicPioDevice
 
 class PrivateMemory : public SimpleMemory
 {
+  protected:
+    bool readyMode;
+    bool *ready;
   public:
     PrivateMemory(const PrivateMemoryParams *p);
+    bool isReady(Addr ad, Addr size);
     void privateAccess(PacketPtr pkt);
+    void access(PacketPtr pkt) override;
+    void setAllReady(bool r);
 };
 
 #include "params/CommMemInterface.hh"
@@ -233,6 +239,7 @@ class CommMemInterface : public CommInterface
     CommMemInterface(Params *p);
     virtual void processMemoryRequests() override;
     virtual void refreshMemPorts() override;
+    virtual void finish() override;
 
   protected:
     virtual void tick() override;

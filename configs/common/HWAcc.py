@@ -13,51 +13,52 @@ def makeHWAcc(options, system):
     system.acc_cluster._connect_caches(system, options, '1kB')
 
     # Add an accelerator to the cluster and connect it
-    if (options.accbench != 'multiacc'):
-        system.acc_cluster.acc = CommMemInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
-        system.acc_cluster.acc.flags_size = 1
-        system.acc_cluster.acc.config_size = 0
-        system.acc_cluster.acc.local_range = local_range
-        system.acc_cluster.acc.llvm_interface = LLVMInterface()
-        system.acc_cluster.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
-        system.acc_cluster.acc.int_num = 68
-        system.acc_cluster.acc.clock_period = 10
-        system.acc_cluster.acc.private_range = AddrRange(0x2f100000, size='128kB')
-        system.acc_cluster.acc.private_memory = PrivateMemory(range=system.acc_cluster.acc.private_range, conf_table_reported=False, latency='2ns')
-        system.acc_cluster.acc.private_read_ports = 4
-        system.acc_cluster.acc.private_write_ports = 4
-        system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
-        system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
-    else:
-        system.acc_cluster.gemm = CommMemInterface(pio_addr=0x2f000000, pio_size=25, gic=system.realview.gic)
-        system.acc_cluster.gemm.flags_size = 1
-        system.acc_cluster.gemm.config_size = 0
-        system.acc_cluster.gemm.local_range = local_range
-        system.acc_cluster.gemm.llvm_interface = LLVMInterface()
-        system.acc_cluster.gemm.llvm_interface.in_file = options.accpath + "/" + "multiacc" + "/bench/" + "gemm" + ".ll"
-        system.acc_cluster.gemm.int_num = 68
-        system.acc_cluster.gemm.clock_period = 10
-        system.acc_cluster.gemm.private_range = AddrRange(0x2f100000, size='128kB')
-        system.acc_cluster.gemm.private_memory = PrivateMemory(range=system.acc_cluster.gemm.private_range, conf_table_reported=False, latency='2ns')
-        system.acc_cluster.gemm.private_read_ports = 4
-        system.acc_cluster.gemm.private_write_ports = 4
-        system.acc_cluster._connect_hwacc(system.acc_cluster.gemm)
-        system.acc_cluster._connect_spm(system.acc_cluster.gemm.private_memory)
+    #if (options.accbench != 'multiacc'):
+    system.acc_cluster.acc = CommMemInterface(pio_addr=0x2f000000, pio_size=64, gic=system.realview.gic)
+    system.acc_cluster.acc.flags_size = 1
+    system.acc_cluster.acc.config_size = 0
+    system.acc_cluster.acc.local_range = local_range
+    system.acc_cluster.acc.llvm_interface = LLVMInterface()
+    system.acc_cluster.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
+    system.acc_cluster.acc.int_num = 68
+    system.acc_cluster.acc.clock_period = 10
+    system.acc_cluster.acc.private_range = AddrRange(0x2f100000, size='128kB')
+    system.acc_cluster.acc.private_memory = PrivateMemory(range=system.acc_cluster.acc.private_range, conf_table_reported=False, latency='2ns')
+    system.acc_cluster.acc.private_read_ports = 4
+    system.acc_cluster.acc.private_write_ports = 4
+    system.acc_cluster.acc.private_memory.ready_mode = True
+    system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
+    system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
+#    else:
+#        system.acc_cluster.gemm = CommMemInterface(pio_addr=0x2f000000, pio_size=25, gic=system.realview.gic)
+#        system.acc_cluster.gemm.flags_size = 1
+#        system.acc_cluster.gemm.config_size = 0
+#        system.acc_cluster.gemm.local_range = local_range
+#        system.acc_cluster.gemm.llvm_interface = LLVMInterface()
+#        system.acc_cluster.gemm.llvm_interface.in_file = options.accpath + "/" + "multiacc" + "/bench/" + "gemm" + ".ll"
+#        system.acc_cluster.gemm.int_num = 68
+#        system.acc_cluster.gemm.clock_period = 10
+#        system.acc_cluster.gemm.private_range = AddrRange(0x2f100000, size='128kB')
+#        system.acc_cluster.gemm.private_memory = PrivateMemory(range=system.acc_cluster.gemm.private_range, conf_table_reported=False, latency='2ns')
+#        system.acc_cluster.gemm.private_read_ports = 4
+#        system.acc_cluster.gemm.private_write_ports = 4
+#        system.acc_cluster._connect_hwacc(system.acc_cluster.gemm)
+#        system.acc_cluster._connect_spm(system.acc_cluster.gemm.private_memory)
 
-        system.acc_cluster.fir = CommMemInterface(pio_addr=0x2f000019, pio_size=64, gic=system.realview.gic)
-        system.acc_cluster.fir.flags_size = 1
-        system.acc_cluster.fir.config_size = 0
-        system.acc_cluster.fir.local_range = local_range
-        system.acc_cluster.fir.llvm_interface = LLVMInterface()
-        system.acc_cluster.fir.llvm_interface.in_file = options.accpath + "/" + "multiacc" + "/bench/" + "fir" + ".ll"
-        system.acc_cluster.fir.int_num = 69
-        system.acc_cluster.fir.clock_period = 10
-        system.acc_cluster.fir.private_range = AddrRange(0x2f200000, size='128kB')
-        system.acc_cluster.fir.private_memory = PrivateMemory(range=system.acc_cluster.fir.private_range, conf_table_reported=False, latency='2ns')
-        system.acc_cluster.fir.private_read_ports = 4
-        system.acc_cluster.fir.private_write_ports = 4
-        system.acc_cluster._connect_hwacc(system.acc_cluster.fir)
-        system.acc_cluster._connect_spm(system.acc_cluster.fir.private_memory)
+#        system.acc_cluster.fir = CommMemInterface(pio_addr=0x2f000019, pio_size=64, gic=system.realview.gic)
+#        system.acc_cluster.fir.flags_size = 1
+#        system.acc_cluster.fir.config_size = 0
+#        system.acc_cluster.fir.local_range = local_range
+#        system.acc_cluster.fir.llvm_interface = LLVMInterface()
+#        system.acc_cluster.fir.llvm_interface.in_file = options.accpath + "/" + "multiacc" + "/bench/" + "fir" + ".ll"
+#        system.acc_cluster.fir.int_num = 69
+#        system.acc_cluster.fir.clock_period = 10
+#        system.acc_cluster.fir.private_range = AddrRange(0x2f200000, size='128kB')
+#        system.acc_cluster.fir.private_memory = PrivateMemory(range=system.acc_cluster.fir.private_range, conf_table_reported=False, latency='2ns')
+#        system.acc_cluster.fir.private_read_ports = 4
+#        system.acc_cluster.fir.private_write_ports = 4
+#        system.acc_cluster._connect_hwacc(system.acc_cluster.fir)
+#        system.acc_cluster._connect_spm(system.acc_cluster.fir.private_memory)
 
 
     # Add DMA devices to the cluster and connect them

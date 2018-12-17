@@ -10,7 +10,11 @@
 
 using namespace std;
 
-
+/***************************************************************************************
+ * CommInterface serves as the general system interface for hardware accelerators. It
+ * provides a set of memory-mapped registers, as well as master ports for accessing
+ * both local busses/SPMs and system memory. 
+ **************************************************************************************/
 CommInterface::CommInterface(Params *p) :
     BasicPioDevice(p, p->pio_size),
     io_addr(p->pio_addr),
@@ -105,6 +109,9 @@ CommInterface::recvPacket(PacketPtr pkt) {
             cu->readCommit(readReq);
             clearMemRequest(readReq, true);
             delete readReq;
+        } else {
+            readQueue->push_front(readReq);
+            clearMemRequest(readReq, true); // Clear the request from the in-flight queue
         }
     } else if (pkt->isWrite()) {
         MemoryRequest * writeReq = findMemRequest(pkt, false);
@@ -117,6 +124,9 @@ CommInterface::recvPacket(PacketPtr pkt) {
             delete[] writeReq->readsDone;
             clearMemRequest(writeReq, false);
             delete writeReq;
+        } else {
+            writeQueue->push_front(writeReq);
+            clearMemRequest(writeReq, false); // Clear the request from the in-flight queue
         }
     } else {
         panic("Something went very wrong!");
@@ -522,7 +532,32 @@ CommInterface::clearMemRequest(MemoryRequest * req, bool isRead) {
 #include "debug/MemoryAccess.hh"
 
 PrivateMemory::PrivateMemory(const PrivateMemoryParams *p) :
-    SimpleMemory(p) {}
+    SimpleMemory(p), readyMode(p->ready_mode) {
+    ready = new bool[range.size()];
+    if (readyMode) {
+        for (auto i=0;i<range.size();i++) {
+            ready[i] = false;
+        }
+    }
+}
+
+bool
+PrivateMemory::isReady(Addr ad, Addr size) {
+    if (!readyMode) return true;
+    Addr start_offset = ad - range.start();
+    Addr end_offset = start_offset + size;
+    for (auto i=start_offset; i<end_offset; i++) {
+        if (ready[i] == false) return false;
+    }
+    return true;
+}
+
+void
+PrivateMemory::setAllReady(bool r) {
+    for (auto i=0;i<range.size();i++) {
+        ready[i] = r;
+    }
+}
 
 void
 PrivateMemory::privateAccess(PacketPtr pkt) {
@@ -550,12 +585,157 @@ PrivateMemory::privateAccess(PacketPtr pkt) {
                 DPRINTF(MemoryAccess, "%s wrote %i bytes to address %x\n",
                         __func__, pkt->getSize(), pkt->getAddr());
             }
+
+            if (readyMode) {
+                Addr start_offset = pkt->getAddr() - range.start();
+                Addr end_offset = start_offset + pkt->getSize();
+                for (auto i=start_offset; i<end_offset; i++) {
+                    ready[i] = true;
+                }
+            }
+
             assert(!pkt->req->isInstFetch());
             numWrites[pkt->req->masterId()]++;
             bytesWritten[pkt->req->masterId()] += pkt->getSize();
         }
     } else {
         panic("Unexpected packet %s", pkt->print());
+    }
+}
+
+static inline void
+tracePacket(System *sys, const char *label, PacketPtr pkt)
+{
+    int size = pkt->getSize();
+#if THE_ISA != NULL_ISA
+    if (size == 1 || size == 2 || size == 4 || size == 8) {
+        DPRINTF(MemoryAccess,"%s from %s of size %i on address %#x data "
+                "%#x %c\n", label, sys->getMasterName(pkt->req->masterId()),
+                size, pkt->getAddr(), pkt->getUintX(TheISA::GuestByteOrder),
+                pkt->req->isUncacheable() ? 'U' : 'C');
+        return;
+    }
+#endif
+    DPRINTF(MemoryAccess, "%s from %s of size %i on address %#x %c\n",
+            label, sys->getMasterName(pkt->req->masterId()),
+            size, pkt->getAddr(), pkt->req->isUncacheable() ? 'U' : 'C');
+    DDUMP(MemoryAccess, pkt->getConstPtr<uint8_t>(), pkt->getSize());
+}
+
+#if TRACING_ON
+#   define TRACE_PACKET(A) tracePacket(system(), A, pkt)
+#else
+#   define TRACE_PACKET(A)
+#endif
+
+void
+PrivateMemory::access(PacketPtr pkt)
+{
+    if (pkt->cacheResponding()) {
+        DPRINTF(MemoryAccess, "Cache responding to %#llx: not responding\n",
+                pkt->getAddr());
+        return;
+    }
+
+    if (pkt->cmd == MemCmd::CleanEvict || pkt->cmd == MemCmd::WritebackClean) {
+        DPRINTF(MemoryAccess, "CleanEvict  on 0x%x: not responding\n",
+                pkt->getAddr());
+      return;
+    }
+
+    assert(AddrRange(pkt->getAddr(),
+                     pkt->getAddr() + (pkt->getSize() - 1)).isSubset(range));
+
+    uint8_t *hostAddr = pmemAddr + pkt->getAddr() - range.start();
+
+    if (pkt->cmd == MemCmd::SwapReq) {
+        if (pkt->isAtomicOp()) {
+            if (pmemAddr) {
+                pkt->setData(hostAddr);
+                (*(pkt->getAtomicOp()))(hostAddr);
+            }
+        } else {
+            std::vector<uint8_t> overwrite_val(pkt->getSize());
+            uint64_t condition_val64;
+            uint32_t condition_val32;
+
+            panic_if(!pmemAddr, "Swap only works if there is real memory " \
+                     "(i.e. null=False)");
+
+            bool overwrite_mem = true;
+            // keep a copy of our possible write value, and copy what is at the
+            // memory address into the packet
+            pkt->writeData(&overwrite_val[0]);
+            pkt->setData(hostAddr);
+
+            if (pkt->req->isCondSwap()) {
+                if (pkt->getSize() == sizeof(uint64_t)) {
+                    condition_val64 = pkt->req->getExtraData();
+                    overwrite_mem = !std::memcmp(&condition_val64, hostAddr,
+                                                 sizeof(uint64_t));
+                } else if (pkt->getSize() == sizeof(uint32_t)) {
+                    condition_val32 = (uint32_t)pkt->req->getExtraData();
+                    overwrite_mem = !std::memcmp(&condition_val32, hostAddr,
+                                                 sizeof(uint32_t));
+                } else
+                    panic("Invalid size for conditional read/write\n");
+            }
+
+            if (overwrite_mem)
+                std::memcpy(hostAddr, &overwrite_val[0], pkt->getSize());
+
+            assert(!pkt->req->isInstFetch());
+            TRACE_PACKET("Read/Write");
+            numOther[pkt->req->masterId()]++;
+        }
+    } else if (pkt->isRead()) {
+        assert(!pkt->isWrite());
+        if (pkt->isLLSC()) {
+            assert(!pkt->fromCache());
+            // if the packet is not coming from a cache then we have
+            // to do the LL/SC tracking here
+            trackLoadLocked(pkt);
+        }
+        if (pmemAddr) {
+            pkt->setData(hostAddr);
+        }
+        TRACE_PACKET(pkt->req->isInstFetch() ? "IFetch" : "Read");
+        numReads[pkt->req->masterId()]++;
+        bytesRead[pkt->req->masterId()] += pkt->getSize();
+        if (pkt->req->isInstFetch())
+            bytesInstRead[pkt->req->masterId()] += pkt->getSize();
+    } else if (pkt->isInvalidate() || pkt->isClean()) {
+        assert(!pkt->isWrite());
+        // in a fastmem system invalidating and/or cleaning packets
+        // can be seen due to cache maintenance requests
+
+        // no need to do anything
+    } else if (pkt->isWrite()) {
+        if (writeOK(pkt)) {
+            if (pmemAddr) {
+                pkt->writeData(hostAddr);
+                DPRINTF(MemoryAccess, "%s wrote %i bytes to address %x\n",
+                        __func__, pkt->getSize(), pkt->getAddr());
+            }
+            assert(!pkt->req->isInstFetch());
+            TRACE_PACKET("Write");
+            numWrites[pkt->req->masterId()]++;
+            bytesWritten[pkt->req->masterId()] += pkt->getSize();
+        }
+        // Set ready bits on external writes
+        if (readyMode) {
+            Addr start_offset = pkt->getAddr() - range.start();
+            Addr end_offset = start_offset + pkt->getSize();
+            for (auto i=start_offset; i<end_offset; i++) {
+                ready[i] = true;
+            }
+        }
+    } else {
+        panic("Unexpected packet %s", pkt->print());
+    }
+
+    if (pkt->needsResponse()) {
+        pkt->makeResponse();
     }
 }
 
@@ -588,8 +768,20 @@ CommMemInterface::processMemoryRequests() {
             DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", (*it)->address);
             if (pmemRange.contains((*it)->address)) {
                 DPRINTF(CommInterfaceQueues, "In Private Memory\n");
+                int size;
+                if ((*it)->currentReadAddr % cacheLineSize) {
+                    size = cacheLineSize - ((*it)->currentReadAddr % cacheLineSize);
+                    DPRINTF(CommInterface, "Aligning\n");
+                } else {
+                    size = cacheLineSize;
+                }
+                size = (*it)->readLeft > (size - 1) ? size : (*it)->readLeft;
+
                 if (avReadPorts <= 0) {
                     DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
+                    ++it;
+                } else if (!pmem->isReady((*it)->address, size)) {
+                    DPRINTF(CommInterfaceQueues, "Data at %lx not ready to read\n", (*it)->address);
                     ++it;
                 } else {
                     avReadPorts--;
@@ -598,14 +790,6 @@ CommMemInterface::processMemoryRequests() {
                         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
                         return;
                     }
-                    int size;
-                    if ((*it)->currentReadAddr % cacheLineSize) {
-                        size = cacheLineSize - ((*it)->currentReadAddr % cacheLineSize);
-                        DPRINTF(CommInterface, "Aligning\n");
-                    } else {
-                        size = cacheLineSize;
-                    }
-                    size = (*it)->readLeft > (size - 1) ? size : (*it)->readLeft;
                     RequestPtr req = make_shared<Request>((*it)->currentReadAddr, size, flags, masterId);
                     DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes\n",
                         req->getPaddr(), size);
@@ -793,6 +977,16 @@ void
 CommMemInterface::refreshMemPorts() {
       avReadPorts = readPorts;
       avWritePorts = writePorts;
+}
+
+void
+CommMemInterface::finish() {
+    *mmreg &= 0xfc;
+    *mmreg |= 0x04;
+    int_flag = true;
+    computationNeeded = false;
+    pmem->setAllReady(false);
+    gic->sendInt(int_num);
 }
 
 void
