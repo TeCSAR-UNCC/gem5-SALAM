@@ -8,8 +8,11 @@ cscope.out
 .*.swp
 m5out
 /src/doxygen
+src/base/circular_queue.hh
+src/base/circular_queue.test.cc
 /ext/dramsim2/DRAMSim2
 /ext/mcpat/regression/*/*.out
+/ext/googletest
 /util/m5/*.o
 /util/m5/*.a
 /util/m5/m5
