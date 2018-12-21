@@ -671,6 +671,7 @@ GetElementPtr::compute() {
 		setResult(&newAddress);
 		////////////////////////////////////////
 	} else if(_Pty[0] == '[') { // Return type is a struct
+		DPRINTF(LLVMOp, "Struct Data Type\n");
 		for(int i = 0; i < _Pty.size(); i++){
 			if(_Pty[i] == '[') {
 				// Find the next integer value Ex: [A x [B x [C x dataSize]]] returns A, B, C
@@ -706,9 +707,9 @@ GetElementPtr::compute() {
 			totalElements = 1;
 			elements[i] = 1;
 		}
-
+		DPRINTF(LLVMOp, "Potential: %x\n", _ActivePtr + finalCount);
 		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
-		else finalCount *=4;
+		else finalCount *=8;
 		newAddress += (_ActivePtr + finalCount);
 		setResult(&newAddress);
 	} else { // GEP With Imm and no structs

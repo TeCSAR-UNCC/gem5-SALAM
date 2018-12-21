@@ -766,6 +766,13 @@ CommMemInterface::processMemoryRequests() {
         DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue->size());
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
             DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", (*it)->address);
+//			if ((*it)->readDone == (*it)->totalLength)
+//            {
+//                DPRINTF(CommInterface, "Done reading\n");
+//                cu->readCommit((*it));
+//                it = readQueue->erase(it);
+//				if (readQueue->empty()) break;
+//            }
             if (pmemRange.contains((*it)->address)) {
                 DPRINTF(CommInterfaceQueues, "In Private Memory\n");
                 int size;
@@ -782,6 +789,7 @@ CommMemInterface::processMemoryRequests() {
                     ++it;
                 } else if (!pmem->isReady((*it)->address, size)) {
                     DPRINTF(CommInterfaceQueues, "Data at %lx not ready to read\n", (*it)->address);
+					std::cout << "Data at " << (*it)->address << " is not ready\n";
                     ++it;
                 } else {
                     avReadPorts--;
@@ -985,7 +993,7 @@ CommMemInterface::finish() {
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;
-    pmem->setAllReady(false);
+    //pmem->setAllReady(false);
     gic->sendInt(int_num);
 }
 

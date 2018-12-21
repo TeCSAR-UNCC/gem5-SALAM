@@ -341,7 +341,7 @@ int main(void) {
 	while(!pollDma());
     resetDma();
 	//printf("Launching RELU Accelerator:\n");
-    //printf("RELU: %d\n", acc_relu);
+    printf("RELU: %d\n", acc_relu);
 	acc_relu = 0x01;
 	printf("RELU: %d\n", acc_relu);
 	while(0x04 != acc_relu) { printf("RELU:%d\n",acc_relu); }
@@ -349,7 +349,7 @@ int main(void) {
 	while(!pollDma());
     resetDma();
 	//printf("Launching Max Pool Accelerator:\n");
-    //printf("Pool: %d\n", acc_pool);
+    printf("Pool: %d\n", acc_pool);
 	acc_pool = 0x01;
 	printf("Pool: %d\n", acc_pool);
 	while(0x04 != acc_pool) { printf("Pool:%d\n",acc_pool); }
@@ -388,12 +388,12 @@ int main(void) {
 //	}
 	while(0x04 != acc_conv) { printf("Conv:%d\n",acc_conv); }
 	//printf("Launching RELU Accelerator:\n");
-    //printf("RELU: %d\n", acc_relu);
+    printf("RELU: %d\n", acc_relu);
 	acc_relu = 0x01;
 	printf("RELU: %d\n", acc_relu);
 	while(0x04 != acc_relu) { printf("RELU:%d\n",acc_relu); }
 	//printf("Launching Max Pool Accelerator:\n");
-    //printf("Pool: %d\n", acc_pool);
+    printf("Pool: %d\n", acc_pool);
 	acc_pool = 0x01;
 	printf("Pool: %d\n", acc_pool);
 	while(0x04 != acc_pool) { printf("Pool:%d\n",acc_pool); }

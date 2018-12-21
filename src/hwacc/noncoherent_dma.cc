@@ -51,7 +51,7 @@ NoncoherentDma::tick() {
         readFifo->startFill(activeSrc, writesLeft);
         writeFifo->startEmpty(activeDst, writesLeft);
     }
-    if ((*FLAGS&0x04) != 0x04) {
+    if (((last_flag&0x04)==0x04) && ((*FLAGS&0x04) != 0x04)) {
         //clear interrupts
         gic->clearInt(intNum);
     }
@@ -75,6 +75,7 @@ NoncoherentDma::tick() {
             }
         }
     }
+	last_flag = *FLAGS;
     if (!tickEvent.scheduled() && running) {
         schedule(tickEvent, nextCycle());
     }
