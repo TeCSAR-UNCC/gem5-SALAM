@@ -949,7 +949,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		break;
 	}
 	case IR_GetElementPtr: {
-	// <result> = getelementptr Creating select<ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 		int index = 0;
