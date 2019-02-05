@@ -206,6 +206,7 @@ class PrivateMemory : public SimpleMemory
 {
   protected:
     bool readyMode;
+    bool resetOnPrivateRead;
     bool *ready;
   public:
     PrivateMemory(const PrivateMemoryParams *p);
@@ -222,6 +223,7 @@ class CommMemInterface : public CommInterface
   protected:
     PrivateMemory * pmem;
     AddrRange pmemRange;
+    bool resetPmemOnFinish;
     int readPorts;
     int writePorts;
     int availablePorts;

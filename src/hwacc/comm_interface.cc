@@ -532,7 +532,8 @@ CommInterface::clearMemRequest(MemoryRequest * req, bool isRead) {
 #include "debug/MemoryAccess.hh"
 
 PrivateMemory::PrivateMemory(const PrivateMemoryParams *p) :
-    SimpleMemory(p), readyMode(p->ready_mode) {
+    SimpleMemory(p), readyMode(p->ready_mode),
+    resetOnPrivateRead(p->reset_on_private_read) {
     ready = new bool[range.size()];
     if (readyMode) {
         for (auto i=0;i<range.size();i++) {
@@ -576,6 +577,13 @@ PrivateMemory::privateAccess(PacketPtr pkt) {
         }
         if (pmemAddr)
             memcpy(pkt->getPtr<uint8_t>(), hostAddr, pkt->getSize());
+        if (resetOnPrivateRead) {
+            Addr start_offset = pkt->getAddr() - range.start();
+            Addr end_offset = start_offset + pkt->getSize();
+            for (auto i=start_offset; i<end_offset; i++) {
+                ready[i] = false;
+            }
+        }
         numReads[pkt->req->masterId()]++;
         bytesRead[pkt->req->masterId()] += pkt->getSize();
     } else if (pkt->isWrite()) {
@@ -752,6 +760,7 @@ CommMemInterface::CommMemInterface(Params *p) :
     CommInterface(p),
     pmem(p->private_memory),
     pmemRange(p->private_range),
+    resetPmemOnFinish(p->reset_private_on_finish),
     readPorts(p->private_read_ports),
     writePorts(p->private_write_ports) {
         avReadPorts = readPorts;
@@ -766,13 +775,13 @@ CommMemInterface::processMemoryRequests() {
         DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue->size());
         for (auto it=readQueue->begin(); it!=readQueue->end(); ) {
             DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", (*it)->address);
-//			if ((*it)->readDone == (*it)->totalLength)
-//            {
-//                DPRINTF(CommInterface, "Done reading\n");
-//                cu->readCommit((*it));
-//                it = readQueue->erase(it);
-//				if (readQueue->empty()) break;
-//            }
+			if ((*it)->readDone == (*it)->totalLength)
+            {
+                DPRINTF(CommInterface, "Done reading\n");
+                cu->readCommit((*it));
+                it = readQueue->erase(it);
+				if (readQueue->empty()) break;
+            }
             if (pmemRange.contains((*it)->address)) {
                 DPRINTF(CommInterfaceQueues, "In Private Memory\n");
                 int size;
@@ -827,12 +836,12 @@ CommMemInterface::processMemoryRequests() {
                         (*it)->readDone++;
                     }
 
-                    if ((*it)->readDone == (*it)->totalLength)
-                    {
-                        DPRINTF(CommInterface, "Done reading\n");
-                        cu->readCommit((*it));
-                        it = readQueue->erase(it);
-                    }
+//                    if ((*it)->readDone == (*it)->totalLength)
+//                    {
+//                        DPRINTF(CommInterface, "Done reading\n");
+//                        cu->readCommit((*it));
+//                        it = readQueue->erase(it);
+//                    }
                 }
             } else if (localRange.contains((*it)->address)) {
                 DPRINTF(CommInterfaceQueues, "In Local Memory\n");
@@ -881,6 +890,14 @@ CommMemInterface::processMemoryRequests() {
             DPRINTF(CommInterfaceQueues, "Request Address: %lx ", (*it)->address);
             if (pmemRange.contains((*it)->address)) {
                 DPRINTF(CommInterfaceQueues, "In Private Memory\n");
+                if ((*it)->writeDone == (*it)->totalLength) {
+                    DPRINTF(CommInterface, "Done writing\n");
+                    cu->writeCommit((*it));
+                    delete[] (*it)->buffer;
+                    delete[] (*it)->readsDone;
+                    it = writeQueue->erase(it);
+                    if (writeQueue->empty()) break;
+                }
                 if (avWritePorts <= 0) {
                     DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
@@ -923,13 +940,13 @@ CommMemInterface::processMemoryRequests() {
 
                     DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
                     (*it)->writeDone += pkt->getSize();
-                    if ((*it)->writeDone == (*it)->totalLength) {
-                        DPRINTF(CommInterface, "Done writing\n");
-                        cu->writeCommit((*it));
-                        delete[] (*it)->buffer;
-                        delete[] (*it)->readsDone;
-                        it = writeQueue->erase(it);
-                    }
+//                    if ((*it)->writeDone == (*it)->totalLength) {
+//                        DPRINTF(CommInterface, "Done writing\n");
+//                        cu->writeCommit((*it));
+//                        delete[] (*it)->buffer;
+//                        delete[] (*it)->readsDone;
+//                        it = writeQueue->erase(it);
+//                    }
                 }
             } else if (localRange.contains((*it)->address)) {
                 DPRINTF(CommInterfaceQueues, "In Local Memory\n");
@@ -993,7 +1010,8 @@ CommMemInterface::finish() {
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;
-    //pmem->setAllReady(false);
+    if (resetPmemOnFinish)
+        pmem->setAllReady(false);
     gic->sendInt(int_num);
 }
 

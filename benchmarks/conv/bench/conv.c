@@ -12,10 +12,10 @@ void conv(double in[FM_HEIGHT][FM_WIDTH], double kern[KERN_HEIGHT][KERN_WIDTH], 
     {
         #pragma clang loop unroll_count(8)
         for (j = 1; j < FM_WIDTH-1; ++j)          // columns
-        {           
+        {
 			double sum = 0;
 			for (m = 0; m < KERN_HEIGHT; ++m)     // kernel rows
-            {    
+            {
                 int mm = KERN_HEIGHT - 1 - m;      // row index
                 for (n = 0; n < KERN_WIDTH; ++n) // kernel columns
                 {

@@ -93,13 +93,16 @@ NoncoherentDma::read(PacketPtr pkt) {
 
     switch(pkt->getSize()) {
       case 1:
-        pkt->set<uint8_t>(data);
+        pkt->setLE<uint8_t>(data);
         break;
       case 2:
-        pkt->set<uint16_t>(data);
+        pkt->setLE<uint16_t>(data);
         break;
       case 4:
-        pkt->set<uint32_t>(data);
+        pkt->setLE<uint32_t>(data);
+        break;
+      case 8:
+        pkt->setLE<uint64_t>(data);
         break;
       default:
         panic("Read size too big?\n");

@@ -2,7 +2,7 @@
 #define __MACROS_HH__
 
 // Data type sizing based off LLVM references
-#define SYSTEMSIZE      64  // Bit size of system 
+#define SYSTEMSIZE      64  // Bit size of system
 #define DEFAULTSIZE     64  // Default register size
 #define BYTE            8   // Size of a byte in bits
 #define VOIDSIZE        0   // Void data type size
@@ -47,12 +47,12 @@
 #define DEBUG 1
 #define DEBUGPARAMS 1
 #define DEPENDENCYLIST 1
-#define PRINTREGISTERS 1  
+#define PRINTREGISTERS 1
 
 
 
 //Cycle Counts
-#define CYCLECOUNTER                0
+#define CYCLECOUNTER                1
 
 #define CYCLECOUNTRET				1
 #define CYCLECOUNTBR				1
@@ -82,7 +82,7 @@
 #define CYCLECOUNTAND				1
 #define CYCLECOUNTOR				1
 #define CYCLECOUNTXOR				1
-	
+
 #define CYCLECOUNTEXTRACTELEMENT	1
 #define CYCLECOUNTINSERTELEMENT		1
 #define CYCLECOUNTSHUFFLEVECTOR		1
@@ -168,15 +168,15 @@
 
 #define NNAN				0x00000000001
 #define NINF				0x00000000002
-#define NSZ					0x00000000004	
+#define NSZ					0x00000000004
 #define ARCP				0x00000000008
 #define CONTRACT			0x00000000010
 #define AFN					0x00000000020
 #define REASSOC				0x00000000040
 #define FAST				0x00000000080
 #define NSW					0x00000000100
-#define NUW					0x00000000200	
-#define EXACT				0x00000000400	
+#define NUW					0x00000000200
+#define EXACT				0x00000000400
 #define EQ					0x00000000800
 #define NE					0x00000001000
 #define UGT					0x00000002000
@@ -190,7 +190,7 @@
 #define CONDFALSE			0x00000200000
 #define CONDTRUE			0x00000400000
 #define OEQ					0x00000800000
-#define OGT					0x00001000000	
+#define OGT					0x00001000000
 #define OGE					0x00002000000
 #define OLT					0x00004000000
 #define OLE					0x00008000000

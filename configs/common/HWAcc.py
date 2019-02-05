@@ -27,6 +27,7 @@ def makeHWAcc(options, system):
     	 system.acc_cluster.acc.private_read_ports = 4
     	 system.acc_cluster.acc.private_write_ports = 4
     	 system.acc_cluster.acc.private_memory.ready_mode = True
+#    	 system.acc_cluster.acc.private_memory.reset_on_private_read = False
     	 system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
     	 system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
     elif (options.accbench == 'conv'):
@@ -129,7 +130,7 @@ def makeHWAcc(options, system):
 #        system.acc_cluster.acc.llvm_interface.FU_pipelined = 1
 #        system.acc_cluster.acc.llvm_interface.sched_threshold = 1000
 #        system.acc_cluster.acc.llvm_interface.FU_clock_period = 10000
-
+#        system.acc_cluster.acc.llvm_interface.FU_int_multiplier = -1
 #    if (options.accbench != 'multiacc'):
 #        system.acc_cluster.acc_conv.llvm_interface.FU_fp_sp_adder = -1
 #        system.acc_cluster.acc_conv.llvm_interface.FU_fp_dp_adder = -1

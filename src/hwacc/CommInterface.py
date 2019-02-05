@@ -25,6 +25,7 @@ class PrivateMemory(SimpleMemory):
     cxx_header = 'hwacc/comm_interface.hh'
 
     ready_mode = Param.Bool(False, "Use ready mode for private memory")
+    reset_on_private_read = Param.Bool(True, "Reset ready bit on private memory read")
 
 class CommMemInterface(CommInterface):
     type = 'CommMemInterface'
@@ -32,5 +33,6 @@ class CommMemInterface(CommInterface):
 
     private_memory = Param.PrivateMemory("Private scratchpad memory for the device")
     private_range = Param.AddrRange("Address range of private memory")
+    reset_private_on_finish = Param.Bool(False, "Reset ready bits on private memory when compute finishes")
     private_read_ports = Param.Int("The number of internal Read ports for the private SPM")
     private_write_ports = Param.Int("The number of internal Write ports for the private SPM")

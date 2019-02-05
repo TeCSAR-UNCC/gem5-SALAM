@@ -419,7 +419,7 @@ int main(void) {
     acc_pool = 0x01;
     printf("Pool: %d\n", acc_pool);
 
-	while(0x04 != (acc_conv || acc_relu || acc_pool)) { 
+	while(0x04 != (acc_conv & acc_relu & acc_pool)) { 
         printf("Conv: %d\n", acc_conv);
 		printf("Relu: %d\n", acc_relu);
 		printf("Pool: %d\n", acc_pool);
@@ -477,6 +477,7 @@ int main(void) {
 	}
 #endif
 /////////////////////////////////////////////////////////////////////////
+	m5_dump_stats();
 	m5_exit();
 }
 
