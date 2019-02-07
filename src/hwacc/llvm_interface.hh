@@ -13,6 +13,7 @@
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
+    bool lockstep;
     uint32_t scheduling_threshold;
     int32_t counter_units;
     int32_t int_adder_units;
@@ -29,6 +30,7 @@ class LLVMInterface : public ComputeUnit {
     int32_t pipelined;
     bool unlimitedFU;
     bool running;
+    bool scheduled;
     std::list<BasicBlock*> *bbList;
     RegisterList *regList;
     BasicBlock *currBB;

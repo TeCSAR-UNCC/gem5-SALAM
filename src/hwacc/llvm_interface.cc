@@ -6,6 +6,7 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
+    lockstep(p->lockstep_mode),
     scheduling_threshold(p->sched_threshold),
     counter_units(p->FU_counter),
     int_adder_units(p->FU_int_adder),
@@ -48,7 +49,6 @@ InstructionBase* createClone(const std::shared_ptr<InstructionBase>& b) {
     return clone;
 }
 
-// Test
 void
 LLVMInterface::tick() {
 /*********************************************************************************************
@@ -103,92 +103,89 @@ LLVMInterface::tick() {
         }
     }
 
-
-    bool scheduled = false;
+    scheduled = false;
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
     }
 
-    // for (auto i = 0; i < reservation.size(); i++) {
-    //     if (reservation.at(i)->_ReturnRegister == NULL)
-    //         DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
-    //     else
-    //         DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
-    // }
-
-    for (auto i = 0; i < reservation.size();) {
-        if (reservation.at(i)->_ReturnRegister == NULL)
-             DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
-         else
-             DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
-        if (reservation.at(i)->_ActiveParents == 0) {
-            if(!(reservation.at(i)->_Terminator)) { 
-                    if(reservation.at(i)->_OpCode == "load") {
-                        readQueue.push_back(reservation.at(i));
-                        reservation.at(i)->compute();
-                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                        scheduled = true;
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    } else if(reservation.at(i)->_OpCode == "store") {
-                        writeQueue.push_back(reservation.at(i));
-                        reservation.at(i)->compute();
-                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                        scheduled = true;
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    } else if(reservation.at(i)->_MaxCycle==0) {
-                        reservation.at(i)->compute();
-                        reservation.at(i)->commit();
-                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                        scheduled = true;
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    } else { // Computation Units
-                        if(!unlimitedFU){
-                            if(limitedFU(reservation.at(i)->_FunctionalUnit)){
-                                if(reservation.at(i)->_OpCode == "fdiv") _FunctionalUnits.fpDivision++;
-                                computeQueue.push_back(reservation.at(i));
-                                reservation.at(i)->compute();
-                                reservation.at(i)->commit();
-                                scheduled = true;
-                                auto it = reservation.erase(reservation.begin()+i);
-                                i = std::distance(reservation.begin(), it);
-                            } else i++;
-                        }
-                        else {
-                            computeQueue.push_back(reservation.at(i));
+    if (lockstep && (!computeQueue.empty() || !readQueue.empty() || !writeQueue.empty() )) {
+        //Do nothing
+    } else {
+        for (auto i = 0; i < reservation.size();) {
+            if (reservation.at(i)->_ReturnRegister == NULL)
+                 DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+             else
+                 DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+            if (reservation.at(i)->_ActiveParents == 0) {
+                if(!(reservation.at(i)->_Terminator)) { 
+                        if(reservation.at(i)->_OpCode == "load") {
+                            readQueue.push_back(reservation.at(i));
+                            reservation.at(i)->compute();
+                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                            scheduled = true;
+                            auto it = reservation.erase(reservation.begin()+i);
+                            i = std::distance(reservation.begin(), it);
+                        } else if(reservation.at(i)->_OpCode == "store") {
+                            writeQueue.push_back(reservation.at(i));
+                            reservation.at(i)->compute();
+                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                            scheduled = true;
+                            auto it = reservation.erase(reservation.begin()+i);
+                            i = std::distance(reservation.begin(), it);
+                        } else if(reservation.at(i)->_MaxCycle==0) {
                             reservation.at(i)->compute();
                             reservation.at(i)->commit();
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                             scheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
+                        } else { // Computation Units
+                            if(!unlimitedFU){
+                                if(limitedFU(reservation.at(i)->_FunctionalUnit)){
+                                    if(reservation.at(i)->_OpCode == "fdiv") _FunctionalUnits.fpDivision++;
+                                    computeQueue.push_back(reservation.at(i));
+                                    reservation.at(i)->compute();
+                                    reservation.at(i)->commit();
+                                    scheduled = true;
+                                    auto it = reservation.erase(reservation.begin()+i);
+                                    i = std::distance(reservation.begin(), it);
+                                } else i++;
+                            }
+                            else {
+                                computeQueue.push_back(reservation.at(i));
+                                reservation.at(i)->compute();
+                                reservation.at(i)->commit();
+                                if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                                scheduled = true;
+                                auto it = reservation.erase(reservation.begin()+i);
+                                i = std::distance(reservation.begin(), it);
+                            }
                         }
+                } else if ((reservation.at(i)->_OpCode != "ret")) {
+                    if (reservation.size() < scheduling_threshold) {
+                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                        prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
+                        reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
+                        currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
+                        auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
+                        i = std::distance(reservation.begin(), it);
+                        scheduleBB(currBB);
+                    } else i++;
+                } 
+            } else {
+                if (reservation.at(i)->_OpCode == "ret"){
+                    if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
+                        running = false;
+                        statistics();
+                        comm->finish();
                     }
-            } else if ((reservation.at(i)->_OpCode != "ret")) {
-                if (reservation.size() < scheduling_threshold) {
-                    if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                    prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
-                    reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
-                    currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
-                    auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
-                    i = std::distance(reservation.begin(), it);
-                    scheduleBB(currBB);
-                } else i++;
-            } 
-        } else {
-            if (reservation.at(i)->_OpCode == "ret"){
-                if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
-                    running = false;
-                    statistics();
-                    comm->finish();
                 }
+                i++;
             }
-            i++;
         }
     }
+
     if (!scheduled) stalls++; // No new compute node was scheduled this cycle
     if (running && !tickEvent.scheduled())
     {

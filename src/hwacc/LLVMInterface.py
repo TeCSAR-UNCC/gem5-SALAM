@@ -8,6 +8,7 @@ class LLVMInterface(ComputeUnit):
     cxx_header = "hwacc/llvm_interface.hh"
 
     in_file = Param.String("LLVM Trace File")
+    lockstep_mode = Param.Bool(False, "TRUE: Stall datapath if any operation stalls. FALSE: Only stall datapath regions with stalls")
     sched_threshold = Param.UInt32(1000, "Scheduling window threshold. Prevents scheduling windows size from exploding during regions of high loop parallelism")
     FU_counter = Param.Int32(-1, "Available counter functional units. -1 indicates unlimited resources")
     FU_int_adder = Param.Int32(-1, "Available integer addition/subtraction functional units. -1 indicates unlimited resources")

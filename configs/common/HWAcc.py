@@ -20,6 +20,7 @@ def makeHWAcc(options, system):
     	 system.acc_cluster.acc.local_range = local_range
     	 system.acc_cluster.acc.llvm_interface = LLVMInterface()
     	 system.acc_cluster.acc.llvm_interface.in_file = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
+    	 system.acc_cluster.acc.llvm_interface.lockstep_mode = True
     	 system.acc_cluster.acc.int_num = 68
     	 system.acc_cluster.acc.clock_period = 10
     	 system.acc_cluster.acc.private_range = AddrRange(0x2f100000, size='128kB')
@@ -27,7 +28,7 @@ def makeHWAcc(options, system):
     	 system.acc_cluster.acc.private_read_ports = 4
     	 system.acc_cluster.acc.private_write_ports = 4
     	 system.acc_cluster.acc.private_memory.ready_mode = True
-#    	 system.acc_cluster.acc.private_memory.reset_on_private_read = False
+    	 system.acc_cluster.acc.private_memory.reset_on_private_read = False
     	 system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
     	 system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
     elif (options.accbench == 'conv'):

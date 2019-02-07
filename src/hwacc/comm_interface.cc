@@ -798,7 +798,7 @@ CommMemInterface::processMemoryRequests() {
                     ++it;
                 } else if (!pmem->isReady((*it)->address, size)) {
                     DPRINTF(CommInterfaceQueues, "Data at %lx not ready to read\n", (*it)->address);
-					std::cout << "Data at " << (*it)->address << " is not ready\n";
+					//std::cout << "Data at " << (*it)->address << " is not ready\n";
                     ++it;
                 } else {
                     avReadPorts--;
