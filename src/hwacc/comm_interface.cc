@@ -1017,9 +1017,9 @@ CommMemInterface::finish() {
 
 void
 CommMemInterface::tick() {
-    DPRINTF(CommInterface, "Tick!\n");
+    //DPRINTF(CommInterface, "Tick!\n");
     checkMMR();
-    refreshMemPorts();
+    //refreshMemPorts(); //Should be called from the ComputeUnit
     requestsInQueues = readQueue->size() + writeQueue->size();
     if (requestsInQueues>0)
         processMemoryRequests();
