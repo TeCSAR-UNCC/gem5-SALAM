@@ -6,6 +6,8 @@
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debugFlags.hh"
 #include "hwacc/LLVMRead/src/utilization.hh"
+#include "hwacc/LLVMRead/src/macros.hh"
+#include "hwacc/LLVMRead/src/cycle_count.hh"
 
 #include <list>
 #include <queue>

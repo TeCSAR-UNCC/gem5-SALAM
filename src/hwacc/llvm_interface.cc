@@ -21,7 +21,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     gep(p->FU_GEP),
     conversion(p->FU_conversion),
     pipelined(p->FU_pipelined) ,
-    clock_period(p->FU_clock_period){
+    clock_period(p->FU_clock_period) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
@@ -41,6 +41,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
         (fp_dp_multiply == -1) &&
         (compare == -1) &&
         (gep == -1)) unlimitedFU = true;
+
     else unlimitedFU = false;
 }
 
@@ -413,9 +414,9 @@ LLVMInterface::constructBBList() {
                         DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
-                            updateParsedFU(currBB->parse(line, regList, prevBB->getName(), comm, typeList));
+                            updateParsedFU(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles));
                         } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            updateParsedFU(currBB->parse(line, regList, "NULL", comm, typeList));
+                            updateParsedFU(currBB->parse(line, regList, "NULL", comm, typeList, cycles));
                         }
 
                     }
@@ -512,6 +513,7 @@ LLVMInterfaceParams::create() {
 *********************************************************************************************/     
     return new LLVMInterface(this);
 }
+
 
 void
 LLVMInterface::statistics() {

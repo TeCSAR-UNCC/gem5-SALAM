@@ -6,6 +6,7 @@ from ComputeUnit import ComputeUnit
 class LLVMInterface(ComputeUnit):
     type = 'LLVMInterface'
     cxx_header = "hwacc/llvm_interface.hh"
+    
 
     in_file = Param.String("LLVM Trace File")
     lockstep_mode = Param.Bool(False, "TRUE: Stall datapath if any operation stalls. FALSE: Only stall datapath regions with stalls")

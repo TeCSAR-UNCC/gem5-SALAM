@@ -129,6 +129,7 @@ class CommInterface : public BasicPioDevice
     int clock_period;
 
     ComputeUnit *cu;
+    CycleCounts *cycleCount;
 
   public:
     typedef CommInterfaceParams Params;
@@ -163,7 +164,7 @@ class CommInterface : public BasicPioDevice
     int getProcessDelay() { return processDelay; }
 
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
-
+    void registerCycleCounts(CycleCounts *cylcount) { cycleCount = cylcount; }
     virtual void finish();
 
     MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead) {

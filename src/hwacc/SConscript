@@ -7,6 +7,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('LLVMInterface.py')
     SimObject('NoncoherentDma.py')
     SimObject('StreamDma.py')
+    SimObject('CycleCounts.py')
     SimObject('AccCluster.py')
 
     Source('io_acc.cc')
@@ -24,6 +25,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/instructions.cc')
     Source('LLVMRead/src/registers.cc')
     Source('LLVMRead/src/base_instruction.cc')
+    Source('LLVMRead/src/cycle_count.cc')
     Source('acc_cluster.cc')
 
     DebugFlag('IOAcc')
