@@ -45,6 +45,7 @@ Utilization::updatePowerConsumption(FunctionalUnits units) {
 
 void
 Utilization::calculateLeakagePowerUsage(FunctionalUnits units) {
+    // --
     totalPwr.leakage_power += adderPwr.leakage_power*units.int_adder_units;
     totalPwr.leakage_power += multiPwr.leakage_power*units.int_multiply_units;
     totalPwr.leakage_power += bitPwr.leakage_power*units.int_bit_units;
@@ -58,19 +59,21 @@ Utilization::calculateLeakagePowerUsage(FunctionalUnits units) {
 void 
 Utilization::calculateDynamicPowerUsage(FunctionalUnits units) {
     // for(auto it = pwrUnits.begin(); it != pwrUnits.end(); ++it) 
+    // --
     totalPwr.dynamic_power = (adderPwr.switch_power+adderPwr.internal_power)*units.int_adder_units;
     totalPwr.dynamic_power += (multiPwr.switch_power+multiPwr.internal_power)*units.int_multiply_units;
     totalPwr.dynamic_power += (bitPwr.switch_power+bitPwr.internal_power)*units.int_bit_units;
     totalPwr.dynamic_power += (shiftPwr.switch_power+shiftPwr.internal_power)*units.int_shifter_units;
     totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*units.fp_sp_adder;
     totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*units.fp_sp_adder;
-    
+    /*
     if(units.fpDivision > 0) {
         totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fpDivision;
         totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fpDivision;
     }
-    totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*(units.fp_sp_multiply - units.fpDivision);
-    totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*(units.fp_dp_multiply - units.fpDivision);
+    */
+    totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fp_sp_multiply;
+    totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fp_dp_multiply;
     totalPwr.dynamic_energy += (totalPwr.dynamic_power*totalPwr.cycleTime);
 }
 

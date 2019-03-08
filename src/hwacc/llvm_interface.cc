@@ -81,12 +81,28 @@ LLVMInterface::tick() {
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
         DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
+        
         if(pipelined) {
+            /*
             if(computeQueue.at(i)->commit()) {
                 auto it = computeQueue.erase(computeQueue.begin() + i);
                 i = std::distance(computeQueue.begin(), it);
             }
             else i++;
+            */
+             if(unlimitedFU) {
+                updateFU(reservation.at(i)->_FunctionalUnit);
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                }
+                else i++;
+            } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                } else i++;
+            } else i++;
         } else { 
             if(unlimitedFU) {
                 updateFU(reservation.at(i)->_FunctionalUnit);
