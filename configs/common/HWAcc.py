@@ -23,7 +23,7 @@ def makeHWAcc(options, system):
                 print("exception on %s!" % option)
                 dict1[option] = None
         return dict1
-        
+
     # Load config file data into application 
     # Construct our Accelerator Cluster and add a SPM of size 128kB
     system.acc_cluster = AccCluster()
@@ -39,18 +39,18 @@ def makeHWAcc(options, system):
 
     # Setup comm interface
     system.acc_cluster.acc = CommMemInterface(pio_addr=ConfigSectionMap("CommInterface")['pio_addr'], pio_size=ConfigSectionMap("CommInterface")['pio_size'], gic=system.realview.gic)
-    
+
     # Accelerator setup
     system.acc_cluster.acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     system.acc_cluster.acc.config_size = ConfigSectionMap("AccConfig")['config_size']
     system.acc_cluster.acc.local_range = local_range
     system.acc_cluster.acc.int_num = ConfigSectionMap("AccConfig")['int_num']
     system.acc_cluster.acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
-    
+
     # Initialize LLVMInterface Objects
     system.acc_cluster.acc.llvm_interface = LLVMInterface()
     system.acc_cluster.acc.llvm_interface.cycles = CycleCounts()
-    
+
     # Load instruction cycle counts
     system.acc_cluster.acc.llvm_interface.cycles.counter = ConfigSectionMap("CycleCounts")['counter']
     system.acc_cluster.acc.llvm_interface.cycles.gep = ConfigSectionMap("CycleCounts")['gep']
@@ -110,7 +110,7 @@ def makeHWAcc(options, system):
     system.acc_cluster.acc.llvm_interface.cycles.fmul = ConfigSectionMap("CycleCounts")['fmul']
     system.acc_cluster.acc.llvm_interface.cycles.fdiv = ConfigSectionMap("CycleCounts")['fdiv']
     system.acc_cluster.acc.llvm_interface.cycles.frem = ConfigSectionMap("CycleCounts")['frem'] 	 
-    
+
     # Set functional units
     system.acc_cluster.acc.llvm_interface.FU_fp_sp_adder = ConfigSectionMap("FunctionalUnits")['fp_sp_add']
     system.acc_cluster.acc.llvm_interface.FU_fp_dp_adder = ConfigSectionMap("FunctionalUnits")['fp_dp_add']
@@ -124,26 +124,26 @@ def makeHWAcc(options, system):
     system.acc_cluster.acc.llvm_interface.FU_int_shifter = ConfigSectionMap("FunctionalUnits")['fu_int_shift']
     system.acc_cluster.acc.llvm_interface.FU_int_bit = ConfigSectionMap("FunctionalUnits")['fu_int_bit']
     system.acc_cluster.acc.llvm_interface.FU_conversion = ConfigSectionMap("FunctionalUnits")['fu_conversion']
-    
+
     # Set scheduling constraints
     system.acc_cluster.acc.llvm_interface.FU_pipelined = ConfigSectionMap("Scheduler")['fu_pipelined']
     system.acc_cluster.acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
     system.acc_cluster.acc.llvm_interface.FU_clock_period = ConfigSectionMap("Scheduler")['fu_clock_period']
     system.acc_cluster.acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
-    
+
     # Private memory
     system.acc_cluster.acc.private_range = AddrRange(ConfigSectionMap("PrivateMemory")['addr_range'], \
 	                                                  size=ConfigSectionMap("PrivateMemory")['size'])
     system.acc_cluster.acc.private_memory = PrivateMemory(range=system.acc_cluster.acc.private_range, \
 	                                                       conf_table_reported=False, \
 	                                                       latency=ConfigSectionMap("PrivateMemory")['latency'])
-    
+
     # Memory constraints
     system.acc_cluster.acc.private_read_ports = ConfigSectionMap("Memory")['read_ports']
     system.acc_cluster.acc.private_write_ports = ConfigSectionMap("Memory")['write_ports']
     system.acc_cluster.acc.private_memory.ready_mode = Config.getboolean("Memory", 'ready_mode')
     system.acc_cluster.acc.private_memory.reset_on_private_read = Config.getboolean("Memory", 'reset_on_private_read')
-    
+
     # Connect HWacc and SPM
     system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
     system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
