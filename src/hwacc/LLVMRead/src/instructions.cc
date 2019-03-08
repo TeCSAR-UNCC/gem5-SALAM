@@ -631,6 +631,7 @@ GetElementPtr::compute() {
 	uint64_t totalElements = 1;
 	uint64_t finalCount = 0;
 	DPRINTF(LLVMOp, "Base Address: %x\n", _ActivePtr);
+
 	int j = 0;
 	// Initialize array values
 	for(int i = 0; i<_Dependencies.size(); i++) {
@@ -671,20 +672,46 @@ GetElementPtr::compute() {
 		setResult(&newAddress);
 		////////////////////////////////////////
 	} else if(_Pty[0] == '[') { // Return type is a struct
+		DPRINTF(LLVMOp, "Struct Type GEP\n");
+		int previousIndex = 0;
 		for(int i = 0; i < _Pty.size(); i++){
 			if(_Pty[i] == '[') {
 				// Find the next integer value Ex: [A x [B x [C x dataSize]]] returns A, B, C
 				elements[j] = stoi(_Pty.substr(i+1, _Pty.find(' ', i)-i-1));
 				j++;
+				previousIndex = i;
 			}
-			if(_Pty[i] == ']') break;
+			if(_Pty[i] == ']') {
+				if(_LLVMType != NULL) {
+					// TODO: Where the 8 is multiplied below should be a value that is parsed, currently
+					// getSize returns the number of elements in the custom data type, but no where is the
+					// size of each element stored, which is what this should return instead. Also confirm
+					// that this change will not cause any errors with LLVMType in any other function
+					dataSize = (_LLVMType->getSize()*8);
+					DPRINTF(LLVMOp, "Custom Nested Data Type = %s, Data Size = %d\n", _LLVMType->getName(), dataSize);
+					j++;
+				} else {
+					// Determine the dataSize of the struct elements
+					std::string dataType;
+					int subIndex = _Pty.find('x', previousIndex)+2;
+					dataType = _Pty.substr(subIndex, i-subIndex);
+					//  --- Integer Types ---------------------------------------------//
+    				if (dataType.front() == 'i') dataSize = BYTESIZE(std::stoi(dataType.substr(SKIPFIRST)));
+    				//  --- Floating Point Types --------------------------------------//
+   					else if (dataType.compare("float") == COMPAREFOUND) dataSize = FLOATSIZE;
+    				else if (dataType.compare("double") == COMPAREFOUND) dataSize = DOUBLESIZE;
+					DPRINTF(LLVMOp, "Nested Data Type = %s, Data Size = %d\n", dataType, dataSize);
+				}
+			break;
+			}
 		}
-		if(_LLVMType != NULL) {
-		dataSize = _LLVMType->getSize();
-		j++;
-		} else {
-			dataSize = 1;
-		}
+		// if(_LLVMType != NULL) {
+		// dataSize = _LLVMType->getSize();
+		// j++;
+		// } else {
+		// 	// Determine the dataSize of the struct elements
+		// 	dataSize = 1;
+		// }
 		for(int i = 0; i <= j; i++){
 			for(int k = 0; k <= j; k++){
 				totalElements*=elements[k];
@@ -693,22 +720,20 @@ GetElementPtr::compute() {
 				if(i == j) {
 					totalElements*=(_ImmIdx.at(i));
 				} else {				
-				totalElements*=(dataSize*_ImmIdx.at(i));
+				totalElements*=(_ImmIdx.at(i));
 				}
 			} else {
 				if(i == j) {
 					totalElements*=(_Ops.at(i));
 				} else {
-				totalElements*=(dataSize*_Ops.at(i));
+				totalElements*=(_Ops.at(i));
 				}
 			}
 			finalCount += totalElements;
 			totalElements = 1;
 			elements[i] = 1;
 		}
-
-		if(_LLVMType != NULL) finalCount *=8; // Final offset calculation, total elements * memory size in bytes
-		else finalCount *=4;
+		finalCount *= dataSize;
 		newAddress += (_ActivePtr + finalCount);
 		setResult(&newAddress);
 	} else { // GEP With Imm and no structs

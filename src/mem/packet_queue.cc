@@ -47,8 +47,6 @@
 #include "debug/Drain.hh"
 #include "debug/PacketQueue.hh"
 
-using namespace std;
-
 PacketQueue::PacketQueue(EventManager& _em, const std::string& _label,
                          const std::string& _sendEventName,
                          bool disable_sanity_check)
@@ -84,7 +82,7 @@ PacketQueue::hasAddr(Addr addr) const
 }
 
 bool
-PacketQueue::checkFunctional(PacketPtr pkt)
+PacketQueue::trySatisfyFunctional(PacketPtr pkt)
 {
     pkt->pushLabel(label);
 
@@ -94,7 +92,7 @@ PacketQueue::checkFunctional(PacketPtr pkt)
     while (!found && i != transmitList.end()) {
         // If the buffered packet contains data, and it overlaps the
         // current packet, then update data
-        found = pkt->checkFunctional(i->pkt);
+        found = pkt->trySatisfyFunctional(i->pkt);
         ++i;
     }
 

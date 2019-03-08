@@ -76,10 +76,15 @@ int main(void) {
     val_a = (uint64_t)base;
     val_b = (uint64_t)(base+8*ROW*COL);
     val_c = (uint64_t)(base+16*ROW*COL);
+
+    printf("%d\n", acc);
 #else
     val_a = (uint64_t)spm_base;
     val_b = (uint64_t)(spm_base+8*ROW*COL);
     val_c = (uint64_t)(spm_base+16*ROW*COL);
+
+    printf("%d\n", acc);
+    //acc = 0x01;
 
     dmacpy(spm1, m1, sizeof(TYPE)*ROW*COL);
     while(!pollDma());
@@ -89,7 +94,6 @@ int main(void) {
     resetDma();
 #endif
 
-    printf("%d\n", acc);
     acc = 0x01;
     printf("%d\n", acc);
 	while(acc != 0x4) {

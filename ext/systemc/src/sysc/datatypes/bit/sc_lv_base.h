@@ -32,9 +32,9 @@
 
       Name, Affiliation, Date:
   Description of Modification:
-        Andy Goodrich, Forte Design Systems
-          Fixed bug in clean_tail for sizes that are modulo 32, which caused
-          zeroing of values.
+	Andy Goodrich, Forte Design Systems
+	  Fixed bug in clean_tail for sizes that are modulo 32, which caused
+	  zeroing of values.
 
  *****************************************************************************/
 
@@ -70,6 +70,7 @@
 #include "sysc/datatypes/bit/sc_logic.h"
 #include "sysc/datatypes/int/sc_length_param.h"
 
+
 namespace sc_dt
 {
 
@@ -103,13 +104,13 @@ public:
     // constructors
 
     explicit sc_lv_base( int length_ = sc_length_param().len() )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( length_ ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( length_ ); }
 
     explicit sc_lv_base( const sc_logic& a,
-                         int length_ = sc_length_param().len()  )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( length_, a ); }
+			 int length_ = sc_length_param().len()  )
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( length_, a ); }
 
     sc_lv_base( const char* a );
 
@@ -117,28 +118,28 @@ public:
 
     template <class X>
     sc_lv_base( const sc_proxy<X>& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( a.back_cast().length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( a.back_cast().length() ); base_type::assign_( a ); }
 
     sc_lv_base( const sc_lv_base& a );
 
 #ifdef SC_DT_DEPRECATED
 
     explicit sc_lv_base( const sc_unsigned& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
     explicit sc_lv_base( const sc_signed& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
     explicit sc_lv_base( const sc_uint_base& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
     explicit sc_lv_base( const sc_int_base& a )
-        : m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
-        { init( a.length() ); base_type::assign_( a ); }
+	: m_len( 0 ), m_size( 0 ), m_data( 0 ), m_ctrl( 0 )
+	{ init( a.length() ); base_type::assign_( a ); }
 
 #endif
 
@@ -146,55 +147,55 @@ public:
     // destructor
 
     virtual ~sc_lv_base()
-        { delete [] m_data; }
+	{ delete [] m_data; }
 
 
     // assignment operators
 
     template <class X>
     sc_lv_base& operator = ( const sc_proxy<X>& a )
-        { assign_p_( *this, a ); return *this; }
+	{ assign_p_( *this, a ); return *this; }
 
     sc_lv_base& operator = ( const sc_lv_base& a )
-        { assign_p_( *this, a ); return *this; }
+	{ assign_p_( *this, a ); return *this; }
 
     sc_lv_base& operator = ( const char* a );
 
     sc_lv_base& operator = ( const bool* a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( const sc_logic* a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( const sc_unsigned& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( const sc_signed& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( const sc_uint_base& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( const sc_int_base& a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( unsigned long a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( long a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( unsigned int a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( int a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( uint64 a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
     sc_lv_base& operator = ( int64 a )
-        { base_type::assign_( a ); return *this; }
+	{ base_type::assign_( a ); return *this; }
 
 
 #if 0
@@ -202,40 +203,40 @@ public:
     // bitwise complement
 
     sc_lv_base& b_not()
-        { return sc_proxy<sc_lv_base>::b_not(); }
+	{ return sc_proxy<sc_lv_base>::b_not(); }
 
     const sc_lv_base operator ~ () const
-        { sc_lv_base a( *this ); return a.b_not(); }
+	{ sc_lv_base a( *this ); return a.b_not(); }
 
 
     // bitwise left shift
 
     sc_lv_base& operator <<= ( int n )
-        { return sc_proxy<sc_lv_base>::operator <<= ( n ); }
+	{ return sc_proxy<sc_lv_base>::operator <<= ( n ); }
 
     const sc_lv_base operator << ( int n ) const
-        { sc_lv_base a( *this ); return ( a <<= n ); }
+	{ sc_lv_base a( *this ); return ( a <<= n ); }
 
 
     // bitwise right shift
 
     sc_lv_base& operator >>= ( int n )
-        { return sc_proxy<sc_lv_base>::operator >>= ( n ); }
+	{ return sc_proxy<sc_lv_base>::operator >>= ( n ); }
 
     const sc_lv_base operator >> ( int n ) const
-        { sc_lv_base a( *this ); return ( a >>= n ); }
+	{ sc_lv_base a( *this ); return ( a >>= n ); }
 
 
     // bitwise left rotate
 
     sc_lv_base& lrotate( int n )
-        { return sc_proxy<sc_lv_base>::lrotate( n ); }
+	{ return sc_proxy<sc_lv_base>::lrotate( n ); }
 
 
     // bitwise right rotate
 
     sc_lv_base& rrotate( int n )
-        { return sc_proxy<sc_lv_base>::rrotate( n ); }
+	{ return sc_proxy<sc_lv_base>::rrotate( n ); }
 
 #endif
 
@@ -243,30 +244,30 @@ public:
     // common methods
 
     int length() const
-        { return m_len; }
+	{ return m_len; }
 
     int size() const
-        { return m_size; }
+	{ return m_size; }
 
     sc_logic_value_t get_bit( int i ) const;
     void set_bit( int i, sc_logic_value_t value );
 
     sc_digit get_word( int wi ) const
-        { return m_data[wi]; }
+	{ return m_data[wi]; }
 
-        // note the test for out of range access here. this is necessary
-        // because of the hair-brained way concatenations are set up.
-        // an extend_sign on a concatenation uses the whole length of
-        // the concatenation to determine how many words to set.
+	// note the test for out of range access here. this is necessary 
+	// because of the hair-brained way concatenations are set up.
+	// an extend_sign on a concatenation uses the whole length of 
+	// the concatenation to determine how many words to set.
     void set_word( int wi, sc_digit w )
-        { assert ( wi < m_size ); m_data[wi] = w; }
-
+	{ assert ( wi < m_size ); m_data[wi] = w; }
+	 
 
     sc_digit get_cword( int wi ) const
-        { return m_ctrl[wi]; }
+	{ return m_ctrl[wi]; }
 
     void set_cword( int wi, sc_digit w )
-        { assert ( wi < m_size ); m_ctrl[wi] = w; }
+	{ assert ( wi < m_size ); m_ctrl[wi] = w; }
 
     void clean_tail();
 
@@ -319,7 +320,7 @@ sc_lv_base::get_bit( int i ) const
     int wi = i / SC_DIGIT_SIZE;
     int bi = i % SC_DIGIT_SIZE;
     return sc_logic_value_t( ((m_data[wi] >> bi) & SC_DIGIT_ONE) |
-                             (((m_ctrl[wi] >> bi) << 1) & SC_DIGIT_TWO) );
+			     (((m_ctrl[wi] >> bi) << 1) & SC_DIGIT_TWO) );
 }
 
 inline
@@ -343,11 +344,11 @@ sc_lv_base::clean_tail()
     int wi = m_size - 1;
     int bi = m_len % SC_DIGIT_SIZE;
     sc_digit mask = ~SC_DIGIT_ZERO >> (SC_DIGIT_SIZE - bi);
-        if ( mask )
-        {
-                m_data[wi] &= mask;
-                m_ctrl[wi] &= mask;
-        }
+	if ( mask )
+	{
+		m_data[wi] &= mask;
+		m_ctrl[wi] &= mask;
+	}
 }
 
 
@@ -686,7 +687,7 @@ const sc_lv_base
 sc_proxy<X>::operator << ( int n ) const
 {
     sc_lv_base a( back_cast().length()+n );
-        a = back_cast();
+	a = back_cast();
     return ( a <<= n );
 }
 
@@ -711,12 +712,12 @@ X&
 sc_proxy<X>::lrotate( int n )
 {
     X& x = back_cast();
-    if ( n < 0 ) {
-        char msg[BUFSIZ];
-        std::sprintf( msg,
-                 "left rotate operation is only allowed with positive "
-                 "rotate values, rotate value = %d", n );
-        SC_REPORT_ERROR( sc_core::SC_ID_OUT_OF_BOUNDS_, msg );
+    if( n < 0 ) {
+	char msg[BUFSIZ];
+	std::sprintf( msg,
+		 "left rotate operation is only allowed with positive "
+		 "rotate values, rotate value = %d", n );
+	SC_REPORT_ERROR( sc_core::SC_ID_OUT_OF_BOUNDS_, msg );
     }
     int len = x.length();
     n %= len;
@@ -724,9 +725,9 @@ sc_proxy<X>::lrotate( int n )
     sc_lv_base a( x << n );
     sc_lv_base b( x >> (len - n) );
     int sz = x.size();
-    for ( int i = 0; i < sz; ++ i ) {
-        x.set_word( i, a.get_word( i ) | b.get_word( i ) );
-        x.set_cword( i, a.get_cword( i ) | b.get_cword( i ) );
+    for( int i = 0; i < sz; ++ i ) {
+	x.set_word( i, a.get_word( i ) | b.get_word( i ) );
+	x.set_cword( i, a.get_cword( i ) | b.get_cword( i ) );
     }
     x.clean_tail();
     return x;
@@ -750,12 +751,12 @@ X&
 sc_proxy<X>::rrotate( int n )
 {
     X& x = back_cast();
-    if ( n < 0 ) {
-        char msg[BUFSIZ];
-        std::sprintf( msg,
-                 "right rotate operation is only allowed with positive "
-                 "rotate values, rotate value = %d", n );
-        SC_REPORT_ERROR( sc_core::SC_ID_OUT_OF_BOUNDS_, msg );
+    if( n < 0 ) {
+	char msg[BUFSIZ];
+	std::sprintf( msg,
+		 "right rotate operation is only allowed with positive "
+		 "rotate values, rotate value = %d", n );
+	SC_REPORT_ERROR( sc_core::SC_ID_OUT_OF_BOUNDS_, msg );
     }
     int len = x.length();
     n %= len;
@@ -763,9 +764,9 @@ sc_proxy<X>::rrotate( int n )
     sc_lv_base a( x >> n );
     sc_lv_base b( x << (len - n) );
     int sz = x.size();
-    for ( int i = 0; i < sz; ++ i ) {
-        x.set_word( i, a.get_word( i ) | b.get_word( i ) );
-        x.set_cword( i, a.get_cword( i ) | b.get_cword( i ) );
+    for( int i = 0; i < sz; ++ i ) {
+	x.set_word( i, a.get_word( i ) | b.get_word( i ) );
+	x.set_cword( i, a.get_cword( i ) | b.get_cword( i ) );
     }
     x.clean_tail();
     return x;
@@ -804,15 +805,15 @@ operator == ( const sc_proxy<X>& px, const sc_proxy<Y>& py )
     const Y& y = py.back_cast();
     int x_len = x.length();
     int y_len = y.length();
-    if ( x_len != y_len ) {
-        return false;
+    if( x_len != y_len ) {
+	return false;
     }
     int sz = x.size();
-    for ( int i = 0; i < sz; ++ i ) {
-        if ( x.get_word( i ) != y.get_word( i ) ||
-            x.get_cword( i ) != y.get_cword( i ) ) {
-            return false;
-        }
+    for( int i = 0; i < sz; ++ i ) {
+	if( x.get_word( i ) != y.get_word( i ) ||
+	    x.get_cword( i ) != y.get_cword( i ) ) {
+	    return false;
+	}
     }
     return true;
 }
@@ -861,7 +862,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 operator , ( sc_bitref_r<T> a, const char* b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -870,7 +871,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 operator , ( const char* a, sc_bitref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -879,7 +880,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 operator , ( sc_bitref_r<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -888,7 +889,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 operator , ( const sc_logic& a, sc_bitref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -916,7 +917,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 concat( sc_bitref_r<T> a, const char* b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -925,7 +926,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 concat( const char* a, sc_bitref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -934,7 +935,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 concat( sc_bitref_r<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -943,7 +944,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 concat( const sc_logic& a, sc_bitref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -973,7 +974,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 operator , ( sc_bitref<T> a, const char* b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -982,7 +983,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 operator , ( const char* a, sc_bitref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -991,7 +992,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 operator , ( sc_bitref<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -1000,7 +1001,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 operator , ( const sc_logic& a, sc_bitref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1028,7 +1029,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 concat( sc_bitref<T> a, const char* b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -1037,7 +1038,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 concat( const char* a, sc_bitref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1046,7 +1047,7 @@ sc_concref_r<sc_bitref_r<T>,sc_lv_base>
 concat( sc_bitref<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_bitref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -1055,7 +1056,7 @@ sc_concref_r<sc_lv_base,sc_bitref_r<T> >
 concat( const sc_logic& a, sc_bitref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_bitref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1093,7 +1094,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 operator , ( sc_subref_r<T> a, const char* b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -1102,7 +1103,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 operator , ( const char* a, sc_subref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1111,7 +1112,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 operator , ( sc_subref_r<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -1120,7 +1121,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 operator , ( const sc_logic& a, sc_subref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1148,7 +1149,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 concat( sc_subref_r<T> a, const char* b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -1157,7 +1158,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 concat( const char* a, sc_subref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1166,7 +1167,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 concat( sc_subref_r<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -1175,7 +1176,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 concat( const sc_logic& a, sc_subref_r<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1205,7 +1206,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 operator , ( sc_subref<T> a, const char* b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -1214,7 +1215,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 operator , ( const char* a, sc_subref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1223,7 +1224,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 operator , ( sc_subref<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -1232,7 +1233,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 operator , ( const sc_logic& a, sc_subref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1260,7 +1261,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 concat( sc_subref<T> a, const char* b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T>
@@ -1269,7 +1270,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 concat( const char* a, sc_subref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1278,7 +1279,7 @@ sc_concref_r<sc_subref_r<T>,sc_lv_base>
 concat( sc_subref<T> a, const sc_logic& b )
 {
     return sc_concref_r<sc_subref_r<T>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T>
@@ -1287,7 +1288,7 @@ sc_concref_r<sc_lv_base,sc_subref_r<T> >
 concat( const sc_logic& a, sc_subref<T> b )
 {
     return sc_concref_r<sc_lv_base,sc_subref_r<T> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T>
@@ -1324,12 +1325,12 @@ sc_subref<X>::operator = ( const sc_subref_r<X>& b )
 {
     sc_lv_base t( b ); // (partial) self assignment protection
     int len = sc_min( this->length(), t.length() );
-    if ( ! this->reversed() ) {
-        for ( int i = len - 1; i >= 0; -- i ) {
+    if( ! this->reversed() ) {
+        for( int i = len - 1; i >= 0; -- i ) {
             this->m_obj.set_bit( this->m_lo + i, t[i].value() );
         }
     } else {
-        for ( int i = len - 1; i >= 0; -- i ) {
+        for( int i = len - 1; i >= 0; -- i ) {
             this->m_obj.set_bit( this->m_lo - i, t[i].value() );
         }
     }
@@ -1343,12 +1344,12 @@ sc_subref<X>::operator = ( const sc_subref<X>& b )
 {
     sc_lv_base t( b ); // (partial) self assignment protection
     int len = sc_min( this->length(), t.length() );
-    if ( ! this->reversed() ) {
-        for ( int i = len - 1; i >= 0; -- i ) {
+    if( ! this->reversed() ) {
+        for( int i = len - 1; i >= 0; -- i ) {
             this->m_obj.set_bit( this->m_lo + i, t[i].value() );
         }
     } else {
-        for ( int i = len - 1; i >= 0; -- i ) {
+        for( int i = len - 1; i >= 0; -- i ) {
             this->m_obj.set_bit( this->m_lo - i, t[i].value() );
         }
     }
@@ -1370,7 +1371,7 @@ sc_concref_r<sc_concref_r<T1,T2>,sc_lv_base>
 operator , ( sc_concref_r<T1,T2> a, const char* b )
 {
     return sc_concref_r<sc_concref_r<T1,T2>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b ), 3 );
+	*a.clone(), *new sc_lv_base( b ), 3 );
 }
 
 template <class T1, class T2>
@@ -1379,7 +1380,7 @@ sc_concref_r<sc_lv_base,sc_concref_r<T1,T2> >
 operator , ( const char* a, sc_concref_r<T1,T2> b )
 {
     return sc_concref_r<sc_lv_base,sc_concref_r<T1,T2> >(
-        *new sc_lv_base( a ), *b.clone(), 3 );
+	*new sc_lv_base( a ), *b.clone(), 3 );
 }
 
 template <class T1, class T2>
@@ -1388,7 +1389,7 @@ sc_concref_r<sc_concref_r<T1,T2>,sc_lv_base>
 operator , ( sc_concref_r<T1,T2> a, const sc_logic& b )
 {
     return sc_concref_r<sc_concref_r<T1,T2>,sc_lv_base>(
-        *a.clone(), *new sc_lv_base( b, 1 ), 3 );
+	*a.clone(), *new sc_lv_base( b, 1 ), 3 );
 }
 
 template <class T1, class T2>
@@ -1397,7 +1398,7 @@ sc_concref_r<sc_lv_base,sc_concref_r<T1,T2> >
 operator , ( const sc_logic& a, sc_concref_r<T1,T2> b )
 {
     return sc_concref_r<sc_lv_base,sc_concref_r<T1,T2> >(
-        *new sc_lv_base( a, 1 ), *b.clone(), 3 );
+	*new sc_lv_base( a, 1 ), *b.clone(), 3 );
 }
 
 template <class T1, class T2>

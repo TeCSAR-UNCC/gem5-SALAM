@@ -165,7 +165,7 @@ class BasicBlock {
     std::vector<std::string> setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType);
     void initializeReturnRegister(std::vector<std::string> &parameters, Register *&reg , std::string &returnType, const std::string &instructionType );
     int setSize(std::string dataType);
-    int64_t parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList);
+    int64_t parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles);
     void printNodes();
     bool immPosition(std::vector<std::string> &parameters);
 };

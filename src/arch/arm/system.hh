@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012-2013, 2015-2017 ARM Limited
+ * Copyright (c) 2010, 2012-2013, 2015-2018 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -89,21 +89,25 @@ class ArmSystem : public System
     const bool _haveVirtualization;
 
     /**
+     * True if this system implements the Crypto Extension
+     */
+    const bool _haveCrypto;
+
+    /**
      * Pointer to the Generic Timer wrapper.
      */
     GenericTimer *_genericTimer;
+
+    /**
+     * Reset address (ARMv8)
+     */
+    const Addr _resetAddr;
 
     /**
      * True if the register width of the highest implemented exception level is
      * 64 bits (ARMv8)
      */
     bool _highestELIs64;
-
-    /**
-     * Reset address if the highest implemented exception level is 64 bits
-     * (ARMv8)
-     */
-    const Addr _resetAddr64;
 
     /**
      * Supported physical address range in bits if the highest implemented
@@ -121,6 +125,11 @@ class ArmSystem : public System
      * invalid/empty if disabled.
      */
     const AddrRange _m5opRange;
+
+    /**
+     * True if the Semihosting interface is enabled.
+     */
+    ArmSemihosting *const semihosting;
 
   protected:
     /**
@@ -172,6 +181,11 @@ class ArmSystem : public System
       */
     bool haveVirtualization() const { return _haveVirtualization; }
 
+    /** Returns true if this system implements the Crypto
+      * Extension
+      */
+    bool haveCrypto() const { return _haveCrypto; }
+
     /** Sets the pointer to the Generic Timer. */
     void setGenericTimer(GenericTimer *generic_timer)
     {
@@ -197,7 +211,7 @@ class ArmSystem : public System
 
     /** Returns the reset address if the highest implemented exception level is
      * 64 bits (ARMv8) */
-    Addr resetAddr64() const { return _resetAddr64; }
+    Addr resetAddr() const { return _resetAddr; }
 
     /** Returns true if ASID is 16 bits in AArch64 (ARMv8) */
     bool haveLargeAsid64() const { return _haveLargeAsid64; }
@@ -227,6 +241,9 @@ class ArmSystem : public System
      * an invalid/empty range if disabled.
      */
     const AddrRange &m5opRange() const { return _m5opRange; }
+
+    /** Is Arm Semihosting support enabled? */
+    bool haveSemihosting() const { return semihosting != nullptr; }
 
     /**
      * Returns a valid ArmSystem pointer if using ARM ISA, it fails
@@ -265,7 +282,7 @@ class ArmSystem : public System
     /** Returns the reset address if the highest implemented exception level
      * for the system of a specific thread context is 64 bits (ARMv8)
      */
-    static Addr resetAddr64(ThreadContext *tc);
+    static Addr resetAddr(ThreadContext *tc);
 
     /** Returns the supported physical address range in bits for the system of a
      * specific thread context
@@ -280,6 +297,17 @@ class ArmSystem : public System
     /** Returns true if ASID is 16 bits for the system of a specific thread
      * context while in AArch64 (ARMv8) */
     static bool haveLargeAsid64(ThreadContext *tc);
+
+    /** Is Arm Semihosting support enabled? */
+    static bool haveSemihosting(ThreadContext *tc);
+
+    /** Make a Semihosting call from aarch64 */
+    static uint64_t callSemihosting64(ThreadContext *tc,
+                                      uint32_t op, uint64_t param);
+
+    /** Make a Semihosting call from aarch32 */
+    static uint32_t callSemihosting32(ThreadContext *tc,
+                                      uint32_t op, uint32_t param);
 };
 
 class GenericArmSystem : public ArmSystem

@@ -40,6 +40,8 @@
 # a generic ARM bigLITTLE system.
 
 
+from __future__ import print_function
+
 import argparse
 import os
 import sys
@@ -51,12 +53,12 @@ m5.util.addToPath("../../")
 
 from common import SysPaths
 from common import CpuConfig
+from common.cores.arm import ex5_big, ex5_LITTLE
 
 import devices
 from devices import AtomicCluster, KvmCluster
 
 
-default_dtb = 'armv8_gem5_v1_big_little_2_2.dtb'
 default_kernel = 'vmlinux4.3.aarch64'
 default_disk = 'aarch64-ubuntu-trusty-headless.img'
 default_rcs = 'bootscript.rcS'
@@ -82,7 +84,7 @@ def _using_pdes(root):
 class BigCluster(devices.CpuCluster):
     def __init__(self, system, num_cpus, cpu_clock,
                  cpu_voltage="1.0V"):
-        cpu_config = [ CpuConfig.get("arm_detailed"), devices.L1I, devices.L1D,
+        cpu_config = [ CpuConfig.get("O3_ARM_v7a_3"), devices.L1I, devices.L1D,
                     devices.WalkCache, devices.L2 ]
         super(BigCluster, self).__init__(system, num_cpus, cpu_clock,
                                          cpu_voltage, *cpu_config)
@@ -90,20 +92,34 @@ class BigCluster(devices.CpuCluster):
 class LittleCluster(devices.CpuCluster):
     def __init__(self, system, num_cpus, cpu_clock,
                  cpu_voltage="1.0V"):
-        cpu_config = [ CpuConfig.get("minor"), devices.L1I, devices.L1D,
+        cpu_config = [ CpuConfig.get("MinorCPU"), devices.L1I, devices.L1D,
                        devices.WalkCache, devices.L2 ]
         super(LittleCluster, self).__init__(system, num_cpus, cpu_clock,
                                          cpu_voltage, *cpu_config)
 
+class Ex5BigCluster(devices.CpuCluster):
+    def __init__(self, system, num_cpus, cpu_clock,
+                 cpu_voltage="1.0V"):
+        cpu_config = [ CpuConfig.get("ex5_big"), ex5_big.L1I, ex5_big.L1D,
+                    ex5_big.WalkCache, ex5_big.L2 ]
+        super(Ex5BigCluster, self).__init__(system, num_cpus, cpu_clock,
+                                         cpu_voltage, *cpu_config)
+
+class Ex5LittleCluster(devices.CpuCluster):
+    def __init__(self, system, num_cpus, cpu_clock,
+                 cpu_voltage="1.0V"):
+        cpu_config = [ CpuConfig.get("ex5_LITTLE"), ex5_LITTLE.L1I,
+                    ex5_LITTLE.L1D, ex5_LITTLE.WalkCache, ex5_LITTLE.L2 ]
+        super(Ex5LittleCluster, self).__init__(system, num_cpus, cpu_clock,
+                                         cpu_voltage, *cpu_config)
 
 def createSystem(caches, kernel, bootscript, disks=[]):
     sys = devices.SimpleSystem(caches, default_mem_size,
                                kernel=SysPaths.binary(kernel),
-                               readfile=bootscript,
-                               machine_type="DTOnly")
+                               readfile=bootscript)
 
-    sys.mem_ctrls = SimpleMemory(range=sys._mem_range)
-    sys.mem_ctrls.port = sys.membus.master
+    sys.mem_ctrls = [ SimpleMemory(range=r, port=sys.membus.master)
+                      for r in sys.mem_ranges ]
 
     sys.connect()
 
@@ -127,6 +143,7 @@ def createSystem(caches, kernel, bootscript, disks=[]):
 cpu_types = {
     "atomic" : (AtomicCluster, AtomicCluster),
     "timing" : (BigCluster, LittleCluster),
+    "exynos" : (Ex5BigCluster, Ex5LittleCluster),
 }
 
 # Only add the KVM CPU if it has been compiled into gem5
@@ -137,7 +154,7 @@ if devices.have_kvm:
 def addOptions(parser):
     parser.add_argument("--restore-from", type=str, default=None,
                         help="Restore from checkpoint")
-    parser.add_argument("--dtb", type=str, default=default_dtb,
+    parser.add_argument("--dtb", type=str, default=None,
                         help="DTB file to load")
     parser.add_argument("--kernel", type=str, default=default_kernel,
                         help="Linux kernel")
@@ -165,6 +182,14 @@ def addOptions(parser):
     parser.add_argument("--sim-quantum", type=str, default="1ms",
                         help="Simulation quantum for parallel simulation. " \
                         "Default: %(default)s")
+    parser.add_argument("-P", "--param", action="append", default=[],
+        help="Set a SimObject parameter relative to the root node. "
+             "An extended Python multi range slicing syntax can be used "
+             "for arrays. For example: "
+             "'system.cpu[0,1,3:8:2].max_insts_all_threads = 42' "
+             "sets max_insts_all_threads for cpus 0, 1, 3, 5 and 7 "
+             "Direct parameters of the root object are not accessible, "
+             "only parameters of its children.")
     return parser
 
 def build(options):
@@ -233,7 +258,19 @@ def build(options):
         _build_kvm(system, all_cpus)
 
     # Linux device tree
-    system.dtb_filename = SysPaths.binary(options.dtb)
+    if options.dtb is not None:
+        system.dtb_filename = SysPaths.binary(options.dtb)
+    else:
+        def create_dtb_for_system(system, filename):
+            state = FdtState(addr_cells=2, size_cells=2, cpu_cells=1)
+            rootNode = system.generateDeviceTree(state)
+
+            fdt = Fdt()
+            fdt.add_rootnode(rootNode)
+            dtb_filename = os.path.join(m5.options.outdir, filename)
+            return fdt.writeDtbFile(dtb_filename)
+
+        system.dtb_filename = create_dtb_for_system(system, 'system.dtb')
 
     return root
 
@@ -284,12 +321,12 @@ def run(checkpoint_dir=m5.options.outdir):
         event = m5.simulate()
         exit_msg = event.getCause()
         if exit_msg == "checkpoint":
-            print "Dropping checkpoint at tick %d" % m5.curTick()
+            print("Dropping checkpoint at tick %d" % m5.curTick())
             cpt_dir = os.path.join(checkpoint_dir, "cpt.%d" % m5.curTick())
             m5.checkpoint(cpt_dir)
-            print "Checkpoint done."
+            print("Checkpoint done.")
         else:
-            print exit_msg, " @ ", m5.curTick()
+            print(exit_msg, " @ ", m5.curTick())
             break
 
     sys.exit(event.getCode())
@@ -301,6 +338,7 @@ def main():
     addOptions(parser)
     options = parser.parse_args()
     root = build(options)
+    root.apply_config(options.param)
     instantiate(options)
     run()
 

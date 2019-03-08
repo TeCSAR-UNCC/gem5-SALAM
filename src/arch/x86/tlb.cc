@@ -94,7 +94,7 @@ TLB::evictLRU()
 }
 
 TlbEntry *
-TLB::insert(Addr vpn, TlbEntry &entry)
+TLB::insert(Addr vpn, const TlbEntry &entry)
 {
     // If somebody beat us to it, just use that existing entry.
     TlbEntry *newEntry = trie.lookup(vpn);
@@ -170,7 +170,7 @@ TLB::demapPage(Addr va, uint64_t asn)
 }
 
 Fault
-TLB::translateInt(RequestPtr req, ThreadContext *tc)
+TLB::translateInt(const RequestPtr &req, ThreadContext *tc)
 {
     DPRINTF(TLB, "Addresses references internal memory.\n");
     Addr vaddr = req->getVaddr();
@@ -224,7 +224,8 @@ TLB::translateInt(RequestPtr req, ThreadContext *tc)
 }
 
 Fault
-TLB::finalizePhysical(RequestPtr req, ThreadContext *tc, Mode mode) const
+TLB::finalizePhysical(const RequestPtr &req,
+                      ThreadContext *tc, Mode mode) const
 {
     Addr paddr = req->getPaddr();
 
@@ -265,7 +266,8 @@ TLB::finalizePhysical(RequestPtr req, ThreadContext *tc, Mode mode) const
 }
 
 Fault
-TLB::translate(RequestPtr req, ThreadContext *tc, Translation *translation,
+TLB::translate(const RequestPtr &req,
+        ThreadContext *tc, Translation *translation,
         Mode mode, bool &delayedResponse, bool timing)
 {
     Request::Flags flags = req->getFlags();
@@ -357,23 +359,26 @@ TLB::translate(RequestPtr req, ThreadContext *tc, Translation *translation,
                     assert(entry);
                 } else {
                     Process *p = tc->getProcessPtr();
-                    TlbEntry newEntry;
-                    bool success = p->pTable->lookup(vaddr, newEntry);
-                    if (!success && mode != Execute) {
+                    const EmulationPageTable::Entry *pte =
+                        p->pTable->lookup(vaddr);
+                    if (!pte && mode != Execute) {
                         // Check if we just need to grow the stack.
                         if (p->fixupStackFault(vaddr)) {
                             // If we did, lookup the entry for the new page.
-                            success = p->pTable->lookup(vaddr, newEntry);
+                            pte = p->pTable->lookup(vaddr);
                         }
                     }
-                    if (!success) {
+                    if (!pte) {
                         return std::make_shared<PageFault>(vaddr, true, mode,
                                                            true, false);
                     } else {
                         Addr alignedVaddr = p->pTable->pageAlign(vaddr);
                         DPRINTF(TLB, "Mapping %#x to %#x\n", alignedVaddr,
-                                newEntry.pageStart());
-                        entry = insert(alignedVaddr, newEntry);
+                                pte->paddr);
+                        entry = insert(alignedVaddr, TlbEntry(
+                                p->pTable->pid(), alignedVaddr, pte->paddr,
+                                pte->flags & EmulationPageTable::Uncacheable,
+                                pte->flags & EmulationPageTable::ReadOnly));
                     }
                     DPRINTF(TLB, "Miss was serviced.\n");
                 }
@@ -422,14 +427,14 @@ TLB::translate(RequestPtr req, ThreadContext *tc, Translation *translation,
 }
 
 Fault
-TLB::translateAtomic(RequestPtr req, ThreadContext *tc, Mode mode)
+TLB::translateAtomic(const RequestPtr &req, ThreadContext *tc, Mode mode)
 {
     bool delayedResponse;
     return TLB::translate(req, tc, NULL, mode, delayedResponse, false);
 }
 
 void
-TLB::translateTiming(RequestPtr req, ThreadContext *tc,
+TLB::translateTiming(const RequestPtr &req, ThreadContext *tc,
         Translation *translation, Mode mode)
 {
     bool delayedResponse;
@@ -438,13 +443,6 @@ TLB::translateTiming(RequestPtr req, ThreadContext *tc,
         TLB::translate(req, tc, translation, mode, delayedResponse, true);
     if (!delayedResponse)
         translation->finish(fault, req, tc, mode);
-}
-
-Fault
-TLB::translateFunctional(RequestPtr req, ThreadContext *tc, Mode mode)
-{
-    panic("Not implemented\n");
-    return NoFault;
 }
 
 Walker *

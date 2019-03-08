@@ -84,6 +84,8 @@ class CommInterface : public BasicPioDevice
     std::list<MemoryRequest*> *spmRdQ;
     std::list<MemoryRequest*> *spmWrQ;
 
+    int requestsInQueues;
+
     MemSidePort dramSide;
     MemSidePort spmSide;
     MemSidePort *dramPort;
@@ -107,6 +109,8 @@ class CommInterface : public BasicPioDevice
     TickEvent tickEvent;
     unsigned cacheLineSize;
 
+    virtual void checkMMR();
+    virtual void processMemoryRequests();
     virtual void tick();
 
     bool running;
@@ -125,6 +129,7 @@ class CommInterface : public BasicPioDevice
     int clock_period;
 
     ComputeUnit *cu;
+    CycleCounts *cycleCount;
 
   public:
     typedef CommInterfaceParams Params;
@@ -159,8 +164,8 @@ class CommInterface : public BasicPioDevice
     int getProcessDelay() { return processDelay; }
 
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
-
-    void finish();
+    void registerCycleCounts(CycleCounts *cylcount) { cycleCount = cylcount; }
+    virtual void finish();
 
     MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead) {
         if (isRead) {
@@ -200,9 +205,16 @@ class CommInterface : public BasicPioDevice
 
 class PrivateMemory : public SimpleMemory
 {
+  protected:
+    bool readyMode;
+    bool resetOnPrivateRead;
+    bool *ready;
   public:
     PrivateMemory(const PrivateMemoryParams *p);
+    bool isReady(Addr ad, Addr size);
     void privateAccess(PacketPtr pkt);
+    void access(PacketPtr pkt) override;
+    void setAllReady(bool r);
 };
 
 #include "params/CommMemInterface.hh"
@@ -212,6 +224,7 @@ class CommMemInterface : public CommInterface
   protected:
     PrivateMemory * pmem;
     AddrRange pmemRange;
+    bool resetPmemOnFinish;
     int readPorts;
     int writePorts;
     int availablePorts;
@@ -227,10 +240,9 @@ class CommMemInterface : public CommInterface
     }
 
     CommMemInterface(Params *p);
-    virtual void refreshMemPorts() {
-      avReadPorts = readPorts;
-      avWritePorts = writePorts;
-    }
+    virtual void processMemoryRequests() override;
+    virtual void refreshMemPorts() override;
+    virtual void finish() override;
 
   protected:
     virtual void tick() override;

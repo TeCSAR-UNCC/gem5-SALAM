@@ -26,9 +26,9 @@
   CHANGE LOG IS AT THE END OF THE FILE
  *****************************************************************************/
 
-#include "sysc/communication/sc_signal_resolved.h"
-#include "sysc/kernel/sc_process_handle.h"
 #include "sysc/kernel/sc_simcontext.h"
+#include "sysc/kernel/sc_process_handle.h"
+#include "sysc/communication/sc_signal_resolved.h"
 
 namespace sc_core {
 
@@ -62,13 +62,13 @@ sc_logic_resolve( sc_dt::sc_logic& result_,
 
     assert( sz != 0 );
 
-    if ( sz == 1 ) {
-        result_ = values_[0];
-        return;
+    if( sz == 1 ) {
+	result_ = values_[0];
+	return;
     }
 
     sc_dt::sc_logic_value_t res = values_[0].value();
-    for ( int i = sz - 1; i > 0 && res != sc_dt::Log_X; -- i ) {
+    for( int i = sz - 1; i > 0 && res != sc_dt::Log_X; -- i ) {
        res = sc_logic_resolution_tbl[res][values_[i].value()];
     }
     result_ = res;
@@ -90,26 +90,26 @@ sc_signal_resolved::write( const data_type& value_ )
 
     bool value_changed = false;
     bool found = false;
-
-    for ( int i = m_proc_vec.size() - 1; i >= 0; -- i ) {
-        if ( cur_proc == m_proc_vec[i] ) {
-            if ( value_ != m_val_vec[i] ) {
-                m_val_vec[i] = value_;
-                value_changed = true;
-            }
-            found = true;
-            break;
-        }
+    
+    for( int i = m_proc_vec.size() - 1; i >= 0; -- i ) {
+	if( cur_proc == m_proc_vec[i] ) {
+	    if( value_ != m_val_vec[i] ) {
+		m_val_vec[i] = value_;
+		value_changed = true;
+	    }
+	    found = true;
+	    break;
+	}
     }
-
-    if ( ! found ) {
-        m_proc_vec.push_back( cur_proc );
-        m_val_vec.push_back( value_ );
-        value_changed = true;
+    
+    if( ! found ) {
+	m_proc_vec.push_back( cur_proc );
+	m_val_vec.push_back( value_ );
+	value_changed = true;
     }
-
-    if ( value_changed ) {
-        request_update();
+    
+    if( value_changed ) {
+	request_update();
     }
 }
 

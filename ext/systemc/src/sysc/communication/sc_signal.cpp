@@ -27,15 +27,15 @@
  *****************************************************************************/
 
 
-#include <sstream>
-
 #include "sysc/communication/sc_communication_ids.h"
+#include "sysc/utils/sc_utils_ids.h"
 #include "sysc/communication/sc_signal.h"
-#include "sysc/datatypes/bit/sc_lv_base.h"
 #include "sysc/datatypes/int/sc_signed.h"
 #include "sysc/datatypes/int/sc_unsigned.h"
+#include "sysc/datatypes/bit/sc_lv_base.h"
 #include "sysc/kernel/sc_reset.h"
-#include "sysc/utils/sc_utils_ids.h"
+
+#include <sstream>
 
 using sc_dt::sc_lv_base;
 using sc_dt::sc_signed;
@@ -52,7 +52,7 @@ sc_signal_invalid_writer( sc_object* target, sc_object* first_writer,
                           sc_object* second_writer, bool check_delta )
 {
     if ( second_writer )
-    {
+    {   
         std::stringstream msg;
 
         msg
@@ -66,7 +66,7 @@ sc_signal_invalid_writer( sc_object* target, sc_object* first_writer,
                "`" << second_writer->name() << "' "
                "(" << second_writer->kind() << ")";
 
-        if ( check_delta )
+        if( check_delta )
         {
             msg << "\n first conflicting write in delta cycle "
                 << sc_delta_count();
@@ -83,7 +83,7 @@ sc_writer_policy_check_port::
     if ( is_output && sc_get_curr_simcontext()->write_check() )
     {
         // an out or inout port; only one can be connected
-        if ( m_output != 0) {
+        if( m_output != 0) {
             sc_signal_invalid_writer( target, m_output, port_, false );
             return false;
         } else {
@@ -99,8 +99,8 @@ void sc_deprecated_get_data_ref()
     if ( warn_get_data_ref_deprecated )
     {
         warn_get_data_ref_deprecated=false;
-        SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
-            "get_data_ref() is deprecated, use read() instead" );
+	SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
+	    "get_data_ref() is deprecated, use read() instead" );
     }
 }
 
@@ -110,8 +110,8 @@ void sc_deprecated_get_new_value()
     if ( warn_new_value )
     {
         warn_new_value=false;
-        SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
-            "sc_signal<T>::get_new_value() is deprecated");
+	SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
+	    "sc_signal<T>::get_new_value() is deprecated");
     }
 }
 
@@ -121,8 +121,8 @@ void sc_deprecated_trace()
     if ( warn_trace_deprecated )
     {
         warn_trace_deprecated=false;
-        SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
-            "sc_signal<T>::trace() is deprecated");
+	SC_REPORT_INFO(SC_ID_IEEE_1666_DEPRECATION_,
+	    "sc_signal<T>::trace() is deprecated");
     }
 }
 
@@ -146,7 +146,7 @@ sc_signal<bool,POL>::register_port( sc_port_base& port_,
                                     const char* if_typename_ )
 {
     bool is_output = std::string( if_typename_ ) == typeid(if_type).name();
-    if ( !policy_type::check_port( this, &port_, is_output ) )
+    if( !policy_type::check_port( this, &port_, is_output ) )
        ((void)0); // fallback? error has been suppressed ...
 }
 
@@ -161,7 +161,7 @@ sc_signal<bool,POL>::write( const bool& value_ )
     if ( !policy_type::check_write(this, value_changed) )
         return;
     m_new_val = value_;
-    if ( value_changed ) {
+    if( value_changed ) {
         request_update();
     }
 }
@@ -189,7 +189,7 @@ void
 sc_signal<bool,POL>::update()
 {
     policy_type::update();
-    if ( !( m_new_val == m_cur_val ) ) {
+    if( !( m_new_val == m_cur_val ) ) {
         do_update();
     }
 }
@@ -269,7 +269,7 @@ sc_signal<sc_dt::sc_logic,POL>::register_port( sc_port_base& port_,
                                                const char* if_typename_ )
 {
     bool is_output = std::string( if_typename_ ) == typeid(if_type).name();
-    if ( !policy_type::check_port( this, &port_, is_output ) )
+    if( !policy_type::check_port( this, &port_, is_output ) )
        ((void)0); // fallback? error has been suppressed ...
 }
 
@@ -286,7 +286,7 @@ sc_signal<sc_dt::sc_logic,POL>::write( const sc_dt::sc_logic& value_ )
         return;
 
     m_new_val = value_;
-    if ( value_changed ) {
+    if( value_changed ) {
         request_update();
     }
 }
@@ -314,7 +314,7 @@ void
 sc_signal<sc_dt::sc_logic,POL>::update()
 {
     policy_type::update();
-    if ( !( m_new_val == m_cur_val ) ) {
+    if( !( m_new_val == m_cur_val ) ) {
         do_update();
     }
 }
@@ -327,10 +327,10 @@ sc_signal<sc_dt::sc_logic,POL>::do_update()
 
     if ( m_change_event_p ) m_change_event_p->notify_next_delta();
 
-    if ( m_posedge_event_p && (this->m_cur_val == sc_dt::SC_LOGIC_1) ) {
+    if( m_posedge_event_p && (this->m_cur_val == sc_dt::SC_LOGIC_1) ) {
         m_posedge_event_p->notify_next_delta();
     }
-    else if ( m_negedge_event_p && (this->m_cur_val == sc_dt::SC_LOGIC_0) ) {
+    else if( m_negedge_event_p && (this->m_cur_val == sc_dt::SC_LOGIC_0) ) {
         m_negedge_event_p->notify_next_delta();
     }
 
@@ -373,7 +373,7 @@ template class sc_signal<sc_dt::sc_logic,SC_UNCHECKED_WRITERS>;
 
 } // namespace sc_core
 
-/*
+/* 
 $Log: sc_signal.cpp,v $
 Revision 1.9  2011/08/26 20:45:42  acg
  Andy Goodrich: moved the modification log to the end of the file to

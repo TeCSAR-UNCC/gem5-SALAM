@@ -60,7 +60,7 @@ protected:
     // constructor
 
     sc_mutex_if()
-        {}
+	{}
 
 private:
 
@@ -92,7 +92,7 @@ public:
 
     bool release()
     {
-        if ( m_active )
+        if( m_active )
         {
             m_ref.unlock();
             m_active = false;

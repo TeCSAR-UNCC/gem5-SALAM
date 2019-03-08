@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "vadd.h"
+#include "../../common/m5ops.h"
 
 vadd_struct vas;
 
@@ -54,5 +55,5 @@ int main(void) {
 	        printf("C[%2d]=%f\n", i, vas.c[i]);
 	    }
 	}
-	*(char *)0x2FFFFFFF = 1;
+	m5_exit();
 }

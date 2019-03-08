@@ -189,8 +189,8 @@ TEST_P(DerivedTest, DoesBlah) {
 // *unconditionally*.  Therefore these #includes cannot be moved
 // inside #if GTEST_HAS_PARAM_TEST.
 #include "gtest/internal/gtest-internal.h"
-#include "gtest/internal/gtest-param-util-generated.h"
 #include "gtest/internal/gtest-param-util.h"
+#include "gtest/internal/gtest-param-util-generated.h"
 
 #if GTEST_HAS_PARAM_TEST
 

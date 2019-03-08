@@ -55,7 +55,7 @@ class sc_export_base : public sc_object
 public:
 
     // typedefs
-
+    
     typedef sc_export_base this_type;
 
 public:
@@ -64,7 +64,7 @@ public:
     virtual       const sc_interface* get_interface() const = 0;
 
 protected:
-
+    
     // constructors
 
     sc_export_base();
@@ -76,7 +76,7 @@ protected:
 
 protected:
 
-    // called when construction is done
+    // called when construction is done 
     virtual void before_end_of_elaboration();
 
     // called when elaboration is done (does nothing by default)
@@ -89,7 +89,7 @@ protected:
     virtual void end_of_simulation();
 
     virtual const char* if_typename() const = 0;
-
+ 
     // error reporting
     void report_error( const char* id, const char* add_msg = 0) const;
 
@@ -120,24 +120,24 @@ class sc_export : public sc_export_base
 public: // constructors:
     sc_export() : sc_export_base()
     {
-        m_interface_p = 0;
+	m_interface_p = 0;
     }
 
     explicit sc_export( const char* name_ ) : sc_export_base(name_)
     {
-        m_interface_p = 0;
+	m_interface_p = 0;
     }
 
 public: // destructor:
-    virtual ~sc_export()
+    virtual ~sc_export() 
     {
     }
 
 public: // interface access:
 
-    virtual sc_interface* get_interface()
+    virtual sc_interface* get_interface() 
     {
-        return m_interface_p;
+	return m_interface_p;
     }
 
     virtual const sc_interface* get_interface() const
@@ -163,11 +163,11 @@ public: // interface access:
 
     operator IF& ()
     {
-        if ( m_interface_p == 0 )
-        {
-            SC_REPORT_ERROR(SC_ID_SC_EXPORT_HAS_NO_INTERFACE_,name());
-        }
-        return *m_interface_p;
+	if ( m_interface_p == 0 )
+	{
+	    SC_REPORT_ERROR(SC_ID_SC_EXPORT_HAS_NO_INTERFACE_,name());
+	}
+	return *m_interface_p;
     }
     operator const IF&() const
         { return *const_cast<this_type*>(this); }
@@ -176,14 +176,14 @@ public: // interface access:
 public: // binding:
     SC_VIRTUAL_ void bind( IF& interface_ )
     {
-        if ( m_interface_p )
-        {
-            SC_REPORT_ERROR(SC_ID_SC_EXPORT_ALREADY_BOUND_,name());
-        }
-        else
-        {
-            m_interface_p = &interface_;
-        }
+    	if ( m_interface_p )
+	{
+	    SC_REPORT_ERROR(SC_ID_SC_EXPORT_ALREADY_BOUND_,name());
+	}
+	else
+	{
+	    m_interface_p = &interface_;
+	}
     }
 
     void operator () ( IF& interface_ )

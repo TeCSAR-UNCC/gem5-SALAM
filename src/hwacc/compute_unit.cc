@@ -3,6 +3,7 @@
 ComputeUnit::ComputeUnit(ComputeUnitParams *p) :
     SimObject(p),
     comm(p->comm_int),
+    cycles(p->cycles),
     tickEvent(this) {}
 
 ComputeUnit*

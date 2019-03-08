@@ -32,7 +32,7 @@
 
       Name, Affiliation, Date:
   Description of Modification:
-
+    
  *****************************************************************************/
 
 // $Log: sc_bit_ids.h,v $
@@ -58,6 +58,7 @@
 
 #include "sysc/utils/sc_report.h"
 
+
 // ----------------------------------------------------------------------------
 //  Report ids (datatypes/bit)
 //
@@ -74,31 +75,31 @@ namespace sc_core {
 
 
 SC_DEFINE_MESSAGE( SC_ID_LENGTH_MISMATCH_, 200,
-                "length mismatch in bit/logic vector assignment" )
+		"length mismatch in bit/logic vector assignment" )
 SC_DEFINE_MESSAGE( SC_ID_INCOMPATIBLE_TYPES_, 201,
-                "incompatible types" )
+		"incompatible types" )
 SC_DEFINE_MESSAGE( SC_ID_CANNOT_CONVERT_, 202,
-                "cannot perform conversion" )
+		"cannot perform conversion" )
 SC_DEFINE_MESSAGE( SC_ID_INCOMPATIBLE_VECTORS_, 203,
-                "incompatible vectors" )
+		"incompatible vectors" )
 SC_DEFINE_MESSAGE( SC_ID_VALUE_NOT_VALID_, 204,
-                "value is not valid" )
+		"value is not valid" )
 SC_DEFINE_MESSAGE( SC_ID_ZERO_LENGTH_,     205,
-                "zero length" )
+		"zero length" )
 SC_DEFINE_MESSAGE( SC_ID_VECTOR_CONTAINS_LOGIC_VALUE_, 206,
-                "vector contains 4-value logic" )
+		"vector contains 4-value logic" )  
 SC_DEFINE_MESSAGE( SC_ID_SC_BV_CANNOT_CONTAIN_X_AND_Z_, 207,
-                "sc_bv cannot contain values X and Z" )
+		"sc_bv cannot contain values X and Z" )
 SC_DEFINE_MESSAGE( SC_ID_VECTOR_TOO_LONG_,  208,
-                "vector is too long: truncated" )
+		"vector is too long: truncated" )  
 SC_DEFINE_MESSAGE( SC_ID_VECTOR_TOO_SHORT_, 209,
-                "vector is too short: 0-padded" )
+		"vector is too short: 0-padded" )  
 SC_DEFINE_MESSAGE( SC_ID_WRONG_VALUE_, 210,
-                "wrong value" )
+		"wrong value" )
 SC_DEFINE_MESSAGE( SC_ID_LOGIC_Z_TO_BOOL_, 211,
-                "sc_logic value 'Z' cannot be converted to bool" )
+		"sc_logic value 'Z' cannot be converted to bool" )
 SC_DEFINE_MESSAGE( SC_ID_LOGIC_X_TO_BOOL_, 212,
-                "sc_logic value 'X' cannot be converted to bool" )
+		"sc_logic value 'X' cannot be converted to bool" )
 
 #endif
 

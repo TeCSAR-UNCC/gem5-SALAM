@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxnum.cpp -
+  sc_fxnum.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -51,9 +51,10 @@
 // the source.
 //
 
-#include <cmath>
+#include <math.h>
 
 #include "sysc/datatypes/fx/sc_fxnum.h"
+
 
 namespace sc_dt
 {
@@ -274,7 +275,7 @@ const std::string
 sc_fxnum::to_string( sc_numrep numrep, bool w_prefix ) const
 {
     return std::string( m_rep->to_string( numrep, (w_prefix ? 1 : 0),
-                                        SC_F, &m_params ) );
+					SC_F, &m_params ) );
 }
 
 const std::string
@@ -293,7 +294,7 @@ const std::string
 sc_fxnum::to_string( sc_numrep numrep, bool w_prefix, sc_fmt fmt ) const
 {
     return std::string( m_rep->to_string( numrep, (w_prefix ? 1 : 0),
-                                        fmt, &m_params ) );
+					fmt, &m_params ) );
 }
 
 
@@ -351,7 +352,7 @@ sc_fxnum::dump( ::std::ostream& os ) const
     os << "o_flag   = " << m_o_flag << ::std::endl;
     // TO BE COMPLETED
     // os << "observer = ";
-    // if ( m_observer != 0 )
+    // if( m_observer != 0 )
     //     m_observer->dump( os );
     // else
     //     os << "0" << ::std::endl;
@@ -394,67 +395,67 @@ quantization( double& c, const scfx_params& params, bool& q_flag )
 
     q_flag = ( frac_part != 0.0 );
 
-    if ( q_flag )
+    if( q_flag )
     {
         val = int_part;
 
-        switch( params.q_mode() )
-        {
+	switch( params.q_mode() )
+	{
             case SC_TRN:			// truncation
-            {
-                if ( c < 0.0 )
-                    val -= 1.0;
-                break;
-            }
+	    {
+	        if( c < 0.0 )
+		    val -= 1.0;
+		break;
+	    }
             case SC_RND:			// rounding to plus infinity
-            {
-                if ( frac_part >= 0.5 )
-                    val += 1.0;
-                else if ( frac_part < -0.5 )
-                    val -= 1.0;
-                break;
-            }
+	    {
+		if( frac_part >= 0.5 )
+		    val += 1.0;
+		else if( frac_part < -0.5 )
+		    val -= 1.0;
+		break;
+	    }
             case SC_TRN_ZERO:			// truncation to zero
-            {
-                break;
-            }
+	    {
+	        break;
+	    }
             case SC_RND_INF:			// rounding to infinity
-            {
-                if ( frac_part >= 0.5 )
-                    val += 1.0;
-                else if ( frac_part <= -0.5 )
-                    val -= 1.0;
-                break;
-            }
+	    {
+		if( frac_part >= 0.5 )
+		    val += 1.0;
+		else if( frac_part <= -0.5 )
+		    val -= 1.0;
+		break;
+	    }
             case SC_RND_CONV:			// convergent rounding
-            {
-                if ( frac_part > 0.5 ||
-                    ( frac_part == 0.5 && fmod( int_part, 2.0 ) != 0.0 ) )
-                    val += 1.0;
-                else if ( frac_part < -0.5 ||
-                         ( frac_part == -0.5 && fmod( int_part, 2.0 ) != 0.0 ) )
-                    val -= 1.0;
-                break;
-            }
+	    {
+		if( frac_part > 0.5 ||
+		    ( frac_part == 0.5 && fmod( int_part, 2.0 ) != 0.0 ) )
+		    val += 1.0;
+		else if( frac_part < -0.5 ||
+			 ( frac_part == -0.5 && fmod( int_part, 2.0 ) != 0.0 ) )
+		    val -= 1.0;
+		break;
+	    }
             case SC_RND_ZERO:			// rounding to zero
-            {
-                if ( frac_part > 0.5 )
-                    val += 1.0;
-                else if ( frac_part < -0.5 )
-                    val -= 1.0;
-                break;
-            }
+	    {
+		if( frac_part > 0.5 )
+		    val += 1.0;
+		else if( frac_part < -0.5 )
+		    val -= 1.0;
+		break;
+	    }
             case SC_RND_MIN_INF:		// rounding to minus infinity
-            {
-                if ( frac_part > 0.5 )
-                    val += 1.0;
-                else if ( frac_part <= -0.5 )
-                    val -= 1.0;
-                break;
-            }
+	    {
+		if( frac_part > 0.5 )
+		    val += 1.0;
+		else if( frac_part <= -0.5 )
+		    val -= 1.0;
+		break;
+	    }
             default:
-                ;
-        }
+	        ;
+	}
     }
 
     val /= scale;
@@ -470,18 +471,18 @@ overflow( double& c, const scfx_params& params, bool& o_flag )
     double full_circle = scfx_pow2( iwl );
     double resolution = scfx_pow2( -fwl );
     double low, high;
-    if ( params.enc() == SC_TC_ )
+    if( params.enc() == SC_TC_ )
     {
-        high = full_circle / 2.0 - resolution;
-        if ( params.o_mode() == SC_SAT_SYM )
-            low = - high;
-        else
-            low = - full_circle / 2.0;
+	high = full_circle / 2.0 - resolution;
+	if( params.o_mode() == SC_SAT_SYM )
+	    low = - high;
+	else
+	    low = - full_circle / 2.0;
     }
     else
     {
-        low = 0.0;
-        high = full_circle - resolution;
+	low = 0.0;
+	high = full_circle - resolution;
     }
     double val = c;
     sc_fxval_fast c2(c);
@@ -491,126 +492,126 @@ overflow( double& c, const scfx_params& params, bool& o_flag )
 
     o_flag = ( under || over );
 
-    if ( o_flag )
+    if( o_flag )
     {
         switch( params.o_mode() )
-        {
+	{
             case SC_WRAP:			// wrap-around
-            {
-                int n_bits = params.n_bits();
+	    {
+		int n_bits = params.n_bits();
 
-                if ( n_bits == 0 )
-                {
-                    // wrap-around all 'wl' bits
-                    val -= floor( val / full_circle ) * full_circle;
-                    if ( val > high )
-                        val -= full_circle;
-                }
-                else if ( n_bits < params.wl() )
-                {
-                    double X = scfx_pow2( iwl - n_bits );
+	        if( n_bits == 0 )
+		{
+		    // wrap-around all 'wl' bits
+		    val -= floor( val / full_circle ) * full_circle;
+		    if( val > high )
+			val -= full_circle;
+		}
+		else if( n_bits < params.wl() )
+		{
+		    double X = scfx_pow2( iwl - n_bits );
 
-                    // wrap-around least significant 'wl - n_bits' bits
-                    val -= floor( val / X ) * X;
-                    if ( val > ( X - resolution ) )
-                        val -= X;
-
-                    // saturate most significant 'n_bits' bits
-                    if ( under )
-                        val += low;
-                    else
-                    {
-                        if ( params.enc() == SC_TC_ )
-                            val += full_circle / 2.0 - X;
-                        else
-                            val += full_circle - X;
-                    }
-                }
-                else
-                {
-                    // saturate all 'wl' bits
-                    if ( under )
-                        val = low;
-                    else
-                        val = high;
-                }
-                break;
-            }
+		    // wrap-around least significant 'wl - n_bits' bits
+		    val -= floor( val / X ) * X;
+		    if( val > ( X - resolution ) )
+			val -= X;
+		    
+		    // saturate most significant 'n_bits' bits
+		    if( under )
+		        val += low;
+		    else
+		    {
+		        if( params.enc() == SC_TC_ )
+			    val += full_circle / 2.0 - X;
+			else
+			    val += full_circle - X;
+		    }
+		}
+		else
+		{
+		    // saturate all 'wl' bits
+		    if( under )
+			val = low;
+		    else
+			val = high;
+		}
+		break;
+	    }
             case SC_SAT:			// saturation
             case SC_SAT_SYM:			// symmetrical saturation
-            {
-                if ( under )
-                    val = low;
-                else
-                    val = high;
-                break;
-            }
+	    {
+	        if( under )
+		    val = low;
+		else
+		    val = high;
+		break;
+	    }
             case SC_SAT_ZERO:			// saturation to zero
-            {
-                val = 0.0;
-                break;
-            }
+	    {
+	        val = 0.0;
+		break;
+	    }
             case SC_WRAP_SM:			// sign magnitude wrap-around
-            {
-                SC_ERROR_IF_( params.enc() == SC_US_,
-                              sc_core::SC_ID_WRAP_SM_NOT_DEFINED_ );
+	    {
+		SC_ERROR_IF_( params.enc() == SC_US_,
+			      sc_core::SC_ID_WRAP_SM_NOT_DEFINED_ );
+	
+		int n_bits = params.n_bits();
 
-                int n_bits = params.n_bits();
+		if( n_bits == 0 )
+		{
+		    // invert conditionally
+		    if( c2.get_bit( iwl ) != c2.get_bit( iwl - 1 ) )
+			val = -val - resolution;
 
-                if ( n_bits == 0 )
-                {
-                    // invert conditionally
-                    if ( c2.get_bit( iwl ) != c2.get_bit( iwl - 1 ) )
-                        val = -val - resolution;
+		    // wrap-around all 'wl' bits
+		    val -= floor( val / full_circle ) * full_circle;
+		    if( val > high )
+			val -= full_circle;
+		}
+		else if( n_bits == 1 )
+		{
+		    // invert conditionally
+		    if( c2.is_neg() != c2.get_bit( iwl - 1 ) )
+			val = -val - resolution;
 
-                    // wrap-around all 'wl' bits
-                    val -= floor( val / full_circle ) * full_circle;
-                    if ( val > high )
-                        val -= full_circle;
-                }
-                else if ( n_bits == 1 )
-                {
-                    // invert conditionally
-                    if ( c2.is_neg() != c2.get_bit( iwl - 1 ) )
-                        val = -val - resolution;
+		    // wrap-around all 'wl' bits
+		    val -= floor( val / full_circle ) * full_circle;
+		    if( val > high )
+			val -= full_circle;
+		}
+		else if( n_bits < params.wl() )
+		{
+		    // invert conditionally
+		    if( c2.is_neg() == c2.get_bit( iwl - n_bits ) )
+			val = -val - resolution;
+		    
+		    double X = scfx_pow2( iwl - n_bits );
 
-                    // wrap-around all 'wl' bits
-                    val -= floor( val / full_circle ) * full_circle;
-                    if ( val > high )
-                        val -= full_circle;
-                }
-                else if ( n_bits < params.wl() )
-                {
-                    // invert conditionally
-                    if ( c2.is_neg() == c2.get_bit( iwl - n_bits ) )
-                        val = -val - resolution;
+		    // wrap-around least significant 'wl - n_bits' bits
+		    val -= floor( val / X ) * X;
+		    if( val > ( X - resolution ) )
+			val -= X;
 
-                    double X = scfx_pow2( iwl - n_bits );
-
-                    // wrap-around least significant 'wl - n_bits' bits
-                    val -= floor( val / X ) * X;
-                    if ( val > ( X - resolution ) )
-                        val -= X;
-
-                    // saturate most significant 'n_bits' bits
-                    if ( under )
-                        val += low;
-                    else
-                        val += full_circle / 2.0 - X;
-                } else {
-                    // saturate all 'wl' bits
-                    if ( under )
-                        val = low;
-                    else
-                        val = high;
-                }
-                break;
-            }
+		    // saturate most significant 'n_bits' bits
+		    if( under )
+		        val += low;
+		    else
+			val += full_circle / 2.0 - X;
+		} else {
+		    // saturate all 'wl' bits
+		    if( under )
+			val = low;
+		    else
+			val = high;
+		}
+	        break;
+	    }
             default:
-                ;
-        }
+	        ;
+	}
 
-        c = val;
+	c = val;
     }
 }
 
@@ -621,37 +622,37 @@ sc_fxnum_fast::cast()
     scfx_ieee_double id( m_val );
     SC_ERROR_IF_( id.is_nan() || id.is_inf(), sc_core::SC_ID_INVALID_FX_VALUE_);
 
-    if ( m_params.cast_switch() == SC_ON )
+    if( m_params.cast_switch() == SC_ON )
     {
         m_q_flag = false;
-        m_o_flag = false;
+	m_o_flag = false;
 
-        // check for special cases
+	// check for special cases
 
-        if ( id.is_zero() )
-        {
-            if ( id.negative() != 0 )
-                m_val = -m_val;
-            return;
-        }
+	if( id.is_zero() )
+	{
+	    if( id.negative() != 0 )
+	        m_val = -m_val;
+	    return;
+	}
 
-        // perform casting
+	// perform casting
 
-        sc_dt::quantization( m_val, m_params, m_q_flag );
-        sc_dt::overflow( m_val, m_params, m_o_flag );
+	sc_dt::quantization( m_val, m_params, m_q_flag );
+	sc_dt::overflow( m_val, m_params, m_o_flag );
 
-        // check for special case: -0
+	// check for special case: -0
 
-        id = m_val;
-        if ( id.is_zero() && id.negative() != 0 ) {
-            m_val = -m_val;
-        }
+	id = m_val;
+	if( id.is_zero() && id.negative() != 0 ) {
+	    m_val = -m_val;
+	}
 
-        // check for special case: NaN of Inf
+	// check for special case: NaN of Inf
 
-        if ( id.is_nan() || id.is_inf() ) {
-            m_val = 0.0;
-        }
+	if( id.is_nan() || id.is_inf() ) {
+	    m_val = 0.0;
+	}
     }
 }
 
@@ -660,10 +661,10 @@ sc_fxnum_fast::cast()
 extern
 const char*
 to_string( const scfx_ieee_double&,
-           sc_numrep,
-           int,
-           sc_fmt,
-           const scfx_params* = 0 );
+	   sc_numrep,
+	   int,
+	   sc_fmt,
+	   const scfx_params* = 0 );
 
 
 // explicit conversion to character string
@@ -684,7 +685,7 @@ const std::string
 sc_fxnum_fast::to_string( sc_numrep numrep, bool w_prefix ) const
 {
     return std::string( sc_dt::to_string( m_val, numrep, (w_prefix ? 1 : 0),
-                                        SC_F, &m_params ) );
+					SC_F, &m_params ) );
 }
 
 const std::string
@@ -703,7 +704,7 @@ const std::string
 sc_fxnum_fast::to_string( sc_numrep numrep, bool w_prefix, sc_fmt fmt ) const
 {
     return std::string( sc_dt::to_string( m_val, numrep, (w_prefix ? 1 : 0),
-                                        fmt, &m_params ) );
+					fmt, &m_params ) );
 }
 
 
@@ -760,7 +761,7 @@ sc_fxnum_fast::dump( ::std::ostream& os ) const
     os << "o_flag   = " << m_o_flag << ::std::endl;
     // TO BE COMPLETED
     // os << "observer = ";
-    // if ( m_observer != 0 )
+    // if( m_observer != 0 )
     //     m_observer->dump( os );
     // else
     //     os << "0" << ::std::endl;
@@ -773,7 +774,7 @@ bool
 sc_fxnum_fast::get_bit( int i ) const
 {
     scfx_ieee_double id( m_val );
-    if ( id.is_zero() || id.is_nan() || id.is_inf() )
+    if( id.is_zero() || id.is_nan() || id.is_inf() )
         return false;
 
     // convert to two's complement
@@ -781,27 +782,27 @@ sc_fxnum_fast::get_bit( int i ) const
     unsigned int m0 = id.mantissa0();
     unsigned int m1 = id.mantissa1();
 
-    if ( id.is_normal() )
+    if( id.is_normal() )
         m0 += 1U << 20;
 
-    if ( id.negative() != 0 )
+    if( id.negative() != 0 )
     {
-        m0 = ~ m0;
-        m1 = ~ m1;
-        unsigned int tmp = m1;
-        m1 += 1U;
-        if ( m1 <= tmp )
-            m0 += 1U;
+	m0 = ~ m0;
+	m1 = ~ m1;
+	unsigned int tmp = m1;
+	m1 += 1U;
+	if( m1 <= tmp )
+	    m0 += 1U;
     }
 
     // get the right bit
 
     int j = i - id.exponent();
-    if ( ( j += 20 ) >= 32 )
+    if( ( j += 20 ) >= 32 )
         return ( ( m0 & 1U << 31 ) != 0 );
-    else if ( j >= 0 )
+    else if( j >= 0 )
         return ( ( m0 & 1U << j ) != 0 );
-    else if ( ( j += 32 ) >= 0 )
+    else if( ( j += 32 ) >= 0 )
         return ( ( m1 & 1U << j ) != 0 );
     else
         return false;
@@ -812,28 +813,28 @@ bool
 sc_fxnum_fast::set_bit( int i, bool high )
 {
     scfx_ieee_double id( m_val );
-    if ( id.is_nan() || id.is_inf() )
+    if( id.is_nan() || id.is_inf() )
         return false;
 
-    if ( high )
+    if( high )
     {
-        if ( get_bit( i ) )
-            return true;
+	if( get_bit( i ) )
+	    return true;
 
-        if ( m_params.enc() == SC_TC_ && i == m_params.iwl() - 1 )
-            m_val -= scfx_pow2( i );
-        else
-            m_val += scfx_pow2( i );
+	if( m_params.enc() == SC_TC_ && i == m_params.iwl() - 1 )
+	    m_val -= scfx_pow2( i );
+	else
+	    m_val += scfx_pow2( i );
     }
     else
     {
-        if ( ! get_bit( i ) )
-            return true;
+	if( ! get_bit( i ) )
+	    return true;
 
-        if ( m_params.enc() == SC_TC_ && i == m_params.iwl() - 1 )
-            m_val += scfx_pow2( i );
-        else
-            m_val -= scfx_pow2( i );
+	if( m_params.enc() == SC_TC_ && i == m_params.iwl() - 1 )
+	    m_val += scfx_pow2( i );
+	else
+	    m_val -= scfx_pow2( i );
     }
 
     return true;
@@ -844,48 +845,48 @@ bool
 sc_fxnum_fast::get_slice( int i, int j, sc_bv_base& bv ) const
 {
     scfx_ieee_double id( m_val );
-    if ( id.is_nan() || id.is_inf() )
-        return false;
+    if( id.is_nan() || id.is_inf() )
+	return false;
 
     // convert to two's complement
 
     unsigned int m0 = id.mantissa0();
     unsigned int m1 = id.mantissa1();
 
-    if ( id.is_normal() )
+    if( id.is_normal() )
         m0 += 1U << 20;
 
-    if ( id.negative() != 0 )
+    if( id.negative() != 0 )
     {
-        m0 = ~ m0;
-        m1 = ~ m1;
-        unsigned int tmp = m1;
-        m1 += 1U;
-        if ( m1 <= tmp )
-            m0 += 1U;
+	m0 = ~ m0;
+	m1 = ~ m1;
+	unsigned int tmp = m1;
+	m1 += 1U;
+	if( m1 <= tmp )
+	    m0 += 1U;
     }
 
     // get the bits
 
     int l = j;
-    for ( int k = 0; k < bv.length(); ++ k )
+    for( int k = 0; k < bv.length(); ++ k )
     {
-        bool b = false;
+	bool b = false;
 
         int n = l - id.exponent();
-        if ( ( n += 20 ) >= 32 )
-            b = ( ( m0 & 1U << 31 ) != 0 );
-        else if ( n >= 0 )
-            b = ( ( m0 & 1U << n ) != 0 );
-        else if ( ( n += 32 ) >= 0 )
-            b = ( ( m1 & 1U << n ) != 0 );
+        if( ( n += 20 ) >= 32 )
+	    b = ( ( m0 & 1U << 31 ) != 0 );
+	else if( n >= 0 )
+	    b = ( ( m0 & 1U << n ) != 0 );
+	else if( ( n += 32 ) >= 0 )
+	    b = ( ( m1 & 1U << n ) != 0 );
 
-        bv[k] = b;
+	bv[k] = b;
 
-        if ( i >= j )
-            ++ l;
-        else
-            -- l;
+	if( i >= j )
+	    ++ l;
+	else
+	    -- l;
     }
 
     return true;
@@ -895,40 +896,40 @@ bool
 sc_fxnum_fast::set_slice( int i, int j, const sc_bv_base& bv )
 {
     scfx_ieee_double id( m_val );
-    if ( id.is_nan() || id.is_inf() )
+    if( id.is_nan() || id.is_inf() )
         return false;
 
     // set the bits
 
     int l = j;
-    for ( int k = 0; k < bv.length(); ++ k )
+    for( int k = 0; k < bv.length(); ++ k )
     {
-        if ( bv[k].to_bool() )
-        {
-            if ( ! get_bit( l ) )
-            {
-                if ( m_params.enc() == SC_TC_ && l == m_params.iwl() - 1 )
-                    m_val -= scfx_pow2( l );
-                else
-                    m_val += scfx_pow2( l );
-            }
-        }
-        else
-        {
-            if ( get_bit( l ) )
-            {
-                if ( m_params.enc() == SC_TC_ && l == m_params.iwl() - 1 )
-                    m_val += scfx_pow2( l );
-                else
-                    m_val -= scfx_pow2( l );
-            }
-        }
+	if( bv[k].to_bool() )
+	{
+	    if( ! get_bit( l ) )
+	    {
+		if( m_params.enc() == SC_TC_ && l == m_params.iwl() - 1 )
+		    m_val -= scfx_pow2( l );
+		else
+		    m_val += scfx_pow2( l );
+	    }
+	}
+	else
+	{
+	    if( get_bit( l ) )
+	    {
+		if( m_params.enc() == SC_TC_ && l == m_params.iwl() - 1 )
+		    m_val += scfx_pow2( l );
+		else
+		    m_val -= scfx_pow2( l );
+	    }
+	}
 
 
-        if ( i >= j )
-            ++ l;
-        else
-            -- l;
+	if( i >= j )
+	    ++ l;
+	else
+	    -- l;
     }
 
     return true;

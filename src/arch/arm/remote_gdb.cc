@@ -164,8 +164,8 @@
 using namespace std;
 using namespace ArmISA;
 
-RemoteGDB::RemoteGDB(System *_system, ThreadContext *tc)
-    : BaseRemoteGDB(_system, tc), regCache32(this), regCache64(this)
+RemoteGDB::RemoteGDB(System *_system, ThreadContext *tc, int _port)
+    : BaseRemoteGDB(_system, tc, _port), regCache32(this), regCache64(this)
 {
 }
 
@@ -177,7 +177,7 @@ RemoteGDB::acc(Addr va, size_t len)
 {
     if (FullSystem) {
         for (ChunkGenerator gen(va, len, PageBytes); !gen.done(); gen.next()) {
-            if (!virtvalid(context, gen.addr())) {
+            if (!virtvalid(context(), gen.addr())) {
                 DPRINTF(GDBAcc, "acc:   %#x mapping is invalid\n", va);
                 return false;
             }
@@ -186,12 +186,9 @@ RemoteGDB::acc(Addr va, size_t len)
         DPRINTF(GDBAcc, "acc:   %#x mapping is valid\n", va);
         return true;
     } else {
-        TlbEntry entry;
-        //Check to make sure the first byte is mapped into the processes address
-        //space.
-        if (context->getProcessPtr()->pTable->lookup(va, entry))
-            return true;
-        return false;
+        // Check to make sure the first byte is mapped into the processes
+        // address space.
+        return context()->getProcessPtr()->pTable->lookup(va) != nullptr;
     }
 }
 
@@ -206,15 +203,13 @@ RemoteGDB::AArch64GdbRegCache::getRegs(ThreadContext *context)
     r.pc = context->pcState().pc();
     r.cpsr = context->readMiscRegNoEffect(MISCREG_CPSR);
 
-    for (int i = 0; i < 32*4; i += 4) {
-        r.v[i + 0] = context->readFloatRegBits(i + 2);
-        r.v[i + 1] = context->readFloatRegBits(i + 3);
-        r.v[i + 2] = context->readFloatRegBits(i + 0);
-        r.v[i + 3] = context->readFloatRegBits(i + 1);
-    }
-
-    for (int i = 0; i < 32; i ++) {
-        r.vec[i] = context->readVecReg(RegId(VecRegClass,i));
+    size_t base = 0;
+    for (int i = 0; i < NumVecV8ArchRegs; i++) {
+        auto v = (context->readVecReg(RegId(VecRegClass, i))).as<VecElem>();
+        for (size_t j = 0; j < NumVecElemPerVecReg; j++) {
+            r.v[base] = v[j];
+            base++;
+        }
     }
 }
 
@@ -225,22 +220,23 @@ RemoteGDB::AArch64GdbRegCache::setRegs(ThreadContext *context) const
 
     for (int i = 0; i < 31; ++i)
         context->setIntReg(INTREG_X0 + i, r.x[i]);
-    context->pcState(r.pc);
+    auto pc_state = context->pcState();
+    pc_state.set(r.pc);
+    context->pcState(pc_state);
     context->setMiscRegNoEffect(MISCREG_CPSR, r.cpsr);
     // Update the stack pointer. This should be done after
     // updating CPSR/PSTATE since that might affect how SPX gets
     // mapped.
     context->setIntReg(INTREG_SPX, r.spx);
 
-    for (int i = 0; i < 32*4; i += 4) {
-        context->setFloatRegBits(i + 2, r.v[i + 0]);
-        context->setFloatRegBits(i + 3, r.v[i + 1]);
-        context->setFloatRegBits(i + 0, r.v[i + 2]);
-        context->setFloatRegBits(i + 1, r.v[i + 3]);
-    }
-
-    for (int i = 0; i < 32; i ++) {
-        context->setVecReg(RegId(VecRegClass, i), r.vec[i]);
+    size_t base = 0;
+    for (int i = 0; i < NumVecV8ArchRegs; i++) {
+        auto v = (context->getWritableVecReg(
+                RegId(VecRegClass, i))).as<VecElem>();
+        for (size_t j = 0; j < NumVecElemPerVecReg; j++) {
+            v[j] = r.v[base];
+            base++;
+        }
     }
 }
 
@@ -293,7 +289,9 @@ RemoteGDB::AArch32GdbRegCache::setRegs(ThreadContext *context) const
     context->setIntReg(INTREG_R12, r.gpr[12]);
     context->setIntReg(INTREG_SP, r.gpr[13]);
     context->setIntReg(INTREG_LR, r.gpr[14]);
-    context->pcState(r.gpr[15]);
+    auto pc_state = context->pcState();
+    pc_state.set(r.gpr[15]);
+    context->pcState(pc_state);
 
     // One day somebody will implement transfer of FPRs correctly.
 
@@ -301,10 +299,10 @@ RemoteGDB::AArch32GdbRegCache::setRegs(ThreadContext *context) const
     context->setMiscRegNoEffect(MISCREG_CPSR, r.cpsr);
 }
 
-RemoteGDB::BaseGdbRegCache*
+BaseGdbRegCache*
 RemoteGDB::gdbRegs()
 {
-    if (inAArch64(context))
+    if (inAArch64(context()))
         return &regCache64;
     else
         return &regCache32;

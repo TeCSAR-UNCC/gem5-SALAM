@@ -38,10 +38,9 @@
 #define MEMBANKWISEPARAMS_H
 
 #include <stdint.h>
-
+#include <vector>
 #include <algorithm>
 #include <numeric>
-#include <vector>
 
 namespace Data {
   class MemBankWiseParams {

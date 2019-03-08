@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <cassert>
 #include <climits>
+#include <functional>
 #include <iosfwd>
 #include <memory>
 #include <mutex>
@@ -710,7 +711,11 @@ class EventQueue
      */
     void checkpointReschedule(Event *event);
 
-    virtual ~EventQueue() { }
+    virtual ~EventQueue()
+    {
+        while (!empty())
+            deschedule(getHead());
+    }
 };
 
 void dumpMainQueue();

@@ -93,24 +93,24 @@ for status, fname in git.status(filter="MA", cached=True):
                 staged_mismatch.add(fname)
     f.close()
 
-#if failing_files:
-#    if len(failing_files) > len(staged_mismatch):
-#        print >> sys.stderr
-#        print >> sys.stderr, "Style checker failed for the following files:"
-#        for f in failing_files:
-#            if f not in staged_mismatch:
-#                print >> sys.stderr, "\t%s" % f
-#        print >> sys.stderr
-#        print >> sys.stderr, \
-#        "Please run the style checker manually to fix the offending files.\n" \
-#        "To check your modifications, run: util/style.py -m"
+if failing_files:
+    if len(failing_files) > len(staged_mismatch):
+        print >> sys.stderr
+        print >> sys.stderr, "Style checker failed for the following files:"
+        for f in failing_files:
+            if f not in staged_mismatch:
+                print >> sys.stderr, "\t%s" % f
+        print >> sys.stderr
+        print >> sys.stderr, \
+        "Please run the style checker manually to fix the offending files.\n" \
+        "To check your modifications, run: util/style.py -m"
 
-#    print >> sys.stderr
-#    if staged_mismatch:
-#        print >> sys.stderr, \
-#        "It looks like you have forgotten to stage your fixes for commit in\n"\
-#        "the following files: "
-#        for f in staged_mismatch:
-#            print >> sys.stderr, "\t%s" % f
-#        print >> sys.stderr, "Please `git --add' them"
-#    sys.exit(1)
+    print >> sys.stderr
+    if staged_mismatch:
+        print >> sys.stderr, \
+        "It looks like you have forgotten to stage your fixes for commit in\n"\
+        "the following files: "
+        for f in staged_mismatch:
+            print >> sys.stderr, "\t%s" % f
+        print >> sys.stderr, "Please `git --add' them"
+    sys.exit(1)

@@ -51,7 +51,7 @@ sc_signal_invalid_writer( sc_object* target, sc_object* first_writer,
 //
 // Note: if you add a new policy to the enum below you will need to add
 // an additional overload of sc_reset::reset_signal_is() for the sc_signal<bool>
-// instance. That will require changes to sysc/kernel/sc_reset.cpp and
+// instance. That will require changes to sysc/kernel/sc_reset.cpp and 
 // sysc/kernel/sc_reset.h
 
 enum sc_writer_policy
@@ -95,7 +95,7 @@ struct sc_writer_policy_check_delta
 
   bool check_write( sc_object* target, bool value_changed )
   {
-      if ( value_changed )
+      if( value_changed )
           return sc_writer_policy_check_write::check_write( target, true );
       return true;
   }

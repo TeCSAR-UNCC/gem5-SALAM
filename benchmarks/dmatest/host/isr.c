@@ -1,10 +1,26 @@
 #include <stdio.h>
-#include "vadd.h"
+//#include "main.h"
 
-void isr(void)
+extern char* FLAGS;
+extern uint8_t* acc;
+extern int dma_signal;
+extern int dev_signal;
+extern void hostStep(int val);
+extern int launchCpy();
+
+
+void dev_isr(void)
 {
-    uint8_t * hwacc = (uint8_t *)0x2f000000;
-    hwacc[0] = 0x0;
-    printf("Interrupt\n\r");
-	common_val = 1;
+    printf("Dev Interrupt\n");
+    uint8_t * ACC = (uint8_t *)0x2f000000;
+    *ACC &= 0xFB;
+	dev_signal = 1;
+}
+
+void dma_isr(void)
+{
+    printf("DMA Interrupt\n");
+    *FLAGS &= 0xFB;
+    int ret_val = launchCpy();
+    dma_signal = ret_val;
 }

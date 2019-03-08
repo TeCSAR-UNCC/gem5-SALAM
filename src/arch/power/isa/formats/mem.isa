@@ -44,9 +44,10 @@ def template LoadStoreDeclare {{
         /// Constructor.
         %(class_name)s(ExtMachInst machInst);
 
-        Fault execute(ExecContext *, Trace::InstRecord *) const;
-        Fault initiateAcc(ExecContext *, Trace::InstRecord *) const;
-        Fault completeAcc(PacketPtr, ExecContext *, Trace::InstRecord *) const;
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+        Fault initiateAcc(ExecContext *, Trace::InstRecord *) const override;
+        Fault completeAcc(PacketPtr, ExecContext *,
+                          Trace::InstRecord *) const override;
     };
 }};
 
@@ -98,7 +99,6 @@ def template LoadInitiateAcc {{
 
         if (fault == NoFault) {
             fault = initiateMemRead(xc, traceData, EA, Mem, memAccessFlags);
-            xc->setEA(EA);
         }
 
         return fault;
@@ -117,7 +117,7 @@ def template LoadCompleteAcc {{
         %(op_decl)s;
         %(op_rd)s;
 
-        EA = xc->getEA();
+        EA = pkt->req->getVaddr();
 
         getMem(pkt, Mem, traceData);
 

@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  scfx_mant.cpp -
+  scfx_mant.cpp - 
 
   Original Author: Robert Graulich, Synopsys, Inc.
                    Martin Janssen,  Synopsys, Inc.
@@ -48,6 +48,7 @@
 
 #include "sysc/datatypes/fx/scfx_mant.h"
 
+
 namespace sc_dt
 {
 
@@ -66,18 +67,18 @@ next_pow2_index( std::size_t size )
 {
     int index = scfx_find_msb( size );
     // If this was a power of 2 we are one bucket too low.
-    if ( ~ (1 << index) & size ) index ++;
+    if( ~ (1 << index) & size ) index ++;
     // If this is a 64-bit machine and we are using 32-bit words go down
-        // one slot size, as all the slots are 2x in size.
-    if ( index != 0 && ( sizeof(word_list) != sizeof(word) ) )
-        {
-                index -= 1;
-        }
+	// one slot size, as all the slots are 2x in size.
+    if ( index != 0 && ( sizeof(word_list) != sizeof(word) ) ) 
+	{
+		index -= 1;
+	}
     return index;
 }
 
 static word_list* free_words[32] = { 0 };
-
+    
 word*
 scfx_mant::alloc_word( std::size_t size )
 {
@@ -89,15 +90,15 @@ scfx_mant::alloc_word( std::size_t size )
 
     word_list*& slot = free_words[slot_index];
 
-    if ( ! slot )
+    if( ! slot )
     {
         slot = new word_list[ALLOC_SIZE * alloc_size];
-        int i;
-        for ( i = 0; i < alloc_size*(ALLOC_SIZE-1) ; i+=alloc_size )
-        {
-            slot[i].m_next_p = &slot[i+alloc_size];
-        }
-        slot[i].m_next_p = 0;
+	int i;
+	for( i = 0; i < alloc_size*(ALLOC_SIZE-1) ; i+=alloc_size )
+	{
+	    slot[i].m_next_p = &slot[i+alloc_size];
+	}
+	slot[i].m_next_p = 0;
     }
 
     word* result = (word*)slot;
@@ -108,13 +109,13 @@ scfx_mant::alloc_word( std::size_t size )
 void
 scfx_mant::free_word( word* array, std::size_t size )
 {
-    if ( array && size )
+    if( array && size )
     {
         int slot_index = next_pow2_index( size );
-        word_list* wl_p = (word_list*)array;
+	word_list* wl_p = (word_list*)array;
 
-        wl_p->m_next_p = free_words[slot_index];
-        free_words[slot_index] = wl_p;
+	wl_p->m_next_p = free_words[slot_index];
+	free_words[slot_index] = wl_p;
     }
 }
 

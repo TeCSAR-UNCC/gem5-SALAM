@@ -27,11 +27,11 @@
   CHANGE LOG IS AT THE END OF THE FILE
  *****************************************************************************/
 
-#include "sysc/communication/sc_communication_ids.h"
 #include "sysc/communication/sc_prim_channel.h"
+#include "sysc/communication/sc_communication_ids.h"
+#include "sysc/kernel/sc_simcontext.h"
 #include "sysc/kernel/sc_module.h"
 #include "sysc/kernel/sc_object_int.h"
-#include "sysc/kernel/sc_simcontext.h"
 
 #ifndef SC_DISABLE_ASYNC_UPDATES
 #  include "sysc/communication/sc_host_mutex.h"
@@ -50,7 +50,7 @@ namespace sc_core {
 sc_prim_channel::sc_prim_channel()
 : sc_object( 0 ),
   m_registry( simcontext()->get_prim_channel_registry() ),
-  m_update_next_p( 0 )
+  m_update_next_p( 0 ) 
 {
     m_registry->insert( *this );
 }
@@ -81,7 +81,7 @@ sc_prim_channel::update()
 
 // called by construction_done (does nothing by default)
 
-void sc_prim_channel::before_end_of_elaboration()
+void sc_prim_channel::before_end_of_elaboration() 
 {}
 
 // called when construction is done
@@ -153,34 +153,34 @@ public:
 
     bool pending() const
     {
-        return m_push_queue.size() != 0;
+	return m_push_queue.size() != 0;
     }
 
     void append( sc_prim_channel& prim_channel_ )
     {
-        sc_scoped_lock lock( m_mutex );
-        m_push_queue.push_back( &prim_channel_ );
-        // return releases the mutex
+	sc_scoped_lock lock( m_mutex );
+	m_push_queue.push_back( &prim_channel_ );
+	// return releases the mutex
     }
 
     void accept_updates()
     {
-        sc_assert( ! m_pop_queue.size() );
-        {
-            sc_scoped_lock lock( m_mutex );
-            m_push_queue.swap( m_pop_queue );
-            // leaving the block releases the mutex
-        }
+	sc_assert( ! m_pop_queue.size() );
+	{
+	    sc_scoped_lock lock( m_mutex );
+	    m_push_queue.swap( m_pop_queue );
+	    // leaving the block releases the mutex
+	}
 
-        std::vector< sc_prim_channel* >::const_iterator
-            it = m_pop_queue.begin(), end = m_pop_queue.end();
-        while ( it!= end )
-        {
-            // we use request_update instead of perform_update
-            // to skip duplicates
-            (*it++)->request_update();
-        }
-        m_pop_queue.clear();
+	std::vector< sc_prim_channel* >::const_iterator
+	    it = m_pop_queue.begin(), end = m_pop_queue.end();
+	while( it!= end )
+	{
+	    // we use request_update instead of perform_update
+	    // to skip duplicates
+	    (*it++)->request_update();
+	}
+	m_pop_queue.clear();
     }
 
 private:
@@ -201,21 +201,21 @@ private:
 void
 sc_prim_channel_registry::insert( sc_prim_channel& prim_channel_ )
 {
-    if ( sc_is_running() ) {
+    if( sc_is_running() ) {
        SC_REPORT_ERROR( SC_ID_INSERT_PRIM_CHANNEL_, "simulation running" );
     }
 
-    if ( m_simc->elaboration_done() ) {
+    if( m_simc->elaboration_done() ) {
 
-        SC_REPORT_ERROR( SC_ID_INSERT_PRIM_CHANNEL_, "elaboration done" );
+	SC_REPORT_ERROR( SC_ID_INSERT_PRIM_CHANNEL_, "elaboration done" );
     }
 
 #ifdef DEBUG_SYSTEMC
     // check if prim_channel_ is already inserted
-    for ( int i = 0; i < size(); ++ i ) {
-        if ( &prim_channel_ == m_prim_channel_vec[i] ) {
-            SC_REPORT_ERROR( SC_ID_INSERT_PRIM_CHANNEL_, "already inserted" );
-        }
+    for( int i = 0; i < size(); ++ i ) {
+	if( &prim_channel_ == m_prim_channel_vec[i] ) {
+	    SC_REPORT_ERROR( SC_ID_INSERT_PRIM_CHANNEL_, "already inserted" );
+	}
     }
 #endif
 
@@ -228,13 +228,13 @@ void
 sc_prim_channel_registry::remove( sc_prim_channel& prim_channel_ )
 {
     int i;
-    for ( i = 0; i < size(); ++ i ) {
-        if ( &prim_channel_ == m_prim_channel_vec[i] ) {
-            break;
-        }
+    for( i = 0; i < size(); ++ i ) {
+	if( &prim_channel_ == m_prim_channel_vec[i] ) {
+	    break;
+	}
     }
-    if ( i == size() ) {
-        SC_REPORT_ERROR( SC_ID_REMOVE_PRIM_CHANNEL_, 0 );
+    if( i == size() ) {
+	SC_REPORT_ERROR( SC_ID_REMOVE_PRIM_CHANNEL_, 0 );
     }
 
     // remove
@@ -275,8 +275,8 @@ sc_prim_channel_registry::perform_update()
     // simulator.
 
 #ifndef SC_DISABLE_ASYNC_UPDATES
-    if ( m_async_update_list_p->pending() )
-        m_async_update_list_p->accept_updates();
+    if( m_async_update_list_p->pending() )
+	m_async_update_list_p->accept_updates();
 #endif
 
     sc_prim_channel* next_p; // Next update to perform.
@@ -287,10 +287,10 @@ sc_prim_channel_registry::perform_update()
     now_p = m_update_list_p;
     m_update_list_p = (sc_prim_channel*)sc_prim_channel::list_end;
     for ( ; now_p != (sc_prim_channel*)sc_prim_channel::list_end;
-        now_p = next_p )
+	now_p = next_p )
     {
-        next_p = now_p->m_update_next_p;
-        now_p->perform_update();
+	next_p = now_p->m_update_next_p;
+	now_p->perform_update();
     }
 }
 
@@ -321,11 +321,11 @@ sc_prim_channel_registry::~sc_prim_channel_registry()
 bool
 sc_prim_channel_registry::construction_done()
 {
-    if ( size() == m_construction_done )
+    if( size() == m_construction_done )
         // nothing has been updated
         return true;
 
-    for ( ; m_construction_done < size(); ++m_construction_done ) {
+    for( ; m_construction_done < size(); ++m_construction_done ) {
         m_prim_channel_vec[m_construction_done]->construction_done();
     }
 
@@ -338,8 +338,8 @@ sc_prim_channel_registry::construction_done()
 void
 sc_prim_channel_registry::elaboration_done()
 {
-    for ( int i = 0; i < size(); ++ i ) {
-        m_prim_channel_vec[i]->elaboration_done();
+    for( int i = 0; i < size(); ++ i ) {
+	m_prim_channel_vec[i]->elaboration_done();
     }
 }
 
@@ -348,8 +348,8 @@ sc_prim_channel_registry::elaboration_done()
 void
 sc_prim_channel_registry::start_simulation()
 {
-    for ( int i = 0; i < size(); ++ i ) {
-        m_prim_channel_vec[i]->start_simulation();
+    for( int i = 0; i < size(); ++ i ) {
+	m_prim_channel_vec[i]->start_simulation();
     }
 }
 
@@ -358,8 +358,8 @@ sc_prim_channel_registry::start_simulation()
 void
 sc_prim_channel_registry::simulation_done()
 {
-    for ( int i = 0; i < size(); ++ i ) {
-        m_prim_channel_vec[i]->simulation_done();
+    for( int i = 0; i < size(); ++ i ) {
+	m_prim_channel_vec[i]->simulation_done();
     }
 }
 
@@ -375,7 +375,7 @@ sc_prim_channel_registry::simulation_done()
                                25 August, 2003
 
   Description of Modification: phase callbacks
-
+    
  *****************************************************************************/
 
 

@@ -32,8 +32,8 @@
 #ifndef SC_INCLUDE_WINDOWS_H
 #  define SC_INCLUDE_WINDOWS_H // include Windows.h, if needed
 #endif
-#include "sysc/communication/sc_mutex_if.h"
 #include "sysc/kernel/sc_cmnhdr.h"
+#include "sysc/communication/sc_mutex_if.h"
 
 #if defined(WIN32) || defined(_WIN32)
 
@@ -53,7 +53,6 @@
 #else // use pthread mutex
 
 #include <pthread.h>
-
 #define SC_MTX_TYPE_ pthread_mutex_t
 
 #if defined(__hpux)
@@ -74,7 +73,7 @@
        ( pthread_mutex_trylock( &(Mutex) ) == 0 )
 #else // no try_lock available
 #   define SC_MTX_TRYLOCK_( Mutex ) \
-       ( false )
+       ( false ) 
 #endif
 
 #define SC_MTX_DESTROY_( Mutex ) \
@@ -98,25 +97,25 @@ public:
     // constructors and destructor
 
     sc_host_mutex()
-        { SC_MTX_INIT_(m_mtx); }
+	{ SC_MTX_INIT_(m_mtx); }
     virtual ~sc_host_mutex()
-        { SC_MTX_DESTROY_(m_mtx); }
+	{ SC_MTX_DESTROY_(m_mtx); }
 
 
     // interface methods
 
     // blocks until mutex could be locked
     virtual int lock()
-        { SC_MTX_LOCK_(m_mtx); return 0; }
+	{ SC_MTX_LOCK_(m_mtx); return 0; }
 
     // returns -1 if mutex could not be locked
     virtual int trylock()
-        { return SC_MTX_TRYLOCK_(m_mtx) ? 0 : -1; }
+	{ return SC_MTX_TRYLOCK_(m_mtx) ? 0 : -1; }
 
     // should return -1 if mutex was not locked by caller,
     // but is not yet able to check this
     virtual int unlock()
-        { SC_MTX_UNLOCK_(m_mtx); return 0; }
+	{ SC_MTX_UNLOCK_(m_mtx); return 0; }
 
 private:
     underlying_type m_mtx;

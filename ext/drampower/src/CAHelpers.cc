@@ -33,8 +33,8 @@
  *
  */
 
-#include <algorithm>  // std::count
 #include <cstdio>
+#include <algorithm>  // std::count
 #include <string>
 
 #include "CommandAnalysis.h"

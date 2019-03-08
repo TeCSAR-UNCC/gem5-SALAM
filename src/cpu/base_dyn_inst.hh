@@ -124,6 +124,7 @@ class BaseDynInst : public ExecContext, public RefCounted
     };
 
     enum Flags {
+        NotAnInst,
         TranslationStarted,
         TranslationCompleted,
         PossibleLoadViolation,
@@ -132,10 +133,6 @@ class BaseDynInst : public ExecContext, public RefCounted
         RecordResult,
         Predicate,
         PredTaken,
-        /** Whether or not the effective address calculation is completed.
-         *  @todo: Consider if this is necessary or not.
-         */
-        EACalcDone,
         IsStrictlyOrdered,
         ReqMade,
         MemOpDone,
@@ -245,12 +242,6 @@ class BaseDynInst : public ExecContext, public RefCounted
     // Need a copy of main request pointer to verify on writes.
     RequestPtr reqToVerify;
 
-  private:
-    /** Instruction effective address.
-     *  @todo: Consider if this is necessary or not.
-     */
-    Addr instEffAddr;
-
   protected:
     /** Flattened register index of the destination registers of this
      *  instruction.
@@ -284,6 +275,9 @@ class BaseDynInst : public ExecContext, public RefCounted
     bool memOpDone() const { return instFlags[MemOpDone]; }
     void memOpDone(bool f) { instFlags[MemOpDone] = f; }
 
+    bool notAnInst() const { return instFlags[NotAnInst]; }
+    void setNotAnInst() { instFlags[NotAnInst] = true; }
+
 
     ////////////////////////////////////////////
     //
@@ -310,12 +304,12 @@ class BaseDynInst : public ExecContext, public RefCounted
                    Request::Flags flags, uint64_t *res);
 
     /** Splits a request in two if it crosses a dcache block. */
-    void splitRequest(RequestPtr req, RequestPtr &sreqLow,
+    void splitRequest(const RequestPtr &req, RequestPtr &sreqLow,
                       RequestPtr &sreqHigh);
 
     /** Initiate a DTB address translation. */
-    void initiateTranslation(RequestPtr req, RequestPtr sreqLow,
-                             RequestPtr sreqHigh, uint64_t *res,
+    void initiateTranslation(const RequestPtr &req, const RequestPtr &sreqLow,
+                             const RequestPtr &sreqHigh, uint64_t *res,
                              BaseTLB::Mode mode);
 
     /** Finish a DTB address translation. */
@@ -511,6 +505,7 @@ class BaseDynInst : public ExecContext, public RefCounted
     bool isMemRef()       const { return staticInst->isMemRef(); }
     bool isLoad()         const { return staticInst->isLoad(); }
     bool isStore()        const { return staticInst->isStore(); }
+    bool isAtomic()       const { return staticInst->isAtomic(); }
     bool isStoreConditional() const
     { return staticInst->isStoreConditional(); }
     bool isInstPrefetch() const { return staticInst->isInstPrefetch(); }
@@ -832,7 +827,7 @@ class BaseDynInst : public ExecContext, public RefCounted
     /**Read the micro PC of this instruction. */
     Addr microPC() const { return pc.microPC(); }
 
-    bool readPredicate()
+    bool readPredicate() const
     {
         return instFlags[Predicate];
     }
@@ -859,23 +854,14 @@ class BaseDynInst : public ExecContext, public RefCounted
     ThreadContext *tcBase() { return thread->getTC(); }
 
   public:
-    /** Sets the effective address. */
-    void setEA(Addr ea) { instEffAddr = ea; instFlags[EACalcDone] = true; }
-
-    /** Returns the effective address. */
-    Addr getEA() const { return instEffAddr; }
-
-    /** Returns whether or not the eff. addr. calculation has been completed. */
-    bool doneEACalc() { return instFlags[EACalcDone]; }
-
     /** Returns whether or not the eff. addr. source registers are ready. */
-    bool eaSrcsReady();
+    bool eaSrcsReady() const;
 
     /** Is this instruction's memory access strictly ordered? */
     bool strictlyOrdered() const { return instFlags[IsStrictlyOrdered]; }
 
     /** Has this instruction generated a memory request. */
-    bool hasRequest() { return instFlags[ReqMade]; }
+    bool hasRequest() const { return instFlags[ReqMade]; }
 
     /** Returns iterator to this instruction in the list of all insts. */
     ListIt &getInstListIt() { return instListIt; }
@@ -908,17 +894,18 @@ BaseDynInst<Impl>::initiateMemRead(Addr addr, unsigned size,
                                    Request::Flags flags)
 {
     instFlags[ReqMade] = true;
-    Request *req = NULL;
-    Request *sreqLow = NULL;
-    Request *sreqHigh = NULL;
+    RequestPtr req = NULL;
+    RequestPtr sreqLow = NULL;
+    RequestPtr sreqHigh = NULL;
 
     if (instFlags[ReqMade] && translationStarted()) {
         req = savedReq;
         sreqLow = savedSreqLow;
         sreqHigh = savedSreqHigh;
     } else {
-        req = new Request(asid, addr, size, flags, masterId(), this->pc.instAddr(),
-                          thread->contextId());
+        req = std::make_shared<Request>(
+            asid, addr, size, flags, masterId(),
+            this->pc.instAddr(), thread->contextId());
 
         req->taskId(cpu->taskId());
 
@@ -936,10 +923,7 @@ BaseDynInst<Impl>::initiateMemRead(Addr addr, unsigned size,
             instFlags[EffAddrValid] = true;
 
             if (cpu->checker) {
-                if (reqToVerify != NULL) {
-                    delete reqToVerify;
-                }
-                reqToVerify = new Request(*req);
+                reqToVerify = std::make_shared<Request>(*req);
             }
             fault = cpu->read(req, sreqLow, sreqHigh, lqIdx);
         } else {
@@ -964,17 +948,18 @@ BaseDynInst<Impl>::writeMem(uint8_t *data, unsigned size, Addr addr,
         traceData->setMem(addr, size, flags);
 
     instFlags[ReqMade] = true;
-    Request *req = NULL;
-    Request *sreqLow = NULL;
-    Request *sreqHigh = NULL;
+    RequestPtr req = NULL;
+    RequestPtr sreqLow = NULL;
+    RequestPtr sreqHigh = NULL;
 
     if (instFlags[ReqMade] && translationStarted()) {
         req = savedReq;
         sreqLow = savedSreqLow;
         sreqHigh = savedSreqHigh;
     } else {
-        req = new Request(asid, addr, size, flags, masterId(), this->pc.instAddr(),
-                          thread->contextId());
+        req = std::make_shared<Request>(
+            asid, addr, size, flags, masterId(),
+            this->pc.instAddr(), thread->contextId());
 
         req->taskId(cpu->taskId());
 
@@ -991,10 +976,7 @@ BaseDynInst<Impl>::writeMem(uint8_t *data, unsigned size, Addr addr,
         instFlags[EffAddrValid] = true;
 
         if (cpu->checker) {
-            if (reqToVerify != NULL) {
-                delete reqToVerify;
-            }
-            reqToVerify = new Request(*req);
+            reqToVerify = std::make_shared<Request>(*req);
         }
         fault = cpu->write(req, sreqLow, sreqHigh, data, sqIdx);
     }
@@ -1004,7 +986,7 @@ BaseDynInst<Impl>::writeMem(uint8_t *data, unsigned size, Addr addr,
 
 template<class Impl>
 inline void
-BaseDynInst<Impl>::splitRequest(RequestPtr req, RequestPtr &sreqLow,
+BaseDynInst<Impl>::splitRequest(const RequestPtr &req, RequestPtr &sreqLow,
                                 RequestPtr &sreqHigh)
 {
     // Check to see if the request crosses the next level block boundary.
@@ -1021,8 +1003,10 @@ BaseDynInst<Impl>::splitRequest(RequestPtr req, RequestPtr &sreqLow,
 
 template<class Impl>
 inline void
-BaseDynInst<Impl>::initiateTranslation(RequestPtr req, RequestPtr sreqLow,
-                                       RequestPtr sreqHigh, uint64_t *res,
+BaseDynInst<Impl>::initiateTranslation(const RequestPtr &req,
+                                       const RequestPtr &sreqLow,
+                                       const RequestPtr &sreqHigh,
+                                       uint64_t *res,
                                        BaseTLB::Mode mode)
 {
     translationStarted(true);

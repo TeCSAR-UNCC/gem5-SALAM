@@ -100,9 +100,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-port.h"
+#include "gtest/internal/gtest-internal.h"
 
 #if GTEST_HAS_STD_TUPLE_
 # include <tuple>

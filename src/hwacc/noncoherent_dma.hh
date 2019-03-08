@@ -36,6 +36,8 @@ class NoncoherentDma : public DmaDevice
     uint64_t * DST;
     int * LEN;
 
+	uint8_t last_flag;
+
     Addr activeSrc;
     Addr activeDst;
     int writesLeft;

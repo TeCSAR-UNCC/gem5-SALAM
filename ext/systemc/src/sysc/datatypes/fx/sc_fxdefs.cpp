@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_fxdefs.cpp -
+  sc_fxdefs.cpp - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -47,6 +47,7 @@
 
 #include "sysc/datatypes/fx/sc_fxdefs.h"
 
+
 namespace sc_dt
 {
 
@@ -65,8 +66,8 @@ to_string( sc_enc enc )
             return std::string( "SC_TC_" );
         case SC_US_:
             return std::string( "SC_US_" );
-        default:
-            return std::string( "unknown" );
+	default:
+	    return std::string( "unknown" );
     }
 }
 
@@ -96,8 +97,8 @@ to_string( sc_q_mode q_mode )
             return std::string( "SC_TRN" );
         case SC_TRN_ZERO:
             return std::string( "SC_TRN_ZERO" );
-        default:
-            return std::string( "unknown" );
+	default:
+	    return std::string( "unknown" );
     }
 }
 
@@ -123,8 +124,8 @@ to_string( sc_o_mode o_mode )
             return std::string( "SC_WRAP" );
         case SC_WRAP_SM:
             return std::string( "SC_WRAP_SM" );
-        default:
-            return std::string( "unknown" );
+	default:
+	    return std::string( "unknown" );
     }
 }
 
@@ -143,8 +144,8 @@ to_string( sc_switch sw )
             return std::string( "SC_OFF" );
         case SC_ON:
             return std::string( "SC_ON" );
-        default:
-            return std::string( "unknown" );
+	default:
+	    return std::string( "unknown" );
     }
 }
 
@@ -163,8 +164,8 @@ to_string( sc_fmt fmt )
             return std::string( "SC_F" );
         case SC_E:
             return std::string( "SC_E" );
-        default:
-            return std::string( "unknown" );
+	default:
+	    return std::string( "unknown" );
     }
 }
 

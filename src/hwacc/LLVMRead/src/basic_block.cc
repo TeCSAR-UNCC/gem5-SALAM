@@ -17,7 +17,7 @@
 // ////////////////////////////////////////////////////////////////////
 
 int64_t
-BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList) {
+BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles) {
 	// ////////////////////////////////////////////////////////////////////
 	// Local Variables
 	std::vector<std::string> parameters; // Used to store each each element of the passed in LLVM instruction line 
@@ -188,7 +188,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// ret <type> <value>; Return a value from a non - void function
 		// ret void; Return from void function
 		// Set general instruction parameters
-		maxCycles = CYCLECOUNTRET;
+		maxCycles = cycles->ret_inst;
 		instructionType = "Terminator";
 		if (parameters[last].find("void")) {
 			// If void is found then it must not have a return value
@@ -211,7 +211,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// br i1 <cond>, label <iftrue>, label <iffalse>
 		// br label <dest>          ; Unconditional branch
 		instructionType = "Terminator";
-		maxCycles = CYCLECOUNTBR;
+		maxCycles = cycles->br_inst;
 		if (parameters.size() == 3) {
 			//Unconditional branch
 			returnType = "void";
@@ -255,7 +255,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Switch: {
 		// switch <intty> <value>, label <defaultdest> [ <intty> <val>, label <dest> ... ]
 		instructionType = "Terminator";
-		maxCycles = CYCLECOUNTSWITCH;
+		maxCycles = cycles->switch_inst;
 		functionalUnit = COMPARE;
 		returnType = parameters[1];
 		std::vector<std::string> branches;
@@ -311,7 +311,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Resume: {
 		// resume <type> <value>
 		instructionType = "Terminator";
-		maxCycles = CYCLECOUNTRESUME;
+		maxCycles = cycles->resume_inst;
 		returnType = parameters[0];
 		Register* condition;
 		setRegister(parameters[1], condition, dependencies, list, parameters);
@@ -328,7 +328,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = add nuw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = add nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
-		maxCycles = CYCLECOUNTADD;
+		maxCycles = cycles->add_inst;
 		functionalUnit = INTADDER;
 		instructionType = "Binary";
 		computeFlags = setFlags(parameters);
@@ -339,7 +339,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		int64_t immOp = 0;
 		if(immOps.size() != 0) {
 			immOp = stoi(immOps.at(0));
-			maxCycles = CYCLECOUNTER;
+			maxCycles = cycles->counter_inst;
 			functionalUnit = COUNTER;
 		}
 		
@@ -362,7 +362,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FAdd: {
 		// <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTFADD;
+		maxCycles = cycles->fadd_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -397,7 +397,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sub nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = sub nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTSUB;
+		maxCycles = cycles->sub_inst;
 		functionalUnit = INTADDER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -425,7 +425,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FSub: {
 		// <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTFSUB;
+		maxCycles = cycles->fsub_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -457,7 +457,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = mul nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = mul nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTMUL;
+		maxCycles = cycles->mul_inst;
 		functionalUnit = INTMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -485,7 +485,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FMul: {
 		// <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result.
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTFMUL;
+		maxCycles = cycles->fmul_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -517,7 +517,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = udiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = udiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTUDIV;
+		maxCycles = cycles->udiv_inst;
 		functionalUnit = INTMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -546,7 +546,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = sdiv <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = sdiv exact <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTSDIV;
+		maxCycles = cycles->sdiv_inst;
 		functionalUnit = INTMULTI;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -574,7 +574,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FDiv: {
 		// <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTFDIV;
+		maxCycles = cycles->fdiv_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -603,7 +603,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_URem: {
 		// <result> = urem <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTUREM;
+		maxCycles = cycles->urem_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -630,7 +630,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_SRem: {
 		// <result> = srem <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTSREM;
+		maxCycles = cycles->srem_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -657,7 +657,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FRem: {
 		// <result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Binary";
-		maxCycles = CYCLECOUNTFREM;
+		maxCycles = cycles->frem_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -690,7 +690,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Bitwise";
-		functionalUnit = INTSHIFTER;
+		functionalUnit = cycles->shl_inst;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -718,7 +718,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = lshr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = lshr exact <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Bitwise";
-		maxCycles = CYCLECOUNTLSHR;
+		maxCycles = cycles->lshr_inst;
 		functionalUnit = INTSHIFTER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -747,7 +747,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = ashr <ty> <op1>, <op2>         ; yields {ty}:result
 		// <result> = ashr exact <ty> <op1>, <op2>; yields{ ty }:result.
 		instructionType = "Bitwise";
-		maxCycles = CYCLECOUNTASHR;
+		maxCycles = cycles->ashr_inst;
 		functionalUnit = INTSHIFTER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -775,7 +775,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_And: {
 		// <result> = and <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Bitwise";
-		maxCycles = CYCLECOUNTAND;
+		maxCycles = cycles->and_inst;
 		functionalUnit = INTBITWISE;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -804,7 +804,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Or: {
 		// <result> = or <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Bitwise";
-		maxCycles = CYCLECOUNTOR;
+		maxCycles = cycles->or_inst;
 		functionalUnit = INTBITWISE;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -832,7 +832,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_Xor: {
 		// <result> = xor <ty> <op1>, <op2>   ; yields {ty}:result
 		instructionType = "Bitwise";
-		maxCycles = CYCLECOUNTXOR;
+		maxCycles = cycles->xor_inst;
 		functionalUnit = INTBITWISE;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
@@ -868,7 +868,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		//	!<index> = !{ i32 1 }
 		// Set memory operation flag to true
 		instructionType = "Memory";
-		maxCycles = CYCLECOUNTLOAD;
+		maxCycles = cycles->load_inst;
 		// Index variable tracks keywords starting from the beginning of instruction
 		int index = 0;
 		// Check if instruction has volatilte keyword
@@ -909,7 +909,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// store [volatile] <ty> <value>, <ty>* <pointer>[, align <alignment>][, !nontemporal !<index>]        ; yields {void}
 		// store atomic[volatile] <ty> <value>, <ty>* <pointer>[singlethread] <ordering>, align <alignment>; yields{ void }
 		instructionType = "Memory";
-		maxCycles = CYCLECOUNTSTORE;
+		maxCycles = cycles->store_inst;
 		int index = 1;
 		int align = 0;
 		int64_t imm;
@@ -949,14 +949,14 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		break;
 	}
 	case IR_GetElementPtr: {
-	// <result> = getelementptr Creating select<ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
+	// <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
 	// <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
 		int index = 0;
 		int j = 0;	
 		std::string customDataType;
 		instructionType = "Memory";
-		maxCycles = CYCLECOUNTGETELEMENTPTR;
+		maxCycles = cycles->gep_inst;
 		functionalUnit = GETELEMENTPTR;
 		ret_reg->setSize("pointer");
 		std::string pty; //instruction.memory.getptr.pty
@@ -1070,7 +1070,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = trunc <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
 		functionalUnit = CONVERSION;
-		maxCycles = CYCLECOUNTTRUNC;
+		maxCycles = cycles->trunc_inst;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
 		Register* operand = NULL;
@@ -1092,7 +1092,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_ZExt: {
 		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTZEXT;
+		maxCycles = cycles->zext_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1115,7 +1115,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_SExt: {
 		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTSEXT;
+		maxCycles = cycles->sext_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1138,7 +1138,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FPToUI: {
 		// <result> = fptoui <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTFPTOUI;
+		maxCycles = cycles->fptoui_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1161,7 +1161,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FPToSI: {
 		// <result> = fptosi <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTFPTOSI;
+		maxCycles = cycles->fptosi_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1184,7 +1184,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_UIToFP: {
 		// <result> = uitofp <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTUITOFP;
+		maxCycles = cycles->uitofp_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1207,7 +1207,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_SIToFP: {
 		// <result> = sitofp <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTSITOFP;
+		maxCycles = cycles->uitofp_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1230,7 +1230,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FPTrunc: {
 		// <result> = fptrunc <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTFPTRUNC;
+		maxCycles = cycles->fptrunc_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1253,7 +1253,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_FPExt: {
 		// <result> = fpext <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTFPEXT;
+		maxCycles = cycles->fpext_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1276,7 +1276,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_PtrToInt: {
 		// <result> = ptrtoint <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTPTRTOINT;
+		maxCycles = cycles->ptrtoint_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1299,7 +1299,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_IntToPtr: {
 		// <result> = inttoptr <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTINTTOPTR;
+		maxCycles = cycles->inttoptr_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1322,7 +1322,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_BitCast: {
 		// <result> = bitcast <ty> <value> to <ty2>             ; yields ty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTBITCAST;
+		maxCycles = cycles->bitcast_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1345,7 +1345,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	case IR_AddrSpaceCast: {
 		// <result> = addrspacecast <pty> <ptrval> to <pty2>       ; yields pty2
 		instructionType = "Conversion";
-		maxCycles = CYCLECOUNTADDRSPACECAST;
+		maxCycles = cycles->addrspacecast_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
 		std::string originalType = parameters[3];
@@ -1371,7 +1371,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		instructionType = "Compare";
 		std::string condition = parameters[0];
 		functionalUnit = COMPARE;
-		maxCycles = CYCLECOUNTICMP;
+		maxCycles = cycles->icmp_inst;
 		returnType = parameters[1];
 		std::vector<Register*> regOps;
 		int64_t immOp = 0;
@@ -1416,7 +1416,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = fcmp <cond> <ty> <op1>, <op2>     ; yields {i1} or {<N x i1>}:result
 		instructionType = "Compare";
 		std::string condition = parameters[0];
-		maxCycles = CYCLECOUNTFCMP;
+		maxCycles = cycles->fcmp_inst;
 		functionalUnit = COMPARE;
 		returnType = parameters[1];
 		std::vector<Register*> regOps;
@@ -1469,7 +1469,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = phi <ty> [ <val0>, <label0>], ...
 		int labelLength = 0;
 		instructionType = "Other";		
-		maxCycles = CYCLECOUNTPHI;
+		maxCycles = cycles->phi_inst;
 		functionalUnit = COMPARE;
 		returnType = parameters[0];
 		ret_reg->setSize(returnType);
@@ -1535,7 +1535,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = select selty <cond>, <ty> <val1>, <ty> <val2>             ; yields ty
 		// selty is either i1 or {<N x i1>}
 		instructionType = "Other";
-		maxCycles = CYCLECOUNTSELECT;
+		maxCycles = cycles->select_inst;
 		functionalUnit = COMPARE;
 		returnType = parameters[2];
 		ret_reg->setSize(returnType);
@@ -1726,7 +1726,7 @@ BasicBlock::sciToDecimal(std::string immediateValue) {
 
 void
 BasicBlock::debugParams(std::vector<std::string> &parameters) { 
-	if(DEBUGPARAMS) for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
+	for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
 	DPRINTF(ComputeNode, "\n");
 }
 
@@ -1866,8 +1866,8 @@ BasicBlock::setSize(std::string dataType) {
     std::string temp = dataType;
 	int size = 8;
     // Pointers
-    if (temp.compare("pointer") == 0) size = SystemSize/8;
-    else if (temp.back() =='*') size = SystemSize/8;
+    if (temp.compare("pointer") == 0) size = SYSTEMSIZE/8;
+    else if (temp.back() =='*') size = SYSTEMSIZE/8;
     // Boolean and integer data types
     // Set size if dataType is integer
     else if (temp.front() == 'i') {
@@ -1876,9 +1876,9 @@ BasicBlock::setSize(std::string dataType) {
     }
     // Floating point data types    
     // Set size if dataType is float
-    else if (temp.compare("float")  != -1) size = SystemSize/16;
+    else if (temp.compare("float")  != -1) size = SYSTEMSIZE/16;
     // Set size if dataType is double
-    else if (temp.find("double") > -1) size = SystemSize/8;
+    else if (temp.find("double") > -1) size = SYSTEMSIZE/8;
     // Set size if dataType is void
     else if (temp.find("void") > -1) size = 0;
     // Aggregate data types
@@ -1889,7 +1889,7 @@ BasicBlock::setSize(std::string dataType) {
     // Unspecified dataType
     // Label
     // Treat size equivalent to a pointer
-    else if (temp.find("label") > -1) size = SystemSize/8;
+    else if (temp.find("label") > -1) size = SYSTEMSIZE/8;
     // Unknown dataType
     else { }
 	return size;

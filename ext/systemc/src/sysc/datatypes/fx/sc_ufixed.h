@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  sc_ufixed.h -
+  sc_ufixed.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -53,6 +53,7 @@
 
 #include "sysc/datatypes/fx/sc_ufix.h"
 
+
 namespace sc_dt
 {
 
@@ -68,8 +69,8 @@ template <int W, int I, sc_q_mode Q, sc_o_mode O, int N> class sc_ufixed_fast;
 // ----------------------------------------------------------------------------
 
 template <int W, int I,
-          sc_q_mode Q = SC_DEFAULT_Q_MODE_,
-          sc_o_mode O = SC_DEFAULT_O_MODE_, int N = SC_DEFAULT_N_BITS_>
+	  sc_q_mode Q = SC_DEFAULT_Q_MODE_,
+	  sc_o_mode O = SC_DEFAULT_O_MODE_, int N = SC_DEFAULT_N_BITS_>
 class sc_ufixed : public sc_ufix
 {
 
@@ -189,8 +190,8 @@ public:
 // ----------------------------------------------------------------------------
 
 template <int W, int I,
-          sc_q_mode Q = SC_DEFAULT_Q_MODE_,
-          sc_o_mode O = SC_DEFAULT_O_MODE_, int N = SC_DEFAULT_N_BITS_>
+	  sc_q_mode Q = SC_DEFAULT_Q_MODE_,
+	  sc_o_mode O = SC_DEFAULT_O_MODE_, int N = SC_DEFAULT_N_BITS_>
 class sc_ufixed_fast : public sc_ufix_fast
 {
 
@@ -200,7 +201,7 @@ public:
 
     explicit sc_ufixed_fast( sc_fxnum_fast_observer* = 0 );
     explicit sc_ufixed_fast( const sc_fxcast_switch&,
-                             sc_fxnum_fast_observer* = 0 );
+			     sc_fxnum_fast_observer* = 0 );
 
 #define DECL_CTORS_T_A(tp)                                                    \
              sc_ufixed_fast( tp, sc_fxnum_fast_observer* = 0 );               \
@@ -210,7 +211,7 @@ public:
 #define DECL_CTORS_T_B(tp)                                                    \
     explicit sc_ufixed_fast( tp, sc_fxnum_fast_observer* = 0 );               \
              sc_ufixed_fast( tp, const sc_fxcast_switch&,                     \
-                             sc_fxnum_fast_observer* = 0 );
+			     sc_fxnum_fast_observer* = 0 );
 
     DECL_CTORS_T_A(int)
     DECL_CTORS_T_A(unsigned int)
@@ -323,7 +324,7 @@ sc_ufixed<W,I,Q,O,N>::sc_ufixed( sc_fxnum_observer* observer_ )
 template<int W, int I, sc_q_mode Q, sc_o_mode O, int N>
 inline
 sc_ufixed<W,I,Q,O,N>::sc_ufixed( const sc_fxcast_switch& cast_sw,
-                                 sc_fxnum_observer* observer_ )
+				 sc_fxnum_observer* observer_ )
 : sc_ufix( W, I, Q, O, N, cast_sw, observer_ )
 {}
 
@@ -331,15 +332,15 @@ sc_ufixed<W,I,Q,O,N>::sc_ufixed( const sc_fxcast_switch& cast_sw,
 template<int W, int I, sc_q_mode Q, sc_o_mode O, int N>                       \
 inline                                                                        \
 sc_ufixed<W,I,Q,O,N>::sc_ufixed( tp a,                                        \
-                                 sc_fxnum_observer* observer_ )               \
+				 sc_fxnum_observer* observer_ )               \
 : sc_ufix( a, W, I, Q, O, N, observer_ )                                      \
 {}                                                                            \
                                                                               \
 template<int W, int I, sc_q_mode Q, sc_o_mode O, int N>                       \
 inline                                                                        \
 sc_ufixed<W,I,Q,O,N>::sc_ufixed( tp a,                                        \
-                                 const sc_fxcast_switch& cast_sw,             \
-                                 sc_fxnum_observer* observer_ )               \
+				 const sc_fxcast_switch& cast_sw,             \
+				 sc_fxnum_observer* observer_ )               \
 : sc_ufix( a, W, I, Q, O, N, cast_sw, observer_ )                             \
 {}
 
@@ -495,7 +496,7 @@ sc_ufixed_fast<W,I,Q,O,N>::sc_ufixed_fast( sc_fxnum_fast_observer* observer_ )
 template<int W, int I, sc_q_mode Q, sc_o_mode O, int N>
 inline
 sc_ufixed_fast<W,I,Q,O,N>::sc_ufixed_fast( const sc_fxcast_switch& cast_sw,
-                                           sc_fxnum_fast_observer* observer_ )
+					   sc_fxnum_fast_observer* observer_ )
 : sc_ufix_fast( W, I, Q, O, N, cast_sw, observer_ )
 {}
 
@@ -503,15 +504,15 @@ sc_ufixed_fast<W,I,Q,O,N>::sc_ufixed_fast( const sc_fxcast_switch& cast_sw,
 template<int W, int I, sc_q_mode Q, sc_o_mode O, int N>                       \
 inline                                                                        \
 sc_ufixed_fast<W,I,Q,O,N>::sc_ufixed_fast( tp a,                              \
-                                           sc_fxnum_fast_observer* observer_ )\
+					   sc_fxnum_fast_observer* observer_ )\
 : sc_ufix_fast( a, W, I, Q, O, N, observer_ )                                 \
 {}                                                                            \
                                                                               \
 template<int W, int I, sc_q_mode Q, sc_o_mode O, int N>                       \
 inline                                                                        \
 sc_ufixed_fast<W,I,Q,O,N>::sc_ufixed_fast( tp a,                              \
-                                           const sc_fxcast_switch& cast_sw,   \
-                                           sc_fxnum_fast_observer* observer_ )\
+					   const sc_fxcast_switch& cast_sw,   \
+					   sc_fxnum_fast_observer* observer_ )\
 : sc_ufix_fast( a, W, I, Q, O, N, cast_sw, observer_ )                        \
 {}
 

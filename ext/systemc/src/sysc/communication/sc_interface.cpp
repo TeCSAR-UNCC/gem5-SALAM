@@ -26,9 +26,10 @@
   CHANGE LOG IS AT THE END OF THE FILE
  *****************************************************************************/
 
-#include "sysc/communication/sc_communication_ids.h"
 #include "sysc/communication/sc_interface.h"
+#include "sysc/communication/sc_communication_ids.h"
 #include "sysc/kernel/sc_event.h"
+
 
 namespace sc_core {
 

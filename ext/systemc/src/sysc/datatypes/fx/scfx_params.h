@@ -19,7 +19,7 @@
 
 /*****************************************************************************
 
-  scfx_params.h -
+  scfx_params.h - 
 
   Original Author: Martin Janssen, Synopsys, Inc.
 
@@ -52,6 +52,7 @@
 #include "sysc/datatypes/fx/sc_fxcast_switch.h"
 #include "sysc/datatypes/fx/sc_fxtype_params.h"
 
+
 namespace sc_dt
 {
 
@@ -73,8 +74,8 @@ public:
     // constructor
 
     scfx_params( const sc_fxtype_params&,
-                 sc_enc,
-                 const sc_fxcast_switch& );
+		 sc_enc,
+		 const sc_fxcast_switch& );
 
 
     // query functions
@@ -103,7 +104,7 @@ private:
     sc_fxtype_params m_type_params;
     sc_enc           m_enc;
     sc_fxcast_switch m_cast_switch;
-
+    
 };
 
 
@@ -113,16 +114,16 @@ private:
 
 inline
 scfx_params::scfx_params( const sc_fxtype_params& type_params_,
-                          sc_enc enc_,
-                          const sc_fxcast_switch& cast_sw )
+			  sc_enc enc_,
+			  const sc_fxcast_switch& cast_sw )
 : m_type_params( type_params_ ),
   m_enc( enc_ ),
   m_cast_switch( cast_sw )
 {
-    if ( m_enc == SC_US_ && m_type_params.o_mode() == SC_WRAP_SM )
+    if( m_enc == SC_US_ && m_type_params.o_mode() == SC_WRAP_SM )
     {
-        SC_REPORT_ERROR( sc_core::SC_ID_INVALID_O_MODE_,
-                         "SC_WRAP_SM not defined for unsigned numbers" );
+	SC_REPORT_ERROR( sc_core::SC_ID_INVALID_O_MODE_,
+			 "SC_WRAP_SM not defined for unsigned numbers" );
     }
 
 }
