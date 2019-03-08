@@ -9,7 +9,7 @@ def makeHWAcc(options, system):
 
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
-    Config.read((options.accpath + "/" + options.accbench + "/host/" + "config.ini"))
+    Config.read((options.accpath + "/" + options.accbench + "/config.ini"))
     Config.sections()
     def ConfigSectionMap(section):
         dict1 = {}
