@@ -60,7 +60,7 @@
 #define REG_6ns_area                                  5.981433e+00
 
 #define REG_10ns_int_power                            5.535310e-04
-#define REG_10ns_switch_power                         0.000000e+00
+#define REG_10ns_switch_power                         1.800732e-04
 #define REG_10ns_dynamic_power                        5.535310e-04
 #define REG_10ns_dynamic_energy                       5.535310e-03
 #define REG_10ns_leakage_power                        7.358945e-05

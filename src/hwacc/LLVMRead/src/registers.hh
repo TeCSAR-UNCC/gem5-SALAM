@@ -15,7 +15,6 @@ class Register {
     private:
         std::string _Name;      // Name of reg in reg list
         std::string _Data_Type; // Data type to be stored in reg
-        Reg_Usage _Reg_Usage;   // Read/Write Usage
         uint64_t _Value = 0;    // Register value (reflects memory)
         uint64_t _Size;         // Reg size in bytes
         bool _Hot;              // Register is ready/not ready
@@ -24,6 +23,7 @@ class Register {
     //-----------------------------------------------------------------------//
     //----- Begin Public ----------------------------------------------------//
     public:
+            Reg_Usage _Reg_Usage;   // Read/Write Usage
         // ---- Constructor
         Register(const std::string& Name, uint64_t Value):
                 _Name(Name),
@@ -46,7 +46,7 @@ class Register {
         uint64_t getSize()              { return _Size; }
         bool getStatus()                { return _Hot; }
         // ---- Set Functions
-        void commit()                   { _Hot = false; }
+        void commit()                   { _Hot = false; _Reg_Usage.writes++;}
         void reset()                    { _Hot = true; }
         void setSize(const std::string& Data_Type); 
         void setValue(void *data);
@@ -76,6 +76,7 @@ class RegisterList{
         Register* findRegister(std::string Name);
         void addRegister(Register *Reg) { _RegList->push_back(Reg); }
         void printRegNames();
+        void totalAccess(Reg_Usage *regUsage);
     //----- End Public ------------------------------------------------------//
     //-----------------------------------------------------------------------//
 };

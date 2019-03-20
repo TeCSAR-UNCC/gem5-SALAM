@@ -33,6 +33,15 @@ RegisterList::printRegNames() { // Prints name of all current registers
     }
 }   //  --- End Function ----------------------------------------------//
 
+void
+RegisterList::totalAccess(Reg_Usage* regUsage) { // Prints name of all current registers
+    for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
+        regUsage->reads += (*it)->_Reg_Usage.reads;
+        regUsage->writes += (*it)->_Reg_Usage.writes;
+    }
+}   //  --- End Function ----------------------------------------------//
+
+
 Register *
 RegisterList::findRegister(std::string Name) {
     for (auto it = _RegList->begin(); it != _RegList->end(); ++it) {

@@ -83,13 +83,6 @@ LLVMInterface::tick() {
         DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
         
         if(pipelined) {
-            /*
-            if(computeQueue.at(i)->commit()) {
-                auto it = computeQueue.erase(computeQueue.begin() + i);
-                i = std::distance(computeQueue.begin(), it);
-            }
-            else i++;
-            */
              if(unlimitedFU) {
                 updateFU(reservation.at(i)->_FunctionalUnit);
                 if(computeQueue.at(i)->commit()) {
@@ -343,7 +336,7 @@ LLVMInterface::constructBBList() {
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
-    pwrUtil = new Utilization(clock_period);
+    pwrUtil = new Utilization(clock_period, regList);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
     bool inFunction = false; // Parse Variable
@@ -491,7 +484,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 
 void
 LLVMInterface::initialize() {
-/*********************************regPwr.************************************************************
+/*********************************************************************************************
  Initialize the Runtime Engine
 
  Calls function that constructs the basic block list, initializes the reservation table and
@@ -536,9 +529,10 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    //double divisor = cycle * (clock_period / 1000);
+    double divisor = cycle * (clock_period / 1000);
+    pwrUtil->finalPowerUsage(_MaxFU);
     
-    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s",
+    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %f %s %s",
     "\n*******************************************************************************",
     "\n   Runtime (Cycles):                ", cycle,
     "\n   Runtime (Seconds):               ", (cycle*10*(1e-12)),
@@ -572,22 +566,16 @@ LLVMInterface::statistics() {
     "\n   Type Conversion FU's:            ", _MaxParsed.conversion,
     "\n   Other:                           ", _MaxParsed.other,
     "\n   Number of Registers:             ", regList->size(),
+    "\n   Total Power:                     ", (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor, "mW",
+    "\n   FU Leakage Power:                ", pwrUtil->finalPwr.leakage_power*1000000, "nW",
+    "\n   FU Dynamic Power:                ", pwrUtil->totalPwr.dynamic_energy/divisor, "mW",
+    "\n   Register Leakage Power:          ", pwrUtil->totalPwr.reg_leakage_power , "mW",
+    "\n   Register Dynamic Power:          ", pwrUtil->totalPwr.reg_dynamic_energy/divisor, "mW",
+    "\n   FU Area:                         ", pwrUtil->totalPwr.area," um^2, (", pwrUtil->totalPwr.area/1000000, " mm^2)",
+    "\n   Total Register Reads:            ", pwrUtil->regUsage.reads,
+    "\n   Total Register Writes:           ", pwrUtil->regUsage.writes,
+    "\n   Total Power:                     ", ((pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor + pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy/divisor), "mW",
     "\n*******************************************************************************\n");
-    
-/*
-    %s %f %s 
-    %s %f %s 
-    %s %f %s 
-    %s %f %s 
-    %s %f %s 
-    %s %f %s %f %s",
-    "\n   Average Power: ", (pwrUtil->getLeakage()+ pwrUtil->getDynEnergy()/divisor+pwrUtil->getRegLeak()+pwrUtil->getRegDyn()/divisor), "mW",
-    "\n   FU Leakage Power: ", pwrUtil->getLeakage(), "mW",
-    "\n   FU Dynamic Power: ", pwrUtil->getDynEnergy()/divisor, "mW",
-    "\n   Register Leakage Power: ", pwrUtil->getRegLeak(), "mW",
-    "\n   Register Dynamic Power: ", pwrUtil->getRegDyn()/divisor, "mW",
-    "\n   FU Area = ",pwrUtil->getArea()," um^2, (", pwrUtil->getArea()/1000000, " mm^2)",
-*/
 
 }
 

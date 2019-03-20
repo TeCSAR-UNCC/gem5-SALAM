@@ -41,6 +41,7 @@ InstructionBase::fetchDependency(Register* reg) {
         for (int i = 0; i < _Dependencies.size(); i++) {
             if (reg == _Dependencies.at(i)) {
                 _Ops.at(i) = _Dependencies.at(i)->getValue();
+                reg->_Reg_Usage.reads++;
             }
         }
     }

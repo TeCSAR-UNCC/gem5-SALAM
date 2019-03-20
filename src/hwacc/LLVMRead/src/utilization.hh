@@ -3,6 +3,8 @@
 #include "debugFlags.hh" 
 #include "debug/Hardware.hh"
 #include "power_func.hh"
+#include "registers.hh"
+#include "power.hh"
 #include "macros.hh"
 #include <map>
 #include <vector>
@@ -60,11 +62,18 @@ class Utilization {
       PowerUsage spfpMulPwr;
       PowerUsage dpfpMulPwr;
       PowerTotals totalPwr;
+      PowerTotals finalPwr;
+      RegisterList *regList;
+      Reg_Usage regUsage;
     
-    Utilization(int clock_period); 
+    Utilization(int clock_period, RegisterList* List);
+    void finalPowerUsage(FunctionalUnits units); 
     void updatePowerConsumption(FunctionalUnits units);
     void calculateLeakagePowerUsage(FunctionalUnits units);
+    void calculateFinalLeakagePowerUsage(FunctionalUnits units);
     void calculateDynamicPowerUsage(FunctionalUnits units);
+    void calculateArea(FunctionalUnits units);
+    void calculateRegisterPowerUsage(Reg_Usage *regUsage);
 };
 
 
