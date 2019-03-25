@@ -59,7 +59,7 @@ int main(void) {
     printf("Generating data\n");
     genData(&mds);
     printf("Data generated\n");
-    
+
 #ifndef SPM
     loc_force_x     = (uint64_t)(BASE+FRCX_OFFSET);
     loc_force_y     = (uint64_t)(BASE+FRCY_OFFSET);
@@ -69,18 +69,13 @@ int main(void) {
     loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
     loc_NL          = (uint64_t)(BASE+NL_OFFSET);
 #else
-    loc_force_x     = (uint64_t)(BASE+FRCX_OFFSET);
-    loc_force_y     = (uint64_t)(BASE+FRCY_OFFSET);
-    loc_force_z     = (uint64_t)(BASE+FRCZ_OFFSET);
-    loc_position_x  = (uint64_t)(BASE+POSX_OFFSET);
-    loc_position_y  = (uint64_t)(BASE+POSY_OFFSET);
-    loc_position_z  = (uint64_t)(BASE+POSZ_OFFSET);
-    loc_NL          = (uint64_t)(BASE+NL_OFFSET);
-
-//    std::memcpy((void *)(SPM_BASE+POSX_OFFSET), (void *)position_x,   sizeof(TYPE)*nAtoms);
-//    std::memcpy((void *)(SPM_BASE+POSY_OFFSET), (void *)position_y,   sizeof(TYPE)*nAtoms);
-//    std::memcpy((void *)(SPM_BASE+POSZ_OFFSET), (void *)position_z,   sizeof(TYPE)*nAtoms);
-//    std::memcpy((void *)(SPM_BASE+NL_OFFSET),   (void *)NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
+    loc_force_x     = (uint64_t)(SPM_BASE+FRCX_OFFSET);
+    loc_force_y     = (uint64_t)(SPM_BASE+FRCY_OFFSET);
+    loc_force_z     = (uint64_t)(SPM_BASE+FRCZ_OFFSET);
+    loc_position_x  = (uint64_t)(SPM_BASE+POSX_OFFSET);
+    loc_position_y  = (uint64_t)(SPM_BASE+POSY_OFFSET);
+    loc_position_z  = (uint64_t)(SPM_BASE+POSZ_OFFSET);
+    loc_NL          = (uint64_t)(SPM_BASE+NL_OFFSET);
 
     dmacpy(spmpx, position_x,	sizeof(TYPE)*nAtoms);
     while(!pollDma());
@@ -151,6 +146,5 @@ int main(void) {
         printf("                               \n");
         printf("Errors: %d \n Total Checks: %d \n", errors, checkvals);
     }
-//	*(char *)0x7fffffff = 1; //Kill the simulation
 	m5_exit();
 }

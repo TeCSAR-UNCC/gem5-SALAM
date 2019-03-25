@@ -52,28 +52,6 @@ void genData(md_struct * mds) {
         mds->position_y[i]  = p_y[i];
         mds->position_z[i]  = p_z[i];
     }
-    /*
-    for(i = 0; i < nAtoms; i++) {
-        mds->check_x[i] = c_x[i];
-    }
-    
-    for(i = 0; i < nAtoms; i++) {
-        mds->check_y[i] = c_y[i];
-    }
-    
-    for(i = 0; i < nAtoms; i++) {
-        mds->check_z[i] = c_z[i];
-    }
-    for(i = 0; i < nAtoms; i++) {
-        mds->position_x[i] = p_x[i];
-    }
-    for(i = 0; i < nAtoms; i++) {
-        mds->position_y[i] = p_y[i];
-    }
-    for(i = 0; i < nAtoms; i++) {
-        mds->position_z[i] = p_z[i];
-    }
-    */
     for(i = 0; i < nAtoms*maxNeighbors; i++) {
         mds->NL[i] = n_l[i];
     }
