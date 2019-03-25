@@ -28,8 +28,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     prevBB = NULL;
     typeList = NULL;
     running = false;
-    clock_period = comm->getProcessDelay(); //Clock period
-    process_delay = 1; //Number of cycles a compute_node needs to complete
+    clock_period = clock_period * 1000; //comm->getProcessDelay(); //Clock period
+    //process_delay = 1; //Number of cycles a compute_node needs to complete
     if((counter_units == -1) && 
         (int_adder_units == -1) &&
         (int_multiply_units == -1) &&
@@ -81,7 +81,7 @@ LLVMInterface::tick() {
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
         DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
-        
+
         if(pipelined) {
              if(unlimitedFU) {
                 updateFU(reservation.at(i)->_FunctionalUnit);
@@ -199,7 +199,7 @@ LLVMInterface::tick() {
     if (!scheduled) stalls++; // No new compute node was scheduled this cycle
     if (running && !tickEvent.scheduled())
     {
-        schedule(tickEvent, curTick() + clock_period * process_delay);
+        schedule(tickEvent, curTick() + clock_period);// * process_delay);
     }
 }
 

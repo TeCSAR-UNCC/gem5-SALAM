@@ -70,8 +70,8 @@ CommInterface::MemSidePort::recvReqRetry() {
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
         if (!owner->tickEvent.scheduled()) {
-            //owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
-            owner->schedule(owner->tickEvent, owner->nextCycle());
+            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
+            //owner->schedule(owner->tickEvent, owner->nextCycle());
         }
     }
 }
@@ -133,8 +133,8 @@ CommInterface::recvPacket(PacketPtr pkt) {
     }
     if (!tickEvent.scheduled())
     {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
     //if (pkt->req) delete pkt->req;
     delete pkt;
@@ -153,8 +153,8 @@ CommInterface::checkMMR() {
 
         if (processingDone && !tickEvent.scheduled()) {
             processingDone = false;
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -255,8 +255,8 @@ CommInterface::processMemoryRequests() {
     }
     requestsInQueues = readQueue->size() + writeQueue->size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -301,14 +301,14 @@ CommInterface::tryRead(MemSidePort * port) {
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
         if (!tickEvent.scheduled()) {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     } else {
         if (!port->isStalled() && !tickEvent.scheduled())
         {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -353,12 +353,12 @@ CommInterface::tryWrite(MemSidePort * port) {
     if (!(writeReq->writeLeft > 0)) {
         writeReq->needToWrite = false;
         if (!tickEvent.scheduled()) {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     } else if (!port->isStalled() && !tickEvent.scheduled()) {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -371,8 +371,8 @@ CommInterface::enqueueRead(MemoryRequest * req) {
         DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -385,8 +385,8 @@ CommInterface::enqueueWrite(MemoryRequest * req) {
         DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -993,8 +993,8 @@ CommMemInterface::processMemoryRequests() {
     }
     requestsInQueues = readQueue->size() + writeQueue->size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
