@@ -25,6 +25,8 @@ class CommInterface : public BasicPioDevice
     std::string devname;
     BaseGic *gic;
     uint32_t int_num;
+    bool use_premap_data;
+    std::vector<Addr> data_base_ptrs;
 
     //class MemoryRequest;
 

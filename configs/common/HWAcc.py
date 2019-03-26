@@ -44,8 +44,8 @@ def makeHWAcc(options, system):
 
     # Add an accelerator with a private SPM to the cluster
     system.acc_cluster.acc = CommMemInterface()
-    AccConfig(options, system.acc_cluster.acc, local_range, acc_config, acc_bench)
-    AccPmemConfig(options, system.acc_cluster.acc, acc_config)
+    AccConfig(system.acc_cluster.acc, local_range, acc_config, acc_bench)
+    AccPmemConfig(system.acc_cluster.acc, acc_config)
 
     # Connect the accelerator to the system's interrupt controller
     system.acc_cluster.acc.gic = system.realview.gic

@@ -3,7 +3,7 @@ from m5.objects import *
 from m5.util import *
 import ConfigParser
 
-def AccConfig(options, acc, local_range, config_file, bench_file):
+def AccConfig(acc, local_range, config_file, bench_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
     Config.read((config_file))
@@ -30,6 +30,10 @@ def AccConfig(options, acc, local_range, config_file, bench_file):
     acc.local_range = local_range
     acc.int_num = ConfigSectionMap("AccConfig")['int_num']
     acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
+    predef = ConfigSectionMap("AccConfig")['premap_data']
+    if (predef == "1" or predef == "True"):
+        acc.premap_data = predef
+        acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
 
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
@@ -118,7 +122,7 @@ def AccConfig(options, acc, local_range, config_file, bench_file):
     acc.llvm_interface.FU_clock_period = ConfigSectionMap("Scheduler")['fu_clock_period']
     acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
 
-def AccPmemConfig(options, acc, config_file):
+def AccPmemConfig(acc, config_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
     Config.read((config_file))

@@ -24,6 +24,7 @@ CommInterface::CommInterface(Params *p) :
     devname(p->devicename),
     gic(p->gic),
     int_num(p->int_num),
+    use_premap_data(p->premap_data),
     dramSide(p->name + ".dram_side", this),
     spmSide(p->name + ".spm_side", this),
     localRange(p->local_range),
@@ -51,6 +52,12 @@ CommInterface::CommInterface(Params *p) :
     dramWrQ = new std::list<MemoryRequest*>();
     spmRdQ = new std::list<MemoryRequest*>();
     spmWrQ = new std::list<MemoryRequest*>();
+
+    if (use_premap_data) {
+        for (auto i = 0; i < p->data_bases.size(); i++) {
+            data_base_ptrs.push_back(p->data_bases[i]);
+        }
+    }
 }
 
 bool
@@ -468,7 +475,11 @@ CommInterface::write(PacketPtr pkt) {
 
 uint64_t
 CommInterface::getGlobalVar(unsigned index) {
-    return *(uint64_t *)(mmreg + VAR_OFFSET + index*8);
+    if (use_premap_data) {
+        return data_base_ptrs.at(index);
+    } else {
+        return *(uint64_t *)(mmreg + VAR_OFFSET + index*8);
+    }
 }
 
 CommInterface *
