@@ -75,6 +75,7 @@ LLVMInterface::tick() {
     cycle++;
     comm->refreshMemPorts();
     pwrUtil->updatePowerConsumption(_FunctionalUnits);
+    regList->resetAccess();
     clearFU();
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
@@ -529,13 +530,13 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    double divisor = cycle * (clock_period / 1000);
+    double divisor = cycle * (clock_period );
     pwrUtil->finalPowerUsage(_MaxFU);
     
     DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %f %s %s",
     "\n*******************************************************************************",
     "\n   Runtime (Cycles):                ", cycle,
-    "\n   Runtime (Seconds):               ", (cycle*10*(1e-12)),
+    "\n   Runtime (Seconds):               ", (cycle*(clock_period/1000.0)*(1e-12)),
     "\n   Stalls  (Cycles):                ", stalls,
     "\n   Executed Nodes:                  ", execnodes,
     "\n   ========= Runtime Functional Units ========="

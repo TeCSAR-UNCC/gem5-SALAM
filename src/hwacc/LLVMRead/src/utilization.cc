@@ -106,12 +106,12 @@ Utilization::calculateDynamicPowerUsage(FunctionalUnits units) {
 
 void 
 Utilization::calculateRegisterPowerUsage(Reg_Usage *regUsage) {
-    float flop_leakage_power = regPwr.leakage_power*32.0*regList->size();
-    totalPwr.readEnergy = ((float)regUsage->reads)*32.0*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
-    totalPwr.writeEnergy = ((float)regUsage->writes)*32.0*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
-    totalPwr.reg_leakage_power = (regList->size()*32.0*regPwr.leakage_power + flop_leakage_power);
+    float flop_leakage_power = regPwr.leakage_power*WORDSIZE*regList->size();
+    totalPwr.readEnergy = ((float)regUsage->reads)*WORDSIZE*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
+    totalPwr.writeEnergy = ((float)regUsage->writes)*WORDSIZE*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
+    totalPwr.reg_leakage_power = (regList->size()*WORDSIZE*regPwr.leakage_power + flop_leakage_power);
     totalPwr.reg_dynamic_energy = (totalPwr.readEnergy + totalPwr.writeEnergy);
-    totalPwr.area += regList->size()*32.0*regPwr.area;
+    totalPwr.area += regList->size()*WORDSIZE*regPwr.area;
 }
 
 void 

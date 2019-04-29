@@ -23,21 +23,24 @@ class Register {
     //-----------------------------------------------------------------------//
     //----- Begin Public ----------------------------------------------------//
     public:
-            Reg_Usage _Reg_Usage;   // Read/Write Usage
+            bool            updated_this_cycle;
+            Reg_Usage       _Reg_Usage;   // Read/Write Usage
         // ---- Constructor
         Register(const std::string& Name, uint64_t Value):
                 _Name(Name),
                 _Data_Type("NA"),
                 _Value(Value),
                 _Size(8),
-                _Hot(false) { }
+                _Hot(false),
+                updated_this_cycle(false) { }
         // ---- Constructor
         Register(const std::string& Name): 
                 _Name(Name),
                 _Data_Type("NA"),
                 _Value(0),
                 _Size(8),
-                _Hot(false) { }
+                _Hot(false),
+                updated_this_cycle(false) { }
         // ---- Get Functions
         std::string getName()           { return _Name; }
         std::string getType()           { return _Data_Type; }
@@ -48,6 +51,7 @@ class Register {
         // ---- Set Functions
         void commit()                   { _Hot = false; _Reg_Usage.writes++;}
         void reset()                    { _Hot = true; }
+        void update()                   { updated_this_cycle = !(updated_this_cycle); }
         void setSize(const std::string& Data_Type); 
         void setValue(void *data);
         // ---- Increment Functions
@@ -76,6 +80,7 @@ class RegisterList{
         Register* findRegister(std::string Name);
         void addRegister(Register *Reg) { _RegList->push_back(Reg); }
         void printRegNames();
+        void resetAccess();
         void totalAccess(Reg_Usage *regUsage);
     //----- End Public ------------------------------------------------------//
     //-----------------------------------------------------------------------//

@@ -34,6 +34,13 @@ RegisterList::printRegNames() { // Prints name of all current registers
 }   //  --- End Function ----------------------------------------------//
 
 void
+RegisterList::resetAccess() { // Prints name of all current registers
+    for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
+        (*it)->updated_this_cycle = false;
+    }
+}   //  --- End Function ----------------------------------------------//
+
+void
 RegisterList::totalAccess(Reg_Usage* regUsage) { // Prints name of all current registers
     for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
         regUsage->reads += (*it)->_Reg_Usage.reads;
