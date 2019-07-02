@@ -67,13 +67,15 @@ class RegisterList{
     //----- Begin Private ---------------------------------------------------//
     private:  
         std::list<Register*> *_RegList; // List of all registers
+        int maxCount;
 
     //----- End Private -----------------------------------------------------//
     //-----------------------------------------------------------------------//
     //----- Begin Public ----------------------------------------------------//
     public:
         // ---- Constructor
-        RegisterList()                  { _RegList = new std::list<Register*>(); }
+        uint64_t count()                { return maxCount; }
+        RegisterList()                  { _RegList = new std::list<Register*>(); maxCount = 0;}
         // ---- Get Functions
         uint64_t size()                 { return _RegList->size(); }
         // ---- Helper Functions

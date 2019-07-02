@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include "hwacc/llvm_interface.hh"
 
@@ -388,7 +389,10 @@ LLVMInterface::constructBBList() {
                         int labelEnd = line.find(" ", 10);
                         prevBB = currBB; // Set previous basic block
                        // currBB->printNodes();  ////////////////////////////////////////////////////////////////////////////////////////////
-                        currBB = new BasicBlock(line.substr(10,(labelEnd - 10)), bbnum); // Create new basic block
+                        // LLVM Version 3.8 added a new : after label names, check for this
+                        std::string versionCheck = line.substr(10,(labelEnd - 10));
+                        if(versionCheck.back() == ':') versionCheck = line.substr(10,(labelEnd - 11));
+                        currBB = new BasicBlock(versionCheck, bbnum); // Create new basic block
                         DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
@@ -530,10 +534,64 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    double divisor = cycle * (clock_period );
+    double divisor = cycle / ((double)clock_period/10000.0);
     pwrUtil->finalPowerUsage(_MaxFU);
-    
-    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %f %s %s",
+    std::cout << "********************************************************************************" << std::endl;
+    std::cout << "   ========= Performance Analysis =============" << std::endl;
+    std::cout << "   Runtime (Cycles):                " << cycle << std::endl;
+    std::cout << "   Runtime (Seconds):               " << (cycle*(clock_period/1000)*(1e-12)) << std::endl;
+    std::cout << "   Stalls  (Cycles):                " << stalls << std::endl;
+    std::cout << "   Executed Nodes:                  " << execnodes << std::endl;
+    std::cout << "   ========= Runtime Functional Units =========" << std::endl;
+    std::cout << "   Counter FU's:                    " << _MaxFU.counter_units << std::endl;
+    std::cout << "   Integer Add/Sub FU's:            " << _MaxFU.int_adder_units << std::endl;
+    std::cout << "   Integer Mul/Div FU's:            " << _MaxFU.int_multiply_units << std::endl;
+    std::cout << "   Integer Shifter FU's:            " << _MaxFU.int_shifter_units << std::endl;
+    std::cout << "   Integer Bitwise FU's:            " << _MaxFU.int_bit_units << std::endl;
+    std::cout << "   Floating Point Float Add/Sub:    " << _MaxFU.fp_sp_adder << std::endl;
+    std::cout << "   Floating Point Double Add/Sub:   " << _MaxFU.fp_dp_adder << std::endl;
+    std::cout << "   Floating Point Float Mul/Div:    " << _MaxFU.fp_sp_multiply << std::endl;
+    std::cout << "   Floating Point Double Mul/Div:   " << _MaxFU.fp_dp_multiply << std::endl;
+    std::cout << "   0 Cycle Compare FU's:            " << _MaxFU.compare << std::endl;
+    std::cout << "   GEP Instruction FU's:            " << _MaxFU.gep << std::endl;
+    std::cout << "   Type Conversion FU's:            " << _MaxFU.conversion << std::endl;
+    std::cout << "   ========= Static Functional Units ========="  << std::endl;
+    std::cout << "   Counter FU's:                    " << _MaxParsed.counter_units << std::endl;
+    std::cout << "   Integer Add/Sub FU's:            " << _MaxParsed.int_adder_units << std::endl;
+    std::cout << "   Integer Mul/Div FU's:            " << _MaxParsed.int_multiply_units << std::endl;
+    std::cout << "   Integer Shifter FU's:            " << _MaxParsed.int_shifter_units << std::endl;
+    std::cout << "   Integer Bitwise FU's:            " << _MaxParsed.int_bit_units << std::endl;
+    std::cout << "   Floating Point Float Add/Sub:    " << _MaxParsed.fp_sp_adder << std::endl;
+    std::cout << "   Floating Point Double Add/Sub:   " << _MaxParsed.fp_dp_adder << std::endl;
+    std::cout << "   Floating Point Float Mul/Div:    " << _MaxParsed.fp_sp_multiply << std::endl;
+    std::cout << "   Floating Point Double Mul/Div:   " << _MaxParsed.fp_dp_multiply << std::endl;
+    std::cout << "   0 Cycle Compare FU's:            " << _MaxParsed.compare << std::endl;
+    std::cout << "   GEP Instruction FU's:            " << _MaxParsed.gep << std::endl;
+    std::cout << "   Type Conversion FU's:            " << _MaxParsed.conversion << std::endl;
+    std::cout << "   Other:                           " << _MaxParsed.other << std::endl;
+    std::cout << "   ========= Register Usage ==================" << std::endl;
+    std::cout << "   Total Number of Registers:       " << regList->size() << std::endl;
+    std::cout << "   Max Register Usage Per Cycle:    " << regList->count() << std::endl;
+    std::cout << "   ========= Power Analysis ==================" << std::endl;
+    std::cout << "   FU Leakage Power:                " << pwrUtil->finalPwr.leakage_power << " mW " << std::endl;
+    std::cout << "   FU Dynamic Power:                " << pwrUtil->totalPwr.dynamic_energy/divisor << " mW " << std::endl;
+    std::cout << "   FU Total Power:                  " << (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor << " mW " << std::endl;
+    std::cout << "   Register Leakage Power:          " << pwrUtil->totalPwr.reg_leakage_power  << " mW " << std::endl;
+    std::cout << "   Register Dynamic Power:          " << pwrUtil->totalPwr.reg_dynamic_energy/divisor << " mW " << std::endl;
+    std::cout << "       Total Register Reads:        " << pwrUtil->regUsage.reads << std::endl;
+    std::cout << "       Total Register Writes:       " << pwrUtil->regUsage.writes << std::endl;
+    std::cout << "   Register Total Power:            " << pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy/divisor <<  " mW" << std::endl;
+    std::cout << std::endl;
+    std::cout << "   Total Power:                     " << (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)/divisor) << std::endl;
+    std::cout << "   ========= Area Analysis ==================" << std::endl;
+    std::cout << "   FU Area:                         " << pwrUtil->totalPwr.area << " um^2 (" << pwrUtil->totalPwr.area/1000000 << " mm^2)" << std::endl;
+    std::cout << "   Register Area:                   " << pwrUtil->totalPwr.reg_area << " um^2 (" << pwrUtil->totalPwr.reg_area/1000000 << " mm^2)" << std::endl;
+    std::cout << "   Total Area:                      " << pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area << " um^2 (" << (pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area) /1000000 << " mm^2)" << std::endl;
+    std::cout << "   Area Test:                       " << pwrUtil->totalPwr.area + ((_MaxFU.counter_units+_MaxFU.compare+_MaxFU.gep+_MaxFU.conversion)*500) << "\n";
+
+    //regList->printRegNames();
+    /* 
+    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %f %s %s",
     "\n*******************************************************************************",
     "\n   Runtime (Cycles):                ", cycle,
     "\n   Runtime (Seconds):               ", (cycle*(clock_period/1000.0)*(1e-12)),
@@ -567,6 +625,7 @@ LLVMInterface::statistics() {
     "\n   Type Conversion FU's:            ", _MaxParsed.conversion,
     "\n   Other:                           ", _MaxParsed.other,
     "\n   Number of Registers:             ", regList->size(),
+    "\n   Max Register Usage Per Cycle:    ", regList->count(),
     "\n   Total Power:                     ", (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor, "mW",
     "\n   FU Leakage Power:                ", pwrUtil->finalPwr.leakage_power*1000000, "nW",
     "\n   FU Dynamic Power:                ", pwrUtil->totalPwr.dynamic_energy/divisor, "mW",
@@ -577,6 +636,7 @@ LLVMInterface::statistics() {
     "\n   Total Register Writes:           ", pwrUtil->regUsage.writes,
     "\n   Total Power:                     ", ((pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor + pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy/divisor), "mW",
     "\n*******************************************************************************\n");
+    */
 
 }
 

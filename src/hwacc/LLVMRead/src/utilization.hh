@@ -45,6 +45,7 @@ struct PowerTotals {
     float readEnergy = 0;
     float writeEnergy = 0;
     float area = 0;
+    float reg_area = 0;
 };
 
 class Utilization {
