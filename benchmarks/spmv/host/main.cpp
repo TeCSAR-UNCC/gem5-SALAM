@@ -78,11 +78,13 @@ int main(void) {
     std::memcpy((void *)out, (void *)(SPM_BASE+OUT_OFFSET), sizeof(TYPE)*N);
 #endif
     acc = 0x00;
+#ifdef CHECK
 	if(!checkData(&sps)) {
 	    for (i = 0; i < N; i++) {
 	        if(((sps.out[i]-sps.check[i]) > EPSILON) || ((sps.out[i]-sps.check[i]) < -EPSILON))
 	            printf("out[%2d]=%10f expected[%d]=%10f\n", i, sps.out[i], i, sps.check[i]);
 	    }
 	}
+#endif
 	*(char *)0x7fffffff = 1; //Kill the simulation
 }

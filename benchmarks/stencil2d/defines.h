@@ -1,4 +1,8 @@
+#ifndef __DEFINES_H__
+#define __DEFINES_H__
+
 #define SPM
+//#define CHECK
 //#define TEST
 
 #ifndef TEST
@@ -29,4 +33,6 @@
 
 //Set number of iterations to execute
 #define MAX_ITERATION 1
+#endif
+
 #endif

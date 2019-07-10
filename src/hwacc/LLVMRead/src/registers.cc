@@ -29,15 +29,18 @@ Register::setValue(void *Data) { // memcpy shortcut method
 void
 RegisterList::printRegNames() { // Prints name of all current registers
     for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
-        std::cout << (*it)->getName() << "\n";
+        std::cout << (*it)->getName() << "Size: " << (*it)->getSize() << "\n";
     }
 }   //  --- End Function ----------------------------------------------//
 
 void
 RegisterList::resetAccess() { // Prints name of all current registers
+    int count = 0;
     for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
+        if((*it)->updated_this_cycle) count++;
         (*it)->updated_this_cycle = false;
     }
+    if ( count > maxCount ) maxCount = count;
 }   //  --- End Function ----------------------------------------------//
 
 void

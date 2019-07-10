@@ -86,6 +86,7 @@ int main(void) {
     while(!pollDma());
 #endif
     acc = 0x00;
+#ifdef CHECK
 	if(!checkData(&nws)) {
 	    for (i = 0; i < (ALEN+BLEN); i++) {
 	        //if (alignedA[i] != checkA[i])
@@ -107,6 +108,7 @@ int main(void) {
 			printf("%c", checkB[i]);
 		}
 	}
-//	*(char *)0x7fffffff = 1;
-	m5_exit();
+#endif
+	*(char *)0x7fffffff = 1;
+	//m5_exit();
 }

@@ -62,12 +62,13 @@ int main(void) {
     std::memcpy((void *)((void *)sol,   SPM_BASE+SOL_OFFSET), sizeof(TYPE)*SIZE);
 #endif
     acc = 0x00;
+#ifdef CHECK
 	if(!checkData(&sts)) {
 	    for (i = 0; i < SIZE; i++) {
 	        if(sts.sol[i] != sts.check[i])
 	            printf("out[%2d]=%d expected[%d]=%d\n", i, sts.sol[i], i, sts.check[i]);
 	    }
 	}
-
+#endif
 	*(char *)0x7fffffff = 1; //Kill the simulation
 }

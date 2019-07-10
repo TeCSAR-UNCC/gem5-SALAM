@@ -2,6 +2,7 @@
 #define __HWACC_LLVM_INTERFACE_HH__
 #include "params/LLVMInterface.hh"
 #include "hwacc/compute_unit.hh"
+#include "hwacc/data_collection.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debugFlags.hh"
@@ -38,6 +39,7 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock *currBB;
     BasicBlock *prevBB;
     TypeList *typeList;
+    Results *results;
     std::vector<InstructionBase*> reservation;
     std::vector<InstructionBase*> readQueue;
     std::vector<InstructionBase*> writeQueue;

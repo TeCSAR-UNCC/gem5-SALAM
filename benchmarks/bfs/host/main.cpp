@@ -77,13 +77,16 @@ int main(void) {
     dmacpy(level_counts,	spmlc,	sizeof(edge_index_t) * N_LEVELS);
     while(!pollDma());
 #endif
+	ACC = 0x00;
+#ifdef CHECK
 	if(!checkData(&bfs)) {
 	    for (i = 0; i < N_LEVELS; i++) {
-	        //if (check[i] != level_counts[i]) {
+	        if (check[i] != level_counts[i]) {
 	            printf("idx:%d exp:%d act:%d\n", i, check[i], level_counts[i]);
-	        //}
+	        }
 	    }
 	}
-//	*(char *)(0x7fffffff) = 0;
-  m5_exit();
+#endif
+	*(char *)(0x7fffffff) = 0;
+  	//m5_exit();
 }

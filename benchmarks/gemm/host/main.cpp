@@ -104,6 +104,8 @@ int main(void) {
     dmacpy(m3, spm3, sizeof(TYPE)*ROW*COL);
     while(!pollDma());
 #endif
+	acc = 0x00;
+#ifdef CHECK
 	bool fail = false;
 	int i, j, k, k_col, i_col;
 	TYPE sum = 0;
@@ -122,16 +124,17 @@ int main(void) {
         }
     }
 
-//    for(i=0; i<ROW*COL; i++) {
-//        printf("Expected:%f Actual:%f\n", check[i], m3[i]);
-//        if(m3[i] != check[i])
-//            fail = true;
-//    }
+    for(i=0; i<ROW*COL; i++) {
+        printf("Expected:%f Actual:%f\n", check[i], m3[i]);
+        if(m3[i] != check[i])
+            fail = true;
+    }
 
     if(fail)
         printf("Check Failed\n");
     else
         printf("Check Passed\n");
-//    *(char *)0x2FFFFFFF = 1;
-	m5_exit();
+#endif
+    *(char *)0x2FFFFFFF = 1;
+//	m5_exit();
 }

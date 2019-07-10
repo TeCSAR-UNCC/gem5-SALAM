@@ -23,7 +23,6 @@ def AccConfig(acc, local_range, config_file, bench_file):
     # Setup comm interface
     acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
     acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
-
     # Accelerator setup
     acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     acc.config_size = ConfigSectionMap("AccConfig")['config_size']

@@ -56,7 +56,7 @@ int main(void) {
     std::memcpy((void *)result, (void *)(SPM_BASE+RESULT_OFFSET),   sizeof(double)*GRID_COLS*GRID_ROWS);
 #endif
     acc = 0x00;
-   
+#ifdef CHECK
 	if(!checkData(&hss)) {
 	
 	    printf("failed");
@@ -67,5 +67,6 @@ int main(void) {
         }
         printf("failed");
 	}
+#endif
 	*(char *)0x7FFFFFFF = 1;//Kill the simulation
 }

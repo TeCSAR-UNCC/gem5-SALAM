@@ -110,6 +110,7 @@ int main(void) {
     while(!pollDma());
 #endif
     acc = 0x00;
+#ifdef CHECK
     if(!checkData(&mds)) {
         int checkvals = 0;
         int errors = 0;
@@ -146,5 +147,7 @@ int main(void) {
         printf("                               \n");
         printf("Errors: %d \n Total Checks: %d \n", errors, checkvals);
     }
-	m5_exit();
+#endif
+	*(char *)0x7fffffff = 1; //Kill the simulation
+	//m5_exit();
 }
