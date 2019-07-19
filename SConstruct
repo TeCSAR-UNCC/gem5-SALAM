@@ -350,7 +350,11 @@ if main['GCC'] or main['CLANG']:
     # Enable -Wall and -Wextra and then disable the few warnings that
     # we consistently violate
     main.Append(CCFLAGS=['-Wall', '-Wundef', '-Wextra',
-                         '-Wno-sign-compare', '-Wno-unused-parameter'])
+                         '-Wno-sign-compare', '-Wno-unused-parameter',
+                         '-Wno-unused-local-typedefs',
+                         '-Wno-reorder',
+                         '-Wno-maybe-uninitialized',
+                         '-Wno-unused-but-set-variable'])
     # We always compile using C++11
     main.Append(CXXFLAGS=['-std=c++11'])
     if sys.platform.startswith('freebsd'):

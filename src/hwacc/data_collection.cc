@@ -39,6 +39,8 @@ Results::print() {
     std::cout << "   ========= Register Usage ==================" << std::endl;
     std::cout << "   Total Number of Registers:       " << reg_total << std::endl;
     std::cout << "   Max Register Usage Per Cycle:    " << reg_max_usage << std::endl;
+    std::cout << "   Avg Register Usage Per Cycle:    " << reg_avg_usage << std::endl;
+    std::cout << "   Avg Register Size Per Cycle:     " << reg_avg_size << std::endl;
     std::cout << "   ========= Power Analysis ==================" << std::endl;
     std::cout << "   FU Leakage Power:                " << fu_leakage << " mW " << std::endl;
     std::cout << "   FU Dynamic Power:                " << fu_dynamic << " mW " << std::endl;

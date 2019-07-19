@@ -3,7 +3,7 @@
 
 #define SPM
 //#define CHECK
-//#define TEST
+#define TEST
 
 #ifndef TEST
 //Define input sizes

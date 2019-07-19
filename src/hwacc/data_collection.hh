@@ -42,6 +42,8 @@ class Results {
         // Registers
         int reg_total;
         int reg_max_usage;
+        double reg_avg_usage;
+        double reg_avg_size;
         int reg_reads;
         int reg_writes;
         // Power
@@ -90,6 +92,8 @@ class Results {
                     int Static_other,
                     int Reg_total,
                     int Reg_max_usage,
+                    double Reg_avg_usage,
+                    double Reg_avg_size,
                     int Reg_reads,
                     int Reg_writes,
                     double Fu_leakage,
@@ -133,6 +137,8 @@ class Results {
                     static_other(Static_other),
                     reg_total(Reg_total),
                     reg_max_usage(Reg_max_usage),
+                    reg_avg_usage(Reg_avg_usage),
+                    reg_avg_size(Reg_avg_size),
                     reg_reads(Reg_reads),
                     reg_writes(Reg_writes),
                     fu_leakage(Fu_leakage),

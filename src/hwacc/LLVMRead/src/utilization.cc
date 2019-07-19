@@ -46,12 +46,15 @@ Utilization::updatePowerConsumption(FunctionalUnits units) {
 }
 
 void 
-Utilization::finalPowerUsage(FunctionalUnits units) {
+Utilization::finalPowerUsage(FunctionalUnits units, int cycle) {
         calculateFinalLeakagePowerUsage(units);
         regList->totalAccess(&regUsage);
         calculateArea(units);
-        calculateRegisterPowerUsage(&regUsage);
-
+        calculateRegisterPowerUsage(&regUsage, cycle);
+        uca_org_t cacti_result = cactiWrapper((4000), 8, 8);
+        std::cout << "Cacti Results: \n" << " Read Dynamic: " << cacti_result.power.readOp.dynamic * 1e+12 <<
+        "mW\n Write Dynamic: " << cacti_result.power.writeOp.dynamic * 1e+12 << "mW\n Leakage: " <<
+        cacti_result.power.readOp.leakage * 1000 << "mW\n Area: " << cacti_result.area << "nm^2" << std::endl;
 }
 
 void
@@ -86,36 +89,33 @@ Utilization::calculateLeakagePowerUsage(FunctionalUnits units) {
 
 void 
 Utilization::calculateDynamicPowerUsage(FunctionalUnits units) {
-    // for(auto it = pwrUnits.begin(); it != pwrUnits.end(); ++it) 
-    // --
-    totalPwr.dynamic_power = (adderPwr.switch_power+adderPwr.internal_power)*units.int_adder_units;
+    totalPwr.dynamic_power = (adderPwr.switch_power+adderPwr.internal_power)*units.int_adder_units ;
     totalPwr.dynamic_power += (multiPwr.switch_power+multiPwr.internal_power)*units.int_multiply_units;
     totalPwr.dynamic_power += (bitPwr.switch_power+bitPwr.internal_power)*units.int_bit_units;
     totalPwr.dynamic_power += (shiftPwr.switch_power+shiftPwr.internal_power)*units.int_shifter_units;
-    totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*units.fp_sp_adder;
-    totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*units.fp_dp_adder;
+    totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*units.fp_sp_adder*5;
+    totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*units.fp_dp_adder*5;
+    totalPwr.dynamic_power += (ADD_0_5ns_int_power+ADD_0_5ns_switch_power)*(units.counter_units+units.conversion+units.compare+units.gep);
     /*
     if(units.fpDivision > 0) {
         totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fpDivision;
         totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fpDivision;
     }
     */
-    totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fp_sp_multiply;
-    totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fp_dp_multiply;
+    if (units.fp_sp_multiply > 0) totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*5;
+    if (units.fp_dp_multiply > 0) totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*5;
+    // totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fp_sp_multiply;
+    // totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fp_dp_multiply;
     totalPwr.dynamic_energy += (totalPwr.dynamic_power);
 }
 
-
-#define WORDSIZE 4.0
-
 void 
-Utilization::calculateRegisterPowerUsage(Reg_Usage *regUsage) {
-    //float flop_leakage_power = regPwr.leakage_power*WORDSIZE*regList->count();
-    totalPwr.readEnergy = ((float)regUsage->reads)*regList->count()*WORDSIZE*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
-    totalPwr.writeEnergy = ((float)regUsage->writes)*regList->count()*WORDSIZE*(regPwr.internal_power + regPwr.switch_power)*regPwr.cycleTime;
-    totalPwr.reg_leakage_power = regPwr.leakage_power*WORDSIZE*regList->count();
+Utilization::calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle) {
+    totalPwr.readEnergy = ((float)regUsage->reads)*((regList->average())/cycle)*(regList->avgSize()/(regList->average()))*(regPwr.internal_power + regPwr.switch_power);
+    totalPwr.writeEnergy = ((float)regUsage->writes)*((regList->average())/cycle)*(regList->avgSize()/(regList->average()))*(regPwr.internal_power + regPwr.switch_power);
+    totalPwr.reg_leakage_power = regPwr.leakage_power*((regList->average())/cycle)*(regList->avgSize()/(regList->average()));
     totalPwr.reg_dynamic_energy = (totalPwr.readEnergy + totalPwr.writeEnergy);
-    totalPwr.reg_area = regList->count()*WORDSIZE*regPwr.area;
+    totalPwr.reg_area = ((regList->average())/cycle)*(regList->avgSize()/(regList->average()))*regPwr.area;
 }
 
 void 

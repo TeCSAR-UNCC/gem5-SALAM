@@ -2,10 +2,10 @@
 #define __DEFINES_H__
 
 #define SPM
-//#define CHECK
-#define TEST
+#define CHECK
+//#define TEST
 
-#ifdef TEST
+#ifndef TEST
 // These constants valid for the IEEE 494 bus interconnect matrix
 #define NNZ 1666
 #define N 494

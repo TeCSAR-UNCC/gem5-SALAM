@@ -534,8 +534,12 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    double divisor = cycle / ((double)clock_period/10000.0);
-    pwrUtil->finalPowerUsage(_MaxFU);
+    //double divisor = (cycle*(clock_period/1000.0)*(1e-12))/(1e9);
+    //double divisor = cycle / (1e9) * (clock_period/((double)cycle));
+    double divisor = cycle / (1e9);
+    pwrUtil->finalPowerUsage(_MaxFU, cycle);
+  //  std::cout << "Clock Period: " << clock_period << std::endl;
+  //  std::cout << "Divisor: " << divisor << std::endl;
     results = new Results(  cycle,
                             (cycle*(clock_period/1000)*(1e-12)),
                             stalls,
@@ -567,72 +571,25 @@ LLVMInterface::statistics() {
                             _MaxParsed.other,
                             regList->size(),
                             regList->count(),
+                            regList->average()/((double)cycle),
+                            regList->avgSize()/(regList->average()),
                             pwrUtil->regUsage.reads,
                             pwrUtil->regUsage.writes,
                             pwrUtil->finalPwr.leakage_power,
-                            pwrUtil->totalPwr.dynamic_energy/divisor,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor,
+                            pwrUtil->totalPwr.dynamic_energy*divisor,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*divisor,
                             pwrUtil->totalPwr.reg_leakage_power,
-                            pwrUtil->totalPwr.reg_dynamic_energy/divisor,
-                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy/divisor,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)/divisor),
+                            pwrUtil->totalPwr.reg_dynamic_energy*divisor,
+                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*divisor,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*divisor + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*divisor),
                             pwrUtil->totalPwr.area,
                             pwrUtil->totalPwr.reg_area,
                             pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
 
-    //results->print();
-    results->simpleStats();
-   // std::cout << "   Area Test:                       " << pwrUtil->totalPwr.area + ((_MaxFU.counter_units+_MaxFU.compare+_MaxFU.gep+_MaxFU.conversion)*500) << "\n";
-
+    results->print();
+    //results->simpleStats();
+    // std::cout << "   Area Test:                       " << pwrUtil->totalPwr.area + ((_MaxFU.counter_units+_MaxFU.compare+_MaxFU.gep+_MaxFU.conversion)*500) << "\n";
     //regList->printRegNames();
-    /* 
-    DPRINTF(IOAcc,"%s %s %d %s %f %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %d %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %s %f %s %f %s %s %d %s %d %s %f %s %s",
-    "\n*******************************************************************************",
-    "\n   Runtime (Cycles):                ", cycle,
-    "\n   Runtime (Seconds):               ", (cycle*(clock_period/1000.0)*(1e-12)),
-    "\n   Stalls  (Cycles):                ", stalls,
-    "\n   Executed Nodes:                  ", execnodes,
-    "\n   ========= Runtime Functional Units ========="
-    "\n   Counter FU's:                    ", _MaxFU.counter_units,
-    "\n   Integer Add/Sub FU's:            ", _MaxFU.int_adder_units,
-    "\n   Integer Mul/Div FU's:            ", _MaxFU.int_multiply_units,
-    "\n   Integer Shifter FU's:            ", _MaxFU.int_shifter_units,
-    "\n   Integer Bitwise FU's:            ", _MaxFU.int_bit_units,
-    "\n   Floating Point Float Add/Sub:    ", _MaxFU.fp_sp_adder,
-    "\n   Floating Point Double Add/Sub:   ", _MaxFU.fp_dp_adder,
-    "\n   Floating Point Float Mul/Div:    ", _MaxFU.fp_sp_multiply,
-    "\n   Floating Point Double Mul/Div:   ", _MaxFU.fp_dp_multiply,
-    "\n   0 Cycle Compare FU's:            ", _MaxFU.compare,
-    "\n   GEP Instruction FU's:            ", _MaxFU.gep,
-    "\n   Type Conversion FU's:            ", _MaxFU.conversion,
-    "\n   ========= Static Functional Units ========="
-    "\n   Counter FU's:                    ", _MaxParsed.counter_units,
-    "\n   Integer Add/Sub FU's:            ", _MaxParsed.int_adder_units,
-    "\n   Integer Mul/Div FU's:            ", _MaxParsed.int_multiply_units,
-    "\n   Integer Shifter FU's:            ", _MaxParsed.int_shifter_units,
-    "\n   Integer Bitwise FU's:            ", _MaxParsed.int_bit_units,
-    "\n   Floating Point Float Add/Sub:    ", _MaxParsed.fp_sp_adder,
-    "\n   Floating Point Double Add/Sub:   ", _MaxParsed.fp_dp_adder,
-    "\n   Floating Point Float Mul/Div:    ", _MaxParsed.fp_sp_multiply,
-    "\n   Floating Point Double Mul/Div:   ", _MaxParsed.fp_dp_multiply,
-    "\n   0 Cycle Compare FU's:            ", _MaxParsed.compare,
-    "\n   GEP Instruction FU's:            ", _MaxParsed.gep,
-    "\n   Type Conversion FU's:            ", _MaxParsed.conversion,
-    "\n   Other:                           ", _MaxParsed.other,
-    "\n   Number of Registers:             ", regList->size(),
-    "\n   Max Register Usage Per Cycle:    ", regList->count(),
-    "\n   Total Power:                     ", (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor, "mW",
-    "\n   FU Leakage Power:                ", pwrUtil->finalPwr.leakage_power*1000000, "nW",
-    "\n   FU Dynamic Power:                ", pwrUtil->totalPwr.dynamic_energy/divisor, "mW",
-    "\n   Register Leakage Power:          ", pwrUtil->totalPwr.reg_leakage_power , "mW",
-    "\n   Register Dynamic Power:          ", pwrUtil->totalPwr.reg_dynamic_energy/divisor, "mW",
-    "\n   FU Area:                         ", pwrUtil->totalPwr.area," um^2, (", pwrUtil->totalPwr.area/1000000, " mm^2)",
-    "\n   Total Register Reads:            ", pwrUtil->regUsage.reads,
-    "\n   Total Register Writes:           ", pwrUtil->regUsage.writes,
-    "\n   Total Power:                     ", ((pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)/divisor + pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy/divisor), "mW",
-    "\n*******************************************************************************\n");
-    */
-
 }
 
 

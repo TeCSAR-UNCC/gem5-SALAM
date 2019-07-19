@@ -8,7 +8,7 @@ spmv_struct sps;
 #define BASE            0x80c00000
 #define SPM_BASE        0x2f100000
 
-#ifndef TEST
+#ifdef TEST
 //Ensure 8 byte alignment
 #define VAL_OFFSET      0
 #define COLS_OFFSET     8*NNZ

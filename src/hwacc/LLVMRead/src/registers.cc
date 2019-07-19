@@ -36,10 +36,16 @@ RegisterList::printRegNames() { // Prints name of all current registers
 void
 RegisterList::resetAccess() { // Prints name of all current registers
     int count = 0;
+    int size = 0;
     for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
-        if((*it)->updated_this_cycle) count++;
+        if((*it)->updated_this_cycle) { 
+            count++;
+            size += (*it)->getSize();
+        }
         (*it)->updated_this_cycle = false;
     }
+    averageSize += size;
+    averageUsage += count;
     if ( count > maxCount ) maxCount = count;
 }   //  --- End Function ----------------------------------------------//
 

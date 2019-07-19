@@ -68,6 +68,8 @@ class RegisterList{
     private:  
         std::list<Register*> *_RegList; // List of all registers
         int maxCount;
+        int averageUsage;
+        double averageSize;
 
     //----- End Private -----------------------------------------------------//
     //-----------------------------------------------------------------------//
@@ -75,7 +77,9 @@ class RegisterList{
     public:
         // ---- Constructor
         uint64_t count()                { return maxCount; }
-        RegisterList()                  { _RegList = new std::list<Register*>(); maxCount = 0;}
+        uint64_t average()              { return averageUsage; }
+        double avgSize()                { return averageSize; }
+        RegisterList()                  { _RegList = new std::list<Register*>(); maxCount = 0; averageUsage = 0; averageSize = 0;}
         // ---- Get Functions
         uint64_t size()                 { return _RegList->size(); }
         // ---- Helper Functions

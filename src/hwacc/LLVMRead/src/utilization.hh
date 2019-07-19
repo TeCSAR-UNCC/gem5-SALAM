@@ -68,13 +68,13 @@ class Utilization {
       Reg_Usage regUsage;
     
     Utilization(int clock_period, RegisterList* List);
-    void finalPowerUsage(FunctionalUnits units); 
+    void finalPowerUsage(FunctionalUnits units, int cycle); 
     void updatePowerConsumption(FunctionalUnits units);
     void calculateLeakagePowerUsage(FunctionalUnits units);
     void calculateFinalLeakagePowerUsage(FunctionalUnits units);
     void calculateDynamicPowerUsage(FunctionalUnits units);
     void calculateArea(FunctionalUnits units);
-    void calculateRegisterPowerUsage(Reg_Usage *regUsage);
+    void calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle);
 };
 
 

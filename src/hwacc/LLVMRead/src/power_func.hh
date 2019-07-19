@@ -1,8 +1,9 @@
 #ifndef __POWER_FUNC_HH__
+#define __POWER_FUNC_HH__
 
 #include <stdlib.h>
 #include <iostream>
-
+#include "cacti/cacti_interface.h"
 #define SINGLE_PORT_SPAD 1
 
 /*Characterized FU latencies from FPGA virtex7 xc7v585tffg1761-2, in ns*/
@@ -577,5 +578,7 @@ void getDoublePrecisionFloatingPointMultiplierPowerArea(float cycle_time,
                                                         float* switch_power,
                                                         float* leakage_power,
                                                         float* area);
+
+uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports);
 
 #endif
