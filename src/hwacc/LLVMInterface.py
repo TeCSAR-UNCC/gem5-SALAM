@@ -25,3 +25,4 @@ class LLVMInterface(ComputeUnit):
     FU_conversion = Param.Int32(-1, "Available type conversion functional units. -1 indicates unlimited resources")
     FU_pipelined = Param.Int32(1, "Sets functional units to operate as pipelined (1) or not pipelined (0)")
     FU_clock_period = Param.Int32(10, "Sets the transitor type used for power calculations")
+    clock_period = Param.Int32(10, "System clock speed")

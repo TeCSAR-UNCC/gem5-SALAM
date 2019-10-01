@@ -135,6 +135,6 @@ int main(void) {
     else
         printf("Check Passed\n");
 #endif
-    *(char *)0x2FFFFFFF = 1;
-//	m5_exit();
+ //   *(char *)0x2FFFFFFF = 1;
+	m5_exit();
 }

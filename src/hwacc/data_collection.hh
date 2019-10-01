@@ -8,10 +8,25 @@ class Results {
 
     private:
         //Performance
+        int clock_period;
+        int fu_clock_period;
         int cycles;
         double runtime;
         int stalls;
         int nodes;
+        //Memory Stats
+        int cache_size;
+        int spm_size;
+        int read_ports;
+        int write_ports;
+        double spm_leakage;
+        double spm_read_dynamic;
+        double spm_write_dynamic;
+        double spm_area;
+        double cache_leakage;
+        double cache_read_dynamic;
+        double cache_write_dynamic;
+        double cache_area;
         // Runtime Functional Units
         int run_counter;
         int run_add_sub;
@@ -46,6 +61,8 @@ class Results {
         double reg_avg_size;
         int reg_reads;
         int reg_writes;
+        int mem_reads;
+        int mem_writes;
         // Power
         double fu_leakage;
         double fu_dynamic;
@@ -61,10 +78,24 @@ class Results {
 
     public:
         Results();
-        Results(    int Cycles,
+        Results(    int Clock_Period,
+                    int FU_Clock_Period,
+                    int Cycles,
                     double Runtime,
                     int Stalls,
                     int Nodes,
+                    int Cache_Size,
+                    int SPM_Size,
+                    int Read_Ports,
+                    int Write_Ports,
+                    double SPM_Leakage,
+                    double SPM_Read_Dynamic,
+                    double SPM_Write_Dynamic,
+                    double SPM_Area,
+                    double Cache_Leakage,
+                    double Cache_Read_Dynamic,
+                    double Cache_Write_Dynamic,
+                    double Cache_Area,
                     int Run_counter,
                     int Run_add_sub,
                     int Run_mul_div,
@@ -96,6 +127,8 @@ class Results {
                     double Reg_avg_size,
                     int Reg_reads,
                     int Reg_writes,
+                    int Memory_Loads,
+                    int Memory_Stores,
                     double Fu_leakage,
                     double Fu_dynamic,
                     double Fu_total_power,
@@ -106,10 +139,24 @@ class Results {
                     double Fu_area,
                     double Reg_area,
                     double Total_area):
+                    clock_period(Clock_Period),
+                    fu_clock_period(FU_Clock_Period),
                     cycles(Cycles),
                     runtime(Runtime),
                     stalls(Stalls),
                     nodes(Nodes),
+                    cache_size(Cache_Size),
+                    spm_size(SPM_Size),
+                    read_ports(Read_Ports),
+                    write_ports(Write_Ports),
+                    spm_leakage(SPM_Leakage),
+                    spm_read_dynamic(SPM_Read_Dynamic),
+                    spm_write_dynamic(SPM_Write_Dynamic),
+                    spm_area(SPM_Area),
+                    cache_leakage(Cache_Leakage),
+                    cache_read_dynamic(Cache_Read_Dynamic),
+                    cache_write_dynamic(Cache_Write_Dynamic),
+                    cache_area(Cache_Area),
                     run_counter(Run_counter),
                     run_add_sub(Run_add_sub),
                     run_mul_div(Run_mul_div),
@@ -141,6 +188,8 @@ class Results {
                     reg_avg_size(Reg_avg_size),
                     reg_reads(Reg_reads),
                     reg_writes(Reg_writes),
+                    mem_reads(Memory_Loads),
+                    mem_writes(Memory_Stores),
                     fu_leakage(Fu_leakage),
                     fu_dynamic(Fu_dynamic),
                     fu_total_power(Fu_total_power),

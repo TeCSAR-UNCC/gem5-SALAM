@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SHOWRESULTS 0
+
 /*  The following are things you might want to change
  *  when compiling
  */

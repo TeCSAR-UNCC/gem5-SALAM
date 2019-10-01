@@ -31,6 +31,9 @@ CommInterface::CommInterface(Params *p) :
     masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
+    cacheSize(p->cache_size),
+    readPorts(p->private_read_ports),
+    writePorts(p->private_write_ports),
     clock_period(p->clock_period) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
@@ -772,6 +775,8 @@ CommMemInterface::CommMemInterface(Params *p) :
     pmem(p->private_memory),
     pmemRange(p->private_range),
     resetPmemOnFinish(p->reset_private_on_finish),
+    cacheSize(p->cache_size),
+    privateSize(p->private_size),
     readPorts(p->private_read_ports),
     writePorts(p->private_write_ports) {
         avReadPorts = readPorts;

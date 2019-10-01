@@ -22,12 +22,15 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     gep(p->FU_GEP),
     conversion(p->FU_conversion),
     pipelined(p->FU_pipelined) ,
-    clock_period(p->FU_clock_period) {
+    fu_clock_period(p->FU_clock_period),
+    clock_period(p->clock_period) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
     prevBB = NULL;
     typeList = NULL;
+    memory_loads = 0;
+    memory_stores = 0;
     running = false;
     clock_period = clock_period * 1000; //comm->getProcessDelay(); //Clock period
     //process_delay = 1; //Number of cycles a compute_node needs to complete
@@ -132,6 +135,7 @@ LLVMInterface::tick() {
             if (reservation.at(i)->_ActiveParents == 0) {
                 if(!(reservation.at(i)->_Terminator)) { 
                         if(reservation.at(i)->_OpCode == "load") {
+                            memory_loads++;
                             readQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
@@ -139,6 +143,7 @@ LLVMInterface::tick() {
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_OpCode == "store") {
+                            memory_stores++;
                             writeQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
@@ -189,6 +194,10 @@ LLVMInterface::tick() {
                 if (reservation.at(i)->_OpCode == "ret"){
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
                         running = false;
+                        cache_size = comm->getCacheSize();
+                        read_ports = comm->getReadPorts();
+                        write_ports = comm->getWritePorts();
+                        spm_size = comm->getPmemRange();
                         statistics();
                         comm->finish();
                     }
@@ -338,7 +347,7 @@ LLVMInterface::constructBBList() {
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
-    pwrUtil = new Utilization(clock_period, regList);
+    pwrUtil = new Utilization(clock_period, fu_clock_period, regList);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
     bool inFunction = false; // Parse Variable
@@ -536,14 +545,41 @@ LLVMInterface::statistics() {
 *********************************************************************************************/ 
     //double divisor = (cycle*(clock_period/1000.0)*(1e-12))/(1e9);
     //double divisor = cycle / (1e9) * (clock_period/((double)cycle));
-    double divisor = cycle / (1e9);
+    double divisor = cycle / (1e9); 
     pwrUtil->finalPowerUsage(_MaxFU, cycle);
+    execnodes = cycle-stalls;
+    //int cache_size, int word_size, int ports, int type
+    // SPM cache_type = 0
+    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, 8, (read_ports+write_ports), 0);
+    uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*8), 8, (read_ports), 0); 
+    uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*8), 8, (write_ports), 0); 
+
+    // Cache cache_type = 1
+    uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, 8, 16, 1);
+    uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults((memory_loads/memory_stores)*8, 8, 8, 1);
+    uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(memory_stores*8, 8, 8, 1);
+    double exponential = 1e12;
+    int leak = 1e3;
   //  std::cout << "Clock Period: " << clock_period << std::endl;
   //  std::cout << "Divisor: " << divisor << std::endl;
-    results = new Results(  cycle,
+    results = new Results(  clock_period,
+                            fu_clock_period,
+                            cycle,
                             (cycle*(clock_period/1000)*(1e-12)),
                             stalls,
                             execnodes,
+                            cache_size,
+                            spm_size,
+                            read_ports,
+                            write_ports,
+                            (cacti_result_spm_leakage.power.readOp.leakage+cacti_result_spm_leakage.power.writeOp.leakage)*leak,
+                            cacti_result_spm_dynamic_read.power.readOp.dynamic*exponential,
+                            cacti_result_spm_dynamic_write.power.writeOp.dynamic*exponential,
+                            cacti_result_spm_leakage.area,
+                            (cacti_result_cache_leakage.power.readOp.leakage+cacti_result_cache_leakage.power.writeOp.leakage)*leak,
+                            cacti_result_cache_dynamic_read.power.readOp.dynamic*exponential,
+                            cacti_result_cache_dynamic_write.power.writeOp.dynamic*exponential,
+                            cacti_result_cache_leakage.area,
                             _MaxFU.counter_units,
                             _MaxFU.int_adder_units,
                             _MaxFU.int_multiply_units,
@@ -575,6 +611,8 @@ LLVMInterface::statistics() {
                             regList->avgSize()/(regList->average()),
                             pwrUtil->regUsage.reads,
                             pwrUtil->regUsage.writes,
+                            memory_loads,
+                            memory_stores,
                             pwrUtil->finalPwr.leakage_power,
                             pwrUtil->totalPwr.dynamic_energy*divisor,
                             (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*divisor,
@@ -586,9 +624,8 @@ LLVMInterface::statistics() {
                             pwrUtil->totalPwr.reg_area,
                             pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
 
-    results->print();
-    //results->simpleStats();
-    // std::cout << "   Area Test:                       " << pwrUtil->totalPwr.area + ((_MaxFU.counter_units+_MaxFU.compare+_MaxFU.gep+_MaxFU.conversion)*500) << "\n";
+    //results->print();
+    results->simpleStats();
     //regList->printRegNames();
 }
 
@@ -621,6 +658,7 @@ LLVMInterface::initFU() {
     _MaxParsed.compare = 0;
     _MaxParsed.gep = 0;
     _MaxParsed.conversion = 0;
+    _MaxParsed.other = 0;
     _MaxFU.counter_units = 0;
     _MaxFU.int_adder_units = 0;
     _MaxFU.int_multiply_units = 0;

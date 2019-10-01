@@ -1,13 +1,12 @@
 #include "utilization.hh"
 #include "debugFlags.hh"
 
-Utilization::Utilization(int clock_period, RegisterList* List) {
+Utilization::Utilization(int clock_period, int fu_clock_period, RegisterList* List) {
     _Clock_Period = clock_period;
     regList = List;
-    int transistorTime = clock_period/1000;
+    int transistorTime = fu_clock_period;
     totalPwr.cycleTime = transistorTime;
     regPwr.cycleTime = transistorTime;
-    std::cout << "Clock Period: " << _Clock_Period << " Transistor Delay: " << transistorTime << std::endl;
     getRegisterPowerArea(transistorTime, &regPwr.internal_power, &regPwr.switch_power, &regPwr.leakage_power, &regPwr.area);
     getAdderPowerArea(transistorTime, &adderPwr.internal_power, &adderPwr.switch_power, &adderPwr.leakage_power, &adderPwr.area);
     getMultiplierPowerArea(transistorTime, &multiPwr.internal_power, &multiPwr.switch_power, &multiPwr.leakage_power, &multiPwr.area);
@@ -51,10 +50,11 @@ Utilization::finalPowerUsage(FunctionalUnits units, int cycle) {
         regList->totalAccess(&regUsage);
         calculateArea(units);
         calculateRegisterPowerUsage(&regUsage, cycle);
-        uca_org_t cacti_result = cactiWrapper((4000), 8, 8);
-        std::cout << "Cacti Results: \n" << " Read Dynamic: " << cacti_result.power.readOp.dynamic * 1e+12 <<
-        "mW\n Write Dynamic: " << cacti_result.power.writeOp.dynamic * 1e+12 << "mW\n Leakage: " <<
-        cacti_result.power.readOp.leakage * 1000 << "mW\n Area: " << cacti_result.area << "nm^2" << std::endl;
+}
+
+uca_org_t
+Utilization::getCactiResults(int cache_size, int word_size, int ports, int cache_type) {
+    return cactiWrapper((cache_size), word_size, ports, cache_type);
 }
 
 void

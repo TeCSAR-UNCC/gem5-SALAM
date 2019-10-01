@@ -3,6 +3,27 @@ from m5.objects import *
 from m5.util import *
 import ConfigParser
 
+def CacheConfig(acc, config_file):
+    # Setup config file parser
+    Config = ConfigParser.ConfigParser()
+    Config.read((config_file))
+    Config.sections()
+    def ConfigSectionMap(section):
+        dict1 = {}
+        options = Config.options(section)
+        for option in options:
+            try:
+                dict1[option] = Config.get(section, option)
+                if dict1[option] == -1:
+                    DebugPrint("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+        return dict1
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    #acc.cache_read_ports = ConfigSectionMap("AccConfig")['cache_read_ports']
+    #acc.cache_write_ports = ConfigSectionMap("AccConfig")['cache_write_ports']
+
 def AccConfig(acc, local_range, config_file, bench_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
@@ -33,7 +54,9 @@ def AccConfig(acc, local_range, config_file, bench_file):
     if (predef == "1" or predef == "True"):
         acc.premap_data = predef
         acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
-
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    acc.private_read_ports = ConfigSectionMap("Memory")['read_ports']
+    acc.private_write_ports = ConfigSectionMap("Memory")['write_ports']
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
     acc.llvm_interface.cycles = CycleCounts()
@@ -119,6 +142,7 @@ def AccConfig(acc, local_range, config_file, bench_file):
     acc.llvm_interface.FU_pipelined = ConfigSectionMap("Scheduler")['fu_pipelined']
     acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
     acc.llvm_interface.FU_clock_period = ConfigSectionMap("Scheduler")['fu_clock_period']
+    acc.llvm_interface.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
 
 def AccPmemConfig(acc, config_file):
@@ -140,6 +164,7 @@ def AccPmemConfig(acc, config_file):
         return dict1
 
     # Private memory
+    acc.private_size = ConfigSectionMap("PrivateMemory")['size']
     acc.private_range = AddrRange(ConfigSectionMap("PrivateMemory")['addr_range'], \
                                                       size=ConfigSectionMap("PrivateMemory")['size'])
     acc.private_memory = PrivateMemory(range=acc.private_range, \
@@ -147,6 +172,7 @@ def AccPmemConfig(acc, config_file):
                                                            latency=ConfigSectionMap("PrivateMemory")['latency'])
 
     # Memory constraints
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
     acc.private_read_ports = ConfigSectionMap("Memory")['read_ports']
     acc.private_write_ports = ConfigSectionMap("Memory")['write_ports']
     acc.private_memory.ready_mode = Config.getboolean("Memory", 'ready_mode')

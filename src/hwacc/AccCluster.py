@@ -15,7 +15,12 @@ class AccCluster(Platform):
     type = 'AccCluster'
     cxx_header = "hwacc/acc_cluster.hh"
     system = Param.System(Parent.any, "system")
-
+    
+    # System Cache Parameter
+    cache_size = Param.Int32(1024, "cache size in bytes")
+    cache_read_ports = Param.Int32(8, "read ports for cache")
+    cache_write_ports = Param.Int32(8, "write ports for cache")
+    
     local_bus = NoncoherentXBar(width=16, frontend_latency=1, forward_latency=0, response_latency=1)
     cache_bus = NoncoherentXBar(width=16, frontend_latency=1, forward_latency=0, response_latency=1)
 

@@ -4,8 +4,8 @@
 #include "stdint.h"
 
 #define SPM
-//#define CHECK
-#define TEST
+#define CHECK
+//#define TEST
 
 #ifdef TEST
 #define TYPE double

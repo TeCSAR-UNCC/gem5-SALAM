@@ -1022,10 +1022,14 @@ uca_org_t cacti_interface(
     init_tech_params(g_ip->F_sz_um, false);
     Wire winit; // Do not delete this line. It initializes wires.
 
-    g_ip->display_ip();
-    solve(&fin_res);
-    output_UCA(&fin_res);
-    output_data_csv(fin_res);
+    if (SHOWRESULTS > 0) {
+        g_ip->display_ip();
+        solve(&fin_res);
+        output_UCA(&fin_res);
+        output_data_csv(fin_res);
+    } else {
+        solve(&fin_res);
+    }
     delete (g_ip);
 
     return fin_res;

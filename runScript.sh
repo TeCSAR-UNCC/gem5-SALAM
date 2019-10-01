@@ -3,7 +3,7 @@
 if [ "$1" = "all" ]
 then
 	echo "Performing All Benchmarks, This Could Take A While"
-	for BENCH in bfs fft gemm hotspot nw spmv stencil2d stencil3d
+	for BENCH in bfs fft gemm md-knn nw spmv
 	do	
 		echo "Performing First Pass: Application = $BENCH"
 		./baremetalarm $BENCH;

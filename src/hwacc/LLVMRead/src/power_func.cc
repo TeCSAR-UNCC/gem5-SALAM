@@ -543,7 +543,7 @@ void getDoublePrecisionFloatingPointMultiplierPowerArea(float cycle_time,
 
 
 
-uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports) {
+uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports, int cache_type) {
   int cache_size = num_of_bytes;
   int line_size = wordsize;  // in bytes
   if (wordsize < 4)          // minimum line size in cacti is 32-bit/4-byte
@@ -571,7 +571,7 @@ uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_po
   int specific_tag = false;
   int tag_width = 0;
   int access_mode = 2;  // 0 normal, 1 seq, 2 fast
-  int cache = 0;        // scratch ram 0 or cache 1
+  int cache = cache_type;   // scratch ram 0 or cache 1
   int main_mem = 0;
   // assign weights for CACTI optimizations
   int obj_func_delay = 0;

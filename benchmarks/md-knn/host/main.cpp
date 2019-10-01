@@ -23,6 +23,7 @@ md_struct mds;
 
 int main(void) {
 
+
 	TYPE *force_x       = (TYPE     *)(BASE+FRCX_OFFSET);
 	TYPE *force_y       = (TYPE     *)(BASE+FRCY_OFFSET);
 	TYPE *force_z       = (TYPE     *)(BASE+FRCZ_OFFSET);
@@ -40,11 +41,15 @@ int main(void) {
 	TYPE *spmpx			= (TYPE		*)(SPM_BASE+POSX_OFFSET);
 	TYPE *spmpy			= (TYPE		*)(SPM_BASE+POSY_OFFSET);
 	TYPE *spmpz			= (TYPE		*)(SPM_BASE+POSZ_OFFSET);
-	TYPE *spmnl			= (TYPE		*)(SPM_BASE+NL_OFFSET);
+	int32_t *spmnl		= (int32_t	*)(SPM_BASE+NL_OFFSET);
+//	TYPE *check_x       = (TYPE     *)(SPM_BASE+CHKX_OFFSET);
+//	TYPE *check_y       = (TYPE     *)(SPM_BASE+CHKY_OFFSET);
+//	TYPE *check_z       = (TYPE     *)(SPM_BASE+CHKZ_OFFSET);
 #endif
-
+	
 	common_val = 0;
 
+//#ifndef SPM
     mds.force_x     = force_x;
     mds.force_y     = force_y;
     mds.force_z     = force_z;
@@ -55,7 +60,20 @@ int main(void) {
     mds.check_x     = check_x;
     mds.check_y     = check_y;
     mds.check_z     = check_z;
-
+/*
+#else
+    mds.force_x     = spmfx;
+    mds.force_y     = spmfy;
+    mds.force_z     = spmfz;
+    mds.position_x  = spmpx;
+    mds.position_y  = spmpy;
+    mds.position_z  = spmpz;
+    mds.NL          = spmnl;
+    mds.check_x     = check_x;
+    mds.check_y     = check_y;
+    mds.check_z     = check_z;
+#endif
+*/
     printf("Generating data\n");
     genData(&mds);
     printf("Data generated\n");
@@ -77,6 +95,7 @@ int main(void) {
     loc_position_z  = (uint64_t)(SPM_BASE+POSZ_OFFSET);
     loc_NL          = (uint64_t)(SPM_BASE+NL_OFFSET);
 
+
     dmacpy(spmpx, position_x,	sizeof(TYPE)*nAtoms);
     while(!pollDma());
     resetDma();
@@ -89,6 +108,8 @@ int main(void) {
     dmacpy(spmnl, NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
     while(!pollDma());
     resetDma();
+
+
 #endif
     int i;
     printf("%d\n", acc);
@@ -100,6 +121,7 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
+
     dmacpy(force_x,	spmfx,	sizeof(TYPE)*nAtoms);
     while(!pollDma());
     resetDma();
@@ -108,11 +130,13 @@ int main(void) {
     resetDma();
     dmacpy(force_z,	spmfz,	sizeof(TYPE)*nAtoms);
     while(!pollDma());
+
 #endif
     acc = 0x00;
 #ifdef CHECK
+    
     if(!checkData(&mds)) {
-        int checkvals = 0;
+     /*   int checkvals = 0;
         int errors = 0;
         for (int i = 0; i < nAtoms; i++) {
             bool xfail = (std::abs(force_x[i]-check_x[i])/check_x[i]) > EPSILON;
@@ -146,7 +170,9 @@ int main(void) {
         }
         printf("                               \n");
         printf("Errors: %d \n Total Checks: %d \n", errors, checkvals);
+    */
     }
+    
 #endif
 	*(char *)0x7fffffff = 1; //Kill the simulation
 	//m5_exit();

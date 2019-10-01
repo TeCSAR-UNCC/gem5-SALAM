@@ -67,8 +67,9 @@ class Utilization {
       RegisterList *regList;
       Reg_Usage regUsage;
     
-    Utilization(int clock_period, RegisterList* List);
+    Utilization(int clock_period, int fu_clock_period, RegisterList* List);
     void finalPowerUsage(FunctionalUnits units, int cycle); 
+    uca_org_t getCactiResults(int cache_size, int word_size, int ports, int cache_type);
     void updatePowerConsumption(FunctionalUnits units);
     void calculateLeakagePowerUsage(FunctionalUnits units);
     void calculateFinalLeakagePowerUsage(FunctionalUnits units);
