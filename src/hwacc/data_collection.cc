@@ -7,16 +7,25 @@ Results::print() {
     std::cout << "   ========= Performance Analysis =============" << std::endl;
     std::cout << "   System Clock:                    " << 1.0/(clock_period/1000) << "GHz" << std::endl;
     std::cout << "   Transistor Latency:              " << fu_clock_period << "ns" << std::endl;
-    std::cout << "   Runtime (Cycles):                " << cycles << std::endl;
-    std::cout << "   Runtime (Seconds):               " << runtime << " s" << std::endl;
-    std::cout << "   Stalls  (Cycles):                " << stalls << std::endl;
-    std::cout << "   Executed Nodes:                  " << nodes << std::endl;
+    std::cout << "   Runtime:                         " << cycles << " cycles" << std::endl;
+    std::cout << "   Runtime:                         " << runtime << " seconds" << std::endl;
+    std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
+    std::cout << "   Executed Nodes:                  " << nodes << " cycles" << std::endl;
+    std::cout << "       Load Only:                   " << loadOnly << " cycles" << std::endl;
+    std::cout << "       Store Only:                  " << storeOnly << " cycles" << std::endl;
+    std::cout << "       Compute Only:                " << compOnly << " cycles" << std::endl;
+    std::cout << "       Compute & Store:             " << storeComp << " cycles" << std::endl;
+    std::cout << "       Load & Store:                " << loadStore << " cycles" << std::endl;
+    std::cout << "       Load & Compute:              " << loadComp << " cycles" << std::endl;
+    std::cout << "       Load & Compute & Store:      " << loadStoreComp << " cycles" << std::endl;
     std::cout << std::endl;
     std::cout << "   ========= Memory Configuration =============" << std::endl;
     std::cout << "   Shared Cache Size:               " << cache_size/1024 << "kB" << std::endl;
     std::cout << "   Private SPM Size:                " << spm_size/1024 << "kB" << std::endl;
     std::cout << "   Private Read Ports:              " << read_ports << std::endl;
     std::cout << "   Private Write Ports:             " << write_ports << std::endl;
+    std::cout << "   Read Bus Width:                  " << read_bus_width << std::endl;
+    std::cout << "   Write Bus Width:                 " << write_bus_width << std::endl;
     std::cout << std::endl;
     std::cout << "   ========= Runtime Functional Units =========" << std::endl;
     std::cout << "   Counter FU's:                    " << run_counter << std::endl;
@@ -63,6 +72,7 @@ Results::print() {
     std::cout << "       Total Register Writes:       " << reg_writes << std::endl;
     std::cout << "   Pipeline Register Total Power:   " << reg_total_power <<  " mW" << std::endl;
     std::cout << "   SPM Leakage Power:               " << spm_leakage << " mW" << std::endl;
+    std::cout << "   SPM Optimized Leakage Power:     " << spm_opt_leakage << " mW" << std::endl;
     std::cout << "   SPM Read Dynamic Power:          " << spm_read_dynamic << " mW" << std::endl;
     std::cout << "   SPM Write Dynamic Power:         " << spm_write_dynamic << " mW" << std::endl;
     std::cout << "   SPM Total Power:                 " << spm_leakage+spm_read_dynamic+spm_write_dynamic << " mW" << std::endl;
@@ -71,12 +81,13 @@ Results::print() {
     std::cout << "   ========= Area Analysis ===================" << std::endl;
     std::cout << "   FU Area:                         " << fu_area << " um^2 (" << fu_area/1000000 << " mm^2)" << std::endl;
     std::cout << "   SPM Area:                        " << spm_area/1000 << " um^2" << std::endl;
+    std::cout << "   SPM Opt Area:                    " << spm_opt_area/1000 << " um^2" << std::endl;
     std::cout << "   Register Area:                   " << reg_area << " um^2 (" << reg_area/1000000 << " mm^2)" << std::endl;
     std::cout << "   Total Accelerator Area:          " << total_area + spm_area/1000 << " um^2 (" << total_area/1000000 << " mm^2)" << std::endl;
     std::cout << std::endl;
     std::cout << "   ========= System Cache Usage ==============" << std::endl;
-    std::cout << "   Cache Reads:                     " << (int)(mem_reads/mem_writes) << std::endl;  //Experimental
-    std::cout << "   Cache Writes:                    " << mem_writes << std::endl;
+    std::cout << "   Cache Reads:                     " << mem_writes << std::endl;  //Experimental
+    std::cout << "   Cache Writes:                    " << mem_writes << std::endl;  //Experimental
     std::cout << "   Cache Leakage Power:             " << cache_leakage << " mW" << std::endl;
     std::cout << "   Cache Read Dynamic Power:        " << cache_read_dynamic << " mW" << std::endl;
     std::cout << "   Cache Write Dynamic Power:       " << cache_write_dynamic << " mW" << std::endl;
@@ -84,6 +95,14 @@ Results::print() {
     std::cout << std::endl;
 
 }
+
+
+
+
+
+
+
+
 
 
 void
@@ -100,6 +119,8 @@ Results::simpleStats() {
     std::cout << "\n," << spm_size/1024;
     std::cout << "\n," << read_ports;
     std::cout << "\n," << write_ports;
+    std::cout << "\n," << read_bus_width;
+    std::cout << "\n," << write_bus_width;
     std::cout << "\n," << run_counter;
     std::cout << "\n," << run_add_sub;
     std::cout << "\n," << run_mul_div;
@@ -146,10 +167,11 @@ Results::simpleStats() {
     std::cout << "\n," << spm_area;
     std::cout << "\n," << reg_area;
     std::cout << "\n," << total_area + spm_area/1000;
-    std::cout << "\n," << (int) (mem_reads/mem_writes);
+    std::cout << "\n," << mem_reads;
     std::cout << "\n," << mem_writes;
     std::cout << "\n," << cache_leakage;
     std::cout << "\n," << cache_read_dynamic;
     std::cout << "\n," << cache_write_dynamic;
     std::cout << "\n," << cache_area/1000;
+    std::cout << "\n";
 }

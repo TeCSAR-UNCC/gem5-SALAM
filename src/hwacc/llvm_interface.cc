@@ -31,6 +31,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     typeList = NULL;
     memory_loads = 0;
     memory_stores = 0;
+    global_loads = 0;
+    global_stores = 0;
     running = false;
     clock_period = clock_period * 1000; //comm->getProcessDelay(); //Clock period
     //process_delay = 1; //Number of cycles a compute_node needs to complete
@@ -81,6 +83,9 @@ LLVMInterface::tick() {
     pwrUtil->updatePowerConsumption(_FunctionalUnits);
     regList->resetAccess();
     clearFU();
+    bool loadOp = false;
+    bool storeOp = false;
+    bool compOp = false;
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
@@ -135,7 +140,7 @@ LLVMInterface::tick() {
             if (reservation.at(i)->_ActiveParents == 0) {
                 if(!(reservation.at(i)->_Terminator)) { 
                         if(reservation.at(i)->_OpCode == "load") {
-                            memory_loads++;
+                            memory_loads++; loadOp = true;
                             readQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
@@ -143,7 +148,9 @@ LLVMInterface::tick() {
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_OpCode == "store") {
-                            memory_stores++;
+                            // if(reservation.at(i)->_ReturnRegister->isGlobal()) global_stores++;
+                            // else memory_stores++;
+                            memory_stores++; storeOp = true;
                             writeQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
@@ -152,9 +159,9 @@ LLVMInterface::tick() {
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_MaxCycle==0) {
                             reservation.at(i)->compute();
-                            reservation.at(i)->commit();
+                            reservation.at(i)->commit(); 
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                            scheduled = true;
+                            scheduled = true; compOp = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else { // Computation Units
@@ -164,7 +171,7 @@ LLVMInterface::tick() {
                                     computeQueue.push_back(reservation.at(i));
                                     reservation.at(i)->compute();
                                     reservation.at(i)->commit();
-                                    scheduled = true;
+                                    scheduled = true; compOp = true;
                                     auto it = reservation.erase(reservation.begin()+i);
                                     i = std::distance(reservation.begin(), it);
                                 } else i++;
@@ -174,7 +181,7 @@ LLVMInterface::tick() {
                                 reservation.at(i)->compute();
                                 reservation.at(i)->commit();
                                 if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                                scheduled = true;
+                                scheduled = true; compOp = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
                             }
@@ -198,6 +205,8 @@ LLVMInterface::tick() {
                         read_ports = comm->getReadPorts();
                         write_ports = comm->getWritePorts();
                         spm_size = comm->getPmemRange();
+                        read_bus_width = comm->getReadBusWidth();
+                        write_bus_width = comm->getWriteBusWidth();
                         statistics();
                         comm->finish();
                     }
@@ -207,7 +216,19 @@ LLVMInterface::tick() {
         }
     }
 
-    if (!scheduled) stalls++; // No new compute node was scheduled this cycle
+    //if (!scheduled) stalls++; // No new compute node was scheduled this cycle
+    if (loadOp) {
+        if (storeOp) {
+            if (compOp) loadStoreComp++;
+            else loadStore++;
+        } else if (compOp) loadComp++;
+        else loadOnly++;
+    } else if(storeOp) {
+        if (compOp) storeComp++;
+        else storeOnly++;
+    } else if (compOp) compOnly++;
+    else stalls++;
+
     if (running && !tickEvent.scheduled())
     {
         schedule(tickEvent, curTick() + clock_period);// * process_delay);
@@ -381,6 +402,7 @@ LLVMInterface::constructBBList() {
                             std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
                             DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName); 
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum))); // Create register for global variable
+                            regList->findRegister(regName)->isGlobal(); // Store global status in register
                             DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
                             paramNum++;
                         }
@@ -518,6 +540,13 @@ LLVMInterface::initialize() {
     cycle = 0;
     stalls = 0;
     execnodes = 0;
+    loadOnly = 0;
+    storeOnly = 0;
+    compOnly = 0;
+    loadStore = 0;
+    loadComp = 0;
+    loadStoreComp = 0;
+    storeComp = 0;
     tick();
 }
 
@@ -543,13 +572,12 @@ LLVMInterface::statistics() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    //double divisor = (cycle*(clock_period/1000.0)*(1e-12))/(1e9);
-    //double divisor = cycle / (1e9) * (clock_period/((double)cycle));
-    double divisor = cycle / (1e9); 
+    double runtime = (cycle*(1e-10));
     pwrUtil->finalPowerUsage(_MaxFU, cycle);
-    execnodes = cycle-stalls;
-    //int cache_size, int word_size, int ports, int type
-    // SPM cache_type = 0
+    execnodes = cycle-stalls-1;
+    // getCactiResults(int cache_size, int word_size, int ports, int type)
+    // SPM cache_type = 0  
+    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, 8, (read_ports+write_ports), 0);
     uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, 8, (read_ports+write_ports), 0);
     uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*8), 8, (read_ports), 0); 
     uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*8), 8, (write_ports), 0); 
@@ -558,24 +586,34 @@ LLVMInterface::statistics() {
     uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, 8, 16, 1);
     uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults((memory_loads/memory_stores)*8, 8, 8, 1);
     uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(memory_stores*8, 8, 8, 1);
-    double exponential = 1e12;
-    int leak = 1e3;
-  //  std::cout << "Clock Period: " << clock_period << std::endl;
-  //  std::cout << "Divisor: " << divisor << std::endl;
+    double exponential = 1e9; // Units correction
+    double leak = 1.0; // Remnant of old units difference
+
     results = new Results(  clock_period,
                             fu_clock_period,
                             cycle,
-                            (cycle*(clock_period/1000)*(1e-12)),
+                            runtime,
                             stalls,
                             execnodes,
+                            loadOnly,
+                            storeOnly,
+                            compOnly,
+                            loadStore,
+                            loadComp,
+                            loadStoreComp,
+                            storeComp,
                             cache_size,
                             spm_size,
                             read_ports,
                             write_ports,
+                            read_bus_width,
+                            write_bus_width,
                             (cacti_result_spm_leakage.power.readOp.leakage+cacti_result_spm_leakage.power.writeOp.leakage)*leak,
                             cacti_result_spm_dynamic_read.power.readOp.dynamic*exponential,
                             cacti_result_spm_dynamic_write.power.writeOp.dynamic*exponential,
                             cacti_result_spm_leakage.area,
+                            (cacti_result_spm_opt.power.readOp.leakage+cacti_result_spm_opt.power.writeOp.leakage)*leak,
+                            cacti_result_spm_opt.area,
                             (cacti_result_cache_leakage.power.readOp.leakage+cacti_result_cache_leakage.power.writeOp.leakage)*leak,
                             cacti_result_cache_dynamic_read.power.readOp.dynamic*exponential,
                             cacti_result_cache_dynamic_write.power.writeOp.dynamic*exponential,
@@ -614,18 +652,18 @@ LLVMInterface::statistics() {
                             memory_loads,
                             memory_stores,
                             pwrUtil->finalPwr.leakage_power,
-                            pwrUtil->totalPwr.dynamic_energy*divisor,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*divisor,
+                            pwrUtil->totalPwr.dynamic_energy*runtime,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime,
                             pwrUtil->totalPwr.reg_leakage_power,
-                            pwrUtil->totalPwr.reg_dynamic_energy*divisor,
-                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*divisor,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*divisor + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*divisor),
+                            pwrUtil->totalPwr.reg_dynamic_energy*runtime,
+                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*runtime,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*runtime),
                             pwrUtil->totalPwr.area,
                             pwrUtil->totalPwr.reg_area,
                             pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
 
-    //results->print();
-    results->simpleStats();
+    results->print();
+    //results->simpleStats();
     //regList->printRegNames();
 }
 

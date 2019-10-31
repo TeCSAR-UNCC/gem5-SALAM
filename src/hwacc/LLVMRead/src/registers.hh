@@ -18,6 +18,7 @@ class Register {
         uint64_t _Value = 0;    // Register value (reflects memory)
         uint64_t _Size;         // Reg size in bytes
         bool _Hot;              // Register is ready/not ready
+        bool _Global = false;
 
     //----- End Private -----------------------------------------------------//
     //-----------------------------------------------------------------------//
@@ -54,6 +55,8 @@ class Register {
         void update()                   { updated_this_cycle = !(updated_this_cycle); }
         void setSize(const std::string& Data_Type); 
         void setValue(void *data);
+        void setGlobal()                { _Global = true; }
+        bool isGlobal()                 { return _Global; }
         // ---- Increment Functions
         void write()                    { _Reg_Usage.writes++; }
         void read()                     { _Reg_Usage.reads++; }     

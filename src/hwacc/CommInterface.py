@@ -22,8 +22,10 @@ class CommInterface(BasicPioDevice):
     clock_period = Param.Int(10, "Clock period in ns")
     premap_data = Param.Bool(False, "Whether or not the memory read/write locations for data predefined")
     data_bases = VectorParam.Addr([0x0], "Base addresses for data if they are predefined")
-    private_read_ports = Param.Int(4, "The number of internal Read ports for the private SPM")
-    private_write_ports = Param.Int(4, "The number of internal Write ports for the private SPM")
+    system_read_ports = Param.Int(4, "The number of internal Read ports on system bus")
+    system_write_ports = Param.Int(4, "The number of internal Write ports on system bus")
+    system_read_bus_width = Param.Int(64, "The bit width of the memory read bus")
+    system_write_bus_width = Param.Int(64, "The bit width of the memory write bus")
 
 class PrivateMemory(SimpleMemory):
     type = 'PrivateMemory'
@@ -40,5 +42,7 @@ class CommMemInterface(CommInterface):
     private_range = Param.AddrRange("Address range of private memory")
     private_size = Param.Int("Size of addressable range in private memory")
     reset_private_on_finish = Param.Bool(False, "Reset ready bits on private memory when compute finishes")
-    private_read_ports = Param.Int("The number of internal Read ports for the private SPM")
-    private_write_ports = Param.Int("The number of internal Write ports for the private SPM")
+    private_read_ports = Param.Int("4, The number of internal Read ports for the private SPM")
+    private_write_ports = Param.Int("4, The number of internal Write ports for the private SPM")
+    private_read_bus_width = Param.Int(64, "The bit width of the private memory read bus")
+    private_write_bus_width = Param.Int(64, "The bit width of the private memory write bus")

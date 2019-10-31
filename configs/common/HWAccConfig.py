@@ -44,6 +44,8 @@ def AccConfig(acc, local_range, config_file, bench_file):
     # Setup comm interface
     acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
     acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
+    acc.system_read_bus_width=ConfigSectionMap("Memory")['read_bus_width']
+    acc.system_write_bus_width=ConfigSectionMap("Memory")['write_bus_width']
     # Accelerator setup
     acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     acc.config_size = ConfigSectionMap("AccConfig")['config_size']
@@ -55,8 +57,9 @@ def AccConfig(acc, local_range, config_file, bench_file):
         acc.premap_data = predef
         acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
     acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
-    acc.private_read_ports = ConfigSectionMap("Memory")['read_ports']
-    acc.private_write_ports = ConfigSectionMap("Memory")['write_ports']
+    acc.system_read_ports = ConfigSectionMap("Memory")['read_ports']
+    acc.system_write_ports = ConfigSectionMap("Memory")['write_ports']
+    
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
     acc.llvm_interface.cycles = CycleCounts()
@@ -173,7 +176,9 @@ def AccPmemConfig(acc, config_file):
 
     # Memory constraints
     acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
-    acc.private_read_ports = ConfigSectionMap("Memory")['read_ports']
-    acc.private_write_ports = ConfigSectionMap("Memory")['write_ports']
+    acc.private_read_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
+    acc.private_write_ports = ConfigSectionMap("PrivateMemory")['private_write_ports']
+    acc.private_read_bus_width = ConfigSectionMap("PrivateMemory")['private_read_bus_width']
+    acc.private_write_bus_width = ConfigSectionMap("PrivateMemory")['private_write_bus_width']    
     acc.private_memory.ready_mode = Config.getboolean("Memory", 'ready_mode')
     acc.private_memory.reset_on_private_read = Config.getboolean("Memory", 'reset_on_private_read')

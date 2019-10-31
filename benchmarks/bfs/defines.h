@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SPM
+//#define SPM
 //#define CHECK
 
 #define MAX_LEVEL INT8_MAX

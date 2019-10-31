@@ -31,11 +31,11 @@ int main(void) {
     edge_index_t * spmlc		 	= (edge_index_t *)(SPM_BASE + COUNT_OFFSET);
 #endif
 
+	common_val = 0;
     bfs.nodes = nodes;
     bfs.edges = edges;
     bfs.starting_node = starting_node;
     bfs.level = level;
-
     bfs.level_counts = level_counts;
     bfs.check = check;
 
@@ -64,7 +64,6 @@ int main(void) {
     dmacpy(spml,		level,	sizeof(level_t) * N_NODES);
     while(!pollDma());
     resetDma();
-
 #endif
     int i;
     printf("%d\n", ACC);

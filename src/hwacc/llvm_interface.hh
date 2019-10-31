@@ -47,8 +47,17 @@ class LLVMInterface : public ComputeUnit {
     int process_delay;
     int cycle;
     int stalls;
+    int loadOnly; //
+    int storeOnly; //
+    int compOnly; //
+    int loadStore; //
+    int loadComp;
+    int loadStoreComp;
+    int storeComp;
     int execnodes;
     int clock_period;
+    int global_loads;
+    int global_stores;
     int memory_loads;
     int memory_stores;
     int read_ports;
@@ -56,6 +65,8 @@ class LLVMInterface : public ComputeUnit {
     int cache_size;
     int spm_size;
     int fu_clock_period;
+    int read_bus_width;
+    int write_bus_width;
     FunctionalUnits _FunctionalUnits;
     FunctionalUnits _MaxFU;
     FunctionalUnits _MaxParsed;

@@ -1,4 +1,4 @@
-# Script opens the first pass of simulation 
+# Script stores simulation results 
 import sys
 import os
 from argparse import ArgumentParser
@@ -12,7 +12,7 @@ myDesign = args.myDesign
 
 flag = False
 param = 0
-designFile = open(myDesign, "w")
+designFile = open(myDesign, "a")
 with open (myFile,"rt") as parameters:
 	for line in parameters:
 		line = line.rstrip()

@@ -112,6 +112,7 @@ class InstructionBase {
         int8_t _FunctionalUnit;
         Register* _RawCheck = NULL;
         bool _Stall = false;
+        bool _Global = false;
         // ---- Constructor
         InstructionBase( const std::string& LLVMLine,
                          const std::string& OpCode,

@@ -3,9 +3,9 @@
 
 #include "stdint.h"
 
-//#define SPM
+#define SPM
 //#define CHECK
-#define TEST
+//#define TEST
 
 #ifdef TEST
 #define TYPE double

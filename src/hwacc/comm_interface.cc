@@ -32,8 +32,10 @@ CommInterface::CommInterface(Params *p) :
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     cacheSize(p->cache_size),
-    readPorts(p->private_read_ports),
-    writePorts(p->private_write_ports),
+    readPorts(p->system_read_ports),
+    writePorts(p->system_write_ports),
+    read_bus_width(p->system_read_bus_width),
+    write_bus_width(p->system_write_bus_width),
     clock_period(p->clock_period) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
@@ -778,9 +780,14 @@ CommMemInterface::CommMemInterface(Params *p) :
     cacheSize(p->cache_size),
     privateSize(p->private_size),
     readPorts(p->private_read_ports),
-    writePorts(p->private_write_ports) {
-        avReadPorts = readPorts;
-        avWritePorts = writePorts;
+    writePorts(p->private_write_ports),
+    read_bus_width(p->private_read_bus_width),
+    write_bus_width(p->private_write_bus_width) {
+        //avReadPorts = readPorts;
+        //avWritePorts = writePorts;
+        // Buffer
+        avReadPorts = readPorts*read_bus_width;
+        avWritePorts = writePorts*write_bus_width;
     }
 
 void
@@ -809,7 +816,7 @@ CommMemInterface::processMemoryRequests() {
                 }
                 size = (*it)->readLeft > (size - 1) ? size : (*it)->readLeft;
 
-                if (avReadPorts <= 0) {
+                if (avReadPorts < (*it)->totalLength) {
                     DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
                 } else if (!pmem->isReady((*it)->address, size)) {
@@ -817,7 +824,8 @@ CommMemInterface::processMemoryRequests() {
 					//std::cout << "Data at " << (*it)->address << " is not ready\n";
                     ++it;
                 } else {
-                    avReadPorts--;
+                    //avReadPorts-=(*it)->totalLength;
+                    avReadPorts-=read_bus_width;
                     Request::Flags flags;
                     if ((*it)->readLeft <= 0) {
                         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
@@ -914,12 +922,12 @@ CommMemInterface::processMemoryRequests() {
                     it = writeQueue->erase(it);
                     if (writeQueue->empty()) break;
                 }
-                if (avWritePorts <= 0) {
+                if (avWritePorts < (*it)->totalLength) {
                     DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
                 } else {
-                    avWritePorts--;
-
+                    //avWritePorts-=(*it)->totalLength;
+                    avWritePorts-=write_bus_width;
                     if ((*it)->writeLeft <= 0) {
                         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
                         return;
@@ -1016,8 +1024,11 @@ CommMemInterface::processMemoryRequests() {
 
 void
 CommMemInterface::refreshMemPorts() {
-      avReadPorts = readPorts;
-      avWritePorts = writePorts;
+      //avReadPorts = readPorts;
+      //avWritePorts = writePorts;
+      // Buffer 
+      avReadPorts = readPorts*read_bus_width;
+      avWritePorts = writePorts*write_bus_width;
 }
 
 void

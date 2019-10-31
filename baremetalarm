@@ -1,6 +1,6 @@
 #!/bin/bash
-#FLAGS=IOAcc
-#,Hardware,LLVMRuntime,LLVMGEP,LLVMInterface,CommInterface,LLVMParse,Interrupt,LLVMRegister
+#FLAGS=
+#IOAcc,NoncoherentDma,Hardware,LLVMRuntime,LLVMGEP,LLVMInterface,CommInterface,LLVMParse,Interrupt,LLVMRegister
 if [ "$1" != "" ]; then
     BENCH=$1
 else
@@ -19,12 +19,13 @@ CACHE_OPTS="--acc_cache"
 # --debug-flags=$FLAGS
 build/ARM/gem5.opt --outdir=BM_ARM_OUT/$BENCH configs/example/fs.py \
 $SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
-> BM_ARM_OUT/$BENCH/debug_trace.txt
+#> BM_ARM_OUT/$BENCH/debug_trace.txt
 #$CACHE_OPTS > BM_ARM_OUT/$BENCH/debug_trace.txt
 
 # Debug Flags List
 #
 # IOAcc
+# ClassDetail
 # CommInterface
 # ComputeUnit
 # LLVMInterface
@@ -34,4 +35,6 @@ $SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
 # LLVMParse
 # LLVMGEP
 # LLVMRuntime == ComputeNode + LLVMRegister + LLVMOp + LLVMParse
-# NoncoherentDma
+# NoncoherentDma - bfs, fft, gemm, md-knn, nw, spmv
+
+

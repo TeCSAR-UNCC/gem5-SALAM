@@ -27,6 +27,8 @@ class CommInterface : public BasicPioDevice
     uint32_t int_num;
     bool use_premap_data;
     std::vector<Addr> data_base_ptrs;
+    int read_bus_width;
+    int write_bus_width;
 
     //class MemoryRequest;
 
@@ -170,6 +172,9 @@ class CommInterface : public BasicPioDevice
     virtual int getCacheSize() { return cacheSize; }
     virtual int getReadPorts() { return readPorts; }
     virtual int getWritePorts() { return writePorts; }
+    virtual int getReadBusWidth() { return write_bus_width; }
+    virtual int getWriteBusWidth() { return read_bus_width; }
+
     virtual int getPmemRange() { return 0; }
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
     void registerCycleCounts(CycleCounts *cylcount) { cycleCount = cylcount; }
@@ -235,6 +240,8 @@ class CommMemInterface : public CommInterface
     bool resetPmemOnFinish;
     int readPorts;
     int writePorts;
+    int read_bus_width;
+    int write_bus_width;
     int availablePorts;
     int avReadPorts;
     int avWritePorts;
@@ -256,6 +263,8 @@ class CommMemInterface : public CommInterface
     int getCacheSize() override { return cacheSize; }
     int getReadPorts() override { return readPorts; }
     int getWritePorts() override { return writePorts; }
+    int getReadBusWidth() override { return write_bus_width; }
+    int getWriteBusWidth() override { return read_bus_width; }
     int getPmemRange() override { return privateSize; }
 
   protected:
