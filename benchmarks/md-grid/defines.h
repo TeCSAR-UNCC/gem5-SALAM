@@ -2,7 +2,9 @@
 #define __DEFINES_H__
 
 #include "stdint.h"
-//#define SPM
+
+#define SPM
+//#define CHECK
 //#define TEST
 
 #ifdef TEST
@@ -47,6 +49,7 @@ typedef struct {
 typedef struct {
   int32_t x, y, z;
 } ivector_t;
+
 #define MIN(x,y) ( (x)<(y) ? (x) : (y) )
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 

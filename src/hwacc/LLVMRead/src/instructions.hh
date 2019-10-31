@@ -247,7 +247,9 @@ class LLVMSwitch : public Terminator {
                             FunctionalUnit)
         , _CaseValues(      CaseValues) { 
                             Details("Switch"); 
-                            for(int i = 0; i < _CaseValues.size(); i++) std::cout << _CaseValues.at(i) << "\n" ;
+                            #ifdef ClassDetail
+                                for(int i = 0; i < _CaseValues.size(); i++) std::cout << _CaseValues.at(i) << "\n";
+                            #endif
                             
                             
                             
@@ -255,7 +257,7 @@ class LLVMSwitch : public Terminator {
                             }
         ~LLVMSwitch()         { Destruct("Switch"); }
         void compute()      override;
-        virtual LLVMSwitch* clone() const {  std::cout << "cloned\n"; return new LLVMSwitch(*this); }
+        virtual LLVMSwitch* clone() const {  return new LLVMSwitch(*this); }
 };
 
 class IndirectBr : public Terminator {

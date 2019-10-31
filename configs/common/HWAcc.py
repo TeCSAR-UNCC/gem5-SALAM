@@ -6,6 +6,14 @@ from HWAccConfig import *
 
 
 def makeHWAcc(options, system):
+    # Specify the path to the benchmark file for an accelerator
+    # acc_bench = <Absolute path to benchmark LLVM file>
+    acc_bench = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
+
+    # Specify the path to the config file for an accelerator
+    # acc_config = <Absolute path to the config file>
+    acc_config = options.accpath + "/" + options.accbench + "/config.ini"
+
     ############################# Creating an Accelerator Cluster #################################
     # Create a new Accelerator Cluster
     system.acc_cluster = AccCluster()
@@ -20,8 +28,10 @@ def makeHWAcc(options, system):
     # Generate bridges to connect local cluster bus to system membus
     system.acc_cluster._attach_bridges(system, local_range, external_range)
 
+    CacheConfig(system.acc_cluster, acc_config)
+
     # Add a shared cache for the accelerator cluster
-    system.acc_cluster._connect_caches(system, options, '1kB')
+    system.acc_cluster._connect_caches(system, options, system.acc_cluster.cache_size)
 
     ############################# Adding Accelerators to Cluster ##################################
     # Add a shared scratchpad memory to the cluster
@@ -30,22 +40,17 @@ def makeHWAcc(options, system):
     # system.acc_cluster._add_spm(spm_range, spm_latency)
     # system.acc_cluster._connect_spm(system.acc_cluster.spm)
 
-    # Specify the path to the benchmark file for an accelerator
-    # acc_bench = <Absolute path to benchmark LLVM file>
-    acc_bench = options.accpath + "/" + options.accbench + "/bench/" + options.accbench + ".ll"
-
-    # Specify the path to the config file for an accelerator
-    # acc_config = <Absolute path to the config file>
-    acc_config = options.accpath + "/" + options.accbench + "/config.ini"
-
     # Add an accelerator to the cluster
     # system.acc_cluster.acc = CommMemInterface()
     # AccConfig(options, system.acc_cluster.acc, local_range, acc_config, acc_bench)
 
     # Add an accelerator with a private SPM to the cluster
     system.acc_cluster.acc = CommMemInterface()
-    AccConfig(options, system.acc_cluster.acc, local_range, acc_config, acc_bench)
-    AccPmemConfig(options, system.acc_cluster.acc, acc_config)
+    AccConfig(system.acc_cluster.acc, local_range, acc_config, acc_bench)
+    AccPmemConfig(system.acc_cluster.acc, acc_config)
+
+    # Add a shared cache for the accelerator cluster
+    #system.acc_cluster._connect_caches(system, options, system.acc_cluster.acc.cache_size)
 
     # Connect the accelerator to the system's interrupt controller
     system.acc_cluster.acc.gic = system.realview.gic

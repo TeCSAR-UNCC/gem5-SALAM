@@ -9,8 +9,8 @@ class LLVMInterface(ComputeUnit):
     
 
     in_file = Param.String("LLVM Trace File")
-    lockstep_mode = Param.Bool(False, "TRUE: Stall datapath if any operation stalls. FALSE: Only stall datapath regions with stalls")
-    sched_threshold = Param.UInt32(1000, "Scheduling window threshold. Prevents scheduling windows size from exploding during regions of high loop parallelism")
+    lockstep_mode = Param.Bool(True, "TRUE: Stall datapath if any operation stalls. FALSE: Only stall datapath regions with stalls")
+    sched_threshold = Param.UInt32(10000, "Scheduling window threshold. Prevents scheduling windows size from exploding during regions of high loop parallelism")
     FU_counter = Param.Int32(-1, "Available counter functional units. -1 indicates unlimited resources")
     FU_int_adder = Param.Int32(-1, "Available integer addition/subtraction functional units. -1 indicates unlimited resources")
     FU_int_multiplier = Param.Int32(-1, "Available integer multiply/divide functional units. -1 indicates unlimited resources")
@@ -24,4 +24,5 @@ class LLVMInterface(ComputeUnit):
     FU_GEP = Param.Int32(-1, "Available equivalent getelementptr functional units. -1 indicates unlimited resources")
     FU_conversion = Param.Int32(-1, "Available type conversion functional units. -1 indicates unlimited resources")
     FU_pipelined = Param.Int32(1, "Sets functional units to operate as pipelined (1) or not pipelined (0)")
-    FU_clock_period = Param.Int32(10000, "Sets the transitor type used for power calculations")
+    FU_clock_period = Param.Int32(10, "Sets the transitor type used for power calculations")
+    clock_period = Param.Int32(10, "System clock speed")

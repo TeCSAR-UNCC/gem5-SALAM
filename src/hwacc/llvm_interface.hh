@@ -2,6 +2,7 @@
 #define __HWACC_LLVM_INTERFACE_HH__
 #include "params/LLVMInterface.hh"
 #include "hwacc/compute_unit.hh"
+#include "hwacc/data_collection.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debugFlags.hh"
@@ -38,6 +39,7 @@ class LLVMInterface : public ComputeUnit {
     BasicBlock *currBB;
     BasicBlock *prevBB;
     TypeList *typeList;
+    Results *results;
     std::vector<InstructionBase*> reservation;
     std::vector<InstructionBase*> readQueue;
     std::vector<InstructionBase*> writeQueue;
@@ -45,8 +47,26 @@ class LLVMInterface : public ComputeUnit {
     int process_delay;
     int cycle;
     int stalls;
+    int loadOnly; //
+    int storeOnly; //
+    int compOnly; //
+    int loadStore; //
+    int loadComp;
+    int loadStoreComp;
+    int storeComp;
     int execnodes;
     int clock_period;
+    int global_loads;
+    int global_stores;
+    int memory_loads;
+    int memory_stores;
+    int read_ports;
+    int write_ports;
+    int cache_size;
+    int spm_size;
+    int fu_clock_period;
+    int read_bus_width;
+    int write_bus_width;
     FunctionalUnits _FunctionalUnits;
     FunctionalUnits _MaxFU;
     FunctionalUnits _MaxParsed;

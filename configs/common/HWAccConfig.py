@@ -3,7 +3,28 @@ from m5.objects import *
 from m5.util import *
 import ConfigParser
 
-def AccConfig(options, acc, local_range, config_file, bench_file):
+def CacheConfig(acc, config_file):
+    # Setup config file parser
+    Config = ConfigParser.ConfigParser()
+    Config.read((config_file))
+    Config.sections()
+    def ConfigSectionMap(section):
+        dict1 = {}
+        options = Config.options(section)
+        for option in options:
+            try:
+                dict1[option] = Config.get(section, option)
+                if dict1[option] == -1:
+                    DebugPrint("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+        return dict1
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    #acc.cache_read_ports = ConfigSectionMap("AccConfig")['cache_read_ports']
+    #acc.cache_write_ports = ConfigSectionMap("AccConfig")['cache_write_ports']
+
+def AccConfig(acc, local_range, config_file, bench_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
     Config.read((config_file))
@@ -23,14 +44,22 @@ def AccConfig(options, acc, local_range, config_file, bench_file):
     # Setup comm interface
     acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
     acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
-
+    acc.system_read_bus_width=ConfigSectionMap("Memory")['read_bus_width']
+    acc.system_write_bus_width=ConfigSectionMap("Memory")['write_bus_width']
     # Accelerator setup
     acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     acc.config_size = ConfigSectionMap("AccConfig")['config_size']
     acc.local_range = local_range
     acc.int_num = ConfigSectionMap("AccConfig")['int_num']
     acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
-
+    predef = ConfigSectionMap("AccConfig")['premap_data']
+    if (predef == "1" or predef == "True"):
+        acc.premap_data = predef
+        acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    acc.system_read_ports = ConfigSectionMap("Memory")['read_ports']
+    acc.system_write_ports = ConfigSectionMap("Memory")['write_ports']
+    
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
     acc.llvm_interface.cycles = CycleCounts()
@@ -116,9 +145,10 @@ def AccConfig(options, acc, local_range, config_file, bench_file):
     acc.llvm_interface.FU_pipelined = ConfigSectionMap("Scheduler")['fu_pipelined']
     acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
     acc.llvm_interface.FU_clock_period = ConfigSectionMap("Scheduler")['fu_clock_period']
+    acc.llvm_interface.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
 
-def AccPmemConfig(options, acc, config_file):
+def AccPmemConfig(acc, config_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
     Config.read((config_file))
@@ -137,6 +167,7 @@ def AccPmemConfig(options, acc, config_file):
         return dict1
 
     # Private memory
+    acc.private_size = ConfigSectionMap("PrivateMemory")['size']
     acc.private_range = AddrRange(ConfigSectionMap("PrivateMemory")['addr_range'], \
                                                       size=ConfigSectionMap("PrivateMemory")['size'])
     acc.private_memory = PrivateMemory(range=acc.private_range, \
@@ -144,7 +175,10 @@ def AccPmemConfig(options, acc, config_file):
                                                            latency=ConfigSectionMap("PrivateMemory")['latency'])
 
     # Memory constraints
-    acc.private_read_ports = ConfigSectionMap("Memory")['read_ports']
-    acc.private_write_ports = ConfigSectionMap("Memory")['write_ports']
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    acc.private_read_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
+    acc.private_write_ports = ConfigSectionMap("PrivateMemory")['private_write_ports']
+    acc.private_read_bus_width = ConfigSectionMap("PrivateMemory")['private_read_bus_width']
+    acc.private_write_bus_width = ConfigSectionMap("PrivateMemory")['private_write_bus_width']    
     acc.private_memory.ready_mode = Config.getboolean("Memory", 'ready_mode')
     acc.private_memory.reset_on_private_read = Config.getboolean("Memory", 'reset_on_private_read')

@@ -1,4 +1,8 @@
+#ifndef __DEFINES_H__
+#define __DEFINES_H__
+
 #define SPM
+//#define CHECK
 //#define TEST
 
 #ifndef TEST
@@ -11,4 +15,6 @@
 #define NNZ 19
 #define N 7
 #define TYPE double
+#endif
+
 #endif

@@ -33,3 +33,8 @@ chisel/*.iml
 chisel
 build.sh
 arm
+/BM_ARM_OUT
+/ext
+baremetalarm
+out.csv
+.sconsign.dblite

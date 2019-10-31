@@ -23,11 +23,13 @@ typedef struct {
 
 int checkData(md_struct * mds) {
     int i;
-
-    for (int i = 0; i < blockSide3*densityFactor; i++) {
-        if (std::abs(mds->force[i]-mds->check[i])/(mds->check[i]) > EPSILON) {
-            printf("Check Failed\n");
-            return 0;
+	double result;
+    for (int i = 0; i < blockSide3*densityFactor*3; i++) {
+    	result = std::abs((mds->force[i]-mds->check[i])/(mds->force[i]))*100;
+        if (result > EPSILON) {
+            printf("Check Failed - %f %% at [%i] \n", result, i);
+        } else {
+        	printf("Check OK - %f %% at [%i] \n", result, i);
         }
     }
     printf("Check Passed\n");

@@ -1,5 +1,6 @@
 #!/bin/bash
-FLAGS=IOAcc #NoncoherentDma,Interrupt #,IOAcc,RuntimeQueues #,Hardware,LLVMRuntime,LLVMGEP,LLVMInterface,CommInterface,LLVMParse,Interrupt,LLVMRegister
+#FLAGS=
+#IOAcc,NoncoherentDma,Hardware,LLVMRuntime,LLVMGEP,LLVMInterface,CommInterface,LLVMParse,Interrupt,LLVMRegister
 if [ "$1" != "" ]; then
     BENCH=$1
 else
@@ -15,13 +16,16 @@ SYS_OPTS="--mem-size=4GB \
           --cpu-type=TimingSimpleCPU"
 CACHE_OPTS="--acc_cache"
 # Script to start up full system simulation
-build/ARM/gem5.opt --debug-flags=$FLAGS --outdir=BM_ARM_OUT/$BENCH configs/example/fs.py \
+# --debug-flags=$FLAGS
+build/ARM/gem5.opt --outdir=BM_ARM_OUT/$BENCH configs/example/fs.py \
 $SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
-$CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
+#> BM_ARM_OUT/$BENCH/debug_trace.txt
+#$CACHE_OPTS > BM_ARM_OUT/$BENCH/debug_trace.txt
 
 # Debug Flags List
 #
 # IOAcc
+# ClassDetail
 # CommInterface
 # ComputeUnit
 # LLVMInterface
@@ -31,4 +35,6 @@ $CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
 # LLVMParse
 # LLVMGEP
 # LLVMRuntime == ComputeNode + LLVMRegister + LLVMOp + LLVMParse
-# NoncoherentDma
+# NoncoherentDma - bfs, fft, gemm, md-knn, nw, spmv
+
+

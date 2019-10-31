@@ -62,11 +62,13 @@ int main(void) {
     std::memcpy((void *)temp, (void *)(SPM_BASE+TEMP_OFFSET),           sizeof(int)*INPUTSIZE);
 #endif
     acc = 0x00;
+#ifdef CHECK
 	if(!checkData(&fir)) {
         for (i = 0; i < INPUTSIZE-1; i++) {
             total += temp[i];
         }
         printf("T = %d\tC=%d\n", total, check[0]);
 	}
+#endif
 	*(char *)0x7FFFFFFF = 1;//Kill the simulation
 }

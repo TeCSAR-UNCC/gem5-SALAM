@@ -61,7 +61,8 @@ class IOAcc : public BasicPioDevice
     IOAcc *acc;
     MasterID masterId;
     TickEvent tickEvent;
-    unsigned cacheLineSize;
+    unsigned int cacheLineSize;
+    unsigned int cacheSize;
 
     void tick();
 
@@ -114,7 +115,7 @@ class IOAcc : public BasicPioDevice
 
     int prepRead(Addr src, size_t length);
     int prepWrite(Addr dst, uint8_t* value, size_t length);
-
+    int getCacheSize() { return cacheSize; }
     void processData();
 
     uint8_t* getCurData() { return curData; }

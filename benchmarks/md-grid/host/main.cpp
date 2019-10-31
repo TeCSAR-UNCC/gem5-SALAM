@@ -1,4 +1,6 @@
 #include <cstdio>
+#include <cstring>
+
 #include "md.h"
 
 #define BASE            0x80c00000
@@ -37,10 +39,10 @@ int main(void) {
     loc_n_points    = (uint64_t)(SPM_BASE+NP_OFFSET);
     loc_force       = (uint64_t)(SPM_BASE+FRC_OFFSET);
     loc_position    = (uint64_t)(SPM_BASE+POS_OFFSET);
-
-    std::memcpy((void *)(SPM_BASE+NP_OFFSET), (void ***)n_points,      sizeof(ivector_t)*3*blockSide);
-//    std::memcpy((void *)(SPM_BASE+SOL_OFFSET), (void *)sol,     sizeof(TYPE)*ROW*COL);
-    std::memcpy((void *)(SPM_BASE+POS_OFFSET), (void ****)position,  sizeof(dvector_t)*3*(blockSide+densityFactor));
+    
+    memcpy( (void *)(SPM_BASE+NP_OFFSET), (void ***)n_points, (sizeof(ivector_t)*3*blockSide));
+	memcpy((void *)(SPM_BASE+FRC_OFFSET), (void *)force,     sizeof(dvector_t)*(blockSide*blockSide*blockSide*densityFactor));
+    memcpy((void *)(SPM_BASE+POS_OFFSET), (void ****)position,  sizeof(dvector_t)*3*(blockSide+densityFactor));
 #endif
     printf("%d\n", acc);
 
@@ -51,9 +53,10 @@ int main(void) {
         printf("%d\n", acc);
 	}
 #ifdef SPM
-    std::memcpy((void ****)force, (void *)(SPM_BASE+FRC_OFFSET), sizeof(dvector_t)*3*(blockSide+densityFactor));
+    memcpy((void ****)force, (void *)(SPM_BASE+FRC_OFFSET), sizeof(dvector_t)*3*(blockSide+densityFactor));
 #endif
     acc = 0x00;
+#ifdef CHECK
 	if(!checkData(&mds)) {
 	    for(i = 0; i < blockSide3*densityFactor; i++) {
 	        int dind = i % densityFactor;
@@ -108,5 +111,6 @@ int main(void) {
 //            }
 //        }
 	}
+#endif
 	*(char *)0x7fffffff = 1; //Kill the simulation
 }

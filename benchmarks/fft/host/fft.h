@@ -19,15 +19,20 @@ typedef struct {
 
 int checkData(fft_struct * ffts) {
     int i;
+    double real, img, check_real, check_img;
     for (i = 0; i < FFT_SIZE; i++) {
-        if(((ffts->real[i]-ffts->real_check[i]) > EPSILON) || ((ffts->real[i]-ffts->real_check[i]) < -EPSILON)) {
+    	real = ffts->real[i] - ffts->real_check[i];
+    	img = ffts->img[i] - ffts->img_check[i];
+
+        if((real > EPSILON) || (real < -EPSILON)) {
             printf("Check Failed\n");
             return 0;
         }
-        if(((ffts->img[i]-ffts->img_check[i]) > EPSILON) || ((ffts->img[i]-ffts->img_check[i]) < -EPSILON)) {
+        if((img > EPSILON) || (img < -EPSILON)) {
             printf("Check Failed\n");
             return 0;
         }
+        printf("Diff[%i] = Real: %f, Img: %f \n", i, real, img);
     }
     printf("Check Passed\n");
     return 1;

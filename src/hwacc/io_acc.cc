@@ -22,6 +22,7 @@ IOAcc::IOAcc(Params *p) :
     masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
+    cacheSize(p->cache_size),
     clock_period(p->clock_period) {
     processDelay = 1000 * clock_period;
     needToRead = false;

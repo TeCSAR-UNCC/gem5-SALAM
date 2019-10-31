@@ -84,6 +84,7 @@ int main(void) {
 	while(!pollDma());
 #endif
     acc = 0x00;
+#ifdef CHECK
 	if(!checkData(&ffts)) {
 	    for (i = 0; i < FFT_SIZE; i++) {
 	        if(((real[i]-real_check[i]) > EPSILON) || ((real[i]-real_check[i]) < -EPSILON))
@@ -94,6 +95,7 @@ int main(void) {
 	            printf("img[%2d]=%f expected[%d]=%f\n", i, img[i], i, img_check[i]);
 	    }
 	}
-//	*(char *)0x7fffffff = 1; //Kill the simulation
-	m5_exit();
+#endif
+	*(char *)0x7fffffff = 1; //Kill the simulation
+//	m5_exit();
 }

@@ -24,12 +24,18 @@ CommInterface::CommInterface(Params *p) :
     devname(p->devicename),
     gic(p->gic),
     int_num(p->int_num),
+    use_premap_data(p->premap_data),
     dramSide(p->name + ".dram_side", this),
     spmSide(p->name + ".spm_side", this),
     localRange(p->local_range),
     masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
+    cacheSize(p->cache_size),
+    readPorts(p->system_read_ports),
+    writePorts(p->system_write_ports),
+    read_bus_width(p->system_read_bus_width),
+    write_bus_width(p->system_write_bus_width),
     clock_period(p->clock_period) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
@@ -51,6 +57,12 @@ CommInterface::CommInterface(Params *p) :
     dramWrQ = new std::list<MemoryRequest*>();
     spmRdQ = new std::list<MemoryRequest*>();
     spmWrQ = new std::list<MemoryRequest*>();
+
+    if (use_premap_data) {
+        for (auto i = 0; i < p->data_bases.size(); i++) {
+            data_base_ptrs.push_back(p->data_bases[i]);
+        }
+    }
 }
 
 bool
@@ -70,8 +82,8 @@ CommInterface::MemSidePort::recvReqRetry() {
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
         if (!owner->tickEvent.scheduled()) {
-            //owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
-            owner->schedule(owner->tickEvent, owner->nextCycle());
+            owner->schedule(owner->tickEvent, curTick() + owner->processDelay);
+            //owner->schedule(owner->tickEvent, owner->nextCycle());
         }
     }
 }
@@ -133,8 +145,8 @@ CommInterface::recvPacket(PacketPtr pkt) {
     }
     if (!tickEvent.scheduled())
     {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
     //if (pkt->req) delete pkt->req;
     delete pkt;
@@ -153,8 +165,8 @@ CommInterface::checkMMR() {
 
         if (processingDone && !tickEvent.scheduled()) {
             processingDone = false;
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -255,8 +267,8 @@ CommInterface::processMemoryRequests() {
     }
     requestsInQueues = readQueue->size() + writeQueue->size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -301,14 +313,14 @@ CommInterface::tryRead(MemSidePort * port) {
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
         if (!tickEvent.scheduled()) {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     } else {
         if (!port->isStalled() && !tickEvent.scheduled())
         {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     }
 }
@@ -353,12 +365,12 @@ CommInterface::tryWrite(MemSidePort * port) {
     if (!(writeReq->writeLeft > 0)) {
         writeReq->needToWrite = false;
         if (!tickEvent.scheduled()) {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
         }
     } else if (!port->isStalled() && !tickEvent.scheduled()) {
-            //schedule(tickEvent, curTick() + processDelay);
-            schedule(tickEvent, nextCycle());
+            schedule(tickEvent, curTick() + processDelay);
+            //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -371,8 +383,8 @@ CommInterface::enqueueRead(MemoryRequest * req) {
         DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -385,8 +397,8 @@ CommInterface::enqueueWrite(MemoryRequest * req) {
         DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
@@ -468,7 +480,11 @@ CommInterface::write(PacketPtr pkt) {
 
 uint64_t
 CommInterface::getGlobalVar(unsigned index) {
-    return *(uint64_t *)(mmreg + VAR_OFFSET + index*8);
+    if (use_premap_data) {
+        return data_base_ptrs.at(index);
+    } else {
+        return *(uint64_t *)(mmreg + VAR_OFFSET + index*8);
+    }
 }
 
 CommInterface *
@@ -761,10 +777,17 @@ CommMemInterface::CommMemInterface(Params *p) :
     pmem(p->private_memory),
     pmemRange(p->private_range),
     resetPmemOnFinish(p->reset_private_on_finish),
+    cacheSize(p->cache_size),
+    privateSize(p->private_size),
     readPorts(p->private_read_ports),
-    writePorts(p->private_write_ports) {
-        avReadPorts = readPorts;
-        avWritePorts = writePorts;
+    writePorts(p->private_write_ports),
+    read_bus_width(p->private_read_bus_width),
+    write_bus_width(p->private_write_bus_width) {
+        //avReadPorts = readPorts;
+        //avWritePorts = writePorts;
+        // Buffer
+        avReadPorts = readPorts*read_bus_width;
+        avWritePorts = writePorts*write_bus_width;
     }
 
 void
@@ -793,7 +816,7 @@ CommMemInterface::processMemoryRequests() {
                 }
                 size = (*it)->readLeft > (size - 1) ? size : (*it)->readLeft;
 
-                if (avReadPorts <= 0) {
+                if (avReadPorts < (*it)->totalLength) {
                     DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
                 } else if (!pmem->isReady((*it)->address, size)) {
@@ -801,7 +824,8 @@ CommMemInterface::processMemoryRequests() {
 					//std::cout << "Data at " << (*it)->address << " is not ready\n";
                     ++it;
                 } else {
-                    avReadPorts--;
+                    //avReadPorts-=(*it)->totalLength;
+                    avReadPorts-=read_bus_width;
                     Request::Flags flags;
                     if ((*it)->readLeft <= 0) {
                         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
@@ -898,12 +922,12 @@ CommMemInterface::processMemoryRequests() {
                     it = writeQueue->erase(it);
                     if (writeQueue->empty()) break;
                 }
-                if (avWritePorts <= 0) {
+                if (avWritePorts < (*it)->totalLength) {
                     DPRINTF(CommInterfaceQueues, "No available internal read ports\n");
                     ++it;
                 } else {
-                    avWritePorts--;
-
+                    //avWritePorts-=(*it)->totalLength;
+                    avWritePorts-=write_bus_width;
                     if ((*it)->writeLeft <= 0) {
                         DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
                         return;
@@ -993,15 +1017,18 @@ CommMemInterface::processMemoryRequests() {
     }
     requestsInQueues = readQueue->size() + writeQueue->size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
-        //schedule(tickEvent, curTick() + processDelay);
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + processDelay);
+        //schedule(tickEvent, nextCycle());
     }
 }
 
 void
 CommMemInterface::refreshMemPorts() {
-      avReadPorts = readPorts;
-      avWritePorts = writePorts;
+      //avReadPorts = readPorts;
+      //avWritePorts = writePorts;
+      // Buffer 
+      avReadPorts = readPorts*read_bus_width;
+      avWritePorts = writePorts*write_bus_width;
 }
 
 void

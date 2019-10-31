@@ -1,5 +1,9 @@
-#define SPM
-//#define TEST
+#ifndef __DEFINES_H__
+#define __DEFINES_H__
+
+//#define SPM
+//#define CHECK
+#define TEST
 
 #ifndef TEST
 //Define input sizes
@@ -29,4 +33,6 @@
 
 //Set number of iterations to execute
 #define MAX_ITERATION 1
+#endif
+
 #endif

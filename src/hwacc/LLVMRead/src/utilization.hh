@@ -3,6 +3,8 @@
 #include "debugFlags.hh" 
 #include "debug/Hardware.hh"
 #include "power_func.hh"
+#include "registers.hh"
+#include "power.hh"
 #include "macros.hh"
 #include <map>
 #include <vector>
@@ -43,6 +45,7 @@ struct PowerTotals {
     float readEnergy = 0;
     float writeEnergy = 0;
     float area = 0;
+    float reg_area = 0;
 };
 
 class Utilization {
@@ -60,11 +63,19 @@ class Utilization {
       PowerUsage spfpMulPwr;
       PowerUsage dpfpMulPwr;
       PowerTotals totalPwr;
+      PowerTotals finalPwr;
+      RegisterList *regList;
+      Reg_Usage regUsage;
     
-    Utilization(int clock_period); 
+    Utilization(int clock_period, int fu_clock_period, RegisterList* List);
+    void finalPowerUsage(FunctionalUnits units, int cycle); 
+    uca_org_t getCactiResults(int cache_size, int word_size, int ports, int cache_type);
     void updatePowerConsumption(FunctionalUnits units);
     void calculateLeakagePowerUsage(FunctionalUnits units);
+    void calculateFinalLeakagePowerUsage(FunctionalUnits units);
     void calculateDynamicPowerUsage(FunctionalUnits units);
+    void calculateArea(FunctionalUnits units);
+    void calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle);
 };
 
 

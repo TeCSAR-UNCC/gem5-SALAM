@@ -1,3 +1,0 @@
-clang -emit-llvm -c vadd.c -o vadd.o
-opt -O1 -mem2reg -simplifycfg -loops -loop-unroll -unroll-count=8 vadd.o -o vadd.bc
-llvm-dis vadd.bc -o vadd.ll

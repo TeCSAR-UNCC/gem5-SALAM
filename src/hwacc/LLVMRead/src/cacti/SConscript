@@ -1,0 +1,25 @@
+Import('*')
+
+if env['TARGET_ISA'] == 'arm':
+
+    Source('arbiter.cc')
+    Source('area.cc')
+    Source('bank.cc')
+    Source('basic_circuit.cc')
+    Source('cacti_interface.cc')
+    Source('component.cc')
+    Source('crossbar.cc')
+    Source('decoder.cc')
+    Source('htree2.cc')
+    Source('io.cc')
+    #Source('main.cc')
+    Source('mat.cc')
+    Source('nuca.cc')
+    Source('parameter.cc')
+    Source('router.cc')
+    Source('subarray.cc')
+    Source('technology.cc')
+    Source('uca.cc')
+    Source('Ucache.cc')
+    Source('wire.cc')
+
