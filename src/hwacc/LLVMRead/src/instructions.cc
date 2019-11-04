@@ -120,7 +120,6 @@ SDiv::compute() {
 			_Ops.at(1) = (int32_t) _Ops.at(1);
 		}
 	}
-	DPRINTF(LLVMOp, "Op1: %d, Op2: %d\n", _Ops.at(0), _Ops.at(1));
 	if (_Operands.size() == 1) {
 		if(_ImmFirst) _Result = _Operand / _Ops.at(0);
 		else _Result = _Ops.at(0) / _Operand;
@@ -547,6 +546,8 @@ Xor::compute() {
 void
 Load::compute() {
     //uint64_t src = _Pointer->getValue();
+	if(_Pointer->isGlobal()) setGlobal(true);
+	else setGlobal(false);
 	uint64_t src = _Ops.at(0);
 	_ReturnRegister->setSize(_ReturnType);
 	DPRINTF(LLVMOp, "Load From: %x\n", _Ops.at(0));
@@ -559,6 +560,8 @@ Store::compute() {
 	uint64_t data;
 	uint64_t size = 0;
 	//uint64_t dst = _Pointer->getValue();
+	if(_Pointer->isGlobal()) setGlobal(true);
+	else setGlobal(false);
 	uint64_t dst = _Ops.at(0);
 	DPRINTF(LLVMOp, "Starting Store!\n");
 	if(_ImmVal) {

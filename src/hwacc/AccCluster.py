@@ -17,12 +17,22 @@ class AccCluster(Platform):
     system = Param.System(Parent.any, "system")
     
     # System Cache Parameter
-    cache_size = Param.Int32(1024, "cache size in bytes")
-    cache_read_ports = Param.Int32(8, "read ports for cache")
-    cache_write_ports = Param.Int32(8, "write ports for cache")
+    cache_size = Param.String('4kB', "cache size in bytes")
+    cache_ports = Param.Int32(4, "read/write ports for cache bus")
+    local_ports = Param.Int32(4, "read/write ports for local bus")
+    local_range_min = Param.Unsigned(0x2f000000, "minimal address of local range")
+    local_range_max = Param.Unsigned(0x7fffffff, "maximum address of local range")
+    external_range_low_min = Param.Unsigned(0x00000000, "minimal address of external range low")
+    external_range_low_max = Param.Unsigned(0x2effffff, "maximum address of external range low")
+    external_range_hi_min = Param.Unsigned(0x80000000, "minimal address of external range high")
+    external_range_hi_max = Param.Unsigned(0xffffffff, "maximum address of external range high")
     
-    local_bus = NoncoherentXBar(width=16, frontend_latency=1, forward_latency=0, response_latency=1)
-    cache_bus = NoncoherentXBar(width=16, frontend_latency=1, forward_latency=0, response_latency=1)
+    local_bus = NoncoherentXBar(width=2, frontend_latency=1, forward_latency=0, response_latency=1)
+    cache_bus = NoncoherentXBar(width=2, frontend_latency=1, forward_latency=0, response_latency=1)
+
+    def _resize_bus(self, local_ports, cache_ports):
+        self.local_bus = NoncoherentXBar(width=local_ports, frontend_latency=1, forward_latency=0, response_latency=1)
+        self.cache_bus = NoncoherentXBar(width=cache_ports, frontend_latency=1, forward_latency=0, response_latency=1)
 
     def _add_spm(self, spm_range, spm_latency):
         self.spm = SimpleMemory(range=spm_range, conf_table_reported=False, latency=spm_latency)

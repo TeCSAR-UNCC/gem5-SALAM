@@ -65,6 +65,7 @@ try:
     import pydot
 except:
     pydot = False
+    print("For graphical output install pydot and graphviz.")
 
 def simnode_children(simNode):
     for child in simNode._children.itervalues():

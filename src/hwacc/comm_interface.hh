@@ -27,8 +27,8 @@ class CommInterface : public BasicPioDevice
     uint32_t int_num;
     bool use_premap_data;
     std::vector<Addr> data_base_ptrs;
-    int read_bus_width;
-    int write_bus_width;
+    int cache_ports;
+    int local_ports;
 
     //class MemoryRequest;
 
@@ -113,8 +113,6 @@ class CommInterface : public BasicPioDevice
     TickEvent tickEvent;
     unsigned cacheLineSize;
     int cacheSize;
-    int readPorts;
-    int writePorts;
 
     virtual void checkMMR();
     virtual void processMemoryRequests();
@@ -170,11 +168,12 @@ class CommInterface : public BasicPioDevice
     uint64_t getGlobalVar(unsigned index);
     int getProcessDelay() { return processDelay; }
     virtual int getCacheSize() { return cacheSize; }
-    virtual int getReadPorts() { return readPorts; }
-    virtual int getWritePorts() { return writePorts; }
-    virtual int getReadBusWidth() { return write_bus_width; }
-    virtual int getWriteBusWidth() { return read_bus_width; }
-
+    virtual int getcachePorts() { return cache_ports; }
+    virtual int getlocalPorts() { return local_ports; }
+    virtual int getReadPorts()  { return 0; }
+    virtual int getWritePorts()  { return 0; }
+    virtual int getReadBusWidth()  { return 0; }
+    virtual int getWriteBusWidth()  { return 0; }  
     virtual int getPmemRange() { return 0; }
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
     void registerCycleCounts(CycleCounts *cylcount) { cycleCount = cylcount; }
@@ -260,7 +259,6 @@ class CommMemInterface : public CommInterface
     virtual void processMemoryRequests() override;
     virtual void refreshMemPorts() override;
     virtual void finish() override;
-    int getCacheSize() override { return cacheSize; }
     int getReadPorts() override { return readPorts; }
     int getWritePorts() override { return writePorts; }
     int getReadBusWidth() override { return write_bus_width; }

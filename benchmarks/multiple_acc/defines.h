@@ -10,8 +10,8 @@
 #define SPM
 
 //#define CPU_COPY
-//#define CPU_DIRECT
-#define HW_MANAGED
+#define CPU_DIRECT
+//#define HW_MANAGED
 //#define SINGLE_ACC
 
 #define RAND_SEED 		5

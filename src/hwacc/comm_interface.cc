@@ -32,10 +32,8 @@ CommInterface::CommInterface(Params *p) :
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     cacheSize(p->cache_size),
-    readPorts(p->system_read_ports),
-    writePorts(p->system_write_ports),
-    read_bus_width(p->system_read_bus_width),
-    write_bus_width(p->system_write_bus_width),
+    cache_ports(p->cache_ports),
+    local_ports(p->local_ports),
     clock_period(p->clock_period) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;

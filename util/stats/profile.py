@@ -193,6 +193,7 @@ class FuncNode(object):
         self._dot(dot, threshold, categorize, self.total())
         self._cleandot()
 
+
 class FuncData(RunData):
     def __init__(self, filename, categorize=None):
         super(FuncData, self).__init__(filename)

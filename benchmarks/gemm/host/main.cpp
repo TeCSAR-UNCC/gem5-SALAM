@@ -43,6 +43,7 @@
 gemm_struct ges;
 
 int main(void) {
+	m5_reset_stats();
     uint64_t base = 0x80c00000;
     uint64_t spm_base = 0x2f100000;
 	TYPE *m1 = (TYPE *)base;
@@ -135,6 +136,7 @@ int main(void) {
     else
         printf("Check Passed\n");
 #endif
-    *(char *)0x2FFFFFFF = 1;
-	//m5_exit();
+    //*(char *)0x2FFFFFFF = 1;
+	m5_dump_stats();	
+	m5_exit();
 }

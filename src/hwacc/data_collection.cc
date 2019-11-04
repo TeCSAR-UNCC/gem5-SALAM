@@ -10,6 +10,13 @@ Results::print() {
     std::cout << "   Runtime:                         " << cycles << " cycles" << std::endl;
     std::cout << "   Runtime:                         " << runtime << " seconds" << std::endl;
     std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
+    std::cout << "       Load Only:                   " << loadOnlyStall << " cycles" << std::endl;
+    std::cout << "       Store Only:                  " << storeOnlyStall << " cycles" << std::endl;
+    std::cout << "       Compute Only:                " << compOnlyStall << " cycles" << std::endl;
+    std::cout << "       Compute & Store:             " << storeCompStall << " cycles" << std::endl;
+    std::cout << "       Load & Store:                " << loadStoreStall << " cycles" << std::endl;
+    std::cout << "       Load & Compute:              " << loadCompStall << " cycles" << std::endl;
+    std::cout << "       Load & Compute & Store:      " << loadStoreCompStall << " cycles" << std::endl;
     std::cout << "   Executed Nodes:                  " << nodes << " cycles" << std::endl;
     std::cout << "       Load Only:                   " << loadOnly << " cycles" << std::endl;
     std::cout << "       Store Only:                  " << storeOnly << " cycles" << std::endl;
@@ -21,11 +28,17 @@ Results::print() {
     std::cout << std::endl;
     std::cout << "   ========= Memory Configuration =============" << std::endl;
     std::cout << "   Shared Cache Size:               " << cache_size/1024 << "kB" << std::endl;
+    std::cout << "   Shared Cache Read Ports:         " << cache_ports << std::endl;
+    std::cout << "   Shared Cache Write Ports:        " << cache_ports << std::endl;
+    std::cout << "   Local Bus Ports:                 " << local_ports << std::endl;
+    std::cout << "   Shared Cache Size:               " << cache_size/1024 << "kB" << std::endl;
     std::cout << "   Private SPM Size:                " << spm_size/1024 << "kB" << std::endl;
     std::cout << "   Private Read Ports:              " << read_ports << std::endl;
     std::cout << "   Private Write Ports:             " << write_ports << std::endl;
-    std::cout << "   Read Bus Width:                  " << read_bus_width << std::endl;
-    std::cout << "   Write Bus Width:                 " << write_bus_width << std::endl;
+    std::cout << "   Private Read Bus Width:          " << read_bus_width << std::endl;
+    std::cout << "   Private Write Bus Width:         " << write_bus_width << std::endl;
+    std::cout << "       SPM Reads:                   " << mem_reads << std::endl;
+    std::cout << "       SPM Writes:                  " << mem_writes << std::endl;
     std::cout << std::endl;
     std::cout << "   ========= Runtime Functional Units =========" << std::endl;
     std::cout << "   Counter FU's:                    " << run_counter << std::endl;
@@ -86,8 +99,8 @@ Results::print() {
     std::cout << "   Total Accelerator Area:          " << total_area + spm_area/1000 << " um^2 (" << total_area/1000000 << " mm^2)" << std::endl;
     std::cout << std::endl;
     std::cout << "   ========= System Cache Usage ==============" << std::endl;
-    std::cout << "   Cache Reads:                     " << mem_writes << std::endl;  //Experimental
-    std::cout << "   Cache Writes:                    " << mem_writes << std::endl;  //Experimental
+    std::cout << "   Cache Reads:                     " << dma_reads << std::endl;  //Experimental
+    std::cout << "   Cache Writes:                    " << dma_writes << std::endl;  //Experimental
     std::cout << "   Cache Leakage Power:             " << cache_leakage << " mW" << std::endl;
     std::cout << "   Cache Read Dynamic Power:        " << cache_read_dynamic << " mW" << std::endl;
     std::cout << "   Cache Write Dynamic Power:       " << cache_write_dynamic << " mW" << std::endl;

@@ -176,7 +176,9 @@ class InstructionBase {
         virtual void compute()           = 0;  
         //virtual void powerCycle()        = 0;
         virtual InstructionBase* clone() const = 0;
-        
+        virtual bool isGlobal() { return false; }
+        void setGlobal(bool Global) { _Global = Global; }
+        bool dmaAccess() { return _Global; }
         // ---- Hardware Usage Functions
         void used() { _Usage++; }
         // ---- Dependency Graph Functions

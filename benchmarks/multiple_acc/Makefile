@@ -1,6 +1,9 @@
 FOLDERS=\
-	host\
-	bench
+	conv\
+	max_pool\
+	relu\
+	combined\
+	host
 
 .PHONY: build clean all
 

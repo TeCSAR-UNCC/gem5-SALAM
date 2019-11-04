@@ -20,15 +20,22 @@ def makeHWAcc(options, system):
 
     # The local_range is used for communication within the cluster. All memory mapped devices
     # (i.e. accelerators and SPMs) for the cluster should appear in this range.
-    local_range = AddrRange(0x2f000000, 0x7fffffff)
+    local_range = AddrRange(system.acc_cluster.local_range_min, system.acc_cluster.local_range_max)
 
     # The external_range is used for communication to devices outside of the cluster
-    external_range = [AddrRange(0x00000000, 0x2effffff), AddrRange(0x80000000, 0xffffffff)]
+    external_range = [AddrRange(system.acc_cluster.external_range_low_min, \
+    							system.acc_cluster.external_range_low_max), \
+    				  AddrRange(system.acc_cluster.external_range_hi_min, \
+    				            system.acc_cluster.external_range_hi_max)]
+
+	# Configure the cache
+    CacheConfig(system.acc_cluster, acc_config)
+
+	# Resize local and cache bus from config file specification 
+    system.acc_cluster._resize_bus(system.acc_cluster.cache_ports, system.acc_cluster.local_ports)
 
     # Generate bridges to connect local cluster bus to system membus
     system.acc_cluster._attach_bridges(system, local_range, external_range)
-
-    CacheConfig(system.acc_cluster, acc_config)
 
     # Add a shared cache for the accelerator cluster
     system.acc_cluster._connect_caches(system, options, system.acc_cluster.cache_size)

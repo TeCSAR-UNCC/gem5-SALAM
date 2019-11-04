@@ -1601,6 +1601,7 @@ class GetElementPtr : public Memory {
         Register* _PtrVal;
         uint64_t _ActivePtr;
         uint64_t _Index;
+        bool _Global;
 
     public:
         GetElementPtr (     const std::string& Line,
@@ -1618,7 +1619,8 @@ class GetElementPtr : public Memory {
                             std::vector<int64_t> ImmIdx,
                             Register* PtrVal,
                             uint64_t Index,
-                            uint8_t FunctionalUnit)
+                            uint8_t FunctionalUnit,
+                            bool Global)
         : Memory (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -1634,10 +1636,12 @@ class GetElementPtr : public Memory {
         , _Type(            Type)
         , _ImmIdx(          ImmIdx)
         , _PtrVal(          PtrVal)
-        , _Index(           Index) { 
+        , _Index(           Index) 
+        , _Global(          Global) { 
                             Details("GetElementPtr"); }
         ~GetElementPtr()  { Destruct("GetElementPtr"); }
         void compute()      override; 
+        bool isGlobal()     override {return _Global; }
         virtual GetElementPtr* clone() const { return new GetElementPtr(*this); }
 };
 //---------------------------------------------------------------------------//

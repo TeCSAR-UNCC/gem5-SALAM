@@ -21,7 +21,16 @@ class Results {
         int loadComp;
         int loadStoreComp;
         int storeComp;
+        int loadOnlyStall; //
+        int storeOnlyStall; //
+        int compOnlyStall;
+        int loadStoreStall; //
+        int loadCompStall;
+        int loadStoreCompStall;
+        int storeCompStall;        
         //Memory Stats
+        int cache_ports;
+        int local_ports;
         int cache_size;
         int spm_size;
         int read_ports;
@@ -74,6 +83,8 @@ class Results {
         int reg_writes;
         int mem_reads;
         int mem_writes;
+        int dma_reads;
+        int dma_writes;
         // Power
         double fu_leakage;
         double fu_dynamic;
@@ -102,12 +113,21 @@ class Results {
                     int LoadComp,
                     int LoadStoreComp,
                     int StoreComp,
+                    int LoadOnlyStall,
+                    int StoreOnlyStall,
+                    int CompOnlyStall,
+                    int LoadStoreStall,
+                    int LoadCompStall,
+                    int LoadStoreCompStall,
+                    int StoreCompStall,
                     int Cache_Size,
                     int SPM_Size,
                     int Read_Ports,
                     int Write_Ports,
                     int Read_Bus_Width,
                     int Write_Bus_Width,
+                    int Cache_Ports,
+                    int Local_Ports,
                     double SPM_Leakage,
                     double SPM_Read_Dynamic,
                     double SPM_Write_Dynamic,
@@ -151,6 +171,8 @@ class Results {
                     int Reg_writes,
                     int Memory_Loads,
                     int Memory_Stores,
+                    int DMA_Reads,
+                    int DMA_Writes,
                     double Fu_leakage,
                     double Fu_dynamic,
                     double Fu_total_power,
@@ -174,10 +196,19 @@ class Results {
                     loadComp(LoadComp),
                     loadStoreComp(LoadStoreComp),
                     storeComp(StoreComp),
+                    loadOnlyStall(LoadOnlyStall),
+                    storeOnlyStall(StoreOnlyStall),
+                    compOnlyStall(CompOnlyStall),
+                    loadStoreStall(LoadStoreStall),
+                    loadCompStall(LoadCompStall),
+                    loadStoreCompStall(LoadStoreCompStall),
+                    storeCompStall(StoreCompStall),
                     cache_size(Cache_Size),
                     spm_size(SPM_Size),
                     read_ports(Read_Ports),
                     write_ports(Write_Ports),
+                    cache_ports(Cache_Ports),
+                    local_ports(Local_Ports),
                     read_bus_width(Read_Bus_Width),
                     write_bus_width(Write_Bus_Width),
                     spm_leakage(SPM_Leakage),
@@ -223,6 +254,8 @@ class Results {
                     reg_writes(Reg_writes),
                     mem_reads(Memory_Loads),
                     mem_writes(Memory_Stores),
+                    dma_reads(DMA_Reads),
+                    dma_writes(DMA_Writes),
                     fu_leakage(Fu_leakage),
                     fu_dynamic(Fu_dynamic),
                     fu_total_power(Fu_total_power),

@@ -3,27 +3,6 @@ from m5.objects import *
 from m5.util import *
 import ConfigParser
 
-def CacheConfig(acc, config_file):
-    # Setup config file parser
-    Config = ConfigParser.ConfigParser()
-    Config.read((config_file))
-    Config.sections()
-    def ConfigSectionMap(section):
-        dict1 = {}
-        options = Config.options(section)
-        for option in options:
-            try:
-                dict1[option] = Config.get(section, option)
-                if dict1[option] == -1:
-                    DebugPrint("skip: %s" % option)
-            except:
-                print("exception on %s!" % option)
-                dict1[option] = None
-        return dict1
-    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
-    #acc.cache_read_ports = ConfigSectionMap("AccConfig")['cache_read_ports']
-    #acc.cache_write_ports = ConfigSectionMap("AccConfig")['cache_write_ports']
-
 def AccConfig(acc, local_range, config_file, bench_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
@@ -44,22 +23,27 @@ def AccConfig(acc, local_range, config_file, bench_file):
     # Setup comm interface
     acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
     acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
-    acc.system_read_bus_width=ConfigSectionMap("Memory")['read_bus_width']
-    acc.system_write_bus_width=ConfigSectionMap("Memory")['write_bus_width']
     # Accelerator setup
+    acc.cache_ports = ConfigSectionMap("AccConfig")['cache_ports']
+    acc.local_ports = ConfigSectionMap("AccConfig")['local_ports']
     acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     acc.config_size = ConfigSectionMap("AccConfig")['config_size']
     acc.local_range = local_range
     acc.int_num = ConfigSectionMap("AccConfig")['int_num']
     acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     predef = ConfigSectionMap("AccConfig")['premap_data']
+    local_range_min = ConfigSectionMap("AccConfig")['local_range_min']
+    local_range_max = ConfigSectionMap("AccConfig")['local_range_max']
+    external_range_low_min = ConfigSectionMap("AccConfig")['external_range_low_min']
+    external_range_low_max = ConfigSectionMap("AccConfig")['external_range_low_max']
+    external_range_hi_min = ConfigSectionMap("AccConfig")['external_range_hi_min']
+    external_range_hi_max = ConfigSectionMap("AccConfig")['external_range_hi_max']
+    
     if (predef == "1" or predef == "True"):
         acc.premap_data = predef
         acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
-    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
-    acc.system_read_ports = ConfigSectionMap("Memory")['read_ports']
-    acc.system_write_ports = ConfigSectionMap("Memory")['write_ports']
-    
+
+
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
     acc.llvm_interface.cycles = CycleCounts()
@@ -147,6 +131,29 @@ def AccConfig(acc, local_range, config_file, bench_file):
     acc.llvm_interface.FU_clock_period = ConfigSectionMap("Scheduler")['fu_clock_period']
     acc.llvm_interface.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
+
+
+def CacheConfig(acc, config_file):
+    # Setup config file parser
+    Config = ConfigParser.ConfigParser()
+    Config.read((config_file))
+    Config.sections()
+    def ConfigSectionMap(section):
+        dict1 = {}
+        options = Config.options(section)
+        for option in options:
+            try:
+                dict1[option] = Config.get(section, option)
+                if dict1[option] == -1:
+                    DebugPrint("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+        return dict1
+    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    acc.cache_ports = ConfigSectionMap("AccConfig")['cache_ports']
+    acc.local_ports = ConfigSectionMap("AccConfig")['local_ports']
+
 
 def AccPmemConfig(acc, config_file):
     # Setup config file parser

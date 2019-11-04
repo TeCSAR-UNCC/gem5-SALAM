@@ -31,6 +31,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     typeList = NULL;
     memory_loads = 0;
     memory_stores = 0;
+    dma_loads = 0;
+    dma_stores = 0;
     global_loads = 0;
     global_stores = 0;
     running = false;
@@ -83,9 +85,12 @@ LLVMInterface::tick() {
     pwrUtil->updatePowerConsumption(_FunctionalUnits);
     regList->resetAccess();
     clearFU();
-    bool loadOp = false;
-    bool storeOp = false;
-    bool compOp = false;
+    bool loadOpScheduled = false;
+    bool storeOpScheduled = false;
+    bool compOpScheduled = false;
+    int loadInFlight = readQueue.size();
+    int storeInFlight = writeQueue.size();
+    int compInFlight = computeQueue.size();
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
@@ -140,19 +145,21 @@ LLVMInterface::tick() {
             if (reservation.at(i)->_ActiveParents == 0) {
                 if(!(reservation.at(i)->_Terminator)) { 
                         if(reservation.at(i)->_OpCode == "load") {
-                            memory_loads++; loadOp = true;
+                            loadOpScheduled = true;
                             readQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
+                            if(reservation.at(i)->_Global) dma_loads++;
+                            else memory_loads++; 
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                             scheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_OpCode == "store") {
-                            // if(reservation.at(i)->_ReturnRegister->isGlobal()) global_stores++;
-                            // else memory_stores++;
-                            memory_stores++; storeOp = true;
+                            storeOpScheduled = true;
                             writeQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
+                            if(reservation.at(i)->_Global) dma_stores++;
+                            else memory_stores++;
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                             scheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
@@ -161,7 +168,7 @@ LLVMInterface::tick() {
                             reservation.at(i)->compute();
                             reservation.at(i)->commit(); 
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                            scheduled = true; compOp = true;
+                            scheduled = true; compOpScheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else { // Computation Units
@@ -171,7 +178,7 @@ LLVMInterface::tick() {
                                     computeQueue.push_back(reservation.at(i));
                                     reservation.at(i)->compute();
                                     reservation.at(i)->commit();
-                                    scheduled = true; compOp = true;
+                                    scheduled = true; compOpScheduled = true;
                                     auto it = reservation.erase(reservation.begin()+i);
                                     i = std::distance(reservation.begin(), it);
                                 } else i++;
@@ -181,7 +188,7 @@ LLVMInterface::tick() {
                                 reservation.at(i)->compute();
                                 reservation.at(i)->commit();
                                 if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                                scheduled = true; compOp = true;
+                                scheduled = true; compOpScheduled = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
                             }
@@ -207,6 +214,8 @@ LLVMInterface::tick() {
                         spm_size = comm->getPmemRange();
                         read_bus_width = comm->getReadBusWidth();
                         write_bus_width = comm->getWriteBusWidth();
+                        cache_ports = comm->getcachePorts();
+                        local_ports = comm->getlocalPorts();
                         statistics();
                         comm->finish();
                     }
@@ -217,17 +226,29 @@ LLVMInterface::tick() {
     }
 
     //if (!scheduled) stalls++; // No new compute node was scheduled this cycle
-    if (loadOp) {
-        if (storeOp) {
-            if (compOp) loadStoreComp++;
+    if (loadOpScheduled) {
+        if (storeOpScheduled) {
+            if (compOpScheduled) loadStoreComp++;
             else loadStore++;
-        } else if (compOp) loadComp++;
+        } else if (compOpScheduled) loadComp++;
         else loadOnly++;
-    } else if(storeOp) {
-        if (compOp) storeComp++;
+    } else if(storeOpScheduled) {
+        if (compOpScheduled) storeComp++;
         else storeOnly++;
-    } else if (compOp) compOnly++;
-    else stalls++;
+    } else if (compOpScheduled) compOnly++;
+    else {
+        stalls++;
+        if(loadInFlight) {
+            if(storeInFlight) {
+                if(compInFlight) loadStoreCompStall++;
+                else loadStoreStall++;
+            } else if (compInFlight) loadCompStall++;
+            else loadOnlyStall++;
+        } else if(storeInFlight) {
+            if(compInFlight) storeCompStall++;
+            else storeOnlyStall++;
+        } else if (compInFlight) compOnlyStall++;
+    }
 
     if (running && !tickEvent.scheduled())
     {
@@ -402,7 +423,7 @@ LLVMInterface::constructBBList() {
                             std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
                             DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName); 
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum))); // Create register for global variable
-                            regList->findRegister(regName)->isGlobal(); // Store global status in register
+                            regList->findRegister(regName)->setGlobal(); // Store global status in register
                             DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
                             paramNum++;
                         }
@@ -577,15 +598,15 @@ LLVMInterface::statistics() {
     execnodes = cycle-stalls-1;
     // getCactiResults(int cache_size, int word_size, int ports, int type)
     // SPM cache_type = 0  
-    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, 8, (read_ports+write_ports), 0);
-    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, 8, (read_ports+write_ports), 0);
-    uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*8), 8, (read_ports), 0); 
-    uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*8), 8, (write_ports), 0); 
+    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
+    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
+    uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
+    uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
 
     // Cache cache_type = 1
-    uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, 8, 16, 1);
-    uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults((memory_loads/memory_stores)*8, 8, 8, 1);
-    uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(memory_stores*8, 8, 8, 1);
+    uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
+    uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults(dma_loads*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
     double exponential = 1e9; // Units correction
     double leak = 1.0; // Remnant of old units difference
 
@@ -602,12 +623,21 @@ LLVMInterface::statistics() {
                             loadComp,
                             loadStoreComp,
                             storeComp,
+                            loadOnlyStall,
+                            storeOnlyStall,
+                            compOnlyStall,
+                            loadStoreStall,
+                            loadCompStall,
+                            loadStoreCompStall,
+                            storeCompStall,
                             cache_size,
                             spm_size,
                             read_ports,
                             write_ports,
                             read_bus_width,
                             write_bus_width,
+                            cache_ports,
+                            local_ports,
                             (cacti_result_spm_leakage.power.readOp.leakage+cacti_result_spm_leakage.power.writeOp.leakage)*leak,
                             cacti_result_spm_dynamic_read.power.readOp.dynamic*exponential,
                             cacti_result_spm_dynamic_write.power.writeOp.dynamic*exponential,
@@ -651,6 +681,8 @@ LLVMInterface::statistics() {
                             pwrUtil->regUsage.writes,
                             memory_loads,
                             memory_stores,
+                            dma_loads,
+                            dma_stores,
                             pwrUtil->finalPwr.leakage_power,
                             pwrUtil->totalPwr.dynamic_energy*runtime,
                             (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime,

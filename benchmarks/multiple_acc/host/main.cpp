@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "../defines.h"
 #include "conv.h"
 #include "relu.h"
 #include "max_pool.h"
