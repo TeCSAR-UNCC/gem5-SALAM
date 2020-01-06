@@ -52,9 +52,8 @@ SectorTags::SectorTags(const SectorTagsParams *p)
       sequentialAccess(p->sequential_access),
       replacementPolicy(p->replacement_policy),
       numBlocksPerSector(p->num_blocks_per_sector),
-      numSectors(numBlocks / p->num_blocks_per_sector), blks(numBlocks),
-      secBlks(numSectors), sectorShift(floorLog2(blkSize)),
-      sectorMask(numBlocksPerSector - 1)
+      numSectors(numBlocks / numBlocksPerSector),
+      sectorShift(floorLog2(blkSize)), sectorMask(numBlocksPerSector - 1)
 {
     // Check parameters
     fatal_if(blkSize < 4 || !isPowerOf2(blkSize),
@@ -66,6 +65,10 @@ SectorTags::SectorTags(const SectorTagsParams *p)
 void
 SectorTags::tagsInit()
 {
+    // Create blocks and sector blocks
+    blks = std::vector<SectorSubBlk>(numBlocks);
+    secBlks = std::vector<SectorBlk>(numSectors);
+
     // Initialize all blocks
     unsigned blk_index = 0;       // index into blks array
     for (unsigned sec_blk_index = 0; sec_blk_index < numSectors;
@@ -73,9 +76,6 @@ SectorTags::tagsInit()
     {
         // Locate next cache sector
         SectorBlk* sec_blk = &secBlks[sec_blk_index];
-
-        // Link block to indexing policy
-        indexingPolicy->setEntry(sec_blk, sec_blk_index);
 
         // Associate a replacement data entry to the sector
         sec_blk->replacementData = replacementPolicy->instantiateEntry();
@@ -104,6 +104,9 @@ SectorTags::tagsInit()
             // Update block index
             ++blk_index;
         }
+
+        // Link block to indexing policy
+        indexingPolicy->setEntry(sec_blk, sec_blk_index);
     }
 }
 
@@ -122,7 +125,7 @@ SectorTags::invalidate(CacheBlk *blk)
     // in the sector.
     if (!sector_blk->isValid()) {
         // Decrease the number of tags in use
-        tagsInUse--;
+        stats.tagsInUse--;
 
         // Invalidate replacement data, as we're invalidating the sector
         replacementPolicy->invalidate(sector_blk->replacementData);
@@ -137,13 +140,13 @@ SectorTags::accessBlock(Addr addr, bool is_secure, Cycles &lat)
     // Access all tags in parallel, hence one in each way.  The data side
     // either accesses all blocks in parallel, or one block sequentially on
     // a hit.  Sequential access with a miss doesn't access data.
-    tagAccesses += allocAssoc;
+    stats.tagAccesses += allocAssoc;
     if (sequentialAccess) {
         if (blk != nullptr) {
-            dataAccesses += 1;
+            stats.dataAccesses += 1;
         }
     } else {
-        dataAccesses += allocAssoc*numBlocksPerSector;
+        stats.dataAccesses += allocAssoc*numBlocksPerSector;
     }
 
     // If a cache hit
@@ -167,9 +170,7 @@ SectorTags::accessBlock(Addr addr, bool is_secure, Cycles &lat)
 }
 
 void
-SectorTags::insertBlock(const Addr addr, const bool is_secure,
-                        const int src_master_ID, const uint32_t task_ID,
-                        CacheBlk *blk)
+SectorTags::insertBlock(const PacketPtr pkt, CacheBlk *blk)
 {
     // Get block's sector
     SectorSubBlk* sub_blk = static_cast<SectorSubBlk*>(blk);
@@ -182,14 +183,14 @@ SectorTags::insertBlock(const Addr addr, const bool is_secure,
         replacementPolicy->touch(sector_blk->replacementData);
     } else {
         // Increment tag counter
-        tagsInUse++;
+        stats.tagsInUse++;
 
         // A new entry resets the replacement data
         replacementPolicy->reset(sector_blk->replacementData);
     }
 
     // Do common block insertion functionality
-    BaseTags::insertBlock(addr, is_secure, src_master_ID, task_ID, blk);
+    BaseTags::insertBlock(pkt, blk);
 }
 
 CacheBlk*
@@ -220,7 +221,7 @@ SectorTags::findBlock(Addr addr, bool is_secure) const
 }
 
 CacheBlk*
-SectorTags::findVictim(Addr addr, const bool is_secure,
+SectorTags::findVictim(Addr addr, const bool is_secure, const std::size_t size,
                        std::vector<CacheBlk*>& evict_blks) const
 {
     // Get possible entries to be victimized

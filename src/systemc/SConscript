@@ -27,15 +27,11 @@
 
 Import('*')
 
-from m5.util import compareVersions
-from m5.util.terminal import termcap
+if not env['USE_SYSTEMC']:
+    Return()
 
-if env['USE_SYSTEMC']:
-    if compareVersions(env['GCC_VERSION'], '5.0') < 0:
-        print(termcap.Yellow + termcap.Bold +
-                'Warning: Disabling systemc on gcc versions less than 5.0.' +
-                termcap.Normal)
-        env['USE_SYSTEMC'] = False
-        Return()
+env.UseSystemcCheck(warn=True)
 
-    env.Append(CPPPATH=Dir('ext'))
+env.Append(CPPPATH=Dir('ext'))
+
+SimObject('Tlm.py')

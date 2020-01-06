@@ -1,4 +1,4 @@
-# Copyright (c) 2012, 2017 ARM Limited
+# Copyright (c) 2012, 2017, 2019 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -46,6 +46,8 @@ from base_config import *
 from common.cores.arm.O3_ARM_v7a import *
 from common.Benchmarks import SysConfig
 
+from common import SysPaths
+
 class ArmSESystemUniprocessor(BaseSESystemUniprocessor):
     """Syscall-emulation builder for ARM uniprocessor systems.
 
@@ -54,7 +56,7 @@ class ArmSESystemUniprocessor(BaseSESystemUniprocessor):
     """
 
     def __init__(self, **kwargs):
-        BaseSESystem.__init__(self, **kwargs)
+        super(ArmSESystemUniprocessor, self).__init__(**kwargs)
 
     def create_caches_private(self, cpu):
         # The atomic SE configurations do not use caches
@@ -95,6 +97,18 @@ class LinuxArmSystemBuilder(object):
         system.panic_on_panic = True
         system.panic_on_oops = True
 
+        default_kernels = {
+            "VExpress_EMM": "vmlinux.aarch32.ll_20131205.0-gem5",
+            "VExpress_EMM64": "vmlinux.aarch64.20140821",
+        }
+        system.kernel = SysPaths.binary(default_kernels[self.machine_type])
+        default_dtbs = {
+           "VExpress_EMM": "vexpress.aarch32.ll_20131205.0-gem5.{}cpu.dtb" \
+             .format(self.num_cpus),
+           "VExpress_EMM64": "vexpress.aarch64.20140821.dtb",
+        }
+        system.dtb_filename = SysPaths.binary(default_dtbs[self.machine_type])
+
         self.init_system(system)
         return system
 
@@ -111,7 +125,7 @@ class LinuxArmFSSystem(LinuxArmSystemBuilder,
         Keyword Arguments:
           machine_type -- String describing the platform to simulate
         """
-        BaseSystem.__init__(self, **kwargs)
+        BaseFSSystem.__init__(self, **kwargs)
         LinuxArmSystemBuilder.__init__(self, machine_type, **kwargs)
 
     def create_caches_private(self, cpu):

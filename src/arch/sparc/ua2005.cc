@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "arch/sparc/interrupts.hh"
 #include "arch/sparc/isa.hh"
 #include "arch/sparc/kernel_stats.hh"
 #include "arch/sparc/registers.hh"
@@ -88,7 +89,7 @@ getMiscRegName(RegIndex index)
 }
 
 void
-ISA::setFSReg(int miscReg, const MiscReg &val, ThreadContext *tc)
+ISA::setFSReg(int miscReg, RegVal val, ThreadContext *tc)
 {
     BaseCPU *cpu = tc->getCpuPtr();
 
@@ -242,7 +243,7 @@ ISA::setFSReg(int miscReg, const MiscReg &val, ThreadContext *tc)
     }
 }
 
-MiscReg
+RegVal
 ISA::readFSReg(int miscReg, ThreadContext * tc)
 {
     uint64_t temp;

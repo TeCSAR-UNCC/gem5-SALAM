@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2015-2018 ARM Limited
+ * Copyright (c) 2012-2013, 2015-2019 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -273,6 +273,9 @@ MSHR::allocate(Addr blk_addr, unsigned blk_size, PacketPtr target,
     Target::Source source = (target->cmd == MemCmd::HardPFReq) ?
         Target::FromPrefetcher : Target::FromCPU;
     targets.add(target, when_ready, _order, source, true, alloc_on_fill);
+
+    // All targets must refer to the same block
+    assert(target->matchBlockAddr(targets.front().pkt, blkSize));
 }
 
 
@@ -459,17 +462,20 @@ MSHR::handleSnoop(PacketPtr pkt, Counter _order)
             // in the case of an uncacheable request there is no need
             // to set the responderHadWritable flag, but since the
             // recipient does not care there is no harm in doing so
+        } else if (isPendingModified() && pkt->isClean()) {
+            // this cache doesn't respond to the clean request, a
+            // destination xbar will respond to this request, but to
+            // do so it needs to know if it should wait for the
+            // WriteCleanReq
+            pkt->setSatisfied();
         }
+
         targets.add(cp_pkt, curTick(), _order, Target::FromSnoop,
                     downstreamPending && targets.needsWritable, false);
 
         if (pkt->needsWritable() || pkt->isInvalidate()) {
             // This transaction will take away our pending copy
             postInvalidate = true;
-        }
-
-        if (isPendingModified() && pkt->isClean()) {
-            pkt->setSatisfied();
         }
     }
 
@@ -606,8 +612,10 @@ MSHR::promoteReadable()
 void
 MSHR::promoteWritable()
 {
+    PacketPtr def_tgt_pkt = deferredTargets.front().pkt;
     if (deferredTargets.needsWritable &&
-        !(hasPostInvalidate() || hasPostDowngrade())) {
+        !(hasPostInvalidate() || hasPostDowngrade()) &&
+        !def_tgt_pkt->req->isCacheInvalidate()) {
         // We got a writable response, but we have deferred targets
         // which are waiting to request a writable copy (not because
         // of a pending invalidate).  This can happen if the original
@@ -681,4 +689,25 @@ MSHR::print() const
     std::ostringstream str;
     print(str);
     return str.str();
+}
+
+bool
+MSHR::matchBlockAddr(const Addr addr, const bool is_secure) const
+{
+    assert(hasTargets());
+    return (blkAddr == addr) && (isSecure == is_secure);
+}
+
+bool
+MSHR::matchBlockAddr(const PacketPtr pkt) const
+{
+    assert(hasTargets());
+    return pkt->matchBlockAddr(blkAddr, isSecure, blkSize);
+}
+
+bool
+MSHR::conflictAddr(const QueueEntry* entry) const
+{
+    assert(hasTargets());
+    return entry->matchBlockAddr(blkAddr, isSecure);
 }

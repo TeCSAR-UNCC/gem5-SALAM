@@ -166,7 +166,6 @@ isRomMicroPC(MicroPC upc)
 const Addr MaxAddr = (Addr)-1;
 
 typedef uint64_t RegVal;
-typedef double FloatRegVal;
 
 static inline uint32_t
 floatToBits32(float val)
@@ -259,6 +258,8 @@ struct TypedAtomicOpFunctor : public AtomicOpFunctor
     virtual AtomicOpFunctor* clone() = 0;
     virtual void execute(T * p) = 0;
 };
+
+typedef std::unique_ptr<AtomicOpFunctor> AtomicOpFunctorPtr;
 
 enum ByteOrder {
     BigEndianByteOrder,

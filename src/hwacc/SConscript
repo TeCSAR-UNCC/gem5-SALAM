@@ -1,7 +1,7 @@
 Import('*')
 
 if env['TARGET_ISA'] == 'arm':
-    SimObject('IOAcc.py')
+    # SimObject('IOAcc.py')
     SimObject('CommInterface.py')
     SimObject('ComputeUnit.py')
     SimObject('LLVMInterface.py')
@@ -10,7 +10,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('CycleCounts.py')
     SimObject('AccCluster.py')
 
-    Source('io_acc.cc')
+    # Source('io_acc.cc')
     Source('comm_interface.cc')
     Source('compute_unit.cc')
     Source('llvm_interface.cc')

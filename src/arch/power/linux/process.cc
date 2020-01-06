@@ -36,6 +36,7 @@
 
 #include "arch/power/isa_traits.hh"
 #include "arch/power/linux/linux.hh"
+#include "base/loader/object_file.hh"
 #include "base/trace.hh"
 #include "cpu/thread_context.hh"
 #include "kern/linux/linux.hh"
@@ -47,21 +48,51 @@
 using namespace std;
 using namespace PowerISA;
 
+namespace
+{
+
+class PowerLinuxObjectFileLoader : public Process::Loader
+{
+  public:
+    Process *
+    load(ProcessParams *params, ObjectFile *obj_file) override
+    {
+        if (obj_file->getArch() != ObjectFile::Power)
+            return nullptr;
+
+        auto opsys = obj_file->getOpSys();
+
+        if (opsys == ObjectFile::UnknownOpSys) {
+            warn("Unknown operating system; assuming Linux.");
+            opsys = ObjectFile::Linux;
+        }
+
+        if (opsys != ObjectFile::Linux)
+            return nullptr;
+
+        return new PowerLinuxProcess(params, obj_file);
+    }
+};
+
+PowerLinuxObjectFileLoader loader;
+
+} // anonymous namespace
+
 /// Target uname() handler.
 static SyscallReturn
-unameFunc(SyscallDesc *desc, int callnum, Process *process,
-          ThreadContext *tc)
+unameFunc(SyscallDesc *desc, int callnum, ThreadContext *tc)
 {
     int index = 0;
+    auto process = tc->getProcessPtr();
     TypedBufferArg<Linux::utsname> name(process->getSyscallArg(tc, index));
 
     strcpy(name->sysname, "Linux");
     strcpy(name->nodename, "sim.gem5.org");
-    strcpy(name->release, "3.0.0");
+    strcpy(name->release, process->release.c_str());
     strcpy(name->version, "#1 Mon Aug 18 11:32:15 EDT 2003");
     strcpy(name->machine, "power");
 
-    name.copyOut(tc->getMemProxy());
+    name.copyOut(tc->getVirtProxy());
     return 0;
 }
 
@@ -69,8 +100,8 @@ SyscallDesc PowerLinuxProcess::syscallDescs[] = {
     /*  0 */ SyscallDesc("syscall", unimplementedFunc),
     /*  1 */ SyscallDesc("exit", exitFunc),
     /*  2 */ SyscallDesc("fork", unimplementedFunc),
-    /*  3 */ SyscallDesc("read", readFunc),
-    /*  4 */ SyscallDesc("write", writeFunc),
+    /*  3 */ SyscallDesc("read", readFunc<PowerLinux>),
+    /*  4 */ SyscallDesc("write", writeFunc<PowerLinux>),
     /*  5 */ SyscallDesc("open", openFunc<PowerLinux>),
     /*  6 */ SyscallDesc("close", closeFunc),
     /*  7 */ SyscallDesc("waitpid", unimplementedFunc), //???
@@ -437,20 +468,17 @@ PowerLinuxProcess::initState()
     PowerProcess::initState();
 }
 
-PowerISA::IntReg
+void
+PowerLinuxProcess::syscall(ThreadContext *tc, Fault *fault)
+{
+    doSyscall(tc->readIntReg(0), tc, fault);
+}
+
+RegVal
 PowerLinuxProcess::getSyscallArg(ThreadContext *tc, int &i)
 {
     // Linux apparently allows more parameter than the ABI says it should.
     // This limit may need to be increased even further.
     assert(i < 6);
     return tc->readIntReg(ArgumentReg0 + i++);
-}
-
-void
-PowerLinuxProcess::setSyscallArg(ThreadContext *tc, int i, PowerISA::IntReg val)
-{
-    // Linux apparently allows more parameter than the ABI says it should.
-    // This limit may need to be increased even further.
-    assert(i < 6);
-    tc->setIntReg(ArgumentReg0 + i, val);
 }

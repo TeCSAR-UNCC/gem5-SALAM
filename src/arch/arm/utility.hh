@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012-2013, 2016-2018 ARM Limited
+ * Copyright (c) 2010, 2012-2013, 2016-2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -117,6 +117,10 @@ copyMiscRegs(ThreadContext *src, ThreadContext *dest)
 
 void initCPU(ThreadContext *tc, int cpuId);
 
+/** Send an event (SEV) to a specific PE if there isn't
+ * already a pending event */
+void sendEvent(ThreadContext *tc);
+
 static inline bool
 inUserMode(CPSR cpsr)
 {
@@ -153,8 +157,13 @@ currOpMode(ThreadContext *tc)
 static inline ExceptionLevel
 currEL(ThreadContext *tc)
 {
-    CPSR cpsr = tc->readMiscReg(MISCREG_CPSR);
-    return (ExceptionLevel) (uint8_t) cpsr.el;
+    return opModeToEL(currOpMode(tc));
+}
+
+inline ExceptionLevel
+currEL(CPSR cpsr)
+{
+    return opModeToEL((OperatingMode) (uint8_t)cpsr.mode);
 }
 
 /**
@@ -178,6 +187,12 @@ ELUsingAArch32K(ThreadContext *tc, ExceptionLevel el);
 bool ELIs32(ThreadContext *tc, ExceptionLevel el);
 
 bool ELIs64(ThreadContext *tc, ExceptionLevel el);
+
+/**
+ * Returns true if the current exception level `el` is executing a Host OS or
+ * an application of a Host OS (Armv8.1 Virtualization Host Extensions).
+ */
+bool ELIsInHost(ThreadContext *tc, ExceptionLevel el);
 
 bool isBigEndian64(ThreadContext *tc);
 
@@ -250,7 +265,13 @@ inline bool isSecureBelowEL3(ThreadContext *tc);
 
 bool longDescFormatInUse(ThreadContext *tc);
 
-uint32_t getMPIDR(ArmSystem *arm_sys, ThreadContext *tc);
+/** This helper function is either returing the value of
+ * MPIDR_EL1 (by calling getMPIDR), or it is issuing a read
+ * to VMPIDR_EL2 (as it happens in virtualized systems) */
+RegVal readMPIDR(ArmSystem *arm_sys, ThreadContext *tc);
+
+/** This helper function is returing the value of MPIDR_EL1 */
+RegVal getMPIDR(ArmSystem *arm_sys, ThreadContext *tc);
 
 static inline uint32_t
 mcrMrcIssBuild(bool isRead, uint32_t crm, IntRegIndex rt, uint32_t crn,
@@ -301,8 +322,8 @@ msrMrs64IssBuild(bool isRead, uint32_t op0, uint32_t op1, uint32_t crn,
 }
 
 bool
-mcrMrc15TrapToHyp(const MiscRegIndex miscReg, HCR hcr, CPSR cpsr, SCR scr,
-                  HDCR hdcr, HSTR hstr, HCPTR hcptr, uint32_t iss);
+mcrMrc15TrapToHyp(const MiscRegIndex miscReg, ThreadContext *tc, uint32_t iss);
+
 bool
 mcrMrc14TrapToHyp(const MiscRegIndex miscReg, HCR hcr, CPSR cpsr, SCR scr,
                   HDCR hdcr, HSTR hstr, HCPTR hcptr, uint32_t iss);

@@ -30,10 +30,10 @@ CommInterface::CommInterface(Params *p) :
     localRange(p->local_range),
     masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
-    cacheLineSize(p->cache_line_size),
-    cacheSize(p->cache_size),
     cache_ports(p->cache_ports),
     local_ports(p->local_ports),
+    cacheLineSize(p->cache_line_size),
+    cacheSize(p->cache_size),
     clock_period(p->clock_period) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
@@ -490,14 +490,16 @@ CommInterfaceParams::create() {
     return new CommInterface(this);
 }
 
-BaseMasterPort&
-CommInterface::getMasterPort(const std::string& if_name, PortID idx) {
+Port&
+CommInterface::getPort(const std::string& if_name, PortID idx) {
     if (if_name == "dram_side") {
         return dramSide;
     } else if (if_name == "spm_side") {
         return spmSide;
+    } else if (if_name == "pio") {
+        return pioPort;
     } else {
-        return MemObject::getMasterPort(if_name, idx);
+        return ClockedObject::getPort(if_name, idx);
     }
 }
 
@@ -598,8 +600,8 @@ PrivateMemory::privateAccess(PacketPtr pkt) {
                 ready[i] = false;
             }
         }
-        numReads[pkt->req->masterId()]++;
-        bytesRead[pkt->req->masterId()] += pkt->getSize();
+        stats.numReads[pkt->req->masterId()]++;
+        stats.bytesRead[pkt->req->masterId()] += pkt->getSize();
     } else if (pkt->isWrite()) {
         if (writeOK(pkt)) {
             if (pmemAddr) {
@@ -617,8 +619,8 @@ PrivateMemory::privateAccess(PacketPtr pkt) {
             }
 
             assert(!pkt->req->isInstFetch());
-            numWrites[pkt->req->masterId()]++;
-            bytesWritten[pkt->req->masterId()] += pkt->getSize();
+            stats.numWrites[pkt->req->masterId()]++;
+            stats.bytesWritten[pkt->req->masterId()] += pkt->getSize();
         }
     } else {
         panic("Unexpected packet %s", pkt->print());
@@ -708,7 +710,7 @@ PrivateMemory::access(PacketPtr pkt)
 
             assert(!pkt->req->isInstFetch());
             TRACE_PACKET("Read/Write");
-            numOther[pkt->req->masterId()]++;
+            stats.numOther[pkt->req->masterId()]++;
         }
     } else if (pkt->isRead()) {
         assert(!pkt->isWrite());
@@ -722,10 +724,10 @@ PrivateMemory::access(PacketPtr pkt)
             pkt->setData(hostAddr);
         }
         TRACE_PACKET(pkt->req->isInstFetch() ? "IFetch" : "Read");
-        numReads[pkt->req->masterId()]++;
-        bytesRead[pkt->req->masterId()] += pkt->getSize();
+        stats.numReads[pkt->req->masterId()]++;
+        stats.bytesRead[pkt->req->masterId()] += pkt->getSize();
         if (pkt->req->isInstFetch())
-            bytesInstRead[pkt->req->masterId()] += pkt->getSize();
+            stats.bytesInstRead[pkt->req->masterId()] += pkt->getSize();
     } else if (pkt->isInvalidate() || pkt->isClean()) {
         assert(!pkt->isWrite());
         // in a fastmem system invalidating and/or cleaning packets
@@ -741,8 +743,8 @@ PrivateMemory::access(PacketPtr pkt)
             }
             assert(!pkt->req->isInstFetch());
             TRACE_PACKET("Write");
-            numWrites[pkt->req->masterId()]++;
-            bytesWritten[pkt->req->masterId()] += pkt->getSize();
+            stats.numWrites[pkt->req->masterId()]++;
+            stats.bytesWritten[pkt->req->masterId()] += pkt->getSize();
         }
         // Set ready bits on external writes
         if (readyMode) {

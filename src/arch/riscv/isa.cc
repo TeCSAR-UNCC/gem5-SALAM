@@ -34,6 +34,7 @@
 #include <set>
 #include <sstream>
 
+#include "arch/riscv/interrupts.hh"
 #include "arch/riscv/registers.hh"
 #include "base/bitfield.hh"
 #include "cpu/base.hh"
@@ -95,7 +96,7 @@ ISA::hpmCounterEnabled(int misc_reg) const
     return (miscRegFile[counteren] & (1ULL << (hpmcounter))) > 0;
 }
 
-MiscReg
+RegVal
 ISA::readMiscRegNoEffect(int misc_reg) const
 {
     if (misc_reg > NumMiscRegs || misc_reg < 0) {
@@ -108,10 +109,12 @@ ISA::readMiscRegNoEffect(int misc_reg) const
     return miscRegFile[misc_reg];
 }
 
-MiscReg
+RegVal
 ISA::readMiscReg(int misc_reg, ThreadContext *tc)
 {
     switch (misc_reg) {
+      case MISCREG_HARTID:
+        return tc->contextId();
       case MISCREG_CYCLE:
         if (hpmCounterEnabled(MISCREG_CYCLE)) {
             DPRINTF(RiscvMisc, "Cycle counter at: %llu.\n",
@@ -139,6 +142,18 @@ ISA::readMiscReg(int misc_reg, ThreadContext *tc)
             warn("Instruction counter disabled.\n");
             return 0;
         }
+      case MISCREG_IP:
+        {
+            auto ic = dynamic_cast<RiscvISA::Interrupts *>(
+                    tc->getCpuPtr()->getInterruptController(tc->threadId()));
+            return ic->readIP();
+        }
+      case MISCREG_IE:
+        {
+            auto ic = dynamic_cast<RiscvISA::Interrupts *>(
+                    tc->getCpuPtr()->getInterruptController(tc->threadId()));
+            return ic->readIE();
+        }
       default:
         // Try reading HPM counters
         // As a placeholder, all HPM counters are just cycle counters
@@ -158,7 +173,7 @@ ISA::readMiscReg(int misc_reg, ThreadContext *tc)
 }
 
 void
-ISA::setMiscRegNoEffect(int misc_reg, const MiscReg &val)
+ISA::setMiscRegNoEffect(int misc_reg, RegVal val)
 {
     if (misc_reg > NumMiscRegs || misc_reg < 0) {
         // Illegal CSR
@@ -169,13 +184,30 @@ ISA::setMiscRegNoEffect(int misc_reg, const MiscReg &val)
 }
 
 void
-ISA::setMiscReg(int misc_reg, const MiscReg &val, ThreadContext *tc)
+ISA::setMiscReg(int misc_reg, RegVal val, ThreadContext *tc)
 {
     if (misc_reg >= MISCREG_CYCLE && misc_reg <= MISCREG_HPMCOUNTER31) {
         // Ignore writes to HPM counters for now
         warn("Ignoring write to %s.\n", CSRData.at(misc_reg).name);
     } else {
-        setMiscRegNoEffect(misc_reg, val);
+        switch (misc_reg) {
+          case MISCREG_IP:
+            {
+                auto ic = dynamic_cast<RiscvISA::Interrupts *>(
+                    tc->getCpuPtr()->getInterruptController(tc->threadId()));
+                ic->setIP(val);
+            }
+            break;
+          case MISCREG_IE:
+            {
+                auto ic = dynamic_cast<RiscvISA::Interrupts *>(
+                    tc->getCpuPtr()->getInterruptController(tc->threadId()));
+                ic->setIE(val);
+            }
+            break;
+          default:
+            setMiscRegNoEffect(misc_reg, val);
+        }
     }
 }
 

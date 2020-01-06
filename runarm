@@ -1,6 +1,0 @@
-#!/bin/bash
-# Script to start up full system simulation
-build/ARM/gem5.opt --debug-flags=IOAcc,CommInterface,LLVMInterface --outdir=FS_ARM_OUT configs/example/fs.py \
---mem-size=4GB --kernel=$M5_PATH/linux-arm-gem5/vmlinux \
---disk-image=$M5_PATH/disks/aarch64-ubuntu-trusty-headless.img --machine-type=VExpress_GEM5_V1 \
---dtb-file=$M5_PATH/system/arm/dt/armv8_gem5_v1_1cpu.dtb --fastmem

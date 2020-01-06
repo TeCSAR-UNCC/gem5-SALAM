@@ -34,7 +34,6 @@
 #ifndef __ARCH_RISCV_FAULTS_HH__
 #define __ARCH_RISCV_FAULTS_HH__
 
-#include <map>
 #include <string>
 
 #include "arch/riscv/isa.hh"
@@ -45,7 +44,7 @@
 namespace RiscvISA
 {
 
-enum FloatException : MiscReg {
+enum FloatException : uint64_t {
     FloatInexact = 0x1,
     FloatUnderflow = 0x2,
     FloatOverflow = 0x4,
@@ -53,7 +52,16 @@ enum FloatException : MiscReg {
     FloatInvalid = 0x10
 };
 
-enum ExceptionCode : MiscReg {
+/*
+ * In RISC-V, exception and interrupt codes share some values. They can be
+ * differentiated by an 'Interrupt' flag that is enabled for interrupt faults
+ * but not exceptions. The full fault cause can be computed by placing the
+ * exception (or interrupt) code in the least significant bits of the CAUSE
+ * CSR and then setting the highest bit of CAUSE with the 'Interrupt' flag.
+ * For more details on exception causes, see Chapter 3.1.20 of the RISC-V
+ * privileged specification v 1.10. Codes are enumerated in Table 3.6.
+ */
+enum ExceptionCode : uint64_t {
     INST_ADDR_MISALIGNED = 0,
     INST_ACCESS = 1,
     INST_ILLEGAL = 2,
@@ -70,7 +78,18 @@ enum ExceptionCode : MiscReg {
     INST_PAGE = 12,
     LOAD_PAGE = 13,
     STORE_PAGE = 15,
-    AMO_PAGE = 15
+    AMO_PAGE = 15,
+
+    INT_SOFTWARE_USER = 0,
+    INT_SOFTWARE_SUPER = 1,
+    INT_SOFTWARE_MACHINE = 3,
+    INT_TIMER_USER = 4,
+    INT_TIMER_SUPER = 5,
+    INT_TIMER_MACHINE = 7,
+    INT_EXT_USER = 8,
+    INT_EXT_SUPER = 9,
+    INT_EXT_MACHINE = 11,
+    NumInterruptTypes
 };
 
 class RiscvFault : public FaultBase
@@ -87,7 +106,7 @@ class RiscvFault : public FaultBase
     FaultName name() const override { return _name; }
     bool isInterrupt() const { return _interrupt; }
     ExceptionCode exception() const { return _code; }
-    virtual MiscReg trap_value() const { return 0; }
+    virtual RegVal trap_value() const { return 0; }
 
     virtual void invokeSE(ThreadContext *tc, const StaticInstPtr &inst);
     void invoke(ThreadContext *tc, const StaticInstPtr &inst) override;
@@ -95,24 +114,22 @@ class RiscvFault : public FaultBase
 
 class Reset : public FaultBase
 {
+  private:
+    const FaultName _name;
 
-    public:
-        Reset()
-            : _name("reset")
-        {}
+  public:
+    Reset() : _name("reset") {}
+    FaultName name() const override { return _name; }
 
-        FaultName
-        name() const override
-        {
-            return _name;
-        }
+    void invoke(ThreadContext *tc, const StaticInstPtr &inst =
+        StaticInst::nullStaticInstPtr) override;
+};
 
-        void
-        invoke(ThreadContext *tc, const StaticInstPtr &inst =
-            StaticInst::nullStaticInstPtr) override;
-
-    private:
-        const FaultName _name;
+class InterruptFault : public RiscvFault
+{
+  public:
+    InterruptFault(ExceptionCode c) : RiscvFault("interrupt", true, c) {}
+    InterruptFault(int c) : InterruptFault(static_cast<ExceptionCode>(c)) {}
 };
 
 class InstFault : public RiscvFault
@@ -125,7 +142,7 @@ class InstFault : public RiscvFault
         : RiscvFault(n, false, INST_ILLEGAL), _inst(inst)
     {}
 
-    MiscReg trap_value() const override { return _inst; }
+    RegVal trap_value() const override { return _inst; }
 };
 
 class UnknownInstFault : public InstFault
@@ -189,7 +206,7 @@ class AddressFault : public RiscvFault
         : RiscvFault("Address", false, code), _addr(addr)
     {}
 
-    MiscReg trap_value() const override { return _addr; }
+    RegVal trap_value() const override { return _addr; }
 };
 
 class BreakpointFault : public RiscvFault
@@ -202,7 +219,7 @@ class BreakpointFault : public RiscvFault
         : RiscvFault("Breakpoint", false, BREAKPOINT), pcState(pc)
     {}
 
-    MiscReg trap_value() const override { return pcState.pc(); }
+    RegVal trap_value() const override { return pcState.pc(); }
     void invokeSE(ThreadContext *tc, const StaticInstPtr &inst) override;
 };
 

@@ -33,6 +33,14 @@
 #include <valgrind/valgrind.h>
 #endif
 
+// Mac OS requires _DARWIN_C_SOURCE if _POSIX_C_SOURCE is defined,
+// otherwise it will mask the definition of MAP_ANONYMOUS.
+// _POSIX_C_SOURCE is already defined by including <ucontext.h> in
+// base/fiber.hh
+#if defined(__APPLE__) && defined(__MACH__)
+#define _DARWIN_C_SOURCE
+#endif
+
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -80,7 +88,7 @@ Fiber::Fiber(size_t stack_size) : Fiber(primaryFiber(), stack_size)
 
 Fiber::Fiber(Fiber *link, size_t stack_size) :
     link(link), stack(nullptr), stackSize(stack_size), guardPage(nullptr),
-    guardPageSize(sysconf(_SC_PAGE_SIZE)), started(false), _finished(false)
+    guardPageSize(sysconf(_SC_PAGE_SIZE)), _started(false), _finished(false)
 {
     if (stack_size) {
         guardPage = mmap(nullptr, guardPageSize + stack_size,
@@ -162,7 +170,7 @@ Fiber::run()
     if (_currentFiber == this)
         return;
 
-    if (!started)
+    if (!_started)
         createContext();
 
     // Switch out of the current Fiber's context and this one's in.

@@ -26,7 +26,6 @@
 #
 # Authors: Nathan Binkert
 
-from orderdict import orderdict
 import output
 
 class FileData(dict):
@@ -192,7 +191,6 @@ class FuncNode(object):
     def dot(self, dot, threshold=0.1, categorize=None):
         self._dot(dot, threshold, categorize, self.total())
         self._cleandot()
-
 
 class FuncData(RunData):
     def __init__(self, filename, categorize=None):

@@ -45,13 +45,13 @@ from m5.defines import buildEnv
 from m5.params import *
 from m5.proxy import *
 
-from DVFSHandler import *
-from SimpleMemory import *
+from m5.objects.DVFSHandler import *
+from m5.objects.SimpleMemory import *
 
 class MemoryMode(Enum): vals = ['invalid', 'atomic', 'timing',
                                 'atomic_noncaching']
 
-class System(MemObject):
+class System(SimObject):
     type = 'System'
     cxx_header = "sim/system.hh"
     system_port = MasterPort("System port")
@@ -82,6 +82,8 @@ class System(MemObject):
     mem_ranges = VectorParam.AddrRange([], "Ranges that constitute main memory")
 
     cache_line_size = Param.Unsigned(64, "Cache line size in bytes")
+
+    redirect_paths = VectorParam.RedirectPath([], "Path redirections")
 
     exit_on_work_items = Param.Bool(False, "Exit from the simulation loop when "
                                     "encountering work item annotations.")

@@ -39,50 +39,51 @@ namespace SparcISA {
 
 /// Target uname() handler.
 static SyscallReturn
-unameFunc(SyscallDesc *desc, int callnum, Process *process,
-          ThreadContext *tc)
+unameFunc(SyscallDesc *desc, int callnum, ThreadContext *tc)
 {
     int index = 0;
+    auto process = tc->getProcessPtr();
     TypedBufferArg<Linux::utsname> name(process->getSyscallArg(tc, index));
 
     strcpy(name->sysname, "Linux");
     strcpy(name->nodename, "sim.gem5.org");
-    strcpy(name->release, "3.0.0-sparc64");
+    strcpy(name->release, process->release.c_str());
     strcpy(name->version, "#1 Mon Aug 18 11:32:15 EDT 2003");
     strcpy(name->machine, "sparc");
 
-    name.copyOut(tc->getMemProxy());
+    name.copyOut(tc->getVirtProxy());
 
     return 0;
 }
 
 
 SyscallReturn
-getresuidFunc(SyscallDesc *desc, int num, Process *p, ThreadContext *tc)
+getresuidFunc(SyscallDesc *desc, int num, ThreadContext *tc)
 {
-    const IntReg id = htog(100);
+    const uint64_t id = htobe(100);
     int index = 0;
+    auto p = tc->getProcessPtr();
     Addr ruid = p->getSyscallArg(tc, index);
     Addr euid = p->getSyscallArg(tc, index);
     Addr suid = p->getSyscallArg(tc, index);
     // Handle the EFAULT case
     // Set the ruid
     if (ruid) {
-        BufferArg ruidBuff(ruid, sizeof(IntReg));
-        memcpy(ruidBuff.bufferPtr(), &id, sizeof(IntReg));
-        ruidBuff.copyOut(tc->getMemProxy());
+        BufferArg ruidBuff(ruid, sizeof(uint64_t));
+        memcpy(ruidBuff.bufferPtr(), &id, sizeof(uint64_t));
+        ruidBuff.copyOut(tc->getVirtProxy());
     }
     // Set the euid
     if (euid) {
-        BufferArg euidBuff(euid, sizeof(IntReg));
-        memcpy(euidBuff.bufferPtr(), &id, sizeof(IntReg));
-        euidBuff.copyOut(tc->getMemProxy());
+        BufferArg euidBuff(euid, sizeof(uint64_t));
+        memcpy(euidBuff.bufferPtr(), &id, sizeof(uint64_t));
+        euidBuff.copyOut(tc->getVirtProxy());
     }
     // Set the suid
     if (suid) {
-        BufferArg suidBuff(suid, sizeof(IntReg));
-        memcpy(suidBuff.bufferPtr(), &id, sizeof(IntReg));
-        suidBuff.copyOut(tc->getMemProxy());
+        BufferArg suidBuff(suid, sizeof(uint64_t));
+        memcpy(suidBuff.bufferPtr(), &id, sizeof(uint64_t));
+        suidBuff.copyOut(tc->getVirtProxy());
     }
     return 0;
 }
@@ -91,8 +92,8 @@ SyscallDesc SparcLinuxProcess::syscall32Descs[] = {
     /*   0 */ SyscallDesc("restart_syscall", unimplementedFunc),
     /*   1 */ SyscallDesc("exit", exitFunc), // 32 bit
     /*   2 */ SyscallDesc("fork", unimplementedFunc),
-    /*   3 */ SyscallDesc("read", readFunc),
-    /*   4 */ SyscallDesc("write", writeFunc),
+    /*   3 */ SyscallDesc("read", readFunc<Sparc32Linux>),
+    /*   4 */ SyscallDesc("write", writeFunc<Sparc32Linux>),
     /*   5 */ SyscallDesc("open", openFunc<Sparc32Linux>), // 32 bit
     /*   6 */ SyscallDesc("close", closeFunc),
     /*   7 */ SyscallDesc("wait4", unimplementedFunc), // 32 bit
@@ -397,8 +398,8 @@ SyscallDesc SparcLinuxProcess::syscallDescs[] = {
     /*  0 */ SyscallDesc("restart_syscall", unimplementedFunc),
     /*  1 */ SyscallDesc("exit", exitFunc),
     /*  2 */ SyscallDesc("fork", unimplementedFunc),
-    /*  3 */ SyscallDesc("read", readFunc),
-    /*  4 */ SyscallDesc("write", writeFunc),
+    /*  3 */ SyscallDesc("read", readFunc<SparcLinux>),
+    /*  4 */ SyscallDesc("write", writeFunc<SparcLinux>),
     /*  5 */ SyscallDesc("open", openFunc<SparcLinux>),
     /*  6 */ SyscallDesc("close", closeFunc),
     /*  7 */ SyscallDesc("wait4", unimplementedFunc),

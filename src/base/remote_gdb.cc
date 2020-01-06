@@ -1,4 +1,15 @@
 /*
+ * Copyright (c) 2018 ARM Limited
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright 2015 LabWare
  * Copyright 2014 Google, Inc.
  * Copyright (c) 2002-2005 The Regents of The University of Michigan
@@ -127,6 +138,7 @@
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
+#include <sstream>
 #include <string>
 
 #include "arch/vtophys.hh"
@@ -163,8 +175,8 @@ class HardBreakpoint : public PCEvent
     int refcount;
 
   public:
-    HardBreakpoint(BaseRemoteGDB *_gdb, PCEventQueue *q, Addr pc)
-        : PCEvent(q, "HardBreakpoint Event", pc),
+    HardBreakpoint(BaseRemoteGDB *_gdb, PCEventScope *s, Addr pc)
+        : PCEvent(s, "HardBreakpoint Event", pc),
           gdb(_gdb), refcount(0)
     {
         DPRINTF(GDBMisc, "creating hardware breakpoint at %#x\n", evpc);
@@ -304,12 +316,6 @@ break_type(char c)
 #endif
 
 std::map<Addr, HardBreakpoint *> hardBreakMap;
-
-EventQueue *
-getComInstEventQueue(ThreadContext *tc)
-{
-    return tc->getCpuPtr()->comInstEventQueue[tc->threadId()];
-}
 
 }
 
@@ -612,13 +618,8 @@ BaseRemoteGDB::read(Addr vaddr, size_t size, char *data)
 
     DPRINTF(GDBRead, "read:  addr=%#x, size=%d", vaddr, size);
 
-    if (FullSystem) {
-        FSTranslatingPortProxy &proxy = tc->getVirtProxy();
-        proxy.readBlob(vaddr, (uint8_t*)data, size);
-    } else {
-        SETranslatingPortProxy &proxy = tc->getMemProxy();
-        proxy.readBlob(vaddr, (uint8_t*)data, size);
-    }
+    PortProxy &proxy = tc->getVirtProxy();
+    proxy.readBlob(vaddr, data, size);
 
 #if TRACING_ON
     if (DTRACE(GDBRead)) {
@@ -655,13 +656,8 @@ BaseRemoteGDB::write(Addr vaddr, size_t size, const char *data)
         } else
             DPRINTFNR("\n");
     }
-    if (FullSystem) {
-        FSTranslatingPortProxy &proxy = tc->getVirtProxy();
-        proxy.writeBlob(vaddr, (uint8_t*)data, size);
-    } else {
-        SETranslatingPortProxy &proxy = tc->getMemProxy();
-        proxy.writeBlob(vaddr, (uint8_t*)data, size);
-    }
+    PortProxy &proxy = tc->getVirtProxy();
+    proxy.writeBlob(vaddr, data, size);
 
     return true;
 }
@@ -715,7 +711,7 @@ BaseRemoteGDB::insertHardBreak(Addr addr, size_t len)
 
     HardBreakpoint *&bkpt = hardBreakMap[addr];
     if (bkpt == 0)
-        bkpt = new HardBreakpoint(this, &sys->pcEventQueue, addr);
+        bkpt = new HardBreakpoint(this, sys, addr);
 
     bkpt->refcount++;
 }
@@ -757,17 +753,16 @@ BaseRemoteGDB::setTempBreakpoint(Addr bkpt)
 void
 BaseRemoteGDB::scheduleInstCommitEvent(Event *ev, int delta)
 {
-    EventQueue *eq = getComInstEventQueue(tc);
     // Here "ticks" aren't simulator ticks which measure time, they're
     // instructions committed by the CPU.
-    eq->schedule(ev, eq->getCurTick() + delta);
+    tc->scheduleInstCountEvent(ev, tc->getCurrentInstCount() + delta);
 }
 
 void
 BaseRemoteGDB::descheduleInstCommitEvent(Event *ev)
 {
     if (ev->scheduled())
-        getComInstEventQueue(tc)->deschedule(ev);
+        tc->descheduleInstCountEvent(ev);
 }
 
 std::map<char, BaseRemoteGDB::GdbCommand> BaseRemoteGDB::command_map = {
@@ -966,10 +961,84 @@ BaseRemoteGDB::cmd_mem_w(GdbCommand::Context &ctx)
 bool
 BaseRemoteGDB::cmd_query_var(GdbCommand::Context &ctx)
 {
-    if (string(ctx.data, ctx.len - 1) != "C")
+    string s(ctx.data, ctx.len - 1);
+    string xfer_read_prefix = "Xfer:features:read:";
+    if (s.rfind("Supported:", 0) == 0) {
+        std::ostringstream oss;
+        // This reply field mandatory. We can receive arbitrarily
+        // long packets, so we could choose it to be arbitrarily large.
+        // This is just an arbitrary filler value that seems to work.
+        oss << "PacketSize=1024";
+        for (const auto& feature : availableFeatures())
+            oss << ';' << feature;
+        send(oss.str().c_str());
+    } else if (s.rfind(xfer_read_prefix, 0) == 0) {
+        size_t offset, length;
+        auto value_string = s.substr(xfer_read_prefix.length());
+        auto colon_pos = value_string.find(':');
+        auto comma_pos = value_string.find(',');
+        if (colon_pos == std::string::npos || comma_pos == std::string::npos)
+            throw CmdError("E00");
+        std::string annex;
+        if (!getXferFeaturesRead(value_string.substr(0, colon_pos), annex))
+            throw CmdError("E00");
+        try {
+            offset = std::stoull(
+                value_string.substr(colon_pos + 1, comma_pos), NULL, 16);
+            length = std::stoull(
+                value_string.substr(comma_pos + 1), NULL, 16);
+        } catch (std::invalid_argument& e) {
+            throw CmdError("E00");
+        } catch (std::out_of_range& e) {
+            throw CmdError("E00");
+        }
+        std::string encoded;
+        encodeXferResponse(annex, encoded, offset, length);
+        send(encoded.c_str());
+    } else if (s == "C") {
+        send("QC0");
+    } else {
         throw Unsupported();
-    send("QC0");
+    }
     return true;
+}
+
+std::vector<std::string>
+BaseRemoteGDB::availableFeatures() const
+{
+    return {};
+};
+
+bool
+BaseRemoteGDB::getXferFeaturesRead(
+    const std::string &annex, std::string &output)
+{
+    return false;
+}
+
+void
+BaseRemoteGDB::encodeBinaryData(
+    const std::string &unencoded, std::string &encoded) const
+{
+    for (const char& c : unencoded) {
+        if (c == '$' || c == '#' || c == '}' || c == '*') {
+            encoded += '}';
+            encoded += c ^ 0x20;
+        } else {
+            encoded += c;
+        }
+    }
+}
+
+void
+BaseRemoteGDB::encodeXferResponse(const std::string &unencoded,
+    std::string &encoded, size_t offset, size_t unencoded_length) const
+{
+    if (offset + unencoded_length < unencoded.length())
+        encoded += 'm';
+    else
+        encoded += 'l';
+    encodeBinaryData(unencoded.substr(offset, unencoded_length), encoded);
 }
 
 bool

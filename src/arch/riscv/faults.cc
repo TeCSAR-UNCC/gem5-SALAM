@@ -61,13 +61,24 @@ RiscvFault::invoke(ThreadContext *tc, const StaticInstPtr &inst)
         STATUS status = tc->readMiscReg(MISCREG_STATUS);
 
         // Set fault handler privilege mode
-        if (pp != PRV_M &&
-            bits(tc->readMiscReg(MISCREG_MEDELEG), _code) != 0) {
-            prv = PRV_S;
-        }
-        if (pp == PRV_U &&
-            bits(tc->readMiscReg(MISCREG_SEDELEG), _code) != 0) {
-            prv = PRV_U;
+        if (isInterrupt()) {
+            if (pp != PRV_M &&
+                bits(tc->readMiscReg(MISCREG_MIDELEG), _code) != 0) {
+                prv = PRV_S;
+            }
+            if (pp == PRV_U &&
+                bits(tc->readMiscReg(MISCREG_SIDELEG), _code) != 0) {
+                prv = PRV_U;
+            }
+        } else {
+            if (pp != PRV_M &&
+                bits(tc->readMiscReg(MISCREG_MEDELEG), _code) != 0) {
+                prv = PRV_S;
+            }
+            if (pp == PRV_U &&
+                bits(tc->readMiscReg(MISCREG_SEDELEG), _code) != 0) {
+                prv = PRV_U;
+            }
         }
 
         // Set fault registers and status
@@ -109,14 +120,17 @@ RiscvFault::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 
         // Set fault cause, privilege, and return PC
         tc->setMiscReg(cause,
-                       (isInterrupt() << (sizeof(MiscReg) * 4 - 1)) | _code);
+                       (isInterrupt() << (sizeof(uint64_t) * 4 - 1)) | _code);
         tc->setMiscReg(epc, tc->instAddr());
         tc->setMiscReg(tval, trap_value());
         tc->setMiscReg(MISCREG_PRV, prv);
         tc->setMiscReg(MISCREG_STATUS, status);
 
         // Set PC to fault handler address
-        pcState.set(tc->readMiscReg(tvec) >> 2);
+        Addr addr = tc->readMiscReg(tvec) >> 2;
+        if (isInterrupt() && bits(tc->readMiscReg(tvec), 1, 0) == 1)
+            addr += 4 * _code;
+        pcState.set(addr);
     } else {
         invokeSE(tc, inst);
         advancePC(pcState, inst);
@@ -126,10 +140,12 @@ RiscvFault::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 
 void Reset::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 {
-    if (FullSystem) {
-        tc->getCpuPtr()->clearInterrupts(tc->threadId());
-        tc->clearArchRegs();
-    }
+    tc->setMiscReg(MISCREG_PRV, PRV_M);
+    STATUS status = tc->readMiscReg(MISCREG_STATUS);
+    status.mie = 0;
+    status.mprv = 0;
+    tc->setMiscReg(MISCREG_STATUS, status);
+    tc->setMiscReg(MISCREG_MCAUSE, 0);
 
     // Advance the PC to the implementation-defined reset vector
     PCState pc = static_cast<RiscvSystem *>(tc->getSystemPtr())->resetVect();
@@ -175,7 +191,7 @@ void
 SyscallFault::invokeSE(ThreadContext *tc, const StaticInstPtr &inst)
 {
     Fault *fault = NoFault;
-    tc->syscall(tc->readIntReg(SyscallNumReg), fault);
+    tc->syscall(fault);
 }
 
 } // namespace RiscvISA

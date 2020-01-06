@@ -29,12 +29,12 @@ class Results {
         int loadStoreCompStall;
         int storeCompStall;        
         //Memory Stats
-        int cache_ports;
-        int local_ports;
         int cache_size;
         int spm_size;
         int read_ports;
         int write_ports;
+        int cache_ports;
+        int local_ports;
         int read_bus_width;
         int write_bus_width;
         double spm_leakage;

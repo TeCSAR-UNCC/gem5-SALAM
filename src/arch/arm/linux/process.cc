@@ -46,8 +46,11 @@
 
 #include "arch/arm/linux/process.hh"
 
+#include <sys/syscall.h>
+
 #include "arch/arm/isa_traits.hh"
 #include "arch/arm/linux/linux.hh"
+#include "base/loader/object_file.hh"
 #include "base/trace.hh"
 #include "cpu/thread_context.hh"
 #include "kern/linux/linux.hh"
@@ -59,61 +62,102 @@
 using namespace std;
 using namespace ArmISA;
 
+namespace
+{
+
+class ArmLinuxObjectFileLoader : public Process::Loader
+{
+  public:
+    Process *
+    load(ProcessParams *params, ObjectFile *obj_file) override
+    {
+        auto arch = obj_file->getArch();
+        auto opsys = obj_file->getOpSys();
+
+        if (arch != ObjectFile::Arm && arch != ObjectFile::Thumb &&
+                arch != ObjectFile::Arm64) {
+            return nullptr;
+        }
+
+        if (opsys == ObjectFile::UnknownOpSys) {
+            warn("Unknown operating system; assuming Linux.");
+            opsys = ObjectFile::Linux;
+        }
+
+        if (opsys == ObjectFile::LinuxArmOABI) {
+            fatal("gem5 does not support ARM OABI binaries. Please recompile "
+                    "with an EABI compiler.");
+        }
+
+        if (opsys != ObjectFile::Linux)
+            return nullptr;
+
+        if (arch == ObjectFile::Arm64)
+            return new ArmLinuxProcess64(params, obj_file, arch);
+        else
+            return new ArmLinuxProcess32(params, obj_file, arch);
+    }
+};
+
+ArmLinuxObjectFileLoader loader;
+
+} // anonymous namespace
+
 /// Target uname() handler.
 static SyscallReturn
-unameFunc32(SyscallDesc *desc, int callnum, Process *process,
-            ThreadContext *tc)
+unameFunc32(SyscallDesc *desc, int callnum, ThreadContext *tc)
 {
     int index = 0;
+    auto process = tc->getProcessPtr();
     TypedBufferArg<Linux::utsname> name(process->getSyscallArg(tc, index));
 
     strcpy(name->sysname, "Linux");
     strcpy(name->nodename, "m5.eecs.umich.edu");
-    strcpy(name->release, "3.7.0+");
+    strcpy(name->release, process->release.c_str());
     strcpy(name->version, "#1 SMP Sat Dec  1 00:00:00 GMT 2012");
     strcpy(name->machine, "armv7l");
 
-    name.copyOut(tc->getMemProxy());
+    name.copyOut(tc->getVirtProxy());
     return 0;
 }
 
 /// Target uname() handler.
 static SyscallReturn
-unameFunc64(SyscallDesc *desc, int callnum, Process *process,
-            ThreadContext *tc)
+unameFunc64(SyscallDesc *desc, int callnum, ThreadContext *tc)
 {
     int index = 0;
+    auto process = tc->getProcessPtr();
     TypedBufferArg<Linux::utsname> name(process->getSyscallArg(tc, index));
 
     strcpy(name->sysname, "Linux");
     strcpy(name->nodename, "gem5");
-    strcpy(name->release, "3.7.0+");
+    strcpy(name->release, process->release.c_str());
     strcpy(name->version, "#1 SMP Sat Dec  1 00:00:00 GMT 2012");
     strcpy(name->machine, "armv8l");
 
-    name.copyOut(tc->getMemProxy());
+    name.copyOut(tc->getVirtProxy());
     return 0;
 }
 
 /// Target set_tls() handler.
 static SyscallReturn
-setTLSFunc32(SyscallDesc *desc, int callnum, Process *process,
-             ThreadContext *tc)
+setTLSFunc32(SyscallDesc *desc, int callnum, ThreadContext *tc)
 {
     int index = 0;
+    auto process = tc->getProcessPtr();
     uint32_t tlsPtr = process->getSyscallArg(tc, index);
 
-    tc->getMemProxy().writeBlob(ArmLinuxProcess32::commPage + 0x0ff0,
-                                 (uint8_t *)&tlsPtr, sizeof(tlsPtr));
+    tc->getVirtProxy().writeBlob(ArmLinuxProcess32::commPage + 0x0ff0,
+                                &tlsPtr, sizeof(tlsPtr));
     tc->setMiscReg(MISCREG_TPIDRURO,tlsPtr);
     return 0;
 }
 
 static SyscallReturn
-setTLSFunc64(SyscallDesc *desc, int callnum, Process *process,
-             ThreadContext *tc)
+setTLSFunc64(SyscallDesc *desc, int callnum, ThreadContext *tc)
 {
     int index = 0;
+    auto process = tc->getProcessPtr();
     uint32_t tlsPtr = process->getSyscallArg(tc, index);
 
     tc->setMiscReg(MISCREG_TPIDRRO_EL0, tlsPtr);
@@ -124,15 +168,15 @@ static SyscallDesc syscallDescs32[] = {
     /*  0 */ SyscallDesc("syscall", unimplementedFunc),
     /*  1 */ SyscallDesc("exit", exitFunc),
     /*  2 */ SyscallDesc("fork", unimplementedFunc),
-    /*  3 */ SyscallDesc("read", readFunc),
-    /*  4 */ SyscallDesc("write", writeFunc),
+    /*  3 */ SyscallDesc("read", readFunc<ArmLinux32>),
+    /*  4 */ SyscallDesc("write", writeFunc<ArmLinux32>),
     /*  5 */ SyscallDesc("open", openFunc<ArmLinux32>),
     /*  6 */ SyscallDesc("close", closeFunc),
     /*  7 */ SyscallDesc("unused#7", unimplementedFunc),
     /*  8 */ SyscallDesc("creat", unimplementedFunc),
     /*  9 */ SyscallDesc("link", unimplementedFunc),
     /* 10 */ SyscallDesc("unlink", unlinkFunc),
-    /* 11 */ SyscallDesc("execve", unimplementedFunc),
+    /* 11 */ SyscallDesc("execve", execveFunc<ArmLinux32>),
     /* 12 */ SyscallDesc("chdir", unimplementedFunc),
     /* 13 */ SyscallDesc("time", timeFunc<ArmLinux32>),
     /* 14 */ SyscallDesc("mknod", unimplementedFunc),
@@ -247,7 +291,7 @@ static SyscallDesc syscallDescs32[] = {
     /* 123 */ SyscallDesc("unused#123", unimplementedFunc),
     /* 124 */ SyscallDesc("adjtimex", unimplementedFunc),
     /* 125 */ SyscallDesc("mprotect", ignoreFunc),
-    /* 126 */ SyscallDesc("sigprocmask", ignoreFunc, SyscallDesc::WarnOnce),
+    /* 126 */ SyscallDesc("sigprocmask", ignoreWarnOnceFunc),
     /* 127 */ SyscallDesc("unused#127", unimplementedFunc),
     /* 128 */ SyscallDesc("init_module", unimplementedFunc),
     /* 129 */ SyscallDesc("delete_module", unimplementedFunc),
@@ -262,7 +306,11 @@ static SyscallDesc syscallDescs32[] = {
     /* 138 */ SyscallDesc("setfsuid", unimplementedFunc),
     /* 139 */ SyscallDesc("setfsgid", unimplementedFunc),
     /* 140 */ SyscallDesc("llseek", _llseekFunc),
+#if defined(SYS_getdents)
+    /* 141 */ SyscallDesc("getdents", getdentsFunc),
+#else
     /* 141 */ SyscallDesc("getdents", unimplementedFunc),
+#endif
     /* 142 */ SyscallDesc("newselect", unimplementedFunc),
     /* 143 */ SyscallDesc("flock", unimplementedFunc),
     /* 144 */ SyscallDesc("msync", unimplementedFunc),
@@ -283,7 +331,7 @@ static SyscallDesc syscallDescs32[] = {
     /* 159 */ SyscallDesc("sched_get_priority_max", unimplementedFunc),
     /* 160 */ SyscallDesc("sched_get_priority_min", unimplementedFunc),
     /* 161 */ SyscallDesc("sched_rr_get_interval", unimplementedFunc),
-    /* 162 */ SyscallDesc("nanosleep", ignoreFunc, SyscallDesc::WarnOnce),
+    /* 162 */ SyscallDesc("nanosleep", ignoreWarnOnceFunc),
     /* 163 */ SyscallDesc("mremap", mremapFunc<ArmLinux32>), // ARM-specific
     /* 164 */ SyscallDesc("setresuid", unimplementedFunc),
     /* 165 */ SyscallDesc("getresuid", unimplementedFunc),
@@ -295,8 +343,8 @@ static SyscallDesc syscallDescs32[] = {
     /* 171 */ SyscallDesc("getresgid", unimplementedFunc),
     /* 172 */ SyscallDesc("prctl", unimplementedFunc),
     /* 173 */ SyscallDesc("rt_sigreturn", unimplementedFunc),
-    /* 174 */ SyscallDesc("rt_sigaction", ignoreFunc, SyscallDesc::WarnOnce),
-    /* 175 */ SyscallDesc("rt_sigprocmask", ignoreFunc, SyscallDesc::WarnOnce),
+    /* 174 */ SyscallDesc("rt_sigaction", ignoreWarnOnceFunc),
+    /* 175 */ SyscallDesc("rt_sigprocmask", ignoreWarnOnceFunc),
     /* 176 */ SyscallDesc("rt_sigpending", unimplementedFunc),
     /* 177 */ SyscallDesc("rt_sigtimedwait", unimplementedFunc),
     /* 178 */ SyscallDesc("rt_sigqueueinfo", ignoreFunc),
@@ -338,14 +386,18 @@ static SyscallDesc syscallDescs32[] = {
     /* 214 */ SyscallDesc("setgid", unimplementedFunc),
     /* 215 */ SyscallDesc("setfsuid", unimplementedFunc),
     /* 216 */ SyscallDesc("setfsgid", unimplementedFunc),
+#if defined(SYS_getdents64)
+    /* 217 */ SyscallDesc("getdents64", getdents64Func),
+#else
     /* 217 */ SyscallDesc("getdents64", unimplementedFunc),
+#endif
     /* 218 */ SyscallDesc("pivot_root", unimplementedFunc),
     /* 219 */ SyscallDesc("mincore", unimplementedFunc),
-    /* 220 */ SyscallDesc("madvise", unimplementedFunc),
+    /* 220 */ SyscallDesc("madvise", ignoreFunc),
     /* 221 */ SyscallDesc("fcntl64", fcntl64Func),
     /* 222 */ SyscallDesc("unused#222", unimplementedFunc),
     /* 223 */ SyscallDesc("unknown#223", unimplementedFunc),
-    /* 224 */ SyscallDesc("gettid", unimplementedFunc),
+    /* 224 */ SyscallDesc("gettid", gettidFunc),
     /* 225 */ SyscallDesc("readahead", unimplementedFunc),
     /* 226 */ SyscallDesc("setxattr", unimplementedFunc),
     /* 227 */ SyscallDesc("lsetxattr", unimplementedFunc),
@@ -361,9 +413,9 @@ static SyscallDesc syscallDescs32[] = {
     /* 237 */ SyscallDesc("fremovexattr", unimplementedFunc),
     /* 238 */ SyscallDesc("tkill", unimplementedFunc),
     /* 239 */ SyscallDesc("sendfile64", unimplementedFunc),
-    /* 240 */ SyscallDesc("futex", ignoreFunc, SyscallDesc::WarnOnce),
+    /* 240 */ SyscallDesc("futex", futexFunc<ArmLinux32>),
     /* 241 */ SyscallDesc("sched_setaffinity", unimplementedFunc),
-    /* 242 */ SyscallDesc("sched_getaffinity", unimplementedFunc),
+    /* 242 */ SyscallDesc("sched_getaffinity", ignoreFunc),
     /* 243 */ SyscallDesc("io_setup", unimplementedFunc),
     /* 244 */ SyscallDesc("io_destroy", unimplementedFunc),
     /* 245 */ SyscallDesc("io_getevents", unimplementedFunc),
@@ -377,7 +429,7 @@ static SyscallDesc syscallDescs32[] = {
     /* 253 */ SyscallDesc("remap_file_pages", unimplementedFunc),
     /* 254 */ SyscallDesc("unused#254", unimplementedFunc),
     /* 255 */ SyscallDesc("unused#255", unimplementedFunc),
-    /* 256 */ SyscallDesc("set_tid_address", unimplementedFunc),
+    /* 256 */ SyscallDesc("set_tid_address", setTidAddressFunc),
     /* 257 */ SyscallDesc("timer_create", unimplementedFunc),
     /* 258 */ SyscallDesc("timer_settime", unimplementedFunc),
     /* 259 */ SyscallDesc("timer_gettime", unimplementedFunc),
@@ -389,7 +441,7 @@ static SyscallDesc syscallDescs32[] = {
     /* 265 */ SyscallDesc("clock_nanosleep", unimplementedFunc),
     /* 266 */ SyscallDesc("statfs64", unimplementedFunc),
     /* 267 */ SyscallDesc("fstatfs64", unimplementedFunc),
-    /* 268 */ SyscallDesc("tgkill", unimplementedFunc),
+    /* 268 */ SyscallDesc("tgkill", tgkillFunc<ArmLinux32>),
     /* 269 */ SyscallDesc("utimes", unimplementedFunc),
     /* 270 */ SyscallDesc("arm_fadvise64_64", unimplementedFunc),
     /* 271 */ SyscallDesc("pciconfig_iobase", unimplementedFunc),
@@ -459,7 +511,7 @@ static SyscallDesc syscallDescs32[] = {
     /* 335 */ SyscallDesc("pselect6", unimplementedFunc),
     /* 336 */ SyscallDesc("ppoll", unimplementedFunc),
     /* 337 */ SyscallDesc("unshare", unimplementedFunc),
-    /* 338 */ SyscallDesc("set_robust_list", unimplementedFunc),
+    /* 338 */ SyscallDesc("set_robust_list", ignoreFunc),
     /* 339 */ SyscallDesc("get_robust_list", unimplementedFunc),
     /* 340 */ SyscallDesc("splice", unimplementedFunc),
     /* 341 */ SyscallDesc("arm_sync_file_range", unimplementedFunc),
@@ -551,10 +603,14 @@ static SyscallDesc syscallDescs64[] = {
     /*   58 */ SyscallDesc("vhangup", unimplementedFunc),
     /*   59 */ SyscallDesc("pipe2", unimplementedFunc),
     /*   60 */ SyscallDesc("quotactl", unimplementedFunc),
+#if defined(SYS_getdents64)
+    /*   61 */ SyscallDesc("getdents64", getdents64Func),
+#else
     /*   61 */ SyscallDesc("getdents64", unimplementedFunc),
+#endif
     /*   62 */ SyscallDesc("llseek", lseekFunc),
-    /*   63 */ SyscallDesc("read", readFunc),
-    /*   64 */ SyscallDesc("write", writeFunc),
+    /*   63 */ SyscallDesc("read", readFunc<ArmLinux64>),
+    /*   64 */ SyscallDesc("write", writeFunc<ArmLinux64>),
     /*   65 */ SyscallDesc("readv", unimplementedFunc),
     /*   66 */ SyscallDesc("writev", writevFunc<ArmLinux64>),
     /*   67 */ SyscallDesc("pread64", unimplementedFunc),
@@ -586,12 +642,12 @@ static SyscallDesc syscallDescs64[] = {
     /*   93 */ SyscallDesc("exit", exitFunc),
     /*   94 */ SyscallDesc("exit_group", exitGroupFunc),
     /*   95 */ SyscallDesc("waitid", unimplementedFunc),
-    /*   96 */ SyscallDesc("set_tid_address", unimplementedFunc),
+    /*   96 */ SyscallDesc("set_tid_address", setTidAddressFunc),
     /*   97 */ SyscallDesc("unshare", unimplementedFunc),
-    /*   98 */ SyscallDesc("futex", unimplementedFunc),
-    /*   99 */ SyscallDesc("set_robust_list", unimplementedFunc),
+    /*   98 */ SyscallDesc("futex", futexFunc<ArmLinux64>),
+    /*   99 */ SyscallDesc("set_robust_list", ignoreFunc),
     /*  100 */ SyscallDesc("get_robust_list", unimplementedFunc),
-    /*  101 */ SyscallDesc("nanosleep", ignoreFunc, SyscallDesc::WarnOnce),
+    /*  101 */ SyscallDesc("nanosleep", ignoreWarnOnceFunc),
     /*  102 */ SyscallDesc("getitimer", unimplementedFunc),
     /*  103 */ SyscallDesc("setitimer", unimplementedFunc),
     /*  104 */ SyscallDesc("kexec_load", unimplementedFunc),
@@ -613,7 +669,7 @@ static SyscallDesc syscallDescs64[] = {
     /*  120 */ SyscallDesc("sched_getscheduler", unimplementedFunc),
     /*  121 */ SyscallDesc("sched_getparam", unimplementedFunc),
     /*  122 */ SyscallDesc("sched_setaffinity", unimplementedFunc),
-    /*  123 */ SyscallDesc("sched_getaffinity", unimplementedFunc),
+    /*  123 */ SyscallDesc("sched_getaffinity", ignoreFunc),
     /*  124 */ SyscallDesc("sched_yield", unimplementedFunc),
     /*  125 */ SyscallDesc("sched_get_priority_max", unimplementedFunc),
     /*  126 */ SyscallDesc("sched_get_priority_min", unimplementedFunc),
@@ -621,11 +677,11 @@ static SyscallDesc syscallDescs64[] = {
     /*  128 */ SyscallDesc("restart_syscall", unimplementedFunc),
     /*  129 */ SyscallDesc("kill", ignoreFunc),
     /*  130 */ SyscallDesc("tkill", unimplementedFunc),
-    /*  131 */ SyscallDesc("tgkill", unimplementedFunc),
+    /*  131 */ SyscallDesc("tgkill", tgkillFunc<ArmLinux64>),
     /*  132 */ SyscallDesc("sigaltstack", unimplementedFunc),
     /*  133 */ SyscallDesc("rt_sigsuspend", unimplementedFunc),
     /*  134 */ SyscallDesc("rt_sigaction", ignoreFunc),
-    /*  135 */ SyscallDesc("rt_sigprocmask", ignoreFunc, SyscallDesc::WarnOnce),
+    /*  135 */ SyscallDesc("rt_sigprocmask", ignoreWarnOnceFunc),
     /*  136 */ SyscallDesc("rt_sigpending", unimplementedFunc),
     /*  137 */ SyscallDesc("rt_sigtimedwait", unimplementedFunc),
     /*  138 */ SyscallDesc("rt_sigqueueinfo", ignoreFunc),
@@ -668,7 +724,7 @@ static SyscallDesc syscallDescs64[] = {
     /*  175 */ SyscallDesc("geteuid", geteuidFunc),
     /*  176 */ SyscallDesc("getgid", getgidFunc),
     /*  177 */ SyscallDesc("getegid", getegidFunc),
-    /*  178 */ SyscallDesc("gettid", unimplementedFunc),
+    /*  178 */ SyscallDesc("gettid", gettidFunc),
     /*  179 */ SyscallDesc("sysinfo", sysinfoFunc<ArmLinux64>),
     /*  180 */ SyscallDesc("mq_open", unimplementedFunc),
     /*  181 */ SyscallDesc("mq_unlink", unimplementedFunc),
@@ -710,8 +766,8 @@ static SyscallDesc syscallDescs64[] = {
     /*  217 */ SyscallDesc("add_key", unimplementedFunc),
     /*  218 */ SyscallDesc("request_key", unimplementedFunc),
     /*  219 */ SyscallDesc("keyctl", unimplementedFunc),
-    /*  220 */ SyscallDesc("clone", unimplementedFunc),
-    /*  221 */ SyscallDesc("execve", unimplementedFunc),
+    /*  220 */ SyscallDesc("clone", cloneFunc<ArmLinux64>),
+    /*  221 */ SyscallDesc("execve", execveFunc<ArmLinux64>),
     /*  222 */ SyscallDesc("mmap2", mmapFunc<ArmLinux64>),
     /*  223 */ SyscallDesc("fadvise64_64", unimplementedFunc),
     /*  224 */ SyscallDesc("swapon", unimplementedFunc),
@@ -723,7 +779,7 @@ static SyscallDesc syscallDescs64[] = {
     /*  230 */ SyscallDesc("mlockall", unimplementedFunc),
     /*  231 */ SyscallDesc("munlockall", unimplementedFunc),
     /*  232 */ SyscallDesc("mincore", unimplementedFunc),
-    /*  233 */ SyscallDesc("madvise", unimplementedFunc),
+    /*  233 */ SyscallDesc("madvise", ignoreFunc),
     /*  234 */ SyscallDesc("remap_file_pages", unimplementedFunc),
     /*  235 */ SyscallDesc("mbind", unimplementedFunc),
     /*  236 */ SyscallDesc("get_mempolicy", unimplementedFunc),
@@ -751,7 +807,7 @@ static SyscallDesc syscallDescs64[] = {
     /*  258 */ SyscallDesc("unused#258", unimplementedFunc),
     /*  259 */ SyscallDesc("unused#259", unimplementedFunc),
     /*  260 */ SyscallDesc("wait4", unimplementedFunc),
-    /*  261 */ SyscallDesc("prlimit64", unimplementedFunc),
+    /*  261 */ SyscallDesc("prlimit64", prlimitFunc<ArmLinux64>),
     /*  262 */ SyscallDesc("fanotify_init", unimplementedFunc),
     /*  263 */ SyscallDesc("fanotify_mark", unimplementedFunc),
     /*  264 */ SyscallDesc("name_to_handle_at", unimplementedFunc),
@@ -1555,7 +1611,11 @@ static SyscallDesc syscallDescs64[] = {
     /* 1062 */ SyscallDesc("time", timeFunc<ArmLinux64>),
     /* 1063 */ SyscallDesc("utime", unimplementedFunc),
     /* 1064 */ SyscallDesc("creat", unimplementedFunc),
+#if defined(SYS_getdents)
+    /* 1065 */ SyscallDesc("getdents", getdentsFunc),
+#else
     /* 1065 */ SyscallDesc("getdents", unimplementedFunc),
+#endif
     /* 1066 */ SyscallDesc("futimesat", unimplementedFunc),
     /* 1067 */ SyscallDesc("select", unimplementedFunc),
     /* 1068 */ SyscallDesc("poll", unimplementedFunc),
@@ -1677,8 +1737,8 @@ ArmLinuxProcess32::initState()
 
     // Fill this page with swi -1 so we'll no if we land in it somewhere.
     for (Addr addr = 0; addr < PageBytes; addr += sizeof(swiNeg1)) {
-        tc->getMemProxy().writeBlob(commPage + addr,
-                                    swiNeg1, sizeof(swiNeg1));
+        tc->getVirtProxy().writeBlob(commPage + addr,
+                                     swiNeg1, sizeof(swiNeg1));
     }
 
     uint8_t memory_barrier[] =
@@ -1686,8 +1746,8 @@ ArmLinuxProcess32::initState()
         0x5f, 0xf0, 0x7f, 0xf5, // dmb
         0x0e, 0xf0, 0xa0, 0xe1  // return
     };
-    tc->getMemProxy().writeBlob(commPage + 0x0fa0, memory_barrier,
-                                sizeof(memory_barrier));
+    tc->getVirtProxy().writeBlob(commPage + 0x0fa0, memory_barrier,
+                                 sizeof(memory_barrier));
 
     uint8_t cmpxchg[] =
     {
@@ -1700,7 +1760,7 @@ ArmLinuxProcess32::initState()
         0x5f, 0xf0, 0x7f, 0xf5,  // dmb
         0x0e, 0xf0, 0xa0, 0xe1   // return
     };
-    tc->getMemProxy().writeBlob(commPage + 0x0fc0, cmpxchg, sizeof(cmpxchg));
+    tc->getVirtProxy().writeBlob(commPage + 0x0fc0, cmpxchg, sizeof(cmpxchg));
 
     uint8_t get_tls[] =
     {
@@ -1708,7 +1768,7 @@ ArmLinuxProcess32::initState()
         0x70, 0x0f, 0x1d, 0xee, // mrc p15, 0, r0, c13, c0, 3
         0x0e, 0xf0, 0xa0, 0xe1  // return
     };
-    tc->getMemProxy().writeBlob(commPage + 0x0fe0, get_tls, sizeof(get_tls));
+    tc->getVirtProxy().writeBlob(commPage + 0x0fe0, get_tls, sizeof(get_tls));
 }
 
 void
@@ -1716,4 +1776,16 @@ ArmLinuxProcess64::initState()
 {
     ArmProcess64::initState();
     // The 64 bit equivalent of the comm page would be set up here.
+}
+
+void
+ArmLinuxProcess32::syscall(ThreadContext *tc, Fault *fault)
+{
+    doSyscall(tc->readIntReg(INTREG_R7), tc, fault);
+}
+
+void
+ArmLinuxProcess64::syscall(ThreadContext *tc, Fault *fault)
+{
+    doSyscall(tc->readIntReg(INTREG_X8), tc, fault);
 }

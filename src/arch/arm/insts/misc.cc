@@ -324,5 +324,60 @@ RegImmRegShiftOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 std::string
 UnknownOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 {
-    return csprintf("%-10s (inst %#08x)", "unknown", machInst & mask(32));
+    return csprintf("%-10s (inst %#08x)", "unknown", encoding());
+}
+
+McrMrcMiscInst::McrMrcMiscInst(const char *_mnemonic, ExtMachInst _machInst,
+                               uint64_t _iss, MiscRegIndex _miscReg)
+    : ArmStaticInst(_mnemonic, _machInst, No_OpClass)
+{
+    flags[IsNonSpeculative] = true;
+    iss = _iss;
+    miscReg = _miscReg;
+}
+
+Fault
+McrMrcMiscInst::execute(ExecContext *xc, Trace::InstRecord *traceData) const
+{
+    bool hypTrap = mcrMrc15TrapToHyp(miscReg, xc->tcBase(), iss);
+
+    if (hypTrap) {
+        return std::make_shared<HypervisorTrap>(machInst, iss,
+                                                EC_TRAPPED_CP15_MCR_MRC);
+    } else {
+        return NoFault;
+    }
+}
+
+std::string
+McrMrcMiscInst::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+{
+    return csprintf("%-10s (pipe flush)", mnemonic);
+}
+
+McrMrcImplDefined::McrMrcImplDefined(const char *_mnemonic,
+                                     ExtMachInst _machInst, uint64_t _iss,
+                                     MiscRegIndex _miscReg)
+    : McrMrcMiscInst(_mnemonic, _machInst, _iss, _miscReg)
+{}
+
+Fault
+McrMrcImplDefined::execute(ExecContext *xc, Trace::InstRecord *traceData) const
+{
+    bool hypTrap = mcrMrc15TrapToHyp(miscReg, xc->tcBase(), iss);
+
+    if (hypTrap) {
+        return std::make_shared<HypervisorTrap>(machInst, iss,
+                                                EC_TRAPPED_CP15_MCR_MRC);
+    } else {
+        return std::make_shared<UndefinedInstruction>(machInst, false,
+                                                      mnemonic);
+    }
+}
+
+std::string
+McrMrcImplDefined::generateDisassembly(Addr pc,
+                                       const SymbolTable *symtab) const
+{
+    return csprintf("%-10s (implementation defined)", mnemonic);
 }

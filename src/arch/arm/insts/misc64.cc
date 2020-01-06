@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013,2017-2018 ARM Limited
+ * Copyright (c) 2011-2013,2017-2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -35,9 +35,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Authors: Gabe Black
+ *          Giacomo Travaglini
  */
 
 #include "arch/arm/insts/misc64.hh"
+#include "arch/arm/isa.hh"
 
 std::string
 ImmOp64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
@@ -78,7 +80,7 @@ RegRegRegImmOp64::generateDisassembly(
 std::string
 UnknownOp64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 {
-    return csprintf("%-10s (inst %#08x)", "unknown", machInst & mask(32));
+    return csprintf("%-10s (inst %#08x)", "unknown", encoding());
 }
 
 Fault
@@ -268,6 +270,17 @@ MiscRegOp64::checkEL2Trap(ThreadContext *tc, const MiscRegIndex misc_reg,
             break;
           case MISCREG_IMPDEF_UNIMPL:
             trap_to_hyp = hcr.tidcp && el == EL1;
+            break;
+          // GICv3 regs
+          case MISCREG_ICC_SGI0R_EL1:
+            if (tc->getIsaPtr()->haveGICv3CpuIfc())
+                trap_to_hyp = hcr.fmo && el == EL1;
+            break;
+          case MISCREG_ICC_SGI1R_EL1:
+          case MISCREG_ICC_ASGI1R_EL1:
+            if (tc->getIsaPtr()->haveGICv3CpuIfc())
+                trap_to_hyp = hcr.imo && el == EL1;
+            break;
           default:
             break;
         }
@@ -307,6 +320,29 @@ MiscRegOp64::checkEL3Trap(ThreadContext *tc, const MiscRegIndex misc_reg,
         break;
     }
     return trap_to_mon;
+}
+
+RegVal
+MiscRegImmOp64::miscRegImm() const
+{
+    if (dest == MISCREG_SPSEL) {
+        return imm & 0x1;
+    } else if (dest == MISCREG_PAN) {
+        return (imm & 0x1) << 22;
+    } else {
+        panic("Not a valid PSTATE field register\n");
+    }
+}
+
+std::string
+MiscRegImmOp64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+{
+    std::stringstream ss;
+    printMnemonic(ss);
+    printMiscReg(ss, dest);
+    ss << ", ";
+    ccprintf(ss, "#0x%x", imm);
+    return ss.str();
 }
 
 std::string

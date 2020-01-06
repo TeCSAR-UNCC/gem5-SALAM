@@ -106,11 +106,11 @@ MemSinkCtrl::recvFunctional(PacketPtr pkt)
     pkt->popLabel();
 }
 
-BaseSlavePort &
-MemSinkCtrl::getSlavePort(const std::string &interface, PortID idx)
+Port &
+MemSinkCtrl::getPort(const std::string &interface, PortID idx)
 {
     if (interface != "port") {
-        return MemObject::getSlavePort(interface, idx);
+        return MemCtrl::getPort(interface, idx);
     } else {
         return port;
     }
@@ -289,7 +289,7 @@ MemSinkCtrl::processNextReqEvent()
                 removed_entries, responseLatency);
 
     // Schedule the response
-    port.schedTimingResp(pkt, curTick() + responseLatency, true);
+    port.schedTimingResp(pkt, curTick() + responseLatency);
     DPRINTF(QOS,
             "%s response scheduled at time %d\n",
             __func__, curTick() + responseLatency);
@@ -344,7 +344,7 @@ MemSinkCtrl::regStats()
 
 MemSinkCtrl::MemoryPort::MemoryPort(const std::string& n,
                                     MemSinkCtrl& m)
-  : QueuedSlavePort(n, &m, queue), memory(m), queue(memory, *this)
+  : QueuedSlavePort(n, &m, queue, true), memory(m), queue(memory, *this, true)
 {}
 
 AddrRangeList

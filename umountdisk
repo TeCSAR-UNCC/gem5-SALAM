@@ -1,5 +1,0 @@
-#!/bin/bash
-[ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
-umount /mnt/proc
-umount /mnt/dev
-umount /mnt

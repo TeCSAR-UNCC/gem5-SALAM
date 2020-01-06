@@ -383,11 +383,11 @@ IOAccParams::create() {
     return new IOAcc(this);
 }
 
-BaseMasterPort&
-IOAcc::getMasterPort(const std::string& if_name, PortID idx) {
+Port&
+IOAcc::getPort(const std::string& if_name, PortID idx) {
     if (if_name == "mem_side") {
         return memPort;
     } else {
-        return MemObject::getMasterPort(if_name, idx);
+        return ClockedObject::getPort(if_name, idx);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012-2013, 2015-2018 ARM Limited
+ * Copyright (c) 2010, 2012-2013, 2015-2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -54,6 +54,7 @@
 #include "sim/system.hh"
 
 class GenericTimer;
+class BaseGic;
 class ThreadContext;
 
 class ArmSystem : public System
@@ -97,6 +98,7 @@ class ArmSystem : public System
      * Pointer to the Generic Timer wrapper.
      */
     GenericTimer *_genericTimer;
+    BaseGic *_gic;
 
     /**
      * Reset address (ARMv8)
@@ -119,6 +121,22 @@ class ArmSystem : public System
      * True if ASID is 16 bits in AArch64 (ARMv8)
      */
     const bool _haveLargeAsid64;
+
+    /**
+     * True if SVE is implemented (ARMv8)
+     */
+    const bool _haveSVE;
+
+    /** SVE vector length at reset, in quadwords */
+    const unsigned _sveVL;
+
+    /**
+     * True if LSE is implemented (ARMv8.1)
+     */
+    const bool _haveLSE;
+
+    /** True if Priviledge Access Never is implemented */
+    const unsigned _havePAN;
 
     /**
      * Range for memory-mapped m5 pseudo ops. The range will be
@@ -192,8 +210,17 @@ class ArmSystem : public System
         _genericTimer = generic_timer;
     }
 
+    /** Sets the pointer to the GIC. */
+    void setGIC(BaseGic *gic)
+    {
+        _gic = gic;
+    }
+
     /** Get a pointer to the system's generic timer model */
     GenericTimer *getGenericTimer() const { return _genericTimer; }
+
+    /** Get a pointer to the system's GIC */
+    BaseGic *getGIC() const { return _gic; }
 
     /** Returns true if the register width of the highest implemented exception
      * level is 64 bits (ARMv8) */
@@ -215,6 +242,18 @@ class ArmSystem : public System
 
     /** Returns true if ASID is 16 bits in AArch64 (ARMv8) */
     bool haveLargeAsid64() const { return _haveLargeAsid64; }
+
+    /** Returns true if SVE is implemented (ARMv8) */
+    bool haveSVE() const { return _haveSVE; }
+
+    /** Returns the SVE vector length at reset, in quadwords */
+    unsigned sveVL() const { return _sveVL; }
+
+    /** Returns true if LSE is implemented (ARMv8.1) */
+    bool haveLSE() const { return _haveLSE; }
+
+    /** Returns true if Priviledge Access Never is implemented */
+    bool havePAN() const { return _havePAN; }
 
     /** Returns the supported physical address range in bits if the highest
      * implemented exception level is 64 bits (ARMv8) */
@@ -244,6 +283,13 @@ class ArmSystem : public System
 
     /** Is Arm Semihosting support enabled? */
     bool haveSemihosting() const { return semihosting != nullptr; }
+
+    /**
+     * Casts the provided System object into a valid ArmSystem, it fails
+     * otherwise.
+     * @param sys System object to cast
+     */
+    static ArmSystem *getArmSystem(System *sys);
 
     /**
      * Returns a valid ArmSystem pointer if using ARM ISA, it fails

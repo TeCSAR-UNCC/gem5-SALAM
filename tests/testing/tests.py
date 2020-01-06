@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python2.7
 #
 # Copyright (c) 2016-2017 ARM Limited
 # All rights reserved
@@ -126,7 +126,7 @@ arch_configs = {
         't1000-simple-x86',
     ),
 
-    ("timing", None) : (
+    ("x86", None) : (
         'pc-simple-atomic',
         'pc-simple-timing',
         'pc-o3-timing',

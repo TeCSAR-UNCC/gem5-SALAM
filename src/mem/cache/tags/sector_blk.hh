@@ -49,7 +49,7 @@ class SectorBlk;
  */
 class SectorSubBlk : public CacheBlk
 {
-  private:
+  protected:
     /**
      * Sector block associated to this block.
      */
@@ -144,7 +144,7 @@ class SectorSubBlk : public CacheBlk
  */
 class SectorBlk : public ReplaceableEntry
 {
-  private:
+  protected:
     /**
      * Sector tag value. A sector's tag is the tag of all its sub-blocks.
      */
@@ -214,6 +214,14 @@ class SectorBlk : public ReplaceableEntry
      * Set secure bit.
      */
     void setSecure();
+
+    /**
+     * Sets the position of the sub-entries, besides its own.
+     *
+     * @param set The set of this entry and sub-entries.
+     * @param way The way of this entry and sub-entries.
+     */
+    void setPosition(const uint32_t set, const uint32_t way) override;
 };
 
 #endif //__MEM_CACHE_TAGS_SECTOR_BLK_HH__

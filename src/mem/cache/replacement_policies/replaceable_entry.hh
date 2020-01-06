@@ -52,7 +52,7 @@ struct ReplacementData {};
  */
 class ReplaceableEntry
 {
-  private:
+  protected:
     /**
      * Set to which this entry belongs.
      */
@@ -63,12 +63,15 @@ class ReplaceableEntry
      */
     uint32_t _way;
 
-   public:
-     /**
-      * Replacement data associated to this entry.
-      * It must be instantiated by the replacement policy before being used.
-      */
-     std::shared_ptr<ReplacementData> replacementData;
+  public:
+    ReplaceableEntry() = default;
+    virtual ~ReplaceableEntry() = default;
+
+    /**
+     * Replacement data associated to this entry.
+     * It must be instantiated by the replacement policy before being used.
+     */
+    std::shared_ptr<ReplacementData> replacementData;
 
     /**
      * Set both the set and way. Should be called only once.
@@ -76,7 +79,9 @@ class ReplaceableEntry
      * @param set The set of this entry.
      * @param way The way of this entry.
      */
-    void setPosition(const uint32_t set, const uint32_t way) {
+    virtual void
+    setPosition(const uint32_t set, const uint32_t way)
+    {
         _set = set;
         _way = way;
     }

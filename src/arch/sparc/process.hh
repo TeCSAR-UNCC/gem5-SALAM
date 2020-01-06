@@ -78,8 +78,7 @@ class Sparc32Process : public SparcProcess
     Sparc32Process(ProcessParams * params, ObjectFile *objFile)
         : SparcProcess(params, objFile, 0)
     {
-        Addr brk_point = objFile->dataBase() + objFile->dataSize() +
-                         objFile->bssSize();
+        Addr brk_point = image.maxAddr();
         brk_point = roundUp(brk_point, SparcISA::PageBytes);
 
         // Reserve 8M for main stack.
@@ -109,11 +108,9 @@ class Sparc32Process : public SparcProcess
 
     void flushWindows(ThreadContext *tc);
 
-    SparcISA::IntReg getSyscallArg(ThreadContext *tc, int &i);
+    RegVal getSyscallArg(ThreadContext *tc, int &i);
     /// Explicitly import the otherwise hidden getSyscallArg
     using Process::getSyscallArg;
-
-    void setSyscallArg(ThreadContext *tc, int i, SparcISA::IntReg val);
 };
 
 class Sparc64Process : public SparcProcess
@@ -123,8 +120,7 @@ class Sparc64Process : public SparcProcess
     Sparc64Process(ProcessParams * params, ObjectFile *objFile)
         : SparcProcess(params, objFile, 2047)
     {
-        Addr brk_point = objFile->dataBase() + objFile->dataSize() +
-                         objFile->bssSize();
+        Addr brk_point = image.maxAddr();
         brk_point = roundUp(brk_point, SparcISA::PageBytes);
 
         Addr max_stack_size = 8 * 1024 * 1024;
@@ -153,11 +149,9 @@ class Sparc64Process : public SparcProcess
 
     void flushWindows(ThreadContext *tc);
 
-    SparcISA::IntReg getSyscallArg(ThreadContext *tc, int &i);
+    RegVal getSyscallArg(ThreadContext *tc, int &i);
     /// Explicitly import the otherwise hidden getSyscallArg
     using Process::getSyscallArg;
-
-    void setSyscallArg(ThreadContext *tc, int i, SparcISA::IntReg val);
 };
 
 #endif // __SPARC_PROCESS_HH__

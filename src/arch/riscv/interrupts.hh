@@ -31,8 +31,15 @@
 #ifndef __ARCH_RISCV_INTERRUPT_HH__
 #define __ARCH_RISCV_INTERRUPT_HH__
 
+#include <bitset>
+#include <memory>
+
+#include "arch/generic/interrupts.hh"
+#include "arch/riscv/faults.hh"
+#include "arch/riscv/registers.hh"
 #include "base/logging.hh"
 #include "cpu/thread_context.hh"
+#include "debug/Interrupt.hh"
 #include "params/RiscvInterrupts.hh"
 #include "sim/sim_object.hh"
 
@@ -41,10 +48,16 @@ class ThreadContext;
 
 namespace RiscvISA {
 
-class Interrupts : public SimObject
+/*
+ * This is based on version 1.10 of the RISC-V privileged ISA reference,
+ * chapter 3.1.14.
+ */
+class Interrupts : public BaseInterrupts
 {
   private:
     BaseCPU * cpu;
+    std::bitset<NumInterruptTypes> ip;
+    std::bitset<NumInterruptTypes> ie;
 
   public:
     typedef RiscvInterruptsParams Params;
@@ -55,64 +68,90 @@ class Interrupts : public SimObject
         return dynamic_cast<const Params *>(_params);
     }
 
-    Interrupts(Params * p) : SimObject(p), cpu(nullptr)
-    {}
+    Interrupts(Params * p) : BaseInterrupts(p), cpu(nullptr), ip(0), ie(0) {}
 
-    void
-    setCPU(BaseCPU * _cpu)
+    void setCPU(BaseCPU * _cpu) { cpu = _cpu; }
+
+    std::bitset<NumInterruptTypes>
+    globalMask(ThreadContext *tc) const
     {
-        cpu = _cpu;
+        INTERRUPT mask = 0;
+        STATUS status = tc->readMiscReg(MISCREG_STATUS);
+        if (status.mie)
+            mask.mei = mask.mti = mask.msi = 1;
+        if (status.sie)
+            mask.sei = mask.sti = mask.ssi = 1;
+        if (status.uie)
+            mask.uei = mask.uti = mask.usi = 1;
+        return std::bitset<NumInterruptTypes>(mask);
     }
 
-    void
-    post(int int_num, int index)
+    bool checkInterrupt(int num) const { return ip[num] && ie[num]; }
+    bool checkInterrupts(ThreadContext *tc) const
     {
-        panic("Interrupts::post not implemented.\n");
-    }
-
-    void
-    clear(int int_num, int index)
-    {
-        panic("Interrupts::clear not implemented.\n");
-    }
-
-    void
-    clearAll()
-    {
-        warn_once("Interrupts::clearAll not implemented.\n");
-    }
-
-    bool
-    checkInterrupts(ThreadContext *tc) const
-    {
-        warn_once("Interrupts::checkInterrupts just rudimentary implemented");
-        /**
-         * read the machine interrupt register in order to check if interrupts
-         * are pending
-         * should be sufficient for now, as interrupts
-         * are not implemented at all
-         */
-        if (tc->readMiscReg(MISCREG_IP))
-            return true;
-
-        return false;
+        return (ip & ie & globalMask(tc)).any();
     }
 
     Fault
     getInterrupt(ThreadContext *tc)
     {
         assert(checkInterrupts(tc));
-        panic("Interrupts::getInterrupt not implemented.\n");
+        std::bitset<NumInterruptTypes> mask = globalMask(tc);
+        for (int c = 0; c < NumInterruptTypes; c++)
+            if (checkInterrupt(c) && mask[c])
+                return std::make_shared<InterruptFault>(c);
+        return NoFault;
+    }
+
+    void updateIntrInfo(ThreadContext *tc) {}
+
+    void
+    post(int int_num, int index)
+    {
+        DPRINTF(Interrupt, "Interrupt %d:%d posted\n", int_num, index);
+        ip[int_num] = true;
     }
 
     void
-    updateIntrInfo(ThreadContext *tc)
+    clear(int int_num, int index)
     {
-        panic("Interrupts::updateIntrInfo not implemented.\n");
+        DPRINTF(Interrupt, "Interrupt %d:%d cleared\n", int_num, index);
+        ip[int_num] = false;
+    }
+
+    void
+    clearAll()
+    {
+        DPRINTF(Interrupt, "All interrupts cleared\n");
+        ip = 0;
+    }
+
+    uint64_t readIP() const { return (uint64_t)ip.to_ulong(); }
+    uint64_t readIE() const { return (uint64_t)ie.to_ulong(); }
+    void setIP(const uint64_t& val) { ip = val; }
+    void setIE(const uint64_t& val) { ie = val; }
+
+    void
+    serialize(CheckpointOut &cp) const
+    {
+        unsigned long ip_ulong = ip.to_ulong();
+        unsigned long ie_ulong = ie.to_ulong();
+        SERIALIZE_SCALAR(ip_ulong);
+        SERIALIZE_SCALAR(ie_ulong);
+    }
+
+    void
+    unserialize(CheckpointIn &cp)
+    {
+        unsigned long ip_ulong;
+        unsigned long ie_ulong;
+        UNSERIALIZE_SCALAR(ip_ulong);
+        ip = ip_ulong;
+        UNSERIALIZE_SCALAR(ie_ulong);
+        ie = ie_ulong;
     }
 };
 
 } // namespace RiscvISA
 
 #endif // __ARCH_RISCV_INTERRUPT_HH__
-

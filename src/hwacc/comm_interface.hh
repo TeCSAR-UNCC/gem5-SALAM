@@ -150,7 +150,7 @@ class CommInterface : public BasicPioDevice
 
     virtual Tick write(PacketPtr pkt);
 
-    BaseMasterPort& getMasterPort(const std::string& if_name,
+    Port& getPort(const std::string& if_name,
                                   PortID idk = InvalidPortID) override;
 
     void recvPacket(PacketPtr pkt);
