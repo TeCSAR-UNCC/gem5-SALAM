@@ -14,10 +14,10 @@ Examples for system-level configuration can be found in configs/common/HWAcc.py.
 Accelerator benchmarks and examples can be found in benchmarks. benchmarks/dmatest and benchmarks/streamdmatest contain examples for configuring and using central and streaming DMA devices.
 The benchmarks/common folder contains basic drivers and syscalls for baremetal simulation.
 
-Currently timing models are verified for full-system baremetal simulation.
+Baremetal examples can be running using:
+> baremetalarm.sh [benchmark]
 
-Examples can be found in the benchmarks folder. They can be run by running
-   baremetalarm.sh <benchmark>
+Currently timing models are verified for full-system baremetal simulation.
 
 ## Full-system OS Simulation ##
 Please download the latest version of the Linux Kernel for ARM from the [gem5 ARM kernel page](http://gem5.org/ARM_Kernel).
