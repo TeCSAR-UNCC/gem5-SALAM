@@ -10,12 +10,19 @@
 #include "hwacc/LLVMRead/src/macros.hh"
 #include "hwacc/LLVMRead/src/cycle_count.hh"
 
+#include <llvm/IR/Module.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/Support/SourceMgr.h>
+
 #include <list>
 #include <queue>
 
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
+    llvm::LLVMContext context;
+    llvm::SMDiagnostic error;
     bool lockstep;
     uint32_t scheduling_threshold;
     int32_t counter_units;

@@ -388,6 +388,7 @@ if main['GCC'] or main['CLANG']:
                          '-Wno-error=deprecated',
                          '-Wno-error=unused-but-set-variable',
                          '-Wno-error=reorder',
+                         '-Wno-error=undef',
                         ])
 else:
     error('\n'.join(
