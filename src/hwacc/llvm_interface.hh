@@ -21,8 +21,8 @@
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
-    llvm::LLVMContext context;
-    llvm::SMDiagnostic error;
+//     llvm::LLVMContext context;
+//     llvm::SMDiagnostic error;
     bool lockstep;
     uint32_t scheduling_threshold;
     int32_t counter_units;
