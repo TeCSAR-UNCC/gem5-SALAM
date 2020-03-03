@@ -10,10 +10,10 @@
 #include "hwacc/LLVMRead/src/macros.hh"
 #include "hwacc/LLVMRead/src/cycle_count.hh"
 
-#include <llvm/IR/Module.h>
-#include <llvm/IRReader/IRReader.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/Support/SourceMgr.h>
+// #include <llvm/IR/Module.h>
+// #include <llvm/IRReader/IRReader.h>
+// #include <llvm/IR/LLVMContext.h>
+// #include <llvm/Support/SourceMgr.h>
 
 #include <list>
 #include <queue>

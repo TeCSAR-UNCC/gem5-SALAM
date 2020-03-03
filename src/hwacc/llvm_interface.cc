@@ -379,8 +379,8 @@ LLVMInterface::constructBBList() {
 
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine. 
 *********************************************************************************************/
-    llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
-    m->dump();
+    // llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
+    // m->dump();
     DPRINTF(LLVMInterface, "Constructing Dependency Graph!\n");
     initFU();
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
