@@ -52,7 +52,7 @@ def makeHWAcc(options, system):
     # AccConfig(options, system.acc_cluster.acc, local_range, acc_config, acc_bench)
 
     # Add an accelerator with a private SPM to the cluster
-    system.acc_cluster.acc = CommMemInterface()
+    system.acc_cluster.acc = CommMemInterface(devicename=options.accbench)
     AccConfig(system.acc_cluster.acc, local_range, acc_config, acc_bench)
     AccPmemConfig(system.acc_cluster.acc, acc_config)
 
@@ -74,12 +74,16 @@ def makeHWAcc(options, system):
     system.acc_cluster._connect_dma(system, system.acc_cluster.dma)
 
     system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_0.stream_addr=0x2ff10020
+    system.acc_cluster.stream_dma_0.stream_size=8
     system.acc_cluster.stream_dma_0.pio_delay = '1ns'
     system.acc_cluster.stream_dma_0.rd_int = 210
     system.acc_cluster.stream_dma_0.wr_int = 211
     system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_0)
 
     system.acc_cluster.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_1.stream_addr=0x2ff20020
+    system.acc_cluster.stream_dma_1.stream_size=8
     system.acc_cluster.stream_dma_1.pio_delay = '1ns'
     system.acc_cluster.stream_dma_1.rd_int = 212
     system.acc_cluster.stream_dma_1.wr_int = 213

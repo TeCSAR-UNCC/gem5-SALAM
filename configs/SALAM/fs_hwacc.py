@@ -67,7 +67,7 @@ from common import MemConfig
 from common import ObjectList
 from common.Caches import *
 from common import Options
-from common import HWAcc
+import HWAcc
 
 def cmd_line_template():
     if options.command_line and options.command_line_file:
