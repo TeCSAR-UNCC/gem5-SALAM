@@ -9,6 +9,8 @@ class StreamDma(DmaDevice) :
     pio_addr = Param.Addr("Device Address")
     pio_delay = Param.Latency('100ns', "PIO Latency")
     pio_size = Param.Addr("MMR Size")
+    stream_addr = Param.Addr("Stream interface address")
+    stream_size = Param.Addr("Stream width")
     mem_delay = Param.Latency('1ns', "Buffer read time")
     read_buffer_size = Param.UInt64(1024, "Read buffer size")
     write_buffer_size = Param.UInt64(1024, "Write buffer size")

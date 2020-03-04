@@ -9,6 +9,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('StreamDma.py')
     SimObject('CycleCounts.py')
     SimObject('AccCluster.py')
+    SimObject('StreamBuffer.py')
 
     # Source('io_acc.cc')
     Source('comm_interface.cc')
@@ -28,6 +29,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/cycle_count.cc')
     Source('acc_cluster.cc')
     Source('data_collection.cc')
+    Source('stream_buffer.cc')
+    Source('stream_port.cc')
 
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')
@@ -44,5 +47,6 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('StreamDma')
     DebugFlag('ClassDetail')
     DebugFlag('RuntimeQueues')
+    DebugFlag('StreamBuffer')
 
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])

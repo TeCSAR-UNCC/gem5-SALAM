@@ -1,0 +1,149 @@
+#include "hwacc/stream_buffer.hh"
+#include "debug/StreamBuffer.hh"
+
+#include "sim/system.hh"
+#include "mem/packet_access.hh"
+#include "debug/AddrRanges.hh"
+
+using namespace std;
+
+// StreamBuffer::StreamBuffer(Params *p) :
+// 	BasicPioDevice(p, p->pio_size),
+// 	buffer(p->buffer_size),
+// 	fifoSize(p->buffer_size),
+// 	endian(p->system->getGuestByteOrder()) {
+// 	//
+// }
+
+StreamBuffer::StreamBuffer(Params *p) :
+	ClockedObject(p),
+	streamPort(this),
+	buffer(p->buffer_size),
+	fifoSize(p->buffer_size),
+	endian(p->system->getGuestByteOrder()),
+	streamAddr(p->stream_address),
+	streamSize(p->stream_size),
+	streamDelay(p->stream_latency) {
+	//
+}
+
+bool
+StreamBuffer::canReadStream(size_t len) {
+	if (buffer.size() >= len) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool
+StreamBuffer::canWriteStream(size_t len) {
+	if ((buffer.size()+len) <= fifoSize) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool
+StreamBuffer::tryReadStream(uint8_t *dst, size_t len) {
+	if (buffer.size() >= len) {
+		buffer.read(dst, len);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool
+StreamBuffer::tryWriteStream(uint8_t *src, size_t len)
+{
+    if ((buffer.size()+len) <= fifoSize) {
+        buffer.write(src, len);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void
+StreamBuffer::readStream(uint8_t *dst, size_t len) {
+	const bool success(tryReadStream(dst, len));
+	panic_if(!success, "Buffer underrun in StreamBuffer::readStream()\n");
+}
+
+void
+StreamBuffer::writeStream(uint8_t *src, size_t len) {
+	const bool success(tryWriteStream(src, len));
+	panic_if(!success, "Buffer overrun in StreamBuffer::writeStream()\n");
+}
+
+bool StreamBuffer::tvalid(PacketPtr pkt) {
+	size_t len = pkt->getSize();
+	return pkt->isRead() ? canReadStream(len) : canWriteStream(len);
+}
+
+Tick
+StreamBuffer::streamRead(PacketPtr pkt) {
+	DPRINTF(StreamBuffer, "A read request of size %d was received by this stream buffer\n", pkt->getSize());
+	uint8_t *buff = new uint8_t[pkt->getSize()];
+	readStream(buff, pkt->getSize());
+	uint64_t data = *(uint64_t *)buff;
+	delete buff;
+
+	switch(pkt->getSize()) {
+      case 1:
+        pkt->set<uint8_t>(data, endian);
+        break;
+      case 2:
+        pkt->set<uint16_t>(data, endian);
+        break;
+      case 4:
+        pkt->set<uint32_t>(data, endian);
+        break;
+      case 8:
+        pkt->set<uint64_t>(data, endian);
+        break;
+      default:
+        panic("Read size too big?\n");
+        break;
+    }
+
+    pkt->makeAtomicResponse();
+    return streamDelay;
+}
+
+Tick
+StreamBuffer::streamWrite(PacketPtr pkt) {
+	DPRINTF(StreamBuffer, "A write request of size %d was received by this stream buffer\n", pkt->getSize());
+	uint8_t * data = new uint8_t[pkt->getSize()];
+	pkt->writeData(data);
+	writeStream(data, pkt->getSize());
+	delete data;
+	pkt->makeAtomicResponse();
+    return streamDelay;
+}
+
+AddrRangeList
+StreamBuffer::getStreamAddrRanges() const {
+	assert(streamSize != 0);
+	AddrRangeList streamRanges;
+	DPRINTF(AddrRanges, "registering range: %#x-%#x\n", streamAddr, streamSize);
+    streamRanges.push_back(RangeSize(streamAddr, streamSize));
+    return streamRanges;
+}
+
+void
+StreamBuffer::serialize(CheckpointOut &cp) const {
+	SERIALIZE_CONTAINER(buffer);
+}
+
+void
+StreamBuffer::unserialize(CheckpointIn &cp) {
+	UNSERIALIZE_CONTAINER(buffer);
+}
+
+StreamBuffer *
+StreamBufferParams::create() {
+	return new StreamBuffer(this);
+}

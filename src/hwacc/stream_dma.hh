@@ -5,6 +5,7 @@
 #include "dev/dma_device.hh"
 #include "hwacc/dma_write_fifo.hh"
 #include "dev/arm/base_gic.hh"
+#include "hwacc/stream_port.hh"
 
 /*
 
@@ -74,11 +75,14 @@
 class StreamDma : public DmaDevice {
   private:
     std::string devname;
+    StreamSlavePortT<StreamDma> streamPort;
     DmaReadFifo *readFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;
     Tick pioDelay;
     Addr pioSize;
+    Addr streamAddr;
+    Addr streamSize;
     Tick memDelay;
     size_t rdBufferSize;
     size_t wrBufferSize;
@@ -91,6 +95,8 @@ class StreamDma : public DmaDevice {
     bool rdRunning;
     bool wrRunning;
     bool running;
+
+    ByteOrder endian;
 
     class TickEvent : public Event
     {
@@ -148,11 +154,17 @@ class StreamDma : public DmaDevice {
     ~StreamDma() {}
 
     AddrRangeList getAddrRanges() const;
+    AddrRangeList getStreamAddrRanges() const;
 
     void tick();
 
     Tick read(PacketPtr pkt);
     Tick write(PacketPtr pkt);
+
+    Tick streamRead(PacketPtr pkt);
+    Tick streamWrite(PacketPtr pkt);
+
+    bool tvalid(PacketPtr pkt);
 };
 
 #endif //__HWACC_STREAM_DMA_HH__

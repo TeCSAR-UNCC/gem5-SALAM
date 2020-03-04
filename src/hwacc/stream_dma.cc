@@ -7,9 +7,12 @@
 StreamDma::StreamDma(const Params *p)
     : DmaDevice(p),
     devname(p->devicename),
+    streamPort(this),
     pioAddr(p->pio_addr),
     pioDelay(p->pio_delay),
     pioSize(p->pio_size),
+    streamAddr(p->stream_addr),
+    streamSize(p->stream_size),
     memDelay(p->mem_delay),
     rdBufferSize(p->read_buffer_size),
     wrBufferSize(p->write_buffer_size),
@@ -38,6 +41,8 @@ StreamDma::StreamDma(const Params *p)
     rdRunning = false;
     wrRunning = false;
     running = false;
+
+    endian = sys->getGuestByteOrder();
 }
 
 AddrRangeList
@@ -48,6 +53,15 @@ StreamDma::getAddrRanges() const
     DPRINTF(AddrRanges, "registering range: %#x-%#x\n", pioAddr, pioSize);
     ranges.push_back(RangeSize(pioAddr, pioSize));
     return ranges;
+}
+
+AddrRangeList
+StreamDma::getStreamAddrRanges() const {
+    assert(streamSize != 0);
+    AddrRangeList streamRanges;
+    DPRINTF(AddrRanges, "registering range: %#x-%#x\n", streamAddr, streamSize);
+    streamRanges.push_back(RangeSize(streamAddr, streamSize));
+    return streamRanges;
 }
 
 void
@@ -153,13 +167,13 @@ StreamDma::read(PacketPtr pkt) {
 
         switch(pkt->getSize()) {
           case 1:
-            pkt->setLE<uint8_t>(data);
+            pkt->set<uint8_t>(data, endian);
             break;
           case 2:
-            pkt->setLE<uint16_t>(data);
+            pkt->set<uint16_t>(data, endian);
             break;
           case 4:
-            pkt->setLE<uint32_t>(data);
+            pkt->set<uint32_t>(data, endian);
             break;
           default:
             panic("Read size too big?\n");
@@ -175,16 +189,16 @@ StreamDma::read(PacketPtr pkt) {
 
         switch(pkt->getSize()) {
           case 1:
-            pkt->setLE<uint8_t>(data);
+            pkt->set<uint8_t>(data, endian);
             break;
           case 2:
-            pkt->setLE<uint16_t>(data);
+            pkt->set<uint16_t>(data, endian);
             break;
           case 4:
-            pkt->setLE<uint32_t>(data);
+            pkt->set<uint32_t>(data, endian);
             break;
           case 8:
-            pkt->setLE<uint64_t>(data);
+            pkt->set<uint64_t>(data, endian);
             break;
           default:
             panic("Read size too big?\n");
@@ -213,6 +227,7 @@ StreamDma::write(PacketPtr pkt) {
         uint8_t * data = new uint8_t[pkt->getSize()];
         pkt->writeData(data);
         writeFifo->fill(data, pkt->getSize());
+        delete data;
     }
 
     if (!tickEvent.scheduled()) {
@@ -220,6 +235,59 @@ StreamDma::write(PacketPtr pkt) {
     }
     pkt->makeAtomicResponse();
     return pioDelay;
+}
+
+Tick
+StreamDma::streamRead(PacketPtr pkt) {
+    DPRINTF(StreamDma, "The data buffer associated with this DMA was read from!\n");
+
+    uint8_t *buff = new uint8_t[pkt->getSize()];
+    readFifo->get(buff, pkt->getSize());
+    uint64_t data = *(uint64_t *)buff;
+    delete buff;
+
+    switch(pkt->getSize()) {
+      case 1:
+        pkt->set<uint8_t>(data, endian);
+        break;
+      case 2:
+        pkt->set<uint16_t>(data, endian);
+        break;
+      case 4:
+        pkt->set<uint32_t>(data, endian);
+        break;
+      case 8:
+        pkt->set<uint64_t>(data, endian);
+        break;
+      default:
+        panic("Read size too big?\n");
+        break;
+    }
+
+    pkt->makeAtomicResponse();
+    return pioDelay;
+}
+
+Tick
+StreamDma::streamWrite(PacketPtr pkt) {
+    DPRINTF(StreamDma, "The data buffer associated with this DMA was written to!\n");
+    uint8_t * data = new uint8_t[pkt->getSize()];
+    pkt->writeData(data);
+    writeFifo->fill(data, pkt->getSize());
+    delete data;
+
+    pkt->makeAtomicResponse();
+    return pioDelay;
+}
+
+bool
+StreamDma::tvalid(PacketPtr pkt) {
+    size_t len = pkt->getSize();
+    if (pkt->isRead()) {
+        return (readFifo->size() >= len) ? true : false;
+    } else {
+        return writeFifo->canFill(len);
+    }
 }
 
 StreamDma *

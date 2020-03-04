@@ -29,6 +29,7 @@ class CommInterface : public BasicPioDevice
     std::vector<Addr> data_base_ptrs;
     int cache_ports;
     int local_ports;
+    ByteOrder endian;
 
     //class MemoryRequest;
 

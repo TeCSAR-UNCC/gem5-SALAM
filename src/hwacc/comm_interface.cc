@@ -34,7 +34,8 @@ CommInterface::CommInterface(Params *p) :
     local_ports(p->local_ports),
     cacheLineSize(p->cache_line_size),
     cacheSize(p->cache_size),
-    clock_period(p->clock_period) {
+    clock_period(p->clock_period),
+    endian(p->system->getGuestByteOrder()) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
@@ -415,22 +416,22 @@ CommInterface::read(PacketPtr pkt) {
 
     Addr offset = pkt->req->getPaddr() - io_addr;
 
-    uint32_t data;
+    uint64_t data;
 
-    data = *(uint32_t *)(mmreg+offset);
+    data = *(uint64_t *)(mmreg+offset);
 
     switch(pkt->getSize()) {
       case 1:
-        pkt->setLE<uint8_t>(data);
+        pkt->set<uint8_t>(data, endian);
         break;
       case 2:
-        pkt->setLE<uint16_t>(data);
+        pkt->set<uint16_t>(data, endian);
         break;
       case 4:
-        pkt->setLE<uint32_t>(data);
+        pkt->set<uint32_t>(data, endian);
         break;
       case 8:
-        pkt->setLE<uint64_t>(data);
+        pkt->set<uint64_t>(data, endian);
         break;
       default:
         panic("Read size too big?\n");
