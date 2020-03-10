@@ -36,11 +36,15 @@ class StreamBuffer : public ClockedObject {
   	bool tryWriteStream(uint8_t *src, size_t len);
 
   	bool tvalid(PacketPtr pkt);
+    bool tvalid(size_t len, bool isRead);
 
   	virtual Tick streamRead(PacketPtr pkt);
   	virtual Tick streamWrite(PacketPtr pkt);
 
   	AddrRangeList getStreamAddrRanges() const;
+
+    Port &getPort(const std::string &if_name,
+            PortID idx=InvalidPortID) override;
 
   	void serialize(CheckpointOut &cp) const override;
   	void unserialize(CheckpointIn & cp) override;

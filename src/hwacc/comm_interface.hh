@@ -8,9 +8,12 @@
 #include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
 #include "hwacc/LLVMRead/src/debugFlags.hh"
+#include "hwacc/stream_port.hh"
+#include "hwacc/scratchpad_memory.hh"
 
 #include <list>
 #include <queue>
+#include <vector>
 
 class CommInterface : public BasicPioDevice
 {
@@ -27,13 +30,11 @@ class CommInterface : public BasicPioDevice
     uint32_t int_num;
     bool use_premap_data;
     std::vector<Addr> data_base_ptrs;
-    int cache_ports;
-    int local_ports;
     ByteOrder endian;
 
-    //class MemoryRequest;
+    const std::string name() const { return devname; }
 
-    class MemSidePort : public MasterPort
+    class MemSidePort : public StreamMasterPort
     {
       friend class CommInterface;
 
@@ -46,13 +47,17 @@ class CommInterface : public BasicPioDevice
         bool writeActive;
 
       public:
-        MemSidePort(const std::string& name, CommInterface *owner) :
-          MasterPort(name, owner), owner(owner) {
+        MemSidePort(const std::string& name, CommInterface *owner, PortID id=InvalidPortID) :
+          StreamMasterPort(name, owner, id), owner(owner) {
           readActive = false;
           writeActive = false;
           readReq = NULL;
           writeReq = NULL;
         }
+        MemoryRequest * getReadReq() { return readReq; }
+        MemoryRequest * getWriteReq() { return writeReq; }
+        void setReadReq(MemoryRequest * req = nullptr) { readReq = req; }
+        void setWriteReq(MemoryRequest * req = nullptr) { writeReq = req; }
 
       protected:
         virtual bool recvTimingResp(PacketPtr pkt);
@@ -66,7 +71,49 @@ class CommInterface : public BasicPioDevice
         }
         bool isStalled() { return !outstandingPkts.empty(); }
         void sendPacket(PacketPtr pkt);
-        bool active() { return readActive && writeActive; }
+        bool active() { return readActive || writeActive; }
+        bool reading() { return readActive; }
+        bool writing() { return writeActive; }
+    };
+
+    class SPMPort : public ScratchpadMasterPort
+    {
+      friend class CommInterface;
+
+      private:
+        CommInterface *owner;
+        std::queue<PacketPtr> outstandingPkts;
+        MemoryRequest *readReq;
+        MemoryRequest *writeReq;
+        bool readActive;
+        bool writeActive;
+
+      public:
+        SPMPort(const std::string& name, CommInterface *owner, PortID id=InvalidPortID) :
+          ScratchpadMasterPort(name, owner, id), owner(owner) {
+          readActive = false;
+          writeActive = false;
+          readReq = NULL;
+          writeReq = NULL;
+        }
+        MemoryRequest * getReadReq() { return readReq; }
+        MemoryRequest * getWriteReq() { return writeReq; }
+        void setReadReq(MemoryRequest * req = nullptr) { readReq = req; }
+        void setWriteReq(MemoryRequest * req = nullptr) { writeReq = req; }
+
+      protected:
+        virtual bool recvTimingResp(PacketPtr pkt);
+        virtual void recvReqRetry();
+        virtual void recvRangeChange() { };
+        virtual Tick recvAtomic(PacketPtr pkt) {return 0;}
+        virtual void recvFunctional(PacketPtr pkt) { };
+        void setStalled(PacketPtr pkt)
+        {
+          outstandingPkts.push(pkt);
+        }
+        bool isStalled() { return !outstandingPkts.empty(); }
+        void sendPacket(PacketPtr pkt);
+        bool active() { return readActive || writeActive; }
         bool reading() { return readActive; }
         bool writing() { return writeActive; }
     };
@@ -82,38 +129,57 @@ class CommInterface : public BasicPioDevice
         virtual const char *description() const { return "CommInterface tick"; }
     };
 
-    std::list<MemoryRequest*> *readQueue;
-    std::list<MemoryRequest*> *writeQueue;
-    std::list<MemoryRequest*> *dramRdQ;
-    std::list<MemoryRequest*> *dramWrQ;
-    std::list<MemoryRequest*> *spmRdQ;
-    std::list<MemoryRequest*> *spmWrQ;
+    std::list<MemoryRequest*> readQueue;
+    std::list<MemoryRequest*> writeQueue;
+    std::list<MemoryRequest*> accRdQ;
+    std::list<MemoryRequest*> accWrQ;
 
     int requestsInQueues;
 
-    MemSidePort dramSide;
-    MemSidePort spmSide;
-    MemSidePort *dramPort;
-    MemSidePort *spmPort;
+    std::vector<MemSidePort*> localPorts;
+    std::vector<MemSidePort*> globalPorts;
+    std::vector<MemSidePort*> streamPorts;
+    std::vector<SPMPort*> spmPorts;
 
-    bool dramPortStalled() { return dramPort->isStalled(); }
-    bool spmPortStalled() { return spmPort->isStalled(); }
-    void setSpmReadReq(MemoryRequest *req) { spmPort->readReq = req; }
-    void setSpmWriteReq(MemoryRequest *req) { spmPort->writeReq = req; }
-    void setDramReadReq(MemoryRequest *req) { dramPort->readReq = req; }
-    void setDramWriteReq(MemoryRequest *req) { dramPort->writeReq = req; }
-    MemoryRequest * getSpmReadReq() { return spmPort->readReq; }
-    MemoryRequest * getSpmWriteReq() { return spmPort->writeReq; }
-    MemoryRequest * getDramReadReq() { return dramPort->readReq; }
-    MemoryRequest * getDramWriteReq() { return dramPort->writeReq; }
-
-    AddrRange localRange;
+    bool localPortsStalled() {
+        for (auto it=localPorts.begin(); it!=localPorts.end(); ++it) {
+            if (!((*it)->isStalled())) return false;
+        }
+        return true;
+    }
+    bool globalPortsStalled() {
+        for (auto it=globalPorts.begin(); it!=globalPorts.end(); ++it) {
+            if (!((*it)->isStalled())) return false;
+        }
+        return true;
+    }
+    bool streamPortsStalled() {
+        for (auto it=streamPorts.begin(); it!=streamPorts.end(); ++it) {
+            if (!((*it)->isStalled())) return false;
+        }
+        return true;
+    }
+    bool spmPortsStalled() {
+        for (auto port : spmPorts) {
+            if (!(port->isStalled())) return false;
+        }
+        return true;
+    }
+    bool allPortsStalled() {
+        return localPortsStalled() && globalPortsStalled() && streamPortsStalled() && spmPortsStalled();
+    }
+    bool inStreamRange(Addr add);
+    bool inSPMRange(Addr add);
+    bool inLocalRange(Addr add);
+    MemSidePort * getValidLocalPort(Addr add, bool read);
+    MemSidePort * getValidGlobalPort(Addr add, bool read);
+    MemSidePort * getValidStreamPort(Addr add, size_t len, bool read);
+    SPMPort * getValidSPMPort(Addr add, size_t len, bool read);
 
     CommInterface *comm;
     MasterID masterId;
     TickEvent tickEvent;
     unsigned cacheLineSize;
-    int cacheSize;
 
     virtual void checkMMR();
     virtual void processMemoryRequests();
@@ -125,6 +191,9 @@ class CommInterface : public BasicPioDevice
 
     void tryRead(MemSidePort * port);
     void tryWrite(MemSidePort * port);
+
+    void tryRead(SPMPort * port);
+    void tryWrite(SPMPort * port);
 
     Addr dataAddr;
 
@@ -147,6 +216,8 @@ class CommInterface : public BasicPioDevice
 
     CommInterface(Params *p);
 
+    void startup();
+
     virtual Tick read(PacketPtr pkt);
 
     virtual Tick write(PacketPtr pkt);
@@ -168,9 +239,6 @@ class CommInterface : public BasicPioDevice
 
     uint64_t getGlobalVar(unsigned index);
     int getProcessDelay() { return processDelay; }
-    virtual int getCacheSize() { return cacheSize; }
-    virtual int getcachePorts() { return cache_ports; }
-    virtual int getlocalPorts() { return local_ports; }
     virtual int getReadPorts()  { return 0; }
     virtual int getWritePorts()  { return 0; }
     virtual int getReadBusWidth()  { return 0; }
@@ -180,94 +248,13 @@ class CommInterface : public BasicPioDevice
     void registerCycleCounts(CycleCounts *cylcount) { cycleCount = cylcount; }
     virtual void finish();
 
-    MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead) {
-        if (isRead) {
-            for (auto it=dramRdQ->begin(); it!=dramRdQ->end(); ++it) {
-                if ((*it)->pkt == pkt) {
-                    return (*it);
-                }
-            }
-            for (auto it=spmRdQ->begin(); it!=dramRdQ->end(); ++it) {
-                if ((*it)->pkt == pkt) {
-                    return (*it);
-                }
-            }
-        } else {
-            for (auto it=dramWrQ->begin(); it!=dramWrQ->end(); ++it) {
-                if ((*it)->pkt == pkt) {
-                    return (*it);
-                }
-            }
-            for (auto it=spmWrQ->begin(); it!=dramWrQ->end(); ++it) {
-                if ((*it)->pkt == pkt) {
-                    return (*it);
-                }
-            }
-        }
-		panic("Could not find memory request in request queues");
-        return NULL;
-    }
-
+    MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead);
     void clearMemRequest(MemoryRequest * req, bool isRead);
     virtual void refreshMemPorts() {}
+    std::string getName() const { return devname; }
+
+    virtual bool isBaseCommInterface() { return true; }
   protected:
-};
-
-#include "mem/simple_mem.hh"
-#include "params/PrivateMemory.hh"
-
-class PrivateMemory : public SimpleMemory
-{
-  protected:
-    bool readyMode;
-    bool resetOnPrivateRead;
-    bool *ready;
-  public:
-    PrivateMemory(const PrivateMemoryParams *p);
-    bool isReady(Addr ad, Addr size);
-    void privateAccess(PacketPtr pkt);
-    void access(PacketPtr pkt) override;
-    void setAllReady(bool r);
-};
-
-#include "params/CommMemInterface.hh"
-
-class CommMemInterface : public CommInterface
-{
-  protected:
-    PrivateMemory * pmem;
-    AddrRange pmemRange;
-    bool resetPmemOnFinish;
-    int readPorts;
-    int writePorts;
-    int read_bus_width;
-    int write_bus_width;
-    int availablePorts;
-    int avReadPorts;
-    int avWritePorts;
-    int cacheSize;
-    int privateSize;
-
-  public:
-    typedef CommMemInterfaceParams Params;
-    const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
-
-    CommMemInterface(Params *p);
-    virtual void processMemoryRequests() override;
-    virtual void refreshMemPorts() override;
-    virtual void finish() override;
-    int getReadPorts() override { return readPorts; }
-    int getWritePorts() override { return writePorts; }
-    int getReadBusWidth() override { return write_bus_width; }
-    int getWriteBusWidth() override { return read_bus_width; }
-    int getPmemRange() override { return privateSize; }
-
-  protected:
-    virtual void tick() override;
 };
 
 #endif //__HWACC_COMM_INTERFACE_HH__

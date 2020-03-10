@@ -32,7 +32,7 @@ def makeHWAcc(options, system):
     CacheConfig(system.acc_cluster, acc_config)
 
 	# Resize local and cache bus from config file specification 
-    system.acc_cluster._resize_bus(system.acc_cluster.cache_ports, system.acc_cluster.local_ports)
+    # system.acc_cluster._resize_bus(system.acc_cluster.cache_ports, system.acc_cluster.local_ports)
 
     # Generate bridges to connect local cluster bus to system membus
     system.acc_cluster._attach_bridges(system, local_range, external_range)
@@ -48,13 +48,16 @@ def makeHWAcc(options, system):
     # system.acc_cluster._connect_spm(system.acc_cluster.spm)
 
     # Add an accelerator to the cluster
-    # system.acc_cluster.acc = CommMemInterface()
-    # AccConfig(options, system.acc_cluster.acc, local_range, acc_config, acc_bench)
+    system.acc_cluster.acc = CommInterface(devicename=options.accbench)
+    AccConfig(system.acc_cluster.acc, acc_config, acc_bench)
+    system.acc_cluster.acc_spm = ScratchpadMemory()
+    AccSPMConfig(system.acc_cluster.acc, system.acc_cluster.acc_spm, acc_config)
+    system.acc_cluster._connect_spm(system.acc_cluster.acc_spm)
 
     # Add an accelerator with a private SPM to the cluster
-    system.acc_cluster.acc = CommMemInterface(devicename=options.accbench)
-    AccConfig(system.acc_cluster.acc, local_range, acc_config, acc_bench)
-    AccPmemConfig(system.acc_cluster.acc, acc_config)
+    # system.acc_cluster.acc = CommMemInterface(devicename=options.accbench)
+    # AccConfig(system.acc_cluster.acc, local_range, acc_config, acc_bench)
+    # AccPmemConfig(system.acc_cluster.acc, acc_config)
 
     # Add a shared cache for the accelerator cluster
     #system.acc_cluster._connect_caches(system, options, system.acc_cluster.acc.cache_size)
@@ -64,16 +67,21 @@ def makeHWAcc(options, system):
 
     # Connect HWAcc to cluster buses
     system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
+    system.acc_cluster.acc.local = system.acc_cluster.local_bus.slave
+    system.acc_cluster.acc.acp = system.acc_cluster.coherency_bus.slave
 
     # Connect accelerator's private SPM to cluster buses
-    system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
+    # system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
 
     ################################## Adding DMAs to Cluster #####################################
     # Add DMA devices to the cluster and connect them
     system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32, int_num=95)
     system.acc_cluster._connect_dma(system, system.acc_cluster.dma)
+    # system.acc_cluster.dma.dma = system.membus.slave
+    # system.acc_cluster.dma.pio = system.acc_cluster.local_bus.master
 
-    system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=32, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_0.stream = system.acc_cluster.acc.stream
     system.acc_cluster.stream_dma_0.stream_addr=0x2ff10020
     system.acc_cluster.stream_dma_0.stream_size=8
     system.acc_cluster.stream_dma_0.pio_delay = '1ns'
@@ -81,7 +89,8 @@ def makeHWAcc(options, system):
     system.acc_cluster.stream_dma_0.wr_int = 211
     system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_0)
 
-    system.acc_cluster.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=40, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=32, gic=system.realview.gic, max_pending=32)
+    system.acc_cluster.stream_dma_1.stream = system.acc_cluster.acc.stream
     system.acc_cluster.stream_dma_1.stream_addr=0x2ff20020
     system.acc_cluster.stream_dma_1.stream_size=8
     system.acc_cluster.stream_dma_1.pio_delay = '1ns'

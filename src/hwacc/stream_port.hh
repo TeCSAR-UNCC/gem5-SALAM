@@ -17,6 +17,7 @@ class StreamSlavePort : public SimpleTimingPort {
   private:
   protected:
   	virtual bool tvalid(PacketPtr pkt) = 0;
+    virtual bool tvalid(size_t len, bool isRead) = 0;
   	Tick recvAtomic(PacketPtr pkt) override {
   		Tick t = 0;
   		return t;
@@ -42,6 +43,7 @@ class StreamSlavePortT : public StreamSlavePort {
   	Device *device;
 
   	virtual bool tvalid(PacketPtr pkt) { return device->tvalid(pkt); }
+    virtual bool tvalid(size_t len, bool isRead) { return device->tvalid(len, isRead); }
   	Tick recvAtomic(PacketPtr pkt) override {
   		Tick receive_delay = pkt->headerDelay + pkt->payloadDelay;
         pkt->headerDelay = pkt->payloadDelay = 0;
@@ -95,10 +97,15 @@ class StreamMasterPort : public MasterPort {
 	 * If the slave port is a stream slave port, then check if it can
 	 * service a request of size 'len'
      */
-    inline bool streamValid(PacketPtr pkt) {
+    bool streamValid(PacketPtr pkt) {
     	if (_stream_slave)
     		return _stream_slave->tvalid(pkt);
-    	return false;
+    	return true;
+    }
+    bool streamValid(size_t len, bool isRead) {
+      if (_stream_slave)
+        return _stream_slave->tvalid(len, isRead);
+      return true;
     }
 };
 

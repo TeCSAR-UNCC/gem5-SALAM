@@ -165,6 +165,10 @@ class StreamDma : public DmaDevice {
     Tick streamWrite(PacketPtr pkt);
 
     bool tvalid(PacketPtr pkt);
+    bool tvalid(size_t len, bool isRead);
+
+    Port &getPort(const std::string &if_name,
+            PortID idx=InvalidPortID) override;
 };
 
 #endif //__HWACC_STREAM_DMA_HH__

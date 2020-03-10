@@ -282,12 +282,23 @@ StreamDma::streamWrite(PacketPtr pkt) {
 
 bool
 StreamDma::tvalid(PacketPtr pkt) {
-    size_t len = pkt->getSize();
-    if (pkt->isRead()) {
+    return tvalid(pkt->getSize(), pkt->isRead());
+}
+
+bool
+StreamDma::tvalid(size_t len, bool isRead) {
+    if (isRead) {
         return (readFifo->size() >= len) ? true : false;
     } else {
         return writeFifo->canFill(len);
     }
+}
+
+Port &
+StreamDma::getPort(const std::string &if_name, PortID idx) {
+    if (if_name == "stream")
+        return streamPort;
+    return DmaDevice::getPort(if_name, idx);
 }
 
 StreamDma *

@@ -126,7 +126,7 @@ LLVMInterface::tick() {
             } else i++;
         }
     }
-
+    // DPRINTF(LLVMInterface, "Reservation size = %d\n", reservation.size());
     scheduled = false;
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
@@ -207,15 +207,18 @@ LLVMInterface::tick() {
                 if (reservation.at(i)->_OpCode == "ret"){
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
                         running = false;
-                        cache_size = comm->getCacheSize();
+                        // cache_size = comm->getCacheSize();
                         read_ports = comm->getReadPorts();
                         write_ports = comm->getWritePorts();
                         spm_size = comm->getPmemRange();
                         read_bus_width = comm->getReadBusWidth();
                         write_bus_width = comm->getWriteBusWidth();
-                        cache_ports = comm->getcachePorts();
-                        local_ports = comm->getlocalPorts();
-                        statistics();
+                        // cache_ports = comm->getcachePorts();
+                        // local_ports = comm->getlocalPorts();
+                        if (comm->isBaseCommInterface())
+                            statistics();
+                        else
+                            statisticsWithMemory();
                         comm->finish();
                     }
                 }
@@ -588,7 +591,6 @@ LLVMInterfaceParams::create() {
     return new LLVMInterface(this);
 }
 
-
 void
 LLVMInterface::statistics() {
 /*********************************************************************************************
@@ -597,19 +599,6 @@ LLVMInterface::statistics() {
     double runtime = (cycle*(1e-10));
     pwrUtil->finalPowerUsage(_MaxFU, cycle);
     execnodes = cycle-stalls-1;
-    // getCactiResults(int cache_size, int word_size, int ports, int type)
-    // SPM cache_type = 0  
-    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
-    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
-    uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
-    uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
-
-    // Cache cache_type = 1
-    uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
-    uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults(dma_loads*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
-    uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
-    double exponential = 1e9; // Units correction
-    double leak = 1.0; // Remnant of old units difference
 
     results = new Results(  clock_period,
                             fu_clock_period,
@@ -631,24 +620,17 @@ LLVMInterface::statistics() {
                             loadCompStall,
                             loadStoreCompStall,
                             storeCompStall,
-                            cache_size,
                             spm_size,
                             read_ports,
                             write_ports,
                             read_bus_width,
                             write_bus_width,
-                            cache_ports,
-                            local_ports,
-                            (cacti_result_spm_leakage.power.readOp.leakage+cacti_result_spm_leakage.power.writeOp.leakage)*leak,
-                            cacti_result_spm_dynamic_read.power.readOp.dynamic*exponential,
-                            cacti_result_spm_dynamic_write.power.writeOp.dynamic*exponential,
-                            cacti_result_spm_leakage.area,
-                            (cacti_result_spm_opt.power.readOp.leakage+cacti_result_spm_opt.power.writeOp.leakage)*leak,
-                            cacti_result_spm_opt.area,
-                            (cacti_result_cache_leakage.power.readOp.leakage+cacti_result_cache_leakage.power.writeOp.leakage)*leak,
-                            cacti_result_cache_dynamic_read.power.readOp.dynamic*exponential,
-                            cacti_result_cache_dynamic_write.power.writeOp.dynamic*exponential,
-                            cacti_result_cache_leakage.area,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
                             _MaxFU.counter_units,
                             _MaxFU.int_adder_units,
                             _MaxFU.int_multiply_units,
@@ -695,8 +677,110 @@ LLVMInterface::statistics() {
                             pwrUtil->totalPwr.reg_area,
                             pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
 
-    results->print();
-    //results->simpleStats();
+    results->print(); // TODO: Dump to stats file instead of stdout
+    //regList->printRegNames();
+}
+
+void
+LLVMInterface::statisticsWithMemory() {
+/*********************************************************************************************
+ Prints usage statistics of how many times each instruction was accessed during runtime
+*********************************************************************************************/ 
+    double runtime = (cycle*(1e-10));
+    pwrUtil->finalPowerUsage(_MaxFU, cycle);
+    execnodes = cycle-stalls-1;
+    // getCactiResults(int cache_size, int word_size, int ports, int type)
+    // SPM cache_type = 0
+    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
+    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
+    uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
+    uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
+
+    // Cache cache_type = 1
+    // uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
+    // uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults(dma_loads*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    // uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    double exponential = 1e9; // Units correction
+    double leak = 1.0; // Remnant of old units difference
+
+    results = new Results(  clock_period,
+                            fu_clock_period,
+                            cycle,
+                            runtime,
+                            stalls,
+                            execnodes,
+                            loadOnly,
+                            storeOnly,
+                            compOnly,
+                            loadStore,
+                            loadComp,
+                            loadStoreComp,
+                            storeComp,
+                            loadOnlyStall,
+                            storeOnlyStall,
+                            compOnlyStall,
+                            loadStoreStall,
+                            loadCompStall,
+                            loadStoreCompStall,
+                            storeCompStall,
+                            spm_size,
+                            read_ports,
+                            write_ports,
+                            read_bus_width,
+                            write_bus_width,
+                            (cacti_result_spm_leakage.power.readOp.leakage+cacti_result_spm_leakage.power.writeOp.leakage)*leak,
+                            cacti_result_spm_dynamic_read.power.readOp.dynamic*exponential,
+                            cacti_result_spm_dynamic_write.power.writeOp.dynamic*exponential,
+                            cacti_result_spm_leakage.area,
+                            (cacti_result_spm_opt.power.readOp.leakage+cacti_result_spm_opt.power.writeOp.leakage)*leak,
+                            cacti_result_spm_opt.area,
+                            _MaxFU.counter_units,
+                            _MaxFU.int_adder_units,
+                            _MaxFU.int_multiply_units,
+                            _MaxFU.int_shifter_units,
+                            _MaxFU.int_bit_units,
+                            _MaxFU.fp_sp_adder,
+                            _MaxFU.fp_dp_adder,
+                            _MaxFU.fp_sp_multiply,
+                            _MaxFU.fp_dp_multiply,
+                            _MaxFU.compare,
+                            _MaxFU.gep,
+                            _MaxFU.conversion,
+                            _MaxParsed.counter_units,
+                            _MaxParsed.int_adder_units,
+                            _MaxParsed.int_multiply_units,
+                            _MaxParsed.int_shifter_units,
+                            _MaxParsed.int_bit_units,
+                            _MaxParsed.fp_sp_adder,
+                            _MaxParsed.fp_dp_adder,
+                            _MaxParsed.fp_sp_multiply,
+                            _MaxParsed.fp_dp_multiply,
+                            _MaxParsed.compare,
+                            _MaxParsed.gep,
+                            _MaxParsed.conversion,
+                            _MaxParsed.other,
+                            regList->size(),
+                            regList->count(),
+                            regList->average()/((double)cycle),
+                            regList->avgSize()/(regList->average()),
+                            pwrUtil->regUsage.reads,
+                            pwrUtil->regUsage.writes,
+                            memory_loads,
+                            memory_stores,
+                            dma_loads,
+                            dma_stores,
+                            pwrUtil->finalPwr.leakage_power,
+                            pwrUtil->totalPwr.dynamic_energy*runtime,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime,
+                            pwrUtil->totalPwr.reg_leakage_power,
+                            pwrUtil->totalPwr.reg_dynamic_energy*runtime,
+                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*runtime,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*runtime),
+                            pwrUtil->totalPwr.area,
+                            pwrUtil->totalPwr.reg_area,
+                            pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
+
+    results->print(); // TODO: Dump to stats file instead of stdout
     //regList->printRegNames();
 }
 

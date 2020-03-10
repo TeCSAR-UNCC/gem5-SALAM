@@ -29,12 +29,9 @@ class Results {
         int loadStoreCompStall;
         int storeCompStall;        
         //Memory Stats
-        int cache_size;
         int spm_size;
         int read_ports;
         int write_ports;
-        int cache_ports;
-        int local_ports;
         int read_bus_width;
         int write_bus_width;
         double spm_leakage;
@@ -43,10 +40,6 @@ class Results {
         double spm_area;
         double spm_opt_leakage;
         double spm_opt_area;
-        double cache_leakage;
-        double cache_read_dynamic;
-        double cache_write_dynamic;
-        double cache_area;
         // Runtime Functional Units
         int run_counter;
         int run_add_sub;
@@ -120,24 +113,17 @@ class Results {
                     int LoadCompStall,
                     int LoadStoreCompStall,
                     int StoreCompStall,
-                    int Cache_Size,
                     int SPM_Size,
                     int Read_Ports,
                     int Write_Ports,
                     int Read_Bus_Width,
                     int Write_Bus_Width,
-                    int Cache_Ports,
-                    int Local_Ports,
                     double SPM_Leakage,
                     double SPM_Read_Dynamic,
                     double SPM_Write_Dynamic,
                     double SPM_Area,
                     double SPM_Opt_Leakage,
                     double SPM_Opt_Area,
-                    double Cache_Leakage,
-                    double Cache_Read_Dynamic,
-                    double Cache_Write_Dynamic,
-                    double Cache_Area,
                     int Run_counter,
                     int Run_add_sub,
                     int Run_mul_div,
@@ -203,12 +189,9 @@ class Results {
                     loadCompStall(LoadCompStall),
                     loadStoreCompStall(LoadStoreCompStall),
                     storeCompStall(StoreCompStall),
-                    cache_size(Cache_Size),
                     spm_size(SPM_Size),
                     read_ports(Read_Ports),
                     write_ports(Write_Ports),
-                    cache_ports(Cache_Ports),
-                    local_ports(Local_Ports),
                     read_bus_width(Read_Bus_Width),
                     write_bus_width(Write_Bus_Width),
                     spm_leakage(SPM_Leakage),
@@ -217,10 +200,6 @@ class Results {
                     spm_area(SPM_Area),
                     spm_opt_leakage(SPM_Opt_Leakage),
                     spm_opt_area(SPM_Opt_Area),
-                    cache_leakage(Cache_Leakage),
-                    cache_read_dynamic(Cache_Read_Dynamic),
-                    cache_write_dynamic(Cache_Write_Dynamic),
-                    cache_area(Cache_Area),
                     run_counter(Run_counter),
                     run_add_sub(Run_add_sub),
                     run_mul_div(Run_mul_div),
@@ -268,8 +247,6 @@ class Results {
                     total_area(Total_area) { }
 
         void print();
-        void simpleStats();
-                
 };
 
 

@@ -79,8 +79,11 @@ StreamBuffer::writeStream(uint8_t *src, size_t len) {
 }
 
 bool StreamBuffer::tvalid(PacketPtr pkt) {
-	size_t len = pkt->getSize();
-	return pkt->isRead() ? canReadStream(len) : canWriteStream(len);
+	return tvalid(pkt->getSize(), pkt->isRead());
+}
+
+bool StreamBuffer::tvalid(size_t len, bool isRead) {
+	return isRead ? canReadStream(len) : canWriteStream(len);
 }
 
 Tick
@@ -131,6 +134,15 @@ StreamBuffer::getStreamAddrRanges() const {
 	DPRINTF(AddrRanges, "registering range: %#x-%#x\n", streamAddr, streamSize);
     streamRanges.push_back(RangeSize(streamAddr, streamSize));
     return streamRanges;
+}
+
+Port &
+StreamBuffer::getPort(const std::string &if_name, PortID idx)
+{
+    if (if_name == "stream") {
+        return streamPort;
+    }
+    return ClockedObject::getPort(if_name, idx);
 }
 
 void

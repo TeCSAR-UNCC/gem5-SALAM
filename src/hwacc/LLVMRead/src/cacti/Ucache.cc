@@ -713,8 +713,9 @@ void solve(uca_org_t *fin_res) {
     // distribute calculate_time() execution to multiple threads
     calc_time_mt_wrapper_struct * calc_array =
         new calc_time_mt_wrapper_struct[nthreads];
+#ifndef DEBUG
     pthread_t threads[nthreads];
-
+#endif
     for (uint32_t t = 0; t < nthreads; t++) {
         calc_array[t].tid         = t;
         calc_array[t].pure_ram    = pure_ram;

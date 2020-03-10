@@ -78,10 +78,7 @@ class LLVMInterface : public ComputeUnit {
     int dma_stores;
     int read_ports;
     int write_ports;
-    int cache_size;
     int spm_size;
-    int cache_ports;
-    int local_ports;
     int fu_clock_period;
     int read_bus_width;
     int write_bus_width;
@@ -93,6 +90,7 @@ class LLVMInterface : public ComputeUnit {
     InstructionBase* findParent(std::string);
     InstructionBase* detectRAW(Register*);
     Utilization* pwrUtil;
+    const std::string name() const { return comm->getName() + ".compute"; }
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
@@ -101,6 +99,7 @@ class LLVMInterface : public ComputeUnit {
     void startup();
     void initialize();
     void statistics();
+    void statisticsWithMemory();
     void scheduleBB(BasicBlock *bb);
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);

@@ -31,6 +31,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('data_collection.cc')
     Source('stream_buffer.cc')
     Source('stream_port.cc')
+    # Source('comm_mem_interface.cc')
+    Source('scratchpad_memory.cc')
 
     DebugFlag('IOAcc')
     DebugFlag('CommInterface')

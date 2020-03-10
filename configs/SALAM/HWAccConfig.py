@@ -3,7 +3,7 @@ from m5.objects import *
 from m5.util import *
 import ConfigParser
 
-def AccConfig(acc, local_range, config_file, bench_file):
+def AccConfig(acc, config_file, bench_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
     Config.read((config_file))
@@ -24,20 +24,20 @@ def AccConfig(acc, local_range, config_file, bench_file):
     acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
     acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
     # Accelerator setup
-    acc.cache_ports = ConfigSectionMap("AccConfig")['cache_ports']
-    acc.local_ports = ConfigSectionMap("AccConfig")['local_ports']
+    # acc.cache_ports = ConfigSectionMap("AccConfig")['cache_ports']
+    # acc.local_ports = ConfigSectionMap("AccConfig")['local_ports']
     acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     acc.config_size = ConfigSectionMap("AccConfig")['config_size']
-    acc.local_range = local_range
+    # acc.local_range = local_range
     acc.int_num = ConfigSectionMap("AccConfig")['int_num']
     acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     predef = ConfigSectionMap("AccConfig")['premap_data']
-    local_range_min = ConfigSectionMap("AccConfig")['local_range_min']
-    local_range_max = ConfigSectionMap("AccConfig")['local_range_max']
-    external_range_low_min = ConfigSectionMap("AccConfig")['external_range_low_min']
-    external_range_low_max = ConfigSectionMap("AccConfig")['external_range_low_max']
-    external_range_hi_min = ConfigSectionMap("AccConfig")['external_range_hi_min']
-    external_range_hi_max = ConfigSectionMap("AccConfig")['external_range_hi_max']
+    # local_range_min = ConfigSectionMap("AccConfig")['local_range_min']
+    # local_range_max = ConfigSectionMap("AccConfig")['local_range_max']
+    # external_range_low_min = ConfigSectionMap("AccConfig")['external_range_low_min']
+    # external_range_low_max = ConfigSectionMap("AccConfig")['external_range_low_max']
+    # external_range_hi_min = ConfigSectionMap("AccConfig")['external_range_hi_min']
+    # external_range_hi_max = ConfigSectionMap("AccConfig")['external_range_hi_max']
     
     if (predef == "1" or predef == "True"):
         acc.premap_data = predef
@@ -150,9 +150,9 @@ def CacheConfig(acc, config_file):
                 print("exception on %s!" % option)
                 dict1[option] = None
         return dict1
-    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
-    acc.cache_ports = ConfigSectionMap("AccConfig")['cache_ports']
-    acc.local_ports = ConfigSectionMap("AccConfig")['local_ports']
+    # acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    # acc.cache_ports = ConfigSectionMap("AccConfig")['cache_ports']
+    # acc.local_ports = ConfigSectionMap("AccConfig")['local_ports']
 
 
 def AccPmemConfig(acc, config_file):
@@ -182,10 +182,39 @@ def AccPmemConfig(acc, config_file):
                                                            latency=ConfigSectionMap("PrivateMemory")['latency'])
 
     # Memory constraints
-    acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
+    # acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
     acc.private_read_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
     acc.private_write_ports = ConfigSectionMap("PrivateMemory")['private_write_ports']
     acc.private_read_bus_width = ConfigSectionMap("PrivateMemory")['private_read_bus_width']
     acc.private_write_bus_width = ConfigSectionMap("PrivateMemory")['private_write_bus_width']    
     acc.private_memory.ready_mode = Config.getboolean("Memory", 'ready_mode')
     acc.private_memory.reset_on_private_read = Config.getboolean("Memory", 'reset_on_private_read')
+
+def AccSPMConfig(acc, spm, config_file):
+    # Setup config file parser
+    Config = ConfigParser.ConfigParser()
+    Config.read((config_file))
+    Config.sections()
+    def ConfigSectionMap(section):
+        dict1 = {}
+        options = Config.options(section)
+        for option in options:
+            try:
+                dict1[option] = Config.get(section, option)
+                if dict1[option] == -1:
+                    DebugPrint("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+        return dict1
+
+    spm.range = AddrRange(ConfigSectionMap("PrivateMemory")['addr_range'], \
+                          size=ConfigSectionMap("PrivateMemory")['size'])
+    spm.latency = ConfigSectionMap("PrivateMemory")['latency']
+    spm.conf_table_reported = False
+    spm.ready_mode = Config.getboolean("Memory", 'ready_mode')
+    spm.reset_on_scratchpad_read = Config.getboolean("Memory", 'reset_on_private_read')
+    spm.bandwidth = '1000GB/s'
+    num_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
+    for i in range(int(num_ports)):
+        acc.spm[i] = spm.spm_ports[i]

@@ -2,10 +2,10 @@
 #define __MEMORY_REQUEST_HH__
 #include "mem/packet.hh"
 #include "debugFlags.hh"
+#include "mem/port.hh"
 
 class MemoryRequest {
   friend class CommInterface;
-  friend class CommMemInterface;
   friend class LLVMInterface;
   private:
     Addr address;
@@ -25,9 +25,12 @@ class MemoryRequest {
     bool *readsDone;
 
     PacketPtr pkt;
+    MasterPort * port;
   public:
     MemoryRequest(Addr add, size_t len);
     MemoryRequest(Addr add, uint8_t *data, size_t len);
+    void setCarrierPort(MasterPort * _port) { port = _port; }
+    MasterPort * getCarrierPort() { return port; }
 };
 
 #endif //__MEM_REQUEST_HH__
