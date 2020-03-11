@@ -19,7 +19,11 @@ class NoncoherentDma : public DmaDevice
 {
   private:
     std::string devname;
+    DmaReadFifo *memSideReadFifo;
+    DmaReadFifo *accSideReadFifo;
     DmaReadFifo *readFifo;
+    DmaWriteFifo *memSideWriteFifo;
+    DmaWriteFifo *accSideWriteFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;
     Addr pioDelay;
@@ -57,7 +61,9 @@ class NoncoherentDma : public DmaDevice
     TickEvent tickEvent;
 
   protected:
-
+    DmaPort accPort;
+    DmaReadFifo * getActiveReadFifo();
+    DmaWriteFifo * getActiveWriteFifo();
   public:
     typedef NoncoherentDmaParams Params;
 
@@ -76,6 +82,9 @@ class NoncoherentDma : public DmaDevice
 
     Tick read(PacketPtr pkt);
     Tick write(PacketPtr pkt);
+
+    Port &getPort(const std::string &if_name,
+                  PortID idx=InvalidPortID) override;
 };
 
 #endif //_HWACC_NONCOHERENT_DMA_HH__

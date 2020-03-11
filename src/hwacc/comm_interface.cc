@@ -283,7 +283,7 @@ CommInterface::getValidSPMPort(Addr add, size_t len, bool read) {
         for (auto address : adl) {
             if (address.contains(add) && !(port->isStalled())) {
                 if (((read && !(port->readReq)) || (!read && !(port->writeReq)))) {
-                    if (port->canAccess(add, len))
+                    if (port->canAccess(add, len, read))
                         return port;
                 }
             }

@@ -6,6 +6,7 @@ class NoncoherentDma(DmaDevice) :
     type = 'NoncoherentDma'
     cxx_header = 'hwacc/noncoherent_dma.hh'
     devicename = Param.String("noncoherent_dma", "Name of DMA device")
+    cluster_dma = MasterPort("Cluster-side DMA port")
     pio_addr = Param.Addr("Device Address")
     pio_delay = Param.Latency('100ns', "PIO Latency")
     pio_size = Param.Addr("MMR Size")

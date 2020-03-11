@@ -214,7 +214,7 @@ def AccSPMConfig(acc, spm, config_file):
     spm.conf_table_reported = False
     spm.ready_mode = Config.getboolean("Memory", 'ready_mode')
     spm.reset_on_scratchpad_read = Config.getboolean("Memory", 'reset_on_private_read')
-    spm.bandwidth = '1000GB/s'
+    # spm.bandwidth = '1000GB/s'
     num_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
     for i in range(int(num_ports)):
         acc.spm[i] = spm.spm_ports[i]

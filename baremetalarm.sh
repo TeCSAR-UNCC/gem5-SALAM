@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS=IOAcc,Hardware,LLVMRuntime,LLVMGEP,LLVMInterface,CommInterface,LLVMParse,Interrupt,LLVMRegister,NoncoherentDma,ComputeUnit
+FLAGS=IOAcc,LLVMInterface,CommInterface,NoncoherentDma,ComputeUnit
 if [ "$1" != "" ]; then
     BENCH=$1
     MULTI="$1"
@@ -13,8 +13,8 @@ SYS_OPTS="--mem-size=4GB \
           --disk-image=$M5_PATH/baremetal/common/fake.iso \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
-          --cpu-type=TimingSimpleCPU"
-CACHE_OPTS="--acc_cache"
+          --cpu-type=DerivO3CPU"
+CACHE_OPTS="--caches --l2cache --acc_cache"
 # Script to start up full system simulation
 # --debug-flags=$FLAGS
 if [ $BENCH == "multiple_acc" ]; then

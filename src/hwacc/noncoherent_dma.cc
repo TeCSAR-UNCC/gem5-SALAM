@@ -15,9 +15,14 @@ NoncoherentDma::NoncoherentDma(const Params *p)
     maxReqSize(p->max_req_size),
     gic(p->gic),
     intNum(p->int_num),
-    tickEvent(this) {
-    readFifo = new DmaReadFifo(dmaPort, bufferSize, maxReqSize, maxPending);
-    writeFifo = new DmaWriteFifo(dmaPort, bufferSize, maxReqSize, maxPending);
+    tickEvent(this),
+    accPort(this, sys, p->sid, p->ssid) {
+    memSideReadFifo = new DmaReadFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
+    memSideWriteFifo = new DmaWriteFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
+    accSideReadFifo = new DmaReadFifo(accPort, size_t(bufferSize/2), maxReqSize, maxPending);
+    accSideWriteFifo = new DmaWriteFifo(accPort, size_t(bufferSize/2), maxReqSize, maxPending);
+    readFifo = nullptr;
+    writeFifo = nullptr;
     mmreg = new uint8_t[pioSize];
     for (int i=0; i<pioSize; i++)
         mmreg[i]=0;
@@ -38,6 +43,28 @@ NoncoherentDma::getAddrRanges() const
     return ranges;
 }
 
+// Select the appropriate DmaReadFifo based on which port holds
+// the active read address
+DmaReadFifo *
+NoncoherentDma::getActiveReadFifo() {
+    AddrRangeList accPortRanges = accPort.getAddrRanges();
+    for (auto range : accPortRanges) {
+        if (range.contains(activeSrc)) return accSideReadFifo;
+    }
+    return memSideReadFifo;
+}
+
+// Select the appropriate DmaWriteFifo based on which port holds
+// the active write address
+DmaWriteFifo *
+NoncoherentDma::getActiveWriteFifo() {
+    AddrRangeList accPortRanges = accPort.getAddrRanges();
+    for (auto range : accPortRanges) {
+        if (range.contains(activeDst)) return accSideWriteFifo;
+    }
+    return memSideWriteFifo;
+}
+
 void
 NoncoherentDma::tick() {
     if (!running && ((*FLAGS&0x01)==0x01)) {
@@ -48,6 +75,8 @@ NoncoherentDma::tick() {
         activeDst = *DST;
         writesLeft = *LEN;
         DPRINTF(NoncoherentDma, "SRC:0x%016x, DST:0x%016x, LEN:%d\n", activeSrc, activeDst, writesLeft);
+        readFifo = getActiveReadFifo();
+        writeFifo = getActiveWriteFifo();
         readFifo->startFill(activeSrc, writesLeft);
         writeFifo->startEmpty(activeDst, writesLeft);
     }
@@ -129,6 +158,15 @@ NoncoherentDma::write(PacketPtr pkt) {
     }
     pkt->makeAtomicResponse();
     return pioDelay;
+}
+
+Port &
+NoncoherentDma::getPort(const std::string &if_name, PortID idx)
+{
+    if (if_name == "cluster_dma") {
+        return accPort;
+    }
+    return DmaDevice::getPort(if_name, idx);
 }
 
 NoncoherentDma *

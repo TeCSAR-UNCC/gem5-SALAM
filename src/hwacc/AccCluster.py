@@ -69,3 +69,7 @@ class AccCluster(Platform):
     def _connect_dma(self, system, dma):
         dma.pio = self.local_bus.master
         dma.dma = self.coherency_bus.slave
+
+    def _connect_cluster_dma(self, system, dma):
+        self._connect_dma(system, dma)
+        dma.cluster_dma = self.local_bus.slave

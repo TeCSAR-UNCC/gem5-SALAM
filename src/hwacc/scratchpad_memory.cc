@@ -46,8 +46,8 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
 }
 
 bool
-ScratchpadMemory::isReady(Addr ad, Addr size) {
-    if (!readyMode) return true;
+ScratchpadMemory::isReady(Addr ad, Addr size, bool read) {
+    if (!readyMode || !read) return true;
     Addr start_offset = ad - range.start();
     Addr end_offset = start_offset + size;
     for (auto i=start_offset; i<end_offset; i++) {

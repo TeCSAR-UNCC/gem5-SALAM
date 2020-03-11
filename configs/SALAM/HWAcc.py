@@ -76,7 +76,7 @@ def makeHWAcc(options, system):
     ################################## Adding DMAs to Cluster #####################################
     # Add DMA devices to the cluster and connect them
     system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32, int_num=95)
-    system.acc_cluster._connect_dma(system, system.acc_cluster.dma)
+    system.acc_cluster._connect_cluster_dma(system, system.acc_cluster.dma)
     # system.acc_cluster.dma.dma = system.membus.slave
     # system.acc_cluster.dma.pio = system.acc_cluster.local_bus.master
 

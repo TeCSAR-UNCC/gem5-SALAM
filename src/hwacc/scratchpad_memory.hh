@@ -16,7 +16,7 @@ class ScratchpadSlavePort : public SlavePort
     ScratchpadSlavePort(const std::string& _name, SimObject* _owner,
         PortID id=InvalidPortID) : SlavePort (_name, _owner, id) {}
   protected:
-    virtual bool canAccess(Addr add, size_t len) { return true; }
+    virtual bool canAccess(Addr add, size_t len, bool read) { return true; }
     Tick recvAtomic(PacketPtr pkt) override { return 0; }
     Tick recvAtomicBackdoor(
             PacketPtr pkt, MemBackdoorPtr &_backdoor) override { return 0; }
@@ -40,7 +40,7 @@ class ScratchpadMasterPort : public MasterPort
     ScratchpadMasterPort(const std::string& _name, SimObject* _owner,
         PortID id=InvalidPortID) : MasterPort(_name, _owner, id) {}
     void setReadyStatus(bool r) { _spmslave->setReadyStatus(r); }
-    bool canAccess(Addr add, size_t len) { return _spmslave->canAccess(add, len); }
+    bool canAccess(Addr add, size_t len, bool read) { return _spmslave->canAccess(add, len, read); }
     void bind(Port &peer) override {
         auto *spmslave = dynamic_cast<ScratchpadSlavePort *>(&peer);
         if (spmslave) {
@@ -70,7 +70,7 @@ class ScratchpadMemory : public AbstractMemory
       return dynamic_cast<const Params *>(_params);
     }
     ScratchpadMemory(const ScratchpadMemoryParams *p);
-    bool isReady(Addr ad, Addr size);
+    bool isReady(Addr ad, Addr size, bool read);
     void scratchpadAccess(PacketPtr pkt, bool validateAccess=false);
     void setAllReady(bool r);
 
@@ -121,7 +121,7 @@ class ScratchpadMemory : public AbstractMemory
         SPMPort(const std::string& _name, ScratchpadMemory * _memory, PortID id=InvalidPortID) :
             ScratchpadSlavePort(_name, _memory, id), memory(_memory) {}
       protected:
-        bool canAccess(Addr add, size_t len) override { return memory->isReady(add, len); }
+        bool canAccess(Addr add, size_t len, bool read) override { return memory->isReady(add, len, read); }
         Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt, true); };
         Tick recvAtomicBackdoor(
                 PacketPtr pkt, MemBackdoorPtr &_backdoor) override { return memory->recvAtomicBackdoor(pkt,_backdoor); };
