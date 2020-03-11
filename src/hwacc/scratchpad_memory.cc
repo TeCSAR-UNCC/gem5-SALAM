@@ -46,7 +46,7 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
 }
 
 bool
-ScratchpadMemory::isReady(Addr ad, Addr size, bool read) {
+ScratchpadMemory::isReady(Addr ad, size_t size, bool read) {
     if (!readyMode || !read) return true;
     Addr start_offset = ad - range.start();
     Addr end_offset = start_offset + size;
@@ -279,7 +279,8 @@ ScratchpadMemory::recvTimingReq(PacketPtr pkt, PortID recvPort, bool validateAcc
 
     // if we are busy with a read or write, remember that we have to
     // retry
-    if (isBusy[idx]) {
+    if (isBusy[idx] ||
+        (validateAccess && !isReady(pkt->getAddr(),pkt->getSize(),pkt->isRead()))) {
         retryReq[idx] = true;
         return false;
     }

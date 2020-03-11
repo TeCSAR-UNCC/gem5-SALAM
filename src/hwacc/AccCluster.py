@@ -11,6 +11,15 @@ from CommInterface import CommInterface
 from NoncoherentDma import NoncoherentDma
 from StreamDma import StreamDma
 
+class ClusterCache(Cache):
+    assoc = 8
+    tag_latency = 20
+    data_latency = 20
+    response_latency = 20
+    mshrs = 20
+    tgts_per_mshr = 12
+    write_buffers = 8
+
 class AccCluster(Platform):
     type = 'AccCluster'
     cxx_header = "hwacc/acc_cluster.hh"
@@ -53,7 +62,8 @@ class AccCluster(Platform):
 
     def _connect_caches(self, system, options, cache_size):
         if options.acc_cache:
-            self.cluster_cache = Cache(assoc=4, tag_latency=1, data_latency=1, response_latency=1, mshrs=16, size=cache_size, tgts_per_mshr=20)
+            self.cluster_cache = ClusterCache()
+            self.cluster_cache.size = cache_size
 
             if options.l2cache:
                 self.cluster_cache.mem_side = system.tol2bus.slave

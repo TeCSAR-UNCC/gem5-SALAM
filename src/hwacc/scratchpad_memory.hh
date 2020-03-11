@@ -70,7 +70,7 @@ class ScratchpadMemory : public AbstractMemory
       return dynamic_cast<const Params *>(_params);
     }
     ScratchpadMemory(const ScratchpadMemoryParams *p);
-    bool isReady(Addr ad, Addr size, bool read);
+    bool isReady(Addr ad, size_t size, bool read);
     void scratchpadAccess(PacketPtr pkt, bool validateAccess=false);
     void setAllReady(bool r);
 
