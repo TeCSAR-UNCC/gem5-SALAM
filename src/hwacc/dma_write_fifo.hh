@@ -1,7 +1,9 @@
 #ifndef __HWACC_DMA_WRITE_FIFO_HH__
 #define __HWACC_DMA_WRITE_FIFO_HH__
-
+//------------------------------------------//
+#include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "dev/dma_device.hh"
+//------------------------------------------//
 
 class DmaWriteFifo : public Drainable, public Serializable
 {

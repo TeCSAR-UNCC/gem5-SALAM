@@ -1,4 +1,6 @@
+//------------------------------------------//
 #include "registers.hh"
+//------------------------------------------//
 
 void 
 Register::setSize(const std::string& Data_Type) {
@@ -34,7 +36,7 @@ RegisterList::printRegNames() { // Prints name of all current registers
 }   //  --- End Function ----------------------------------------------//
 
 void
-RegisterList::resetAccess() { // Prints name of all current registers
+RegisterList::resetAccess() { 
     int count = 0;
     int size = 0;
     for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {

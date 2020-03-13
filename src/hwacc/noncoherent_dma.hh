@@ -1,19 +1,19 @@
 #ifndef __HWACC_NONCOHERENT_DMA_HH__
 #define __HWACC_NONCOHERENT_DMA_HH__
-
+//------------------------------------------//
+#include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "params/NoncoherentDma.hh"
 #include "dev/dma_device.hh"
 #include "hwacc/dma_write_fifo.hh"
 #include "dev/arm/base_gic.hh"
-
-/*
-    Memory Map
-    |  Length  | Dst Addr | Src Addr | Flags  |
-    |----------|----------|----------|--------|
-    |  4 Bytes | 8 Bytes  | 8 Bytes  | 1 Byte |
-*/
-
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#include "mem/packet.hh"
+#include "mem/packet_access.hh"
+//------------------------------------------ 
+//    Memory Map
+//    |  Length  | Dst Addr | Src Addr | Flags  |
+//    |----------|----------|----------|--------|
+//    |  4 Bytes | 8 Bytes  | 8 Bytes  | 1 Byte |
+//------------------------------------------//
 
 class NoncoherentDma : public DmaDevice
 {

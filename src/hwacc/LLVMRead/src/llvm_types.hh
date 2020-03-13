@@ -1,10 +1,11 @@
-#ifndef __LLVM_TYPES_HH__
-
-#define __LLVM_TYPES_HH__
-
+#ifndef LLVM_TYPES_HH
+#define LLVM_TYPES_HH
+//------------------------------------------//
+#include "debug_flags.hh"
+//------------------------------------------//
 #include <string>
 #include <list>
-#include "debugFlags.hh"
+//------------------------------------------//
 
 class LLVMType {
 friend class TypeList;

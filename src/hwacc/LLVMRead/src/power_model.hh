@@ -1,15 +1,18 @@
-#ifndef __POWER_FUNC_HH__
-#define __POWER_FUNC_HH__
-
+#ifndef POWER_MODEL_HH
+#define POWER_MODEL_HH
+//------------------------------------------//
+#include "debug_flags.hh"
+#include "cacti/cacti_interface.h"
+//------------------------------------------//
 #include <stdlib.h>
 #include <iostream>
-#include "cacti/cacti_interface.h"
-#define SINGLE_PORT_SPAD 1
+//------------------------------------------//
 
-/*Characterized FU latencies from FPGA virtex7 xc7v585tffg1761-2, in ns*/
-/*#define   Virtex7_ADD_LATENCY       1.87*/
-/*#define   Virtex7_MEMOP_LATENCY     2.39*/
-/*#define   Virtex7_MUL_LATENCY       9.74*/
+//************************ (Original) ****************************************************
+// Yakun Sophia Shao, Sam (Likun) Xi, Vijayalakshmi Srinivasan, Gu-Yeon Wei, David Brooks: 
+// Co-Designing Accelerators and SoC Interfaces using gem5-Aladdin. 
+// In: International Symposium on Microarchitecture (MICRO), 2016.
+//****************************************************************************************
 
 /* Function units power model normalized to a commercial 40g */
 /* Power in mW, energy in pJ, time in ns, area in um^2 */
@@ -306,6 +309,8 @@
 #define SHIFTER_10ns_area                             2.496461e+02
 #define SHIFTER_10ns_critical_path_delay              0.70
 
+#define SINGLE_PORT_SPAD                              1
+
 /* Floating Point Power/Area/Energy Models.
  * We use Synopsys DesignWare IP library to model 3-stage both single-precision
  * (SP) and double precision (DP) floating point functional units, including
@@ -536,49 +541,75 @@
 void getRegisterPowerArea(float cycle_time,
                           float* internal_power_per_bit,
                           float* switch_power_per_bit,
+                          float* dynamic_power_per_bit,
+                          float* dynamic_enengy_per_bit,
                           float* leakage_power_per_bit,
                           float* area);
 void getAdderPowerArea(float cycle_time,
                        float* internal_power,
                        float* swich_power,
+                       float* dynamic_power,
+                       float* dynamic_energy,
                        float* leakage_power,
                        float* area);
 void getMultiplierPowerArea(float cycle_time,
                             float* internal_power,
                             float* switch_power,
+                            float* dynamic_power,
+                            float* dynamic_energy,
                             float* leakage_power,
                             float* area);
 void getBitPowerArea(float cycle_time,
                      float* internal_power,
                      float* swich_power,
+                     float* dynamic_power,
+                     float* dynamic_energy,
                      float* leakage_power,
                      float* area);
 void getShifterPowerArea(float cycle_time,
                          float* internal_power,
                          float* swich_power,
+                         float* dynamic_power,
+                         float* dynamic_energy,
                          float* leakage_power,
                          float* area);
 void getSinglePrecisionFloatingPointAdderPowerArea(float cycle_time,
                                                    float* internal_power,
                                                    float* switch_power,
+                                                   float* dynamic_power,
+                                                   float* dynamic_energy,
                                                    float* leakage_power,
                                                    float* area);
 void getDoublePrecisionFloatingPointAdderPowerArea(float cycle_time,
                                                    float* internal_power,
                                                    float* switch_power,
+                                                   float* dynamic_power,
+                                                   float* dynamic_energy,
                                                    float* leakage_power,
                                                    float* area);
 void getSinglePrecisionFloatingPointMultiplierPowerArea(float cycle_time,
                                                         float* internal_power,
                                                         float* switch_power,
+                                                        float* dynamic_power,
+                                                        float* dynamic_energy,
                                                         float* leakage_power,
                                                         float* area);
 void getDoublePrecisionFloatingPointMultiplierPowerArea(float cycle_time,
                                                         float* internal_power,
                                                         float* switch_power,
+                                                        float* dynamic_power,
+                                                        float* dynamic_energy,
                                                         float* leakage_power,
                                                         float* area);
 
+void getCounterPowerArea(float cycle_time,
+                         float* internal_power,
+                         float* switch_power,
+                         float* dynamic_power,
+                         float* dynamic_energy,
+                         float* leakage_power,
+                         float* area);
+                         
 uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports, int cache_type);
 
 #endif

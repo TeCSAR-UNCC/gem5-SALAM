@@ -1,8 +1,12 @@
-#ifndef __BASIC_BLOCK_HH__
-#define __BASIC_BLOCK_HH__
-#include "debugFlags.hh"
+#ifndef BASIC_BLOCK_HH
+#define BASIC_BLOCK_HH
+//------------------------------------------//
+#include "debug_flags.hh"
 #include "instructions.hh"
+//------------------------------------------//
 #include <memory>
+#include <iostream>
+//------------------------------------------//
 
 class BasicBlock {
   friend class LLVMInterface;
@@ -75,8 +79,8 @@ class BasicBlock {
       IR_Sine,
       IR_Cosine };
     typedef std::map<std::string, int> OPMap; // Define new type that maps LLVM instruction
-                                            // to enumerated switch cases
-    OPMap s_opMap = { // Mapped values for op codes
+                                              // to enumerated switch cases
+    OPMap switch_opMap = { // Mapped values for op codes
       {"move", IR_Move},
       {"ret", IR_Ret},
       {"br", IR_Br},
@@ -165,7 +169,7 @@ class BasicBlock {
     std::vector<std::string> setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType);
     void initializeReturnRegister(std::vector<std::string> &parameters, Register *&reg , std::string &returnType, const std::string &instructionType );
     int setSize(std::string dataType);
-    int64_t parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles);
+    int parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles);
     void printNodes();
     bool immPosition(std::vector<std::string> &parameters);
 };

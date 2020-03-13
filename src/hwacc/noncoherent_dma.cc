@@ -1,8 +1,6 @@
+//------------------------------------------//
 #include "hwacc/noncoherent_dma.hh"
-#include "mem/packet.hh"
-#include "mem/packet_access.hh"
-#include "debug/AddrRanges.hh"
-#include "debug/NoncoherentDma.hh"
+//------------------------------------------//
 
 NoncoherentDma::NoncoherentDma(const Params *p)
     : DmaDevice(p),

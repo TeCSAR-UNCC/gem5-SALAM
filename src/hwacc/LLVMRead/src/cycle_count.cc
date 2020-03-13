@@ -1,5 +1,6 @@
+//------------------------------------------//
 #include "cycle_count.hh"
-
+//------------------------------------------//
 
 CycleCounts::CycleCounts(CycleCountsParams *p) :
     SimObject(p),

@@ -1,18 +1,17 @@
-#ifndef __BASE_INSTRUCTION_HH__
-#define __BASE_INSTRUCTION_HH__
-
+#ifndef BASE_INSTRUCTION_HH
+#define BASE_INSTRUCTION_HH
+//------------------------------------------//
 #include "hwacc/comm_interface.hh"
 #include "mem_request.hh"
 #include "llvm_types.hh"
-#include "debugFlags.hh"
+#include "debug_flags.hh"
 #include "registers.hh"
-#include "base_instruction.hh"
-#include "power.hh"
+//#include "instructions.hh"
+//#include "utilization.hh"
+//------------------------------------------//
 #include <string>
 #include <vector>
-
-#define Details(name) DPRINTF(ClassDetail, "Creating Instance of %s!\n", name)
-#define Destruct(name) DPRINTF(ClassDetail, "Deleting Instance of %s!\n", name)
+//------------------------------------------//
 //---------------------------------------------------------------------------//
 //--------- Begin Immediate Value Sub Classes -------------------------------//
 //---------------------------------------------------------------------------//
@@ -23,8 +22,8 @@ class Signed {
         // ---- Constructor
         Signed(                     int64_t Operand)       
         : _SOperand(                (int64_t)Operand) 
-                                    { Details("Signed"); }
-        virtual ~Signed()           { Destruct("Signed"); }
+                                    { Details("Base Instruction: Signed"); }
+        virtual ~Signed()           { Destruct("Base Instruction: Signed"); }
         // ---- Get Functions
         int64_t getSigned()         { return _SOperand; }
 };
@@ -36,8 +35,8 @@ class Unsigned {
 
         Unsigned(                   uint64_t Operand)         
         : _UOperand(                (uint64_t)Operand) 
-                                    { Details("Unsigned"); }
-        virtual ~Unsigned()         { Destruct("Unsigned"); }
+                                    { Details("Base Instruction: Unsigned"); }
+        virtual ~Unsigned()         { Destruct("Base Instruction: Unsigned"); }
         // ---- Get Functions
         int64_t getUnsigned()       { return _UOperand; }
 };
@@ -49,8 +48,8 @@ class Integer {
         // ---- Constructor
         Integer(                    int64_t Operand)         
         : _Operand(                 Operand) 
-                                    { Details("Integer"); }
-        virtual ~Integer()          { Destruct("Integer"); }
+                                    { Details("Base Instruction: Integer"); }
+        virtual ~Integer()          { Destruct("Base Instruction: Integer"); }
         // ---- Get Functions
         int64_t getOperand()        { return _Operand; }
 };
@@ -62,8 +61,8 @@ class FloatingPointSP {
         // ---- Constructor
         FloatingPointSP(            float Operand)
         : _OperandSP(               Operand) 
-                                    { Details("FloatingPointSP"); }
-        virtual ~FloatingPointSP()  { Destruct("FloatingPointSP"); }
+                                    { Details("Base Instruction: FloatingPointSP"); }
+        virtual ~FloatingPointSP()  { Destruct("Base Instruction: FloatingPointSP"); }
         // ---- Get Functions
         float getOperandSP()        { return _OperandSP; }
 };
@@ -75,8 +74,8 @@ class FloatingPointDP {
         // ---- Constructor
         FloatingPointDP(            double Operand)
         : _OperandDP(               Operand) 
-                                    { Details("FloatingPointDP"); }
-        virtual ~FloatingPointDP()  { Destruct("FloatingPointDP"); }
+                                    { Details("Base Instruction: FloatingPointDP"); }
+        virtual ~FloatingPointDP()  { Destruct("Base Instruction: FloatingPointDP"); }
         // ---- Get Functions
         double getOperandDP()           { return _OperandDP; }
 };
@@ -102,7 +101,6 @@ class InstructionBase {
         std::vector<InstructionBase*> _Parents; // Parent Nodes
         std::vector<InstructionBase*> _Children; // Child Nodes
         int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
-        uint64_t _Usage; // Counter for times instruction used
         uint64_t _CurrCycle;
         std::string _PrevBB;
         bool _Terminator = false;
@@ -111,8 +109,6 @@ class InstructionBase {
         std::vector<int64_t> _Ops; 
         int8_t _FunctionalUnit;
         Register* _RawCheck = NULL;
-        bool _Stall = false;
-        bool _Global = false;
         // ---- Constructor
         InstructionBase( const std::string& LLVMLine,
                          const std::string& OpCode,
@@ -132,9 +128,8 @@ class InstructionBase {
                          _Comm(Comm) 
                         { _Req = NULL;
                           _CurrCycle = 0; 
-                          _Usage = 0;
                           _ActiveParents = 0; 
-                          Details("Instruction Base"); 
+                          Details("Base Instruction: Instruction Base"); 
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
                           _FunctionalUnit = -1;
                           }
@@ -158,9 +153,8 @@ class InstructionBase {
                          _FunctionalUnit(FunctionalUnit) 
                         { _Req = NULL;
                           _CurrCycle = 0; 
-                          _Usage = 0;
                           _ActiveParents = 0; 
-                          Details("Instruction Base"); 
+                          Details("Base Instruction: Instruction Base"); 
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
                           }                  
         // ---- Get Functions
@@ -168,29 +162,22 @@ class InstructionBase {
         std::string getOpCode()        { return _OpCode; }
         std::string getInstrType()     { return _InstructionType; }
         // ---- Virtual Functions
-        virtual ~InstructionBase()     { Destruct("Instruction Base"); }
-        void signalChildren();
+        virtual ~InstructionBase()     { Destruct("Base Instruction: Instruction Base"); }
         virtual bool commit();
-        // Each commit increments cycle count once, broadcast once complete
-        // If memory type, commit request and broadcast
         virtual void compute()           = 0;  
-        //virtual void powerCycle()        = 0;
         virtual InstructionBase* clone() const = 0;
-        virtual bool isGlobal() { return false; }
-        void setGlobal(bool Global) { _Global = Global; }
-        bool dmaAccess() { return _Global; }
-        // ---- Hardware Usage Functions
-        void used() { _Usage++; }
-        // ---- Dependency Graph Functions
-            // Find Parents and Return Register for Previous Instance 
         virtual std::vector<Register*> runtimeDependencies(std::string PrevBB);
+        // ---- Memory Functions 
+        MemoryRequest * getReq() { return _Req; }
+        // ---- Dependency Tracking
         void fetchDependency(Register*);
         void fetchDependency(int);
         void registerChild(InstructionBase*);
         void registerParent(InstructionBase*);
-        // ---- General Functions
+        void signalChildren();
+        // ---- Communications Setup
         void setCommInterface(CommInterface *newComm) { _Comm = newComm; }
-        MemoryRequest * getReq() { return _Req; }
+        // ---- Data Storage
         void setResult(void *Data);
 };
 //---------------------------------------------------------------------------//

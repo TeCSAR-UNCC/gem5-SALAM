@@ -1,6 +1,6 @@
+//------------------------------------------//
 #include "basic_block.hh"
-#include <memory>
-#include <iostream>
+//------------------------------------------//
 
 // ////////////////////////////////////////////////////////////////////
 // Compute Node Constructor 
@@ -16,7 +16,7 @@
 // parsed from the passed LLVM instruction line.
 // ////////////////////////////////////////////////////////////////////
 
-int64_t
+int 
 BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles) {
 	// ////////////////////////////////////////////////////////////////////
 	// Local Variables
@@ -34,11 +34,11 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	uint64_t computeFlags = 0;
 	uint64_t attributeFlags = 0;
 	bool immFirst = false;
-	int64_t functionalUnit = -1;
+	int16_t functionalUnit = -1;
 	// ////////////////////////////////////////////////////////////////////
 	// Find the return register. If it exists, it is always the first component of the line
 	if (returnChk > 0) {
-		// Check if register already exists (It should not because SSA)
+		// Check if register already exists
 		std::string ret_name = line.substr((line.find("%") + 1), returnChk - 3); // Set return register name
 		ret_reg = list->findRegister(ret_name); // Ensure the return register isnt already in the list 
 		if(ret_reg == NULL) {
@@ -169,7 +169,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	debugParams(parameters); // Prints all found parameters for the instruction line
 	// Once all components have been found, navigate through and define each component
 	// and initialize the attributes struct values to match the line
-	//Instruction Type
+	// Instruction Type
 	// Terminator
 	// Binary Operations
 	// Integer
@@ -182,7 +182,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	// Other Operations
 	// Custom Operations
 
-	switch (s_opMap[opCode]) {
+	switch (switch_opMap[opCode]) {
 	// Terminator Instructions
 	case IR_Ret: {
 		// ret <type> <value>; Return a value from a non - void function
@@ -340,6 +340,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		if(immOps.size() != 0) {
 			immOp = stoi(immOps.at(0));
 			maxCycles = cycles->counter_inst;
+			instructionType = "Counter";
 			functionalUnit = COUNTER;
 		}
 		
@@ -388,7 +389,6 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immFirst,
 											functionalUnit );
 		addNode(fadd);
-		DPRINTF(ComputeNode, "Fadd Done\n");
 		break;
 	}
 	case IR_Sub: {
@@ -580,8 +580,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
-		if(returnType == "double") functionalUnit = FPDPMULTI;
-		else functionalUnit = FPSPMULTI;
+		if(returnType == "double") functionalUnit = FPDPDIVID;
+		else functionalUnit = FPSPDIVID;
 		double immOp = 0;
 		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto fdiv = std::make_shared<FDiv>(	lineCpy, 
@@ -611,6 +611,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		functionalUnit = INTMULTI;
 		auto urem = std::make_shared<URem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -638,6 +639,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		functionalUnit = INTMULTI;
 		auto srem = std::make_shared<SRem>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -663,8 +665,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
-		if(returnType == "double") functionalUnit = FPDPMULTI;
-		else functionalUnit = FPSPMULTI;
+		if(returnType == "double") functionalUnit = FPDPDIVID;
+		else functionalUnit = FPSPDIVID;
 		double immOp = 0;
 		if(immOps.size() != 0) immOp = stod(convertImmediate(returnType, immOps.at(0)));
 		auto frem = std::make_shared<FRem>(	lineCpy, 
@@ -690,7 +692,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		// <result> = shl nsw <ty> <op1>, <op2>; yields{ ty }:result
 		// <result> = shl nuw nsw <ty> <op1>, <op2>; yields{ ty }:result
 		instructionType = "Bitwise";
-		functionalUnit = cycles->shl_inst;
+		maxCycles = cycles->shl_inst;
+		functionalUnit = INTSHIFTER;
 		computeFlags = setFlags(parameters);
 		initializeReturnRegister(parameters, ret_reg, returnType, instructionType);
 		std::vector<Register*> regOps = setRegOperands(list, parameters, dependencies, instructionType);
@@ -991,11 +994,6 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		    else
 		        index = 1;
 		}
-		bool global = false;
-		if (ptrval->isGlobal()) {
-			global = true;
-			ret_reg->setGlobal();
-		}
 		if(pty[0] == '[') { // Return type is a struct
 				int stringLength = (pty.find_first_of(']') - pty.find('%')-1);
 				customDataType = pty.substr(pty.find('%')+1, stringLength);
@@ -1052,8 +1050,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 													immdx,
 													ptrval,
 													indexRet,
-													functionalUnit,
-													global);
+													functionalUnit);
 		addNode(gep);
 
 		// Null Stored for register if immediate value used in the situation
@@ -1580,10 +1577,10 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			immvalues.push_back(stoi(parameters[5]));
 			imm.at(1) = true;
 			////////////////////////////
-			if(parameters[4][0] == 'i') {
-			} else if(parameters[2] == "float") {
-			} else if(parameters[2] == "double") {
-			} else { }
+			if(parameters[4][0] == 'i') { DPRINTF(LLVMParse, "\n\n !!! --- Undefined Condition --- !!! \n\n");
+			} else if(parameters[2] == "float") { DPRINTF(LLVMParse, "\n\n !!! --- Undefined Condition --- !!! \n\n"); 
+			} else if(parameters[2] == "double") { DPRINTF(LLVMParse, "\n\n !!! --- Undefined Condition --- !!! \n\n");
+			} else { DPRINTF(LLVMParse, "\n\n !!! --- Undefined Condition --- !!! \n\n"); }
 		}
 		auto select = std::make_shared<Select>(	lineCpy, 
 												opCode, 
@@ -1643,7 +1640,6 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 	default: { break; }
 	}
 	//dependencyList(parameters, dependencies);
-
 	return functionalUnit;
 }
 
@@ -1732,8 +1728,8 @@ BasicBlock::sciToDecimal(std::string immediateValue) {
 
 void
 BasicBlock::debugParams(std::vector<std::string> &parameters) { 
-	for (int i = 0; i < parameters.size(); i++) DPRINTF(ComputeNode, "Parameter[%d]: (%s)\n", i, parameters[i]);
-	DPRINTF(ComputeNode, "\n");
+	for (int i = 0; i < parameters.size(); i++) DPRINTF(LLVMParse, "Parameter[%d]: (%s)\n", i, parameters[i]);
+	DPRINTF(LLVMParse, "\n");
 }
 
 uint64_t
@@ -1870,10 +1866,10 @@ int
 BasicBlock::setSize(std::string dataType) {
     // Code here will infer size based around the stored dataType string
     std::string temp = dataType;
-	int size = 8;
+	int size = DEFAULTSIZE;
     // Pointers
-    if (temp.compare("pointer") == 0) size = SYSTEMSIZE/8;
-    else if (temp.back() =='*') size = SYSTEMSIZE/8;
+    if (temp.compare("pointer") == 0) size = POINTERSIZE;
+    else if (temp.back() =='*') size = POINTERSIZE;
     // Boolean and integer data types
     // Set size if dataType is integer
     else if (temp.front() == 'i') {
@@ -1882,11 +1878,11 @@ BasicBlock::setSize(std::string dataType) {
     }
     // Floating point data types    
     // Set size if dataType is float
-    else if (temp.compare("float")  != -1) size = SYSTEMSIZE/16;
+    else if (temp.compare("float")  != -1) size = FLOATSIZE;
     // Set size if dataType is double
-    else if (temp.find("double") > -1) size = SYSTEMSIZE/8;
+    else if (temp.find("double") > -1) size = DOUBLESIZE;
     // Set size if dataType is void
-    else if (temp.find("void") > -1) size = 0;
+    else if (temp.find("void") > -1) size = VOIDSIZE;
     // Aggregate data types
     // Array dataType
     else if (temp[0] == '[') { }
@@ -1895,7 +1891,7 @@ BasicBlock::setSize(std::string dataType) {
     // Unspecified dataType
     // Label
     // Treat size equivalent to a pointer
-    else if (temp.find("label") > -1) size = SYSTEMSIZE/8;
+    else if (temp.find("label") > -1) size = POINTERSIZE;
     // Unknown dataType
     else { }
 	return size;
@@ -1903,9 +1899,6 @@ BasicBlock::setSize(std::string dataType) {
 
 void
 BasicBlock::printNodes() {
-	// for(auto it = _Nodes.begin(); it != _Nodes.end(); ++it) {
-	// 	std::cout << it.at(0) << std::endl;
-	// }
 	std::cout << "Nodes for " << _Name << " Size: " << _Nodes.size() << std::endl;
 	for(auto i=0; i<_Nodes.size(); i++) {
 		std::cout << _Nodes.at(i)->_OpCode << " Dependencies" << std::endl;

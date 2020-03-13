@@ -1,5 +1,6 @@
+//------------------------------------------//
 #include "llvm_types.hh"
-#include <string>
+//------------------------------------------//
 
 LLVMType::LLVMType(int size, std::string name) {
     this->size = size;

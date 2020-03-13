@@ -1,4 +1,6 @@
+//------------------------------------------//
 #include "hwacc/acc_cluster.hh"
+//------------------------------------------//
 
 AccCluster::AccCluster(const Params *p)
     : Platform(p), system(p->system), gic(nullptr)

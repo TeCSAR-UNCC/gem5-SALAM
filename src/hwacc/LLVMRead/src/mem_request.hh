@@ -1,8 +1,10 @@
-#ifndef __MEMORY_REQUEST_HH__
-#define __MEMORY_REQUEST_HH__
+#ifndef MEMORY_REQUEST_HH
+#define MEMORY_REQUEST_HH
+//------------------------------------------//
 #include "mem/packet.hh"
-#include "debugFlags.hh"
 #include "mem/port.hh"
+#include "debug_flags.hh"
+//------------------------------------------//
 
 class MemoryRequest {
   friend class CommInterface;

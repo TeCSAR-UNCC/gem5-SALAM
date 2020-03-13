@@ -1,7 +1,6 @@
-#include <iostream>
-#include <iomanip>
-#include <fstream>
+//------------------------------------------//
 #include "hwacc/llvm_interface.hh"
+//------------------------------------------//
 
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
@@ -20,36 +19,17 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     compare(p->FU_compare),
     gep(p->FU_GEP),
     conversion(p->FU_conversion),
-    pipelined(p->FU_pipelined) ,
-    fu_clock_period(p->FU_clock_period),
+    pipelined(p->FU_pipelined),
+    fu_latency(p->FU_clock_period),
     clock_period(p->clock_period) {
     bbList = NULL;
     regList = NULL;
     currBB = NULL;
     prevBB = NULL;
     typeList = NULL;
-    memory_loads = 0;
-    memory_stores = 0;
-    dma_loads = 0;
-    dma_stores = 0;
-    global_loads = 0;
-    global_stores = 0;
     running = false;
-    clock_period = clock_period * 1000; //comm->getProcessDelay(); //Clock period
+    clock_period = clock_period * 1000; 
     //process_delay = 1; //Number of cycles a compute_node needs to complete
-    if((counter_units == -1) && 
-        (int_adder_units == -1) &&
-        (int_multiply_units == -1) &&
-        (int_shifter_units == -1) &&
-        (int_bit_units == -1) &&
-        (fp_sp_adder == -1) &&
-        (fp_dp_adder == -1) &&
-        (fp_sp_multiply == -1) &&
-        (fp_dp_multiply == -1) &&
-        (compare == -1) &&
-        (gep == -1)) unlimitedFU = true;
-
-    else unlimitedFU = false;
 }
 
 InstructionBase* createClone(const std::shared_ptr<InstructionBase>& b) {
@@ -81,53 +61,38 @@ LLVMInterface::tick() {
             "********************************************************************************");
     cycle++;
     comm->refreshMemPorts();
-    pwrUtil->updatePowerConsumption(_FunctionalUnits);
-    regList->resetAccess();
-    clearFU();
-    bool loadOpScheduled = false;
-    bool storeOpScheduled = false;
-    bool compOpScheduled = false;
-    int loadInFlight = readQueue.size();
-    int storeInFlight = writeQueue.size();
-    int compInFlight = computeQueue.size();
+    hardware->update();
+    ///////////////////////////
+    //pwrUtil->updatePowerConsumption(_FunctionalUnits);
+    //regList->resetAccess();
+    //clearFU();
+    loadOpScheduled = false;
+    storeOpScheduled = false;
+    compOpScheduled = false;
+    loadInFlight = readQueue.size();
+    storeInFlight = writeQueue.size();
+    compInFlight = computeQueue.size();
+    ///////////////////////////
     DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
         DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
-
-        if(pipelined) {
-             if(unlimitedFU) {
-                updateFU(reservation.at(i)->_FunctionalUnit);
-                if(computeQueue.at(i)->commit()) {
-                    auto it = computeQueue.erase(computeQueue.begin() + i);
-                    i = std::distance(computeQueue.begin(), it);
-                }
-                else i++;
-            } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
-                if(computeQueue.at(i)->commit()) {
-                    auto it = computeQueue.erase(computeQueue.begin() + i);
-                    i = std::distance(computeQueue.begin(), it);
-                } else i++;
-            } else i++;
-        } else { 
-            if(unlimitedFU) {
-                updateFU(reservation.at(i)->_FunctionalUnit);
-                if(computeQueue.at(i)->commit()) {
-                    auto it = computeQueue.erase(computeQueue.begin() + i);
-                    i = std::distance(computeQueue.begin(), it);
-                }
-                else i++;
-            } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
-                if(computeQueue.at(i)->commit()) {
-                    auto it = computeQueue.erase(computeQueue.begin() + i);
-                    i = std::distance(computeQueue.begin(), it);
-                } else i++;
-            } else i++;
-        }
+        //if(unlimitedFU) {
+            if(computeQueue.at(i)->commit()) {
+                auto it = computeQueue.erase(computeQueue.begin() + i);
+                i = std::distance(computeQueue.begin(), it);
+            } else {
+                i++;
+                hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+            }
+        //} else if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
+        //    if(computeQueue.at(i)->commit()) {
+        //        auto it = computeQueue.erase(computeQueue.begin() + i);
+        //        i = std::distance(computeQueue.begin(), it);
+        //    } else i++;
+        //} else i++;
     }
-    // DPRINTF(LLVMInterface, "Reservation size = %d\n", reservation.size());
-    scheduled = false;
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
@@ -147,54 +112,66 @@ LLVMInterface::tick() {
                             loadOpScheduled = true;
                             readQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
-                            if(reservation.at(i)->_Global) dma_loads++;
-                            else memory_loads++; 
-                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                            scheduled = true;
+                            hardware->memoryLoad();
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_OpCode == "store") {
                             storeOpScheduled = true;
                             writeQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
-                            if(reservation.at(i)->_Global) dma_stores++;
-                            else memory_stores++;
-                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                            scheduled = true;
+                            hardware->memoryStore();
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
-                        } else if(reservation.at(i)->_MaxCycle==0) {
-                            reservation.at(i)->compute();
-                            reservation.at(i)->commit(); 
-                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                            scheduled = true; compOpScheduled = true;
-                            auto it = reservation.erase(reservation.begin()+i);
-                            i = std::distance(reservation.begin(), it);
-                        } else { // Computation Units
-                            if(!unlimitedFU){
-                                if(limitedFU(reservation.at(i)->_FunctionalUnit)){
-                                    if(reservation.at(i)->_OpCode == "fdiv") _FunctionalUnits.fpDivision++;
-                                    computeQueue.push_back(reservation.at(i));
+                        }  //////////////// New 
+                        else if(reservation.at(i)->_MaxCycle == 0) {
+                            if(!unlimitedFU) {
+                                if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
                                     reservation.at(i)->compute();
-                                    reservation.at(i)->commit();
-                                    scheduled = true; compOpScheduled = true;
+                                    reservation.at(i)->commit(); 
+                                    compOpScheduled = true;
                                     auto it = reservation.erase(reservation.begin()+i);
                                     i = std::distance(reservation.begin(), it);
                                 } else i++;
-                            }
-                            else {
+                            } else {
+                                hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                                reservation.at(i)->compute();
+                                reservation.at(i)->commit(); 
+                                compOpScheduled = true;
+                                auto it = reservation.erase(reservation.begin()+i);
+                                i = std::distance(reservation.begin(), it);
+                            } 
+                        } //////////////// New 
+                        //else if(reservation.at(i)->_MaxCycle==0) {
+                        //    reservation.at(i)->compute();
+                        //    reservation.at(i)->commit(); 
+                        //    if(unlimitedFU) hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                        //    scheduled = true; compOpScheduled = true;
+                        //    auto it = reservation.erase(reservation.begin()+i);
+                        //    i = std::distance(reservation.begin(), it);
+                        // } 
+                        else { // Computation Units
+                            if(!unlimitedFU){
+                                if(hardware->available(reservation.at(i)->_FunctionalUnit)){
+                                    computeQueue.push_back(reservation.at(i));
+                                    reservation.at(i)->compute();
+                                    reservation.at(i)->commit();
+                                    compOpScheduled = true;
+                                    auto it = reservation.erase(reservation.begin()+i);
+                                    i = std::distance(reservation.begin(), it);
+                                } else i++;
+                            } else {
                                 computeQueue.push_back(reservation.at(i));
                                 reservation.at(i)->compute();
                                 reservation.at(i)->commit();
-                                if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
-                                scheduled = true; compOpScheduled = true;
+                                hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                                compOpScheduled = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
                             }
                         }
                 } else if ((reservation.at(i)->_OpCode != "ret")) {
                     if (reservation.size() < scheduling_threshold) {
-                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                        hardware->controlFlow();
                         prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
                         reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
                         currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
@@ -205,52 +182,16 @@ LLVMInterface::tick() {
                 } 
             } else {
                 if (reservation.at(i)->_OpCode == "ret"){
+                    DPRINTF(LLVMInterface, "Simulation Complete \n");
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
-                        running = false;
-                        // cache_size = comm->getCacheSize();
-                        read_ports = comm->getReadPorts();
-                        write_ports = comm->getWritePorts();
-                        spm_size = comm->getPmemRange();
-                        read_bus_width = comm->getReadBusWidth();
-                        write_bus_width = comm->getWriteBusWidth();
-                        // cache_ports = comm->getcachePorts();
-                        // local_ports = comm->getlocalPorts();
-                        if (comm->isBaseCommInterface())
-                            statistics();
-                        else
-                            statisticsWithMemory();
-                        comm->finish();
+                        finalize();
                     }
                 }
                 i++;
             }
         }
     }
-
-    //if (!scheduled) stalls++; // No new compute node was scheduled this cycle
-    if (loadOpScheduled) {
-        if (storeOpScheduled) {
-            if (compOpScheduled) loadStoreComp++;
-            else loadStore++;
-        } else if (compOpScheduled) loadComp++;
-        else loadOnly++;
-    } else if(storeOpScheduled) {
-        if (compOpScheduled) storeComp++;
-        else storeOnly++;
-    } else if (compOpScheduled) compOnly++;
-    else {
-        stalls++;
-        if(loadInFlight) {
-            if(storeInFlight) {
-                if(compInFlight) loadStoreCompStall++;
-                else loadStoreStall++;
-            } else if (compInFlight) loadCompStall++;
-            else loadOnlyStall++;
-        } else if(storeInFlight) {
-            if(compInFlight) storeCompStall++;
-            else storeOnlyStall++;
-        } else if (compInFlight) compOnlyStall++;
-    }
+    occupancy();
 
     if (running && !tickEvent.scheduled())
     {
@@ -384,8 +325,7 @@ LLVMInterface::constructBBList() {
 *********************************************************************************************/
     // llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
     // m->dump();
-    DPRINTF(LLVMInterface, "Constructing Dependency Graph!\n");
-    initFU();
+    DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
@@ -393,7 +333,8 @@ LLVMInterface::constructBBList() {
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
-    pwrUtil = new Utilization(clock_period, fu_clock_period, regList);
+    hardware = new Hardware(fu_latency); // Initialize Hardware Functional Units
+    hardware->linkRegList(regList);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
     bool inFunction = false; // Parse Variable
@@ -427,7 +368,6 @@ LLVMInterface::constructBBList() {
                             std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
                             DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName); 
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum))); // Create register for global variable
-                            regList->findRegister(regName)->setGlobal(); // Store global status in register
                             DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
                             paramNum++;
                         }
@@ -484,9 +424,9 @@ LLVMInterface::constructBBList() {
                         DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
-                            updateParsedFU(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles));
+                            hardware->updateParsed(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles));
                         } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            updateParsedFU(currBB->parse(line, regList, "NULL", comm, typeList, cycles));
+                            hardware->updateParsed(currBB->parse(line, regList, "NULL", comm, typeList, cycles));
                         }
 
                     }
@@ -498,7 +438,8 @@ LLVMInterface::constructBBList() {
     } else { // Could not find LLVM file
         panic("Unable to open LLVM file!\n");
     }
-    //regList->printRegNames();
+    setupStop = std::chrono::high_resolution_clock::now();
+    setupTime = std::chrono::duration_cast<std::chrono::duration<double>>(setupStop-timeStart);
 }
 
 BasicBlock*
@@ -550,9 +491,9 @@ LLVMInterface::initialize() {
 
  Calls function that constructs the basic block list, initializes the reservation table and
  read, write, and compute queues. Set all data collection variables to zero.
-*********************************************************************************************/     
+*********************************************************************************************/
+    timeStart = std::chrono::high_resolution_clock::now();
     DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
-    running = true;
     constructBBList();
     DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
@@ -562,18 +503,30 @@ LLVMInterface::initialize() {
             "*******************************************************************************",
             "*                 Begin Runtime Simulation Computation Engine                 *",
             "*******************************************************************************");
+    running = true;
     cycle = 0;
     stalls = 0;
-    execnodes = 0;
-    loadOnly = 0;
-    storeOnly = 0;
-    compOnly = 0;
-    loadStore = 0;
-    loadComp = 0;
-    loadStoreComp = 0;
-    storeComp = 0;
+    unlimitedFU = unlimitedMode(); // If all functional units are unlimited, decreases simulation time
+    hardware->updateLimit(counter_units,
+                                int_adder_units,
+                                int_multiply_units,
+                                int_shifter_units,
+                                int_bit_units,
+                                fp_sp_adder,
+                                fp_dp_adder,
+                                fp_sp_multiply,
+                                fp_sp_division,
+                                fp_dp_multiply,
+                                fp_dp_division,
+                                compare,
+                                gep,
+                                conversion);
+
+                           
+
     tick();
 }
+
 
 void
 LLVMInterface::startup() {
@@ -591,110 +544,100 @@ LLVMInterfaceParams::create() {
     return new LLVMInterface(this);
 }
 
-void
-LLVMInterface::statistics() {
-/*********************************************************************************************
- Prints usage statistics of how many times each instruction was accessed during runtime
-*********************************************************************************************/ 
-    double runtime = (cycle*(1e-10));
-    pwrUtil->finalPowerUsage(_MaxFU, cycle);
-    execnodes = cycle-stalls-1;
-
-    results = new Results(  clock_period,
-                            fu_clock_period,
-                            cycle,
-                            runtime,
-                            stalls,
-                            execnodes,
-                            loadOnly,
-                            storeOnly,
-                            compOnly,
-                            loadStore,
-                            loadComp,
-                            loadStoreComp,
-                            storeComp,
-                            loadOnlyStall,
-                            storeOnlyStall,
-                            compOnlyStall,
-                            loadStoreStall,
-                            loadCompStall,
-                            loadStoreCompStall,
-                            storeCompStall,
-                            spm_size,
-                            read_ports,
-                            write_ports,
-                            read_bus_width,
-                            write_bus_width,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            _MaxFU.counter_units,
-                            _MaxFU.int_adder_units,
-                            _MaxFU.int_multiply_units,
-                            _MaxFU.int_shifter_units,
-                            _MaxFU.int_bit_units,
-                            _MaxFU.fp_sp_adder,
-                            _MaxFU.fp_dp_adder,
-                            _MaxFU.fp_sp_multiply,
-                            _MaxFU.fp_dp_multiply,
-                            _MaxFU.compare,
-                            _MaxFU.gep,
-                            _MaxFU.conversion,
-                            _MaxParsed.counter_units,
-                            _MaxParsed.int_adder_units,
-                            _MaxParsed.int_multiply_units,
-                            _MaxParsed.int_shifter_units,
-                            _MaxParsed.int_bit_units,
-                            _MaxParsed.fp_sp_adder,
-                            _MaxParsed.fp_dp_adder,
-                            _MaxParsed.fp_sp_multiply,
-                            _MaxParsed.fp_dp_multiply,
-                            _MaxParsed.compare,
-                            _MaxParsed.gep,
-                            _MaxParsed.conversion,
-                            _MaxParsed.other,
-                            regList->size(),
-                            regList->count(),
-                            regList->average()/((double)cycle),
-                            regList->avgSize()/(regList->average()),
-                            pwrUtil->regUsage.reads,
-                            pwrUtil->regUsage.writes,
-                            memory_loads,
-                            memory_stores,
-                            dma_loads,
-                            dma_stores,
-                            pwrUtil->finalPwr.leakage_power,
-                            pwrUtil->totalPwr.dynamic_energy*runtime,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime,
-                            pwrUtil->totalPwr.reg_leakage_power,
-                            pwrUtil->totalPwr.reg_dynamic_energy*runtime,
-                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*runtime,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*runtime),
-                            pwrUtil->totalPwr.area,
-                            pwrUtil->totalPwr.reg_area,
-                            pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
-
-    results->print(); // TODO: Dump to stats file instead of stdout
-    //regList->printRegNames();
+bool
+LLVMInterface::unlimitedMode() {
+    if((counter_units == -1) && 
+        (int_adder_units == -1) &&
+        (int_multiply_units == -1) &&
+        (int_shifter_units == -1) &&
+        (int_bit_units == -1) &&
+        (fp_sp_adder == -1) &&
+        (fp_dp_adder == -1) &&
+        (fp_sp_multiply == -1) &&
+        //(fp_sp_division == -1) &&
+        (fp_dp_multiply == -1) &&
+        //(fp_dp_division == -1) &&
+        (compare == -1) &&
+        (gep == -1)) return true;
+    return false; 
 }
 
 void
-LLVMInterface::statisticsWithMemory() {
+LLVMInterface::occupancy() {
+        if (loadOpScheduled) {
+        if (storeOpScheduled) {
+            if (compOpScheduled) hardware->occ_scheduled.loadStoreComp++;
+            else hardware->occ_scheduled.loadStore++;
+        } else if (compOpScheduled) hardware->occ_scheduled.loadComp++;
+        else hardware->occ_scheduled.loadOnly++;
+    } else if(storeOpScheduled) {
+        if (compOpScheduled) hardware->occ_scheduled.storeComp++;
+        else hardware->occ_scheduled.storeOnly++;
+    } else if (compOpScheduled) hardware->occ_scheduled.compOnly++;
+    else {
+        stalls++;
+        if(loadInFlight) {
+            if(storeInFlight) {
+                if(compInFlight) hardware->occ_stalled.loadStoreComp++;
+                else hardware->occ_stalled.loadStore++;
+            } else if (compInFlight) hardware->occ_stalled.loadComp++;
+            else hardware->occ_stalled.loadOnly++;
+        } else if(storeInFlight) {
+            if(compInFlight) hardware->occ_stalled.storeComp++;
+            else hardware->occ_stalled.storeOnly++;
+        } else if (compInFlight) hardware->occ_stalled.compOnly++;
+    }
+
+}
+
+void
+LLVMInterface::finalize() {
+    // Simulation Times
+    running = false;
+    simStop = std::chrono::high_resolution_clock::now();
+    simTime = std::chrono::duration_cast<std::chrono::duration<double>>(simStop-timeStart);
+
+    printPerformanceResults();
+    // comm->printResults() ?
+    hardware->printResults();
+    comm->finish();
+}
+
+void
+LLVMInterface::printPerformanceResults() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/ 
-    double runtime = (cycle*(1e-10));
-    pwrUtil->finalPowerUsage(_MaxFU, cycle);
-    execnodes = cycle-stalls-1;
+    std::cout << "********************************************************************************" << std::endl;
+    std::cout << "   ========= Performance Analysis =============" << std::endl;
+    std::cout << "   Setup Time:                      " << (double)(setupTime.count()) << "seconds" << std::endl;
+    std::cout << "   Simulation Time:                 " << (double)(simTime.count()) << "seconds" << std::endl;
+    std::cout << "   System Clock:                    " << 1.0/(clock_period/1000) << "GHz" << std::endl;
+    std::cout << "   Transistor Latency:              " << fu_latency << "ns" << std::endl;
+    std::cout << "   Runtime:                         " << cycle << " cycles" << std::endl;
+    std::cout << "   Runtime:                         " << (cycle*(1e-10)) << " seconds" << std::endl;
+    std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
+    std::cout << "   Executed Nodes:                  " << (cycle-stalls-1) << " cycles" << std::endl;
+    std::cout << std::endl;
+    if(comm->isBaseCommInterface()){
+    std::cout << "   ========= Memory Configuration =============" << std::endl;
+    std::cout << "   Private SPM Size:                " << (comm->getPmemRange())/1024 << "kB" << std::endl;
+    std::cout << "   Private Read Ports:              " << comm->getReadPorts() << std::endl;
+    std::cout << "   Private Write Ports:             " << comm->getWritePorts() << std::endl;
+    std::cout << "   Private Read Bus Width:          " << comm->getReadBusWidth() << std::endl;
+    std::cout << "   Private Write Bus Width:         " << comm->getWriteBusWidth() << std::endl;
+  //  std::cout << "       SPM Reads:                   " << mem_reads << std::endl;
+  //  std::cout << "       SPM Writes:                  " << mem_writes << std::endl;
+    std::cout << std::endl;
+    }
+}
+    /*
     // getCactiResults(int cache_size, int word_size, int ports, int type)
     // SPM cache_type = 0
     uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
     uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
-    uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
-    uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
+    //uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
+    //uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
 
     // Cache cache_type = 1
     // uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
@@ -702,333 +645,4 @@ LLVMInterface::statisticsWithMemory() {
     // uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
     double exponential = 1e9; // Units correction
     double leak = 1.0; // Remnant of old units difference
-
-    results = new Results(  clock_period,
-                            fu_clock_period,
-                            cycle,
-                            runtime,
-                            stalls,
-                            execnodes,
-                            loadOnly,
-                            storeOnly,
-                            compOnly,
-                            loadStore,
-                            loadComp,
-                            loadStoreComp,
-                            storeComp,
-                            loadOnlyStall,
-                            storeOnlyStall,
-                            compOnlyStall,
-                            loadStoreStall,
-                            loadCompStall,
-                            loadStoreCompStall,
-                            storeCompStall,
-                            spm_size,
-                            read_ports,
-                            write_ports,
-                            read_bus_width,
-                            write_bus_width,
-                            (cacti_result_spm_leakage.power.readOp.leakage+cacti_result_spm_leakage.power.writeOp.leakage)*leak,
-                            cacti_result_spm_dynamic_read.power.readOp.dynamic*exponential,
-                            cacti_result_spm_dynamic_write.power.writeOp.dynamic*exponential,
-                            cacti_result_spm_leakage.area,
-                            (cacti_result_spm_opt.power.readOp.leakage+cacti_result_spm_opt.power.writeOp.leakage)*leak,
-                            cacti_result_spm_opt.area,
-                            _MaxFU.counter_units,
-                            _MaxFU.int_adder_units,
-                            _MaxFU.int_multiply_units,
-                            _MaxFU.int_shifter_units,
-                            _MaxFU.int_bit_units,
-                            _MaxFU.fp_sp_adder,
-                            _MaxFU.fp_dp_adder,
-                            _MaxFU.fp_sp_multiply,
-                            _MaxFU.fp_dp_multiply,
-                            _MaxFU.compare,
-                            _MaxFU.gep,
-                            _MaxFU.conversion,
-                            _MaxParsed.counter_units,
-                            _MaxParsed.int_adder_units,
-                            _MaxParsed.int_multiply_units,
-                            _MaxParsed.int_shifter_units,
-                            _MaxParsed.int_bit_units,
-                            _MaxParsed.fp_sp_adder,
-                            _MaxParsed.fp_dp_adder,
-                            _MaxParsed.fp_sp_multiply,
-                            _MaxParsed.fp_dp_multiply,
-                            _MaxParsed.compare,
-                            _MaxParsed.gep,
-                            _MaxParsed.conversion,
-                            _MaxParsed.other,
-                            regList->size(),
-                            regList->count(),
-                            regList->average()/((double)cycle),
-                            regList->avgSize()/(regList->average()),
-                            pwrUtil->regUsage.reads,
-                            pwrUtil->regUsage.writes,
-                            memory_loads,
-                            memory_stores,
-                            dma_loads,
-                            dma_stores,
-                            pwrUtil->finalPwr.leakage_power,
-                            pwrUtil->totalPwr.dynamic_energy*runtime,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime,
-                            pwrUtil->totalPwr.reg_leakage_power,
-                            pwrUtil->totalPwr.reg_dynamic_energy*runtime,
-                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*runtime,
-                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*runtime),
-                            pwrUtil->totalPwr.area,
-                            pwrUtil->totalPwr.reg_area,
-                            pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
-
-    results->print(); // TODO: Dump to stats file instead of stdout
-    //regList->printRegNames();
-}
-
-
-void
-LLVMInterface::initFU() {
-    maxFU(_FunctionalUnits);
-    _FunctionalUnits.counter_units = 0;
-    _FunctionalUnits.int_adder_units = 0;
-    _FunctionalUnits.int_multiply_units = 0;
-    _FunctionalUnits.int_shifter_units = 0;
-    _FunctionalUnits.int_bit_units = 0;
-    _FunctionalUnits.fp_sp_adder = 0;
-    _FunctionalUnits.fp_dp_adder = 0;
-    _FunctionalUnits.fp_sp_multiply = 0;
-    _FunctionalUnits.fp_dp_multiply = 0;
-    _FunctionalUnits.compare = 0;
-    _FunctionalUnits.gep = 0;
-    _FunctionalUnits.conversion = 0;
-    _FunctionalUnits.fpDivision = 0;
-    _MaxParsed.counter_units = 0;
-    _MaxParsed.int_adder_units = 0;
-    _MaxParsed.int_multiply_units = 0;
-    _MaxParsed.int_shifter_units = 0;
-    _MaxParsed.int_bit_units = 0;
-    _MaxParsed.fp_sp_adder = 0;
-    _MaxParsed.fp_dp_adder = 0;
-    _MaxParsed.fp_sp_multiply = 0;
-    _MaxParsed.fp_dp_multiply = 0;
-    _MaxParsed.compare = 0;
-    _MaxParsed.gep = 0;
-    _MaxParsed.conversion = 0;
-    _MaxParsed.other = 0;
-    _MaxFU.counter_units = 0;
-    _MaxFU.int_adder_units = 0;
-    _MaxFU.int_multiply_units = 0;
-    _MaxFU.int_shifter_units = 0;
-    _MaxFU.int_bit_units = 0;
-    _MaxFU.fp_sp_adder = 0;
-    _MaxFU.fp_dp_adder = 0;
-    _MaxFU.fp_sp_multiply = 0;
-    _MaxFU.fp_dp_multiply = 0;
-    _MaxFU.compare = 0;
-    _MaxFU.gep = 0;
-    _MaxFU.conversion = 0;
-}
-
-
-void
-LLVMInterface::clearFU() {
-    maxFU(_FunctionalUnits);
-    _FunctionalUnits.counter_units = 0;
-    _FunctionalUnits.int_adder_units = 0;
-    _FunctionalUnits.int_multiply_units = 0;
-    _FunctionalUnits.int_shifter_units = 0;
-    _FunctionalUnits.int_bit_units = 0;
-    _FunctionalUnits.fp_sp_adder = 0;
-    _FunctionalUnits.fp_dp_adder = 0;
-    _FunctionalUnits.fp_sp_multiply = 0;
-    _FunctionalUnits.fp_dp_multiply = 0;
-    _FunctionalUnits.compare = 0;
-    _FunctionalUnits.gep = 0;
-    _FunctionalUnits.conversion = 0;
-    _FunctionalUnits.fpDivision = 0;
-}
-
-void
-LLVMInterface::updateFU(int8_t FU) {
-    switch(FU) {
-        case COUNTER: _FunctionalUnits.counter_units++; break;
-        case INTADDER: _FunctionalUnits.int_adder_units++; break;
-        case INTMULTI: _FunctionalUnits.int_multiply_units++; break;
-        case INTSHIFTER:  _FunctionalUnits.int_shifter_units++; break;
-        case INTBITWISE: _FunctionalUnits.int_bit_units++; break;
-        case FPSPADDER: _FunctionalUnits.fp_sp_adder++; break;
-        case FPDPADDER: _FunctionalUnits.fp_dp_adder++; break;
-        case FPSPMULTI: _FunctionalUnits.fp_sp_multiply++; break;
-        case FPDPMULTI: _FunctionalUnits.fp_dp_multiply++; break;
-        case COMPARE: _FunctionalUnits.compare++; break;
-        case GETELEMENTPTR: _FunctionalUnits.gep++; break;
-        case CONVERSION: _FunctionalUnits.conversion++; break;
-        default: break;
-    }
-}
-
-void
-LLVMInterface::updateParsedFU(int8_t FU) {
-    switch(FU) {
-        case COUNTER: _MaxParsed.counter_units++; break;
-        case INTADDER: _MaxParsed.int_adder_units++; break;
-        case INTMULTI: _MaxParsed.int_multiply_units++; break;
-        case INTSHIFTER:  _MaxParsed.int_shifter_units++; break;
-        case INTBITWISE: _MaxParsed.int_bit_units++; break;
-        case FPSPADDER: _MaxParsed.fp_sp_adder++; break;
-        case FPDPADDER: _MaxParsed.fp_dp_adder++; break;
-        case FPSPMULTI: _MaxParsed.fp_sp_multiply++; break;
-        case FPDPMULTI: _MaxParsed.fp_dp_multiply++; break;
-        case COMPARE: _MaxParsed.compare++; break;
-        case GETELEMENTPTR: _MaxParsed.gep++; break;
-        case CONVERSION: _MaxParsed.conversion++; break;
-        default: _MaxParsed.other++; break;
-    }
-}
-
-void
-LLVMInterface::maxFU(FunctionalUnits FU) {
-    if(FU.counter_units > _MaxFU.counter_units) _MaxFU.counter_units = FU.counter_units;
-    if(FU.int_adder_units > _MaxFU.int_adder_units) _MaxFU.int_adder_units = FU.int_adder_units;
-    if(FU.int_multiply_units > _MaxFU.int_multiply_units) _MaxFU.int_multiply_units = FU.int_multiply_units;
-    if(FU.int_shifter_units > _MaxFU.int_shifter_units) _MaxFU.int_shifter_units = FU.int_shifter_units;
-    if(FU.int_bit_units > _MaxFU.int_bit_units) _MaxFU.int_bit_units = FU.int_bit_units;
-    if(FU.fp_sp_adder > _MaxFU.fp_sp_adder) _MaxFU.fp_sp_adder = FU.fp_sp_adder;
-    if(FU.fp_dp_adder > _MaxFU.fp_dp_adder) _MaxFU.fp_dp_adder = FU.fp_dp_adder;
-    if(FU.fp_sp_multiply > _MaxFU.fp_sp_multiply) _MaxFU.fp_sp_multiply = FU.fp_sp_multiply;
-    if(FU.fp_dp_multiply > _MaxFU.fp_dp_multiply) _MaxFU.fp_dp_multiply = FU.fp_dp_multiply;
-    if(FU.compare > _MaxFU.compare) _MaxFU.compare = FU.compare;
-    if(FU.gep > _MaxFU.gep) _MaxFU.gep = FU.gep;
-    if(FU.conversion > _MaxFU.conversion) _MaxFU.conversion = FU.conversion;
-}
-
-bool
-LLVMInterface::limitedFU(int8_t FU) {
-    bool available = false;
-    switch(FU) {
-        case COUNTER: { 
-            if(counter_units == -1) {
-                _FunctionalUnits.counter_units++; 
-                available = true;
-            } else if(_FunctionalUnits.counter_units < counter_units) {
-                _FunctionalUnits.counter_units++; 
-                available = true; 
-            }
-            break;
-        }
-        case INTADDER: {
-            if(int_adder_units == -1) {
-                _FunctionalUnits.int_adder_units++; 
-                available = true;
-            } else if(_FunctionalUnits.int_adder_units < int_adder_units) {
-                _FunctionalUnits.int_adder_units++; 
-                available = true; 
-            }
-            break;
-        }
-        case INTMULTI: {
-            if(int_multiply_units == -1) {
-                _FunctionalUnits.int_multiply_units++; 
-                available = true;
-            } else if(_FunctionalUnits.int_multiply_units < int_multiply_units) {
-                _FunctionalUnits.int_multiply_units++; 
-                available = true; 
-            }
-            break;
-        }
-        case INTSHIFTER: {
-            if(int_shifter_units == -1) {
-                _FunctionalUnits.int_shifter_units++; 
-                available = true;
-            } else if(_FunctionalUnits.int_shifter_units < int_shifter_units) {
-                _FunctionalUnits.int_shifter_units++; 
-                available = true; 
-            }
-            break;
-        }
-        case INTBITWISE: {
-            if(int_bit_units == -1) {
-                _FunctionalUnits.int_bit_units++; 
-                available = true;
-            } else if(_FunctionalUnits.int_bit_units < int_bit_units) {
-                _FunctionalUnits.int_bit_units++; 
-                available = true; 
-            }
-            break;
-        }
-        case FPSPADDER: {
-            if(fp_sp_adder == -1) {
-                _FunctionalUnits.fp_sp_adder++; 
-                available = true;
-            } else if(_FunctionalUnits.fp_sp_adder < fp_sp_adder) {
-                _FunctionalUnits.fp_sp_adder++; 
-                available = true; 
-            }
-            break;
-        }
-        case FPDPADDER: {
-            if(fp_dp_adder == -1) {
-                _FunctionalUnits.fp_dp_adder++; 
-                available = true;
-            } else if(_FunctionalUnits.fp_dp_adder < fp_dp_adder) {
-                _FunctionalUnits.fp_dp_adder++; 
-                available = true; 
-            }
-            break;
-        }
-        case FPSPMULTI: {
-            if(fp_sp_multiply == -1) {
-                _FunctionalUnits.fp_sp_multiply++; 
-                available = true;
-            } else if(_FunctionalUnits.fp_sp_multiply < fp_sp_multiply) {
-                _FunctionalUnits.fp_sp_multiply++; 
-                available = true; 
-            }
-            break;
-        }
-        case FPDPMULTI: {
-            if(fp_dp_multiply == -1) {
-                _FunctionalUnits.fp_dp_multiply++; 
-                available = true;
-            } else if(_FunctionalUnits.fp_dp_multiply < fp_dp_multiply) {
-                _FunctionalUnits.fp_dp_multiply++; 
-                available = true; 
-            }
-            break;
-        }
-        case COMPARE: {
-            if(compare == -1) {
-                _FunctionalUnits.compare++; 
-                available = true;
-            } else if(_FunctionalUnits.compare < compare) {
-                _FunctionalUnits.compare++; 
-                available = true; 
-            }
-            break;
-        }
-        case GETELEMENTPTR: {
-            if(gep == -1) {
-                _FunctionalUnits.gep++; 
-                available = true;
-            } else if(_FunctionalUnits.gep < gep) {
-                _FunctionalUnits.gep++; 
-                available = true; 
-            }
-            break;
-        }
-        case CONVERSION: {
-            if(conversion == -1) {
-                _FunctionalUnits.conversion++; 
-                available = true;
-            } else if(_FunctionalUnits.conversion < conversion) {
-                _FunctionalUnits.conversion++; 
-                available = true; 
-            }
-            break;
-        }
-        default: {
-            available = true;
-            break;
-        }
-    }
-    return available;
-}
+    */

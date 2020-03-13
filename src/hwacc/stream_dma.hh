@@ -1,14 +1,17 @@
 #ifndef __HWACC_STREAM_DMA_HH__
 #define __HWACC_STREAM_DMA_HH__
-
+//------------------------------------------//
+#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/dma_write_fifo.hh"
 #include "params/StreamDma.hh"
 #include "dev/dma_device.hh"
-#include "hwacc/dma_write_fifo.hh"
 #include "dev/arm/base_gic.hh"
 #include "hwacc/stream_port.hh"
+#include "mem/packet.hh"
+#include "mem/packet_access.hh"
+//------------------------------------------//
 
 /*
-
     Steaming DMA device with 2 modes.
     1. Memory to Stream (MM2S)
     2. Stream to Memory (S2MM)

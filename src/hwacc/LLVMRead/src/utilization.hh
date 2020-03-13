@@ -1,13 +1,29 @@
-#ifndef __UTILIZATION_HH__
-#define __UTILIZATION_HH__
-#include "debugFlags.hh" 
-#include "debug/Hardware.hh"
-#include "power_func.hh"
+#ifndef UTILIZATION_HH
+#define UTILIZATION_HH
+//------------------------------------------//
+#include "functional_units.hh" 
+#include "debug_flags.hh" 
+#include "cycle_count.hh"
 #include "registers.hh"
-#include "power.hh"
-#include "macros.hh"
-#include <map>
-#include <vector>
+
+//------------------------------------------//
+
+class RegisterList;
+
+
+struct Pwr_Parameters {
+    float cycleTime;
+    float internal_power;
+    float switch_power;
+    float leakage_power;
+    float area;
+    Pwr_Parameters():
+        cycleTime(0.0),
+        internal_power(0.0),
+        switch_power(0.0),
+        leakage_power(0.0),
+        area(0.0) {}
+};
 
 struct FunctionalUnits {
   int32_t counter_units;
@@ -33,6 +49,7 @@ struct PowerUsage {
     float switch_power = 0;
     float leakage_power = 0;
     float area = 0;
+    
 };
 
 struct PowerTotals {
@@ -78,5 +95,89 @@ class Utilization {
     void calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle);
 };
 
+struct Occupancy {
+    int loadOnly; //
+    int storeOnly; //
+    int compOnly; //
+    int loadStore; //
+    int loadComp;
+    int loadStoreComp;
+    int storeComp;
+    Occupancy():
+        loadOnly(0),
+        storeOnly(0),
+        compOnly(0),
+        loadStore(0),
+        loadComp(0),
+        loadStoreComp(0),
+        storeComp(0) {}
+};
+
+
+
+class Hardware {
+    public:
+        CycleCounts * cycles;
+        FunctionalUnit * counter;
+        FunctionalUnit * int_adder;
+        FunctionalUnit * int_multiplier;
+        FunctionalUnit * int_shifter;
+        FunctionalUnit * int_bitwise;
+        FunctionalUnit * fp_sp_adder;
+        FunctionalUnit * fp_dp_adder;
+        FunctionalUnit * fp_sp_multiplier;
+        FunctionalUnit * fp_sp_division;
+        FunctionalUnit * fp_dp_multiplier;
+        FunctionalUnit * fp_dp_division;
+        FunctionalUnit * comparison;
+        FunctionalUnit * getelementptr;
+        FunctionalUnit * conversion;
+        FunctionalUnit * registers;
+        FunctionalUnit * other;
+        RegisterList * regList;
+        int loads;
+        int stores;
+        int control_flow;
+
+        Occupancy occ_stalled;
+        Occupancy occ_scheduled;
+        Hardware(int Latency);
+        void reset();
+        void update();
+        void updateMax();
+        void linkRegList(RegisterList * List) { regList = List; }
+        bool available(uint8_t HardwareUnit);
+        void updateParsed(uint8_t HardwareUnit);
+        void updateDynamic(uint8_t HardwareUnit);
+        void memoryLoad() { loads++; }
+        void memoryStore() { stores++; }
+        void controlFlow() { control_flow++; }
+        void updateLimit(int Counter, 
+                            int IntAdder, 
+                            int IntMul, 
+                            int IntShift, 
+                            int IntBit, 
+                            int FPSPAdd, 
+                            int FPDPAdd, 
+                            int FPSPMul, 
+                            int FPSPDiv, 
+                            int FPDPMul, 
+                            int FPDPDiv, 
+                            int Compare, 
+                            int GEP, 
+                            int Conversion);
+        void printResults(); 
+        void printOccupancyResults();
+        void printLLVMFunctionalUnits();
+        void printDefinedFunctionalUnits();
+        void printDynamicFunctionalUnits();
+        void printPowerAnalysis();
+        void printAreaAnalysis();
+        void printRegisterUsageAnalysis();
+        void printRegisterPowerAnalysis();
+        void printRegisterAreaAnalysis();
+        void printTotals();                    
+
+};
 
 #endif //__UTILIZATION_HH__

@@ -1,19 +1,21 @@
-#ifndef __INSTRUCTIONS_HH__
-#define __INSTRUCTIONS_HH__
-
+#ifndef INSTRUCTIONS_HH
+#define INSTRUCTIONS_HH
+//------------------------------------------//
 #include "hwacc/comm_interface.hh"
 #include "mem_request.hh"
 #include "llvm_types.hh"
-#include "debugFlags.hh"
+#include "debug_flags.hh"
 #include "registers.hh"
 #include "base_instruction.hh"
-#include "power.hh"
+//#include "utilization.hh"
+//------------------------------------------//
 #include <string>
 #include <vector>
+//------------------------------------------//
 
-// counter type in parser 0 cycle
+class InstructionBase;
 
-
+//---------------------------------------------------------------------------//
 //--------- Begin Terminator Instruction Base -------------------------------//
 //---------------------------------------------------------------------------//
 class Terminator : public InstructionBase {
@@ -1601,7 +1603,6 @@ class GetElementPtr : public Memory {
         Register* _PtrVal;
         uint64_t _ActivePtr;
         uint64_t _Index;
-        bool _Global;
 
     public:
         GetElementPtr (     const std::string& Line,
@@ -1619,8 +1620,7 @@ class GetElementPtr : public Memory {
                             std::vector<int64_t> ImmIdx,
                             Register* PtrVal,
                             uint64_t Index,
-                            uint8_t FunctionalUnit,
-                            bool Global)
+                            uint8_t FunctionalUnit)
         : Memory (          Line, 
                             OpCode, 
                             ReturnType, 
@@ -1636,12 +1636,10 @@ class GetElementPtr : public Memory {
         , _Type(            Type)
         , _ImmIdx(          ImmIdx)
         , _PtrVal(          PtrVal)
-        , _Index(           Index) 
-        , _Global(          Global) { 
+        , _Index(           Index) { 
                             Details("GetElementPtr"); }
         ~GetElementPtr()  { Destruct("GetElementPtr"); }
         void compute()      override; 
-        bool isGlobal()     override {return _Global; }
         virtual GetElementPtr* clone() const { return new GetElementPtr(*this); }
 };
 //---------------------------------------------------------------------------//

@@ -1,10 +1,12 @@
-#ifndef __CYCLE_COUNT_HH__
-#define __CYCLE_COUNT_HH__
-#include <cstdint>
+#ifndef CYCLE_COUNT_HH
+#define CYCLE_COUNT_HH
+//------------------------------------------//
+#include "debug_flags.hh"
 #include "params/CycleCounts.hh"
 #include "sim/sim_object.hh"
-
-
+//------------------------------------------//
+#include <cstdint>
+//------------------------------------------//
 
 class CycleCounts : public SimObject {
     public:
@@ -66,10 +68,7 @@ class CycleCounts : public SimObject {
     uint32_t fmul_inst;
     uint32_t fdiv_inst;
     uint32_t frem_inst;
-
     CycleCounts(CycleCountsParams *p);
-
 };
-
 
 #endif //__CYCLE_COUNT_HH__

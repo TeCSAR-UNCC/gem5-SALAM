@@ -1,4 +1,6 @@
+//------------------------------------------//
 #include "mem_request.hh"
+//------------------------------------------//
 
 MemoryRequest::MemoryRequest(Addr add, size_t len) {
     address = add;

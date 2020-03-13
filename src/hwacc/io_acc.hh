@@ -1,13 +1,19 @@
 #ifndef __HWACC_IO_ACC_HH__
-
 #define __HWACC_IO_ACC_HH__
-
+//------------------------------------------//
+#include "base/trace.hh"
+#include "mem/packet.hh"
+#include "mem/packet_access.hh"
+#include "sim/system.hh"
 #include "params/IOAcc.hh"
 #include "dev/io_device.hh"
 #include "dev/arm/base_gic.hh"
-#include "hwacc/LLVMRead/src/debugFlags.hh"
-
+#include "hwacc/LLVMRead/src/debug_flags.hh"
+//------------------------------------------//
+#include <stdio.h>
+#include <stdlib.h>
 #include <queue>
+//------------------------------------------//
 
 class IOAcc : public BasicPioDevice
 {

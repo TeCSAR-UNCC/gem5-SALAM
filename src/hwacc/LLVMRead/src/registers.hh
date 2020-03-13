@@ -1,13 +1,22 @@
-#ifndef __REGISTERS_HH__
-#define __REGISTERS_HH__
+#ifndef REGISTERS_HH
+#define REGISTERS_HH
+//------------------------------------------//
+//#include "utilization.hh"
+#include "debug_flags.hh"
+//------------------------------------------//
 #include <iostream>
 #include <cstdint>
 #include <cstring>
 #include <string>
 #include <list>
-#include "power.hh"
-#include "macros.hh"
-#include "debugFlags.hh"
+//------------------------------------------//
+
+struct Reg_Usage {
+    uint64_t reads;
+    uint64_t writes;
+    Reg_Usage():reads(0), writes(0) {}
+};
+
 
 class Register {
     //-----------------------------------------------------------------------//
@@ -50,13 +59,11 @@ class Register {
         uint64_t getSize()              { return _Size; }
         bool getStatus()                { return _Hot; }
         // ---- Set Functions
-        void commit()                   { _Hot = false; _Reg_Usage.writes++;}
+        void commit()                   { _Hot = false; }
         void reset()                    { _Hot = true; }
         void update()                   { updated_this_cycle = !(updated_this_cycle); }
         void setSize(const std::string& Data_Type); 
         void setValue(void *data);
-        void setGlobal()                { _Global = true; }
-        bool isGlobal()                 { return _Global; }
         // ---- Increment Functions
         void write()                    { _Reg_Usage.writes++; }
         void read()                     { _Reg_Usage.reads++; }     
@@ -65,7 +72,7 @@ class Register {
 };
 
 
-class RegisterList{
+class RegisterList {
     //-----------------------------------------------------------------------//
     //----- Begin Private ---------------------------------------------------//
     private:  

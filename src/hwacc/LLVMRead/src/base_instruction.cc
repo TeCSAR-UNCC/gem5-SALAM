@@ -1,8 +1,10 @@
+//------------------------------------------//
 #include "base_instruction.hh"
-#include "instructions.hh"
+//------------------------------------------//
 
 void
-InstructionBase::setResult(void *Data) { // memcpy shortcut method
+InstructionBase::setResult(void *Data) { 
+    // memcpy shortcut method
     memcpy(&_FinalResult, Data, _ReturnRegister->getSize());
 }   //  --- End Function ----------------------------------------------//
 
@@ -14,10 +16,11 @@ InstructionBase::commit() {
 		if (_CurrCycle >= _MaxCycle) {
 			_ReturnRegister->setValue(&_FinalResult);
 			_ReturnRegister->commit();
+            _ReturnRegister->write();
 			signalChildren();
-			DPRINTF(LLVMOp, "Committed\n\n");
+			DPRINTF(LLVMOp, "Operation Committed to Memory \n");
 			return true;
-		} else DPRINTF(LLVMOp, "Will commit in future cycle\n\n");
+		} else DPRINTF(LLVMOp, "Operation Will Commit in %d Cycle(s) \n", (_MaxCycle-_CurrCycle));
         _CurrCycle++;
     } else {
         signalChildren();
@@ -42,7 +45,7 @@ InstructionBase::fetchDependency(Register* reg) {
             if (reg == _Dependencies.at(i)) {
                 _Ops.at(i) = _Dependencies.at(i)->getValue();
                 if(!(reg->updated_this_cycle)) {
-                    reg->_Reg_Usage.reads++;
+                    reg->read();
                     reg->update();
                 }
             }

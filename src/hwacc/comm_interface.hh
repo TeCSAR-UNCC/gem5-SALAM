@@ -1,5 +1,4 @@
 #ifndef __HWACC_COMM_INTERFACE_HH__
-
 #define __HWACC_COMM_INTERFACE_HH__
 
 #include "params/CommInterface.hh"
@@ -7,9 +6,9 @@
 #include "dev/arm/base_gic.hh"
 #include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
-#include "hwacc/LLVMRead/src/debugFlags.hh"
 #include "hwacc/stream_port.hh"
 #include "hwacc/scratchpad_memory.hh"
+#include "hwacc/LLVMRead/src/debug_flags.hh"
 
 #include <list>
 #include <queue>

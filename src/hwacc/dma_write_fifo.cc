@@ -1,5 +1,6 @@
+//------------------------------------------//
 #include "hwacc/dma_write_fifo.hh"
-#include "debug/DMA.hh"
+//------------------------------------------//
 
 DmaWriteFifo::DmaWriteFifo(DmaPort &_port, size_t size,
                          unsigned max_req_size,

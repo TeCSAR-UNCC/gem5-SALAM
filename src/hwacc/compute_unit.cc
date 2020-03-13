@@ -1,4 +1,6 @@
+//------------------------------------------//
 #include "hwacc/compute_unit.hh"
+//------------------------------------------//
 
 ComputeUnit::ComputeUnit(ComputeUnitParams *p) :
     SimObject(p),

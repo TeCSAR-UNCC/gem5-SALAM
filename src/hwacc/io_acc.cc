@@ -1,13 +1,6 @@
+//------------------------------------------//
 #include "hwacc/io_acc.hh"
-
-#include "base/trace.hh"
-#include "mem/packet.hh"
-#include "mem/packet_access.hh"
-#include "sim/system.hh"
-
-#include <stdio.h>
-#include <stdlib.h>
-
+//------------------------------------------//
 
 using namespace std;
 

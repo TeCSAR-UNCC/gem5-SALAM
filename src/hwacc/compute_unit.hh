@@ -1,14 +1,13 @@
 #ifndef __HWACC_COMPUTE_UNIT_HH__
-
 #define __HWACC_COMPUTE_UNIT_HH__
-
+//------------------------------------------//
 #include "params/ComputeUnit.hh"
 #include "sim/sim_object.hh"
 #include "hwacc/comm_interface.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
-#include "hwacc/LLVMRead/src/debugFlags.hh"
+#include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/LLVMRead/src/cycle_count.hh"
-
+//------------------------------------------//
 
 class ComputeUnit : public SimObject {
   private:

@@ -1,4 +1,6 @@
+//------------------------------------------//
 #include "instructions.hh"
+//------------------------------------------//
 
 void 
 Add::compute() {
@@ -545,9 +547,6 @@ Xor::compute() {
 
 void
 Load::compute() {
-    //uint64_t src = _Pointer->getValue();
-	if(_Pointer->isGlobal()) setGlobal(true);
-	else setGlobal(false);
 	uint64_t src = _Ops.at(0);
 	_ReturnRegister->setSize(_ReturnType);
 	DPRINTF(LLVMOp, "Load From: %x\n", _Ops.at(0));
@@ -559,14 +558,10 @@ void
 Store::compute() {
 	uint64_t data;
 	uint64_t size = 0;
-	//uint64_t dst = _Pointer->getValue();
-	if(_Pointer->isGlobal()) setGlobal(true);
-	else setGlobal(false);
 	uint64_t dst = _Ops.at(0);
 	DPRINTF(LLVMOp, "Starting Store!\n");
 	if(_ImmVal) {
 		data = (uint64_t) _Imm;
-		//size = getSize(_ReturnType);
 		size = ((std::stoi(_ReturnType.substr(1))-1)/8)+1;
 		_Req = new MemoryRequest((Addr)dst, (uint8_t *)(&data), size);
 		DPRINTF(LLVMOp,"Store (Imm) Operation:(%s) Addr = %x Data = %x, Size = %u\n",_Pointer->getName(), dst, data, size);
