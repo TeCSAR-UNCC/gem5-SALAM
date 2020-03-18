@@ -5,7 +5,11 @@
 #include "instructions.hh"
 //------------------------------------------//
 #include <memory>
+#include <iomanip> 
+#include <string>
+#include <sstream>
 #include <iostream>
+#include <iterator>
 //------------------------------------------//
 
 class BasicBlock {
@@ -150,6 +154,7 @@ class BasicBlock {
     std::string _PrevBB; 
     std::string _Name;
     uint64_t _BBID;
+    uint64_t GLOBALID;
     std::vector<std::shared_ptr<InstructionBase> > _Nodes;
   
   public:

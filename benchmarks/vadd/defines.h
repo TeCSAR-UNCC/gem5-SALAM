@@ -1,3 +1,3 @@
 #define TYPE int
-#define LENGTH 1024
+#define LENGTH 16
 #define SPM

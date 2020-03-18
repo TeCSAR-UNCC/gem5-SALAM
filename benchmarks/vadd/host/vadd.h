@@ -28,9 +28,9 @@ int checkData(vadd_struct * vas) {
 
 void genData(vadd_struct * vas) {
     int i;
+    vas->a[0] = 2;
     for (i = 0; i < vas->length; i++) {
-        vas->a[i] = (TYPE)i;
-        vas->b[i] = (TYPE)(vas->length - i);
-        vas->check[i] = vas->a[i]+vas->b[i];
+        vas->c[i] = (TYPE)(vas->length - i);
+        vas->check[i] = vas->a[0]+vas->c[i];
     }
 }

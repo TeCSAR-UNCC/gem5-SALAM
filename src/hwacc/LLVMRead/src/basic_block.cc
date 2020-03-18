@@ -889,9 +889,22 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		int align = 0;
 		while (parameters[align].compare("align") != 0)
 		    align++;
-		// Determine if register that contains load address exists
+		// Check if load contains inttoptr direct address
 		Register* pointer;
-		if(isRegister(parameters[align - 1])) setRegister(parameters[align - 1], pointer, dependencies, list, parameters);
+		if((parameters[align - 2].find("inttoptr")) != std::string::npos) {
+			// Substring (i## pointervalue to i##*)
+			std::istringstream iss(parameters[align -1]);
+			std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+			std::string globalRegister = "%global_" + std::to_string(GLOBALID);
+			GLOBALID++;
+			setRegister(globalRegister, pointer, dependencies, list, parameters);
+
+			// Address should be in value variable below
+			uint64_t address = std::stoi(substring[1]); 
+			pointer->setValue(&address);
+		} else if(isRegister(parameters[align - 1])) {
+			setRegister(parameters[align - 1], pointer, dependencies, list, parameters);
+		}
 		// Set value for alignment
 		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
 	    align = stoi(parameters[align + 1]);
@@ -924,7 +937,24 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		returnType = parameters[index];
 		Register* pointer;
 		Register* value;
-		if(isRegister(parameters[index + 3])) setRegister(parameters[index + 3], pointer, dependencies, list, parameters);
+
+		if((parameters[index + 3].find("inttoptr")) != std::string::npos) {
+			// Substring (i## pointervalue to i##*)
+			std::istringstream iss(parameters[index + 4]);
+			std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+			std::string globalRegister = "%global_" + std::to_string(GLOBALID);
+			GLOBALID++;
+			setRegister(globalRegister, pointer, dependencies, list, parameters);
+			align = std::stoi(parameters[index + 6]);
+			// Address should be in value variable below
+			uint64_t address = std::stoi(substring[1]); 
+			pointer->setValue(&address);
+		} else if(isRegister(parameters[index + 3])) {
+			setRegister(parameters[index + 3], pointer, dependencies, list, parameters);
+			align = std::stoi(parameters[index + 5]);
+		}
+
+
 		if(isRegister(parameters[index + 1])) {
 			setRegister(parameters[index + 1], value, dependencies, list, parameters);
 			value->setSize(returnType);
@@ -934,7 +964,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 				immVal = true;
 			} else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
-		align = std::stoi(parameters[index + 5]);
+		
 		auto storeoc = std::make_shared<Store>(	lineCpy, 
 												opCode, 
 												returnType, 
@@ -970,21 +1000,58 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<int64_t> immdx;
 		uint64_t indexRet = 0;
 		Register* tempReg;
+		
+		// Base Load Address Value
+		// Index = location of reg or ptr that stores base address
 		if (parameters[0] == "inbounds") {
 			attributeFlags = attributeFlags | INBOUNDS;
 			pty = parameters[1];
 			returnType = parameters[1];
-			if (list->findRegister(parameters[3].substr(1)) == NULL) {
+			if (parameters[3].find("inttoptr") != std::string::npos) {
+				// Embedded inttoptr
+				std::string globalRegister = "%global_" + std::to_string(GLOBALID);
+				GLOBALID++;
+				ptrval = new Register(globalRegister);
+				list->addRegister(ptrval);
+				std::istringstream iss(parameters[4]);
+				std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+				// Address should be in value variable below
+				uint64_t address = std::stoi(substring[1]); 
+				ptrval->setValue(&address);
+				if(parameters[1].back() != '*') 
+					// GEPs with embedded inttoptr have an extra parameter
+			    	index = 4;
+		    	else
+		        	index = 3;
+
+			} else if (list->findRegister(parameters[3].substr(1)) == NULL) {
 				ptrval = new Register(parameters[3]);
 				list->addRegister(ptrval);
-			} else ptrval = list->findRegister(parameters[3].substr(1));
-			if(parameters[1].back() != '*')
-			    index = 3;
-		    else
-		        index = 2;
+				if(parameters[1].back() != '*') 
+			    	index = 3;
+		    	else
+		        	index = 2;
+			} else {
+				ptrval = list->findRegister(parameters[3].substr(1));
+				if(parameters[1].back() != '*') 
+			    	index = 3;
+		    	else
+		    	    index = 2;
+			}
 		} else {
 			pty = parameters[0];
-			if (list->findRegister(parameters[2].substr(1)) == NULL) {
+			if (parameters[2].find("inttoptr") != std::string::npos) {
+				// Embedded inttoptr
+				std::string globalRegister = "%global_" + std::to_string(GLOBALID);
+				GLOBALID++;
+				ptrval = new Register(globalRegister);
+				list->addRegister(ptrval);
+				std::istringstream iss(parameters[3]);
+				std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+				// Address should be in value variable below
+				uint64_t address = std::stoi(substring[1]); 
+				ptrval->setValue(&address);
+			} else if (list->findRegister(parameters[2].substr(1)) == NULL) {
 				ptrval = new Register(parameters[3]);
 				list->addRegister(ptrval);
 			} else ptrval = list->findRegister(parameters[2].substr(1));
@@ -994,6 +1061,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		    else
 		        index = 1;
 		}
+
+		// Additional return register setup for structs and custom data types
 		if(pty[0] == '[') { // Return type is a struct
 				int stringLength = (pty.find_first_of(']') - pty.find('%')-1);
 				customDataType = pty.substr(pty.find('%')+1, stringLength);
@@ -1016,9 +1085,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 				DPRINTF(LLVMGEP, "No Custom Data Types Found!\n");
 			}
 		}
+
+		// Index is the address of base value, so loop start (index +1) is start of offsets
+		// This loop begins at the datatype type of the first offset registers
+		// It finds all offsets, and determines if the value is stored or immediate
 		for (int i = 1; i + index <= last; i+=2) {
 			ty.push_back(parameters[index+i]);
-			//if(parameters[index+i+1][0] == '%') {
 			if(isRegister(parameters[index+i+1])) {
 				setRegister(parameters[index+i+1], tempReg, dependencies, list, parameters);
 				idx.push_back(tempReg);
@@ -1664,6 +1736,7 @@ BasicBlock::BasicBlock(const std::string& Name, uint64_t BBID) {
     //cnList = new std::list<ComputeNode *>();
     _Name = Name;
     _BBID = BBID;
+	GLOBALID = 0;
 }
 
 void
