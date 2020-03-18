@@ -31,7 +31,7 @@ class CommInterface : public BasicPioDevice
     std::vector<Addr> data_base_ptrs;
     ByteOrder endian;
 
-    const std::string name() const { return devname; }
+    // const std::string name() const { return devname; }
 
     class MemSidePort : public StreamMasterPort
     {
@@ -250,7 +250,7 @@ class CommInterface : public BasicPioDevice
     MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead);
     void clearMemRequest(MemoryRequest * req, bool isRead);
     virtual void refreshMemPorts() {}
-    std::string getName() const { return devname; }
+    std::string getName() const { return name(); }
 
     virtual bool isBaseCommInterface() { return true; }
   protected:

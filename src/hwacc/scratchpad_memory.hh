@@ -60,6 +60,8 @@ class ScratchpadMemory : public AbstractMemory
 {
   protected:
     bool readyMode;
+    bool readOnInvalid;
+    bool writeOnValid;
     bool resetOnScratchpadRead;
     bool *ready;
   public:

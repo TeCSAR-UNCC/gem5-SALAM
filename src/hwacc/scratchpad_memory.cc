@@ -25,6 +25,8 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
     latency_var(p->latency_var), bandwidth(p->bandwidth),
     dequeueEvent([this]{ dequeue(); }, name()),
     readyMode(p->ready_mode),
+    readOnInvalid(p->read_on_invalid),
+    writeOnValid(p->write_on_valid),
     resetOnScratchpadRead(p->reset_on_scratchpad_read) {
     ready = new bool[range.size()];
     if (readyMode) {
@@ -47,11 +49,26 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
 
 bool
 ScratchpadMemory::isReady(Addr ad, size_t size, bool read) {
-    if (!readyMode || !read) return true;
-    Addr start_offset = ad - range.start();
-    Addr end_offset = start_offset + size;
-    for (auto i=start_offset; i<end_offset; i++) {
-        if (ready[i] == false) return false;
+    if (!readyMode) {
+        return true;
+    } else if (read) {
+        // We are reading. We can read if readOnInvalid or
+        // if all segments are valid.
+        if (readOnInvalid) return true;
+        Addr start_offset = ad - range.start();
+        Addr end_offset = start_offset + size;
+        for (auto i=start_offset; i<end_offset; i++) {
+            if (ready[i] == false) return false;
+        }
+    } else {
+        // We are writing. We can write if writeOnValid or
+        // if all segments are invalid.
+        if (writeOnValid) return true;
+        Addr start_offset = ad - range.start();
+        Addr end_offset = start_offset + size;
+        for (auto i=start_offset; i<end_offset; i++) {
+            if (ready[i] == true) return false;
+        }
     }
     return true;
 }
@@ -157,13 +174,15 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
             trackLoadLocked(pkt);
         }
         if (validateAccess) {
-            Addr start_offset = pkt->getAddr() - range.start();
-            Addr end_offset = start_offset + pkt->getSize();
-            for (auto i=start_offset; i<end_offset; i++) {
-                if (!ready[i] && readyMode)
-                    panic("Scratchpad read at address: 0x%lx is invalid! Sector has not been written yet!\n", pkt->getAddr());
-                if (resetOnScratchpadRead)
+            if (!isReady(pkt->getAddr(),pkt->getSize(), true)) {
+                panic("Scratchpad read at address: 0x%lx is invalid! Sector has not been written yet!\n", pkt->getAddr());
+            }
+            if (resetOnScratchpadRead) {
+                Addr start_offset = pkt->getAddr() - range.start();
+                Addr end_offset = start_offset + pkt->getSize();
+                for (auto i=start_offset; i<end_offset; i++) {
                     ready[i] = false;
+                }
             }
         }
         if (pmemAddr) {
@@ -191,6 +210,11 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
             TRACE_PACKET("Write");
             stats.numWrites[pkt->req->masterId()]++;
             stats.bytesWritten[pkt->req->masterId()] += pkt->getSize();
+        }
+        if (validateAccess) {
+            if (!isReady(pkt->getAddr(),pkt->getSize(), false)) {
+                panic("Scratchpad write at address: 0x%lx is invalid! Sector has not been cleared yet!\n", pkt->getAddr());
+            }
         }
         // Set ready bits on external writes
         if (readyMode) {
@@ -279,8 +303,7 @@ ScratchpadMemory::recvTimingReq(PacketPtr pkt, PortID recvPort, bool validateAcc
 
     // if we are busy with a read or write, remember that we have to
     // retry
-    if (isBusy[idx] ||
-        (validateAccess && !isReady(pkt->getAddr(),pkt->getSize(),pkt->isRead()))) {
+    if (isBusy[idx]) {
         retryReq[idx] = true;
         return false;
     }
