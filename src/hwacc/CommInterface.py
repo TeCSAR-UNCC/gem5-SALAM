@@ -18,7 +18,7 @@ class CommInterface(BasicPioDevice):
     system = Param.System(Parent.any, "Parent system of the device")
     cache_line_size = Param.Unsigned(Parent.cache_line_size, "Cache line size in bytes")
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
-    int_num = Param.UInt32(320, "Interrupt number that connects to GIC")
+    int_num = Param.Int32(-1, "Interrupt number that connects to GIC")
     clock_period = Param.Int(10, "Clock period in ns")
     premap_data = Param.Bool(False, "Whether or not the memory read/write locations for data predefined")
     data_bases = VectorParam.Addr([0x0], "Base addresses for data if they are predefined")

@@ -622,7 +622,11 @@ CommInterface::finish() {
     *mmreg |= 0x04;
     int_flag = true;
     computationNeeded = false;
-    gic->sendInt(int_num);
+    if (int_num>0)
+        gic->sendInt(int_num);
+    for (auto port : spmPorts) {
+        port->setReadyStatus(false);
+    }
 }
 
 Tick
@@ -682,7 +686,8 @@ CommInterface::write(PacketPtr pkt) {
     pkt->makeAtomicResponse();
 
     if (((*mmreg & 0x04) == 0x00) && int_flag) {
-        gic->clearInt(int_num);
+        if (int_num > 0)
+            gic->clearInt(int_num);
         int_flag = false;
     }
     if (!tickEvent.scheduled()) {
