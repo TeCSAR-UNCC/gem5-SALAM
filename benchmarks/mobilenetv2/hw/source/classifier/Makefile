@@ -11,6 +11,7 @@ LL = top.ll Linear.ll
 %.ll : %.bc
 	llvm-dis -o $@ $<
 build: $(LL)
+	mkdir -p ../../ir/$(CLUSTER)
 	mv $^ ../../ir/$(CLUSTER)/
 clean:
 	rm -f ../../ir/$(CLUSTER)/*.ll
