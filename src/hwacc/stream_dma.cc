@@ -5,7 +5,8 @@
 StreamDma::StreamDma(const Params *p)
     : DmaDevice(p),
     devname(p->devicename),
-    streamPort(this),
+    streamIn(this),
+    streamOut(this),
     pioAddr(p->pio_addr),
     pioDelay(p->pio_delay),
     pioSize(p->pio_size),
@@ -294,8 +295,10 @@ StreamDma::tvalid(size_t len, bool isRead) {
 
 Port &
 StreamDma::getPort(const std::string &if_name, PortID idx) {
-    if (if_name == "stream")
-        return streamPort;
+    if (if_name == "stream_in")
+        return streamIn;
+    else if (if_name == "stream_out")
+        return streamOut;
     return DmaDevice::getPort(if_name, idx);
 }
 

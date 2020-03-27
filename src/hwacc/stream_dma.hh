@@ -78,7 +78,8 @@
 class StreamDma : public DmaDevice {
   private:
     std::string devname;
-    StreamSlavePortT<StreamDma> streamPort;
+    StreamSlavePortT<StreamDma> streamIn;
+    StreamSlavePortT<StreamDma> streamOut;
     DmaReadFifo *readFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;

@@ -9,7 +9,8 @@
 
 class StreamBuffer : public ClockedObject {
   private:
-  	StreamSlavePortT<StreamBuffer> streamPort;
+  	StreamSlavePortT<StreamBuffer> streamIn;
+    StreamSlavePortT<StreamBuffer> streamOut;
   	Fifo<uint8_t> buffer;
   	size_t const fifoSize;
   	ByteOrder endian;

@@ -240,8 +240,6 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
 void
 ScratchpadMemory::init()
 {
-    AbstractMemory::init();
-
     // allow unconnected memories as this is used in several ruby
     // systems at the moment
     if (port.isConnected()) {

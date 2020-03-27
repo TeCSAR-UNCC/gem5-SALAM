@@ -7,7 +7,8 @@ class StreamBuffer(ClockedObject):
 	type = 'StreamBuffer'
 	cxx_header = 'hwacc/stream_buffer.hh'
 	system = Param.System(Parent.any, "System this devices is part of")
-	stream = SlavePort("Stream buffer access port")
+	stream_in = SlavePort("Stream buffer access port")
+	stream_out = SlavePort("Stream buffer access port")
 	buffer_size = Param.UInt64(256, "Stream buffer depth in bytes")
 	stream_address = Param.Addr("Address ")
 	stream_size = Param.Addr("Stream buffer width in bytes")
