@@ -667,9 +667,14 @@ CommInterface::write(PacketPtr pkt) {
     if (debug()) DPRINTF(CommInterface,
         "The address range associated with this ACC was written to!\n");
 
+    if (debug()) DPRINTF(CommInterface, "Packet addr 0x%lx\n", pkt->req->getPaddr());
+    if (debug()) DPRINTF(CommInterface, "IO addr 0x%lx\n", io_addr);
+    if (debug()) DPRINTF(CommInterface, "Diff addr 0x%lx\n", pkt->req->getPaddr() - io_addr);
+    if (debug()) DPRINTF(CommInterface, "Packet val (LE) %d\n", pkt->getLE<uint8_t>());
+    if (debug()) DPRINTF(CommInterface, "Packet val (BE) %d\n", pkt->getBE<uint8_t>());
+    if (debug()) DPRINTF(CommInterface, "Packet val %d\n", pkt->get<uint8_t>(endian));
     pkt->writeData(mmreg + (pkt->req->getPaddr() - io_addr));
 
-    //if (debug()) DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
     std::stringstream mm;
     for (int i = io_size-1; i >= 0; i--) {
         if ((i >= flag_size+config_size) && ((i-flag_size-config_size)%8 == 0))

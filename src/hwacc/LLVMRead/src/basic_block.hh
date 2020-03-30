@@ -149,19 +149,20 @@ class BasicBlock {
       {"indexadd", IR_IndexAdd},
       {"silentstore", IR_SilentStore},
       {"sine", IR_Sine},
-      {"cosine", IR_Cosine} 
+      {"cosine", IR_Cosine}
     };
-    std::string _PrevBB; 
+    std::string _PrevBB;
     std::string _Name;
     uint64_t _BBID;
     std::vector<std::shared_ptr<InstructionBase> > _Nodes;
-  
+
   public:
     BasicBlock(const std::string& Name, uint64_t BBID);
     ~BasicBlock();
     void addNode(std::shared_ptr<InstructionBase> Node);
     void prevBB(std::string prevBB) { _PrevBB = prevBB; }
     std::string getName() { return _Name; }
+    bool isEmpty() { return _Nodes.empty(); }
     std::string convertImmediate(std::string dataType, std::string immediateValue);
     std::string sciToDecimal(std::string immediateValue);
     void dependencyList(std::vector<std::string> &parameters, int dependencies);

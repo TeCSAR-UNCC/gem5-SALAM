@@ -441,8 +441,8 @@ LLVMInterface::constructBBList() {
                 }
             }
         }
-        currBB = findBB("0"); //
-        prevBB = currBB; 
+        currBB = findEntryBB(); //
+        prevBB = currBB;
     } else { // Could not find LLVM file
         panic("Unable to open LLVM file!\n");
     }
@@ -453,7 +453,7 @@ LLVMInterface::constructBBList() {
 BasicBlock*
 LLVMInterface::findBB(std::string bbname) {
 /*********************************************************************************************
- Find Basic Block 
+ Find Basic Block
 
  Iterates through list of known basic block and returns a pointer to passed BB name if found
  and NULL if the BB does not exist in the BB list.
@@ -465,10 +465,26 @@ LLVMInterface::findBB(std::string bbname) {
     return NULL;
 }
 
+BasicBlock*
+LLVMInterface::findEntryBB() {
+/*********************************************************************************************
+ Find Entry Basic Block
+
+ Iterates through list of known basic block and returns a pointer to the first basic block
+ that contains instructions
+*********************************************************************************************/
+    for (auto it = bbList->begin(); it != bbList->end(); ++it) {
+        if (!((*it)->isEmpty()))
+            return (*it);
+    }
+    panic("No entry basic block found!\n");
+    return NULL;
+}
+
 void
 LLVMInterface::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
- Commit Memory Read Request 
+ Commit Memory Read Request
 *********************************************************************************************/
     for (auto i = 0; i < readQueue.size(); i++ ) {
         if(readQueue.at(i)->getReq() == req) {

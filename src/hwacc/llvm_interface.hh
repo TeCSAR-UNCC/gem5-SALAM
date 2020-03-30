@@ -89,6 +89,7 @@ class LLVMInterface : public ComputeUnit {
     void tick();
     void constructBBList();
     BasicBlock* findBB(std::string bbname);
+    BasicBlock* findEntryBB();
     void startup();
     void initialize();
     void printPerformanceResults();

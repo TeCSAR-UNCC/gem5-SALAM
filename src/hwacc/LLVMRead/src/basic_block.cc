@@ -278,7 +278,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			location = parameters[5].find_first_of('i', location);
 			location = parameters[5].find_first_of(' ', location) + 1;
 			length = parameters[5].find_first_of(',', location) - location;
-			caseValues.push_back(stoi(parameters[5].substr(location, length)));
+			caseValues.push_back(atol(parameters[5].substr(location, length).c_str()));
 			location = parameters[5].find_first_of('%', location)+1;
 			length = parameters[5].find_first_of(' ', location) - location;
 			branches.push_back(parameters[5].substr(location, length));
@@ -338,7 +338,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
 		if(immOps.size() != 0) {
-			immOp = stoi(immOps.at(0));
+			immOp = atol(immOps.at(0).c_str());
 			maxCycles = cycles->counter_inst;
 			instructionType = "Counter";
 			functionalUnit = COUNTER;
@@ -409,7 +409,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto sub = std::make_shared<Sub>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -471,7 +471,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto mul = std::make_shared<Mul>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -533,7 +533,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto udiv = std::make_shared<UDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -562,7 +562,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto sdiv = std::make_shared<SDiv>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -620,7 +620,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		functionalUnit = INTMULTI;
 		auto urem = std::make_shared<URem>(	lineCpy, 
 											opCode, 
@@ -648,7 +648,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		functionalUnit = INTMULTI;
 		auto srem = std::make_shared<SRem>(	lineCpy, 
 											opCode, 
@@ -712,7 +712,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto shl = std::make_shared<Shl>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -741,7 +741,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto lshr = std::make_shared<LShr>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -770,7 +770,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto ashr = std::make_shared<AShr>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -798,7 +798,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto andoc = std::make_shared<And>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -827,7 +827,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto oroc = std::make_shared<Or>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -855,7 +855,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		std::vector<std::string> immOps = setImmOperands(list, parameters, dependencies, instructionType);
 		immFirst = immPosition(parameters);
 		int64_t immOp = 0;
-		if(immOps.size() != 0) immOp = stoi(immOps.at(0));
+		if(immOps.size() != 0) immOp = atol(immOps.at(0).c_str());
 		auto xoroc = std::make_shared<Xor>(	lineCpy, 
 											opCode, 
 											returnType, 
@@ -911,14 +911,14 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			setRegister(globalRegister, pointer, dependencies, list, parameters);
 
 			// Address should be in value variable below
-			uint64_t address = std::stoi(substring[1]); 
+			uint64_t address = std::atol(substring[1].c_str()); 
 			pointer->setValue(&address);
 		} else if(isRegister(parameters[align - 1])) {
 			setRegister(parameters[align - 1], pointer, dependencies, list, parameters);
 		}
 		// Set value for alignment
 		DPRINTF(ComputeNode, "Align: %s\n", parameters[align+1]);
-	    align = stoi(parameters[align + 1]);
+	    align = atol(parameters[align + 1].c_str());
 		auto loadoc = std::make_shared<Load>(	lineCpy, 
 												opCode, 
 												returnType, 
@@ -955,13 +955,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
 			std::string globalRegister = "%global_" + substring[1];
 			setRegister(globalRegister, pointer, dependencies, list, parameters);
-			align = std::stoi(parameters[index + 6]);
+			align = std::atol(parameters[index + 6].c_str());
 			// Address should be in value variable below
-			uint64_t address = std::stoi(substring[1]); 
+			uint64_t address = std::atol(substring[1].c_str()); 
 			pointer->setValue(&address);
 		} else if(isRegister(parameters[index + 3])) {
 			setRegister(parameters[index + 3], pointer, dependencies, list, parameters);
-			align = std::stoi(parameters[index + 5]);
+			align = std::atol(parameters[index + 5].c_str());
 		}
 
 
@@ -970,8 +970,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			value->setSize(returnType);
 		} else {
 			if (returnType[0] == 'i') {
-				if (parameters[1] == "volatile") imm  = stoi(parameters[3]);
-				else imm  = stoi(parameters[2]);
+				imm  = atol(parameters[index+1].c_str());
 				immVal = true;
 			} else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
@@ -1026,7 +1025,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 				ptrval = new Register(globalRegister);
 				list->addRegister(ptrval);
 				// Address should be in value variable below
-				uint64_t address = std::stoi(substring[1]); 
+				uint64_t address = std::atol(substring[1].c_str()); 
 				ptrval->setValue(&address);
 				if(parameters[1].back() != '*') 
 					// GEPs with embedded inttoptr have an extra parameter
@@ -1058,7 +1057,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 				ptrval = new Register(globalRegister);
 				list->addRegister(ptrval);
 				// Address should be in value variable below
-				uint64_t address = std::stoi(substring[1]); 
+				uint64_t address = std::atol(substring[1].c_str()); 
 				ptrval->setValue(&address);
 			} else if (list->findRegister(parameters[2].substr(1)) == NULL) {
 				ptrval = new Register(parameters[3]);
@@ -1109,7 +1108,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			else {
 				idx.push_back(NULL);
 				dependencies.push_back(NULL);
-				immdx.push_back(stoi(parameters[index+i+1]));
+				immdx.push_back(atol(parameters[index+i+1].c_str()));
 				DPRINTF(LLVMGEP, "idx%d = %d\n", j, immdx.at(j));
 			}
 			j++;
@@ -1465,12 +1464,12 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		if(isRegister(parameters[last-1])) {
 			setRegister(parameters[last-1], op1, dependencies, list, parameters);	
 			regOps.push_back(op1);
-		} else immOp = stoi(parameters[last-1]);
+		} else immOp = atol(parameters[last-1].c_str());
 		// Check if value is from register or immediate value
 		if(isRegister(parameters[last])) {
 			setRegister(parameters[last], op2, dependencies, list, parameters);
 			regOps.push_back(op2);
-		} else immOp = stoi(parameters[last]);
+		} else immOp = atol(parameters[last].c_str());
 		if (condition == "eq") computeFlags = EQ;
 		else if (condition == "ne") computeFlags = NE;
 		else if (condition == "ugt") computeFlags = UGT;
@@ -1642,7 +1641,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			regvalues.push_back(tempReg);
 		} else {
 			///////////////////////////////////
-			immvalues.push_back(stoi(parameters[3]));
+			immvalues.push_back(atol(parameters[3].c_str()));
 			imm.at(0) = true;
 			///////////////////////////////////
 			if(parameters[2][0] == 'i') {
@@ -1655,7 +1654,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			regvalues.push_back(tempReg);
 		} else {
 			////////////////////////////////
-			immvalues.push_back(stoi(parameters[5]));
+			immvalues.push_back(atol(parameters[5].c_str()));
 			imm.at(1) = true;
 			////////////////////////////
 			if(parameters[4][0] == 'i') { DPRINTF(LLVMParse, "\n\n !!! --- Undefined Condition --- !!! \n\n");
@@ -1797,7 +1796,7 @@ BasicBlock::sciToDecimal(std::string immediateValue) {
 		if(immediateValue[i] == '.') decimalLocation = i;
 		if(immediateValue[i] == 'e') magnitudeLoc = i;
 	}
-	magnitude = stoi(immediateValue.substr(magnitudeLoc+2));
+	magnitude = atol(immediateValue.substr(magnitudeLoc+2).c_str());
 	for(int i = decimalLocation; i < decimalLocation+magnitude; i++) {
 		immediateValue[i] = immediateValue[i+1];
 	}
@@ -1955,7 +1954,7 @@ BasicBlock::setSize(std::string dataType) {
     // Set size if dataType is integer
     else if (temp.front() == 'i') {
         temp = temp.substr(1);
-        size = ((std::stoi(temp)-1)/8)+1;
+        size = ((std::atol(temp.c_str())-1)/8)+1;
     }
     // Floating point data types    
     // Set size if dataType is float
