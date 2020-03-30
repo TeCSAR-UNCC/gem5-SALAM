@@ -15,7 +15,9 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     fp_sp_adder(p->FU_fp_sp_adder),
     fp_dp_adder(p->FU_fp_dp_adder),
     fp_sp_multiply(p->FU_fp_sp_multiplier),
+    fp_sp_division(p->FU_fp_sp_divider),
     fp_dp_multiply(p->FU_fp_dp_multiplier),
+    fp_dp_division(p->FU_fp_dp_divider),
     compare(p->FU_compare),
     gep(p->FU_GEP),
     conversion(p->FU_conversion),
@@ -84,7 +86,11 @@ LLVMInterface::tick() {
                 i = std::distance(computeQueue.begin(), it);
             } else {
                 i++;
-                hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                // Check if FP operation has staged
+                if (reservation.at(i)->_StageCycle) {
+                    if((reservation.at(i)->_CurrCycle >= reservation.at(i)->_StageCycle)) { } // Active, but staged
+                    else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);    
+                } else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
             }
         //} else if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
         //    if(computeQueue.at(i)->commit()) {
@@ -424,9 +430,9 @@ LLVMInterface::constructBBList() {
                         DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
-                            hardware->updateParsed(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles));
+                            hardware->updateParsed(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles, pipelined));
                         } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            hardware->updateParsed(currBB->parse(line, regList, "NULL", comm, typeList, cycles));
+                            hardware->updateParsed(currBB->parse(line, regList, "NULL", comm, typeList, cycles, pipelined));
                         }
 
                     }
@@ -521,9 +527,7 @@ LLVMInterface::initialize() {
                                 compare,
                                 gep,
                                 conversion);
-
-                           
-
+    if(pipelined) hardware->pipelined();
     tick();
 }
 
@@ -554,9 +558,9 @@ LLVMInterface::unlimitedMode() {
         (fp_sp_adder == -1) &&
         (fp_dp_adder == -1) &&
         (fp_sp_multiply == -1) &&
-        //(fp_sp_division == -1) &&
+        (fp_sp_division == -1) &&
         (fp_dp_multiply == -1) &&
-        //(fp_dp_division == -1) &&
+        (fp_dp_division == -1) &&
         (compare == -1) &&
         (gep == -1)) return true;
     return false; 

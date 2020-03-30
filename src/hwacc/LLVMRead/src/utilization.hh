@@ -145,6 +145,7 @@ class Hardware {
         void reset();
         void update();
         void updateMax();
+        void pipelined();
         void linkRegList(RegisterList * List) { regList = List; }
         bool available(uint8_t HardwareUnit);
         void updateParsed(uint8_t HardwareUnit);

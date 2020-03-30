@@ -11,6 +11,7 @@ FunctionalUnit::FunctionalUnit(int Latency, uint8_t HardwareUnit) {
     dynamic_count = 0;
     dynamic_max = 0;
     static_limit = 0;
+    multistage = false;
     switch(HardwareUnit) {
         case COUNTER: {
                 getCounterPowerArea(         Latency, 

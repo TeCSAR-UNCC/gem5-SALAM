@@ -96,12 +96,15 @@ class InstructionBase {
         std::string _InstructionType; // Terminator, Binary, Etc...
         Register* _ReturnRegister;
         uint64_t _MaxCycle;
+        uint64_t _StageCycle;
+        uint64_t _Stages = 3;  // Current power profile used 3 stage floating point FU's, 
         std::vector<Register*> _Dependencies;
         CommInterface* _Comm; // Pointer to add basic block to queues 
         std::vector<InstructionBase*> _Parents; // Parent Nodes
         std::vector<InstructionBase*> _Children; // Child Nodes
         int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
         uint64_t _CurrCycle;
+        uint64_t _CurrStage;
         std::string _PrevBB;
         bool _Terminator = false;
         std::string _Dest;
@@ -129,6 +132,8 @@ class InstructionBase {
                         { _Req = NULL;
                           _CurrCycle = 0; 
                           _ActiveParents = 0; 
+                          _StageCycle = 0;
+                          _CurrStage = 0;
                           Details("Base Instruction: Instruction Base"); 
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
                           _FunctionalUnit = -1;
@@ -154,6 +159,8 @@ class InstructionBase {
                         { _Req = NULL;
                           _CurrCycle = 0; 
                           _ActiveParents = 0; 
+                          _StageCycle = 0;
+                          _CurrStage = 0;
                           Details("Base Instruction: Instruction Base"); 
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
                           }                  
@@ -178,6 +185,7 @@ class InstructionBase {
         // ---- Communications Setup
         void setCommInterface(CommInterface *newComm) { _Comm = newComm; }
         // ---- Data Storage
+        void pipelined() { _StageCycle = _MaxCycle / _Stages; if((_MaxCycle % _StageCycle)) _StageCycle++; }
         void setResult(void *Data);
 };
 //---------------------------------------------------------------------------//

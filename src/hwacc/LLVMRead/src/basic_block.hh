@@ -154,7 +154,6 @@ class BasicBlock {
     std::string _PrevBB; 
     std::string _Name;
     uint64_t _BBID;
-    uint64_t GLOBALID;
     std::vector<std::shared_ptr<InstructionBase> > _Nodes;
   
   public:
@@ -174,7 +173,7 @@ class BasicBlock {
     std::vector<std::string> setImmOperands(RegisterList *list, std::vector<std::string> &parameters, std::vector<Register*> &dependencies, const std::string& instructionType);
     void initializeReturnRegister(std::vector<std::string> &parameters, Register *&reg , std::string &returnType, const std::string &instructionType );
     int setSize(std::string dataType);
-    int parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles);
+    int parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles, int32_t Pipelined);
     void printNodes();
     bool immPosition(std::vector<std::string> &parameters);
 };

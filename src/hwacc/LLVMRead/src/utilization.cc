@@ -179,6 +179,15 @@ Hardware::updateLimit(int Counter,
     conversion->setStatic(Conversion);
 }
 
+void
+Hardware::pipelined() {
+    fp_sp_adder->multistaged();
+    fp_dp_adder->multistaged();
+    fp_sp_multiplier->multistaged();
+    fp_sp_division->multistaged();
+    fp_dp_multiplier->multistaged();
+    fp_dp_division->multistaged();
+}
 
 void
 Hardware::printResults() {

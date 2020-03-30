@@ -17,7 +17,7 @@
 // ////////////////////////////////////////////////////////////////////
 
 int 
-BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles) {
+BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles, int32_t pipelined) {
 	// ////////////////////////////////////////////////////////////////////
 	// Local Variables
 	std::vector<std::string> parameters; // Used to store each each element of the passed in LLVM instruction line 
@@ -388,9 +388,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		// Multi Stage Instruction
+		if(pipelined) fadd->pipelined();
 		addNode(fadd);
 		break;
 	}
+
+	
 	case IR_Sub: {
 		// <result> = sub <ty> <op1>, <op2>          ; yields {ty}:result
 		// <result> = sub nuw <ty> <op1>, <op2>; yields{ ty }:result
@@ -448,6 +452,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		// Multi Stage Instruction
+		if(pipelined) fsub->pipelined();
 		addNode(fsub);
 		break;
 	}
@@ -510,6 +516,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		// Multi Stage Instruction
+		if(pipelined) fmul->pipelined();
 		addNode(fmul);
 		break;
 	}
@@ -597,6 +605,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		// Multi Stage Instruction
+		if(pipelined) fdiv->pipelined();
 		addNode(fdiv);
 		break;
 	}
@@ -682,6 +692,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		// Multi Stage Instruction
+		if(pipelined) frem->pipelined();
 		addNode(frem);
 		break;
 	}
@@ -895,8 +907,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			// Substring (i## pointervalue to i##*)
 			std::istringstream iss(parameters[align -1]);
 			std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
-			std::string globalRegister = "%global_" + std::to_string(GLOBALID);
-			GLOBALID++;
+			std::string globalRegister = "%global_" + substring[1];
 			setRegister(globalRegister, pointer, dependencies, list, parameters);
 
 			// Address should be in value variable below
@@ -942,8 +953,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			// Substring (i## pointervalue to i##*)
 			std::istringstream iss(parameters[index + 4]);
 			std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
-			std::string globalRegister = "%global_" + std::to_string(GLOBALID);
-			GLOBALID++;
+			std::string globalRegister = "%global_" + substring[1];
 			setRegister(globalRegister, pointer, dependencies, list, parameters);
 			align = std::stoi(parameters[index + 6]);
 			// Address should be in value variable below
@@ -1009,12 +1019,11 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			returnType = parameters[1];
 			if (parameters[3].find("inttoptr") != std::string::npos) {
 				// Embedded inttoptr
-				std::string globalRegister = "%global_" + std::to_string(GLOBALID);
-				GLOBALID++;
-				ptrval = new Register(globalRegister);
-				list->addRegister(ptrval);
 				std::istringstream iss(parameters[4]);
 				std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+				std::string globalRegister = "%global_" + substring[1];
+				ptrval = new Register(globalRegister);
+				list->addRegister(ptrval);
 				// Address should be in value variable below
 				uint64_t address = std::stoi(substring[1]); 
 				ptrval->setValue(&address);
@@ -1042,12 +1051,11 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			pty = parameters[0];
 			if (parameters[2].find("inttoptr") != std::string::npos) {
 				// Embedded inttoptr
-				std::string globalRegister = "%global_" + std::to_string(GLOBALID);
-				GLOBALID++;
-				ptrval = new Register(globalRegister);
-				list->addRegister(ptrval);
 				std::istringstream iss(parameters[3]);
 				std::vector<std::string> substring(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+				std::string globalRegister = "%global_" + substring[1];
+				ptrval = new Register(globalRegister);
+				list->addRegister(ptrval);
 				// Address should be in value variable below
 				uint64_t address = std::stoi(substring[1]); 
 				ptrval->setValue(&address);
@@ -1736,7 +1744,6 @@ BasicBlock::BasicBlock(const std::string& Name, uint64_t BBID) {
     //cnList = new std::list<ComputeNode *>();
     _Name = Name;
     _BBID = BBID;
-	GLOBALID = 0;
 }
 
 void

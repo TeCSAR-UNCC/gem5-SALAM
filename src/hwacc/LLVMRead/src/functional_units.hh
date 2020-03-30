@@ -38,6 +38,7 @@ class FunctionalUnit {
      int dynamic_count;
      int dynamic_max;
      int static_limit;
+     bool multistage;
     public:
     FunctionalUnit(int Latency, uint8_t HardwareUnit);
     int getDynamicMax() { return dynamic_max; }
@@ -50,6 +51,7 @@ class FunctionalUnit {
     void updateParse() { parse_count++; }
     void setCycleCount(int Count) { cycle_count = Count; } 
     void reset() { dynamic_count = 0; }
+    void multistaged() { multistage = true; }
     bool available();
     void occupancy();
 };
