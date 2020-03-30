@@ -59,51 +59,51 @@
 /***********************************************************
  * MMR Addresses
  ***********************************************************/
-#define TOP_MMR			BASE + 0x1B00
-#define STREAM_DMA_MMR	BASE + 0x0001
-#define CLUSTER_DMA_MMR	BASE + 0x0029
-#define CONV_MMR		BASE + 0x003E
-#define DW_MMR			BASE + 0x003F
-#define PW_MMR			BASE + 0x0040
+#define TOP_MMR			BASE + 0x0000
+#define STREAM_DMA_MMR	BASE + 0x0041
+#define CLUSTER_DMA_MMR	BASE + 0x0069
+#define CONV_MMR		BASE + 0x007E
+#define DW_MMR			BASE + 0x007F
+#define PW_MMR			BASE + 0x0080
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define StreamIn		BASE + 0x0021
-#define StreamOut		BASE + 0x0021
+#define StreamIn		BASE + 0x0061
+#define StreamOut		BASE + 0x0061
 
 #define ConvIn 			StreamIn
-#define ConvBuffer		BASE + 0x0041
-#define ConvWindow		BASE + 0x0401
-#define ConvWeights		BASE + 0x041C
-#define ConvBias		BASE + 0x06A4
-#define ConvIMultBias	BASE + 0x06BC
-#define ConvNShiftBias  BASE + 0x06D4
-#define ConvIMultOut	BASE + 0x06EC
-#define ConvNShiftOut	BASE + 0x0704
-#define ConvWeightZP	BASE + 0x071C
-#define ConvOut			BASE + 0x0734
+#define ConvBuffer		BASE + 0x0081
+#define ConvWindow		BASE + 0x0441
+#define ConvWeights		BASE + 0x045C
+#define ConvBias		BASE + 0x06E4
+#define ConvIMultBias	BASE + 0x06FC
+#define ConvNShiftBias  BASE + 0x0714
+#define ConvIMultOut	BASE + 0x072C
+#define ConvNShiftOut	BASE + 0x0744
+#define ConvWeightZP	BASE + 0x075C
+#define ConvOut			BASE + 0x0774
 
 #define DWIn 			ConvOut
-#define DWBuffer		BASE + 0x0735
-#define DWWindow		BASE + 0x1635
-#define DWWeights		BASE + 0x170D
-#define DWBias			BASE + 0x17FD
-#define DWIMultBias		BASE + 0x1815
-#define DWNShiftBias  	BASE + 0x182D
-#define DWIMultOut		BASE + 0x1845
-#define DWNShiftOut		BASE + 0x185D
-#define DWWeightZP		BASE + 0x1875
-#define DWOutBuffer		BASE + 0x188D
-#define DWOut			BASE + 0x18A5
+#define DWBuffer		BASE + 0x0775
+#define DWWindow		BASE + 0x1675
+#define DWOutBuffer		BASE + 0x174D
+#define DWWeights		BASE + 0x1765
+#define DWBias			BASE + 0x1855
+#define DWIMultBias		BASE + 0x186D
+#define DWNShiftBias  	BASE + 0x1885
+#define DWIMultOut		BASE + 0x189D
+#define DWNShiftOut		BASE + 0x18B5
+#define DWWeightZP		BASE + 0x18CD
+#define DWOut			BASE + 0x18E5
 
 #define PWIn 			DWOut
-#define PWWeights		BASE + 0x18A6
-#define PWBias			BASE + 0x1A26
-#define PWIMultBias		BASE + 0x1A3E
-#define PWNShiftBias  	BASE + 0x1A56
-#define PWIMultOut		BASE + 0x1A6E
-#define PWNShiftOut		BASE + 0x1A86
-#define PWWeightZP		BASE + 0x1A9E
-#define PWLocalFeat		BASE + 0x1AB6
+#define PWLocalFeat		BASE + 0x18E6
+#define PWWeights		BASE + 0x18FE
+#define PWBias			BASE + 0x1A7E
+#define PWIMultBias		BASE + 0x1A8E
+#define PWNShiftBias  	BASE + 0x1A9E
+#define PWIMultOut		BASE + 0x1AAE
+#define PWNShiftOut		BASE + 0x1ABE
+#define PWWeightZP		BASE + 0x1ACE
 #define PWOut			StreamOut

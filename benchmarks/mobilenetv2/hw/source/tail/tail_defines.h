@@ -34,36 +34,36 @@
 /***********************************************************
  * Cluster Base Address
  ***********************************************************/
-#define BASE			0x2F065000
+#define BASE			0x2F063000
 /***********************************************************
  * MMR Addresses
  ***********************************************************/
 #define TOP_MMR			BASE + 0x000000
-#define STREAM_DMA_MMR	BASE + 0x000020
-#define CLUSTER_DMA_MMR	BASE + 0x000048
-#define PW_MMR			BASE + 0x00005D
-#define RS_MMR			BASE + 0x00005E
-#define POOL_MMR		BASE + 0x00005F
+#define STREAM_DMA_MMR	BASE + 0x000021
+#define CLUSTER_DMA_MMR	BASE + 0x000049
+#define PW_MMR			BASE + 0x00005E
+#define RS_MMR			BASE + 0x00005F
+#define POOL_MMR		BASE + 0x000060
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define StreamIn		BASE + 0x000040
-#define StreamOut		BASE + 0x000040
+#define StreamIn		BASE + 0x000041
+#define StreamOut		BASE + 0x000041
 
 #define PWIn 			StreamIn
-#define PWWeights		BASE + 0x000060
-#define PWBias			BASE + 0x04B060
-#define PWIMultBias		BASE + 0x04B560
-#define PWNShiftBias  	BASE + 0x04BA60
-#define PWIMultOut		BASE + 0x04BF60
-#define PWNShiftOut		BASE + 0x04C460
-#define PWWeightZP		BASE + 0x04C960
-#define PWLocalFeat		BASE + 0x04CE60
-#define PWOut			BASE + 0x04CF50
+#define PWLocalFeat		BASE + 0x000061
+#define PWWeights		BASE + 0x000151
+#define PWBias			BASE + 0x04B151
+#define PWIMultBias		BASE + 0x04B651
+#define PWNShiftBias  	BASE + 0x04BB51
+#define PWIMultOut		BASE + 0x04C051
+#define PWNShiftOut		BASE + 0x04C551
+#define PWWeightZP		BASE + 0x04CA51
+#define PWOut			BASE + 0x04CF51
 
 #define RSIn			PWOut
-#define RSOut 			BASE + 0x04CF51 //Ends at 0x054C51
+#define RSOut 			BASE + 0x04CF52 //Ends at 0x054C52
 
 #define PoolIn			RSOut
 #define PoolOut			StreamOut

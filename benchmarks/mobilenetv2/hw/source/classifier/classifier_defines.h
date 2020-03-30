@@ -16,25 +16,25 @@
 /***********************************************************
  * Cluster Base Address
  ***********************************************************/
-#define BASE			0x2F0BF000
+#define BASE			0x2F0B8000
 /***********************************************************
  * MMR Addresses
  ***********************************************************/
 #define TOP_MMR			BASE + 0x000000
-#define STREAM_DMA_MMR	BASE + 0x000020
-#define CLUSTER_DMA_MMR	BASE + 0x000048
-#define LINEAR_MMR		BASE + 0x00005D
+#define STREAM_DMA_MMR	BASE + 0x000021
+#define CLUSTER_DMA_MMR	BASE + 0x000049
+#define LINEAR_MMR		BASE + 0x00005E
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define FeatSPM			BASE + 0x00005E
-#define WeightSPM		BASE + 0x00055E
-#define Bias			BASE + 0x138D5E
-#define iMultBias		BASE + 0x139146
-#define nShiftBias		BASE + 0x13952E
-#define iMultOut		BASE + 0x139916
-#define nShiftOut		BASE + 0x139CFE
-#define WeightZP		BASE + 0x13A0E6
-#define SumSPM			BASE + 0x13A4CE
-#define OutputBuff		BASE + 0x000040
+#define FeatSPM			BASE + 0x00005F
+#define WeightSPM		BASE + 0x00055F
+#define Bias			BASE + 0x138D5F
+#define iMultBias		BASE + 0x139147
+#define nShiftBias		BASE + 0x13952F
+#define iMultOut		BASE + 0x139917
+#define nShiftOut		BASE + 0x139CFF
+#define WeightZP		BASE + 0x13A0E7
+#define SumSPM			BASE + 0x13A4CF
+#define OutputBuff		BASE + 0x000041

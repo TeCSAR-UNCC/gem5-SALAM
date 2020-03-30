@@ -3,10 +3,10 @@
 #define feats       0x8f000000
 #define weights     0x91000000
 #define qparams     0x93000000
-#define head_top    0x2f001b00
+#define head_top    0x2f000000
 #define body_top    0x2f002000
-#define tail_top    0x2f065000
-#define class_top   0x2f0bf000
+#define tail_top    0x2f063000
+#define class_top   0x2f0b8000
 #define stage       *(uint8_t *)0x8effffff
 
 void runHead(uint64_t img_rd_addr, uint64_t feat_wr_addr,
