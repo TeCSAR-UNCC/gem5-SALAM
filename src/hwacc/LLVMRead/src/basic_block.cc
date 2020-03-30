@@ -970,7 +970,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			value->setSize(returnType);
 		} else {
 			if (returnType[0] == 'i') {
-				imm  = stoi(parameters[2]);
+				if (parameters[1] == "volatile") imm  = stoi(parameters[3]);
+				else imm  = stoi(parameters[2]);
 				immVal = true;
 			} else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}
