@@ -970,7 +970,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 			value->setSize(returnType);
 		} else {
 			if (returnType[0] == 'i') {
-				imm  = stoi(parameters[2]);
+				imm  = stoi(parameters[2].substr(1));
 				immVal = true;
 			} else DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
 		}

@@ -83,6 +83,7 @@ class LLVMInterface : public ComputeUnit {
     InstructionBase* findParent(std::string);
     InstructionBase* detectRAW(Register*);
     const std::string name() const { return comm->getName() + ".compute"; }
+    virtual bool debug() { return comm->debug(); }
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();

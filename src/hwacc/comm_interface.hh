@@ -30,9 +30,12 @@ class CommInterface : public BasicPioDevice
     bool use_premap_data;
     std::vector<Addr> data_base_ptrs;
     ByteOrder endian;
+    bool debugEnabled;
 
-    // const std::string name() const { return devname; }
+  public:
+    bool debug() { return debugEnabled; }
 
+  protected:
     class MemSidePort : public StreamMasterPort
     {
       friend class CommInterface;
@@ -73,6 +76,7 @@ class CommInterface : public BasicPioDevice
         bool active() { return readActive || writeActive; }
         bool reading() { return readActive; }
         bool writing() { return writeActive; }
+        bool debug() { return owner->debug(); }
     };
 
     class SPMPort : public ScratchpadMasterPort
@@ -115,6 +119,7 @@ class CommInterface : public BasicPioDevice
         bool active() { return readActive || writeActive; }
         bool reading() { return readActive; }
         bool writing() { return writeActive; }
+        bool debug() { return owner->debug(); }
     };
 
     class TickEvent : public Event
@@ -126,6 +131,7 @@ class CommInterface : public BasicPioDevice
         TickEvent(CommInterface *_comm) : Event(CPU_Tick_Pri), comm(_comm) {}
         void process() { comm->tick(); }
         virtual const char *description() const { return "CommInterface tick"; }
+        bool debug() { return comm->debug(); }
     };
 
     std::list<MemoryRequest*> readQueue;

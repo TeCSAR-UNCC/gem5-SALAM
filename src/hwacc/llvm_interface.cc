@@ -57,7 +57,7 @@ LLVMInterface::tick() {
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
 
-    DPRINTF(IOAcc, "\n%s\n%s %d\n%s\n",
+    if (debug()) DPRINTF(IOAcc, "\n%s\n%s %d\n%s\n",
             "********************************************************************************",
             "   Cycle", cycle,
             "********************************************************************************");
@@ -75,11 +75,11 @@ LLVMInterface::tick() {
     storeInFlight = writeQueue.size();
     compInFlight = computeQueue.size();
     ///////////////////////////
-    DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
+    if (debug()) DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
-    DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
+    if (debug()) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
-        DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
+        if (debug()) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
         //if(unlimitedFU) {
             if(computeQueue.at(i)->commit()) {
                 auto it = computeQueue.erase(computeQueue.begin() + i);
@@ -100,7 +100,7 @@ LLVMInterface::tick() {
         //} else i++;
     }
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
-        DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
+        if (debug()) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
     }
 
@@ -108,10 +108,11 @@ LLVMInterface::tick() {
         //Do nothing
     } else {
         for (auto i = 0; i < reservation.size();) {
-            if (reservation.at(i)->_ReturnRegister == NULL)
-                 DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
-             else
-                 DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+            if (reservation.at(i)->_ReturnRegister == NULL) {
+                if (debug()) DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+            } else {
+                if (debug()) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+            }
             if (reservation.at(i)->_ActiveParents == 0) {
                 if(!(reservation.at(i)->_Terminator)) { 
                         if(reservation.at(i)->_OpCode == "load") {
@@ -188,7 +189,7 @@ LLVMInterface::tick() {
                 } 
             } else {
                 if (reservation.at(i)->_OpCode == "ret"){
-                    DPRINTF(LLVMInterface, "Simulation Complete \n");
+                    if (debug()) DPRINTF(LLVMInterface, "Simulation Complete \n");
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
                         finalize();
                     }
@@ -215,38 +216,38 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
  the only remaining instructions are unconditional branches such as pre-headers and crit-edges
  and immediately compute and commit.
 *********************************************************************************************/
-    DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
+    if (debug()) DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
     for (auto i = 0; i < bb->_Nodes.size(); i++) {
-        DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
+        if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
         reservation.push_back(createClone(bb->_Nodes.at(i)));
         if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
             InstructionBase * parent = findParent(reservation.back()->_LLVMLine);
             if (parent) {
-                DPRINTF(LLVMOp, "Previous instance found\n");
+                if (debug()) DPRINTF(LLVMOp, "Previous instance found\n");
                 reservation.back()->registerParent(parent);
                 parent->registerChild(reservation.back());
             } else {
-                DPRINTF(LLVMOp, "No previous instance found\n");
+                if (debug()) DPRINTF(LLVMOp, "No previous instance found\n");
             }
         }
         if (reservation.back()->_OpCode == "load") {
             InstructionBase * parent = detectRAW(dynamic_cast<Load*>(reservation.back())->_RawCheck);
             if (parent) {
-                DPRINTF(LLVMOp, "Memory RAW dependency corrected!\n");
+                if (debug()) DPRINTF(LLVMOp, "Memory RAW dependency corrected!\n");
                 reservation.back()->registerParent(parent);
                 parent->registerChild(reservation.back());
             } else {
-                DPRINTF(LLVMOp, "No RAW dependency found\n");
+                if (debug()) DPRINTF(LLVMOp, "No RAW dependency found\n");
             }
         }
         if (reservation.back()->_OpCode == "getelementptr") {
             InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
             if (parent) {
-                DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                if (debug()) DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
                 reservation.back()->registerParent(parent);
                 parent->registerChild(reservation.back());
             } else {
-                DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                if (debug()) DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
                 dynamic_cast<GetElementPtr*>(reservation.back())->_ActivePtr = dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getValue();
             }
         }
@@ -256,24 +257,25 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
                 if (depList.at(j)!=NULL) {
                     InstructionBase * parent = findParent(depList.at(j));
                     if (parent) {
-                        DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());
+                        if (debug()) DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());
                         reservation.back()->registerParent(parent);
                         parent->registerChild(reservation.back());
                     } else {
-                        DPRINTF(LLVMOp, "No parent returning to register:%s found\n", depList.at(j)->getName());
+                        if (debug()) DPRINTF(LLVMOp, "No parent returning to register:%s found\n", depList.at(j)->getName());
                         reservation.back()->fetchDependency(j);
                     }
                 }
             }
         }
     }
-    DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
-    DPRINTF(RuntimeQueues, "Active Scheduling Window\n");
+    if (debug()) DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
+    if (debug()) DPRINTF(RuntimeQueues, "Active Scheduling Window\n");
     for (auto i = 0; i < reservation.size(); i++) {
-        if (reservation.at(i)->_ReturnRegister == NULL)
-            DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
-        else
-            DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+        if (reservation.at(i)->_ReturnRegister == NULL) {
+            if (debug()) DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
+        } else {
+            if (debug()) DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+        }
     }
 }
 
@@ -331,7 +333,7 @@ LLVMInterface::constructBBList() {
 *********************************************************************************************/
     // llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
     // m->dump();
-    DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
+    if (debug()) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
@@ -345,10 +347,10 @@ LLVMInterface::constructBBList() {
     std::string line; // Stores Single Line of File
     bool inFunction = false; // Parse Variable
     unsigned bbnum = 0; // Start of Basic Block Numbering
-    DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
+    if (debug()) DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
     if(llvmFile.is_open()) {
         while (getline(llvmFile, line)) { // Read until end of LLVM file
-            DPRINTF(LLVMParse, "Line: (%s)\n", line); 
+            if (debug()) DPRINTF(LLVMParse, "Line: (%s)\n", line); 
             if (!inFunction) { // Looks for data before the main function is defined
                 if (!line.find("%struct")) { // Found custom data type.
                     int pos = line.find('='); 
@@ -359,7 +361,7 @@ LLVMInterface::constructBBList() {
                     }
                     typeList->addType(new LLVMType(size, name)); // Add custom data type to typeList
                 } else if (!line.find("define")) { //Found a function. Need to parse its header
-                    DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
+                    if (debug()) DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
                     inFunction = true;
                     unsigned paramNum = 0;
                     unsigned linePos = 0;
@@ -372,16 +374,16 @@ LLVMInterface::constructBBList() {
                             commaPos = line.find(",", percPos);
                             if (commaPos < 0) commaPos = line.find(")");
                             std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
-                            DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName); 
+                            if (debug()) DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName); 
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum))); // Create register for global variable
-                            DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
+                            if (debug()) DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
                             paramNum++;
                         }
                         linePos = percPos + 1;
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
                     currBB = new BasicBlock("0", bbnum); // First basic block is always defined as BB 0
-                    DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
+                    if (debug()) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
                 }
@@ -395,39 +397,39 @@ LLVMInterface::constructBBList() {
                         std::string versionCheck = line.substr(10,(labelEnd - 10));
                         if(versionCheck.back() == ':') versionCheck = line.substr(10,(labelEnd - 11));
                         currBB = new BasicBlock(versionCheck, bbnum); // Create new basic block
-                        DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
+                        if (debug()) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
                     } else if (line.find(".") == 0) { // Found new basic block (edge)
                         int labelEnd = line.find(" "); 
                         prevBB = currBB; // Set previous basic block
                         currBB = new BasicBlock(line.substr(0,(labelEnd-1)), bbnum); // Create new basic block
-                        DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name); 
+                        if (debug()) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name); 
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
                     } else if (line.find("}") == 0) { // Found end of function definition
                         inFunction = false;
-                        DPRINTF(LLVMParse, "Finished File Parsing!\n");
+                        if (debug()) DPRINTF(LLVMParse, "Finished File Parsing!\n");
                         break;
                     } else if (!(line.find_first_not_of(' ') != std::string::npos)){ // Skip empty Line
                     } else { // Found instruction, create new compute node within the current BB
-                        DPRINTF(LLVMParse, "Registering Compute Node for: (%s)\n", line);
+                        if (debug()) DPRINTF(LLVMParse, "Registering Compute Node for: (%s)\n", line);
                         if ((line.find("switch") != -1)) {
                             // If instruction is switch statement, convert it to be defined in a single line
-                            DPRINTF(LLVMParse, "Found Switch Statement, Converting to Inline!\n");
+                            if (debug()) DPRINTF(LLVMParse, "Found Switch Statement, Converting to Inline!\n");
                             std::string concatLine;
                             int cases = 1;
                             while(line.find(" ]") == -1) { 
                                 // Continue reading through lines until the end of switch statement
                                 // Concatinate all instruction lines into a single string
-                                DPRINTF(LLVMParse, "Case %d: (%s)\n", cases, line);
+                                if (debug()) DPRINTF(LLVMParse, "Case %d: (%s)\n", cases, line);
                                 concatLine += line;
                                 getline(llvmFile, line);
                                 cases++;
                             }
                         concatLine+= " ]"; // Close case statements arguement
                         line = concatLine;
-                        DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
+                        if (debug()) DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
                             hardware->updateParsed(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles, pipelined));
@@ -499,13 +501,13 @@ LLVMInterface::initialize() {
  read, write, and compute queues. Set all data collection variables to zero.
 *********************************************************************************************/
     timeStart = std::chrono::high_resolution_clock::now();
-    DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
+    if (debug()) DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
     constructBBList();
-    DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
-    DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
-    DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");
-    DPRINTF(LLVMInterface, "Initializing computeQueue List!\n");
-    DPRINTF(LLVMInterface, "\n%s\n%s\n%s\n",
+    if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
+    if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
+    if (debug()) DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");
+    if (debug()) DPRINTF(LLVMInterface, "Initializing computeQueue List!\n");
+    if (debug()) DPRINTF(LLVMInterface, "\n%s\n%s\n%s\n",
             "*******************************************************************************",
             "*                 Begin Runtime Simulation Computation Engine                 *",
             "*******************************************************************************");

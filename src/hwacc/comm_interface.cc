@@ -29,7 +29,8 @@ CommInterface::CommInterface(Params *p) :
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period),
-    endian(p->system->getGuestByteOrder()) {
+    endian(p->system->getGuestByteOrder()),
+    debugEnabled(p->enable_debug_msgs) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
@@ -61,9 +62,9 @@ void
 CommInterface::MemSidePort::recvReqRetry() {
     assert(outstandingPkts.size());
 
-    DPRINTF(CommInterface, "Got a retry...\n");
+    if (debug()) DPRINTF(CommInterface, "Got a retry...\n");
     while (outstandingPkts.size() && sendTimingReq(outstandingPkts.front())) {
-        DPRINTF(CommInterface, "Unblocked, sent blocked packet.\n");
+        if (debug()) DPRINTF(CommInterface, "Unblocked, sent blocked packet.\n");
         outstandingPkts.pop();
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
@@ -77,7 +78,7 @@ CommInterface::MemSidePort::recvReqRetry() {
 void
 CommInterface::MemSidePort::sendPacket(PacketPtr pkt) {
     if (isStalled() || !sendTimingReq(pkt)) {
-        DPRINTF(CommInterface, "sendTiming failed in sendPacket(pkt->req->getPaddr()=0x%x)\n", (unsigned int)pkt->req->getPaddr());
+        if (debug()) DPRINTF(CommInterface, "sendTiming failed in sendPacket(pkt->req->getPaddr()=0x%x)\n", (unsigned int)pkt->req->getPaddr());
         setStalled(pkt);
     }
 }
@@ -92,9 +93,9 @@ void
 CommInterface::SPMPort::recvReqRetry() {
     assert(outstandingPkts.size());
 
-    DPRINTF(CommInterface, "Got a retry...\n");
+    if (debug()) DPRINTF(CommInterface, "Got a retry...\n");
     while (outstandingPkts.size() && sendTimingReq(outstandingPkts.front())) {
-        DPRINTF(CommInterface, "Unblocked, sent blocked packet.\n");
+        if (debug()) DPRINTF(CommInterface, "Unblocked, sent blocked packet.\n");
         outstandingPkts.pop();
         // TODO: This should just signal the engine that the packet completed
         // engine should schedule tick as necessary. Need a test case
@@ -108,7 +109,7 @@ CommInterface::SPMPort::recvReqRetry() {
 void
 CommInterface::SPMPort::sendPacket(PacketPtr pkt) {
     if (isStalled() || !sendTimingReq(pkt)) {
-        DPRINTF(CommInterface, "sendTiming failed in sendPacket(pkt->req->getPaddr()=0x%x)\n", (unsigned int)pkt->req->getPaddr());
+        if (debug()) DPRINTF(CommInterface, "sendTiming failed in sendPacket(pkt->req->getPaddr()=0x%x)\n", (unsigned int)pkt->req->getPaddr());
         setStalled(pkt);
     }
 }
@@ -120,9 +121,9 @@ CommInterface::recvPacket(PacketPtr pkt) {
         MasterPort * carrier = readReq->getCarrierPort();
         if (MemSidePort * port = dynamic_cast<MemSidePort *>(carrier)) port->readReq = nullptr;
         if (SPMPort * port = dynamic_cast<SPMPort *>(carrier)) port->readReq = nullptr;
-        DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
+        if (debug()) DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         pkt->writeData(readReq->buffer + (pkt->req->getPaddr() - readReq->beginAddr));
-        DPRINTF(CommInterface, "Read:0x%016lx\n", *(uint64_t *)readReq->buffer);
+        if (debug()) DPRINTF(CommInterface, "Read:0x%016lx\n", *(uint64_t *)readReq->buffer);
         for (int i = pkt->req->getPaddr() - readReq->beginAddr;
              i < pkt->req->getPaddr() - readReq->beginAddr + pkt->getSize(); i++)
         {
@@ -137,7 +138,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
 
         if (!readReq->needToRead)
         {
-            DPRINTF(CommInterface, "Done reading\n");
+            if (debug()) DPRINTF(CommInterface, "Done reading\n");
             cu->readCommit(readReq);
             clearMemRequest(readReq, true);
             delete readReq;
@@ -150,10 +151,10 @@ CommInterface::recvPacket(PacketPtr pkt) {
         MasterPort * carrier = writeReq->getCarrierPort();
         if (MemSidePort * port = dynamic_cast<MemSidePort *>(carrier)) port->writeReq = nullptr;
         if (SPMPort * port = dynamic_cast<SPMPort *>(carrier)) port->writeReq = nullptr;
-        DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
+        if (debug()) DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         writeReq->writeDone += pkt->getSize();
         if (!(writeReq->needToWrite)) {
-            DPRINTF(CommInterface, "Done writing\n");
+            if (debug()) DPRINTF(CommInterface, "Done writing\n");
             cu->writeCommit(writeReq);
             delete[] writeReq->buffer;
             delete[] writeReq->readsDone;
@@ -178,7 +179,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
 void
 CommInterface::checkMMR() {
     if (!computationNeeded) {
-        DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
+        if (debug()) DPRINTF(CommInterface, "Checking MMR to see if Run bit set\n");
         if (*mmreg & 0x01) {
             *mmreg &= 0xfe;
             *mmreg |= 0x02;
@@ -295,10 +296,10 @@ CommInterface::getValidSPMPort(Addr add, size_t len, bool read) {
 void
 CommInterface::processMemoryRequests() {
     if (!localPortsStalled() || !globalPortsStalled() || !streamPortsStalled()) {
-        DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue.size());
+        if (debug()) DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue.size());
         for (auto it=readQueue.begin(); it!=readQueue.end(); ) {
             Addr address = (*it)->address;
-            DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
+            if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
                 mport = getValidStreamPort(address, (*it)->length, true);
@@ -310,38 +311,38 @@ CommInterface::processMemoryRequests() {
                 mport = getValidGlobalPort(address, true);
             }
             if (SPMPort * port = dynamic_cast<SPMPort *>(mport)) {
-                DPRINTF(CommInterfaceQueues, "Found available memory port\n");
+                if (debug()) DPRINTF(CommInterfaceQueues, "Found available memory port\n");
                 port->readReq = (*it);
                 port->readReq->setCarrierPort(port);
                 it = readQueue.erase(it);
                 if (port->readReq && port->readReq->needToRead) {
-                    DPRINTF(CommInterfaceQueues, "Trying read on available memory port\n");
+                    if (debug()) DPRINTF(CommInterfaceQueues, "Trying read on available memory port\n");
                     tryRead(port);
                     accRdQ.push_back(port->readReq);
                     // if (!port->readReq->needToRead)
                     //     port->readReq = NULL;
                 }
             } else if (MemSidePort * port = dynamic_cast<MemSidePort *>(mport)) {
-                DPRINTF(CommInterfaceQueues, "Found available memory port\n");
+                if (debug()) DPRINTF(CommInterfaceQueues, "Found available memory port\n");
                 port->readReq = (*it);
                 port->readReq->setCarrierPort(port);
                 it = readQueue.erase(it);
                 if (port->readReq && port->readReq->needToRead) {
-                    DPRINTF(CommInterfaceQueues, "Trying read on available memory port\n");
+                    if (debug()) DPRINTF(CommInterfaceQueues, "Trying read on available memory port\n");
                     tryRead(port);
                     accRdQ.push_back(port->readReq);
                     // if (!port->readReq->needToRead)
                     //     port->readReq = NULL;
                 }
             } else {
-                DPRINTF(CommInterfaceQueues, "Found no ports able to read %d bytes from %lx\n", (*it)->length, address);
+                if (debug()) DPRINTF(CommInterfaceQueues, "Found no ports able to read %d bytes from %lx\n", (*it)->length, address);
                 ++it;
             }
         }
-        DPRINTF(CommInterface, "Checking write requests. %d requests in queue.\n", writeQueue.size());
+        if (debug()) DPRINTF(CommInterface, "Checking write requests. %d requests in queue.\n", writeQueue.size());
         for (auto it=writeQueue.begin(); it!=writeQueue.end(); ) {
             Addr address = (*it)->address;
-            DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
+            if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
                 mport = getValidStreamPort(address, (*it)->length, false);
@@ -353,31 +354,31 @@ CommInterface::processMemoryRequests() {
                 mport = getValidGlobalPort(address, false);
             }
             if (SPMPort * port = dynamic_cast<SPMPort*>(mport)) {
-                DPRINTF(CommInterfaceQueues, "Found available memory port\n");
+                if (debug()) DPRINTF(CommInterfaceQueues, "Found available memory port\n");
                 port->writeReq = (*it);
                 port->writeReq->setCarrierPort(port);
                 it = writeQueue.erase(it);
                 if (port->writeReq && port->writeReq->needToWrite) {
-                    DPRINTF(CommInterfaceQueues, "Trying write on available memory port\n");
+                    if (debug()) DPRINTF(CommInterfaceQueues, "Trying write on available memory port\n");
                     tryWrite(port);
                     accWrQ.push_back(port->writeReq);
                     // if (!port->writeReq->needToWrite)
                     //     port->writeReq = NULL;
                 }
             } else if (MemSidePort * port = dynamic_cast<MemSidePort*>(mport)) {
-                DPRINTF(CommInterfaceQueues, "Found available memory port\n");
+                if (debug()) DPRINTF(CommInterfaceQueues, "Found available memory port\n");
                 port->writeReq = (*it);
                 port->writeReq->setCarrierPort(port);
                 it = writeQueue.erase(it);
                 if (port->writeReq && port->writeReq->needToWrite) {
-                    DPRINTF(CommInterfaceQueues, "Trying write on available memory port\n");
+                    if (debug()) DPRINTF(CommInterfaceQueues, "Trying write on available memory port\n");
                     tryWrite(port);
                     accWrQ.push_back(port->writeReq);
                     // if (!port->writeReq->needToWrite)
                     //     port->writeReq = NULL;
                 }
             } else {
-                DPRINTF(CommInterfaceQueues, "Found no ports able to write %d bytes to %lx\n", (*it)->length, address);
+                if (debug()) DPRINTF(CommInterfaceQueues, "Found no ports able to write %d bytes to %lx\n", (*it)->length, address);
                 ++it;
             }
         }
@@ -391,7 +392,7 @@ CommInterface::processMemoryRequests() {
 
 void
 CommInterface::tick() {
-    DPRINTF(CommInterface, "Tick!\n");
+    if (debug()) DPRINTF(CommInterface, "Tick!\n");
     checkMMR();
     requestsInQueues = readQueue.size() + writeQueue.size();
     if (requestsInQueues > 0)
@@ -403,19 +404,19 @@ CommInterface::tryRead(MemSidePort * port) {
     MemoryRequest * readReq = port->readReq;
     Request::Flags flags;
     if (readReq->readLeft <= 0) {
-        DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
+        if (debug()) DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
         return;
     }
     int size;
     if (readReq->currentReadAddr % cacheLineSize) {
         size = cacheLineSize - (readReq->currentReadAddr % cacheLineSize);
-        DPRINTF(CommInterface, "Aligning\n");
+        if (debug()) DPRINTF(CommInterface, "Aligning\n");
     } else {
         size = cacheLineSize;
     }
     size = readReq->readLeft > (size - 1) ? size : readReq->readLeft;
     RequestPtr req = make_shared<Request>(readReq->currentReadAddr, size, flags, masterId);
-    DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes through port: %s\n",
+    if (debug()) DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes through port: %s\n",
         req->getPaddr(), size, port->name());
 
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
@@ -446,14 +447,14 @@ void
 CommInterface::tryWrite(MemSidePort * port) {
     MemoryRequest * writeReq = port->writeReq;
     if (writeReq->writeLeft <= 0) {
-        DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
+        if (debug()) DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
         return;
     }
 
     int size;
     if (writeReq->currentWriteAddr % cacheLineSize) {
         size = cacheLineSize - (writeReq->currentWriteAddr % cacheLineSize);
-        DPRINTF(CommInterface, "Aligning\n");
+        if (debug()) DPRINTF(CommInterface, "Aligning\n");
     } else {
         size = cacheLineSize;
     }
@@ -466,8 +467,8 @@ CommInterface::tryWrite(MemSidePort * port) {
     req->setExtraData((uint64_t)data);
 
 
-    DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
-    DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%08x through port: %s\n",
+    if (debug()) DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
+    if (debug()) DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%08x through port: %s\n",
         writeReq->currentWriteAddr, size,
         *((uint64_t*)(&(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]))),
         port->name());
@@ -498,19 +499,19 @@ CommInterface::tryRead(SPMPort * port) {
     MemoryRequest * readReq = port->readReq;
     Request::Flags flags;
     if (readReq->readLeft <= 0) {
-        DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
+        if (debug()) DPRINTF(CommInterface, "Something went wrong. Shouldn't try to read if there aren't reads left\n");
         return;
     }
     int size;
     if (readReq->currentReadAddr % cacheLineSize) {
         size = cacheLineSize - (readReq->currentReadAddr % cacheLineSize);
-        DPRINTF(CommInterface, "Aligning\n");
+        if (debug()) DPRINTF(CommInterface, "Aligning\n");
     } else {
         size = cacheLineSize;
     }
     size = readReq->readLeft > (size - 1) ? size : readReq->readLeft;
     RequestPtr req = make_shared<Request>(readReq->currentReadAddr, size, flags, masterId);
-    DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes through port: %s\n",
+    if (debug()) DPRINTF(CommInterface, "Trying to read addr: 0x%016x, %d bytes through port: %s\n",
         req->getPaddr(), size, port->name());
 
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
@@ -541,14 +542,14 @@ void
 CommInterface::tryWrite(SPMPort * port) {
     MemoryRequest * writeReq = port->writeReq;
     if (writeReq->writeLeft <= 0) {
-        DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
+        if (debug()) DPRINTF(CommInterface, "Something went wrong. Shouldn't try to write if there aren't writes left\n");
         return;
     }
 
     int size;
     if (writeReq->currentWriteAddr % cacheLineSize) {
         size = cacheLineSize - (writeReq->currentWriteAddr % cacheLineSize);
-        DPRINTF(CommInterface, "Aligning\n");
+        if (debug()) DPRINTF(CommInterface, "Aligning\n");
     } else {
         size = cacheLineSize;
     }
@@ -561,8 +562,8 @@ CommInterface::tryWrite(SPMPort * port) {
     req->setExtraData((uint64_t)data);
 
 
-    DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
-    DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%08x through port: %s\n",
+    if (debug()) DPRINTF(CommInterface, "totalLength: %d, writeLeft: %d\n", writeReq->totalLength, writeReq->writeLeft);
+    if (debug()) DPRINTF(CommInterface, "Trying to write to addr: 0x%016x, %d bytes, data 0x%08x through port: %s\n",
         writeReq->currentWriteAddr, size,
         *((uint64_t*)(&(writeReq->buffer[writeReq->totalLength-writeReq->writeLeft]))),
         port->name());
@@ -590,11 +591,11 @@ CommInterface::tryWrite(SPMPort * port) {
 
 void
 CommInterface::enqueueRead(MemoryRequest * req) {
-    DPRINTF(CommInterface, "Read from 0x%lx of Size:%d Bytes Enqueued:\n", req->address, req->length);
+    if (debug()) DPRINTF(CommInterface, "Read from 0x%lx of Size:%d Bytes Enqueued:\n", req->address, req->length);
     readQueue.push_back(req);
-    DPRINTF(CommInterfaceQueues, "Current Queue:\n");
+    if (debug()) DPRINTF(CommInterfaceQueues, "Current Queue:\n");
     for (auto it=readQueue.begin(); it!=readQueue.end(); ++it) {
-        DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
+        if (debug()) DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + processDelay);
@@ -604,11 +605,11 @@ CommInterface::enqueueRead(MemoryRequest * req) {
 
 void
 CommInterface::enqueueWrite(MemoryRequest * req) {
-    DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", req->address, req->length);
+    if (debug()) DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", req->address, req->length);
     writeQueue.push_back(req);
-    DPRINTF(CommInterfaceQueues, "Current Queue:\n");
+    if (debug()) DPRINTF(CommInterfaceQueues, "Current Queue:\n");
     for (auto it=writeQueue.begin(); it!=writeQueue.end(); ++it) {
-        DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
+        if (debug()) DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
     }
     if (!tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + processDelay);
@@ -631,7 +632,7 @@ CommInterface::finish() {
 
 Tick
 CommInterface::read(PacketPtr pkt) {
-    DPRINTF(CommInterface, "The address range associated with this ACC was read!\n");
+    if (debug()) DPRINTF(CommInterface, "The address range associated with this ACC was read!\n");
 
     Addr offset = pkt->req->getPaddr() - io_addr;
 
@@ -663,12 +664,12 @@ CommInterface::read(PacketPtr pkt) {
 
 Tick
 CommInterface::write(PacketPtr pkt) {
-    DPRINTF(CommInterface,
+    if (debug()) DPRINTF(CommInterface,
         "The address range associated with this ACC was written to!\n");
 
     pkt->writeData(mmreg + (pkt->req->getPaddr() - io_addr));
 
-    //DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
+    //if (debug()) DPRINTF(CommInterface, "MMReg value: 0x%016x\n", *(uint64_t *)mmreg);
     std::stringstream mm;
     for (int i = io_size-1; i >= 0; i--) {
         if ((i >= flag_size+config_size) && ((i-flag_size-config_size)%8 == 0))
@@ -681,7 +682,7 @@ CommInterface::write(PacketPtr pkt) {
             mm << std::setfill('0') << std::setw(2) << std::hex << (uint32_t)mmreg[i];
     }
     std::string mmr = mm.str();
-    DPRINTF(CommInterface, "MMReg value: %s\n", mmr);
+    if (debug()) DPRINTF(CommInterface, "MMReg value: %s\n", mmr);
 
     pkt->makeAtomicResponse();
 

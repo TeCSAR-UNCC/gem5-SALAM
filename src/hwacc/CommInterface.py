@@ -22,3 +22,4 @@ class CommInterface(BasicPioDevice):
     clock_period = Param.Int(10, "Clock period in ns")
     premap_data = Param.Bool(False, "Whether or not the memory read/write locations for data predefined")
     data_bases = VectorParam.Addr([0x0], "Base addresses for data if they are predefined")
+    enable_debug_msgs = Param.Bool(False, "Whether or not this device will display debug messages")
