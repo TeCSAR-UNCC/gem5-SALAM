@@ -49,19 +49,19 @@ class AccCluster(Platform):
         spm.port = self.local_bus.master
 
     def _attach_bridges(self, system, mem_range, ext_ranges):
-        system.mem_to_hwacc = Bridge(delay='1ns', ranges = mem_range)
-        system.mem_to_hwacc.master = self.local_bus.slave
-        system.mem_to_hwacc.slave = system.membus.master
+        self.mem2cls = Bridge(delay='1ns', ranges = mem_range)
+        self.mem2cls.master = self.local_bus.slave
+        self.mem2cls.slave = system.membus.master
 
-        # system.hwacc_to_mem = Bridge(delay='1ns', ranges = ext_ranges)
-        # system.hwacc_to_mem.master = system.membus.slave
-        # system.hwacc_to_mem.slave = self.local_bus.master
+        # self.cls2mem = Bridge(delay='1ns', ranges = ext_ranges)
+        # self.cls2mem.master = system.membus.slave
+        # self.cls2mem.slave = self.local_bus.master
 
     def _connect_hwacc(self, hwacc):
         hwacc.pio = self.local_bus.master
 
-    def _connect_caches(self, system, options, cache_size):
-        if options.acc_cache:
+    def _connect_caches(self, system, options, cache_size=0):
+        if options.acc_cache and (cache_size!=0):
             self.cluster_cache = ClusterCache()
             self.cluster_cache.size = cache_size
 

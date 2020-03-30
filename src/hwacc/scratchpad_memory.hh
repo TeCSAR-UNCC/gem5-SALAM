@@ -64,6 +64,7 @@ class ScratchpadMemory : public AbstractMemory
     bool writeOnValid;
     bool resetOnScratchpadRead;
     bool *ready;
+    bool initial;
   public:
     typedef ScratchpadMemoryParams Params;
     const Params *

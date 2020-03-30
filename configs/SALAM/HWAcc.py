@@ -81,7 +81,8 @@ def makeHWAcc(options, system):
     # system.acc_cluster.dma.pio = system.acc_cluster.local_bus.master
 
     system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=32, gic=system.realview.gic, max_pending=32)
-    system.acc_cluster.stream_dma_0.stream = system.acc_cluster.acc.stream
+    system.acc_cluster.stream_dma_0.stream_in = system.acc_cluster.acc.stream
+    system.acc_cluster.stream_dma_0.stream_out = system.acc_cluster.acc.stream
     system.acc_cluster.stream_dma_0.stream_addr=0x2ff10020
     system.acc_cluster.stream_dma_0.stream_size=8
     system.acc_cluster.stream_dma_0.pio_delay = '1ns'
@@ -90,7 +91,8 @@ def makeHWAcc(options, system):
     system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_0)
 
     system.acc_cluster.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=32, gic=system.realview.gic, max_pending=32)
-    system.acc_cluster.stream_dma_1.stream = system.acc_cluster.acc.stream
+    system.acc_cluster.stream_dma_1.stream_in = system.acc_cluster.acc.stream
+    system.acc_cluster.stream_dma_1.stream_out = system.acc_cluster.acc.stream
     system.acc_cluster.stream_dma_1.stream_addr=0x2ff20020
     system.acc_cluster.stream_dma_1.stream_size=8
     system.acc_cluster.stream_dma_1.pio_delay = '1ns'

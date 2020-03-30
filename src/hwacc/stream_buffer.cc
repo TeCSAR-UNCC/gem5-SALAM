@@ -17,7 +17,8 @@ using namespace std;
 
 StreamBuffer::StreamBuffer(Params *p) :
 	ClockedObject(p),
-	streamPort(this),
+	streamIn(this),
+	streamOut(this),
 	buffer(p->buffer_size),
 	fifoSize(p->buffer_size),
 	endian(p->system->getGuestByteOrder()),
@@ -139,8 +140,10 @@ StreamBuffer::getStreamAddrRanges() const {
 Port &
 StreamBuffer::getPort(const std::string &if_name, PortID idx)
 {
-    if (if_name == "stream") {
-        return streamPort;
+    if (if_name == "stream_in") {
+        return streamIn;
+    } else if (if_name == "stream_out") {
+    	return streamOut;
     }
     return ClockedObject::getPort(if_name, idx);
 }

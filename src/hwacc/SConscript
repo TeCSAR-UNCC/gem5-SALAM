@@ -5,13 +5,13 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('CommInterface.py')
     SimObject('ComputeUnit.py')
     SimObject('LLVMInterface.py')
+    SimObject('ScratchpadMemory.py')
     SimObject('NoncoherentDma.py')
     SimObject('StreamDma.py')
     SimObject('CycleCounts.py')
     SimObject('AccCluster.py')
     SimObject('StreamBuffer.py')
 
-    # Source('io_acc.cc')
     Source('comm_interface.cc')
     Source('compute_unit.cc')
     Source('llvm_interface.cc')
@@ -31,7 +31,6 @@ if env['TARGET_ISA'] == 'arm':
     Source('acc_cluster.cc')
     Source('stream_buffer.cc')
     Source('stream_port.cc')
-    # Source('comm_mem_interface.cc')
     Source('scratchpad_memory.cc')
 
     DebugFlag('IOAcc')

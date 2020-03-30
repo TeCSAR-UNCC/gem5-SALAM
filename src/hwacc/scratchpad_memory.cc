@@ -27,14 +27,14 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
     readyMode(p->ready_mode),
     readOnInvalid(p->read_on_invalid),
     writeOnValid(p->write_on_valid),
-    resetOnScratchpadRead(p->reset_on_scratchpad_read) {
+    resetOnScratchpadRead(p->reset_on_scratchpad_read),
+    initial(true) {
     ready = new bool[range.size()];
     if (readyMode) {
         for (auto i=0;i<range.size();i++) {
             ready[i] = false;
         }
     }
-
     // Each port has its own release and dequeue events, as well as signals
     // Adding these events and signals for ".port"
     const std::string releaseEventName = csprintf("%s_release[0]", name());
@@ -75,9 +75,12 @@ ScratchpadMemory::isReady(Addr ad, size_t size, bool read) {
 
 void
 ScratchpadMemory::setAllReady(bool r) {
-    for (auto i=0;i<range.size();i++) {
-        ready[i] = r;
+    if (readyMode && !initial){
+        for (auto i=0;i<range.size();i++) {
+            ready[i] = r;
+        }
     }
+    initial = true;
 }
 
 static inline void
@@ -108,6 +111,7 @@ tracePacket(System *sys, const char *label, PacketPtr pkt)
 void
 ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
 {
+    initial = false;
     if (pkt->cacheResponding()) {
         DPRINTF(MemoryAccess, "Cache responding to %#llx: not responding\n",
                 pkt->getAddr());
@@ -236,13 +240,12 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
 void
 ScratchpadMemory::init()
 {
-    AbstractMemory::init();
-
     // allow unconnected memories as this is used in several ruby
     // systems at the moment
     if (port.isConnected()) {
         port.sendRangeChange();
     }
+    initial = true;
 }
 
 Tick
