@@ -3,13 +3,13 @@
 //------------------------------------------//
 
 void
-InstructionBase::setResult(void *Data) { 
+InstructionBase::setResult(void *Data) {
     // memcpy shortcut method
     memcpy(&_FinalResult, Data, _ReturnRegister->getSize());
 }   //  --- End Function ----------------------------------------------//
 
 
-bool 
+bool
 InstructionBase::commit() {
 	// If cycle count is = max cycle count, commit register value to memory
 	if(_ReturnRegister != NULL) {
@@ -18,9 +18,13 @@ InstructionBase::commit() {
 			_ReturnRegister->commit();
             _ReturnRegister->write();
 			signalChildren();
-			DPRINTF(LLVMOp, "Operation Committed to Memory \n");
+			if (_debug) {
+                DPRINTF(LLVMOp, "Operation Committed to Memory \n");
+            }
 			return true;
-		} else DPRINTF(LLVMOp, "Operation Will Commit in %d Cycle(s) \n", (_MaxCycle-_CurrCycle));
+		} else if (_debug) {
+            DPRINTF(LLVMOp, "Operation Will Commit in %d Cycle(s) \n", (_MaxCycle-_CurrCycle));
+        }
         _CurrCycle++;
     } else {
         signalChildren();
@@ -30,7 +34,7 @@ InstructionBase::commit() {
 
 
 
-std::vector<Register*> 
+std::vector<Register*>
 InstructionBase::runtimeDependencies(std::string PrevBB) {
 	return _Dependencies;
 }

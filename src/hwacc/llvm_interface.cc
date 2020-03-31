@@ -30,7 +30,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     prevBB = NULL;
     typeList = NULL;
     running = false;
-    clock_period = clock_period * 1000; 
+    clock_period = clock_period * 1000;
     //process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
@@ -56,11 +56,13 @@ LLVMInterface::tick() {
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
-
-    if (debug()) DPRINTF(IOAcc, "\n%s\n%s %d\n%s\n",
+    bool dbg = debug();
+    if (dbg) {
+        DPRINTF(IOAcc, "\n%s\n%s %d\n%s\n",
             "********************************************************************************",
             "   Cycle", cycle,
             "********************************************************************************");
+    }
     cycle++;
     comm->refreshMemPorts();
     hardware->update();
@@ -75,11 +77,11 @@ LLVMInterface::tick() {
     storeInFlight = writeQueue.size();
     compInFlight = computeQueue.size();
     ///////////////////////////
-    if (debug()) DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
+    if (dbg) DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
-    if (debug()) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
+    if (dbg) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
-        if (debug()) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
+        if (dbg) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
         //if(unlimitedFU) {
             if(computeQueue.at(i)->commit()) {
                 auto it = computeQueue.erase(computeQueue.begin() + i);
@@ -89,7 +91,7 @@ LLVMInterface::tick() {
                 // Check if FP operation has staged
                 if (reservation.at(i)->_StageCycle) {
                     if((reservation.at(i)->_CurrCycle >= reservation.at(i)->_StageCycle)) { } // Active, but staged
-                    else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);    
+                    else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
                 } else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
             }
         //} else if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
@@ -100,7 +102,7 @@ LLVMInterface::tick() {
         //} else i++;
     }
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
-        if (debug()) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
+        if (dbg) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
     }
 
@@ -109,87 +111,87 @@ LLVMInterface::tick() {
     } else {
         for (auto i = 0; i < reservation.size();) {
             if (reservation.at(i)->_ReturnRegister == NULL) {
-                if (debug()) DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+                if (dbg) DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
             } else {
-                if (debug()) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+                if (dbg) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
             }
             if (reservation.at(i)->_ActiveParents == 0) {
-                if(!(reservation.at(i)->_Terminator)) { 
-                        if(reservation.at(i)->_OpCode == "load") {
-                            loadOpScheduled = true;
-                            readQueue.push_back(reservation.at(i));
-                            reservation.at(i)->compute();
-                            hardware->memoryLoad();
-                            auto it = reservation.erase(reservation.begin()+i);
-                            i = std::distance(reservation.begin(), it);
-                        } else if(reservation.at(i)->_OpCode == "store") {
-                            storeOpScheduled = true;
-                            writeQueue.push_back(reservation.at(i));
-                            reservation.at(i)->compute();
-                            hardware->memoryStore();
-                            auto it = reservation.erase(reservation.begin()+i);
-                            i = std::distance(reservation.begin(), it);
-                        }  //////////////// New 
-                        else if(reservation.at(i)->_MaxCycle == 0) {
-                            if(!unlimitedFU) {
-                                if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
-                                    reservation.at(i)->compute();
-                                    reservation.at(i)->commit(); 
-                                    compOpScheduled = true;
-                                    auto it = reservation.erase(reservation.begin()+i);
-                                    i = std::distance(reservation.begin(), it);
-                                } else i++;
-                            } else {
-                                hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                if(!(reservation.at(i)->_Terminator)) {
+                    if(reservation.at(i)->_OpCode == "load") {
+                        loadOpScheduled = true;
+                        readQueue.push_back(reservation.at(i));
+                        reservation.at(i)->compute();
+                        hardware->memoryLoad();
+                        auto it = reservation.erase(reservation.begin()+i);
+                        i = std::distance(reservation.begin(), it);
+                    } else if(reservation.at(i)->_OpCode == "store") {
+                        storeOpScheduled = true;
+                        writeQueue.push_back(reservation.at(i));
+                        reservation.at(i)->compute();
+                        hardware->memoryStore();
+                        auto it = reservation.erase(reservation.begin()+i);
+                        i = std::distance(reservation.begin(), it);
+                    }  //////////////// New
+                    else if(reservation.at(i)->_MaxCycle == 0) {
+                        if(!unlimitedFU) {
+                            if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
                                 reservation.at(i)->compute();
-                                reservation.at(i)->commit(); 
+                                reservation.at(i)->commit();
                                 compOpScheduled = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
-                            } 
-                        } //////////////// New 
-                        //else if(reservation.at(i)->_MaxCycle==0) {
-                        //    reservation.at(i)->compute();
-                        //    reservation.at(i)->commit(); 
-                        //    if(unlimitedFU) hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-                        //    scheduled = true; compOpScheduled = true;
-                        //    auto it = reservation.erase(reservation.begin()+i);
-                        //    i = std::distance(reservation.begin(), it);
-                        // } 
-                        else { // Computation Units
-                            if(!unlimitedFU){
-                                if(hardware->available(reservation.at(i)->_FunctionalUnit)){
-                                    computeQueue.push_back(reservation.at(i));
-                                    reservation.at(i)->compute();
-                                    reservation.at(i)->commit();
-                                    compOpScheduled = true;
-                                    auto it = reservation.erase(reservation.begin()+i);
-                                    i = std::distance(reservation.begin(), it);
-                                } else i++;
-                            } else {
+                            } else i++;
+                        } else {
+                            hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                            reservation.at(i)->compute();
+                            reservation.at(i)->commit();
+                            compOpScheduled = true;
+                            auto it = reservation.erase(reservation.begin()+i);
+                            i = std::distance(reservation.begin(), it);
+                        }
+                    } //////////////// New
+                    //else if(reservation.at(i)->_MaxCycle==0) {
+                    //    reservation.at(i)->compute();
+                    //    reservation.at(i)->commit();
+                    //    if(unlimitedFU) hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                    //    scheduled = true; compOpScheduled = true;
+                    //    auto it = reservation.erase(reservation.begin()+i);
+                    //    i = std::distance(reservation.begin(), it);
+                    // }
+                    else { // Computation Units
+                        if(!unlimitedFU){
+                            if(hardware->available(reservation.at(i)->_FunctionalUnit)){
                                 computeQueue.push_back(reservation.at(i));
                                 reservation.at(i)->compute();
                                 reservation.at(i)->commit();
-                                hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
                                 compOpScheduled = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
-                            }
+                            } else i++;
+                        } else {
+                            computeQueue.push_back(reservation.at(i));
+                            reservation.at(i)->compute();
+                            reservation.at(i)->commit();
+                            hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                            compOpScheduled = true;
+                            auto it = reservation.erase(reservation.begin()+i);
+                            i = std::distance(reservation.begin(), it);
                         }
+                    }
                 } else if ((reservation.at(i)->_OpCode != "ret")) {
                     if (reservation.size() < scheduling_threshold) {
                         hardware->controlFlow();
                         prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
-                        reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
+                        reservation.at(i)->compute(); // Send instruction to runtime computation simulator
                         currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
                         auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
                         i = std::distance(reservation.begin(), it);
                         scheduleBB(currBB);
                     } else i++;
-                } 
+                }
             } else {
                 if (reservation.at(i)->_OpCode == "ret"){
-                    if (debug()) DPRINTF(LLVMInterface, "Simulation Complete \n");
+                    if (dbg) DPRINTF(LLVMInterface, "Simulation Complete \n");
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
                         finalize();
                     }
@@ -327,13 +329,14 @@ LLVMInterface::findParent(std::string line) {
 void
 LLVMInterface::constructBBList() {
 /*********************************************************************************************
- Constructing Basic Block List 
+ Constructing Basic Block List
 
- Parses LLVM file and creates the CDFG passed to our runtime simulation engine. 
+ Parses LLVM file and creates the CDFG passed to our runtime simulation engine.
 *********************************************************************************************/
     // llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
     // m->dump();
-    if (debug()) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
+    bool dbg = debug();
+    if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
@@ -347,43 +350,43 @@ LLVMInterface::constructBBList() {
     std::string line; // Stores Single Line of File
     bool inFunction = false; // Parse Variable
     unsigned bbnum = 0; // Start of Basic Block Numbering
-    if (debug()) DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
+    if (dbg) DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
     if(llvmFile.is_open()) {
         while (getline(llvmFile, line)) { // Read until end of LLVM file
-            if (debug()) DPRINTF(LLVMParse, "Line: (%s)\n", line); 
+            if (dbg) DPRINTF(LLVMParse, "Line: (%s)\n", line);
             if (!inFunction) { // Looks for data before the main function is defined
                 if (!line.find("%struct")) { // Found custom data type.
-                    int pos = line.find('='); 
+                    int pos = line.find('=');
                     int size = 1; // Size indicated number of elements in custom data type
-                    std::string name = line.substr(1,pos-2); // Store name as called within function 
+                    std::string name = line.substr(1,pos-2); // Store name as called within function
                     for(int i = pos; i < line.size(); i++) {
                         if(line[i] == ',') size++; // Elements delimeted by commas, counts number of elements
                     }
                     typeList->addType(new LLVMType(size, name)); // Add custom data type to typeList
                 } else if (!line.find("define")) { //Found a function. Need to parse its header
-                    if (debug()) DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
+                    if (dbg) DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
                     inFunction = true;
                     unsigned paramNum = 0;
                     unsigned linePos = 0;
                     int percPos = line.find("%"); //All registers preceeded by a % in LLVM
                     int commaPos;
                     while (percPos > -1) {
-                        // Parse all global variables within the function definition 
+                        // Parse all global variables within the function definition
                         if (line.find("%struct", linePos) != percPos) { //Ensure we didn't just find a struct type
                             percPos++;
                             commaPos = line.find(",", percPos);
                             if (commaPos < 0) commaPos = line.find(")");
                             std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
-                            if (debug()) DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName); 
+                            if (dbg) DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName);
                             regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum))); // Create register for global variable
-                            if (debug()) DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
+                            if (dbg) DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
                             paramNum++;
                         }
                         linePos = percPos + 1;
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
-                    currBB = new BasicBlock("0", bbnum); // First basic block is always defined as BB 0
-                    if (debug()) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
+                    currBB = new BasicBlock("0", name(), bbnum, dbg); // First basic block is always defined as BB 0
+                    if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
                 }
@@ -396,40 +399,40 @@ LLVMInterface::constructBBList() {
                         // LLVM Version 3.8 added a new : after label names, check for this
                         std::string versionCheck = line.substr(10,(labelEnd - 10));
                         if(versionCheck.back() == ':') versionCheck = line.substr(10,(labelEnd - 11));
-                        currBB = new BasicBlock(versionCheck, bbnum); // Create new basic block
-                        if (debug()) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
+                        currBB = new BasicBlock(versionCheck, name(), bbnum, dbg); // Create new basic block
+                        if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
                     } else if (line.find(".") == 0) { // Found new basic block (edge)
-                        int labelEnd = line.find(" "); 
+                        int labelEnd = line.find(" ");
                         prevBB = currBB; // Set previous basic block
-                        currBB = new BasicBlock(line.substr(0,(labelEnd-1)), bbnum); // Create new basic block
-                        if (debug()) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name); 
+                        currBB = new BasicBlock(line.substr(0,(labelEnd-1)), name(), bbnum, dbg); // Create new basic block
+                        if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
                     } else if (line.find("}") == 0) { // Found end of function definition
                         inFunction = false;
-                        if (debug()) DPRINTF(LLVMParse, "Finished File Parsing!\n");
+                        if (dbg) DPRINTF(LLVMParse, "Finished File Parsing!\n");
                         break;
                     } else if (!(line.find_first_not_of(' ') != std::string::npos)){ // Skip empty Line
                     } else { // Found instruction, create new compute node within the current BB
-                        if (debug()) DPRINTF(LLVMParse, "Registering Compute Node for: (%s)\n", line);
+                        if (dbg) DPRINTF(LLVMParse, "Registering Compute Node for: (%s)\n", line);
                         if ((line.find("switch") != -1)) {
                             // If instruction is switch statement, convert it to be defined in a single line
-                            if (debug()) DPRINTF(LLVMParse, "Found Switch Statement, Converting to Inline!\n");
+                            if (dbg) DPRINTF(LLVMParse, "Found Switch Statement, Converting to Inline!\n");
                             std::string concatLine;
                             int cases = 1;
-                            while(line.find(" ]") == -1) { 
+                            while(line.find(" ]") == -1) {
                                 // Continue reading through lines until the end of switch statement
                                 // Concatinate all instruction lines into a single string
-                                if (debug()) DPRINTF(LLVMParse, "Case %d: (%s)\n", cases, line);
+                                if (dbg) DPRINTF(LLVMParse, "Case %d: (%s)\n", cases, line);
                                 concatLine += line;
                                 getline(llvmFile, line);
                                 cases++;
                             }
                         concatLine+= " ]"; // Close case statements arguement
                         line = concatLine;
-                        if (debug()) DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
+                        if (dbg) DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
                         }
                         if(prevBB) { // Add instruction line to compute node list in current BB
                             hardware->updateParsed(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles, pipelined));
@@ -498,8 +501,8 @@ LLVMInterface::readCommit(MemoryRequest * req) {
 void
 LLVMInterface::writeCommit(MemoryRequest * req) {
 /*********************************************************************************************
- Commit Memory Write Request 
-*********************************************************************************************/    
+ Commit Memory Write Request
+*********************************************************************************************/
    for (auto i = 0; i < writeQueue.size(); i++ ) {
         if(writeQueue.at(i)->getReq() == req) {
             writeQueue.at(i)->commit();
@@ -554,7 +557,7 @@ void
 LLVMInterface::startup() {
 /*********************************************************************************************
  Initialize communications between gem5 interface and simulator
-*********************************************************************************************/ 
+*********************************************************************************************/
     comm->registerCompUnit(this);
 }
 
@@ -562,13 +565,13 @@ LLVMInterface*
 LLVMInterfaceParams::create() {
 /*********************************************************************************************
  Create new interface between the llvm IR and our simulation engine
-*********************************************************************************************/     
+*********************************************************************************************/
     return new LLVMInterface(this);
 }
 
 bool
 LLVMInterface::unlimitedMode() {
-    if((counter_units == -1) && 
+    if((counter_units == -1) &&
         (int_adder_units == -1) &&
         (int_multiply_units == -1) &&
         (int_shifter_units == -1) &&
@@ -581,7 +584,7 @@ LLVMInterface::unlimitedMode() {
         (fp_dp_division == -1) &&
         (compare == -1) &&
         (gep == -1)) return true;
-    return false; 
+    return false;
 }
 
 void
@@ -629,7 +632,7 @@ void
 LLVMInterface::printPerformanceResults() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
-*********************************************************************************************/ 
+*********************************************************************************************/
     std::cout << "********************************************************************************" << std::endl;
     std::cout << "   ========= Performance Analysis =============" << std::endl;
     std::cout << "   Setup Time:                      " << (double)(setupTime.count()) << "seconds" << std::endl;
@@ -658,8 +661,8 @@ LLVMInterface::printPerformanceResults() {
     // SPM cache_type = 0
     uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
     uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
-    //uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
-    //uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
+    //uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0);
+    //uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0);
 
     // Cache cache_type = 1
     // uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
@@ -668,3 +671,34 @@ LLVMInterface::printPerformanceResults() {
     double exponential = 1e9; // Units correction
     double leak = 1.0; // Remnant of old units difference
     */
+
+void
+LLVMInterface::dumpQueues() {
+    std::cout << "*********************************************************\n"
+              << "Compute Queue\n"
+              << "*********************************************************\n";
+    for (auto compute : computeQueue) {
+        std::cout << compute->_LLVMLine << std::endl;
+    }
+    std::cout << "*********************************************************\n"
+              << "Read Queue\n"
+              << "*********************************************************\n";
+    for (auto read : readQueue) {
+        std::cout << read->_LLVMLine << std::endl;
+    }
+    std::cout << "*********************************************************\n"
+              << "Write Queue\n"
+              << "*********************************************************\n";
+    for (auto write : writeQueue) {
+        std::cout << write->_LLVMLine << std::endl;
+    }
+    std::cout << "*********************************************************\n"
+              << "Reservation Queue\n"
+              << "*********************************************************\n";
+    for (auto reserved : reservation) {
+        std::cout << reserved->_LLVMLine << std::endl;
+    }
+    std::cout << "*********************************************************\n"
+              << "End of queue dump\n"
+              << "*********************************************************\n";
+}

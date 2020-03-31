@@ -155,9 +155,13 @@ class BasicBlock {
     std::string _Name;
     uint64_t _BBID;
     std::vector<std::shared_ptr<InstructionBase> > _Nodes;
+    bool _debug = false;
+    std::string _ParentName;
 
+  protected:
+    const std::string name() const { return _ParentName + ".bb(" + _Name + ")"; }
   public:
-    BasicBlock(const std::string& Name, uint64_t BBID);
+    BasicBlock(const std::string& Name, const std::string& ParentName, uint64_t BBID, bool dbg=false);
     ~BasicBlock();
     void addNode(std::shared_ptr<InstructionBase> Node);
     void prevBB(std::string prevBB) { _PrevBB = prevBB; }
@@ -177,6 +181,7 @@ class BasicBlock {
     int parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles, int32_t Pipelined);
     void printNodes();
     bool immPosition(std::vector<std::string> &parameters);
+    void setDebug(bool);
 };
 
 #endif //__BASIC_BLOCK_HH__

@@ -100,6 +100,7 @@ class LLVMInterface : public ComputeUnit {
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
     bool unlimitedMode();
+    void dumpQueues();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
