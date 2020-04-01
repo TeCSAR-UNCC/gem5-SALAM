@@ -26,6 +26,7 @@ def buildHead(options, system, clstr):
     AccConfig(clstr.top, config, ir)
     clstr._connect_hwacc(clstr.top)
     clstr.top.local = clstr.local_bus.slave
+    # clstr.top.enable_debug_msgs = True
 
     # Add the Stream DMAs
     addr = local_low + 0x0041
@@ -50,6 +51,7 @@ def buildHead(options, system, clstr):
     AccConfig(clstr.NormalConv, config, ir)
     clstr._connect_hwacc(clstr.NormalConv)
     clstr.NormalConv.stream = clstr.stream_dma0.stream_out
+    clstr.NormalConv.enable_debug_msgs = True
 
     addr = local_low + 0x0081
     spmRange = AddrRange(addr, addr+(160*2*3))
@@ -66,7 +68,7 @@ def buildHead(options, system, clstr):
     clstr.NormalConvWindow.conf_table_reported = False
     clstr.NormalConvWindow.ready_mode=True
     clstr.NormalConvWindow.port = clstr.local_bus.master
-    for i in range(1):
+    for i in range(27):
         clstr.NormalConv.spm = clstr.NormalConvWindow.spm_ports
 
     addr = local_low + 0x045C

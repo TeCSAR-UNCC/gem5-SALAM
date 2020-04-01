@@ -14,53 +14,26 @@ def makeHWAcc(options, system):
     # acc_config = <Absolute path to the config file>
     acc_config = options.accpath + "/" + options.accbench + "/config.ini"
 
-    ############################# Creating an Accelerator Cluster #################################
+    ############################# Creating the Accelerator Cluster #################################
     # Create a new Accelerator Cluster
-    system.acc_cluster = AccCluster()
-
-    # The local_range is used for communication within the cluster. All memory mapped devices
-    # (i.e. accelerators and SPMs) for the cluster should appear in this range.
-    local_range = AddrRange(system.acc_cluster.local_range_min, system.acc_cluster.local_range_max)
-
-    # The external_range is used for communication to devices outside of the cluster
-    external_range = [AddrRange(system.acc_cluster.external_range_low_min, \
-    							system.acc_cluster.external_range_low_max), \
-    				  AddrRange(system.acc_cluster.external_range_hi_min, \
-    				            system.acc_cluster.external_range_hi_max)]
-
-	# Configure the cache
-    CacheConfig(system.acc_cluster, acc_config)
-
-	# Resize local and cache bus from config file specification 
-    # system.acc_cluster._resize_bus(system.acc_cluster.cache_ports, system.acc_cluster.local_ports)
-
-    # Generate bridges to connect local cluster bus to system membus
-    system.acc_cluster._attach_bridges(system, local_range, external_range)
-
-    # Add a shared cache for the accelerator cluster
-    system.acc_cluster._connect_caches(system, options, system.acc_cluster.cache_size)
+    system.acctest    = AccCluster()
+    local_low       = 0x2F000000
+    local_high      = 0x2FFFFFFF
+    local_range     = AddrRange(local_low, local_high)
+    external_range  = [AddrRange(0x00000000, local_low-1),
+                       AddrRange(local_high+1, 0xFFFFFFFF)]
+    system.acctest._attach_bridges(system, local_range, external_range)
+    system.acctest._connect_caches(system, options)
 
     ############################# Adding Accelerators to Cluster ##################################
-    # Add a shared scratchpad memory to the cluster
-    # spm_range = AddrRange()
-    # spm_latency = '2ns'
-    # system.acc_cluster._add_spm(spm_range, spm_latency)
-    # system.acc_cluster._connect_spm(system.acc_cluster.spm)
-
     # Add an accelerator to the cluster
     system.acc_cluster.acc = CommInterface(devicename=options.accbench)
     AccConfig(system.acc_cluster.acc, acc_config, acc_bench)
+
+    # Add an SPM for the accelerator
     system.acc_cluster.acc_spm = ScratchpadMemory()
     AccSPMConfig(system.acc_cluster.acc, system.acc_cluster.acc_spm, acc_config)
     system.acc_cluster._connect_spm(system.acc_cluster.acc_spm)
-
-    # Add an accelerator with a private SPM to the cluster
-    # system.acc_cluster.acc = CommMemInterface(devicename=options.accbench)
-    # AccConfig(system.acc_cluster.acc, local_range, acc_config, acc_bench)
-    # AccPmemConfig(system.acc_cluster.acc, acc_config)
-
-    # Add a shared cache for the accelerator cluster
-    #system.acc_cluster._connect_caches(system, options, system.acc_cluster.acc.cache_size)
 
     # Connect the accelerator to the system's interrupt controller
     system.acc_cluster.acc.gic = system.realview.gic
@@ -70,8 +43,8 @@ def makeHWAcc(options, system):
     system.acc_cluster.acc.local = system.acc_cluster.local_bus.slave
     system.acc_cluster.acc.acp = system.acc_cluster.coherency_bus.slave
 
-    # Connect accelerator's private SPM to cluster buses
-    # system.acc_cluster._connect_spm(system.acc_cluster.acc.private_memory)
+    # Enable display of debug messages for the accelerator
+    system.acc_cluster.acc.enable_debug_msgs = True
 
     ################################## Adding DMAs to Cluster #####################################
     # Add DMA devices to the cluster and connect them

@@ -234,6 +234,19 @@ CommInterface::inLocalRange(Addr add) {
     return false;
 }
 
+bool
+CommInterface::inGlobalRange(Addr add) {
+    for (auto port : globalPorts) {
+        AddrRangeList adl = port->getAddrRanges();
+        for (auto address : adl) {
+            if (address.contains(add)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 CommInterface::MemSidePort *
 CommInterface::getValidLocalPort(Addr add, bool read) {
     for (auto port : localPorts) {
@@ -295,7 +308,7 @@ CommInterface::getValidSPMPort(Addr add, size_t len, bool read) {
 
 void
 CommInterface::processMemoryRequests() {
-    if (!localPortsStalled() || !globalPortsStalled() || !streamPortsStalled()) {
+    if (!allPortsStalled()) {
         if (debug()) DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue.size());
         for (auto it=readQueue.begin(); it!=readQueue.end(); ) {
             Addr address = (*it)->address;
@@ -307,8 +320,10 @@ CommInterface::processMemoryRequests() {
                 mport = getValidSPMPort(address, (*it)->length, true);
             } else if (inLocalRange(address)) {
                 mport = getValidLocalPort(address, true);
-            } else {
+            } else if (inGlobalRange(address)) {
                 mport = getValidGlobalPort(address, true);
+            } else {
+                panic("Address %lx is not reachable by any ports\n", address);
             }
             if (SPMPort * port = dynamic_cast<SPMPort *>(mport)) {
                 if (debug()) DPRINTF(CommInterfaceQueues, "Found available memory port\n");
@@ -350,8 +365,10 @@ CommInterface::processMemoryRequests() {
                 mport = getValidSPMPort(address, (*it)->length, false);
             } else if (inLocalRange(address)) {
                 mport = getValidLocalPort(address, false);
-            } else {
+            } else if (inGlobalRange(address)) {
                 mport = getValidGlobalPort(address, false);
+            } else {
+                panic("Address %lx is not reachable by any ports\n", address);
             }
             if (SPMPort * port = dynamic_cast<SPMPort*>(mport)) {
                 if (debug()) DPRINTF(CommInterfaceQueues, "Found available memory port\n");
@@ -382,6 +399,8 @@ CommInterface::processMemoryRequests() {
                 ++it;
             }
         }
+    } else {
+        if (debug()) DPRINTF(CommInterface, "All ports are stalled\n");
     }
     requestsInQueues = readQueue.size() + writeQueue.size();
     if (!tickEvent.scheduled() && requestsInQueues>0) {
@@ -621,10 +640,11 @@ void
 CommInterface::finish() {
     *mmreg &= 0xfc;
     *mmreg |= 0x04;
-    int_flag = true;
     computationNeeded = false;
-    if (int_num>0)
+    if (int_num>0) {
+        int_flag = true;
         gic->sendInt(int_num);
+    }
     for (auto port : spmPorts) {
         port->setReadyStatus(false);
     }

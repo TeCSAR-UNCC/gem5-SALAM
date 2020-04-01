@@ -124,41 +124,6 @@ def AccConfig(acc, config_file, bench_file):
     acc.llvm_interface.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
 
-def AccPmemConfig(acc, config_file):
-    # Setup config file parser
-    Config = ConfigParser.ConfigParser()
-    Config.read((config_file))
-    Config.sections()
-    def ConfigSectionMap(section):
-        dict1 = {}
-        options = Config.options(section)
-        for option in options:
-            try:
-                dict1[option] = Config.get(section, option)
-                if dict1[option] == -1:
-                    DebugPrint("skip: %s" % option)
-            except:
-                print("exception on %s!" % option)
-                dict1[option] = None
-        return dict1
-
-    # Private memory
-    acc.private_size = ConfigSectionMap("PrivateMemory")['size']
-    acc.private_range = AddrRange(ConfigSectionMap("PrivateMemory")['addr_range'], \
-                                                      size=ConfigSectionMap("PrivateMemory")['size'])
-    acc.private_memory = PrivateMemory(range=acc.private_range, \
-                                                           conf_table_reported=False, \
-                                                           latency=ConfigSectionMap("PrivateMemory")['latency'])
-
-    # Memory constraints
-    # acc.cache_size = ConfigSectionMap("AccConfig")['cache_size']
-    acc.private_read_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
-    acc.private_write_ports = ConfigSectionMap("PrivateMemory")['private_write_ports']
-    acc.private_read_bus_width = ConfigSectionMap("PrivateMemory")['private_read_bus_width']
-    acc.private_write_bus_width = ConfigSectionMap("PrivateMemory")['private_write_bus_width']    
-    acc.private_memory.ready_mode = Config.getboolean("Memory", 'ready_mode')
-    acc.private_memory.reset_on_private_read = Config.getboolean("Memory", 'reset_on_private_read')
-
 def AccSPMConfig(acc, spm, config_file):
     # Setup config file parser
     Config = ConfigParser.ConfigParser()
@@ -177,13 +142,12 @@ def AccSPMConfig(acc, spm, config_file):
                 dict1[option] = None
         return dict1
 
-    spm.range = AddrRange(ConfigSectionMap("PrivateMemory")['addr_range'], \
-                          size=ConfigSectionMap("PrivateMemory")['size'])
-    spm.latency = ConfigSectionMap("PrivateMemory")['latency']
+    spm.range = AddrRange(ConfigSectionMap("Memory")['addr_range'], \
+                          size=ConfigSectionMap("Memory")['size'])
+    spm.latency = ConfigSectionMap("Memory")['latency']
     spm.conf_table_reported = False
     spm.ready_mode = Config.getboolean("Memory", 'ready_mode')
     spm.reset_on_scratchpad_read = Config.getboolean("Memory", 'reset_on_private_read')
-    # spm.bandwidth = '1000GB/s'
-    num_ports = ConfigSectionMap("PrivateMemory")['private_read_ports']
+    num_ports = ConfigSectionMap("Memory")['ports']
     for i in range(int(num_ports)):
         acc.spm[i] = spm.spm_ports[i]

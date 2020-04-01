@@ -1,6 +1,5 @@
 #!/bin/bash
-FLAGS=IOAcc,LLVMInterface,CommInterface,NoncoherentDma,ComputeUnit
-
+FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
 echo "$1"
 if [ "$1" == "debug" ]; then
     BINARY="ddd --gdb --args build/ARM/gem5.debug"

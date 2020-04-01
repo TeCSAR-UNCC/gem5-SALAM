@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS=IOAcc,LLVMInterface,CommInterface,NoncoherentDma,ComputeUnit
+FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
 if [ "$1" != "" ]; then
     BENCH=$1
     MULTI="$1"
@@ -26,7 +26,7 @@ if [ $BENCH == "multiple_acc" ]; then
 	# --debug-flags=$FLAGS
 else
 	echo "Running Single Accelerator Configuration"
-	build/ARM/gem5.opt --outdir=BM_ARM_OUT/$BENCH configs/SALAM/fs_hwacc.py \
+	build/ARM/gem5.opt --debug-flags=$FLAGS --outdir=BM_ARM_OUT/$BENCH configs/SALAM/fs_hwacc.py \
 	$SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
 	$CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
 fi

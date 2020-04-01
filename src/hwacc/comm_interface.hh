@@ -26,7 +26,7 @@ class CommInterface : public BasicPioDevice
     Addr VAR_OFFSET;
     std::string devname;
     BaseGic *gic;
-    uint32_t int_num;
+    int32_t int_num;
     bool use_premap_data;
     std::vector<Addr> data_base_ptrs;
     ByteOrder endian;
@@ -176,6 +176,7 @@ class CommInterface : public BasicPioDevice
     bool inStreamRange(Addr add);
     bool inSPMRange(Addr add);
     bool inLocalRange(Addr add);
+    bool inGlobalRange(Addr add);
     MemSidePort * getValidLocalPort(Addr add, bool read);
     MemSidePort * getValidGlobalPort(Addr add, bool read);
     MemSidePort * getValidStreamPort(Addr add, size_t len, bool read);

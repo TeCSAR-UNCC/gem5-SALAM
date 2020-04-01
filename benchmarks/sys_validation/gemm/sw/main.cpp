@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2015, University of Kaiserslautern
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Authors: Matthias Jung
+            Frederik Lauer
+ */
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include "bench.h"
+#include "../../../common/m5ops.h"
+
+gemm_struct ges;
+
+volatile uint8_t  * top   = (uint8_t  *)0x2f000000;
+volatile uint32_t * val_a = (uint32_t *)0x2f000001;
+volatile uint32_t * val_b = (uint32_t *)0x2f000009;
+volatile uint32_t * val_c = (uint32_t *)0x2f000011;
+
+int main(void) {
+	m5_reset_stats();
+    uint64_t base = 0x80c00000;
+	TYPE *m1 = (TYPE *)base;
+	TYPE *m2 = (TYPE *)(base+8*ROW*COL);
+	TYPE *m3 = (TYPE *)(base+16*ROW*COL);
+	TYPE *check = (TYPE *)(base+24*ROW*COL);
+	int row_size = ROW;
+    int col_size = COL;
+    volatile int count = 0;
+	stage = 0;
+
+    ges.a = m1;
+    ges.b = m2;
+    ges.c = m3;
+    ges.row_size = row_size;
+    ges.col_size = col_size;
+
+    printf("Generating data\n");
+    genData(&ges);
+    printf("Data generated\n");
+
+    *val_a = (uint32_t)(void *)m1;
+    *val_b = (uint32_t)(void *)m2;
+    *val_c = (uint32_t)(void *)m3;
+    // printf("%d\n", *top);
+    *top = 0x01;
+    while (stage < 1) count++;
+
+    printf("Job complete\n");
+#ifdef CHECK
+    printf("Checking result\n");
+    printf("Running bench on CPU\n");
+	bool fail = false;
+	int i, j, k, k_col, i_col;
+	TYPE sum = 0;
+	TYPE mult = 0;
+	for(i=0;i<ROW;i++) {
+        for(j=0;j<COL;j++) {
+            i_col = i * COL;
+            sum = 0;
+            for(k=0;k<ROW;k++) {
+                k_col = k * COL;
+                mult = m1[i_col + k] * m2[k_col + j];
+                sum += mult;
+            }
+            check[i_col + j] = sum;
+        }
+    }
+    printf("Comparing CPU run to accelerated run\n");
+    for(i=0; i<ROW*COL; i++) {
+        if(m3[i] != check[i]) {
+            printf("Expected:%f Actual:%f\n", check[i], m3[i]);
+            fail = true;
+            break;
+        }
+    }
+    if(fail)
+        printf("Check Failed\n");
+    else
+        printf("Check Passed\n");
+#endif
+	m5_dump_stats();
+	m5_exit();
+}
