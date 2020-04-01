@@ -114,9 +114,9 @@ NoncoherentDma::read(PacketPtr pkt) {
 
     Addr offset = pkt->req->getPaddr() - pioAddr;
 
-    uint32_t data;
+    uint64_t data;
 
-    data = *(uint32_t *)(mmreg+offset);
+    data = *(uint64_t *)(mmreg+offset);
 
     switch(pkt->getSize()) {
       case 1:
