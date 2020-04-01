@@ -16,7 +16,7 @@ def makeHWAcc(options, system):
 
     ############################# Creating the Accelerator Cluster #################################
     # Create a new Accelerator Cluster
-    system.acctest    = AccCluster()
+    system.acctest  = AccCluster()
     local_low       = 0x2F000000
     local_high      = 0x2FFFFFFF
     local_range     = AddrRange(local_low, local_high)
@@ -27,49 +27,49 @@ def makeHWAcc(options, system):
 
     ############################# Adding Accelerators to Cluster ##################################
     # Add an accelerator to the cluster
-    system.acc_cluster.acc = CommInterface(devicename=options.accbench)
-    AccConfig(system.acc_cluster.acc, acc_config, acc_bench)
+    system.acctest.acc = CommInterface(devicename=options.accbench)
+    AccConfig(system.acctest.acc, acc_config, acc_bench)
 
     # Add an SPM for the accelerator
-    system.acc_cluster.acc_spm = ScratchpadMemory()
-    AccSPMConfig(system.acc_cluster.acc, system.acc_cluster.acc_spm, acc_config)
-    system.acc_cluster._connect_spm(system.acc_cluster.acc_spm)
+    system.acctest.acc_spm = ScratchpadMemory()
+    AccSPMConfig(system.acctest.acc, system.acctest.acc_spm, acc_config)
+    system.acctest._connect_spm(system.acctest.acc_spm)
 
     # Connect the accelerator to the system's interrupt controller
-    system.acc_cluster.acc.gic = system.realview.gic
+    system.acctest.acc.gic = system.realview.gic
 
     # Connect HWAcc to cluster buses
-    system.acc_cluster._connect_hwacc(system.acc_cluster.acc)
-    system.acc_cluster.acc.local = system.acc_cluster.local_bus.slave
-    system.acc_cluster.acc.acp = system.acc_cluster.coherency_bus.slave
+    system.acctest._connect_hwacc(system.acctest.acc)
+    system.acctest.acc.local = system.acctest.local_bus.slave
+    system.acctest.acc.acp = system.acctest.coherency_bus.slave
 
     # Enable display of debug messages for the accelerator
-    system.acc_cluster.acc.enable_debug_msgs = True
+    system.acctest.acc.enable_debug_msgs = True
 
     ################################## Adding DMAs to Cluster #####################################
     # Add DMA devices to the cluster and connect them
-    system.acc_cluster.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32, int_num=95)
-    system.acc_cluster._connect_cluster_dma(system, system.acc_cluster.dma)
-    # system.acc_cluster.dma.dma = system.membus.slave
-    # system.acc_cluster.dma.pio = system.acc_cluster.local_bus.master
+    system.acctest.dma = NoncoherentDma(pio_addr=0x2ff00000, pio_size=24, gic=system.realview.gic, max_pending=32, int_num=95)
+    system.acctest._connect_cluster_dma(system, system.acctest.dma)
+    # system.acctest.dma.dma = system.membus.slave
+    # system.acctest.dma.pio = system.acctest.local_bus.master
 
-    system.acc_cluster.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=32, gic=system.realview.gic, max_pending=32)
-    system.acc_cluster.stream_dma_0.stream_in = system.acc_cluster.acc.stream
-    system.acc_cluster.stream_dma_0.stream_out = system.acc_cluster.acc.stream
-    system.acc_cluster.stream_dma_0.stream_addr=0x2ff10020
-    system.acc_cluster.stream_dma_0.stream_size=8
-    system.acc_cluster.stream_dma_0.pio_delay = '1ns'
-    system.acc_cluster.stream_dma_0.rd_int = 210
-    system.acc_cluster.stream_dma_0.wr_int = 211
-    system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_0)
+    system.acctest.stream_dma_0 = StreamDma(pio_addr=0x2ff10000, pio_size=32, gic=system.realview.gic, max_pending=32)
+    system.acctest.stream_dma_0.stream_in = system.acctest.acc.stream
+    system.acctest.stream_dma_0.stream_out = system.acctest.acc.stream
+    system.acctest.stream_dma_0.stream_addr=0x2ff10020
+    system.acctest.stream_dma_0.stream_size=8
+    system.acctest.stream_dma_0.pio_delay = '1ns'
+    system.acctest.stream_dma_0.rd_int = 210
+    system.acctest.stream_dma_0.wr_int = 211
+    system.acctest._connect_dma(system, system.acctest.stream_dma_0)
 
-    system.acc_cluster.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=32, gic=system.realview.gic, max_pending=32)
-    system.acc_cluster.stream_dma_1.stream_in = system.acc_cluster.acc.stream
-    system.acc_cluster.stream_dma_1.stream_out = system.acc_cluster.acc.stream
-    system.acc_cluster.stream_dma_1.stream_addr=0x2ff20020
-    system.acc_cluster.stream_dma_1.stream_size=8
-    system.acc_cluster.stream_dma_1.pio_delay = '1ns'
-    system.acc_cluster.stream_dma_1.rd_int = 212
-    system.acc_cluster.stream_dma_1.wr_int = 213
-    system.acc_cluster._connect_dma(system, system.acc_cluster.stream_dma_1)
+    system.acctest.stream_dma_1 = StreamDma(pio_addr=0x2ff20000, pio_size=32, gic=system.realview.gic, max_pending=32)
+    system.acctest.stream_dma_1.stream_in = system.acctest.acc.stream
+    system.acctest.stream_dma_1.stream_out = system.acctest.acc.stream
+    system.acctest.stream_dma_1.stream_addr=0x2ff20020
+    system.acctest.stream_dma_1.stream_size=8
+    system.acctest.stream_dma_1.pio_delay = '1ns'
+    system.acctest.stream_dma_1.rd_int = 212
+    system.acctest.stream_dma_1.wr_int = 213
+    system.acctest._connect_dma(system, system.acctest.stream_dma_1)
 
