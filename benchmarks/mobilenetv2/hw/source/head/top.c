@@ -9,12 +9,6 @@ void top(uint64_t img_rd_addr, uint64_t feat_wr_addr,
 	volatile uint8_t * NormConv 	= (uint8_t *)CONV_MMR;
 	volatile uint8_t * DWConv 		= (uint8_t *)DW_MMR;
 	volatile uint8_t * PWConv 		= (uint8_t *)PW_MMR;
-	//Start Norm Conv
-	*NormConv = 0x01;
-	//Start DW Conv
-	*DWConv = 0x01;
-	//Start PW Conv
-	*PWConv = 0x01;
 
 	//Initialize DMAs
 	//StreamDma
@@ -86,6 +80,15 @@ void top(uint64_t img_rd_addr, uint64_t feat_wr_addr,
 	*MemDmaWrAddr  = PWBias;
 	*MemDmaCopyLen = PWQParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	//Start Norm Conv
+	*NormConv = 0x01;
+	//Start DW Conv
+	*DWConv = 0x01;
+	//Start PW Conv
+	*PWConv = 0x01;
 
 	//Wait for all accelerators to finish before sending interrupt to CPU
 	while ((*StrDmaFlags & STR_DMA_WR_INTR) != STR_DMA_WR_INTR);

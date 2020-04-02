@@ -1,4 +1,4 @@
-TARGET=gemm.ll top.ll
+TARGET=stencil2d.ll top.ll
 %.o : %.c
 	clang -emit-llvm -c -o $@ $<
 %.bc : %.o

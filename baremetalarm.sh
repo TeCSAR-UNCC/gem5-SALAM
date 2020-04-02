@@ -1,12 +1,37 @@
 #!/bin/bash
 FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
-if [ "$1" != "" ]; then
-    BENCH=$1
-    MULTI="$1"
-else
-    echo "No benchmark specified. Using vadd."
-    BENCH="vadd"
+
+BENCH=""
+DEBUG="false"
+
+while getopts ":b:d" opt
+	do
+		case $opt in
+			b )
+				BENCH=${OPTARG}
+				;;
+			d )
+				DEBUG="true"
+				;;
+			* )
+				echo "Invalid argument: ${OPTARG}"
+				exit 1
+				;;
+		esac
+done
+
+if [ "${BENCH}" == "" ]; then
+	echo "No benchmark specified."
+	echo "Usage: $0 -b BENCHMARK (-d)"
+	exit 2
 fi
+
+if [ "${DEBUG}" == "true" ]; then
+	BINARY="ddd --gdb --args ${M5_PATH}/build/ARM/gem5.debug"
+else
+	BINARY="${M5_PATH}/build/ARM/gem5.opt"
+fi
+
 KERNEL=$M5_PATH/benchmarks/$BENCH/host/main.elf
 SYS_OPTS="--mem-size=4GB \
           --kernel=$KERNEL \
@@ -17,19 +42,10 @@ SYS_OPTS="--mem-size=4GB \
 CACHE_OPTS="--caches --l2cache --acc_cache"
 # Script to start up full system simulation
 # --debug-flags=$FLAGS
-if [ $BENCH == "multiple_acc" ]; then
-	echo "Running Mutiple Accelerator Configuration"
-	build/ARM/gem5.opt --outdir=BM_ARM_OUT/$BENCH \
-	configs/example/fs_multi.py \
-	$SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
-	$CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
-	# --debug-flags=$FLAGS
-else
-	echo "Running Single Accelerator Configuration"
-	build/ARM/gem5.opt --debug-flags=$FLAGS --outdir=BM_ARM_OUT/$BENCH configs/SALAM/fs_hwacc.py \
-	$SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
-	$CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
-fi
+
+$BINARY --debug-flags=$FLAGS --outdir=BM_ARM_OUT/$BENCH configs/SALAM/fs_hwacc.py \
+$SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
+$CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
 
 # Debug Flags List
 #
