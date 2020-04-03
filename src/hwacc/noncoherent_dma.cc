@@ -13,6 +13,7 @@ NoncoherentDma::NoncoherentDma(const Params *p)
     maxReqSize(p->max_req_size),
     gic(p->gic),
     intNum(p->int_num),
+    clock_period(p->clock_period),
     tickEvent(this),
     accPort(this, sys, p->sid, p->ssid) {
     memSideReadFifo = new DmaReadFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
@@ -104,7 +105,7 @@ NoncoherentDma::tick() {
     }
 	last_flag = *FLAGS;
     if (!tickEvent.scheduled() && running) {
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + clock_period*1000);
     }
 }
 
@@ -152,7 +153,7 @@ NoncoherentDma::write(PacketPtr pkt) {
     pkt->writeData(mmreg + (pkt->req->getPaddr() - pioAddr));
 
     if (!tickEvent.scheduled()) {
-        schedule(tickEvent, nextCycle());
+        schedule(tickEvent, curTick() + clock_period*1000);
     }
     pkt->makeAtomicResponse();
     return pioDelay;

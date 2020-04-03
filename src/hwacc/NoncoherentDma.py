@@ -15,3 +15,4 @@ class NoncoherentDma(DmaDevice) :
     max_req_size = Param.Unsigned(Parent.cache_line_size, "Maximum size of a DMA request")
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
     int_num = Param.UInt32(200, "Interrupt number that connects to GIC")
+    clock_period = Param.Int(10, "Clock period in ns")
