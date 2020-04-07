@@ -48,6 +48,8 @@ class NoncoherentDma : public DmaDevice
     int writesLeft;
     bool running;
 
+    Tick start_time;
+
     class TickEvent : public Event
     {
       private:

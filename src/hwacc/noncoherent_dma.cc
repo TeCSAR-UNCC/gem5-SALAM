@@ -74,6 +74,7 @@ NoncoherentDma::tick() {
         activeDst = *DST;
         writesLeft = *LEN;
         DPRINTF(NoncoherentDma, "SRC:0x%016x, DST:0x%016x, LEN:%d\n", activeSrc, activeDst, writesLeft);
+        start_time = curTick();
         readFifo = getActiveReadFifo();
         writeFifo = getActiveWriteFifo();
         readFifo->startFill(activeSrc, writesLeft);
@@ -100,6 +101,8 @@ NoncoherentDma::tick() {
                 *FLAGS |= 0x04;
                 //raise interrupts
                 gic->sendInt(intNum);
+                Tick xfer_time = (double)(curTick() - start_time) * (1e-6);
+                DPRINTF(NoncoherentDma, "Transfer completed in %ld us\n", xfer_time);
             }
         }
     }
@@ -111,7 +114,7 @@ NoncoherentDma::tick() {
 
 Tick
 NoncoherentDma::read(PacketPtr pkt) {
-    DPRINTF(NoncoherentDma, "The address range associated with this DMA was read!\n");
+    DPRINTF(DeviceMMR, "The address range associated with this DMA was read!\n");
 
     Addr offset = pkt->req->getPaddr() - pioAddr;
 
@@ -143,12 +146,12 @@ NoncoherentDma::read(PacketPtr pkt) {
 
 Tick
 NoncoherentDma::write(PacketPtr pkt) {
-    DPRINTF(NoncoherentDma,
+    DPRINTF(DeviceMMR,
         "The address range associated with this DMA was written to!\n");
-    DPRINTF(NoncoherentDma, "LEN Reg:0x%08x\n", *LEN);
-    DPRINTF(NoncoherentDma, "SRC Reg:0x%016x\n", *SRC);
-    DPRINTF(NoncoherentDma, "DST Reg:0x%016x\n", *DST);
-    DPRINTF(NoncoherentDma, "FLAGS Reg:0x%02x\n", *FLAGS);
+    DPRINTF(DeviceMMR, "LEN Reg:0x%08x\n", *LEN);
+    DPRINTF(DeviceMMR, "SRC Reg:0x%016x\n", *SRC);
+    DPRINTF(DeviceMMR, "DST Reg:0x%016x\n", *DST);
+    DPRINTF(DeviceMMR, "FLAGS Reg:0x%02x\n", *FLAGS);
 
     pkt->writeData(mmreg + (pkt->req->getPaddr() - pioAddr));
 

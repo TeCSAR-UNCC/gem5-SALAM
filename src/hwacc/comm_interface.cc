@@ -652,7 +652,7 @@ CommInterface::finish() {
 
 Tick
 CommInterface::read(PacketPtr pkt) {
-    if (debug()) DPRINTF(CommInterface, "The address range associated with this ACC was read!\n");
+    if (debug()) DPRINTF(DeviceMMR, "The address range associated with this ACC was read!\n");
 
     Addr offset = pkt->req->getPaddr() - io_addr;
 
@@ -684,15 +684,15 @@ CommInterface::read(PacketPtr pkt) {
 
 Tick
 CommInterface::write(PacketPtr pkt) {
-    if (debug()) DPRINTF(CommInterface,
+    if (debug()) DPRINTF(DeviceMMR,
         "The address range associated with this ACC was written to!\n");
 
-    if (debug()) DPRINTF(CommInterface, "Packet addr 0x%lx\n", pkt->req->getPaddr());
-    if (debug()) DPRINTF(CommInterface, "IO addr 0x%lx\n", io_addr);
-    if (debug()) DPRINTF(CommInterface, "Diff addr 0x%lx\n", pkt->req->getPaddr() - io_addr);
-    if (debug()) DPRINTF(CommInterface, "Packet val (LE) %d\n", pkt->getLE<uint8_t>());
-    if (debug()) DPRINTF(CommInterface, "Packet val (BE) %d\n", pkt->getBE<uint8_t>());
-    if (debug()) DPRINTF(CommInterface, "Packet val %d\n", pkt->get<uint8_t>(endian));
+    if (debug()) DPRINTF(DeviceMMR, "Packet addr 0x%lx\n", pkt->req->getPaddr());
+    if (debug()) DPRINTF(DeviceMMR, "IO addr 0x%lx\n", io_addr);
+    if (debug()) DPRINTF(DeviceMMR, "Diff addr 0x%lx\n", pkt->req->getPaddr() - io_addr);
+    if (debug()) DPRINTF(DeviceMMR, "Packet val (LE) %d\n", pkt->getLE<uint8_t>());
+    if (debug()) DPRINTF(DeviceMMR, "Packet val (BE) %d\n", pkt->getBE<uint8_t>());
+    if (debug()) DPRINTF(DeviceMMR, "Packet val %d\n", pkt->get<uint8_t>(endian));
     pkt->writeData(mmreg + (pkt->req->getPaddr() - io_addr));
 
     std::stringstream mm;
@@ -707,7 +707,7 @@ CommInterface::write(PacketPtr pkt) {
             mm << std::setfill('0') << std::setw(2) << std::hex << (uint32_t)mmreg[i];
     }
     std::string mmr = mm.str();
-    if (debug()) DPRINTF(CommInterface, "MMReg value: %s\n", mmr);
+    if (debug()) DPRINTF(DeviceMMR, "MMReg value: %s\n", mmr);
 
     pkt->makeAtomicResponse();
 

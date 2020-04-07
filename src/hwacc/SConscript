@@ -50,5 +50,6 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('StreamBuffer')
     DebugFlag('StreamDma')
     DebugFlag('SALAMRuntime')
+    DebugFlag('DeviceMMR')
 
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])

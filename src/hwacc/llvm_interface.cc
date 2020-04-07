@@ -630,6 +630,7 @@ LLVMInterface::finalize() {
 
 void
 LLVMInterface::printPerformanceResults() {
+    Tick cycle_time = clock_period/1000;
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/
@@ -637,24 +638,13 @@ LLVMInterface::printPerformanceResults() {
     std::cout << "   ========= Performance Analysis =============" << std::endl;
     std::cout << "   Setup Time:                      " << (double)(setupTime.count()) << "seconds" << std::endl;
     std::cout << "   Simulation Time:                 " << (double)(simTime.count()) << "seconds" << std::endl;
-    std::cout << "   System Clock:                    " << 1.0/(clock_period/1000) << "GHz" << std::endl;
+    std::cout << "   System Clock:                    " << 1.0/(cycle_time) << "GHz" << std::endl;
     std::cout << "   Transistor Latency:              " << fu_latency << "ns" << std::endl;
     std::cout << "   Runtime:                         " << cycle << " cycles" << std::endl;
-    std::cout << "   Runtime:                         " << (cycle*(1e-10)) << " seconds" << std::endl;
+    std::cout << "   Runtime:                         " << (cycle*cycle_time*(1e-3)) << " us" << std::endl;
     std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
     std::cout << "   Executed Nodes:                  " << (cycle-stalls-1) << " cycles" << std::endl;
     std::cout << std::endl;
-    if(comm->isBaseCommInterface()){
-    std::cout << "   ========= Memory Configuration =============" << std::endl;
-    std::cout << "   Private SPM Size:                " << (comm->getPmemRange())/1024 << "kB" << std::endl;
-    std::cout << "   Private Read Ports:              " << comm->getReadPorts() << std::endl;
-    std::cout << "   Private Write Ports:             " << comm->getWritePorts() << std::endl;
-    std::cout << "   Private Read Bus Width:          " << comm->getReadBusWidth() << std::endl;
-    std::cout << "   Private Write Bus Width:         " << comm->getWriteBusWidth() << std::endl;
-  //  std::cout << "       SPM Reads:                   " << mem_reads << std::endl;
-  //  std::cout << "       SPM Writes:                  " << mem_writes << std::endl;
-    std::cout << std::endl;
-    }
 }
     /*
     // getCactiResults(int cache_size, int word_size, int ports, int type)

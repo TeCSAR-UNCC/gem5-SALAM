@@ -21,5 +21,6 @@
 #include "debug/RuntimeQueues.hh"
 #include "debug/StreamDma.hh"
 #include "debug/SALAMRuntime.hh"
+#include "debug/DeviceMMR.hh"
 //------------------------------------------//
 #endif //__LLVMREAD_DEBUG_HH__

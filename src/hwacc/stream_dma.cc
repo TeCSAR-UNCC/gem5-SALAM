@@ -158,7 +158,7 @@ StreamDma::read(PacketPtr pkt) {
     Addr offset = pkt->req->getPaddr() - pioAddr;
 
     if (offset < BUFFER_ACCESS_OFF) {
-        DPRINTF(StreamDma, "The MMR associated with this DMA was read from!\n");
+        DPRINTF(DeviceMMR, "The MMR associated with this DMA was read from!\n");
 
         uint32_t data;
 
@@ -179,7 +179,7 @@ StreamDma::read(PacketPtr pkt) {
             break;
         }
     } else {
-        DPRINTF(StreamDma, "The data buffer associated with this DMA was read from!\n");
+        DPRINTF(DeviceMMR, "The data buffer associated with this DMA was read from!\n");
 
         uint8_t *buff = new uint8_t[pkt->getSize()];
         readFifo->get(buff, pkt->getSize());
@@ -218,11 +218,11 @@ StreamDma::write(PacketPtr pkt) {
     Addr offset = pkt->req->getPaddr() - pioAddr;
 
     if (offset < BUFFER_ACCESS_OFF) {
-        DPRINTF(StreamDma, "The MMR associated with this DMA was written to!\n");
+        DPRINTF(DeviceMMR, "The MMR associated with this DMA was written to!\n");
 
         pkt->writeData(mmreg + offset);
     } else {
-        DPRINTF(StreamDma, "The data buffer associated with this DMA was written to!\n");
+        DPRINTF(DeviceMMR, "The data buffer associated with this DMA was written to!\n");
         uint8_t * data = new uint8_t[pkt->getSize()];
         pkt->writeData(data);
         writeFifo->fill(data, pkt->getSize());
@@ -238,7 +238,7 @@ StreamDma::write(PacketPtr pkt) {
 
 Tick
 StreamDma::streamRead(PacketPtr pkt) {
-    DPRINTF(StreamDma, "The data buffer associated with this DMA was read from!\n");
+    DPRINTF(DeviceMMR, "The data buffer associated with this DMA was read from!\n");
 
     uint8_t *buff = new uint8_t[pkt->getSize()];
     readFifo->get(buff, pkt->getSize());
@@ -269,7 +269,7 @@ StreamDma::streamRead(PacketPtr pkt) {
 
 Tick
 StreamDma::streamWrite(PacketPtr pkt) {
-    DPRINTF(StreamDma, "The data buffer associated with this DMA was written to!\n");
+    DPRINTF(DeviceMMR, "The data buffer associated with this DMA was written to!\n");
     uint8_t * data = new uint8_t[pkt->getSize()];
     pkt->writeData(data);
     writeFifo->fill(data, pkt->getSize());
