@@ -3,8 +3,9 @@ FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
 
 BENCH=""
 DEBUG="false"
+PRINT_TO_FILE="false"
 
-while getopts ":b:d" opt
+while getopts ":b:dp" opt
 	do
 		case $opt in
 			b )
@@ -12,6 +13,9 @@ while getopts ":b:d" opt
 				;;
 			d )
 				DEBUG="true"
+				;;
+			p )
+				PRINT_TO_FILE="true"
 				;;
 			* )
 				echo "Invalid argument: ${OPTARG}"
@@ -40,11 +44,20 @@ SYS_OPTS="--mem-size=4GB \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
 CACHE_OPTS="--caches"
-# Script to start up full system simulation
-$BINARY --debug-flags=$FLAGS --outdir=BM_ARM_OUT/sys_validation/$BENCH \
-configs/SALAM/sys_validation.py $SYS_OPTS \
---accpath=$M5_PATH/benchmarks/sys_validation \
---accbench=$BENCH $CACHE_OPTS
+
+OUTDIR=BM_ARM_OUT/sys_validation/$BENCH
+
+RUN_SCRIPT="$BINARY --debug-flags=$FLAGS --outdir=$OUTDIR \
+			configs/SALAM/sys_validation.py $SYS_OPTS \
+			--accpath=$M5_PATH/benchmarks/sys_validation \
+			--accbench=$BENCH $CACHE_OPTS"
+
+if [ "${PRINT_TO_FILE}" == "true" ]; then
+	mkdir -p $OUTDIR
+	$RUN_SCRIPT > ${OUTDIR}/debug-trace.txt
+else
+	$RUN_SCRIPT
+fi
 
 # Debug Flags List
 #

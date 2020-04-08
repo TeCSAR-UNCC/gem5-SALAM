@@ -3,8 +3,9 @@ FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
 
 BENCH=""
 DEBUG="false"
+PRINT_TO_FILE="false"
 
-while getopts ":b:d" opt
+while getopts ":b:dp" opt
 	do
 		case $opt in
 			b )
@@ -12,6 +13,9 @@ while getopts ":b:d" opt
 				;;
 			d )
 				DEBUG="true"
+				;;
+			p )
+				PRINT_TO_FILE="true"
 				;;
 			* )
 				echo "Invalid argument: ${OPTARG}"
@@ -43,9 +47,19 @@ CACHE_OPTS="--caches --l2cache --acc_cache"
 # Script to start up full system simulation
 # --debug-flags=$FLAGS
 
-$BINARY --debug-flags=$FLAGS --outdir=BM_ARM_OUT/$BENCH configs/SALAM/fs_hwacc.py \
-$SYS_OPTS --accpath=$M5_PATH/benchmarks --accbench=$BENCH \
-$CACHE_OPTS #> BM_ARM_OUT/$BENCH/debug_trace.txt
+OUTDIR=BM_ARM_OUT/$BENCH
+
+RUN_SCRIPT="$BINARY --debug-flags=$FLAGS --outdir=$OUTDIR \
+			configs/SALAM/fs_hwacc.py $SYS_OPTS \
+			--accpath=$M5_PATH/benchmarks \
+			--accbench=$BENCH $CACHE_OPTS"
+
+if [ "${PRINT_TO_FILE}" == "true" ]; then
+	mkdir -p $OUTDIR
+	$RUN_SCRIPT > ${OUTDIR}/debug-trace.txt
+else
+	$RUN_SCRIPT
+fi
 
 # Debug Flags List
 #
