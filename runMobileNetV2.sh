@@ -1,10 +1,9 @@
 #!/bin/bash
-FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
-
+FLAGS="HWACC"
 DEBUG="false"
 PRINT_TO_FILE="false"
 
-while getopts ":dp" opt
+while getopts ":f:dp" opt
 	do
 		case $opt in
 			d )
@@ -12,6 +11,9 @@ while getopts ":dp" opt
 				;;
 			p )
 				PRINT_TO_FILE="true"
+				;;
+			f )
+				FLAGS+=",${OPTARG}"
 				;;
 			* )
 				echo "Invalid argument: ${OPTARG}"

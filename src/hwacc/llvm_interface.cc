@@ -58,7 +58,7 @@ LLVMInterface::tick() {
 *********************************************************************************************/
     bool dbg = debug();
     if (dbg) {
-        DPRINTF(IOAcc, "\n%s\n%s %d\n%s\n",
+        DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
             "********************************************************************************",
             "   Cycle", cycle,
             "********************************************************************************");
@@ -77,7 +77,7 @@ LLVMInterface::tick() {
     storeInFlight = writeQueue.size();
     compInFlight = computeQueue.size();
     ///////////////////////////
-    if (dbg) DPRINTF(IOAcc, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
+    if (dbg) DPRINTF(LLVMInterface, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
     //Check our compute queue to see if any compute nodes are ready to commit
     if (dbg) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {

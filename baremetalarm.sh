@@ -1,11 +1,10 @@
 #!/bin/bash
-FLAGS=IOAcc,LLVMInterface,CommInterface,ComputeUnit
-
+FLAGS="HWACC"
 BENCH=""
 DEBUG="false"
 PRINT_TO_FILE="false"
 
-while getopts ":b:dp" opt
+while getopts ":b:f:dp" opt
 	do
 		case $opt in
 			b )
@@ -17,8 +16,12 @@ while getopts ":b:dp" opt
 			p )
 				PRINT_TO_FILE="true"
 				;;
+			f )
+				FLAGS+=",${OPTARG}"
+				;;
 			* )
 				echo "Invalid argument: ${OPTARG}"
+				echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
 				exit 1
 				;;
 		esac
@@ -26,7 +29,7 @@ done
 
 if [ "${BENCH}" == "" ]; then
 	echo "No benchmark specified."
-	echo "Usage: $0 -b BENCHMARK (-d)"
+	echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
 	exit 2
 fi
 

@@ -33,7 +33,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('stream_port.cc')
     Source('scratchpad_memory.cc')
 
-    DebugFlag('IOAcc')
+    # DebugFlag('IOAcc')
     DebugFlag('CommInterface')
     DebugFlag('CommInterfaceQueues')
     DebugFlag('ComputeUnit')
@@ -52,4 +52,5 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('SALAMRuntime')
     DebugFlag('DeviceMMR')
 
+    CompoundFlag('HWACC', ['CommInterface', 'ComputeUnit', 'LLVMInterface'])
     CompoundFlag('LLVMRuntime', ['ComputeNode', 'LLVMRegister', 'LLVMOp', 'LLVMParse'])

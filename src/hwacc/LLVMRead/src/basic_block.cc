@@ -1765,7 +1765,7 @@ BasicBlock::convertImmediate(std::string dataType, std::string immediateValue) {
 	std::string temp;
 	char *array = &immediateValue[0];
 	char *end;
-	if (_debug) DPRINTF(IOAcc, "Type: %s, Value: %s\n",dataType, immediateValue);
+	if (_debug) DPRINTF(LLVMParse, "Type: %s, Value: %s\n",dataType, immediateValue);
 	if(dataType.compare("double") == 0) {
 		if(immediateValue[1] == 'x') {
 			doub = strtol(array, &end, 16);
@@ -1786,7 +1786,7 @@ BasicBlock::convertImmediate(std::string dataType, std::string immediateValue) {
 			temp = std::to_string(integer);
 		} else temp = sciToDecimal(immediateValue);
 	}
-	if (_debug) DPRINTF(IOAcc, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
+	if (_debug) DPRINTF(LLVMParse, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
 	return temp;
 }
 
