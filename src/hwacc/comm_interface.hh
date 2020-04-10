@@ -243,7 +243,7 @@ class CommInterface : public BasicPioDevice
     bool isRunning() { return running; }
     bool isCompNeeded() { return computationNeeded; }
 
-    uint64_t getGlobalVar(unsigned index);
+    uint64_t getGlobalVar(unsigned offset, unsigned size);
     int getProcessDelay() { return processDelay; }
     virtual int getReadPorts()  { return 0; }
     virtual int getWritePorts()  { return 0; }

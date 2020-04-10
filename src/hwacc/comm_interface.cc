@@ -724,11 +724,28 @@ CommInterface::write(PacketPtr pkt) {
 }
 
 uint64_t
-CommInterface::getGlobalVar(unsigned index) {
+CommInterface::getGlobalVar(unsigned offset, unsigned size) {
     if (use_premap_data) {
-        return data_base_ptrs.at(index);
+        return data_base_ptrs.at(offset/8);
     } else {
-        return *(uint64_t *)(mmreg + VAR_OFFSET + index*8);
+        uint64_t value;
+        switch (size) {
+            case 1:
+                value = *(uint64_t *)(uint8_t *)(mmreg + VAR_OFFSET + offset);
+                break;
+            case 2:
+                value = *(uint64_t *)(uint16_t *)(mmreg + VAR_OFFSET + offset);
+                break;
+            case 4:
+                value = *(uint64_t *)(uint32_t *)(mmreg + VAR_OFFSET + offset);
+                break;
+            case 8:
+                value = *(uint64_t *)(mmreg + VAR_OFFSET + offset);
+                break;
+            default:
+                panic("Data of size: %d is not supported as a global variable!");
+        }
+        return value;
     }
 }
 

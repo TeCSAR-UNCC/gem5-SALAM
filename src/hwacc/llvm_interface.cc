@@ -366,7 +366,7 @@ LLVMInterface::constructBBList() {
                 } else if (!line.find("define")) { //Found a function. Need to parse its header
                     if (dbg) DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
                     inFunction = true;
-                    unsigned paramNum = 0;
+                    unsigned paramOffset = 0;
                     unsigned linePos = 0;
                     int percPos = line.find("%"); //All registers preceeded by a % in LLVM
                     int commaPos;
@@ -378,9 +378,9 @@ LLVMInterface::constructBBList() {
                             if (commaPos < 0) commaPos = line.find(")");
                             std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
                             if (dbg) DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName);
-                            regList->addRegister(new Register(regName, comm->getGlobalVar(paramNum))); // Create register for global variable
+                            regList->addRegister(new Register(regName, comm->getGlobalVar(paramOffset, 8))); // Create register for global variable
                             if (dbg) DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
-                            paramNum++;
+                            paramOffset+=8;
                         }
                         linePos = percPos + 1;
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition

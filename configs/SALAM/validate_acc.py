@@ -17,7 +17,7 @@ def makeHWAcc(options, system):
     external_range  = [AddrRange(0x00000000, local_low-1),
                        AddrRange(local_high+1, 0xFFFFFFFF)]
     system.acctest._attach_bridges(system, local_range, external_range)
-    system.acctest._connect_caches(system, options)
+    system.acctest._connect_caches(system, options, l2coherent=False)
     gic = system.realview.gic
 
     ############################# Adding Devices to Cluster ##################################
@@ -48,3 +48,5 @@ def makeHWAcc(options, system):
     system.acctest.dma.cluster_dma = system.acctest.local_bus.slave
     system.acctest.dma.dma = system.acctest.coherency_bus.slave
     system.acctest.dma.pio = system.acctest.top.local
+    system.acctest.dma.max_req_size = 16
+    system.acctest.dma.buffer_size = 64

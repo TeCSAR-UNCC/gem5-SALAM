@@ -23,7 +23,7 @@ def makeHWAcc(options, system):
     external_range  = [AddrRange(0x00000000, local_low-1),
                        AddrRange(local_high+1, 0xFFFFFFFF)]
     system.acctest._attach_bridges(system, local_range, external_range)
-    system.acctest._connect_caches(system, options)
+    system.acctest._connect_caches(system, options, l2coherent=True)
 
     ############################# Adding Accelerators to Cluster ##################################
     # Add an accelerator to the cluster

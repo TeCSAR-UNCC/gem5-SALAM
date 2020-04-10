@@ -35,7 +35,7 @@ SYS_OPTS="--mem-size=4GB \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
-CACHE_OPTS="--caches"
+CACHE_OPTS="--caches, l2cache"
 
 OUTDIR=BM_ARM_OUT/mobilenetv2
 

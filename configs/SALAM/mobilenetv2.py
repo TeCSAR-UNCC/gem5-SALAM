@@ -15,7 +15,7 @@ def buildHead(options, system, clstr):
     external_range = [AddrRange(0x00000000, local_low-1),
                       AddrRange(local_high+1, 0xFFFFFFFF)]
     clstr._attach_bridges(system, local_range, external_range)
-    clstr._connect_caches(system, options)
+    clstr._connect_caches(system, options, l2coherent=False)
     gic = system.realview.gic
 
     # Add the top function
@@ -195,12 +195,12 @@ def buildBody(options, system, clstr):
     hw_config_path = hw_path + "/configs/body/"
     hw_ir_path = hw_path + "/ir/body/"
     local_low = 0x2F002000
-    local_high = 0x2F0623E6
+    local_high = 0x2F063A66
     local_range = AddrRange(local_low, local_high)
     external_range = [AddrRange(0x00000000, local_low-1),
                       AddrRange(local_high+1, 0xFFFFFFFF)]
     clstr._attach_bridges(system, local_range, external_range)
-    clstr._connect_caches(system, options)
+    clstr._connect_caches(system, options, l2coherent=False)
     gic = system.realview.gic
 
     # Add the top function
@@ -211,9 +211,10 @@ def buildBody(options, system, clstr):
     AccConfig(clstr.top, config, ir)
     clstr._connect_hwacc(clstr.top)
     clstr.top.local = clstr.local_bus.slave
+    # clstr.top.enable_debug_msgs=True
 
     # Add the Stream DMAs
-    addr = local_low + 0x004A
+    addr = local_low + 0x0051
     clstr.stream_dma0 = StreamDma(pio_addr=addr, pio_size=32, gic=gic, max_pending=32)
     clstr.stream_dma0.stream_addr=addr+32
     clstr.stream_dma0.stream_size=8
@@ -222,7 +223,7 @@ def buildBody(options, system, clstr):
     clstr.stream_dma0.wr_int = 213
     clstr._connect_dma(system, clstr.stream_dma0)
 
-    addr = local_low + 0x0072
+    addr = local_low + 0x0079
     clstr.stream_dma1 = StreamDma(pio_addr=addr, pio_size=32, gic=gic, max_pending=32)
     clstr.stream_dma1.stream_addr=addr+32
     clstr.stream_dma1.stream_size=8
@@ -232,7 +233,7 @@ def buildBody(options, system, clstr):
     clstr._connect_dma(system, clstr.stream_dma1)
 
     # Add the cluster DMA
-    addr = local_low + 0x0009A
+    addr = local_low + 0x000A1
     clstr.dma = NoncoherentDma(pio_addr=addr, pio_size=21, gic=gic, int_num=96)
     clstr._connect_cluster_dma(system, clstr.dma)
 
@@ -246,9 +247,10 @@ def buildBody(options, system, clstr):
     clstr.Residual.stream = clstr.stream_dma0.stream_out
     clstr.Residual.stream = clstr.stream_dma1.stream_out
 
-    addr = local_low + 0x0000F5
+    addr = local_low + 0x0000FC
     clstr.ResidualOut = StreamBuffer(stream_address=addr, stream_size=1, buffer_size=8)
     clstr.Residual.stream = clstr.ResidualOut.stream_in
+    clstr.Residual.enable_debug_msgs=True
 
     # Add the First Pointwise Convolution
     acc = "PWConv0"
@@ -258,8 +260,9 @@ def buildBody(options, system, clstr):
     AccConfig(clstr.PWConv0, config, ir)
     clstr._connect_hwacc(clstr.PWConv0)
     clstr.PWConv0.stream = clstr.ResidualOut.stream_out
+    # clstr.PWConv0.enable_debug_msgs=True
 
-    addr = local_low + 0x0000F6
+    addr = local_low + 0x0000FD
     spmRange = AddrRange(addr, addr+120)
     clstr.PWConv0LocalFeat = ScratchpadMemory(range=spmRange)
     clstr.PWConv0LocalFeat.conf_table_reported = False
@@ -268,7 +271,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.PWConv0.spm = clstr.PWConv0LocalFeat.spm_ports
 
-    addr = local_low + 0x00016E
+    addr = local_low + 0x000175
     spmRange = AddrRange(addr, addr+(120*720))
     clstr.PWConv0Weights = ScratchpadMemory(range=spmRange)
     clstr.PWConv0Weights.conf_table_reported = False
@@ -277,7 +280,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.PWConv0.spm = clstr.PWConv0Weights.spm_ports
 
-    addr = local_low + 0x0152EE
+    addr = local_low + 0x0152F5
     spmRange = AddrRange(addr, addr+(720*6))
     clstr.PWConv0QParams = ScratchpadMemory(range=spmRange)
     clstr.PWConv0QParams.conf_table_reported = False
@@ -286,7 +289,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.PWConv0.spm = clstr.PWConv0QParams.spm_ports
 
-    addr = local_low + 0x0163CE
+    addr = local_low + 0x0163D5
     clstr.PWConv0Out = StreamBuffer(stream_address=addr, stream_size=1, buffer_size=8)
     clstr.PWConv0.stream = clstr.PWConv0Out.stream_in
 
@@ -299,7 +302,7 @@ def buildBody(options, system, clstr):
     clstr._connect_hwacc(clstr.DWConv)
     clstr.DWConv.stream = clstr.PWConv0Out.stream_out
 
-    addr = local_low + 0x0163CF
+    addr = local_low + 0x0163D6
     spmRange = AddrRange(addr, addr+(80*2*720))
     clstr.DWConvBuffer = ScratchpadMemory(range=spmRange)
     clstr.DWConvBuffer.conf_table_reported = False
@@ -308,7 +311,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.DWConv.spm = clstr.DWConvBuffer.spm_ports
 
-    addr = local_low + 0x0325CF
+    addr = local_low + 0x0325D6
     spmRange = AddrRange(addr, addr+(9*720))
     clstr.DWConvWindow = ScratchpadMemory(range=spmRange)
     clstr.DWConvWindow.conf_table_reported = False
@@ -317,7 +320,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.DWConv.spm = clstr.DWConvWindow.spm_ports
 
-    addr = local_low + 0x033F1F
+    addr = local_low + 0x033F26
     spmRange = AddrRange(addr, addr+720)
     clstr.DWConvOutBuffer = ScratchpadMemory(range=spmRange)
     clstr.DWConvOutBuffer.conf_table_reported = False
@@ -326,7 +329,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.DWConv.spm = clstr.DWConvOutBuffer.spm_ports
 
-    addr = local_low + 0x0341EF
+    addr = local_low + 0x0341F6
     spmRange = AddrRange(addr, addr+(10*720))
     clstr.DWConvWeights = ScratchpadMemory(range=spmRange)
     clstr.DWConvWeights.conf_table_reported = False
@@ -335,7 +338,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.DWConv.spm = clstr.DWConvWeights.spm_ports
 
-    addr = local_low + 0x035E0F
+    addr = local_low + 0x035E16
     spmRange = AddrRange(addr, addr+(6*720))
     clstr.DWConvQParams = ScratchpadMemory(range=spmRange)
     clstr.DWConvQParams.conf_table_reported = False
@@ -344,7 +347,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.DWConv.spm = clstr.DWConvQParams.spm_ports
 
-    addr = local_low + 0x036EEF
+    addr = local_low + 0x036EF6
     clstr.DWConvOut = StreamBuffer(stream_address=addr, stream_size=1, buffer_size=8)
     clstr.DWConv.stream = clstr.DWConvOut.stream_in
 
@@ -357,7 +360,7 @@ def buildBody(options, system, clstr):
     clstr._connect_hwacc(clstr.PWConv1)
     clstr.PWConv1.stream = clstr.DWConvOut.stream_out
 
-    addr = local_low + 0x036EF0
+    addr = local_low + 0x036EF7
     spmRange = AddrRange(addr, addr+720)
     clstr.PWConv1LocalFeat = ScratchpadMemory(range=spmRange)
     clstr.PWConv1LocalFeat.conf_table_reported = False
@@ -366,7 +369,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.PWConv1.spm = clstr.PWConv1LocalFeat.spm_ports
 
-    addr = local_low + 0x0371C0
+    addr = local_low + 0x0371C7
     spmRange = AddrRange(addr, addr+(240*720))
     clstr.PWConv1Weights = ScratchpadMemory(range=spmRange)
     clstr.PWConv1Weights.conf_table_reported = False
@@ -375,7 +378,7 @@ def buildBody(options, system, clstr):
     for i in range(1):
         clstr.PWConv1.spm = clstr.PWConv1Weights.spm_ports
 
-    addr = local_low + 0x0614C0
+    addr = local_low + 0x0614C7
     spmRange = AddrRange(addr, addr+(6*240))
     clstr.PWConv1QParams = ScratchpadMemory(range=spmRange)
     clstr.PWConv1QParams.conf_table_reported = False
@@ -392,12 +395,12 @@ def buildTail(options, system, clstr):
     hw_config_path = hw_path + "/configs/tail/"
     hw_ir_path = hw_path + "/ir/tail/"
     local_low = 0x2F065000
-    local_high = 0x2F0B7C52
+    local_high = 0x2F0B9C51
     local_range = AddrRange(local_low, local_high)
     external_range = [AddrRange(0x00000000, local_low-1),
                       AddrRange(local_high+1, 0xFFFFFFFF)]
     clstr._attach_bridges(system, local_range, external_range)
-    clstr._connect_caches(system, options)
+    clstr._connect_caches(system, options, l2coherent=False)
     gic = system.realview.gic
 
     # Add the top function
@@ -500,12 +503,12 @@ def buildClassifier(options, system, clstr):
     hw_config_path = hw_path + "/configs/classifier/"
     hw_ir_path = hw_path + "/ir/classifier/"
     local_low = 0x2F0BF000
-    local_high = 0x2F1F28B7
+    local_high = 0x2F1F98B6
     local_range = AddrRange(local_low, local_high)
     external_range = [AddrRange(0x00000000, local_low-1),
                       AddrRange(local_high+1, 0xFFFFFFFF)]
     clstr._attach_bridges(system, local_range, external_range)
-    clstr._connect_caches(system, options)
+    clstr._connect_caches(system, options, l2coherent=False)
     gic = system.realview.gic
 
     # Add the top function
@@ -579,14 +582,14 @@ def buildClassifier(options, system, clstr):
     clstr.Linear.stream = clstr.stream_dma0.stream_in
 
 def makeHWAcc(options, system):
-    system.head = AccCluster()
-    buildHead(options, system, system.head)
+    # system.head = AccCluster()
+    # buildHead(options, system, system.head)
 
     system.body = AccCluster()
     buildBody(options, system, system.body)
 
-    system.tail = AccCluster()
-    buildTail(options, system, system.tail)
+    # system.tail = AccCluster()
+    # buildTail(options, system, system.tail)
 
-    system.classifier = AccCluster()
-    buildClassifier(options, system, system.classifier)
+    # system.classifier = AccCluster()
+    # buildClassifier(options, system, system.classifier)

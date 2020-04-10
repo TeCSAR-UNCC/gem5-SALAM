@@ -60,18 +60,18 @@ class AccCluster(Platform):
     def _connect_hwacc(self, hwacc):
         hwacc.pio = self.local_bus.master
 
-    def _connect_caches(self, system, options, cache_size=0):
+    def _connect_caches(self, system, options, l2coherent, cache_size=0):
         if options.acc_cache and (cache_size!=0):
             self.cluster_cache = ClusterCache()
             self.cluster_cache.size = cache_size
 
-            if options.l2cache:
+            if options.l2cache and l2coherent:
                 self.cluster_cache.mem_side = system.tol2bus.slave
             else:
                 self.cluster_cache.mem_side = system.membus.slave
             self.coherency_bus.master = self.cluster_cache.cpu_side
         else:
-            if options.l2cache:
+            if options.l2cache and l2coherent:
                 self.coherency_bus.master = system.tol2bus.slave
             else:
                 self.coherency_bus.master = system.membus.slave
