@@ -101,8 +101,8 @@ NoncoherentDma::tick() {
                 *FLAGS |= 0x04;
                 //raise interrupts
                 gic->sendInt(intNum);
-                Tick xfer_time = (double)(curTick() - start_time) * (1e-6);
-                DPRINTF(NoncoherentDma, "Transfer completed in %ld us\n", xfer_time);
+                double xfer_time = (double)(curTick() - start_time) * (1e-6);
+                DPRINTF(NoncoherentDma, "Transfer completed in %f us\n", xfer_time);
             }
         }
     }
