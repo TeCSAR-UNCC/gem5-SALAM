@@ -403,14 +403,14 @@ LLVMInterface::constructBBList() {
                         if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
-                    } else if (line.find(".") == 0) { // Found new basic block (edge)
+                    } else if (line.find("; preds") != std::string::npos) { // Found new basic block (edge)
                         int labelEnd = line.find(" ");
                         prevBB = currBB; // Set previous basic block
                         currBB = new BasicBlock(line.substr(0,(labelEnd-1)), name(), bbnum, dbg); // Create new basic block
                         if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                         bbnum++; // Increment BB count
                         bbList->push_back(currBB); // Add BB to BB list
-                    } else if (line.find("}") == 0) { // Found end of function definition
+                    }else if (line.find("}") == 0) { // Found end of function definition
                         inFunction = false;
                         if (dbg) DPRINTF(LLVMParse, "Finished File Parsing!\n");
                         break;
