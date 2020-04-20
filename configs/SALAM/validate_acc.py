@@ -35,7 +35,7 @@ def makeHWAcc(options, system):
     acc = options.accbench
     config = hw_path + acc + ".ini"
     ir = hw_path + acc + ".ll"
-    system.acctest.bench = CommInterface(devicename=acc, gic=gic)
+    system.acctest.bench = CommInterface(devicename=acc, gic=gic, reset_spm=False)
     AccConfig(system.acctest.bench, config, ir)
     system.acctest.bench.pio = system.acctest.top.local
     system.acctest.spm = ScratchpadMemory()
@@ -43,10 +43,29 @@ def makeHWAcc(options, system):
     system.acctest._connect_spm(system.acctest.spm)
     # system.acctest.bench.enable_debug_msgs = True
 
+    if acc == "fft":
+        max_req_size = 8
+        buffer_size = 48
+    elif acc == "gemm":
+        max_req_size = 8
+        buffer_size = 64
+    elif acc == "md-knn":
+        max_req_size = 4
+        buffer_size = 24
+    elif acc == "stencil2d":
+        max_req_size = 4
+        buffer_size = 24
+    elif acc == "stencil3d":
+        max_req_size = 4
+        buffer_size = 32
+    else:
+        max_req_size = 4
+        buffer_size = 16
+
     # Add the cluster DMA
     system.acctest.dma = NoncoherentDma(pio_addr=0x2FF00000, pio_size=21, gic=gic, int_num=98)
     system.acctest.dma.cluster_dma = system.acctest.local_bus.slave
     system.acctest.dma.dma = system.acctest.coherency_bus.slave
     system.acctest.dma.pio = system.acctest.top.local
-    system.acctest.dma.max_req_size = 16
-    system.acctest.dma.buffer_size = 64
+    system.acctest.dma.max_req_size = max_req_size
+    system.acctest.dma.buffer_size = buffer_size

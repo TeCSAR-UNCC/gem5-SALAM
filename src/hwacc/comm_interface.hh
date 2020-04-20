@@ -209,6 +209,8 @@ class CommInterface : public BasicPioDevice
     int processDelay;
     int clock_period;
 
+    bool reset_spm;
+
     ComputeUnit *cu;
     CycleCounts *cycleCount;
 

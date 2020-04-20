@@ -635,6 +635,7 @@ LLVMInterface::printPerformanceResults() {
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/
     std::cout << "********************************************************************************" << std::endl;
+    std::cout << name() << std::endl;
     std::cout << "   ========= Performance Analysis =============" << std::endl;
     std::cout << "   Setup Time:                      " << (double)(setupTime.count()) << "seconds" << std::endl;
     std::cout << "   Simulation Time:                 " << (double)(simTime.count()) << "seconds" << std::endl;

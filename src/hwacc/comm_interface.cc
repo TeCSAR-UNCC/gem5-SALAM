@@ -30,7 +30,8 @@ CommInterface::CommInterface(Params *p) :
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period),
     endian(p->system->getGuestByteOrder()),
-    debugEnabled(p->enable_debug_msgs) {
+    debugEnabled(p->enable_debug_msgs),
+    reset_spm(p->reset_spm) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
@@ -645,8 +646,10 @@ CommInterface::finish() {
         int_flag = true;
         gic->sendInt(int_num);
     }
-    for (auto port : spmPorts) {
-        port->setReadyStatus(false);
+    if (reset_spm) {
+        for (auto port : spmPorts) {
+            port->setReadyStatus(false);
+        }
     }
 }
 

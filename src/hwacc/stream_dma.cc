@@ -49,7 +49,7 @@ StreamDma::getAddrRanges() const
 {
     assert(pioSize != 0);
     AddrRangeList ranges;
-    DPRINTF(AddrRanges, "registering range: %#x-%#x\n", pioAddr, pioSize);
+    DPRINTF(AddrRanges, "Valid pio range: %#x-%#x\n", pioAddr, pioAddr+pioSize);
     ranges.push_back(RangeSize(pioAddr, pioSize));
     return ranges;
 }
@@ -58,7 +58,7 @@ AddrRangeList
 StreamDma::getStreamAddrRanges() const {
     assert(streamSize != 0);
     AddrRangeList streamRanges;
-    DPRINTF(AddrRanges, "registering range: %#x-%#x\n", streamAddr, streamSize);
+    DPRINTF(AddrRanges, "Valid stream range: %#x-%#x\n", streamAddr, streamAddr+streamSize);
     streamRanges.push_back(RangeSize(streamAddr, streamSize));
     return streamRanges;
 }
