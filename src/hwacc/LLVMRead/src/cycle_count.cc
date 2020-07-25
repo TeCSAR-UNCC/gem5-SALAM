@@ -62,8 +62,6 @@ CycleCounts::CycleCounts(CycleCountsParams *p) :
     fmul_inst(p->fmul),
     fdiv_inst(p->fdiv),
     frem_inst(p->frem) { 
-
-        std::cout << "Cycle Counts Loaded!\n";
     }
 
 

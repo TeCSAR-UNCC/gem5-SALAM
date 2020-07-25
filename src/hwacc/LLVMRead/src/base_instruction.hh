@@ -2,6 +2,7 @@
 #define BASE_INSTRUCTION_HH
 //------------------------------------------//
 #include "hwacc/comm_interface.hh"
+#include "functional_units.hh"
 #include "mem_request.hh"
 #include "llvm_types.hh"
 #include "debug_flags.hh"
@@ -11,6 +12,7 @@
 //------------------------------------------//
 #include <string>
 #include <vector>
+#include <memory>
 //------------------------------------------//
 //---------------------------------------------------------------------------//
 //--------- Begin Immediate Value Sub Classes -------------------------------//
@@ -96,8 +98,10 @@ class InstructionBase {
         std::string _InstructionType; // Terminator, Binary, Etc...
         Register* _ReturnRegister;
         uint64_t _MaxCycle;
-        uint64_t _StageCycle;
-        uint64_t _Stages = 3;  // Current power profile used 3 stage floating point FU's,
+        uint64_t _MaxStages;
+        std::vector<uint64_t> _StageCycle;
+        bool _Multistaged = false;
+        int active_FU;
         std::vector<Register*> _Dependencies;
         CommInterface* _Comm; // Pointer to add basic block to queues
         std::vector<InstructionBase*> _Parents; // Parent Nodes
@@ -105,12 +109,13 @@ class InstructionBase {
         int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
         uint64_t _CurrCycle;
         uint64_t _CurrStage;
+        uint64_t _Usage;
         std::string _PrevBB;
         bool _Terminator = false;
         std::string _Dest;
         uint64_t _FinalResult;
         std::vector<int64_t> _Ops;
-        int8_t _FunctionalUnit;
+        int16_t _FunctionalUnit;
         Register* _RawCheck = NULL;
         bool _debug = false;
         std::string _DebugName;
@@ -134,8 +139,8 @@ class InstructionBase {
                         { _Req = NULL;
                           _CurrCycle = 0;
                           _ActiveParents = 0;
-                          _StageCycle = 0;
                           _CurrStage = 0;
+                          _Usage = 0;
                           Details("Base Instruction: Instruction Base");
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
                           _FunctionalUnit = -1;
@@ -162,8 +167,8 @@ class InstructionBase {
                         { _Req = NULL;
                           _CurrCycle = 0;
                           _ActiveParents = 0;
-                          _StageCycle = 0;
                           _CurrStage = 0;
+                          _Usage = 0;
                           Details("Base Instruction: Instruction Base");
                           while(_Dependencies.size() != _Ops.size()) _Ops.push_back(0);
                           _DebugName = LLVMLine;
@@ -189,10 +194,21 @@ class InstructionBase {
         // ---- Communications Setup
         void setCommInterface(CommInterface *newComm) { _Comm = newComm; }
         // ---- Data Storage
-        void pipelined() { _StageCycle = _MaxCycle / _Stages; if((_MaxCycle % _StageCycle)) _StageCycle++; }
         void setResult(void *Data);
         void setDebugName(const std::string& base) { _DebugName = base + ".i(" + _LLVMLine +")"; }
         const std::string name() const { return _DebugName; }
+        // ---- FU Signals
+        void configFU(uint8_t HardwareUnit, int32_t pipelined);
+        int stageCount() { return (_MaxStages-1); }
+        int stageCycle(int CurrStage) { return _StageCycle.at(CurrStage); }
+        int currentStage() { return _CurrStage; }
+        void stage() { _CurrStage++; if (_CurrStage == _MaxStages) _CurrStage = 0; }
+        void cycle() { _CurrCycle++; }
+        void reset() { _CurrCycle = 0; }
+        void used() { _Usage++; }
+        void setActiveFU(int ID) { active_FU = ID; }
+        int getActiveFU() { return active_FU; }
+
 };
 //---------------------------------------------------------------------------//
 //--------- End Shared Instruction Base -------------------------------------//

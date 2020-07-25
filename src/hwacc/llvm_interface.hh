@@ -8,6 +8,7 @@
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/LLVMRead/src/utilization.hh"
 #include "hwacc/LLVMRead/src/cycle_count.hh"
+#include "hwacc/LLVMRead/src/ir_parse.hh"
 //------------------------------------------//
 // #include <llvm/IR/Module.h>
 // #include <llvm/IRReader/IRReader.h>
@@ -99,7 +100,6 @@ class LLVMInterface : public ComputeUnit {
     void scheduleBB(BasicBlock *bb);
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
-    bool unlimitedMode();
     void dumpQueues();
 };
 

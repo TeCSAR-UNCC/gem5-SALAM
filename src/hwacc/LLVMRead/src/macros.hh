@@ -7,7 +7,7 @@
 
 
 // Debug Macros 
-#define Function(name) DPRINTF(SALAMRuntime, "Function Call - %s \n", name)
+//#define Function(name) DPRINTF(SALAMRuntime, "Function Call - %s \n", name)
 #define Details(name) DPRINTF(ClassDetail, "New Instance - %s \n", name)
 #define Destruct(name) DPRINTF(ClassDetail, "Deleting Instance - %s \n", name)
 
@@ -41,8 +41,26 @@
 #define    COMPARE          11
 #define    GETELEMENTPTR    12
 #define    CONVERSION       13
-#define    REGISTER         14
-#define    OTHER            15
+#define    OTHER            14
+#define    REGISTER         15
+
+// Hardware Unit Staging
+#define    COUNTER_STAGES          1
+#define    INTADDER_STAGES         1
+#define    INTMULTI_STAGES         1
+#define    INTSHIFTER_STAGES       1
+#define    INTBITWISE_STAGES       1
+#define    FPSPADDER_STAGES        3
+#define    FPDPADDER_STAGES        3
+#define    FPSPMULTI_STAGES        3
+#define    FPSPDIVID_STAGES        3
+#define    FPDPMULTI_STAGES        3
+#define    FPDPDIVID_STAGES        3
+#define    COMPARE_STAGES          1
+#define    GETELEMENTPTR_STAGES    1
+#define    CONVERSION_STAGES       1
+#define    REGISTER_STAGES         1
+#define    OTHER_STAGES            1
 
 //Flags
 #define ZEROEXT 			0x00000000001

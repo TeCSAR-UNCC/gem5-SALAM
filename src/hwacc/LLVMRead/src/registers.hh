@@ -14,7 +14,12 @@
 struct Reg_Usage {
     uint64_t reads;
     uint64_t writes;
-    Reg_Usage():reads(0), writes(0) {}
+    uint64_t bytes_read;
+    uint64_t bytes_written;
+    Reg_Usage():reads(0), 
+                writes(0),
+                bytes_read(0),
+                bytes_written(0) {}
 };
 
 
@@ -42,7 +47,12 @@ class Register {
                 _Value(Value),
                 _Size(8),
                 _Hot(false),
-                updated_this_cycle(false) { }
+                updated_this_cycle(false) {
+                    _Reg_Usage.reads = 0; 
+                    _Reg_Usage.writes = 0; 
+                    _Reg_Usage.bytes_read = 0; 
+                    _Reg_Usage.bytes_written = 0; 
+                }
         // ---- Constructor
         Register(const std::string& Name): 
                 _Name(Name),
@@ -50,7 +60,12 @@ class Register {
                 _Value(0),
                 _Size(8),
                 _Hot(false),
-                updated_this_cycle(false) { }
+                updated_this_cycle(false) {
+                    _Reg_Usage.reads = 0; 
+                    _Reg_Usage.writes = 0; 
+                    _Reg_Usage.bytes_read = 0; 
+                    _Reg_Usage.bytes_written = 0; 
+                }
         // ---- Get Functions
         std::string getName()           { return _Name; }
         std::string getType()           { return _Data_Type; }

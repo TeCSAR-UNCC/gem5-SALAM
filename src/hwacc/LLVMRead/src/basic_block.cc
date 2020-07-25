@@ -357,6 +357,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		add->configFU(functionalUnit, pipelined);
 		addNode(add);
 		break;
 	}
@@ -389,7 +390,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immFirst,
 											functionalUnit );
 		// Multi Stage Instruction
-		if(pipelined) fadd->pipelined();
+		fadd->configFU(functionalUnit, pipelined);
 		addNode(fadd);
 		break;
 	}
@@ -423,6 +424,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		sub->configFU(functionalUnit, pipelined);
 		addNode(sub);
 		break;
 	}
@@ -453,7 +455,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immFirst,
 											functionalUnit );
 		// Multi Stage Instruction
-		if(pipelined) fsub->pipelined();
+		fsub->configFU(functionalUnit, pipelined);
 		addNode(fsub);
 		break;
 	}
@@ -485,6 +487,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		mul->configFU(functionalUnit, pipelined);
 		addNode(mul);
 		break;
 	}
@@ -517,7 +520,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immFirst,
 											functionalUnit );
 		// Multi Stage Instruction
-		if(pipelined) fmul->pipelined();
+		fmul->configFU(functionalUnit, pipelined);
 		addNode(fmul);
 		break;
 	}
@@ -547,6 +550,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		udiv->configFU(functionalUnit, pipelined);
 		addNode(udiv);
 		break;
 	}
@@ -576,6 +580,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		sdiv->configFU(functionalUnit, pipelined);
 		addNode(sdiv);
 		break;
 	}
@@ -606,7 +611,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immFirst,
 											functionalUnit );
 		// Multi Stage Instruction
-		if(pipelined) fdiv->pipelined();
+		fdiv->configFU(functionalUnit, pipelined);
 		addNode(fdiv);
 		break;
 	}
@@ -635,6 +640,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		urem->configFU(functionalUnit, pipelined);
 		addNode(urem);
 		break;
 	}
@@ -663,6 +669,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		srem->configFU(functionalUnit, pipelined);
 		addNode(srem);
 		break;
 	}
@@ -693,7 +700,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immFirst,
 											functionalUnit );
 		// Multi Stage Instruction
-		if(pipelined) frem->pipelined();
+		frem->configFU(functionalUnit, pipelined);
 		addNode(frem);
 		break;
 	}
@@ -726,6 +733,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		shl->configFU(functionalUnit, pipelined);
 		addNode(shl);
 		break;
 	}
@@ -755,6 +763,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		lshr->configFU(functionalUnit, pipelined);
 		addNode(lshr);
 		break;
 	}
@@ -812,6 +821,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		andoc->configFU(functionalUnit, pipelined);
 		addNode(andoc);
 		if (_debug) DPRINTF(ComputeNode, "And Created!\n");
 		break;
@@ -841,6 +851,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		oroc->configFU(functionalUnit, pipelined);
 		addNode(oroc);
 		break;
 	}
@@ -869,6 +880,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											immOp,
 											immFirst,
 											functionalUnit );
+		xoroc->configFU(functionalUnit, pipelined);
 		addNode(xoroc);
 		break;
 	}
@@ -968,8 +980,10 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		if(isRegister(parameters[index + 1])) {
 			setRegister(parameters[index + 1], value, dependencies, list, parameters);
 			value->setSize(returnType);
+			//ret_reg->setSize(returnType);
 		} else {
 			if (returnType[0] == 'i') {
+				//ret_reg->setSize(returnType);
 				imm  = atol(parameters[index+1].c_str());
 				immVal = true;
 			} else if (_debug) DPRINTF(ComputeNode, "Immediate value is of type other than integer, not implemented");
@@ -1131,6 +1145,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 													ptrval,
 													indexRet,
 													functionalUnit);
+		gep->configFU(functionalUnit, pipelined);
 		addNode(gep);
 
 		// Null Stored for register if immediate value used in the situation
@@ -1169,12 +1184,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		trnc->configFU(functionalUnit, pipelined);
 		addNode(trnc);
 		break;
 	}
 	case IR_ZExt: {
 		// <result> = zext <ty> <value> to <ty2>             ; yields ty2
-		instructionType = "Conversion";
+		instructionType = "Counter";
 		maxCycles = cycles->zext_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
@@ -1192,12 +1208,13 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		zext->configFU(functionalUnit, pipelined);
 		addNode(zext);
 		break;
 	}
 	case IR_SExt: {
 		// <result> = sext <ty> <value> to <ty2>             ; yields ty2
-		instructionType = "Conversion";
+		instructionType = "Counter";
 		maxCycles = cycles->sext_inst;
 		functionalUnit = CONVERSION;
 		returnType = parameters[0];
@@ -1238,6 +1255,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		fptoui->configFU(functionalUnit, pipelined);
 		addNode(fptoui);
 		break;
 	}
@@ -1261,6 +1279,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		fptosi->configFU(functionalUnit, pipelined);
 		addNode(fptosi);
 		break;
 	}
@@ -1284,6 +1303,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		uitofp->configFU(functionalUnit, pipelined);
 		addNode(uitofp);
 		break;
 	}
@@ -1307,6 +1327,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		sitofp->configFU(functionalUnit, pipelined);
 		addNode(sitofp);
 		break;
 	}
@@ -1330,6 +1351,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		fptrunc->configFU(functionalUnit, pipelined);
 		addNode(fptrunc);
 		break;
 	}
@@ -1353,6 +1375,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		fpext->configFU(functionalUnit, pipelined);
 		addNode(fpext);
 		break;
 	}
@@ -1376,6 +1399,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		ptrtoint->configFU(functionalUnit, pipelined);
 		addNode(ptrtoint);
 		break;
 	}
@@ -1399,6 +1423,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		inttoptr->configFU(functionalUnit, pipelined);
 		addNode(inttoptr);
 		break;
 	}
@@ -1422,6 +1447,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												originalType,
 												operand,
 												functionalUnit);
+		bitcast->configFU(functionalUnit, pipelined);
 		addNode(bitcast);
 		break;
 	}
@@ -1445,6 +1471,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 																originalType,
 																operand,
 																functionalUnit);
+		addrspacecast->configFU(functionalUnit, pipelined);
 		addNode(addrspacecast);
 		break;
 	}
@@ -1492,6 +1519,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											computeFlags,
 											immOp,
 											functionalUnit);
+		icmp->configFU(functionalUnit, pipelined);
 		addNode(icmp);
 		break;
 	}
@@ -1545,6 +1573,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											computeFlags,
 											immOp,
 											functionalUnit);
+		fcmp->configFU(functionalUnit, pipelined);
 		addNode(fcmp);
 		break;
 	}
@@ -1604,6 +1633,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 											phiReg,
 											phiLabel,
 											functionalUnit);
+		phi->configFU(functionalUnit, pipelined);
 		addNode(phi);
 		if (_debug) DPRINTF(ComputeNode, "Registration Complete: (%s)\n", opCode);
 		// Further Testing will be needed for phi for computing
@@ -1675,6 +1705,7 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 												immvalues,
 												imm,
 												functionalUnit);
+		select->configFU(functionalUnit, pipelined);
 		addNode(select);
 		break;
 	}

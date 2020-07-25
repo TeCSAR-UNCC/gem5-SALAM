@@ -1,151 +1,105 @@
 //------------------------------------------//
 #include "utilization.hh"
+//#include "algorithm"
 //------------------------------------------//
 
-Utilization::Utilization(int clock_period, int fu_clock_period, RegisterList* List) {
-    _Clock_Period = clock_period;
-    regList = List;
-    int transistorTime = fu_clock_period;
-    totalPwr.cycleTime = transistorTime;
-    regPwr.cycleTime = transistorTime;
- //   getRegisterPowerArea(transistorTime, &regPwr.internal_power, &regPwr.switch_power, &regPwr.leakage_power, &regPwr.area);
- //   getAdderPowerArea(transistorTime, &adderPwr.internal_power, &adderPwr.switch_power, &adderPwr.leakage_power, &adderPwr.area);
- //   getMultiplierPowerArea(transistorTime, &multiPwr.internal_power, &multiPwr.switch_power, &multiPwr.leakage_power, &multiPwr.area);
- //   getBitPowerArea(transistorTime, &bitPwr.internal_power, &bitPwr.switch_power, &bitPwr.leakage_power, &bitPwr.area);
- //   getShifterPowerArea(transistorTime, &shiftPwr.internal_power, &shiftPwr.switch_power, &shiftPwr.leakage_power, &shiftPwr.area);
- //   getSinglePrecisionFloatingPointAdderPowerArea(transistorTime, &spfpAddPwr.internal_power, &spfpAddPwr.switch_power, &spfpAddPwr.leakage_power, &spfpAddPwr.area);
- //  getDoublePrecisionFloatingPointAdderPowerArea(transistorTime, &dpfpAddPwr.internal_power, &dpfpAddPwr.switch_power, &dpfpAddPwr.leakage_power, &dpfpAddPwr.area);
- //   getSinglePrecisionFloatingPointMultiplierPowerArea(transistorTime, &spfpMulPwr.internal_power, &spfpMulPwr.switch_power, &spfpMulPwr.leakage_power, &spfpMulPwr.area);
- //   getDoublePrecisionFloatingPointMultiplierPowerArea(transistorTime, &dpfpMulPwr.internal_power, &dpfpMulPwr.switch_power, &dpfpMulPwr.leakage_power, &dpfpMulPwr.area);
-}
 
-Hardware::Hardware(int Latency) {
-    DPRINTF(Hardware, "Initializing Hardware Resources \n");
-    counter = new FunctionalUnit(Latency, COUNTER);
-    int_adder = new FunctionalUnit(Latency, INTADDER);
-    int_multiplier = new FunctionalUnit(Latency, INTMULTI);
-    int_shifter = new FunctionalUnit(Latency, INTSHIFTER);
-    int_bitwise = new FunctionalUnit(Latency, INTBITWISE);
-    fp_sp_adder = new FunctionalUnit(Latency, FPSPADDER);
-    fp_dp_adder = new FunctionalUnit(Latency, FPDPADDER);
-    fp_sp_multiplier = new FunctionalUnit(Latency, FPSPMULTI);
-    fp_sp_division = new FunctionalUnit(Latency, FPDPDIVID);
-    fp_dp_multiplier = new FunctionalUnit(Latency, FPDPMULTI);
-    fp_dp_division = new FunctionalUnit(Latency, FPDPDIVID);
-    comparison = new FunctionalUnit(Latency, COMPARE);
-    getelementptr = new FunctionalUnit(Latency, GETELEMENTPTR);
-    conversion = new FunctionalUnit(Latency, CONVERSION);
-    registers = new FunctionalUnit(Latency, REGISTER);
-    other = new FunctionalUnit(Latency, OTHER);
-    loads = 0; stores = 0; control_flow = 0;
-}
+Hardware::Hardware(int Latency, int Pipelined) {
 
-void
-Hardware::update(){
-    updateMax();
-    // Power
+    // Initialized in the same order they are defined in macros.hh
+    // Do not change the order.
+    uint8_t stages = 1;
+    // Counters 
+    if(Pipelined) stages = COUNTER_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, COUNTER, stages, "Counters"));
+    // Integer Addition
+    if(Pipelined) stages = INTADDER_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, INTADDER, stages, "Integer Adder"));
+    // Integer Multiplication
+    if(Pipelined) stages = INTMULTI_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, INTMULTI, stages, "Integer Multiplier"));
+    // Integer Shifter
+    if(Pipelined) stages = INTSHIFTER_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, INTSHIFTER, stages, "Integer Shifter"));
+    // Integer Bitwise
+    if(Pipelined) stages = INTBITWISE_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, INTBITWISE, stages, "Integer Bitwise"));
+    // Floating Point Single Precision Addition
+    if(Pipelined) stages = FPSPADDER_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, FPSPADDER, stages, "Floating Point Single Precision Adder"));
+    // Floating Point Double Precision Addition
+    if(Pipelined) stages = FPDPADDER_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, FPDPADDER, stages, "Floating Point Double Precision Adder"));
+    // Floating Point Single Precision Multiplier
+    if(Pipelined) stages = FPSPMULTI_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, FPSPMULTI, stages, "Floating Point Single Precision Multiplier"));
+    // Floating Point Single Precision Division
+    if(Pipelined) stages = FPSPDIVID_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, FPSPDIVID, stages, "Floating Point Double Precision Divider"));
+    // Floating Point Double Precision Multiplier
+    if(Pipelined) stages = FPDPMULTI_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, FPDPMULTI, stages, "Floating Point Double Precision Multiplier"));
+    // Floating Point Double Precision Division
+    if(Pipelined) stages = FPDPDIVID_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, FPDPDIVID, stages, "Floating Point Double Precision Divider"));
+    // Comparison Instructions
+    if(Pipelined) stages = COMPARE_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, COMPARE, stages, "Comparison"));
+    // GEP Instruction
+    if(Pipelined) stages = GETELEMENTPTR_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, GETELEMENTPTR, stages, "GEP"));
+    // Conversion Instructions
+    if(Pipelined) stages = CONVERSION_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, CONVERSION, stages, "Conversion"));
+    // Other Instructions
+    if(Pipelined) stages = OTHER_STAGES;
+    runtime_list.push_back(new FunctionalUnit(Latency, OTHER, stages, "Other"));
     // Registers
-    reset();
+    registers = new FunctionalUnit(Latency, REGISTER, REGISTER_STAGES, "Registers");
+    loads = 0; stores = 0; control_flow = 0;
+    pipelined = Pipelined;
 }
 
 void
 Hardware::updateParsed(uint8_t HardwareUnit) {
-     switch(HardwareUnit) {
-        case COUNTER: counter->updateParse(); break;
-        case INTADDER: int_adder->updateParse(); break;
-        case INTMULTI: int_multiplier->updateParse(); break;
-        case INTSHIFTER: int_shifter->updateParse(); break;
-        case INTBITWISE: int_bitwise->updateParse(); break;
-        case FPSPADDER: fp_sp_adder ->updateParse(); break;
-        case FPDPADDER: fp_dp_adder->updateParse(); break;
-        case FPSPMULTI: fp_sp_multiplier->updateParse(); break;
-        case FPSPDIVID: fp_sp_division->updateParse(); break;
-        case FPDPMULTI: fp_dp_multiplier->updateParse(); break;
-        case FPDPDIVID: fp_dp_division->updateParse(); break;
-        case COMPARE: comparison->updateParse(); break;
-        case GETELEMENTPTR: getelementptr->updateParse(); break;
-        case CONVERSION: conversion->updateParse(); break;
-        default: other->updateParse(); break;
-     }
-}
-
-void
-Hardware::updateDynamic(uint8_t HardwareUnit) {
-     switch(HardwareUnit) {
-        case COUNTER: counter->updateDynamic(); break;
-        case INTADDER: int_adder->updateDynamic(); break;
-        case INTMULTI: int_multiplier->updateDynamic(); break;
-        case INTSHIFTER: int_shifter->updateDynamic(); break;
-        case INTBITWISE: int_bitwise->updateDynamic(); break;
-        case FPSPADDER: fp_sp_adder ->updateDynamic(); break;
-        case FPDPADDER: fp_dp_adder->updateDynamic(); break;
-        case FPSPMULTI: fp_sp_multiplier->updateDynamic(); break;
-        case FPSPDIVID: fp_sp_division->updateDynamic(); break;
-        case FPDPMULTI: fp_dp_multiplier->updateDynamic(); break;
-        case FPDPDIVID: fp_dp_division->updateDynamic(); break;
-        case COMPARE: comparison->updateDynamic(); break;
-        case GETELEMENTPTR: getelementptr->updateDynamic(); break;
-        case CONVERSION: conversion->updateDynamic(); break;
-        default: other->updateDynamic(); break;
-     }
-}
-
-bool
-Hardware::available(uint8_t HardwareUnit) {
-     switch(HardwareUnit) {
-        case COUNTER: return counter->available(); break;
-        case INTADDER: return int_adder->available(); break;
-        case INTMULTI: return int_multiplier->available(); break;
-        case INTSHIFTER: return int_shifter->available(); break;
-        case INTBITWISE: return int_bitwise->available(); break;
-        case FPSPADDER: return fp_sp_adder ->available(); break;
-        case FPDPADDER: return fp_dp_adder->available(); break;
-        case FPSPMULTI: return fp_sp_multiplier->available(); break;
-        case FPSPDIVID: return fp_sp_division->available(); break;
-        case FPDPMULTI: return fp_dp_multiplier->available(); break;
-        case FPDPDIVID: return fp_dp_division->available(); break;
-        case COMPARE: return comparison->available(); break;
-        case GETELEMENTPTR: return getelementptr->available(); break;
-        case CONVERSION: return conversion->available(); break;
-        default: return true; break;
+    for (auto& fu:runtime_list) {
+        if ( HardwareUnit == fu->getHardwareUnit()) {
+            fu->updateParse();
+            return;
+        }
     }
-    return true;
+    runtime_list.back()->updateParse(); // Default: Final Element is Other
+    // switch(HardwareUnit) {
+    //     case COUNTER: (counter_list.front())->updateParse(); break;
+    //     case INTADDER: ( int_adder_list.front())->updateParse(); break;
+    //     case INTMULTI: ( int_multiplier_list.front())->updateParse(); break;
+    //     case INTSHIFTER:git ( int_shifter_list.front())->updateParse(); break;
+    //     case INTBITWISE: ( int_bitwise_list.front())->updateParse(); break;
+    //     case FPSPADDER: ( fp_sp_adder_list.front())->updateParse(); break;
+    //     case FPDPADDER: ( fp_dp_adder_list.front())->updateParse(); break;
+    //     case FPSPMULTI: ( fp_sp_multiplier_list.front())->updateParse(); break;
+    //     case FPSPDIVID: ( fp_sp_division_list.front())->updateParse(); break;
+    //     case FPDPMULTI: ( fp_dp_multiplier_list.front())->updateParse(); break;
+    //     case FPDPDIVID: ( fp_dp_division_list.front())->updateParse(); break;
+    //     case COMPARE: ( comparison_list.front())->updateParse(); break;
+    //     case GETELEMENTPTR: ( getelementptr_list.front())->updateParse(); break;
+    //     case CONVERSION: ( conversion_list.front())->updateParse(); break;
+    //     default: ( other_list.front())->updateParse(); break;
+    // }
 }
 
 void
-Hardware::updateMax() {
-    counter->maxDynamic();
-    int_adder->maxDynamic();
-    int_multiplier->maxDynamic();
-    int_shifter->maxDynamic();
-    int_bitwise->maxDynamic();
-    fp_sp_adder->maxDynamic();
-    fp_dp_adder->maxDynamic();
-    fp_sp_multiplier->maxDynamic();
-    fp_sp_division->maxDynamic();
-    fp_dp_multiplier->maxDynamic();
-    fp_dp_division->maxDynamic();
-    comparison->maxDynamic();
-    getelementptr->maxDynamic();
-    conversion->maxDynamic();
-}
-
-void
-Hardware::reset() {
-    counter->reset();
-    int_adder->reset();
-    int_multiplier->reset();
-    int_shifter->reset();
-    int_bitwise->reset();
-    fp_sp_adder->reset();
-    fp_dp_adder->reset();
-    fp_sp_multiplier->reset();
-    fp_sp_division->reset();
-    fp_dp_multiplier->reset();
-    fp_dp_division->reset();
-    comparison->reset();
-    getelementptr->reset();
-    conversion->reset();
+Hardware::activateUnits(int Units, 
+                        int Latency,
+                        int Stages,
+                        int Static_Limit,
+                        uint8_t ID,
+                        std::string Name,
+                        std::vector<FunctionalUnit*> &FU_List) {
+    for (int i = 0; i < Units; i++ ) {
+        FU_List.push_back(new FunctionalUnit(Latency, ID, Stages, Name));
+        FU_List.back()->setStatic(Static_Limit);
+    }
 }
 
 void
@@ -163,38 +117,662 @@ Hardware::updateLimit(int Counter,
                             int Compare, 
                             int GEP, 
                             int Conversion) {
-    counter->setStatic(Counter);
-    int_adder->setStatic(IntAdder);
-    int_multiplier->setStatic(IntMul);
-    int_shifter->setStatic(IntShift);
-    int_bitwise->setStatic(IntBit);
-    fp_sp_adder->setStatic(FPSPAdd);
-    fp_dp_adder->setStatic(FPDPAdd);
-    fp_sp_multiplier->setStatic(FPSPMul);
-    fp_sp_division->setStatic(FPSPDiv);
-    fp_dp_multiplier->setStatic(FPDPMul);
-    fp_dp_division->setStatic(FPDPDiv);
-    comparison->setStatic(Compare);
-    getelementptr->setStatic(GEP);
-    conversion->setStatic(Conversion);
+
+    for (auto& fu:runtime_list) {
+        switch(fu->getHardwareUnit()) {
+            case COUNTER: { 
+                activateUnits(fu->setStatic(Counter), 
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              counter_list);
+                hardware_list.push_back(counter_list);
+                break;
+            }
+            case INTADDER: {
+                activateUnits(fu->setStatic(IntAdder), 
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              int_adder_list);
+                hardware_list.push_back(int_adder_list);
+                break;
+            }
+            case INTMULTI: {
+                activateUnits(fu->setStatic(IntMul),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              int_multiplier_list);
+                hardware_list.push_back(int_multiplier_list);
+                break;
+            }
+            case INTSHIFTER: {
+                activateUnits(fu->setStatic(IntShift),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              int_shifter_list);
+                hardware_list.push_back(int_shifter_list);
+                break;
+            }
+            case INTBITWISE: {
+                activateUnits(fu->setStatic(IntBit),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              int_bitwise_list);
+                hardware_list.push_back(int_bitwise_list);
+                break;
+            }
+            case FPSPADDER: { 
+                activateUnits(fu->setStatic(FPSPAdd),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              fp_sp_adder_list);
+                hardware_list.push_back(fp_sp_adder_list);
+                break;
+            }
+            case FPDPADDER: {
+                activateUnits(fu->setStatic(FPDPAdd),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              fp_dp_adder_list);
+                hardware_list.push_back(fp_dp_adder_list);
+                break;
+            }
+            case FPSPMULTI: {
+                activateUnits(fu->setStatic(FPSPMul),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              fp_sp_multiplier_list);
+                hardware_list.push_back(fp_sp_multiplier_list);
+                break;
+            }
+            case FPSPDIVID: {
+                activateUnits(fu->setStatic(FPSPDiv),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              fp_sp_division_list);
+                hardware_list.push_back(fp_sp_division_list);
+                break;
+            }
+            case FPDPMULTI: {
+                activateUnits(fu->setStatic(FPDPMul),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              fp_dp_multiplier_list);
+                hardware_list.push_back(fp_dp_multiplier_list);
+                break;
+            }
+            case FPDPDIVID: {
+                activateUnits(fu->setStatic(FPDPDiv),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              fp_dp_division_list);
+                hardware_list.push_back(fp_dp_division_list);
+                break;
+            }
+            case COMPARE: {
+                activateUnits(fu->setStatic(Compare),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              comparison_list);
+                hardware_list.push_back(comparison_list);
+                break;
+            }
+            case GETELEMENTPTR: {
+                activateUnits(fu->setStatic(GEP),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              getelementptr_list);
+                hardware_list.push_back(getelementptr_list);
+                break;
+            }
+            case CONVERSION: {
+                activateUnits(fu->setStatic(Conversion),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              conversion_list);
+                hardware_list.push_back(conversion_list);
+                break;
+            }
+            default: { 
+                activateUnits(fu->setStatic(-1),  
+                              fu->getLatency(), 
+                              fu->getStages(), 
+                              fu->getStaticLimit(), 
+                              fu->getID(), 
+                              fu->getName(), 
+                              other_list);
+                hardware_list.push_back(other_list);
+                break;
+            }
+        }
+    }
+    setIDs();
+}
+
+bool
+Hardware::updateStage(uint8_t HardwareUnit, int CurrentStage, int ID) {
+  switch(HardwareUnit) {
+        case COUNTER: {
+            for ( auto it = counter_list.begin(); it != counter_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case INTADDER: {
+            for ( auto it = int_adder_list.begin(); it != int_adder_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case INTMULTI:  {
+            for ( auto it = int_multiplier_list.begin(); it != int_multiplier_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case INTSHIFTER:  {
+            for ( auto it = int_shifter_list.begin(); it != int_shifter_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case INTBITWISE:  {
+            for ( auto it = int_bitwise_list.begin(); it != int_bitwise_list.end(); ++ it) {
+                 if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case FPSPADDER:  {
+            for ( auto it = fp_sp_adder_list.begin(); it != fp_sp_adder_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case FPDPADDER:  {
+            for ( auto it = fp_dp_adder_list.begin(); it != fp_dp_adder_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case FPSPMULTI:  {
+            for ( auto it = fp_sp_multiplier_list.begin(); it != fp_sp_multiplier_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage-1), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage)) {
+                        (*it)->setStage(CurrentStage, true);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case FPSPDIVID:  {
+            for ( auto it = fp_sp_division_list.begin(); it != fp_sp_division_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case FPDPMULTI:  {
+            for ( auto it = fp_dp_multiplier_list.begin(); it != fp_dp_multiplier_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case FPDPDIVID:  {
+            for ( auto it = fp_dp_division_list.begin(); it != fp_dp_division_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case COMPARE: {
+            for ( auto it = comparison_list.begin(); it != comparison_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case GETELEMENTPTR: {
+            for ( auto it = getelementptr_list.begin(); it != getelementptr_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        case CONVERSION: {
+            for ( auto it = conversion_list.begin(); it != conversion_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+        default:  {
+            for ( auto it = other_list.begin(); it != other_list.end(); ++ it) {
+                if ((*it)->getID() == ID) {
+                    if(CurrentStage == ((*it)->getStages()-1)) {
+                        (*it)->setStage((CurrentStage), true);
+                        return true;
+                    } else if (!(*it)->isActive(CurrentStage + 1)) {
+                        (*it)->setStage(CurrentStage + 1, true);
+                        (*it)->setStage(CurrentStage, false);
+                        return true;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    return false;
 }
 
 void
-Hardware::pipelined() {
-    fp_sp_adder->multistaged();
-    fp_dp_adder->multistaged();
-    fp_sp_multiplier->multistaged();
-    fp_sp_division->multistaged();
-    fp_dp_multiplier->multistaged();
-    fp_dp_division->multistaged();
+Hardware::setIDs() {
+    int ID = 0;
+    for ( auto hw_it = hardware_list.begin(); hw_it != hardware_list.end(); ++hw_it ) {
+        for ( auto fu_it = hw_it->begin(); fu_it != hw_it->end(); ++fu_it) {
+            (*fu_it)->setID(ID); 
+            ID++;
+        }
+        ID = 0;
+    }
+}
+
+int
+Hardware::reserveFU(uint8_t HardwareUnit) {
+    switch(HardwareUnit) {
+        case COUNTER: {
+            for ( auto it = counter_list.begin(); it != counter_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(COUNTER)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case INTADDER: {
+            for ( auto it = int_adder_list.begin(); it != int_adder_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(INTADDER)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case INTMULTI:  {
+            for ( auto it = int_multiplier_list.begin(); it != int_multiplier_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(INTMULTI)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case INTSHIFTER:  {
+            for ( auto it = int_shifter_list.begin(); it != int_shifter_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(INTSHIFTER)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case INTBITWISE:  {
+            for ( auto it = int_bitwise_list.begin(); it != int_bitwise_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(INTBITWISE)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case FPSPADDER:  {
+            for ( auto it = fp_sp_adder_list.begin(); it != fp_sp_adder_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(FPSPADDER)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case FPDPADDER:  {
+            for ( auto it = fp_dp_adder_list.begin(); it != fp_dp_adder_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(FPDPADDER)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case FPSPMULTI:  {
+            for ( auto it = fp_sp_multiplier_list.begin(); it != fp_sp_multiplier_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(FPSPMULTI)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case FPSPDIVID:  {
+            for ( auto it = fp_sp_division_list.begin(); it != fp_sp_division_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(FPSPDIVID)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case FPDPMULTI:  {
+            for ( auto it = fp_dp_multiplier_list.begin(); it != fp_dp_multiplier_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(FPDPMULTI)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case FPDPDIVID:  {
+            for ( auto it = fp_dp_division_list.begin(); it != fp_dp_division_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(FPDPDIVID)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case COMPARE: {
+            for ( auto it = comparison_list.begin(); it != comparison_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(COMPARE)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case GETELEMENTPTR: {
+            for ( auto it = getelementptr_list.begin(); it != getelementptr_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(GETELEMENTPTR)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        case CONVERSION: {
+            for ( auto it = conversion_list.begin(); it != conversion_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(CONVERSION)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+        default:  {
+            for ( auto it = other_list.begin(); it != other_list.end(); ++ it) {
+                if ((*it)->available()) {
+                    (*it)->reserve();
+                    runtime_list.at(OTHER)->updateDynamic();
+                    return (*it)->getID();
+                }
+            }
+            break;
+        }
+    }
+    return (-1);
+}
+
+bool
+Hardware::isMultistaged(uint8_t HardwareUnit) {
+     switch(HardwareUnit) {
+        case COUNTER: return counter_list.front()->isMultistaged(); break;
+        case INTADDER: return int_adder_list.front()->isMultistaged(); break;
+        case INTMULTI: return int_multiplier_list.front()->isMultistaged(); break;
+        case INTSHIFTER: return int_shifter_list.front()->isMultistaged(); break;
+        case INTBITWISE: return int_bitwise_list.front()->isMultistaged(); break;
+        case FPSPADDER: return fp_sp_adder_list.front()->isMultistaged(); break;
+        case FPDPADDER: return fp_dp_adder_list.front()->isMultistaged(); break;
+        case FPSPMULTI: return fp_sp_multiplier_list.front()->isMultistaged(); break;
+        case FPSPDIVID: return fp_sp_division_list.front()->isMultistaged(); break;
+        case FPDPMULTI: return fp_dp_multiplier_list.front()->isMultistaged(); break;
+        case FPDPDIVID: return fp_dp_division_list.front()->isMultistaged(); break;
+        case COMPARE: return comparison_list.front()->isMultistaged(); break;
+        case GETELEMENTPTR: return getelementptr_list.front()->isMultistaged(); break;
+        case CONVERSION: return conversion_list.front()->isMultistaged(); break;
+        default: return other_list.front()->isMultistaged(); break;
+    }
+    return false;
+}
+
+void
+Hardware::updateMax() {
+    for (auto& fu:runtime_list) fu->maxDynamic();
+}
+
+void
+Hardware::reset() {
+    for (auto hw_list = hardware_list.begin(); hw_list != hardware_list.end(); ++hw_list){
+        for (auto fu_list = hw_list->begin(); fu_list != hw_list->end(); ++fu_list) {
+            (*fu_list)->resetStages();
+        }
+    }
+    for (auto& fu:runtime_list) fu->resetRuntime();
+}
+
+void
+Hardware::update(){
+    updateMax();
+    // Power
+    // Registers
+    //regList->resetAccess();
+    reset();
+}
+
+void
+Hardware::powerUpdate() {
+    for (auto& hardware:hardware_list){
+        for (auto& fu:hardware) {
+            fu->powerUpdate();
+        }
+    }
+}
+
+void
+Hardware::printFunctionalUnits(){
+  //  for (auto& hardware:hardware_list){
+  //      for (auto& fu:hardware) {
+  //          fu->printHardwareStats();
+  //      }
+  //  }
+    for (auto& fu:runtime_list) {
+        std::cout << fu->getName() << " Functional Unit(s)\n";
+        std::cout << "Static Max: " << fu->getStaticLimit() << "\n"; 
+        std::cout << "Runtime Max: " << fu->getDynamicMax() << "\n";
+    }
+
+}
+
+void
+Hardware::finalize() {
+    printFunctionalUnits();
+
+
 }
 
 void
 Hardware::printResults() {
-    printOccupancyResults();
-    printLLVMFunctionalUnits();
-    printDefinedFunctionalUnits();
-    printDynamicFunctionalUnits();
+  //  printOccupancyResults();
+  //  printLLVMFunctionalUnits();
+  //  printDefinedFunctionalUnits();
+  //  printDynamicFunctionalUnits();
 }
 
 void
@@ -218,23 +796,23 @@ Hardware::printTotals() {
 
 void
 Hardware::printOccupancyResults() {
-    std::cout << "   ========= Stalled Cycle Breakdown ==========" << std::endl;    
-    std::cout << "       Load Only:                   " << occ_stalled.loadOnly << " cycles" << std::endl;
-    std::cout << "       Store Only:                  " << occ_stalled.storeOnly << " cycles" << std::endl;
-    std::cout << "       Compute Only:                " << occ_stalled.compOnly << " cycles" << std::endl;
-    std::cout << "       Compute & Store:             " << occ_stalled.storeComp << " cycles" << std::endl;
-    std::cout << "       Load & Store:                " << occ_stalled.loadStore << " cycles" << std::endl;
-    std::cout << "       Load & Compute:              " << occ_stalled.loadComp << " cycles" << std::endl;
-    std::cout << "       Load & Compute & Store:      " << occ_stalled.loadStoreComp << " cycles" << std::endl;
-    std::cout << "   ========= Execution Cycle Breakdown ========" << std::endl;    
-    std::cout << "       Load Only:                   " << occ_scheduled.loadOnly << " cycles" << std::endl;
-    std::cout << "       Store Only:                  " << occ_scheduled.storeOnly << " cycles" << std::endl;
-    std::cout << "       Compute Only:                " << occ_scheduled.compOnly << " cycles" << std::endl;
-    std::cout << "       Compute & Store:             " << occ_scheduled.storeComp << " cycles" << std::endl;
-    std::cout << "       Load & Store:                " << occ_scheduled.loadStore << " cycles" << std::endl;
-    std::cout << "       Load & Compute:              " << occ_scheduled.loadComp << " cycles" << std::endl;
-    std::cout << "       Load & Compute & Store:      " << occ_scheduled.loadStoreComp << " cycles" << std::endl;
-    std::cout << std::endl;
+    // std::cout << "   ========= Stalled Cycle Breakdown ==========" << std::endl;    
+    // std::cout << "       Load Only:                   " << occ_stalled.loadOnly << " cycles" << std::endl;
+    // std::cout << "       Store Only:                  " << occ_stalled.storeOnly << " cycles" << std::endl;
+    // std::cout << "       Compute Only:                " << occ_stalled.compOnly << " cycles" << std::endl;
+    // std::cout << "       Compute & Store:             " << occ_stalled.storeComp << " cycles" << std::endl;
+    // std::cout << "       Load & Store:                " << occ_stalled.loadStore << " cycles" << std::endl;
+    // std::cout << "       Load & Compute:              " << occ_stalled.loadComp << " cycles" << std::endl;
+    // std::cout << "       Load & Compute & Store:      " << occ_stalled.loadStoreComp << " cycles" << std::endl;
+    // std::cout << "   ========= Execution Cycle Breakdown ========" << std::endl;    
+    // std::cout << "       Load Only:                   " << occ_scheduled.loadOnly << " cycles" << std::endl;
+    // std::cout << "       Store Only:                  " << occ_scheduled.storeOnly << " cycles" << std::endl;
+    // std::cout << "       Compute Only:                " << occ_scheduled.compOnly << " cycles" << std::endl;
+    // std::cout << "       Compute & Store:             " << occ_scheduled.storeComp << " cycles" << std::endl;
+    // std::cout << "       Load & Store:                " << occ_scheduled.loadStore << " cycles" << std::endl;
+    // std::cout << "       Load & Compute:              " << occ_scheduled.loadComp << " cycles" << std::endl;
+    // std::cout << "       Load & Compute & Store:      " << occ_scheduled.loadStoreComp << " cycles" << std::endl;
+    // std::cout << std::endl;
 }
 
 void 
@@ -286,181 +864,71 @@ Hardware::printRegisterAreaAnalysis() {
 
 void
 Hardware::printLLVMFunctionalUnits(){
-    std::cout << "   ========= LLVM Parsed FU's =================" << std::endl;
-    std::cout << "   Counter FU's:                    " << counter->getParsedLimit() << std::endl;
-    std::cout << "   Integer Add/Sub FU's:            " << int_adder->getParsedLimit() << std::endl;
-    std::cout << "   Integer Mul/Div FU's:            " << int_multiplier->getParsedLimit() << std::endl;
-    std::cout << "   Integer Shifter FU's:            " << int_shifter->getParsedLimit() << std::endl;
-    std::cout << "   Integer Bitwise FU's:            " << int_bitwise->getParsedLimit() << std::endl;
-    std::cout << "   Floating Point Float Add/Sub:    " << fp_sp_adder->getParsedLimit() << std::endl;
-    std::cout << "   Floating Point Double Add/Sub:   " << fp_dp_adder->getParsedLimit() << std::endl;
-    std::cout << "   Floating Point Float Mul:        " << fp_sp_multiplier->getParsedLimit() << std::endl;
-    std::cout << "   Floating Point Float Div:        " << fp_sp_division->getParsedLimit() << std::endl;
-    std::cout << "   Floating Point Double Mul:       " << fp_dp_multiplier->getParsedLimit() << std::endl;
-    std::cout << "   Floating Point Double Div:       " << fp_dp_division->getParsedLimit() << std::endl;
-    std::cout << "   Compare FU's:                    " << comparison->getParsedLimit() << std::endl;
-    std::cout << "   GEP Instruction FU's:            " << getelementptr->getParsedLimit() << std::endl;
-    std::cout << "   Type Conversion FU's:            " << conversion->getParsedLimit() << std::endl;
-    std::cout << "   Other FU's:                      " << other->getParsedLimit() << std::endl;
-    std::cout << std::endl;
+    // std::cout << "   ========= LLVM Parsed FU's =================" << std::endl;
+    // std::cout << "   Counter FU's:                    " << counter->getParsedLimit() << std::endl;
+    // std::cout << "   Integer Add/Sub FU's:            " << int_adder->getParsedLimit() << std::endl;
+    // std::cout << "   Integer Mul/Div FU's:            " << int_multiplier->getParsedLimit() << std::endl;
+    // std::cout << "   Integer Shifter FU's:            " << int_shifter->getParsedLimit() << std::endl;
+    // std::cout << "   Integer Bitwise FU's:            " << int_bitwise->getParsedLimit() << std::endl;
+    // std::cout << "   Floating Point Float Add/Sub:    " << fp_sp_adder->getParsedLimit() << std::endl;
+    // std::cout << "   Floating Point Double Add/Sub:   " << fp_dp_adder->getParsedLimit() << std::endl;
+    // std::cout << "   Floating Point Float Mul:        " << fp_sp_multiplier->getParsedLimit() << std::endl;
+    // std::cout << "   Floating Point Float Div:        " << fp_sp_division->getParsedLimit() << std::endl;
+    // std::cout << "   Floating Point Double Mul:       " << fp_dp_multiplier->getParsedLimit() << std::endl;
+    // std::cout << "   Floating Point Double Div:       " << fp_dp_division->getParsedLimit() << std::endl;
+    // std::cout << "   Compare FU's:                    " << comparison->getParsedLimit() << std::endl;
+    // std::cout << "   GEP Instruction FU's:            " << getelementptr->getParsedLimit() << std::endl;
+    // std::cout << "   Type Conversion FU's:            " << conversion->getParsedLimit() << std::endl;
+    // std::cout << "   Other FU's:                      " << other->getParsedLimit() << std::endl;
+    // std::cout << std::endl;
 }
 
 void
 Hardware::printDefinedFunctionalUnits(){
-    std::cout << "   ========= Statically Limited FU's ==========" << std::endl;
-    std::cout << "   Counter FU's:                    " << counter->getStaticLimit() << std::endl;
-    std::cout << "   Integer Add/Sub FU's:            " << int_adder->getStaticLimit() << std::endl;
-    std::cout << "   Integer Mul/Div FU's:            " << int_multiplier->getStaticLimit() << std::endl;
-    std::cout << "   Integer Shifter FU's:            " << int_shifter->getStaticLimit() << std::endl;
-    std::cout << "   Integer Bitwise FU's:            " << int_bitwise->getStaticLimit() << std::endl;
-    std::cout << "   Floating Point Float Add/Sub:    " << fp_sp_adder->getStaticLimit() << std::endl;
-    std::cout << "   Floating Point Double Add/Sub:   " << fp_dp_adder->getStaticLimit() << std::endl;
-    std::cout << "   Floating Point Float Mul:        " << fp_sp_multiplier->getStaticLimit() << std::endl;
-    std::cout << "   Floating Point Float Div:        " << fp_sp_division->getStaticLimit() << std::endl;
-    std::cout << "   Floating Point Double Mul:       " << fp_dp_multiplier->getStaticLimit() << std::endl;
-    std::cout << "   Floating Point Double Div:       " << fp_dp_division->getStaticLimit() << std::endl;
-    std::cout << "   Compare FU's:                    " << comparison->getStaticLimit() << std::endl;
-    std::cout << "   GEP Instruction FU's:            " << getelementptr->getStaticLimit() << std::endl;
-    std::cout << "   Type Conversion FU's:            " << conversion->getStaticLimit() << std::endl;
-    std::cout << "   Other FU's:                      " << other->getStaticLimit() << std::endl;
-    std::cout << std::endl;
+    // std::cout << "   ========= Statically Limited FU's ==========" << std::endl;
+    // std::cout << "   Counter FU's:                    " << counter->getStaticLimit() << std::endl;
+    // std::cout << "   Integer Add/Sub FU's:            " << int_adder->getStaticLimit() << std::endl;
+    // std::cout << "   Integer Mul/Div FU's:            " << int_multiplier->getStaticLimit() << std::endl;
+    // std::cout << "   Integer Shifter FU's:            " << int_shifter->getStaticLimit() << std::endl;
+    // std::cout << "   Integer Bitwise FU's:            " << int_bitwise->getStaticLimit() << std::endl;
+    // std::cout << "   Floating Point Float Add/Sub:    " << fp_sp_adder->getStaticLimit() << std::endl;
+    // std::cout << "   Floating Point Double Add/Sub:   " << fp_dp_adder->getStaticLimit() << std::endl;
+    // std::cout << "   Floating Point Float Mul:        " << fp_sp_multiplier->getStaticLimit() << std::endl;
+    // std::cout << "   Floating Point Float Div:        " << fp_sp_division->getStaticLimit() << std::endl;
+    // std::cout << "   Floating Point Double Mul:       " << fp_dp_multiplier->getStaticLimit() << std::endl;
+    // std::cout << "   Floating Point Double Div:       " << fp_dp_division->getStaticLimit() << std::endl;
+    // std::cout << "   Compare FU's:                    " << comparison->getStaticLimit() << std::endl;
+    // std::cout << "   GEP Instruction FU's:            " << getelementptr->getStaticLimit() << std::endl;
+    // std::cout << "   Type Conversion FU's:            " << conversion->getStaticLimit() << std::endl;
+    // std::cout << "   Other FU's:                      " << other->getStaticLimit() << std::endl;
+    // std::cout << std::endl;
 }
 
 void
 Hardware::printDynamicFunctionalUnits(){
-    std::cout << "   ========= Runtime Allocated FU's ===========" << std::endl;
-    std::cout << "   Counter FU's:                    " << counter->getDynamicMax() << std::endl;
-    std::cout << "   Integer Add/Sub FU's:            " << int_adder->getDynamicMax() << std::endl;
-    std::cout << "   Integer Mul/Div FU's:            " << int_multiplier->getDynamicMax() << std::endl;
-    std::cout << "   Integer Shifter FU's:            " << int_shifter->getDynamicMax() << std::endl;
-    std::cout << "   Integer Bitwise FU's:            " << int_bitwise->getDynamicMax() << std::endl;
-    std::cout << "   Floating Point Float Add/Sub:    " << fp_sp_adder->getDynamicMax() << std::endl;
-    std::cout << "   Floating Point Double Add/Sub:   " << fp_dp_adder->getDynamicMax() << std::endl;
-    std::cout << "   Floating Point Float Mul:        " << fp_sp_multiplier->getDynamicMax() << std::endl;
-    std::cout << "   Floating Point Float Div:        " << fp_sp_division->getDynamicMax() << std::endl;
-    std::cout << "   Floating Point Double Mul:       " << fp_dp_multiplier->getDynamicMax() << std::endl;
-    std::cout << "   Floating Point Double Div:       " << fp_dp_division->getDynamicMax() << std::endl;
-    std::cout << "   Compare FU's:                    " << comparison->getDynamicMax() << std::endl;
-    std::cout << "   GEP Instruction FU's:            " << getelementptr->getDynamicMax() << std::endl;
-    std::cout << "   Type Conversion FU's:            " << conversion->getDynamicMax() << std::endl;
-    std::cout << "   Other FU's:                      " << other->getDynamicMax() << std::endl;
-    std::cout << std::endl;
+    // std::cout << "   ========= Runtime Allocated FU's ===========" << std::endl;
+    // std::cout << "   Counter FU's:                    " << counter->getDynamicMax() << std::endl;
+    // std::cout << "   Integer Add/Sub FU's:            " << int_adder->getDynamicMax() << std::endl;
+    // std::cout << "   Integer Mul/Div FU's:            " << int_multiplier->getDynamicMax() << std::endl;
+    // std::cout << "   Integer Shifter FU's:            " << int_shifter->getDynamicMax() << std::endl;
+    // std::cout << "   Integer Bitwise FU's:            " << int_bitwise->getDynamicMax() << std::endl;
+    // std::cout << "   Floating Point Float Add/Sub:    " << fp_sp_adder->getDynamicMax() << std::endl;
+    // std::cout << "   Floating Point Double Add/Sub:   " << fp_dp_adder->getDynamicMax() << std::endl;
+    // std::cout << "   Floating Point Float Mul:        " << fp_sp_multiplier->getDynamicMax() << std::endl;
+    // std::cout << "   Floating Point Float Div:        " << fp_sp_division->getDynamicMax() << std::endl;
+    // std::cout << "   Floating Point Double Mul:       " << fp_dp_multiplier->getDynamicMax() << std::endl;
+    // std::cout << "   Floating Point Double Div:       " << fp_dp_division->getDynamicMax() << std::endl;
+    // std::cout << "   Compare FU's:                    " << comparison->getDynamicMax() << std::endl;
+    // std::cout << "   GEP Instruction FU's:            " << getelementptr->getDynamicMax() << std::endl;
+    // std::cout << "   Type Conversion FU's:            " << conversion->getDynamicMax() << std::endl;
+    // std::cout << "   Other FU's:                      " << other->getDynamicMax() << std::endl;
+    // std::cout << std::endl;
 }
 
-
-void 
-Utilization::updatePowerConsumption(FunctionalUnits units) {
 /*
-    printf("%s %s %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s",
-    "   Power",
-    "\n*******************************************************************************",
-    "\n   Counters:", units.counter_units,
-    "   Adder: ", units.int_adder_units,
-    "   Mul/Div: ", units.int_multiply_units,
-    "   Shift: ", units.int_shifter_units,
-    "   Bit: ", units.int_bit_units,
-    "\n   SP Adder: ", units.fp_sp_adder,
-    "   SP Mul/Div: ", units.fp_sp_multiply,
-    "   DP Adder: ", units.fp_dp_adder,
-    "   DP Mul/Div: ", units.fp_dp_multiply,
-    "\n   Compare: ",units.compare,
-    "   GEP: ", units.gep,
-    "   Conversion: ", units.conversion,
-    "   Other: ", units.other,
-    "\n*******************************************************************************\n"
-    );
-*/
-    calculateLeakagePowerUsage(units);
-    calculateDynamicPowerUsage(units);
-}
-
-void 
-Utilization::finalPowerUsage(FunctionalUnits units, int cycle) {
-        calculateFinalLeakagePowerUsage(units);
-        regList->totalAccess(&regUsage);
-        calculateArea(units);
-         calculateRegisterPowerUsage(&regUsage, cycle);
-}
-
 uca_org_t
-Utilization::getCactiResults(int cache_size, int word_size, int ports, int cache_type) {
+Hardware::getCactiResults(int cache_size, int word_size, int ports, int cache_type) {
     return cactiWrapper((cache_size), word_size, ports, cache_type);
 }
+*/
 
-void
-Utilization::calculateFinalLeakagePowerUsage(FunctionalUnits units) {
-    // --
-    finalPwr.leakage_power = adderPwr.leakage_power*units.int_adder_units;
-    finalPwr.leakage_power += multiPwr.leakage_power*units.int_multiply_units;
-    finalPwr.leakage_power += bitPwr.leakage_power*units.int_bit_units;
-    finalPwr.leakage_power += shiftPwr.leakage_power*units.int_shifter_units;
-    finalPwr.leakage_power += spfpAddPwr.leakage_power*units.fp_sp_adder;
-    finalPwr.leakage_power += dpfpAddPwr.leakage_power*units.fp_dp_adder;
-   
-   // Since leakage power is much greater for floating point multipliers, assume full reuse
-    if (units.fp_sp_multiply > 0) finalPwr.leakage_power += spfpMulPwr.leakage_power; 
-    if (units.fp_dp_multiply > 0) finalPwr.leakage_power += dpfpMulPwr.leakage_power;
-   // finalPwr.leakage_power += spfpMulPwr.leakage_power*units.fp_sp_multiply;
-   // finalPwr.leakage_power += dpfpMulPwr.leakage_power*units.fp_dp_multiply;
-}
-
-void
-Utilization::calculateLeakagePowerUsage(FunctionalUnits units) {
-    // --
-    totalPwr.leakage_power += adderPwr.leakage_power*units.int_adder_units;
-    totalPwr.leakage_power += multiPwr.leakage_power*units.int_multiply_units;
-    totalPwr.leakage_power += bitPwr.leakage_power*units.int_bit_units;
-    totalPwr.leakage_power += shiftPwr.leakage_power*units.int_shifter_units;
-    totalPwr.leakage_power += spfpAddPwr.leakage_power*units.fp_sp_adder;
-    totalPwr.leakage_power += dpfpAddPwr.leakage_power*units.fp_dp_adder;
-    totalPwr.leakage_power += spfpMulPwr.leakage_power*units.fp_sp_multiply;
-    totalPwr.leakage_power += dpfpMulPwr.leakage_power*units.fp_dp_multiply;
-}
-
-void 
-Utilization::calculateDynamicPowerUsage(FunctionalUnits units) {
-    totalPwr.dynamic_power = (adderPwr.switch_power+adderPwr.internal_power)*units.int_adder_units ;
-    totalPwr.dynamic_power += (multiPwr.switch_power+multiPwr.internal_power)*units.int_multiply_units;
-    totalPwr.dynamic_power += (bitPwr.switch_power+bitPwr.internal_power)*units.int_bit_units;
-    totalPwr.dynamic_power += (shiftPwr.switch_power+shiftPwr.internal_power)*units.int_shifter_units;
-    totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*units.fp_sp_adder*5;
-    totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*units.fp_dp_adder*5;
-    totalPwr.dynamic_power += (ADD_0_5ns_int_power+ADD_0_5ns_switch_power)*(units.counter_units+units.conversion+units.compare+units.gep);
-    /*
-    if(units.fpDivision > 0) {
-        totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fpDivision;
-        totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fpDivision;
-    }
-    */
-    if (units.fp_sp_multiply > 0) totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*5;
-    if (units.fp_dp_multiply > 0) totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*5;
-    // totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fp_sp_multiply;
-    // totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fp_dp_multiply;
-    totalPwr.dynamic_energy += (totalPwr.dynamic_power);
-}
-
-
-void 
-Utilization::calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle) {
-    totalPwr.readEnergy = ((float)regUsage->reads)*((regList->average())/cycle)*(regList->avgSize()/(regList->average()))*(regPwr.internal_power + regPwr.switch_power);
-    totalPwr.writeEnergy = ((float)regUsage->writes)*((regList->average())/cycle)*(regList->avgSize()/(regList->average()))*(regPwr.internal_power + regPwr.switch_power);
-    totalPwr.reg_leakage_power = regPwr.leakage_power*((regList->average())/cycle)*(regList->avgSize()/(regList->average()));
-    totalPwr.reg_dynamic_energy = (totalPwr.readEnergy + totalPwr.writeEnergy);
-    totalPwr.reg_area = ((regList->average())/cycle)*(regList->avgSize()/(regList->average()))*regPwr.area;
-}
-
-
-void 
-Utilization::calculateArea(FunctionalUnits units) {
-    
-    totalPwr.area = multiPwr.area*units.int_multiply_units;
-    totalPwr.area += bitPwr.area*units.int_bit_units;
-    totalPwr.area += shiftPwr.area*units.int_shifter_units;
-    totalPwr.area += dpfpAddPwr.area*units.fp_dp_adder;
-    //totalPwr.area += dpfpMulPwr.area*units.fp_dp_multiply;
-    totalPwr.area += spfpAddPwr.area*units.fp_sp_adder;
-    //totalPwr.area += spfpMulPwr.area*units.fp_sp_multiply;
-    // Since area is much greater for floating point multipliers, assume full reuse
-    if (units.fp_sp_multiply > 0) totalPwr.area += spfpMulPwr.area; 
-    if (units.fp_dp_multiply > 0) totalPwr.area += dpfpMulPwr.area;
-}

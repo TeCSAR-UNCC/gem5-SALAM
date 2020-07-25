@@ -56,7 +56,7 @@ LLVMInterface::tick() {
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
-    bool dbg = debug();
+    bool dbg = debug(); 
     if (dbg) {
         DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
             "********************************************************************************",
@@ -65,11 +65,7 @@ LLVMInterface::tick() {
     }
     cycle++;
     comm->refreshMemPorts();
-    hardware->update();
     ///////////////////////////
-    //pwrUtil->updatePowerConsumption(_FunctionalUnits);
-    //regList->resetAccess();
-    //clearFU();
     loadOpScheduled = false;
     storeOpScheduled = false;
     compOpScheduled = false;
@@ -82,33 +78,58 @@ LLVMInterface::tick() {
     if (dbg) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
         if (dbg) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
-        //if(unlimitedFU) {
-            if(computeQueue.at(i)->commit()) {
-                auto it = computeQueue.erase(computeQueue.begin() + i);
-                i = std::distance(computeQueue.begin(), it);
-            } else {
-                i++;
-                // Check if FP operation has staged
-                if (reservation.at(i)->_StageCycle) {
-                    if((reservation.at(i)->_CurrCycle >= reservation.at(i)->_StageCycle)) { } // Active, but staged
-                    else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-                } else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+        if(computeQueue.at(i)->commit()) {
+        //////////////// Computation Complete ////////////////////////
+            if (hardware->isMultistaged((int) (computeQueue.at(i)->_FunctionalUnit))) {
+                if (dbg) DPRINTF(LLVMInterface, "Multistage Operation Completed\n");
+                computeQueue.at(i)->stage();
             }
-        //} else if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
-        //    if(computeQueue.at(i)->commit()) {
-        //        auto it = computeQueue.erase(computeQueue.begin() + i);
-        //        i = std::distance(computeQueue.begin(), it);
-        //    } else i++;
-        //} else i++;
+            computeQueue.at(i)->reset();
+            auto it = computeQueue.erase(computeQueue.begin() + i);
+            i = std::distance(computeQueue.begin(), it);
+        } else {
+        //////////////// Computation Incomplete ////////////////////////
+            if (hardware->isMultistaged((int) (computeQueue.at(i)->_FunctionalUnit))) {
+            //////////////// Multistaged Scheduling ////////////////////////
+                if (dbg) DPRINTF(LLVMInterface, "Multistage Operation: Current Stage = %d \n", computeQueue.at(i)->currentStage());
+                // Check if current cycle is at a stage boundary
+                if ((computeQueue.at(i)->_CurrCycle) == computeQueue.at(i)->stageCycle(computeQueue.at(i)->currentStage())) {
+                    // Check if already in final stage, gets priority on available hardware
+                    if (computeQueue.at(i)->currentStage() == computeQueue.at(i)->stageCount()) {
+                        if (dbg) DPRINTF(LLVMInterface, "Multistage Operation: Final Stage \n");
+                        hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->currentStage()), (computeQueue.at(i)->getActiveFU()));
+                        if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+                    // If not final stage but at stage boundary, check if there is available hardware for the next stage          
+                    } else if (hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->currentStage() + 1), (computeQueue.at(i)->getActiveFU()))) {
+                        if (dbg) DPRINTF(LLVMInterface, "%s Functional Unit Stage %d Available, Advancing to Next Stage \n", computeQueue.at(i)->_OpCode, (computeQueue.at(i)->currentStage()+1));
+                        if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+                        computeQueue.at(i)->stage();
+                    // No hardware available, wait until next cycle
+                    } else {
+                        if (dbg) DPRINTF(LLVMInterface, "%s Functional Unit Stage %d Not Available, Cycle Count Stalled \n", computeQueue.at(i)->_OpCode, (computeQueue.at(i)->currentStage()+1));
+                        hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->_CurrStage), (computeQueue.at(i)->getActiveFU()));
+                    }
+                // Multistaged but not at boundary, cycle like normal 
+                } else { 
+                    if((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+                    hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->_CurrStage), (computeQueue.at(i)->getActiveFU()));
+                }
+            //////////////// Single Stage Scheduling ////////////////////////
+            } else {
+                if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+            } 
+            i++;
+        }
     }
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         if (dbg) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
     }
-
+    //////////////// Re-Check In-Flight Queues ////////////////////////
     if (lockstep && (!computeQueue.empty() || !readQueue.empty() || !writeQueue.empty() )) {
-        //Do nothing
+        //Do nothing - all queues empty
     } else {
+    //////////////// Check Reservation Queues ////////////////////////
         for (auto i = 0; i < reservation.size();) {
             if (reservation.at(i)->_ReturnRegister == NULL) {
                 if (dbg) DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
@@ -116,73 +137,66 @@ LLVMInterface::tick() {
                 if (dbg) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
             }
             if (reservation.at(i)->_ActiveParents == 0) {
-                if(!(reservation.at(i)->_Terminator)) {
+                if(!(reservation.at(i)->_Terminator)) { 
+                //////////////// Computation & Memory Operations ////////////////////////
                     if(reservation.at(i)->_OpCode == "load") {
+                    //////////////// Load ////////////////////////
                         loadOpScheduled = true;
                         readQueue.push_back(reservation.at(i));
                         reservation.at(i)->compute();
-                        hardware->memoryLoad();
+                        reservation.at(i)->used();
+                        hardware->memoryLoad(reservation.at(i)->_ReturnRegister->getSize());
                         auto it = reservation.erase(reservation.begin()+i);
                         i = std::distance(reservation.begin(), it);
                     } else if(reservation.at(i)->_OpCode == "store") {
+                    //////////////// Store ////////////////////////
                         storeOpScheduled = true;
                         writeQueue.push_back(reservation.at(i));
                         reservation.at(i)->compute();
-                        hardware->memoryStore();
+                        reservation.at(i)->used();
+                        //hardware->memoryStore(reservation.at(i)->_ReturnRegister->getSize());
                         auto it = reservation.erase(reservation.begin()+i);
                         i = std::distance(reservation.begin(), it);
-                    }  //////////////// New
-                    else if(reservation.at(i)->_MaxCycle == 0) {
-                        if(!unlimitedFU) {
-                            if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
-                                reservation.at(i)->compute();
-                                reservation.at(i)->commit();
-                                compOpScheduled = true;
-                                auto it = reservation.erase(reservation.begin()+i);
-                                i = std::distance(reservation.begin(), it);
-                            } else i++;
-                        } else {
-                            hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                    } else if(reservation.at(i)->_MaxCycle == 0) { 
+                    //////////////// 0-Cycle ////////////////////////
+                        if(hardware->reserveFU(reservation.at(i)->_FunctionalUnit) >= 0) {
+                            if (dbg) DPRINTF(LLVMInterface, "Functional Units Available\n");
                             reservation.at(i)->compute();
+                            reservation.at(i)->used();
                             reservation.at(i)->commit();
+                            if((reservation.at(i)->_ReturnRegister) != NULL) reservation.at(i)->cycle();
                             compOpScheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
-                        }
-                    } //////////////// New
-                    //else if(reservation.at(i)->_MaxCycle==0) {
-                    //    reservation.at(i)->compute();
-                    //    reservation.at(i)->commit();
-                    //    if(unlimitedFU) hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-                    //    scheduled = true; compOpScheduled = true;
-                    //    auto it = reservation.erase(reservation.begin()+i);
-                    //    i = std::distance(reservation.begin(), it);
-                    // }
-                    else { // Computation Units
-                        if(!unlimitedFU){
-                            if(hardware->available(reservation.at(i)->_FunctionalUnit)){
-                                computeQueue.push_back(reservation.at(i));
-                                reservation.at(i)->compute();
-                                reservation.at(i)->commit();
-                                compOpScheduled = true;
-                                auto it = reservation.erase(reservation.begin()+i);
-                                i = std::distance(reservation.begin(), it);
-                            } else i++;
                         } else {
+                            if (dbg) DPRINTF(LLVMInterface, "No Functional Units Available\n");
+                            i++;
+                        }
+                    } else { 
+                    //////////////// All Other Instructions ////////////////////////
+                        if(hardware->reserveFU(reservation.at(i)->_FunctionalUnit) >= 0) {
+                            if (dbg) DPRINTF(LLVMInterface, "Functional Units Available\n");
+                            reservation.at(i)->setActiveFU(hardware->reserveFU(reservation.at(i)->_FunctionalUnit));
                             computeQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
+                            reservation.at(i)->used();
                             reservation.at(i)->commit();
-                            hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                            if((reservation.at(i)->_ReturnRegister) != NULL) reservation.at(i)->cycle();
                             compOpScheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
+                        } else {
+                            if (dbg) DPRINTF(LLVMInterface, "No Functional Units Available\n");
+                            i++;
                         }
                     }
                 } else if ((reservation.at(i)->_OpCode != "ret")) {
+                //////////////// Control Flow Instructions ////////////////////////
                     if (reservation.size() < scheduling_threshold) {
                         hardware->controlFlow();
                         prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
                         reservation.at(i)->compute(); // Send instruction to runtime computation simulator
+                        reservation.at(i)->used();
                         currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
                         auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
                         i = std::distance(reservation.begin(), it);
@@ -190,7 +204,8 @@ LLVMInterface::tick() {
                     } else i++;
                 }
             } else {
-                if (reservation.at(i)->_OpCode == "ret"){
+                if (reservation.at(i)->_OpCode == "ret") {
+                //////////////// Return Instruction ////////////////////////
                     if (dbg) DPRINTF(LLVMInterface, "Simulation Complete \n");
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
                         finalize();
@@ -200,10 +215,11 @@ LLVMInterface::tick() {
             }
         }
     }
+    //////////////// Update Hardware Utilization ////////////////////////
+    hardware->update();
     occupancy();
-
-    if (running && !tickEvent.scheduled())
-    {
+    //////////////// Schedule Next Cycle ////////////////////////
+    if (running && !tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + clock_period);// * process_delay);
     }
 }
@@ -335,6 +351,9 @@ LLVMInterface::constructBBList() {
 *********************************************************************************************/
     // llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
     // m->dump();
+    SALAM::ir_parser(filename);
+    finalize();
+
     bool dbg = debug();
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
@@ -344,7 +363,7 @@ LLVMInterface::constructBBList() {
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
-    hardware = new Hardware(fu_latency); // Initialize Hardware Functional Units
+    hardware = new Hardware(fu_latency, pipelined); // Initialize Hardware Functional Units
     hardware->linkRegList(regList);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
     std::string line; // Stores Single Line of File
@@ -533,7 +552,6 @@ LLVMInterface::initialize() {
     running = true;
     cycle = 0;
     stalls = 0;
-    unlimitedFU = unlimitedMode(); // If all functional units are unlimited, decreases simulation time
     hardware->updateLimit(counter_units,
                                 int_adder_units,
                                 int_multiply_units,
@@ -548,7 +566,6 @@ LLVMInterface::initialize() {
                                 compare,
                                 gep,
                                 conversion);
-    if(pipelined) hardware->pipelined();
     tick();
 }
 
@@ -567,24 +584,6 @@ LLVMInterfaceParams::create() {
  Create new interface between the llvm IR and our simulation engine
 *********************************************************************************************/
     return new LLVMInterface(this);
-}
-
-bool
-LLVMInterface::unlimitedMode() {
-    if((counter_units == -1) &&
-        (int_adder_units == -1) &&
-        (int_multiply_units == -1) &&
-        (int_shifter_units == -1) &&
-        (int_bit_units == -1) &&
-        (fp_sp_adder == -1) &&
-        (fp_dp_adder == -1) &&
-        (fp_sp_multiply == -1) &&
-        (fp_sp_division == -1) &&
-        (fp_dp_multiply == -1) &&
-        (fp_dp_division == -1) &&
-        (compare == -1) &&
-        (gep == -1)) return true;
-    return false;
 }
 
 void
@@ -612,7 +611,6 @@ LLVMInterface::occupancy() {
             else hardware->occ_stalled.storeOnly++;
         } else if (compInFlight) hardware->occ_stalled.compOnly++;
     }
-
 }
 
 void
@@ -625,6 +623,7 @@ LLVMInterface::finalize() {
     printPerformanceResults();
     // comm->printResults() ?
     hardware->printResults();
+    hardware->finalize();
     comm->finish();
 }
 

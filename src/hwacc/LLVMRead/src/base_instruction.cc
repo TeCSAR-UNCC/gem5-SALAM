@@ -13,7 +13,7 @@ bool
 InstructionBase::commit() {
 	// If cycle count is = max cycle count, commit register value to memory
 	if(_ReturnRegister != NULL) {
-		if (_CurrCycle >= _MaxCycle) {
+		if (_CurrCycle == _MaxCycle) { 
 			_ReturnRegister->setValue(&_FinalResult);
 			_ReturnRegister->commit();
             _ReturnRegister->write();
@@ -25,14 +25,45 @@ InstructionBase::commit() {
 		} else if (_debug) {
             DPRINTF(LLVMOp, "Operation Will Commit in %d Cycle(s) \n", (_MaxCycle-_CurrCycle));
         }
-        _CurrCycle++;
+       // _CurrCycle++;
     } else {
         signalChildren();
     }
 	return false;
 }
 
-
+void
+InstructionBase::configFU(uint8_t HardwareUnit, int32_t pipelined) {
+    
+    if (pipelined) {
+        switch(HardwareUnit) {
+            case COUNTER: _MaxStages = COUNTER_STAGES; break;
+            case INTADDER: _MaxStages = INTADDER_STAGES; break;
+            case INTMULTI: _MaxStages = INTMULTI_STAGES; break;
+            case INTSHIFTER: _MaxStages = INTSHIFTER_STAGES; break;
+            case INTBITWISE: _MaxStages = INTBITWISE_STAGES; break;
+            case FPSPADDER: _MaxStages = FPSPADDER_STAGES; break;
+            case FPDPADDER: _MaxStages = FPDPADDER_STAGES; break;
+            case FPSPMULTI: _MaxStages = FPSPMULTI_STAGES; break;
+            case FPSPDIVID: _MaxStages = FPSPDIVID_STAGES; break;
+            case FPDPMULTI: _MaxStages = FPDPMULTI_STAGES; break;
+            case FPDPDIVID:  _MaxStages = FPDPDIVID_STAGES; break;
+            case COMPARE: _MaxStages = COMPARE_STAGES; break;
+            case GETELEMENTPTR: _MaxStages = GETELEMENTPTR_STAGES; break;
+            case CONVERSION: _MaxStages = CONVERSION_STAGES; break;
+            case REGISTER: _MaxStages = REGISTER_STAGES; break;
+            default: _MaxStages = OTHER_STAGES; break;
+        }
+    } else _MaxStages = 1;
+    if (_MaxStages > 1) _Multistaged = true;
+    int remainingStages;
+    int remainingCycles = _MaxCycle;
+    for (int i = 0; i < (_MaxStages); i++) {
+        remainingStages = _MaxStages-i;
+        _StageCycle.push_back(remainingCycles / remainingStages); 
+        remainingCycles-=(remainingCycles / remainingStages);
+    } 
+}
 
 std::vector<Register*>
 InstructionBase::runtimeDependencies(std::string PrevBB) {

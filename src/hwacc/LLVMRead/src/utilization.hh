@@ -3,97 +3,13 @@
 //------------------------------------------//
 #include "functional_units.hh" 
 #include "debug_flags.hh" 
-#include "cycle_count.hh"
 #include "registers.hh"
+#include <memory>
+#include <vector>
 
 //------------------------------------------//
 
 class RegisterList;
-
-
-struct Pwr_Parameters {
-    float cycleTime;
-    float internal_power;
-    float switch_power;
-    float leakage_power;
-    float area;
-    Pwr_Parameters():
-        cycleTime(0.0),
-        internal_power(0.0),
-        switch_power(0.0),
-        leakage_power(0.0),
-        area(0.0) {}
-};
-
-struct FunctionalUnits {
-  int32_t counter_units;
-  int32_t int_adder_units;
-  int32_t int_multiply_units;
-  int32_t int_shifter_units;
-  int32_t int_bit_units;
-  int32_t fp_sp_adder;
-  int32_t fp_dp_adder;
-  int32_t fp_sp_multiply;
-  int32_t fp_dp_multiply;  
-  int32_t compare;
-  int32_t gep;
-  int32_t conversion;
-  int32_t other;
-  int32_t fpDivision = 0;  
-};
-
-
-struct PowerUsage {
-    float cycleTime = 0;
-    float internal_power = 0;
-    float switch_power = 0;
-    float leakage_power = 0;
-    float area = 0;
-    
-};
-
-struct PowerTotals {
-    float cycleTime = 0;
-    float reg_leakage_power = 0;
-    float reg_dynamic_energy = 0;
-    float leakage_power = 0;
-    float dynamic_power = 0;
-    float dynamic_energy = 0;
-    float readEnergy = 0;
-    float writeEnergy = 0;
-    float area = 0;
-    float reg_area = 0;
-};
-
-class Utilization {
-    private:
-     int _Clock_Period = 0;
-
-     public:
-      PowerUsage regPwr;
-      PowerUsage adderPwr;
-      PowerUsage multiPwr;
-      PowerUsage bitPwr;
-      PowerUsage shiftPwr;
-      PowerUsage spfpAddPwr;
-      PowerUsage dpfpAddPwr;
-      PowerUsage spfpMulPwr;
-      PowerUsage dpfpMulPwr;
-      PowerTotals totalPwr;
-      PowerTotals finalPwr;
-      RegisterList *regList;
-      Reg_Usage regUsage;
-    
-    Utilization(int clock_period, int fu_clock_period, RegisterList* List);
-    void finalPowerUsage(FunctionalUnits units, int cycle); 
-    uca_org_t getCactiResults(int cache_size, int word_size, int ports, int cache_type);
-    void updatePowerConsumption(FunctionalUnits units);
-    void calculateLeakagePowerUsage(FunctionalUnits units);
-    void calculateFinalLeakagePowerUsage(FunctionalUnits units);
-    void calculateDynamicPowerUsage(FunctionalUnits units);
-    void calculateArea(FunctionalUnits units);
-    void calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle);
-};
 
 struct Occupancy {
     int loadOnly; //
@@ -114,46 +30,57 @@ struct Occupancy {
 };
 
 
-
 class Hardware {
     public:
-        CycleCounts * cycles;
-        FunctionalUnit * counter;
-        FunctionalUnit * int_adder;
-        FunctionalUnit * int_multiplier;
-        FunctionalUnit * int_shifter;
-        FunctionalUnit * int_bitwise;
-        FunctionalUnit * fp_sp_adder;
-        FunctionalUnit * fp_dp_adder;
-        FunctionalUnit * fp_sp_multiplier;
-        FunctionalUnit * fp_sp_division;
-        FunctionalUnit * fp_dp_multiplier;
-        FunctionalUnit * fp_dp_division;
-        FunctionalUnit * comparison;
-        FunctionalUnit * getelementptr;
-        FunctionalUnit * conversion;
+        std::vector<FunctionalUnit*> counter_list;
+        std::vector<FunctionalUnit*> int_adder_list;
+        std::vector<FunctionalUnit*> int_multiplier_list;
+        std::vector<FunctionalUnit*> int_shifter_list;
+        std::vector<FunctionalUnit*> int_bitwise_list;
+        std::vector<FunctionalUnit*> fp_sp_adder_list;
+        std::vector<FunctionalUnit*> fp_dp_adder_list;
+        std::vector<FunctionalUnit*> fp_sp_multiplier_list;
+        std::vector<FunctionalUnit*> fp_sp_division_list;
+        std::vector<FunctionalUnit*> fp_dp_multiplier_list;
+        std::vector<FunctionalUnit*> fp_dp_division_list;
+        std::vector<FunctionalUnit*> comparison_list;
+        std::vector<FunctionalUnit*> getelementptr_list;
+        std::vector<FunctionalUnit*> conversion_list;
+        std::vector<FunctionalUnit*> other_list;
+        std::vector<FunctionalUnit*> runtime_list;
+        std::vector<std::vector<FunctionalUnit*> > hardware_list;
         FunctionalUnit * registers;
-        FunctionalUnit * other;
         RegisterList * regList;
         int loads;
+        uint64_t bytes_loaded;
         int stores;
+        uint64_t bytes_stored;
         int control_flow;
+        int pipelined;
 
         Occupancy occ_stalled;
         Occupancy occ_scheduled;
-        Hardware(int Latency);
+        Hardware(int Latency, int Pipelined);
+        void activateUnits( int Units,
+                            int Latency,
+                            int Stages,
+                            int Static_Limit,
+                            uint8_t ID,
+                            std::string Name,
+                            std::vector<FunctionalUnit*> &FU_List);
         void reset();
         void update();
         void updateMax();
-        void pipelined();
+        void setIDs();
         void linkRegList(RegisterList * List) { regList = List; }
-        bool available(uint8_t HardwareUnit);
+        int reserveFU(uint8_t HardwareUnit);
+        bool isMultistaged(uint8_t HardwareUnit); 
         void updateParsed(uint8_t HardwareUnit);
-        void updateDynamic(uint8_t HardwareUnit);
-        void memoryLoad() { loads++; }
-        void memoryStore() { stores++; }
+        bool updateStage(uint8_t HardwareUnit, int CurrentStage, int ID);
+        void memoryLoad(uint64_t Size) { loads++; bytes_loaded+=Size; }
+        void memoryStore(uint64_t Size) { stores++; bytes_stored+=Size; }
         void controlFlow() { control_flow++; }
-        void updateLimit(int Counter, 
+        void updateLimit(   int Counter, 
                             int IntAdder, 
                             int IntMul, 
                             int IntShift, 
@@ -167,6 +94,8 @@ class Hardware {
                             int Compare, 
                             int GEP, 
                             int Conversion);
+        void powerUpdate();
+        void printFunctionalUnits();
         void printResults(); 
         void printOccupancyResults();
         void printLLVMFunctionalUnits();
@@ -177,7 +106,9 @@ class Hardware {
         void printRegisterUsageAnalysis();
         void printRegisterPowerAnalysis();
         void printRegisterAreaAnalysis();
-        void printTotals();                    
+        void printTotals(); 
+        void finalize();
+                      
 
 };
 
