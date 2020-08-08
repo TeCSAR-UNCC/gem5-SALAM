@@ -4,16 +4,21 @@
 #include "params/LLVMInterface.hh"
 #include "hwacc/compute_unit.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
+#include "hwacc/LLVMRead/src/function.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/LLVMRead/src/utilization.hh"
 #include "hwacc/LLVMRead/src/cycle_count.hh"
 #include "hwacc/LLVMRead/src/ir_parse.hh"
 //------------------------------------------//
-// #include <llvm/IR/Module.h>
-// #include <llvm/IRReader/IRReader.h>
-// #include <llvm/IR/LLVMContext.h>
-// #include <llvm/Support/SourceMgr.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/Transforms/Utils/Cloning.h>
 //------------------------------------------//
 #include <list>
 #include <queue>
@@ -28,14 +33,14 @@
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
-//     llvm::LLVMContext context;
-//     llvm::SMDiagnostic error;
+    llvm::LLVMContext context;
+    llvm::SMDiagnostic error;
     bool lockstep;
     uint32_t scheduling_threshold;
     // Functional Units
     // -1 = Runtime Defined
     //  0 = Static LLVM Defined
-    // >0 = User defined  
+    // >0 = User defined
     int32_t counter_units;
     int32_t int_adder_units;
     int32_t int_multiply_units;
@@ -73,12 +78,14 @@ class LLVMInterface : public ComputeUnit {
     std::vector<InstructionBase*> readQueue;
     std::vector<InstructionBase*> writeQueue;
     std::vector<InstructionBase*> computeQueue;
-    std::list<BasicBlock*> *bbList;
+    std::list<SALAM::BasicBlock*> *bbList;
+    std::vector<SALAM::Function*> functions;
     RegisterList *regList;
-    BasicBlock *currBB;
-    BasicBlock *prevBB;
-    TypeList *typeList;    
+    SALAM::BasicBlock *currBB;
+    SALAM::BasicBlock *prevBB;
+    TypeList *typeList;
     Hardware* hardware;
+    llvm::ValueToValueMapTy vmap;
   protected:
     InstructionBase* findParent(Register*);
     InstructionBase* findParent(std::string);
@@ -88,19 +95,20 @@ class LLVMInterface : public ComputeUnit {
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
-    void constructBBList();
-    BasicBlock* findBB(std::string bbname);
-    BasicBlock* findEntryBB();
+    void constructStaticGraph();
+    SALAM::BasicBlock* findBB(std::string bbname);
+    SALAM::BasicBlock* findEntryBB();
     void startup();
     void initialize();
     void printPerformanceResults();
     void finalize();
     void occupancy();
     //void statisticsWithMemory();
-    void scheduleBB(BasicBlock *bb);
+    void scheduleBB(SALAM::BasicBlock *bb);
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
     void dumpQueues();
+    void dumpModule(llvm::Module *m);
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

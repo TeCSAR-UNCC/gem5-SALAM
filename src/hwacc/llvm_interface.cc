@@ -225,7 +225,7 @@ LLVMInterface::tick() {
 }
 
 void
-LLVMInterface::scheduleBB(BasicBlock* bb) {
+LLVMInterface::scheduleBB(SALAM::BasicBlock* bb) {
 /*********************************************************************************************
  BB Scheduling
 
@@ -235,9 +235,9 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
  and immediately compute and commit.
 *********************************************************************************************/
     if (debug()) DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
-    for (auto i = 0; i < bb->_Nodes.size(); i++) {
-        if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
-        reservation.push_back(createClone(bb->_Nodes.at(i)));
+    for (auto i = 0; i < bb->Nodes()->size(); i++) {
+        if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->Nodes()->at(i)->_OpCode);
+        reservation.push_back(createClone(bb->Nodes()->at(i)));
         if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
             InstructionBase * parent = findParent(reservation.back()->_LLVMLine);
             if (parent) {
@@ -343,136 +343,65 @@ LLVMInterface::findParent(std::string line) {
 }
 
 void
-LLVMInterface::constructBBList() {
+LLVMInterface::dumpModule(llvm::Module *M) {
+    M->print(llvm::outs(), nullptr);
+    for (const llvm::Function &F : *M) {
+        for (const llvm::BasicBlock &BB : F) {
+            for (const llvm::Instruction &I : BB) {
+                I.print(llvm::outs());
+            }
+        }
+    }
+}
+
+void
+LLVMInterface::constructStaticGraph() {
 /*********************************************************************************************
- Constructing Basic Block List
+ Constructing the Static CDFG
 
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine.
 *********************************************************************************************/
-    // llvm::Module * m = llvm::parseIRFile(filename, error, context).get();
-    // m->dump();
-    SALAM::ir_parser(filename);
-    finalize();
 
     bool dbg = debug();
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
-    bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
+    bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
     Register* alwaysTrue = new Register("alwaysTrue", ((uint64_t) 1));
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
+
+    // SALAM::ir_parser(filename);
+
+    llvm::StringRef file = filename;
+    llvm::LLVMContext context;
+    llvm::SMDiagnostic error;
+
+    // Load LLVM IR file
+    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(file);
+    if (std::error_code ec = fileOrErr.getError()) {
+        panic(" Error opening input file: %s", ec.message());
+    }
+
+    // Load LLVM Module
+    llvm::ErrorOr<std::unique_ptr<llvm::Module>> moduleOrErr = llvm::parseIRFile(file, error, context);
+    if (std::error_code ec = moduleOrErr.getError()) {
+        panic("Error reading Module: %s", ec.message());
+    }
+
+    std::unique_ptr<llvm::Module> m(llvm::parseIRFile(file, error, context));
+    if(!m) panic("Error reading Module");
+
+    // Start parsing
+
     hardware = new Hardware(fu_latency, pipelined); // Initialize Hardware Functional Units
     hardware->linkRegList(regList);
-    std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
-    std::string line; // Stores Single Line of File
-    bool inFunction = false; // Parse Variable
-    unsigned bbnum = 0; // Start of Basic Block Numbering
-    if (dbg) DPRINTF(LLVMInterface, "Parsing: (%s)\n", filename);
-    if(llvmFile.is_open()) {
-        while (getline(llvmFile, line)) { // Read until end of LLVM file
-            if (dbg) DPRINTF(LLVMParse, "Line: (%s)\n", line);
-            if (!inFunction) { // Looks for data before the main function is defined
-                if (!line.find("%struct")) { // Found custom data type.
-                    int pos = line.find('=');
-                    int size = 1; // Size indicated number of elements in custom data type
-                    std::string name = line.substr(1,pos-2); // Store name as called within function
-                    for(int i = pos; i < line.size(); i++) {
-                        if(line[i] == ',') size++; // Elements delimeted by commas, counts number of elements
-                    }
-                    typeList->addType(new LLVMType(size, name)); // Add custom data type to typeList
-                } else if (!line.find("define")) { //Found a function. Need to parse its header
-                    if (dbg) DPRINTF(LLVMParse, "Found ACC Function, Parsing Global Variables!\n");
-                    inFunction = true;
-                    unsigned paramOffset = 0;
-                    unsigned linePos = 0;
-                    int percPos = line.find("%"); //All registers preceeded by a % in LLVM
-                    int commaPos;
-                    while (percPos > -1) {
-                        // Parse all global variables within the function definition
-                        if (line.find("%struct", linePos) != percPos) { //Ensure we didn't just find a struct type
-                            percPos++;
-                            commaPos = line.find(",", percPos);
-                            if (commaPos < 0) commaPos = line.find(")");
-                            std::string regName = line.substr(percPos, (commaPos-percPos)); // Determine register name for global variable
-                            if (dbg) DPRINTF(LLVMParse, "Creating register for: (%s)\n", regName);
-                            regList->addRegister(new Register(regName, comm->getGlobalVar(paramOffset, 8))); // Create register for global variable
-                            if (dbg) DPRINTF(LLVMParse, "Initial Value: (%X)\n", (regList->findRegister(regName))->getValue());
-                            paramOffset+=8;
-                        }
-                        linePos = percPos + 1;
-                        percPos = line.find("%", linePos); // Check if another register exists within the function definition
-                    }
-                    currBB = new BasicBlock("0", name(), bbnum, dbg); // First basic block is always defined as BB 0
-                    if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
-                    bbnum++; // Increment BB count
-                    bbList->push_back(currBB); // Add BB to BB list
-                }
-            } else { // Already within a function, begin defining basic blocks and compute nodes
-                if (line.find("\n") > 0) { // Skip blank lines
-                    if (line.find("; <label>:") == 0) { // Found new basic block
-                        int labelEnd = line.find(" ", 10);
-                        prevBB = currBB; // Set previous basic block
-                       // currBB->printNodes();  ////////////////////////////////////////////////////////////////////////////////////////////
-                        // LLVM Version 3.8 added a new : after label names, check for this
-                        std::string versionCheck = line.substr(10,(labelEnd - 10));
-                        if(versionCheck.back() == ':') versionCheck = line.substr(10,(labelEnd - 11));
-                        currBB = new BasicBlock(versionCheck, name(), bbnum, dbg); // Create new basic block
-                        if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
-                        bbnum++; // Increment BB count
-                        bbList->push_back(currBB); // Add BB to BB list
-                    } else if (line.find("; preds") != std::string::npos) { // Found new basic block (edge)
-                        int labelEnd = line.find(" ");
-                        prevBB = currBB; // Set previous basic block
-                        currBB = new BasicBlock(line.substr(0,(labelEnd-1)), name(), bbnum, dbg); // Create new basic block
-                        if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
-                        bbnum++; // Increment BB count
-                        bbList->push_back(currBB); // Add BB to BB list
-                    }else if (line.find("}") == 0) { // Found end of function definition
-                        inFunction = false;
-                        if (dbg) DPRINTF(LLVMParse, "Finished File Parsing!\n");
-                        break;
-                    } else if (!(line.find_first_not_of(' ') != std::string::npos)){ // Skip empty Line
-                    } else { // Found instruction, create new compute node within the current BB
-                        if (dbg) DPRINTF(LLVMParse, "Registering Compute Node for: (%s)\n", line);
-                        if ((line.find("switch") != -1)) {
-                            // If instruction is switch statement, convert it to be defined in a single line
-                            if (dbg) DPRINTF(LLVMParse, "Found Switch Statement, Converting to Inline!\n");
-                            std::string concatLine;
-                            int cases = 1;
-                            while(line.find(" ]") == -1) {
-                                // Continue reading through lines until the end of switch statement
-                                // Concatinate all instruction lines into a single string
-                                if (dbg) DPRINTF(LLVMParse, "Case %d: (%s)\n", cases, line);
-                                concatLine += line;
-                                getline(llvmFile, line);
-                                cases++;
-                            }
-                        concatLine+= " ]"; // Close case statements arguement
-                        line = concatLine;
-                        if (dbg) DPRINTF(LLVMParse, "New Switch Instruction Line: (%s)\n", line);
-                        }
-                        if(prevBB) { // Add instruction line to compute node list in current BB
-                            hardware->updateParsed(currBB->parse(line, regList, prevBB->getName(), comm, typeList, cycles, pipelined));
-                        } else { // Add instruction line to compute node list in current BB (Fist BB Only)
-                            hardware->updateParsed(currBB->parse(line, regList, "NULL", comm, typeList, cycles, pipelined));
-                        }
-
-                    }
-                }
-            }
-        }
-        currBB = findEntryBB(); //
-        prevBB = currBB;
-    } else { // Could not find LLVM file
-        panic("Unable to open LLVM file!\n");
-    }
     setupStop = std::chrono::high_resolution_clock::now();
     setupTime = std::chrono::duration_cast<std::chrono::duration<double>>(setupStop-timeStart);
 }
 
-BasicBlock*
+SALAM::BasicBlock*
 LLVMInterface::findBB(std::string bbname) {
 /*********************************************************************************************
  Find Basic Block
@@ -481,13 +410,13 @@ LLVMInterface::findBB(std::string bbname) {
  and NULL if the BB does not exist in the BB list.
 *********************************************************************************************/
     for (auto it = bbList->begin(); it != bbList->end(); ++it) {
-        if ((*it)->_Name.compare(bbname) == 0)
+        if ((*it)->Name().compare(bbname) == 0)
             return (*it);
     }
     return NULL;
 }
 
-BasicBlock*
+SALAM::BasicBlock*
 LLVMInterface::findEntryBB() {
 /*********************************************************************************************
  Find Entry Basic Block
@@ -540,7 +469,7 @@ LLVMInterface::initialize() {
 *********************************************************************************************/
     timeStart = std::chrono::high_resolution_clock::now();
     if (debug()) DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
-    constructBBList();
+    constructStaticGraph();
     if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
     if (debug()) DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");

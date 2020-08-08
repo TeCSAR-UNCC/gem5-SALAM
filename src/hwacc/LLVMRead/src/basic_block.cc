@@ -16,6 +16,8 @@
 // parsed from the passed LLVM instruction line.
 // ////////////////////////////////////////////////////////////////////
 
+using namespace SALAM;
+
 int
 BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommInterface *co, TypeList *typeList, CycleCounts *cycles, int32_t pipelined) {
 	// ////////////////////////////////////////////////////////////////////
@@ -1779,6 +1781,11 @@ BasicBlock::BasicBlock(const std::string& Name, const std::string& ParentName, u
     _debug = dbg;
 }
 
+BasicBlock::BasicBlock(llvm::BasicBlock * bb, RegisterList *regs, bool dbg) :
+	_Name(""), _ParentName(""), _BBID(-1), _debug(dbg), irvalue(bb), regList(regs) {
+
+}
+
 void
 BasicBlock::addNode(std::shared_ptr<InstructionBase> Node) {
     Node->_debug = _debug;
@@ -2037,4 +2044,10 @@ BasicBlock::setDebug(bool dbg) {
 	for (auto node : _Nodes) {
 		node->_debug = dbg;
 	}
+}
+
+void
+BasicBlock::dump() {
+	// irvalue->dump();
+	irvalue->print(llvm::errs());
 }

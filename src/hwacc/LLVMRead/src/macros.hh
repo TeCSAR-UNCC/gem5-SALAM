@@ -6,8 +6,9 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 
-// Debug Macros 
+// Debug Macros
 //#define Function(name) DPRINTF(SALAMRuntime, "Function Call - %s \n", name)
+
 #define Details(name) DPRINTF(ClassDetail, "New Instance - %s \n", name)
 #define Destruct(name) DPRINTF(ClassDetail, "Deleting Instance - %s \n", name)
 
