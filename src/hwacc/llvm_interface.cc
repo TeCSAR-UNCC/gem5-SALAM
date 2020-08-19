@@ -24,20 +24,20 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     pipelined(p->FU_pipelined),
     fu_latency(p->FU_clock_period),
     clock_period(p->clock_period) {
-    bbList = NULL;
+    // bbList = NULL;
     regList = NULL;
-    currBB = NULL;
-    prevBB = NULL;
+    // currBB = NULL;
+    // prevBB = NULL;
     typeList = NULL;
     running = false;
     clock_period = clock_period * 1000;
     //process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
-InstructionBase* createClone(const std::shared_ptr<InstructionBase>& b) {
-    InstructionBase* clone = b->clone();
-    return clone;
-}
+// SALAM::Instruction* createClone(const std::shared_ptr<SALAM::Instruction>& b) {
+//     SALAM::Instruction* clone = b->clone();
+//     return clone;
+// }
 
 void
 LLVMInterface::tick() {
@@ -56,7 +56,7 @@ LLVMInterface::tick() {
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
-    bool dbg = debug(); 
+    bool dbg = debug();
     if (dbg) {
         DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
             "********************************************************************************",
@@ -65,156 +65,156 @@ LLVMInterface::tick() {
     }
     cycle++;
     comm->refreshMemPorts();
-    ///////////////////////////
-    loadOpScheduled = false;
-    storeOpScheduled = false;
-    compOpScheduled = false;
-    loadInFlight = readQueue.size();
-    storeInFlight = writeQueue.size();
-    compInFlight = computeQueue.size();
-    ///////////////////////////
-    if (dbg) DPRINTF(LLVMInterface, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
-    //Check our compute queue to see if any compute nodes are ready to commit
-    if (dbg) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
-    for(auto i = 0; i < computeQueue.size();) {
-        if (dbg) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
-        if(computeQueue.at(i)->commit()) {
-        //////////////// Computation Complete ////////////////////////
-            if (hardware->isMultistaged((int) (computeQueue.at(i)->_FunctionalUnit))) {
-                if (dbg) DPRINTF(LLVMInterface, "Multistage Operation Completed\n");
-                computeQueue.at(i)->stage();
-            }
-            computeQueue.at(i)->reset();
-            auto it = computeQueue.erase(computeQueue.begin() + i);
-            i = std::distance(computeQueue.begin(), it);
-        } else {
-        //////////////// Computation Incomplete ////////////////////////
-            if (hardware->isMultistaged((int) (computeQueue.at(i)->_FunctionalUnit))) {
-            //////////////// Multistaged Scheduling ////////////////////////
-                if (dbg) DPRINTF(LLVMInterface, "Multistage Operation: Current Stage = %d \n", computeQueue.at(i)->currentStage());
-                // Check if current cycle is at a stage boundary
-                if ((computeQueue.at(i)->_CurrCycle) == computeQueue.at(i)->stageCycle(computeQueue.at(i)->currentStage())) {
-                    // Check if already in final stage, gets priority on available hardware
-                    if (computeQueue.at(i)->currentStage() == computeQueue.at(i)->stageCount()) {
-                        if (dbg) DPRINTF(LLVMInterface, "Multistage Operation: Final Stage \n");
-                        hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->currentStage()), (computeQueue.at(i)->getActiveFU()));
-                        if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
-                    // If not final stage but at stage boundary, check if there is available hardware for the next stage          
-                    } else if (hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->currentStage() + 1), (computeQueue.at(i)->getActiveFU()))) {
-                        if (dbg) DPRINTF(LLVMInterface, "%s Functional Unit Stage %d Available, Advancing to Next Stage \n", computeQueue.at(i)->_OpCode, (computeQueue.at(i)->currentStage()+1));
-                        if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
-                        computeQueue.at(i)->stage();
-                    // No hardware available, wait until next cycle
-                    } else {
-                        if (dbg) DPRINTF(LLVMInterface, "%s Functional Unit Stage %d Not Available, Cycle Count Stalled \n", computeQueue.at(i)->_OpCode, (computeQueue.at(i)->currentStage()+1));
-                        hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->_CurrStage), (computeQueue.at(i)->getActiveFU()));
-                    }
-                // Multistaged but not at boundary, cycle like normal 
-                } else { 
-                    if((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
-                    hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->_CurrStage), (computeQueue.at(i)->getActiveFU()));
-                }
-            //////////////// Single Stage Scheduling ////////////////////////
-            } else {
-                if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
-            } 
-            i++;
-        }
-    }
-    if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
-        if (dbg) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
-        scheduleBB(currBB);
-    }
-    //////////////// Re-Check In-Flight Queues ////////////////////////
-    if (lockstep && (!computeQueue.empty() || !readQueue.empty() || !writeQueue.empty() )) {
-        //Do nothing - all queues empty
-    } else {
-    //////////////// Check Reservation Queues ////////////////////////
-        for (auto i = 0; i < reservation.size();) {
-            if (reservation.at(i)->_ReturnRegister == NULL) {
-                if (dbg) DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
-            } else {
-                if (dbg) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
-            }
-            if (reservation.at(i)->_ActiveParents == 0) {
-                if(!(reservation.at(i)->_Terminator)) { 
-                //////////////// Computation & Memory Operations ////////////////////////
-                    if(reservation.at(i)->_OpCode == "load") {
-                    //////////////// Load ////////////////////////
-                        loadOpScheduled = true;
-                        readQueue.push_back(reservation.at(i));
-                        reservation.at(i)->compute();
-                        reservation.at(i)->used();
-                        hardware->memoryLoad(reservation.at(i)->_ReturnRegister->getSize());
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    } else if(reservation.at(i)->_OpCode == "store") {
-                    //////////////// Store ////////////////////////
-                        storeOpScheduled = true;
-                        writeQueue.push_back(reservation.at(i));
-                        reservation.at(i)->compute();
-                        reservation.at(i)->used();
-                        //hardware->memoryStore(reservation.at(i)->_ReturnRegister->getSize());
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    } else if(reservation.at(i)->_MaxCycle == 0) { 
-                    //////////////// 0-Cycle ////////////////////////
-                        if(hardware->reserveFU(reservation.at(i)->_FunctionalUnit) >= 0) {
-                            if (dbg) DPRINTF(LLVMInterface, "Functional Units Available\n");
-                            reservation.at(i)->compute();
-                            reservation.at(i)->used();
-                            reservation.at(i)->commit();
-                            if((reservation.at(i)->_ReturnRegister) != NULL) reservation.at(i)->cycle();
-                            compOpScheduled = true;
-                            auto it = reservation.erase(reservation.begin()+i);
-                            i = std::distance(reservation.begin(), it);
-                        } else {
-                            if (dbg) DPRINTF(LLVMInterface, "No Functional Units Available\n");
-                            i++;
-                        }
-                    } else { 
-                    //////////////// All Other Instructions ////////////////////////
-                        if(hardware->reserveFU(reservation.at(i)->_FunctionalUnit) >= 0) {
-                            if (dbg) DPRINTF(LLVMInterface, "Functional Units Available\n");
-                            reservation.at(i)->setActiveFU(hardware->reserveFU(reservation.at(i)->_FunctionalUnit));
-                            computeQueue.push_back(reservation.at(i));
-                            reservation.at(i)->compute();
-                            reservation.at(i)->used();
-                            reservation.at(i)->commit();
-                            if((reservation.at(i)->_ReturnRegister) != NULL) reservation.at(i)->cycle();
-                            compOpScheduled = true;
-                            auto it = reservation.erase(reservation.begin()+i);
-                            i = std::distance(reservation.begin(), it);
-                        } else {
-                            if (dbg) DPRINTF(LLVMInterface, "No Functional Units Available\n");
-                            i++;
-                        }
-                    }
-                } else if ((reservation.at(i)->_OpCode != "ret")) {
-                //////////////// Control Flow Instructions ////////////////////////
-                    if (reservation.size() < scheduling_threshold) {
-                        hardware->controlFlow();
-                        prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
-                        reservation.at(i)->compute(); // Send instruction to runtime computation simulator
-                        reservation.at(i)->used();
-                        currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
-                        auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
-                        i = std::distance(reservation.begin(), it);
-                        scheduleBB(currBB);
-                    } else i++;
-                }
-            } else {
-                if (reservation.at(i)->_OpCode == "ret") {
-                //////////////// Return Instruction ////////////////////////
-                    if (dbg) DPRINTF(LLVMInterface, "Simulation Complete \n");
-                    if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
-                        finalize();
-                    }
-                }
-                i++;
-            }
-        }
-    }
+    // ///////////////////////////
+    // loadOpScheduled = false;
+    // storeOpScheduled = false;
+    // compOpScheduled = false;
+    // loadInFlight = readQueue.size();
+    // storeInFlight = writeQueue.size();
+    // compInFlight = computeQueue.size();
+    // ///////////////////////////
+    // if (dbg) DPRINTF(LLVMInterface, "Queue In-Flight Status: Cmp:%d Rd:%d Wr:%d\n", computeQueue.size(), readQueue.size(), writeQueue.size());
+    // //Check our compute queue to see if any compute nodes are ready to commit
+    // if (dbg) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
+    // for(auto i = 0; i < computeQueue.size();) {
+    //     if (dbg) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
+    //     if(computeQueue.at(i)->commit()) {
+    //     //////////////// Computation Complete ////////////////////////
+    //         if (hardware->isMultistaged((int) (computeQueue.at(i)->_FunctionalUnit))) {
+    //             if (dbg) DPRINTF(LLVMInterface, "Multistage Operation Completed\n");
+    //             computeQueue.at(i)->stage();
+    //         }
+    //         computeQueue.at(i)->reset();
+    //         auto it = computeQueue.erase(computeQueue.begin() + i);
+    //         i = std::distance(computeQueue.begin(), it);
+    //     } else {
+    //     //////////////// Computation Incomplete ////////////////////////
+    //         if (hardware->isMultistaged((int) (computeQueue.at(i)->_FunctionalUnit))) {
+    //         //////////////// Multistaged Scheduling ////////////////////////
+    //             if (dbg) DPRINTF(LLVMInterface, "Multistage Operation: Current Stage = %d \n", computeQueue.at(i)->currentStage());
+    //             // Check if current cycle is at a stage boundary
+    //             if ((computeQueue.at(i)->_CurrCycle) == computeQueue.at(i)->stageCycle(computeQueue.at(i)->currentStage())) {
+    //                 // Check if already in final stage, gets priority on available hardware
+    //                 if (computeQueue.at(i)->currentStage() == computeQueue.at(i)->stageCount()) {
+    //                     if (dbg) DPRINTF(LLVMInterface, "Multistage Operation: Final Stage \n");
+    //                     hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->currentStage()), (computeQueue.at(i)->getActiveFU()));
+    //                     if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+    //                 // If not final stage but at stage boundary, check if there is available hardware for the next stage          
+    //                 } else if (hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->currentStage() + 1), (computeQueue.at(i)->getActiveFU()))) {
+    //                     if (dbg) DPRINTF(LLVMInterface, "%s Functional Unit Stage %d Available, Advancing to Next Stage \n", computeQueue.at(i)->_OpCode, (computeQueue.at(i)->currentStage()+1));
+    //                     if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+    //                     computeQueue.at(i)->stage();
+    //                 // No hardware available, wait until next cycle
+    //                 } else {
+    //                     if (dbg) DPRINTF(LLVMInterface, "%s Functional Unit Stage %d Not Available, Cycle Count Stalled \n", computeQueue.at(i)->_OpCode, (computeQueue.at(i)->currentStage()+1));
+    //                     hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->_CurrStage), (computeQueue.at(i)->getActiveFU()));
+    //                 }
+    //             // Multistaged but not at boundary, cycle like normal 
+    //             } else { 
+    //                 if((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+    //                 hardware->updateStage(computeQueue.at(i)->_FunctionalUnit, (computeQueue.at(i)->_CurrStage), (computeQueue.at(i)->getActiveFU()));
+    //             }
+    //         //////////////// Single Stage Scheduling ////////////////////////
+    //         } else {
+    //             if ((computeQueue.at(i)->_ReturnRegister) != NULL) computeQueue.at(i)->cycle();
+    //         } 
+    //         i++;
+    //     }
+    // }
+    // if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
+    //     if (dbg) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
+    //     scheduleBB(currBB);
+    // }
+    // //////////////// Re-Check In-Flight Queues ////////////////////////
+    // if (lockstep && (!computeQueue.empty() || !readQueue.empty() || !writeQueue.empty() )) {
+    //     //Do nothing - all queues empty
+    // } else {
+    // //////////////// Check Reservation Queues ////////////////////////
+    //     for (auto i = 0; i < reservation.size();) {
+    //         if (reservation.at(i)->_ReturnRegister == NULL) {
+    //             if (dbg) DPRINTF(RuntimeQueues, "Checking if %s can launch\n", reservation.at(i)->_OpCode);
+    //         } else {
+    //             if (dbg) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+    //         }
+    //         if (reservation.at(i)->_ActiveParents == 0) {
+    //             if(!(reservation.at(i)->_Terminator)) { 
+    //             //////////////// Computation & Memory Operations ////////////////////////
+    //                 if(reservation.at(i)->_OpCode == "load") {
+    //                 //////////////// Load ////////////////////////
+    //                     loadOpScheduled = true;
+    //                     readQueue.push_back(reservation.at(i));
+    //                     reservation.at(i)->compute();
+    //                     reservation.at(i)->used();
+    //                     hardware->memoryLoad(reservation.at(i)->_ReturnRegister->getSize());
+    //                     auto it = reservation.erase(reservation.begin()+i);
+    //                     i = std::distance(reservation.begin(), it);
+    //                 } else if(reservation.at(i)->_OpCode == "store") {
+    //                 //////////////// Store ////////////////////////
+    //                     storeOpScheduled = true;
+    //                     writeQueue.push_back(reservation.at(i));
+    //                     reservation.at(i)->compute();
+    //                     reservation.at(i)->used();
+    //                     //hardware->memoryStore(reservation.at(i)->_ReturnRegister->getSize());
+    //                     auto it = reservation.erase(reservation.begin()+i);
+    //                     i = std::distance(reservation.begin(), it);
+    //                 } else if(reservation.at(i)->_MaxCycle == 0) { 
+    //                 //////////////// 0-Cycle ////////////////////////
+    //                     if(hardware->reserveFU(reservation.at(i)->_FunctionalUnit) >= 0) {
+    //                         if (dbg) DPRINTF(LLVMInterface, "Functional Units Available\n");
+    //                         reservation.at(i)->compute();
+    //                         reservation.at(i)->used();
+    //                         reservation.at(i)->commit();
+    //                         if((reservation.at(i)->_ReturnRegister) != NULL) reservation.at(i)->cycle();
+    //                         compOpScheduled = true;
+    //                         auto it = reservation.erase(reservation.begin()+i);
+    //                         i = std::distance(reservation.begin(), it);
+    //                     } else {
+    //                         if (dbg) DPRINTF(LLVMInterface, "No Functional Units Available\n");
+    //                         i++;
+    //                     }
+    //                 } else { 
+    //                 //////////////// All Other Instructions ////////////////////////
+    //                     if(hardware->reserveFU(reservation.at(i)->_FunctionalUnit) >= 0) {
+    //                         if (dbg) DPRINTF(LLVMInterface, "Functional Units Available\n");
+    //                         reservation.at(i)->setActiveFU(hardware->reserveFU(reservation.at(i)->_FunctionalUnit));
+    //                         computeQueue.push_back(reservation.at(i));
+    //                         reservation.at(i)->compute();
+    //                         reservation.at(i)->used();
+    //                         reservation.at(i)->commit();
+    //                         if((reservation.at(i)->_ReturnRegister) != NULL) reservation.at(i)->cycle();
+    //                         compOpScheduled = true;
+    //                         auto it = reservation.erase(reservation.begin()+i);
+    //                         i = std::distance(reservation.begin(), it);
+    //                     } else {
+    //                         if (dbg) DPRINTF(LLVMInterface, "No Functional Units Available\n");
+    //                         i++;
+    //                     }
+    //                 }
+    //             } else if ((reservation.at(i)->_OpCode != "ret")) {
+    //             //////////////// Control Flow Instructions ////////////////////////
+    //                 if (reservation.size() < scheduling_threshold) {
+    //                     hardware->controlFlow();
+    //                     prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
+    //                     reservation.at(i)->compute(); // Send instruction to runtime computation simulator
+    //                     reservation.at(i)->used();
+    //                     currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
+    //                     auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
+    //                     i = std::distance(reservation.begin(), it);
+    //                     scheduleBB(currBB);
+    //                 } else i++;
+    //             }
+    //         } else {
+    //             if (reservation.at(i)->_OpCode == "ret") {
+    //             //////////////// Return Instruction ////////////////////////
+    //                 if (dbg) DPRINTF(LLVMInterface, "Simulation Complete \n");
+    //                 if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
+    //                     finalize();
+    //                 }
+    //             }
+    //             i++;
+    //         }
+    //     }
+    // }
     //////////////// Update Hardware Utilization ////////////////////////
     hardware->update();
     occupancy();
@@ -224,123 +224,123 @@ LLVMInterface::tick() {
     }
 }
 
-void
-LLVMInterface::scheduleBB(SALAM::BasicBlock* bb) {
-/*********************************************************************************************
- BB Scheduling
+// void
+// LLVMInterface::scheduleBB(SALAM::BasicBlock* bb) {
+// /*********************************************************************************************
+//  BB Scheduling
 
- As BBs are scheduled they are added to the reservation table. Once the BB is scheduled check
- if the the BB includes Phi instructions, and if so commit them immediately. Also checks if
- the only remaining instructions are unconditional branches such as pre-headers and crit-edges
- and immediately compute and commit.
-*********************************************************************************************/
-    if (debug()) DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
-    for (auto i = 0; i < bb->Nodes()->size(); i++) {
-        if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->Nodes()->at(i)->_OpCode);
-        reservation.push_back(createClone(bb->Nodes()->at(i)));
-        if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
-            InstructionBase * parent = findParent(reservation.back()->_LLVMLine);
-            if (parent) {
-                if (debug()) DPRINTF(LLVMOp, "Previous instance found\n");
-                reservation.back()->registerParent(parent);
-                parent->registerChild(reservation.back());
-            } else {
-                if (debug()) DPRINTF(LLVMOp, "No previous instance found\n");
-            }
-        }
-        if (reservation.back()->_OpCode == "load") {
-            InstructionBase * parent = detectRAW(dynamic_cast<Load*>(reservation.back())->_RawCheck);
-            if (parent) {
-                if (debug()) DPRINTF(LLVMOp, "Memory RAW dependency corrected!\n");
-                reservation.back()->registerParent(parent);
-                parent->registerChild(reservation.back());
-            } else {
-                if (debug()) DPRINTF(LLVMOp, "No RAW dependency found\n");
-            }
-        }
-        if (reservation.back()->_OpCode == "getelementptr") {
-            InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
-            if (parent) {
-                if (debug()) DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
-                reservation.back()->registerParent(parent);
-                parent->registerChild(reservation.back());
-            } else {
-                if (debug()) DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
-                dynamic_cast<GetElementPtr*>(reservation.back())->_ActivePtr = dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getValue();
-            }
-        }
-        std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
-        if (depList.size() > 0) {
-            for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
-                if (depList.at(j)!=NULL) {
-                    InstructionBase * parent = findParent(depList.at(j));
-                    if (parent) {
-                        if (debug()) DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());
-                        reservation.back()->registerParent(parent);
-                        parent->registerChild(reservation.back());
-                    } else {
-                        if (debug()) DPRINTF(LLVMOp, "No parent returning to register:%s found\n", depList.at(j)->getName());
-                        reservation.back()->fetchDependency(j);
-                    }
-                }
-            }
-        }
-    }
-    if (debug()) DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
-    if (debug()) DPRINTF(RuntimeQueues, "Active Scheduling Window\n");
-    for (auto i = 0; i < reservation.size(); i++) {
-        if (reservation.at(i)->_ReturnRegister == NULL) {
-            if (debug()) DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
-        } else {
-            if (debug()) DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
-        }
-    }
-}
+//  As BBs are scheduled they are added to the reservation table. Once the BB is scheduled check
+//  if the the BB includes Phi instructions, and if so commit them immediately. Also checks if
+//  the only remaining instructions are unconditional branches such as pre-headers and crit-edges
+//  and immediately compute and commit.
+// *********************************************************************************************/
+//     if (debug()) DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
+//     for (auto i = 0; i < bb->Nodes()->size(); i++) {
+//         if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->Nodes()->at(i)->_OpCode);
+//         reservation.push_back(createClone(bb->Nodes()->at(i)));
+//         if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
+//             InstructionBase * parent = findParent(reservation.back()->_LLVMLine);
+//             if (parent) {
+//                 if (debug()) DPRINTF(LLVMOp, "Previous instance found\n");
+//                 reservation.back()->registerParent(parent);
+//                 parent->registerChild(reservation.back());
+//             } else {
+//                 if (debug()) DPRINTF(LLVMOp, "No previous instance found\n");
+//             }
+//         }
+//         if (reservation.back()->_OpCode == "load") {
+//             InstructionBase * parent = detectRAW(dynamic_cast<Load*>(reservation.back())->_RawCheck);
+//             if (parent) {
+//                 if (debug()) DPRINTF(LLVMOp, "Memory RAW dependency corrected!\n");
+//                 reservation.back()->registerParent(parent);
+//                 parent->registerChild(reservation.back());
+//             } else {
+//                 if (debug()) DPRINTF(LLVMOp, "No RAW dependency found\n");
+//             }
+//         }
+//         if (reservation.back()->_OpCode == "getelementptr") {
+//             InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
+//             if (parent) {
+//                 if (debug()) DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+//                 reservation.back()->registerParent(parent);
+//                 parent->registerChild(reservation.back());
+//             } else {
+//                 if (debug()) DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+//                 dynamic_cast<GetElementPtr*>(reservation.back())->_ActivePtr = dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getValue();
+//             }
+//         }
+//         std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
+//         if (depList.size() > 0) {
+//             for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
+//                 if (depList.at(j)!=NULL) {
+//                     InstructionBase * parent = findParent(depList.at(j));
+//                     if (parent) {
+//                         if (debug()) DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());
+//                         reservation.back()->registerParent(parent);
+//                         parent->registerChild(reservation.back());
+//                     } else {
+//                         if (debug()) DPRINTF(LLVMOp, "No parent returning to register:%s found\n", depList.at(j)->getName());
+//                         reservation.back()->fetchDependency(j);
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     if (debug()) DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
+//     if (debug()) DPRINTF(RuntimeQueues, "Active Scheduling Window\n");
+//     for (auto i = 0; i < reservation.size(); i++) {
+//         if (reservation.at(i)->_ReturnRegister == NULL) {
+//             if (debug()) DPRINTF(RuntimeQueues, "%s\n", reservation.at(i)->_OpCode);
+//         } else {
+//             if (debug()) DPRINTF(RuntimeQueues, "%s %s\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
+//         }
+//     }
+// }
 
-InstructionBase *
-LLVMInterface::detectRAW(Register* reg) {
-    for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
-        if(reservation.at(i)->_OpCode == "store") {
-            if(reservation.at(i)->_RawCheck == reg) return reservation.at(i);
-        }
-    }
-    for(int i = writeQueue.size()-1; i >= 0; i--) {
-        if (writeQueue.at(i)->_RawCheck == reg) return writeQueue.at(i);
-    }
-    return NULL;
-}
+// InstructionBase *
+// LLVMInterface::detectRAW(Register* reg) {
+//     for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
+//         if(reservation.at(i)->_OpCode == "store") {
+//             if(reservation.at(i)->_RawCheck == reg) return reservation.at(i);
+//         }
+//     }
+//     for(int i = writeQueue.size()-1; i >= 0; i--) {
+//         if (writeQueue.at(i)->_RawCheck == reg) return writeQueue.at(i);
+//     }
+//     return NULL;
+// }
 
-InstructionBase *
-LLVMInterface::findParent(Register* reg) {
-    //Search queues with return registers for last instance of a node with the same return register as our target reg
-    //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
-    for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
-        if (reservation.at(i)->_ReturnRegister == reg) return reservation.at(i);
-    }
-    for(int i = computeQueue.size()-1; i >= 0; i--) {
-        if (computeQueue.at(i)->_ReturnRegister == reg) return computeQueue.at(i);
-    }
-    for(int i = readQueue.size()-1; i >= 0; i--) {
-        if (readQueue.at(i)->_ReturnRegister == reg) return readQueue.at(i);
-    }
-    return NULL;
-}
+// InstructionBase *
+// LLVMInterface::findParent(Register* reg) {
+//     //Search queues with return registers for last instance of a node with the same return register as our target reg
+//     //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
+//     for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
+//         if (reservation.at(i)->_ReturnRegister == reg) return reservation.at(i);
+//     }
+//     for(int i = computeQueue.size()-1; i >= 0; i--) {
+//         if (computeQueue.at(i)->_ReturnRegister == reg) return computeQueue.at(i);
+//     }
+//     for(int i = readQueue.size()-1; i >= 0; i--) {
+//         if (readQueue.at(i)->_ReturnRegister == reg) return readQueue.at(i);
+//     }
+//     return NULL;
+// }
 
-InstructionBase *
-LLVMInterface::findParent(std::string line) {
-    //Search queues with return registers for last instance of a node with the same instruction
-    //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
-    for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
-        if (reservation.at(i)->_LLVMLine == line) return reservation.at(i);
-    }
-    for(int i = computeQueue.size()-1; i >= 0; i--) {
-        if (computeQueue.at(i)->_LLVMLine == line) return computeQueue.at(i);
-    }
-    for(int i = readQueue.size()-1; i >= 0; i--) {
-        if (readQueue.at(i)->_LLVMLine == line) return readQueue.at(i);
-    }
-    return NULL;
-}
+// InstructionBase *
+// LLVMInterface::findParent(std::string line) {
+//     //Search queues with return registers for last instance of a node with the same instruction
+//     //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
+//     for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
+//         if (reservation.at(i)->_LLVMLine == line) return reservation.at(i);
+//     }
+//     for(int i = computeQueue.size()-1; i >= 0; i--) {
+//         if (computeQueue.at(i)->_LLVMLine == line) return computeQueue.at(i);
+//     }
+//     for(int i = readQueue.size()-1; i >= 0; i--) {
+//         if (readQueue.at(i)->_LLVMLine == line) return readQueue.at(i);
+//     }
+//     return NULL;
+// }
 
 void
 LLVMInterface::dumpModule(llvm::Module *M) {
@@ -364,7 +364,7 @@ LLVMInterface::constructStaticGraph() {
 
     bool dbg = debug();
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
-    bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
+    // bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
     Register* alwaysTrue = new Register("alwaysTrue", ((uint64_t) 1));
@@ -393,7 +393,55 @@ LLVMInterface::constructStaticGraph() {
     std::unique_ptr<llvm::Module> m(llvm::parseIRFile(file, error, context));
     if(!m) panic("Error reading Module");
 
-    // Start parsing
+    // Construct the LLVM::Value to SALAM::Value map
+    uint64_t valueID = 0;
+    SALAM::irvmap vmap;
+    // Generate SALAM::Functions
+    for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
+        llvm::Function &func = *func_iter;
+        std::shared_ptr<SALAM::Function> sfunc = std::make_shared<SALAM::Function>(valueID);
+        values.push_back(sfunc);
+        functions.push_back(sfunc);
+        vmap.insert(SALAM::irvmaptype(&func, sfunc));
+        valueID++;
+        // Generate args for SALAM:Functions
+        for (auto arg_iter = func.arg_begin(); arg_iter != func.arg_end(); arg_iter++) {
+            llvm::Argument &arg = *arg_iter;
+            std::shared_ptr<SALAM::Value> sarg = std::make_shared<SALAM::Value>(valueID);
+            values.push_back(sarg);
+            vmap.insert(SALAM::irvmaptype(&arg, sarg));
+            valueID++;
+        }
+        // Generate SALAM::BasicBlocks
+        for (auto bb_iter = func.begin(); bb_iter != func.end(); bb_iter++) {
+            llvm::BasicBlock &bb = *bb_iter;
+            std::shared_ptr<SALAM::BasicBlock> sbb = std::make_shared<SALAM::BasicBlock>(valueID);
+            values.push_back(sbb);
+            vmap.insert(SALAM::irvmaptype(&bb, sbb));
+            valueID++;
+            //Generate SALAM::Instructions
+            for (auto inst_iter = bb.begin(); inst_iter != bb.end(); inst_iter++) {
+                llvm::Instruction &inst = *inst_iter;
+                std::shared_ptr<SALAM::Instruction> sinst = createInstruction(&inst, valueID);
+                values.push_back(sinst);
+                vmap.insert(SALAM::irvmaptype(&inst, sinst));
+                valueID++;
+            }
+        }
+    }
+
+    // Use value map to initialize SALAM::Values
+    // Functions will initialize BasicBlocks, which will initialize Instructions
+    for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
+        llvm::Function &func = *func_iter;
+        std::shared_ptr<SALAM::Value> funcval = vmap.find(&func)->second;
+        assert(funcval);
+        std::shared_ptr<SALAM::Function> sfunc = std::dynamic_pointer_cast<SALAM::Function>(funcval);
+        assert(sfunc);
+        sfunc->initialize(&func, &vmap, regList);
+    }
+
+    panic("Killing Sim");
 
     hardware = new Hardware(fu_latency, pipelined); // Initialize Hardware Functional Units
     hardware->linkRegList(regList);
@@ -401,49 +449,49 @@ LLVMInterface::constructStaticGraph() {
     setupTime = std::chrono::duration_cast<std::chrono::duration<double>>(setupStop-timeStart);
 }
 
-SALAM::BasicBlock*
-LLVMInterface::findBB(std::string bbname) {
-/*********************************************************************************************
- Find Basic Block
+// SALAM::BasicBlock*
+// LLVMInterface::findBB(std::string bbname) {
+// /*********************************************************************************************
+//  Find Basic Block
 
- Iterates through list of known basic block and returns a pointer to passed BB name if found
- and NULL if the BB does not exist in the BB list.
-*********************************************************************************************/
-    for (auto it = bbList->begin(); it != bbList->end(); ++it) {
-        if ((*it)->Name().compare(bbname) == 0)
-            return (*it);
-    }
-    return NULL;
-}
+//  Iterates through list of known basic block and returns a pointer to passed BB name if found
+//  and NULL if the BB does not exist in the BB list.
+// *********************************************************************************************/
+//     for (auto it = bbList->begin(); it != bbList->end(); ++it) {
+//         if ((*it)->Name().compare(bbname) == 0)
+//             return (*it);
+//     }
+//     return NULL;
+// }
 
-SALAM::BasicBlock*
-LLVMInterface::findEntryBB() {
-/*********************************************************************************************
- Find Entry Basic Block
+// SALAM::BasicBlock*
+// LLVMInterface::findEntryBB() {
+// /*********************************************************************************************
+//  Find Entry Basic Block
 
- Iterates through list of known basic block and returns a pointer to the first basic block
- that contains instructions
-*********************************************************************************************/
-    for (auto it = bbList->begin(); it != bbList->end(); ++it) {
-        if (!((*it)->isEmpty()))
-            return (*it);
-    }
-    panic("No entry basic block found!\n");
-    return NULL;
-}
+//  Iterates through list of known basic block and returns a pointer to the first basic block
+//  that contains instructions
+// *********************************************************************************************/
+//     for (auto it = bbList->begin(); it != bbList->end(); ++it) {
+//         if (!((*it)->isEmpty()))
+//             return (*it);
+//     }
+//     panic("No entry basic block found!\n");
+//     return NULL;
+// }
 
 void
 LLVMInterface::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Read Request
 *********************************************************************************************/
-    for (auto i = 0; i < readQueue.size(); i++ ) {
-        if(readQueue.at(i)->getReq() == req) {
-            readQueue.at(i)->setResult(req->buffer);
-            readQueue.at(i)->commit();
-            readQueue.erase(readQueue.begin() + i);
-        }
-    }
+    // for (auto i = 0; i < readQueue.size(); i++ ) {
+    //     if(readQueue.at(i)->getReq() == req) {
+    //         readQueue.at(i)->setResult(req->buffer);
+    //         readQueue.at(i)->commit();
+    //         readQueue.erase(readQueue.begin() + i);
+    //     }
+    // }
 }
 
 void
@@ -451,12 +499,12 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Write Request
 *********************************************************************************************/
-   for (auto i = 0; i < writeQueue.size(); i++ ) {
-        if(writeQueue.at(i)->getReq() == req) {
-            writeQueue.at(i)->commit();
-            writeQueue.erase(writeQueue.begin() + i);
-        }
-    }
+   // for (auto i = 0; i < writeQueue.size(); i++ ) {
+   //      if(writeQueue.at(i)->getReq() == req) {
+   //          writeQueue.at(i)->commit();
+   //          writeQueue.erase(writeQueue.begin() + i);
+   //      }
+   //  }
 }
 
 void
@@ -593,31 +641,39 @@ LLVMInterface::printPerformanceResults() {
 
 void
 LLVMInterface::dumpQueues() {
-    std::cout << "*********************************************************\n"
-              << "Compute Queue\n"
-              << "*********************************************************\n";
-    for (auto compute : computeQueue) {
-        std::cout << compute->_LLVMLine << std::endl;
+    // std::cout << "*********************************************************\n"
+    //           << "Compute Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto compute : computeQueue) {
+    //     std::cout << compute->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "Read Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto read : readQueue) {
+    //     std::cout << read->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "Write Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto write : writeQueue) {
+    //     std::cout << write->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "Reservation Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto reserved : reservation) {
+    //     std::cout << reserved->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "End of queue dump\n"
+    //           << "*********************************************************\n";
+}
+
+std::shared_ptr<SALAM::Instruction>
+LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
+    switch(inst->getOpcode()) {
+        default:
+            return std::make_shared<SALAM::Instruction>(id);
     }
-    std::cout << "*********************************************************\n"
-              << "Read Queue\n"
-              << "*********************************************************\n";
-    for (auto read : readQueue) {
-        std::cout << read->_LLVMLine << std::endl;
-    }
-    std::cout << "*********************************************************\n"
-              << "Write Queue\n"
-              << "*********************************************************\n";
-    for (auto write : writeQueue) {
-        std::cout << write->_LLVMLine << std::endl;
-    }
-    std::cout << "*********************************************************\n"
-              << "Reservation Queue\n"
-              << "*********************************************************\n";
-    for (auto reserved : reservation) {
-        std::cout << reserved->_LLVMLine << std::endl;
-    }
-    std::cout << "*********************************************************\n"
-              << "End of queue dump\n"
-              << "*********************************************************\n";
 }

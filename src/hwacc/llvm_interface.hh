@@ -28,6 +28,7 @@
 #include <ctime>
 #include <chrono>
 #include <ratio>
+#include <memory>
 //------------------------------------------//
 
 class LLVMInterface : public ComputeUnit {
@@ -74,41 +75,42 @@ class LLVMInterface : public ComputeUnit {
     std::chrono::high_resolution_clock::time_point simStop;
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
-    std::vector<InstructionBase*> reservation;
-    std::vector<InstructionBase*> readQueue;
-    std::vector<InstructionBase*> writeQueue;
-    std::vector<InstructionBase*> computeQueue;
-    std::list<SALAM::BasicBlock*> *bbList;
-    std::vector<SALAM::Function*> functions;
+    std::vector<SALAM::Instruction*> reservation;
+    std::vector<SALAM::Instruction*> readQueue;
+    std::vector<SALAM::Instruction*> writeQueue;
+    std::vector<SALAM::Instruction*> computeQueue;
+    // std::list<SALAM::BasicBlock*> *bbList;
+    std::vector<std::shared_ptr<SALAM::Function>> functions;
+    std::vector<std::shared_ptr<SALAM::Value>> values;
     RegisterList *regList;
-    SALAM::BasicBlock *currBB;
-    SALAM::BasicBlock *prevBB;
+    // SALAM::BasicBlock *currBB;
+    // SALAM::BasicBlock *prevBB;
     TypeList *typeList;
     Hardware* hardware;
-    llvm::ValueToValueMapTy vmap;
   protected:
-    InstructionBase* findParent(Register*);
-    InstructionBase* findParent(std::string);
-    InstructionBase* detectRAW(Register*);
+    // InstructionBase* findParent(Register*);
+    // InstructionBase* findParent(std::string);
+    // InstructionBase* detectRAW(Register*);
     const std::string name() const { return comm->getName() + ".compute"; }
     virtual bool debug() { return comm->debug(); }
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
     void constructStaticGraph();
-    SALAM::BasicBlock* findBB(std::string bbname);
-    SALAM::BasicBlock* findEntryBB();
+    // SALAM::BasicBlock* findBB(std::string bbname);
+    // SALAM::BasicBlock* findEntryBB();
     void startup();
     void initialize();
     void printPerformanceResults();
     void finalize();
     void occupancy();
     //void statisticsWithMemory();
-    void scheduleBB(SALAM::BasicBlock *bb);
+    // void scheduleBB(SALAM::BasicBlock *bb);
     void readCommit(MemoryRequest * req);
     void writeCommit(MemoryRequest * req);
     void dumpQueues();
     void dumpModule(llvm::Module *m);
+    std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction * inst, uint64_t id);
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

@@ -3,13 +3,14 @@
 
 #include <cstdlib>
 #include <iostream>
+#include "value.hh"
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Instruction.h>
 
 
 
 namespace SALAM {
-    class Instruction {
+    class Instruction : public Value {
         class Register {
             Register();
 
@@ -38,12 +39,13 @@ namespace SALAM {
 
 
         public:
-            Instruction(llvm::Instruction *newInstruction):
+            Instruction(llvm::Instruction *newInstruction): Value(0),
                         llvmIRClone(newInstruction) {
                             std::cout << llvmIRClone->getOpcodeName() << " Loaded \n";
                          }
+            Instruction(uint64_t id) : Value(id), llvmIRClone(NULL) {}
             void test() { std::cout << llvmIRClone->getOpcodeName() << " Test \n"; }
-
+            virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 
     };
 }

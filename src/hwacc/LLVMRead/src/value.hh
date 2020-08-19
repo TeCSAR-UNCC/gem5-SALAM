@@ -1,12 +1,15 @@
 #ifndef __SALAM_VALUE_HH__
 #define __SALAM_VALUE_HH__
 
+#include "registers.hh"
 #include "llvm/IR/Value.h"
 #include <map>
+#include <memory>
 
 namespace SALAM {
 	class Value;
-	typedef std::map<llvm::Value *, Value *> irvmap;
+	typedef std::pair<llvm::Value *, std::shared_ptr<Value>> irvmaptype;
+	typedef std::map<llvm::Value *, std::shared_ptr<Value>> irvmap;
 
 	class Value {
 	private:
