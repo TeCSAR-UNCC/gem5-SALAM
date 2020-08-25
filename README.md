@@ -210,11 +210,11 @@ The gem5 documentation has a [tutorial for working with gem5](http://learning.ge
 
 ## Building and Integrating Accelerators in gem5-SALAM
 
-We have written a guide on how to create the GEMM system validation example. This will help you get started with creating your own benchmarks and systems. It can be viewed [here](https://github.com/clonetrooper67/gem5-SALAM-README/blob/master/Building_and_Integrating_Accelerators.md).
+We have written a guide on how to create the GEMM system validation example. This will help you get started with creating your own benchmarks and systems. It can be viewed [here](https://github.com/TeCSAR-UNCC/gem5-SALAM/blob/master/docs/Building_and_Integrating_Accelerators.md).
 
 ## SALAM Object Overview
 
-The [SALAM Object Overview](https://github.com/clonetrooper67/gem5-SALAM-README/blob/master/SALAM_Object_Overview.md) covers what various Sim Objects in gem5-SALAM are and their purpose.
+The [SALAM Object Overview](https://github.com/TeCSAR-UNCC/gem5-SALAM/blob/master/docs/SALAM_Object_Overview.md) covers what various Sim Objects in gem5-SALAM are and their purpose.
 
 ## Full-system OS Simulation ##
 

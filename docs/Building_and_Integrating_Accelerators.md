@@ -288,7 +288,7 @@ boot.o: Makefile
 
 ## Benchmark Output
 
-This section concerns the output of a benchmark after is has already been run. The system validation script will be used. You can refer to [here](https://github.com/clonetrooper67/gem5-SALAM-README/blob/master/README.md#system-validation-examples) in the README for a usage guide. 
+This section concerns the output of a benchmark after is has already been run. The system validation script will be used. You can refer to [here](https://github.com/TeCSAR-UNCC/gem5-SALAM#system-validation-examples) in the README for a usage guide. 
 
 In gem5-SALAM when a benchmark is run there are a few items that are of interest. 
 
@@ -309,11 +309,12 @@ host_seconds                       273.03 # Real time elapsed on the host
 host_tick_rate                     840130224 # Simulator tick rate (ticks/s)
 ```
 
-If you have installed the [optional graphviz dependencies](https://github.com/clonetrooper67/gem5-SALAM-README#visualization) gem5-SALAM will generate a system configuration diagram when run. In our case the GEMM accelerator's diagram is stored in **config.dot** and should look like below: 
+If you have installed the [optional graphviz dependencies](https://github.com/TeCSAR-UNCC/gem5-SALAM#visualization) gem5-SALAM will generate a system configuration diagram when run. In our case the GEMM accelerator's diagram is stored in **config.dot** and should look like below: 
 
 <p align="center"> 
-    <img width="359" height="390" src="https://github.com/clonetrooper67/gem5-SALAM-README/blob/master/GEMM_ACC.png"
+    <img width="359" height="390" src="https://github.com/TeCSAR-UNCC/gem5-SALAM/blob/master/docs/GEMM_ACC.png"
 </p>
+
 
 
 **system.terminal** contains the simulated system's terminal output. This can be useful for viewing any issues or outputs that the actual simulation might have. An example from the GEMM benchmark is shown below:
