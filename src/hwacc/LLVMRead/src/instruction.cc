@@ -6,245 +6,248 @@ namespace SALAM {
     Instruction::initialize(llvm::Value * irval, irvmap * irmap) {
         SALAM::Value::initialize(irval, irmap);
     }
-
+    
+    // First Pass - Data Structure Initialization --------------- //
+    
     std::shared_ptr<SALAM::Instruction>
-    retInst(llvm::Instruction * inst, uint64_t id) { 
+    createRetInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Ret>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    brInst(llvm::Instruction * inst, uint64_t id) { 
+    createBrInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Br>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    switchInst(llvm::Instruction * inst, uint64_t id) { 
+    createSwitchInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Switch>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    addInst(llvm::Instruction * inst, uint64_t id) { 
+    createAddInst(uint64_t id) { 
+        // ID only as arguments
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Add>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    faddInst(llvm::Instruction * inst, uint64_t id) { 
+    createFAddInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FAdd>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    subInst(llvm::Instruction * inst, uint64_t id) { 
+    createSubInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Sub>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fsubInst(llvm::Instruction * inst, uint64_t id) { 
+    createFSubInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FSub>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    mulInst(llvm::Instruction * inst, uint64_t id) { 
+    createMulInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Mul>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fmulInst(llvm::Instruction * inst, uint64_t id) { 
+    createFMulInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FMul>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    udivInst(llvm::Instruction * inst, uint64_t id) { 
+    createUDivInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::UDiv>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    sdivInst(llvm::Instruction * inst, uint64_t id) { 
+    createSDivInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::SDiv>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fdivInst(llvm::Instruction * inst, uint64_t id) { 
+    createFDivInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FDiv>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    uremInst(llvm::Instruction * inst, uint64_t id) { 
+    createURemInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::URem>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    sremInst(llvm::Instruction * inst, uint64_t id) { 
+    createSRemInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::SRem>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fremInst(llvm::Instruction * inst, uint64_t id) { 
+    createFRemInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FRem>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    shlInst(llvm::Instruction * inst, uint64_t id) { 
+    createShlInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Shl>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    lshrInst(llvm::Instruction * inst, uint64_t id) { 
+    createLShrInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::LShr>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    ashrInst(llvm::Instruction * inst, uint64_t id) { 
+    createAShrInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::AShr>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    andInst(llvm::Instruction * inst, uint64_t id) { 
+    createAndInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::And>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    orInst(llvm::Instruction * inst, uint64_t id) { 
+    createOrInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Or>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    xorInst(llvm::Instruction * inst, uint64_t id) { 
+    createXorInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Xor>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    loadInst(llvm::Instruction * inst, uint64_t id) { 
+    createLoadInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Load>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    storeInst(llvm::Instruction * inst, uint64_t id) { 
+    createStoreInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Store>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    getelementptrInst(llvm::Instruction * inst, uint64_t id) { 
+    createGetElementPtrInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::GetElementPtr>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    truncInst(llvm::Instruction * inst, uint64_t id) { 
+    createTruncInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Trunc>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    zextInst(llvm::Instruction * inst, uint64_t id) { 
+    createZExtInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::ZExt>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    sextInst(llvm::Instruction * inst, uint64_t id) { 
+    createSExtInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::SExt>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fptouiInst(llvm::Instruction * inst, uint64_t id) { 
+    createFPToUIInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FPToUI>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fptosiInst(llvm::Instruction * inst, uint64_t id) { 
+    createFPToSIInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FPToSI>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    uitofpInst(llvm::Instruction * inst, uint64_t id) { 
+    createUIToFPInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::UIToFP>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    sitofpInst(llvm::Instruction * inst, uint64_t id) { 
+    createSIToFPInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::SIToFP>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fptruncInst(llvm::Instruction * inst, uint64_t id) { 
+    createFPTruncInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FPTrunc>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fpextInst(llvm::Instruction * inst, uint64_t id) { 
+    createFPExtInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FPExt>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    ptrtointInst(llvm::Instruction * inst, uint64_t id) { 
+    createPtrToIntInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::PtrToInt>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    inttoptrInst(llvm::Instruction * inst, uint64_t id) { 
+    createIntToPtrInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::IntToPtr>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    icmpInst(llvm::Instruction * inst, uint64_t id) { 
+    createICmpInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::ICmp>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    fcmpInst(llvm::Instruction * inst, uint64_t id) { 
+    createFCmpInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::FCmp>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    phiInst(llvm::Instruction * inst, uint64_t id) { 
+    createPHIInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Phi>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    callInst(llvm::Instruction * inst, uint64_t id) { 
-
-        return std::make_shared<SALAM::Instruction>(inst, id);
+    createCallInst(uint64_t id) { 
+        // TODO - No Class for Call Function Yet
+        return std::make_shared<SALAM::Instruction>(id);
     }
 
     std::shared_ptr<SALAM::Instruction>
-    selectInst(llvm::Instruction * inst, uint64_t id) { 
+    createSelectInst(uint64_t id) { 
 
-        return std::make_shared<SALAM::Instruction>(inst, id);
+        return std::make_shared<SALAM::Select>(id);
     }
 
     // Compute // -------------------------------------------------------- //
@@ -405,7 +408,7 @@ namespace SALAM {
     }
 
     void
-    LLVMSwitch::compute() {
+    Switch::compute() {
     
     }
 

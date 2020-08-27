@@ -7,16 +7,12 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Instruction.h>
 
-//------------------------------------------//
-//#include "hwacc/comm_interface.hh"
-//#include "mem_request.hh"
-//#include "llvm_types.hh"
-//#include "debug_flags.hh"
-//#include "registers.hh"
-//#include "base_instruction.hh"
 
+namespace SALAM { 
 
-namespace SALAM {
+    //---------------------------------------------------------------------------//
+    //--------- Instruction Base Class ------------------------------------------//
+    //---------------------------------------------------------------------------//
 
     class Instruction : public Value { 
         private:
@@ -30,397 +26,443 @@ namespace SALAM {
             Instruction(llvm::Instruction *newInstruction): Value(0),
                         llvmIRClone(newInstruction) {
                             std::cout << llvmIRClone->getOpcodeName() << " Loaded \n";
-                         }
-            Instruction(llvm::Instruction *newInstruction, uint64_t id): Value(id),
-                        llvmIRClone(newInstruction) {
-                            std::cout << llvmIRClone->getOpcodeName() << " Loaded \n";
-                         }             
-            Instruction(uint64_t id) : Value(id), llvmIRClone(NULL) {}
+                         } 
+
+            Instruction(uint64_t id) : Value(id) { std::cout << "ID: " << id << "\n"; }
+            ~Instruction() = default;
             void test() { std::cout << llvmIRClone->getOpcodeName() << " Test \n"; }
             virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
+            // Create initialize function for instruction - common item containers
             virtual void compute() { }
+            // virtual Instruction* clone() const { return new Instruction(*this); }
 
     };
 
-    std::shared_ptr<SALAM::Instruction> retInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> brInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> switchInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> addInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> faddInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> subInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fsubInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> mulInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fmulInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> udivInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> sdivInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fdivInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> uremInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> sremInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fremInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> shlInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> lshrInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> ashrInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> andInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> orInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> xorInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> loadInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> storeInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> getelementptrInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> truncInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> zextInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> sextInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fptouiInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fptosiInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> uitofpInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> sitofpInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fptruncInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fpextInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> ptrtointInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> inttoptrInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> icmpInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> fcmpInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> phiInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> callInst(llvm::Instruction * inst, uint64_t id);
-    std::shared_ptr<SALAM::Instruction> selectInst(llvm::Instruction * inst, uint64_t id);
-
-
     //---------------------------------------------------------------------------//
-    //--------- Begin Terminator Instruction Base -------------------------------//
+    //--------- Terminator Instructions -----------------------------------------//
     //---------------------------------------------------------------------------//
+
     class BadInstruction : public Instruction {
         // Used to draw hard dependencies, ie: ret
+        private:
+
+        protected:
+        
         public:
-            BadInstruction();
-            ~BadInstruction();
+            BadInstruction(uint64_t id) : Instruction(id) { }
+            ~BadInstruction() = default;
             void compute()      override { }
             virtual BadInstruction* clone() const { return new BadInstruction(*this); }
     };
 
     class Br : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
             // Unconditional Branch Constructor
-            // Br ();
+            // Br (uint64_t id) : Instruction(id) { }
             // Conditional Branch Constructor
-            Br();
-            ~Br();
+            Br(uint64_t id) : Instruction(id) { }
+            ~Br() = default;
             void compute()      override;
             virtual Br* clone() const { return new Br(*this); }
     };
 
-
     class Ret : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            Ret();
-            ~Ret();
+            Ret(uint64_t id) : Instruction(id) { }
+            ~Ret() = default;
             void compute()      override;
             virtual Ret* clone() const { return new Ret(*this); }
     };
 
-    class LLVMSwitch : public Instruction {
-        protected:
+    class Switch : public Instruction {
+        private:
 
+        protected:
+        
         public:
-            LLVMSwitch();
-            ~LLVMSwitch();
+            Switch(uint64_t id) : Instruction(id) { }
+            ~Switch() = default;
             void compute()      override;
-            virtual LLVMSwitch* clone() const {  return new LLVMSwitch(*this); }
+            virtual Switch* clone() const {  return new Switch(*this); }
     };
+
     //---------------------------------------------------------------------------//
-    //--------- End Terminator Instruction Base ---------------------------------//
+    //--------- Binary Instructions ---------------------------------------------//
     //---------------------------------------------------------------------------//
-    //--------- Begin Binary Instruction Base -----------------------------------//
-    //---------------------------------------------------------------------------//
-    // ---- Binary ---- Integer Instructions
+    //// Integer Instructions
 
     class Add : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            Add();
-            ~Add();
+            Add(uint64_t id) : Instruction(id) { }
+            //Add(uint64_t id) : Instruction(id) { }
+            ~Add() = default;
             void compute()      override;
+            // virtual inintialize
             virtual Add* clone() const { return new Add(*this); }
     };
 
     class Sub : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            Sub();
-            ~Sub();
+            Sub(uint64_t id) : Instruction(id) { }
+            ~Sub() = default;
             void compute()      override;
             virtual Sub* clone() const { return new Sub(*this); }
     };
 
     class Mul : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            Mul();
-            ~Mul();
+            Mul(uint64_t id) : Instruction(id) { }
+            ~Mul() = default;
             void compute()      override;
             virtual Mul* clone() const { return new Mul(*this); }
     };
 
     class UDiv : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            UDiv();
-            ~UDiv();
+            UDiv(uint64_t id) : Instruction(id) { }
+            ~UDiv() = default;
             void compute()      override;
             virtual UDiv* clone() const { return new UDiv(*this); }
     };
 
     class SDiv : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            SDiv();
-            ~SDiv();
+            SDiv(uint64_t id) : Instruction(id) { }
+            ~SDiv() = default;
             void compute()      override;
             virtual SDiv* clone() const { return new SDiv(*this); }
     };
 
     class URem : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            URem();
-            ~URem();
+            URem(uint64_t id) : Instruction(id) { }
+            ~URem() = default;
             void compute()      override;
             virtual URem* clone() const { return new URem(*this); }
     };
 
     class SRem : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            SRem();
-            ~SRem();
+            SRem(uint64_t id) : Instruction(id) { }
+            ~SRem() = default;
             void compute()      override;
             virtual SRem* clone() const { return new SRem(*this); }
     };
 
-    // ---- Binary ---- Floating Point Instructions
+    //// Floating Point Instructions
 
     class FAdd : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            FAdd();
-            ~FAdd();
+            FAdd(uint64_t id) : Instruction(id) { }
+            ~FAdd() = default;
             void compute()      override;
             virtual FAdd* clone() const { return new FAdd(*this); }
     };
 
     class FSub : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            FSub();
-            ~FSub();
+            FSub(uint64_t id) : Instruction(id) { }
+            ~FSub() = default;
             void compute()      override;
             virtual FSub* clone() const { return new FSub(*this); }
     };
 
     class FMul : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            FMul();
-            ~FMul();
+            FMul(uint64_t id) : Instruction(id) { }
+            ~FMul() = default;
             void compute()      override;
             virtual FMul* clone() const { return new FMul(*this); }
     };
 
     class FDiv : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            FDiv();
-            ~FDiv();
+            FDiv(uint64_t id) : Instruction(id) { }
+            ~FDiv() = default;
             void compute()      override;
             virtual FDiv* clone() const { return new FDiv(*this); }
     };
 
     class FRem : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            FRem();
-            ~FRem();
+            FRem(uint64_t id) : Instruction(id) { }
+            ~FRem() = default;
             void compute()      override;
             virtual FRem* clone() const { return new FRem(*this); }
     };
 
     //---------------------------------------------------------------------------//
-    //--------- End Binary Instruction Base -------------------------------------//
+    //--------- Logical Instructions --------------------------------------------//
     //---------------------------------------------------------------------------//
-    //--------- Begin Bitwise Instruction Base ----------------------------------//
-    //---------------------------------------------------------------------------//
-    class Shl : public Instruction {
-        protected:
 
+    class Shl : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            Shl();
-            ~Shl();
+            Shl(uint64_t id) : Instruction(id) { }
+            ~Shl() = default;
             void compute()      override;
             virtual Shl* clone() const { return new Shl(*this); }
     };
 
     class LShr : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            LShr();
-            ~LShr();
+            LShr(uint64_t id) : Instruction(id) { }
+            ~LShr() = default;
             void compute()      override;
             virtual LShr* clone() const { return new LShr(*this); }
     };
 
     class AShr : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            AShr();
-            ~AShr();
+            AShr(uint64_t id) : Instruction(id) { }
+            ~AShr() = default;
             void compute()      override;
             virtual AShr* clone() const { return new AShr(*this); }
     };
 
     class And : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            And();
-            ~And();
+            And(uint64_t id) : Instruction(id) { }
+            ~And() = default;
             void compute()      override;
             virtual And* clone() const { return new And(*this); }
     };
 
     class Or : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            Or();
-            ~Or();
+            Or(uint64_t id) : Instruction(id) { }
+            ~Or() = default;
             void compute()      override;
             virtual Or* clone() const { return new Or(*this); }
     };
 
     class Xor : public Instruction {
-        protected:
+        private:
 
+        protected:
+        
         public:
-            Xor();
-            ~Xor();
+            Xor(uint64_t id) : Instruction(id) { }
+            ~Xor() = default;
             void compute()      override;
             virtual Xor* clone() const { return new Xor(*this); }
     };
 
     //---------------------------------------------------------------------------//
-    //--------- End Bitwise Instruction Base ------------------------------------//
+    //--------- Cast Instructions -----------------------------------------------//
     //---------------------------------------------------------------------------//
-    //--------- Begin Conversion Instruction Base -------------------------------//
-    //---------------------------------------------------------------------------//
+
     class Trunc : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            Trunc();
-            ~Trunc();
+            Trunc(uint64_t id) : Instruction(id) { }
+            ~Trunc() = default;
             void compute()      override;
             virtual Trunc* clone() const { return new Trunc(*this); }
     };
 
     class ZExt : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            ZExt();
-            ~ZExt();
+            ZExt(uint64_t id) : Instruction(id) { }
+            ~ZExt() = default;
             void compute()      override;
             virtual ZExt* clone() const { return new ZExt(*this); }
     };
 
     class SExt : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            SExt();
-            ~SExt();
+            SExt(uint64_t id) : Instruction(id) { }
+            ~SExt() = default;
             void compute()      override;
             virtual SExt* clone() const { return new SExt(*this); }
     };
 
     class FPToUI : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            FPToUI();
-            ~FPToUI();
+            FPToUI(uint64_t id) : Instruction(id) { }
+            ~FPToUI() = default;
             void compute()      override;
             virtual FPToUI* clone() const { return new FPToUI(*this); }
     };
 
     class FPToSI : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            FPToSI();
-            ~FPToSI();
+            FPToSI(uint64_t id) : Instruction(id) { }
+            ~FPToSI() = default;
             void compute()      override;
             virtual FPToSI* clone() const { return new FPToSI(*this); }
     };
 
     class UIToFP : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            UIToFP();
-            ~UIToFP();
+            UIToFP(uint64_t id) : Instruction(id) { }
+            ~UIToFP() = default;
             void compute()      override;
             virtual UIToFP* clone() const { return new UIToFP(*this); }
     };
 
     class SIToFP : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            SIToFP();
-            ~SIToFP();
+            SIToFP(uint64_t id) : Instruction(id) { }
+            ~SIToFP() = default;
             void compute()      override;
             virtual SIToFP* clone() const { return new SIToFP(*this); }
     };
 
     class FPTrunc : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            FPTrunc();
-            ~FPTrunc();
+            FPTrunc(uint64_t id) : Instruction(id) { }
+            ~FPTrunc() = default;
             void compute()      override;
             virtual FPTrunc* clone() const { return new FPTrunc(*this); }
     };
 
     class FPExt : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            FPExt();
-            ~FPExt();
+            FPExt(uint64_t id) : Instruction(id) { }
+            ~FPExt() = default;
             void compute()      override;
             virtual FPExt* clone() const { return new FPExt(*this); }
     };
 
     class PtrToInt : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            PtrToInt ();
-            ~PtrToInt();
+            PtrToInt (uint64_t id) : Instruction(id) { }
+            ~PtrToInt() = default;
             void compute()      override;
             virtual PtrToInt* clone() const { return new PtrToInt(*this); }
     };
 
     class IntToPtr : public Instruction {
+        private:
+
+        protected:
+        
         public:
-            IntToPtr();
-            ~IntToPtr();
+            IntToPtr(uint64_t id) : Instruction(id) { }
+            ~IntToPtr() = default;
             void compute()      override;
             virtual IntToPtr* clone() const { return new IntToPtr(*this); }
     };
 
     //---------------------------------------------------------------------------//
-    //--------- End Conversion Instruction Base ---------------------------------//
+    //--------- Memory Instructions ---------------------------------------------//
     //---------------------------------------------------------------------------//
-    //--------- Begin Memory Instruction Base -----------------------------------//
-    //---------------------------------------------------------------------------//
+
     class Load : public Instruction {
         private:
         
@@ -428,8 +470,8 @@ namespace SALAM {
         
         
         public:
-            Load();
-            ~Load();
+            Load(uint64_t id) : Instruction(id) { }
+            ~Load() = default;
             void compute()      override;
             virtual Load* clone() const { return new Load(*this); }
     };
@@ -440,8 +482,8 @@ namespace SALAM {
         protected:
         
         public:
-            Store ();
-            ~Store();
+            Store (uint64_t id) : Instruction(id) { }
+            ~Store() = default;
             void compute()      override;
             virtual Store* clone() const { return new Store(*this); }
     };
@@ -452,24 +494,24 @@ namespace SALAM {
         protected:
 
         public:
-            GetElementPtr();
-            ~GetElementPtr();
+            GetElementPtr(uint64_t id) : Instruction(id) { }
+            ~GetElementPtr() = default;
             void compute()      override;
             virtual GetElementPtr* clone() const { return new GetElementPtr(*this); }
     };
+
     //---------------------------------------------------------------------------//
-    //--------- End Memory Instruction Base -------------------------------------//
+    //--------- Other Instructions ----------------------------------------------//
     //---------------------------------------------------------------------------//
-    //--------- Begin Other Instruction Base ------------------------------------//
-    //---------------------------------------------------------------------------//
+
     class Phi : public Instruction {
         private:
 
         protected:
         
         public:
-            Phi ();
-            ~Phi();
+            Phi (uint64_t id) : Instruction(id) { }
+            ~Phi() = default;
             void compute()      override;
             virtual Phi* clone() const { return new Phi(*this); }
     };
@@ -481,20 +523,24 @@ namespace SALAM {
 
         public:
             // ---- Constructor
-            Select ();
-            ~Select();
+            Select (uint64_t id) : Instruction(id) { }
+            ~Select() = default;
             void compute()      override;
             virtual Select* clone() const { return new Select(*this); }
     };
-    // ---- Other Sub Type ---- Compare
+
+    //---------------------------------------------------------------------------//
+    //--------- Comparison Instructions -----------------------------------------//
+    //---------------------------------------------------------------------------//
+
     class ICmp : public Instruction {
         private:
 
         protected: 
 
         public:
-            ICmp();
-            ~ICmp();           
+            ICmp(uint64_t id) : Instruction(id) { }
+            ~ICmp() = default;           
             void compute()      override;
             virtual ICmp* clone() const { return new ICmp(*this); }
     };
@@ -505,14 +551,61 @@ namespace SALAM {
         protected:
         
         public:
-            FCmp();
-            ~FCmp();         
+            FCmp(uint64_t id) : Instruction(id) { }
+            ~FCmp() = default;         
             void compute()      override;
             virtual FCmp* clone() const { return new FCmp(*this); }
     };
     //---------------------------------------------------------------------------//
-    //--------- End Other Instruction Base --------------------------------------//
+    //--------- End Instruction Classes -----------------------------------------//
     //---------------------------------------------------------------------------//
+
+
+    //---------------------------------------------------------------------------//
+    //--------- Namespace Function Prototypes -----------------------------------//
+    //---------------------------------------------------------------------------//
+    std::shared_ptr<SALAM::Instruction> createRetInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createBrInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSwitchInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createAddInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFAddInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSubInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFSubInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createMulInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFMulInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createUDivInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSDivInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFDivInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createURemInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSRemInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFRemInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createShlInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createLShrInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createAShrInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createAndInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createOrInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createXorInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createLoadInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createStoreInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createGetElementPtrInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createTruncInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createZExtInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSExtInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFPToUIInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFPToSIInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createUIToFPInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSIToFPInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFPTruncInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFPExtInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createPtrToIntInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createIntToPtrInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createICmpInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createFCmpInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createPHIInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createCallInst(uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createSelectInst(uint64_t id);
+    //---------------------------------------------------------------------------//
+
 }
 
 #endif // __HWACC_LLVM_INSTRUCTION_HH__
