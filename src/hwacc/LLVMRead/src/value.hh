@@ -12,15 +12,27 @@ namespace SALAM {
 	typedef std::map<llvm::Value *, std::shared_ptr<Value>> irvmap;
 
 	class Value {
-	private:
-		//
-	protected:
-		uint64_t uid;
-		llvm::Type * irtype;
-	public:
-		Value(uint64_t id) { uid=id; }
-		virtual void initialize(llvm::Value * irval, irvmap * irmap) { irtype = irval->getType(); }
-		uint64_t getUID() { return uid; }
+		// Sub Class - Register
+		template <typename Type> class Register {
+            private:
+                std::string name;
+                Type data;
+            public:
+                Register() = default;
+                Register(const std::string& registerName) : name(registerName) { }
+        };
+
+		private:
+			//
+		protected:
+			uint64_t uid;
+			llvm::Type * irtype;
+
+
+		public:
+			Value(uint64_t id) { uid=id; }
+			virtual void initialize(llvm::Value * irval, irvmap * irmap) { irtype = irval->getType(); }
+			uint64_t getUID() { return uid; }
 	};
 }
 
