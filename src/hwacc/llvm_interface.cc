@@ -679,7 +679,47 @@ LLVM::Interface::scheduleFunction(std::shared_ptr<SALAM::Function> callee,
 
 std::shared_ptr<SALAM::Instruction>
 LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
-    switch(inst->getOpcode()) {
+    switch(inst->getOpcode()) { 
+        case LLVMRet : return SALAM::createRetInst(id); break;
+        case LLVMBr: return SALAM::createBrInst(id); break;
+        case LLVMSwitch: return SALAM::createSwitchInst(id); break;
+        case LLVMAdd: return SALAM::createAddInst(id); break;
+        case LLVMFAdd: return SALAM::createFAddInst(id); break;
+        case LLVMSub: return SALAM::createSubInst(id); break;
+        case LLVMFSub: return SALAM::createFSubInst(id); break;
+        case LLVMMul: return SALAM::createMulInst(id); break;
+        case LLVMFMul: return SALAM::createFMulInst(id); break;
+        case LLVMUDiv: return SALAM::createUDivInst(id); break;
+        case LLVMSDiv: return SALAM::createSDivInst(id); break;
+        case LLVMFDiv: return SALAM::createFDivInst(id); break;
+        case LLVMURem: return SALAM::createURemInst(id); break;
+        case LLVMSRem: return SALAM::createSRemInst(id); break;
+        case LLVMFRem: return SALAM::createFRemInst(id); break;
+        case LLVMShl: return SALAM::createShlInst(id); break;
+        case LLVMLShr: return SALAM::createLShrInst(id); break;
+        case LLVMAShr: return SALAM::createAShrInst(id); break;
+        case LLVMAnd: return SALAM::createAndInst(id); break;
+        case LLVMOr: return SALAM::createOrInst(id); break;
+        case LLVMXor: return SALAM::createXorInst(id); break;
+        case LLVMLoad: return SALAM::createLoadInst(id); break;
+        case LLVMStore: return SALAM::createStoreInst(id); break;
+        case LLVMGetElementPtr: return SALAM::createGetElementPtrInst(id); break;
+        case LLVMTrunc: return SALAM::createTruncInst(id); break;
+        case LLVMZExt: return SALAM::createZExtInst(id); break;
+        case LLVMSExt: return SALAM::createSExtInst(id); break;
+        case LLVMFPToUI: return SALAM::createFPToUIInst(id); break;
+        case LLVMFPToSI: return SALAM::createFPToSIInst(id); break;
+        case LLVMUIToFP: return SALAM::createUIToFPInst(id); break;
+        case LLVMSIToFP: return SALAM::createSIToFPInst(id); break;
+        case LLVMFPTrunc: return SALAM::createFPTruncInst(id); break;
+        case LLVMFPExt: return SALAM::createFPExtInst(id); break;
+        case LLVMPtrToInt: return SALAM::createPtrToIntInst(id); break;
+        case LLVMIntToPtr: return SALAM::createIntToPtrInst(id); break;
+        case LLVMICmp: return SALAM::createICmpInst(id); break;
+        case LLVMFCmp: return SALAM::createFCmpInst(id); break;
+        case LLVMPHI: return SALAM::createPHIInst(id); break;
+        case LLVMCall: return SALAM::createCallInst(id); break;
+        case LLVMSelect: return SALAM::createSelectInst(id); break;
         default:
             return std::make_shared<SALAM::Instruction>(id);
     }

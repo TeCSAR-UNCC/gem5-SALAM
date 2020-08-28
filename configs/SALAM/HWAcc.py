@@ -44,7 +44,7 @@ def makeHWAcc(options, system):
     system.acctest.acc.acp = system.acctest.coherency_bus.slave
 
     # Enable display of debug messages for the accelerator
-    system.acctest.acc.enable_debug_msgs = True
+    system.acctest.acc.enable_debug_msgs = False
 
     ################################## Adding DMAs to Cluster #####################################
     # Add DMA devices to the cluster and connect them

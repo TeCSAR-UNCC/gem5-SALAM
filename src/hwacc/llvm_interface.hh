@@ -19,6 +19,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Transforms/Utils/Cloning.h>
+#include <llvm-c/Core.h>
 //------------------------------------------//
 #include <list>
 #include <queue>
