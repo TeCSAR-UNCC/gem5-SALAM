@@ -17,20 +17,20 @@ namespace SALAM {
     class Instruction : public Value { 
         private:
             llvm::Instruction * llvmIRClone;
-        //    Operation operation;
-            
+            Value * returnRegister;
+            std::vector<Value*> dependencies;
+            std::vector<Value*> parents;
+            std::vector<Value*> dynamicDependencies;
+            std::vector<Value*> dynamicParents;
+            std::vector<Value*> users;
+            uint64_t llvmOpCode;
+
         protected:
 
 
         public:
-            Instruction(llvm::Instruction *newInstruction): Value(0),
-                        llvmIRClone(newInstruction) {
-                            std::cout << llvmIRClone->getOpcodeName() << " Loaded \n";
-                         } 
-
             Instruction(uint64_t id) : Value(id) { std::cout << "ID: " << id << "\n"; }
             ~Instruction() = default;
-            void test() { std::cout << llvmIRClone->getOpcodeName() << " Test \n"; }
             virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
             // Create initialize function for instruction - common item containers
             virtual void compute() { }
@@ -45,7 +45,7 @@ namespace SALAM {
     class BadInstruction : public Instruction {
         // Used to draw hard dependencies, ie: ret
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -57,7 +57,7 @@ namespace SALAM {
 
     class Br : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -72,7 +72,7 @@ namespace SALAM {
 
     class Ret : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -84,7 +84,7 @@ namespace SALAM {
 
     class Switch : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -101,7 +101,7 @@ namespace SALAM {
 
     class Add : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -115,7 +115,7 @@ namespace SALAM {
 
     class Sub : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -127,7 +127,7 @@ namespace SALAM {
 
     class Mul : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -139,7 +139,7 @@ namespace SALAM {
 
     class UDiv : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -151,7 +151,7 @@ namespace SALAM {
 
     class SDiv : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -163,7 +163,7 @@ namespace SALAM {
 
     class URem : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -175,7 +175,7 @@ namespace SALAM {
 
     class SRem : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -189,7 +189,7 @@ namespace SALAM {
 
     class FAdd : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -201,7 +201,7 @@ namespace SALAM {
 
     class FSub : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -213,7 +213,7 @@ namespace SALAM {
 
     class FMul : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -225,7 +225,7 @@ namespace SALAM {
 
     class FDiv : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -237,7 +237,7 @@ namespace SALAM {
 
     class FRem : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -253,7 +253,7 @@ namespace SALAM {
 
     class Shl : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -265,7 +265,7 @@ namespace SALAM {
 
     class LShr : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -277,7 +277,7 @@ namespace SALAM {
 
     class AShr : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -289,7 +289,7 @@ namespace SALAM {
 
     class And : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -301,7 +301,7 @@ namespace SALAM {
 
     class Or : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -313,7 +313,7 @@ namespace SALAM {
 
     class Xor : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -329,7 +329,7 @@ namespace SALAM {
 
     class Trunc : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -341,7 +341,7 @@ namespace SALAM {
 
     class ZExt : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -353,7 +353,7 @@ namespace SALAM {
 
     class SExt : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -365,7 +365,7 @@ namespace SALAM {
 
     class FPToUI : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -377,7 +377,7 @@ namespace SALAM {
 
     class FPToSI : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -389,7 +389,7 @@ namespace SALAM {
 
     class UIToFP : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -401,7 +401,7 @@ namespace SALAM {
 
     class SIToFP : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -413,7 +413,7 @@ namespace SALAM {
 
     class FPTrunc : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -425,7 +425,7 @@ namespace SALAM {
 
     class FPExt : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -437,7 +437,7 @@ namespace SALAM {
 
     class PtrToInt : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -449,7 +449,7 @@ namespace SALAM {
 
     class IntToPtr : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -465,7 +465,7 @@ namespace SALAM {
 
     class Load : public Instruction {
         private:
-        
+            std::vector< std::vector<uint64_t> > conditions; 
         protected:
         
         
@@ -478,7 +478,7 @@ namespace SALAM {
 
     class Store : public Instruction {
         private:
-        
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -490,7 +490,7 @@ namespace SALAM {
 
     class GetElementPtr : public Instruction {
         private:
-        
+            std::vector< std::vector<uint64_t> > conditions; 
         protected:
 
         public:
@@ -506,7 +506,7 @@ namespace SALAM {
 
     class Phi : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
@@ -518,7 +518,7 @@ namespace SALAM {
 
     class Select : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
 
         public:
@@ -535,7 +535,7 @@ namespace SALAM {
 
     class ICmp : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected: 
 
         public:
@@ -547,7 +547,7 @@ namespace SALAM {
 
     class FCmp : public Instruction {
         private:
-
+            std::vector< std::vector<uint64_t> > conditions;
         protected:
         
         public:
