@@ -110,6 +110,9 @@ class LLVMInterface : public ComputeUnit {
     void writeCommit(MemoryRequest * req);
     void dumpQueues();
     void dumpModule(llvm::Module *m);
+    void scheduleFunction(std::shared_ptr<SALAM::Function> callee,
+                          std::shared_ptr<SALAM::Instruction> caller,
+                          std::vector<uint64_t> &args);
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction * inst, uint64_t id);
 };
 

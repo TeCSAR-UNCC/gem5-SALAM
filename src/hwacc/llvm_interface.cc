@@ -670,6 +670,13 @@ LLVMInterface::dumpQueues() {
     //           << "*********************************************************\n";
 }
 
+void
+LLVM::Interface::scheduleFunction(std::shared_ptr<SALAM::Function> callee,
+                                  std::shared_ptr<SALAM::Instruction> caller,
+                                  std::vector<uint64_t> &args) {
+
+}
+
 std::shared_ptr<SALAM::Instruction>
 LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     switch(inst->getOpcode()) {
