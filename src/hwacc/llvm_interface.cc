@@ -671,7 +671,7 @@ LLVMInterface::dumpQueues() {
 }
 
 void
-LLVM::Interface::scheduleFunction(std::shared_ptr<SALAM::Function> callee,
+LLVMInterface::scheduleFunction(std::shared_ptr<SALAM::Function> callee,
                                   std::shared_ptr<SALAM::Instruction> caller,
                                   std::vector<uint64_t> &args) {
 

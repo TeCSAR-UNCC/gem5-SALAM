@@ -16,13 +16,10 @@ namespace SALAM {
 
     class Instruction : public Value { 
         private:
-            llvm::Instruction * llvmIRClone;
             Value * returnRegister;
-            std::vector<Value*> dependencies;
-            std::vector<Value*> parents;
+            std::vector<Value*> staticDependencies;
             std::vector<Value*> dynamicDependencies;
-            std::vector<Value*> dynamicParents;
-            std::vector<Value*> users;
+            std::vector<Value*> dynamicUsers;
             uint64_t llvmOpCode;
 
         protected:
