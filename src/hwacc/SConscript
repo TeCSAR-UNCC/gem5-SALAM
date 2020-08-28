@@ -23,7 +23,6 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/power_model.cc')
     Source('LLVMRead/src/functional_units.cc')
     Source('LLVMRead/src/instruction.cc')
-    Source('LLVMRead/src/ir_parse.cc')
     Source('dma_write_fifo.cc')
     Source('noncoherent_dma.cc')
     Source('stream_dma.cc')
