@@ -4,6 +4,14 @@
 namespace SALAM {
     void
     Instruction::initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) {
+    	// Fetch the operands of the instruction
+    	llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
+    	assert(iruser);
+    	for (auto op : iruser->operand_values()) {
+    		std::shared_ptr<SALAM::Value> opval = irmap->find(op)->second;
+    		assert(opval);
+    		staticDependencies.push_back(opval);
+    	}
         SALAM::Value::initialize(irval, irmap);
     }
     

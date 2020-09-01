@@ -17,9 +17,9 @@ namespace SALAM {
     class Instruction : public Value { 
         private:
             Value * returnRegister;
-            std::vector<Value*> staticDependencies;
-            std::vector<Value*> dynamicDependencies;
-            std::vector<Value*> dynamicUsers;
+            valueListTy staticDependencies;
+            valueListTy dynamicDependencies;
+            valueListTy dynamicUsers;
             uint64_t llvmOpCode;
 
         protected:
