@@ -3,7 +3,7 @@
 
 namespace SALAM {
     void
-    Instruction::initialize(llvm::Value * irval, irvmap * irmap) {
+    Instruction::initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) {
         SALAM::Value::initialize(irval, irmap);
     }
     

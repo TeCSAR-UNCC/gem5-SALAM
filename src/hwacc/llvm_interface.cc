@@ -396,6 +396,14 @@ LLVMInterface::constructStaticGraph() {
     // Construct the LLVM::Value to SALAM::Value map
     uint64_t valueID = 0;
     SALAM::irvmap vmap;
+    // Generate SALAM::Values for llvm::GlobalVariables
+    for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
+        llvm::GlobalVariable &glb = *glob_iter;
+        std::shared_ptr<SALAM::GlobalConstantValue> sglb = std::make_shared<SALAM::GlobalConstantValue>(valueID);
+        values.push_back(sglb);
+        vmap.insert(SALAM::irvmaptype(&glb, sglb));
+        valueID++;
+    }
     // Generate SALAM::Functions
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
@@ -407,7 +415,7 @@ LLVMInterface::constructStaticGraph() {
         // Generate args for SALAM:Functions
         for (auto arg_iter = func.arg_begin(); arg_iter != func.arg_end(); arg_iter++) {
             llvm::Argument &arg = *arg_iter;
-            std::shared_ptr<SALAM::Value> sarg = std::make_shared<SALAM::Value>(valueID);
+            std::shared_ptr<SALAM::Argument> sarg = std::make_shared<SALAM::Argument>(valueID);
             values.push_back(sarg);
             vmap.insert(SALAM::irvmaptype(&arg, sarg));
             valueID++;
@@ -431,6 +439,14 @@ LLVMInterface::constructStaticGraph() {
     }
 
     // Use value map to initialize SALAM::Values
+    for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
+        llvm::GlobalVariable &glb = *glob_iter;
+        std::shared_ptr<SALAM::Value> glbval = vmap.find(&glb)->second;
+        assert(glbval);
+        std::shared_ptr<SALAM::GlobalConstantValue> sglb = std::dynamic_pointer_cast<SALAM::GlobalConstantValue>(glbval);
+        assert(sglb);
+        sglb->initialize(&glb, &vmap);
+    }
     // Functions will initialize BasicBlocks, which will initialize Instructions
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
@@ -438,7 +454,7 @@ LLVMInterface::constructStaticGraph() {
         assert(funcval);
         std::shared_ptr<SALAM::Function> sfunc = std::dynamic_pointer_cast<SALAM::Function>(funcval);
         assert(sfunc);
-        sfunc->initialize(&func, &vmap, regList);
+        sfunc->initialize(&func, &vmap, &values);
     }
 
     panic("Killing Sim");

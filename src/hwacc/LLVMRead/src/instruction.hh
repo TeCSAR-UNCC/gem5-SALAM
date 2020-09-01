@@ -28,7 +28,7 @@ namespace SALAM {
         public:
             Instruction(uint64_t id) : Value(id) { std::cout << "ID: " << id << "\n"; }
             ~Instruction() = default;
-            virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
+            virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList);
             // Create initialize function for instruction - common item containers
             virtual void compute() { }
             // virtual Instruction* clone() const { return new Instruction(*this); }
