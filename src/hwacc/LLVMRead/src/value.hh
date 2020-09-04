@@ -5,6 +5,9 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/ADT/APSInt.h"
+#include "llvm/ADT/APFloat.h"
+
 #include <map>
 #include <memory>
 #include <vector>
@@ -16,17 +19,122 @@ namespace SALAM {
 	typedef std::vector<std::shared_ptr<Value>> valueListTy;
 
 	class Value {
-		// Sub Class - Register
+		/*****************************************************************************
+		* Register is the data storage container for SALAM::Values.
+		* Every instruction and function argument has a corresponding register that
+		* is tracked for power/area/timing. Additionally Constants have corresponding
+		* registers, which are not tracked, since they do not have a timing component.
+		*****************************************************************************/
 		class Register {
-            private:
-                uint64_t data;
-				unsigned size;
-				// TODO : Add support for larger registers
-
+            protected:
+            	bool tracked;
+            	bool isNULL = false;
             public:
-                Register() = default;
-				Register(unsigned bitSize) : size(bitSize) { }
-				// set value function
+                Register(bool trk=true, bool nul=false) : tracked(trk), isNULL(nul) { }
+                virtual llvm::APFloat * getFloatData() = 0;
+                virtual llvm::APSInt * getIntData() = 0;
+                virtual uint64_t * getPtrData() = 0;
+                bool isTracked() { return tracked; }
+                virtual bool isInt() { return false; }
+                virtual bool isFP() { return false; }
+                virtual bool isPtr() { return false; }
+                bool isNull() { return isNULL; }
+                void setNull(bool flag) { isNULL = flag; }
+                void setTracked(bool flag) { tracked = flag; }
+        };
+        class APFloatRegister : public Register {
+        	private:
+        		llvm::APFloat *data;
+        	public:
+        		APFloatRegister(llvm::Type * T, bool isTracked=true) : Register(isTracked) {
+        			switch (T->getTypeID()) {
+        				case llvm::Type::HalfTyID:
+        				{
+        					data = new llvm::APFloat(llvm::APFloat::IEEEhalf());
+        					break;
+        				}
+        				case llvm::Type::FloatTyID:
+        				{
+        					data = new llvm::APFloat(llvm::APFloat::IEEEsingle());
+        					break;
+        				}
+        				case llvm::Type::DoubleTyID:
+        				{
+        					data = new llvm::APFloat(llvm::APFloat::IEEEdouble());
+        					break;
+        				}
+        				case llvm::Type::X86_FP80TyID:
+        				{
+        					data = new llvm::APFloat(llvm::APFloat::x87DoubleExtended());
+        					break;
+        				}
+        				case llvm::Type::FP128TyID:
+        				{
+        					data = new llvm::APFloat(llvm::APFloat::IEEEquad());
+        					break;
+        				}
+        				case llvm::Type::PPC_FP128TyID:
+        				{
+        					data = new llvm::APFloat(llvm::APFloat::PPCDoubleDouble());
+        					break;
+        				}
+        				default:
+        					assert(0);
+        			}
+        		}
+        		APFloatRegister(const llvm::APFloat &RHS) : Register(false) {
+        			data = new llvm::APFloat(RHS);
+        		}
+        		virtual llvm::APFloat * getFloatData() override { return data; }
+                virtual llvm::APSInt * getIntData() {
+                	assert(0);
+                	return NULL;
+                }
+                virtual uint64_t * getPtrData() {
+                	assert(0);
+                	return NULL;
+                }
+        		virtual bool isFP() override { return true; }
+        };
+        class APIntRegister : public Register {
+    		private:
+    			llvm::APSInt *data;
+    		public:
+    			APIntRegister(llvm::Type * T, bool isTracked=true) : Register(isTracked) {
+    				llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
+    				assert(it);
+    				data = new llvm::APSInt(it->getBitWidth(), 0);
+    			}
+    			APIntRegister(const llvm::APInt &RHS) : Register(false) {
+    				data = new llvm::APSInt(RHS);
+    			}
+    			virtual llvm::APSInt * getIntData() override { return data; }
+    			virtual llvm::APFloat * getFloatData() {
+    				assert(0);
+    				return NULL;
+    			}
+                virtual uint64_t * getPtrData() {
+                	assert(0);
+                	return NULL;
+                }
+    			virtual bool isInt() override { return true; }
+        };
+        class PointerRegister : public Register {
+        	private:
+        		uint64_t *pointer;
+        	public:
+        		PointerRegister(bool isTracked=true, bool isNull=false) : Register(isTracked, isNull), pointer(new uint64_t(0)) { }
+        		PointerRegister(uint64_t val, bool isTracked=true, bool isNull=false) : Register(isTracked, isNull), pointer(new uint64_t(val)) { }
+        		virtual bool isPtr() override { return true; }
+        		virtual uint64_t * getPtrData() override { return pointer; }
+        		virtual llvm::APFloat * getFloatData() {
+        			assert(0);
+        			return NULL;
+        		}
+                virtual llvm::APSInt * getIntData() {
+                	assert(0);
+                	return NULL;
+                }
         };
 
 		private:
@@ -37,7 +145,12 @@ namespace SALAM {
 			Register * reg;
 			unsigned size;
 
-			void addRegister() { reg = new Register(size); }
+			void addRegister(bool istracked=true);
+			void addAPIntRegister(const llvm::APInt & val);
+			void addAPIntRegister(const llvm::APSInt & val);
+			void addAPFloatRegister(const llvm::APFloat & val);
+			void addPointerRegister(bool isTracked=true, bool isNull=false);
+			void addPointerRegister(uint64_t val, bool isTracked=true, bool isNull=false);
 
 		public:
 			Value(uint64_t id) {
@@ -46,27 +159,26 @@ namespace SALAM {
 			}
 			virtual void initialize(llvm::Value * irval, irvmap * irmap);
 			uint64_t getUID() { return uid; }
-			// add register function
+			Register * getReg() { return reg; }
 
 			// virtual Value* clone() const = 0;
 	};
-	class ConstantValue : public Value {
+
+	class Constant: public Value {
 		private:
 		protected:
-			uint64_t constData;
+			SALAM::valueListTy operands;
 		public:
-			ConstantValue(uint64_t id) : Value(id) { }
-			virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
-			template<typename T>
-			T getConstData() { return *(T *)&constData; }
+			Constant(uint64_t id) : Value(id) { }
+			virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
 	};
 
-	class GlobalConstantValue : public ConstantValue {
+	class GlobalConstant : public Constant {
 		private:
 		protected:
 		public:
-			GlobalConstantValue(uint64_t id) : ConstantValue(id) { }
-			virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
+			GlobalConstant(uint64_t id) : Constant(id) { }
+			virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 	};
 
 	class Argument : public Value {

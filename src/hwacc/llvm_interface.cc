@@ -399,7 +399,7 @@ LLVMInterface::constructStaticGraph() {
     // Generate SALAM::Values for llvm::GlobalVariables
     for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
         llvm::GlobalVariable &glb = *glob_iter;
-        std::shared_ptr<SALAM::GlobalConstantValue> sglb = std::make_shared<SALAM::GlobalConstantValue>(valueID);
+        std::shared_ptr<SALAM::GlobalConstant> sglb = std::make_shared<SALAM::GlobalConstant>(valueID);
         values.push_back(sglb);
         vmap.insert(SALAM::irvmaptype(&glb, sglb));
         valueID++;
@@ -443,9 +443,9 @@ LLVMInterface::constructStaticGraph() {
         llvm::GlobalVariable &glb = *glob_iter;
         std::shared_ptr<SALAM::Value> glbval = vmap.find(&glb)->second;
         assert(glbval);
-        std::shared_ptr<SALAM::GlobalConstantValue> sglb = std::dynamic_pointer_cast<SALAM::GlobalConstantValue>(glbval);
+        std::shared_ptr<SALAM::GlobalConstant> sglb = std::dynamic_pointer_cast<SALAM::GlobalConstant>(glbval);
         assert(sglb);
-        sglb->initialize(&glb, &vmap);
+        sglb->initialize(&glb, &vmap, &values);
     }
     // Functions will initialize BasicBlocks, which will initialize Instructions
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
