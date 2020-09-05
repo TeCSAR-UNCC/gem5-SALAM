@@ -703,6 +703,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case LLVMXor: return SALAM::createXorInst(id); break;
         case LLVMLoad: return SALAM::createLoadInst(id); break;
         case LLVMStore: return SALAM::createStoreInst(id); break;
+// ------------------------------------------------------------------------- //
         case LLVMGetElementPtr: return SALAM::createGetElementPtrInst(id); break;
         case LLVMTrunc: return SALAM::createTruncInst(id); break;
         case LLVMZExt: return SALAM::createZExtInst(id); break;
