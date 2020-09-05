@@ -9,11 +9,9 @@ SALAM::Function::Function(uint64_t id) : SALAM::Value(id) {
 void
 SALAM::Function::initialize(llvm::Value * irval,
 						   irvmap *vmap,
-						   RegisterList * regs,
+						   SALAM::valueListTy *valueList,
 						   bool isTop) {
 	top = isTop;
-	regList = regs;
-
 	//Parse irval for function params
 	llvm::Function * func = llvm::dyn_cast<llvm::Function>(irval);
 	assert(func); //panic("Invalid llvm::Value type used to initialize function. Failed cast to llvm::Function.");
@@ -23,7 +21,10 @@ SALAM::Function::initialize(llvm::Value * irval,
         llvm::Argument &arg = *arg_iter;
         std::shared_ptr<SALAM::Value> argval = vmap->find(&arg)->second;
         assert(argval);
-        arguments.push_back(argval);
+        std::shared_ptr<SALAM::Argument> argum = std::dynamic_pointer_cast<SALAM::Argument>(argval);
+        assert(argum);
+        arguments.push_back(argum);
+        argum->initialize(&arg, vmap);
     }
 
     // Fill bbList
@@ -34,7 +35,7 @@ SALAM::Function::initialize(llvm::Value * irval,
         std::shared_ptr<SALAM::BasicBlock> bblock = std::dynamic_pointer_cast<SALAM::BasicBlock>(bbval);
         assert(bblock);
         bbList.push_back(bblock);
-        bblock->initialize(&bb, vmap, regs);
+        bblock->initialize(&bb, vmap, valueList);
     }
 
 	Value::initialize(irval, vmap);

@@ -10,11 +10,10 @@ namespace SALAM {
 	private:
 		std::vector<std::shared_ptr<SALAM::BasicBlock>> bbList;
 		std::vector<std::shared_ptr<SALAM::Value>> arguments;
-		RegisterList * regList;
 		bool top;
 	public:
 		Function(uint64_t id);
-		void initialize(llvm::Value * irval, irvmap *vmap, RegisterList * regs, bool isTop=false);
+		void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList, bool isTop=false);
 		bool isTop() { return top; }
 		std::vector<std::shared_ptr<SALAM::BasicBlock>> * getBBList() { return &bbList; }
 		std::shared_ptr<SALAM::BasicBlock> entry() { return bbList.front(); }

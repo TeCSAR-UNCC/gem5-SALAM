@@ -3,7 +3,26 @@
 
 namespace SALAM {
     void
-    Instruction::initialize(llvm::Value * irval, irvmap * irmap) {
+    Instruction::initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) {
+    	// Fetch the operands of the instruction
+    	llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
+    	assert(iruser);
+    	for (auto op : iruser->operand_values()) {
+    		auto mapit = irmap->find(op);
+    		std::shared_ptr<SALAM::Value> opval;
+    		if(mapit == irmap->end()) {
+    			// TODO: Handle constant data and constant expressions
+    			uint64_t id = valueList->back()->getUID() + 1;
+    			std::shared_ptr<SALAM::Constant> con = std::make_shared<SALAM::Constant>(id);
+		        valueList->push_back(con);
+		        irmap->insert(SALAM::irvmaptype(op, con));
+		        con->initialize(op, irmap, valueList);
+		        opval = con;
+    		} else {
+    			opval = mapit->second;
+    		}
+    		staticDependencies.push_back(opval);
+    	}
         SALAM::Value::initialize(irval, irmap);
     }
     

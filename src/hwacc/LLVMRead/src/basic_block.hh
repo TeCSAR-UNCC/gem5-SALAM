@@ -21,12 +21,10 @@ namespace SALAM {
       std::vector<SALAM::BasicBlock*> predecessors;
       std::vector<std::shared_ptr<SALAM::Instruction>> instructions;
       bool _debug = false;
-      RegisterList * regList;
-
     protected:
     public:
       BasicBlock(uint64_t id);
-      void initialize(llvm::Value * irval, irvmap *vmap, RegisterList * regs);
+      void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList);
       std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() { return &instructions; }
   };
 }

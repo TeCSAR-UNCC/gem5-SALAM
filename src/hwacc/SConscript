@@ -15,6 +15,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('comm_interface.cc')
     Source('compute_unit.cc')
     Source('llvm_interface.cc')
+    Source('LLVMRead/src/value.cc')
     Source('LLVMRead/src/function.cc')
     Source('LLVMRead/src/basic_block.cc')
     Source('LLVMRead/src/llvm_types.cc')
