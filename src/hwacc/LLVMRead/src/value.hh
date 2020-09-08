@@ -7,6 +7,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/APFloat.h"
+#include <llvm-c/Core.h>
 
 #include <map>
 #include <memory>
@@ -30,14 +31,16 @@ namespace SALAM {
             	bool tracked;
             	bool isNULL = false;
             public:
-                Register(bool trk=true, bool nul=false) : tracked(trk), isNULL(nul) { }
+                Register(bool trk=true, bool nul=false) : tracked(trk), isNULL(nul) { 
+								  CLASSOUT("SALAM::Value::Register::Register", false);
+								}
                 virtual llvm::APFloat * getFloatData() = 0;
                 virtual llvm::APSInt * getIntData() = 0;
                 virtual uint64_t * getPtrData() = 0;
-                bool isTracked() { return tracked; }
                 virtual bool isInt() { return false; }
                 virtual bool isFP() { return false; }
                 virtual bool isPtr() { return false; }
+				bool isTracked() { return tracked; }
                 bool isNull() { return isNULL; }
                 void setNull(bool flag) { isNULL = flag; }
                 void setTracked(bool flag) { tracked = flag; }
@@ -137,14 +140,12 @@ namespace SALAM {
                 }
         };
 
-		private:
-			//
 		protected:
-			uint64_t uid;
+			uint64_t uid = 0;
 			llvm::Type * irtype;
 			Register * reg;
 			unsigned size;
-
+			
 			void addRegister(bool istracked=true);
 			void addAPIntRegister(const llvm::APInt & val);
 			void addAPIntRegister(const llvm::APSInt & val);
@@ -154,12 +155,13 @@ namespace SALAM {
 
 		public:
 			Value(uint64_t id) {
+				CLASSOUT("SALAM::Value::Value(uint64_t)", id);
 				uid = id;
 				size = 0;
 			}
 			virtual void initialize(llvm::Value * irval, irvmap * irmap);
-			uint64_t getUID() { return uid; }
-			Register * getReg() { return reg; }
+			uint64_t getUID() { TRACEOUT("SALAM::Value::getUID()"); return uid; }
+			Register * getReg() { TRACEOUT("SALAM::Value::getReg()"); return reg; }
 
 			// virtual Value* clone() const = 0;
 	};

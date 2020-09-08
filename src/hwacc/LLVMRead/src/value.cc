@@ -4,16 +4,21 @@
 
 void
 SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
+	TRACEOUT("SALAM::Value::initialize");
 	irtype = irval->getType();
 	if (irtype->getTypeID() == llvm::Type::PointerTyID) {
 		size = 64; //We assume a 64-bit memory address space
 	} else {
 		size = irtype->getScalarSizeInBits();
 	}
+	
 }
 
 void
 SALAM::Value::addRegister(bool istracked) {
+	TRACEOUT("SALAM::Value::addRegister");
+	DEBUGOUT("---");
+
 	if (irtype->isPointerTy()) {
 		reg = new PointerRegister(istracked);
 	} else if (irtype->isIntegerTy()) {
@@ -26,32 +31,38 @@ SALAM::Value::addRegister(bool istracked) {
 }
 void
 SALAM::Value::addAPIntRegister(const llvm::APInt & val) {
+	TRACEOUT("SALAM::Value::addAPIntRegister");
 	assert(irtype->isIntegerTy());
 	reg = new APIntRegister(val);
 }
 void
 SALAM::Value::addAPIntRegister(const llvm::APSInt & val) {
+	TRACEOUT("SALAM::Value::addAPIntRegister");
 	assert(irtype->isIntegerTy());
 	reg = new APIntRegister(val);
 }
 void
 SALAM::Value::addAPFloatRegister(const llvm::APFloat & val) {
+	TRACEOUT("SALAM::Value::addAPFloatRegister");
 	assert(irtype->isFloatingPointTy());
 	reg = new APFloatRegister(val);
 }
 void
 SALAM::Value::addPointerRegister(bool istracked, bool isnull) {
+	TRACEOUT("SALAM::Value::addPointerRegister");
 	assert(irtype->isPointerTy());
 	reg = new PointerRegister(istracked, isnull);
 }
 void
 SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
+	TRACEOUT("SALAM::Value::addPointerRegister");
 	assert(irtype->isPointerTy());
 	reg = new PointerRegister(val, istracked, isnull);
 }
 
 void
 SALAM::Constant::initialize(llvm::Value * irval, SALAM::irvmap * irmap, SALAM::valueListTy * values) {
+	TRACEOUT("SALAM::Constant::initialize");
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
 	// Parse the constant value
@@ -198,6 +209,7 @@ SALAM::Constant::initialize(llvm::Value * irval, SALAM::irvmap * irmap, SALAM::v
 
 void
 SALAM::GlobalConstant::initialize(llvm::Value * irval, SALAM::irvmap * irmap, SALAM::valueListTy * values) {
+	TRACEOUT("SALAM::GlobalConstant::initialize");
 	// Parse the initializer of the value
 	auto glb = llvm::dyn_cast<llvm::GlobalVariable>(irval);
 	assert(glb);
@@ -210,6 +222,7 @@ SALAM::GlobalConstant::initialize(llvm::Value * irval, SALAM::irvmap * irmap, SA
 
 void
 SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
+	TRACEOUT("SALAM::Argument::initialize");
 	addRegister();
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);

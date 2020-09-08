@@ -24,6 +24,7 @@ SALAM::Function::initialize(llvm::Value * irval,
         std::shared_ptr<SALAM::Argument> argum = std::dynamic_pointer_cast<SALAM::Argument>(argval);
         assert(argum);
         arguments.push_back(argum);
+        std::cout << "Arguments Initialized\n";
         argum->initialize(&arg, vmap);
     }
 
@@ -35,6 +36,7 @@ SALAM::Function::initialize(llvm::Value * irval,
         std::shared_ptr<SALAM::BasicBlock> bblock = std::dynamic_pointer_cast<SALAM::BasicBlock>(bbval);
         assert(bblock);
         bbList.push_back(bblock);
+        std::cout << "Basic Block Initialized\n";
         bblock->initialize(&bb, vmap, valueList);
     }
 
