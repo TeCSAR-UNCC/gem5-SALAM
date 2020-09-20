@@ -1069,7 +1069,11 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 		    else
 		        index = 1;
 		}
-
+		bool global = false;
+		if (ptrval->isGlobal()) {
+			global = true;
+			ret_reg->setGlobal();
+		}
 		// Additional return register setup for structs and custom data types
 		if(pty[0] == '[') { // Return type is a struct
 				int stringLength = (pty.find_first_of(']') - pty.find('%')-1);
@@ -1130,7 +1134,8 @@ BasicBlock::parse(std::string line, RegisterList *list, std::string prev, CommIn
 													immdx,
 													ptrval,
 													indexRet,
-													functionalUnit);
+													functionalUnit,
+													global);
 		addNode(gep);
 
 		// Null Stored for register if immediate value used in the situation

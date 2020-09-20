@@ -29,6 +29,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/base_instruction.cc')
     Source('LLVMRead/src/cycle_count.cc')
     Source('acc_cluster.cc')
+    Source('data_collection.cc')
     Source('stream_buffer.cc')
     Source('stream_port.cc')
     Source('scratchpad_memory.cc')

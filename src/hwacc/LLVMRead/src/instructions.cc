@@ -571,6 +571,8 @@ Xor::compute() {
 
 void
 Load::compute() {
+	if(_Pointer->isGlobal()) setGlobal(true);
+	else setGlobal(false);
 	uint64_t src = _Ops.at(0);
 	_ReturnRegister->setSize(_ReturnType);
 	if (_debug) DPRINTF(LLVMOp, "Load From: %x\n", _Ops.at(0));
@@ -583,6 +585,8 @@ Store::compute() {
 	uint64_t data;
 	uint64_t size = 0;
 	uint64_t dst = _Ops.at(0);
+	if(_Pointer->isGlobal()) setGlobal(true);
+	else setGlobal(false);
 	if (_debug) DPRINTF(LLVMOp, "Starting Store!\n");
 	if(_ImmVal) {
 		data = (uint64_t) _Imm;

@@ -64,6 +64,8 @@ class Register {
         void update()                   { updated_this_cycle = !(updated_this_cycle); }
         void setSize(const std::string& Data_Type); 
         void setValue(void *data);
+        void setGlobal()                { _Global = true; }
+        bool isGlobal()                 { return _Global; }
         // ---- Increment Functions
         void write()                    { _Reg_Usage.writes++; }
         void read()                     { _Reg_Usage.reads++; }     

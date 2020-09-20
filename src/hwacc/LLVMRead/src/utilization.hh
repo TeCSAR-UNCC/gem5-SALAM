@@ -5,11 +5,12 @@
 #include "debug_flags.hh" 
 #include "cycle_count.hh"
 #include "registers.hh"
+#include <cstdint>
+
 
 //------------------------------------------//
 
 class RegisterList;
-
 
 struct Pwr_Parameters {
     float cycleTime;
@@ -42,11 +43,29 @@ struct FunctionalUnits {
   int32_t fpDivision = 0;  
 };
 
+struct FunctionalUnitOccupancy {
+  double counter_units;
+  double int_adder_units;
+  double int_multiply_units;
+  double int_shifter_units;
+  double int_bit_units;
+  double fp_sp_adder;
+  double fp_dp_adder;
+  double fp_sp_multiply;
+  double fp_dp_multiply;  
+  double compare;
+  double gep;
+  double conversion;
+  double other;
+  double fpDivision = 0;  
+};
 
 struct PowerUsage {
     float cycleTime = 0;
     float internal_power = 0;
     float switch_power = 0;
+    float dynamic_power = 0;
+    float dynamic_energy = 0;
     float leakage_power = 0;
     float area = 0;
     
@@ -65,9 +84,18 @@ struct PowerTotals {
     float reg_area = 0;
 };
 
+struct CactiResults {
+    uca_org_t opt;
+    uca_org_t leakage;
+    uca_org_t dyn_read;
+    uca_org_t dyn_write;
+};
+
 class Utilization {
     private:
      int _Clock_Period = 0;
+     int reuse_factor;
+     int fp_cycle_count = 5;
 
      public:
       PowerUsage regPwr;
@@ -93,6 +121,7 @@ class Utilization {
     void calculateDynamicPowerUsage(FunctionalUnits units);
     void calculateArea(FunctionalUnits units);
     void calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle);
+    void setFPReuseFactor(int newFactor) { reuse_factor = newFactor; }
 };
 
 struct Occupancy {

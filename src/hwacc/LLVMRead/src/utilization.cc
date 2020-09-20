@@ -3,6 +3,7 @@
 //------------------------------------------//
 
 Utilization::Utilization(int clock_period, int fu_clock_period, RegisterList* List) {
+    /*  -- Remove --
     _Clock_Period = clock_period;
     regList = List;
     int transistorTime = fu_clock_period;
@@ -17,6 +18,24 @@ Utilization::Utilization(int clock_period, int fu_clock_period, RegisterList* Li
  //  getDoublePrecisionFloatingPointAdderPowerArea(transistorTime, &dpfpAddPwr.internal_power, &dpfpAddPwr.switch_power, &dpfpAddPwr.leakage_power, &dpfpAddPwr.area);
  //   getSinglePrecisionFloatingPointMultiplierPowerArea(transistorTime, &spfpMulPwr.internal_power, &spfpMulPwr.switch_power, &spfpMulPwr.leakage_power, &spfpMulPwr.area);
  //   getDoublePrecisionFloatingPointMultiplierPowerArea(transistorTime, &dpfpMulPwr.internal_power, &dpfpMulPwr.switch_power, &dpfpMulPwr.leakage_power, &dpfpMulPwr.area);
+    */
+
+    _Clock_Period = clock_period;
+    regList = List;
+    int transistorTime = fu_clock_period;
+    totalPwr.cycleTime = transistorTime;
+    regPwr.cycleTime = transistorTime;
+    getRegisterPowerArea(transistorTime, &regPwr.internal_power, &regPwr.switch_power, &regPwr.dynamic_power, &regPwr.dynamic_energy, &regPwr.leakage_power, &regPwr.area);
+    getAdderPowerArea(transistorTime, &adderPwr.internal_power, &adderPwr.switch_power, &adderPwr.dynamic_power, &adderPwr.dynamic_energy, &adderPwr.leakage_power, &adderPwr.area);
+    getMultiplierPowerArea(transistorTime, &multiPwr.internal_power, &multiPwr.switch_power, &multiPwr.dynamic_power, &multiPwr.dynamic_energy, &multiPwr.leakage_power, &multiPwr.area);
+    getBitPowerArea(transistorTime, &bitPwr.internal_power, &bitPwr.switch_power, &bitPwr.dynamic_power, &bitPwr.dynamic_energy, &bitPwr.leakage_power, &bitPwr.area);
+    getShifterPowerArea(transistorTime, &shiftPwr.internal_power, &shiftPwr.switch_power, &shiftPwr.dynamic_power, &shiftPwr.dynamic_energy, &shiftPwr.leakage_power, &shiftPwr.area);
+    getSinglePrecisionFloatingPointAdderPowerArea(transistorTime, &spfpAddPwr.internal_power, &spfpAddPwr.switch_power, &spfpAddPwr.dynamic_power, &spfpAddPwr.dynamic_energy, &spfpAddPwr.leakage_power, &spfpAddPwr.area);
+    getDoublePrecisionFloatingPointAdderPowerArea(transistorTime, &dpfpAddPwr.internal_power, &dpfpAddPwr.switch_power, &dpfpAddPwr.dynamic_power, &dpfpAddPwr.dynamic_energy, &dpfpAddPwr.leakage_power, &dpfpAddPwr.area);
+    getSinglePrecisionFloatingPointMultiplierPowerArea(transistorTime, &spfpMulPwr.internal_power, &spfpMulPwr.switch_power, &spfpMulPwr.dynamic_power, &spfpMulPwr.dynamic_energy, &spfpMulPwr.leakage_power, &spfpMulPwr.area);
+    getDoublePrecisionFloatingPointMultiplierPowerArea(transistorTime, &dpfpMulPwr.internal_power, &dpfpMulPwr.switch_power, &dpfpMulPwr.dynamic_power, &dpfpMulPwr.dynamic_energy, &dpfpMulPwr.leakage_power, &dpfpMulPwr.area);
+
+
 }
 
 Hardware::Hardware(int Latency) {
@@ -350,26 +369,6 @@ Hardware::printDynamicFunctionalUnits(){
 
 void 
 Utilization::updatePowerConsumption(FunctionalUnits units) {
-/*
-    printf("%s %s %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s %3d %s",
-    "   Power",
-    "\n*******************************************************************************",
-    "\n   Counters:", units.counter_units,
-    "   Adder: ", units.int_adder_units,
-    "   Mul/Div: ", units.int_multiply_units,
-    "   Shift: ", units.int_shifter_units,
-    "   Bit: ", units.int_bit_units,
-    "\n   SP Adder: ", units.fp_sp_adder,
-    "   SP Mul/Div: ", units.fp_sp_multiply,
-    "   DP Adder: ", units.fp_dp_adder,
-    "   DP Mul/Div: ", units.fp_dp_multiply,
-    "\n   Compare: ",units.compare,
-    "   GEP: ", units.gep,
-    "   Conversion: ", units.conversion,
-    "   Other: ", units.other,
-    "\n*******************************************************************************\n"
-    );
-*/
     calculateLeakagePowerUsage(units);
     calculateDynamicPowerUsage(units);
 }
@@ -379,7 +378,7 @@ Utilization::finalPowerUsage(FunctionalUnits units, int cycle) {
         calculateFinalLeakagePowerUsage(units);
         regList->totalAccess(&regUsage);
         calculateArea(units);
-         calculateRegisterPowerUsage(&regUsage, cycle);
+        calculateRegisterPowerUsage(&regUsage, cycle);
 }
 
 uca_org_t
@@ -397,11 +396,9 @@ Utilization::calculateFinalLeakagePowerUsage(FunctionalUnits units) {
     finalPwr.leakage_power += spfpAddPwr.leakage_power*units.fp_sp_adder;
     finalPwr.leakage_power += dpfpAddPwr.leakage_power*units.fp_dp_adder;
    
-   // Since leakage power is much greater for floating point multipliers, assume full reuse
-    if (units.fp_sp_multiply > 0) finalPwr.leakage_power += spfpMulPwr.leakage_power; 
-    if (units.fp_dp_multiply > 0) finalPwr.leakage_power += dpfpMulPwr.leakage_power;
-   // finalPwr.leakage_power += spfpMulPwr.leakage_power*units.fp_sp_multiply;
-   // finalPwr.leakage_power += dpfpMulPwr.leakage_power*units.fp_dp_multiply;
+    // Since leakage power is much greater for floating point multipliers, assume maximum reuse
+    if (units.fp_sp_multiply > 0) finalPwr.leakage_power += spfpMulPwr.leakage_power*reuse_factor; 
+    if (units.fp_dp_multiply > 0) finalPwr.leakage_power += dpfpMulPwr.leakage_power*reuse_factor;
 }
 
 void
@@ -426,16 +423,10 @@ Utilization::calculateDynamicPowerUsage(FunctionalUnits units) {
     totalPwr.dynamic_power += (spfpAddPwr.switch_power+spfpAddPwr.internal_power)*units.fp_sp_adder*5;
     totalPwr.dynamic_power += (dpfpAddPwr.switch_power+dpfpAddPwr.internal_power)*units.fp_dp_adder*5;
     totalPwr.dynamic_power += (ADD_0_5ns_int_power+ADD_0_5ns_switch_power)*(units.counter_units+units.conversion+units.compare+units.gep);
-    /*
-    if(units.fpDivision > 0) {
-        totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fpDivision;
-        totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fpDivision;
-    }
-    */
     if (units.fp_sp_multiply > 0) totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*5;
     if (units.fp_dp_multiply > 0) totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*5;
-    // totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*units.fp_sp_multiply;
-    // totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*units.fp_dp_multiply;
+    if (units.fp_sp_multiply > 0) totalPwr.dynamic_power += (spfpMulPwr.switch_power+spfpMulPwr.internal_power)*reuse_factor*fp_cycle_count;
+    if (units.fp_dp_multiply > 0) totalPwr.dynamic_power += (dpfpMulPwr.switch_power+dpfpMulPwr.internal_power)*reuse_factor*fp_cycle_count;
     totalPwr.dynamic_energy += (totalPwr.dynamic_power);
 }
 
@@ -452,15 +443,12 @@ Utilization::calculateRegisterPowerUsage(Reg_Usage *regUsage, int cycle) {
 
 void 
 Utilization::calculateArea(FunctionalUnits units) {
-    
     totalPwr.area = multiPwr.area*units.int_multiply_units;
     totalPwr.area += bitPwr.area*units.int_bit_units;
     totalPwr.area += shiftPwr.area*units.int_shifter_units;
     totalPwr.area += dpfpAddPwr.area*units.fp_dp_adder;
-    //totalPwr.area += dpfpMulPwr.area*units.fp_dp_multiply;
     totalPwr.area += spfpAddPwr.area*units.fp_sp_adder;
-    //totalPwr.area += spfpMulPwr.area*units.fp_sp_multiply;
-    // Since area is much greater for floating point multipliers, assume full reuse
-    if (units.fp_sp_multiply > 0) totalPwr.area += spfpMulPwr.area; 
-    if (units.fp_dp_multiply > 0) totalPwr.area += dpfpMulPwr.area;
+    // Since area is much greater for floating point multipliers, assume maximum reuse
+    if (units.fp_sp_multiply > 0) totalPwr.area += spfpMulPwr.area*reuse_factor; 
+    if (units.fp_dp_multiply > 0) totalPwr.area += dpfpMulPwr.area*reuse_factor;
 }

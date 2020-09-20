@@ -30,6 +30,12 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     prevBB = NULL;
     typeList = NULL;
     running = false;
+    memory_loads = 0;
+    memory_stores = 0;
+    dma_loads = 0;
+    dma_stores = 0;
+    global_loads = 0;
+    global_stores = 0;
     clock_period = clock_period * 1000;
     //process_delay = 1; //Number of cycles a compute_node needs to complete
 }
@@ -65,11 +71,11 @@ LLVMInterface::tick() {
     }
     cycle++;
     comm->refreshMemPorts();
-    hardware->update();
+    //hardware->update();
     ///////////////////////////
-    //pwrUtil->updatePowerConsumption(_FunctionalUnits);
-    //regList->resetAccess();
-    //clearFU();
+    pwrUtil->updatePowerConsumption(_FunctionalUnits);
+    regList->resetAccess();
+    clearFU();
     loadOpScheduled = false;
     storeOpScheduled = false;
     compOpScheduled = false;
@@ -82,25 +88,37 @@ LLVMInterface::tick() {
     if (dbg) DPRINTF(LLVMInterface, "Checking Compute Queue for Nodes Ready for Commit!\n");
     for(auto i = 0; i < computeQueue.size();) {
         if (dbg) DPRINTF(LLVMOp, "Checking if %s has finished\n", computeQueue.at(i)->_OpCode);
-        //if(unlimitedFU) {
-            if(computeQueue.at(i)->commit()) {
-                auto it = computeQueue.erase(computeQueue.begin() + i);
-                i = std::distance(computeQueue.begin(), it);
-            } else {
-                i++;
-                // Check if FP operation has staged
-                if (reservation.at(i)->_StageCycle) {
-                    if((reservation.at(i)->_CurrCycle >= reservation.at(i)->_StageCycle)) { } // Active, but staged
-                    else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-                } else hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-            }
-        //} else if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
-        //    if(computeQueue.at(i)->commit()) {
-        //        auto it = computeQueue.erase(computeQueue.begin() + i);
-        //        i = std::distance(computeQueue.begin(), it);
-        //    } else i++;
-        //} else i++;
+        if(pipelined) {
+             if(unlimitedFU) {
+                updateFU(reservation.at(i)->_FunctionalUnit);
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                }
+                else i++;
+            } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                } else i++;
+            } else i++;
+        } else { 
+            if(unlimitedFU) {
+                updateFU(reservation.at(i)->_FunctionalUnit);
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                }
+                else i++;
+            } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
+                if(computeQueue.at(i)->commit()) {
+                    auto it = computeQueue.erase(computeQueue.begin() + i);
+                    i = std::distance(computeQueue.begin(), it);
+                } else i++;
+            } else i++;
+        }
     }
+    scheduled = false;
     if (reservation.empty()) { // If no compute nodes in reservation queue, load next basic block
         if (dbg) DPRINTF(LLVMInterface, "Schedule Basic Block!\n");
         scheduleBB(currBB);
@@ -116,84 +134,74 @@ LLVMInterface::tick() {
                 if (dbg) DPRINTF(RuntimeQueues, "Checking if %s returning to %s can launch\n", reservation.at(i)->_OpCode, reservation.at(i)->_ReturnRegister->getName());
             }
             if (reservation.at(i)->_ActiveParents == 0) {
-                if(!(reservation.at(i)->_Terminator)) {
-                    if(reservation.at(i)->_OpCode == "load") {
-                        loadOpScheduled = true;
-                        readQueue.push_back(reservation.at(i));
-                        reservation.at(i)->compute();
-                        hardware->memoryLoad();
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    } else if(reservation.at(i)->_OpCode == "store") {
-                        storeOpScheduled = true;
-                        writeQueue.push_back(reservation.at(i));
-                        reservation.at(i)->compute();
-                        hardware->memoryStore();
-                        auto it = reservation.erase(reservation.begin()+i);
-                        i = std::distance(reservation.begin(), it);
-                    }  //////////////// New
-                    else if(reservation.at(i)->_MaxCycle == 0) {
-                        if(!unlimitedFU) {
-                            if(hardware->available(reservation.at(i)->_FunctionalUnit)) {
-                                reservation.at(i)->compute();
-                                reservation.at(i)->commit();
-                                compOpScheduled = true;
-                                auto it = reservation.erase(reservation.begin()+i);
-                                i = std::distance(reservation.begin(), it);
-                            } else i++;
-                        } else {
-                            hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
+                if(!(reservation.at(i)->_Terminator)) { 
+                        if(reservation.at(i)->_OpCode == "load") {
+                            loadOpScheduled = true;
+                            readQueue.push_back(reservation.at(i));
                             reservation.at(i)->compute();
-                            reservation.at(i)->commit();
-                            compOpScheduled = true;
+                            if(reservation.at(i)->_Global) dma_loads++;
+                            else memory_loads++; 
+                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                            scheduled = true;
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
-                        }
-                    } //////////////// New
-                    //else if(reservation.at(i)->_MaxCycle==0) {
-                    //    reservation.at(i)->compute();
-                    //    reservation.at(i)->commit();
-                    //    if(unlimitedFU) hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-                    //    scheduled = true; compOpScheduled = true;
-                    //    auto it = reservation.erase(reservation.begin()+i);
-                    //    i = std::distance(reservation.begin(), it);
-                    // }
-                    else { // Computation Units
-                        if(!unlimitedFU){
-                            if(hardware->available(reservation.at(i)->_FunctionalUnit)){
+                        } else if(reservation.at(i)->_OpCode == "store") {
+                            storeOpScheduled = true;
+                            writeQueue.push_back(reservation.at(i));
+                            reservation.at(i)->compute();
+                            if(reservation.at(i)->_Global) dma_stores++;
+                            else memory_stores++;
+                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                            scheduled = true;
+                            auto it = reservation.erase(reservation.begin()+i);
+                            i = std::distance(reservation.begin(), it);
+                        } else if(reservation.at(i)->_MaxCycle==0) {
+                            reservation.at(i)->compute();
+                            reservation.at(i)->commit(); 
+                            if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                            scheduled = true; compOpScheduled = true;
+                            auto it = reservation.erase(reservation.begin()+i);
+                            i = std::distance(reservation.begin(), it);
+                        } else { // Computation Units
+                            if(!unlimitedFU){
+                                if(limitedFU(reservation.at(i)->_FunctionalUnit)){
+                                    if(reservation.at(i)->_OpCode == "fdiv") _FunctionalUnits.fpDivision++;
+                                    computeQueue.push_back(reservation.at(i));
+                                    reservation.at(i)->compute();
+                                    reservation.at(i)->commit();
+                                    scheduled = true; compOpScheduled = true;
+                                    auto it = reservation.erase(reservation.begin()+i);
+                                    i = std::distance(reservation.begin(), it);
+                                } else i++;
+                            }
+                            else {
                                 computeQueue.push_back(reservation.at(i));
                                 reservation.at(i)->compute();
                                 reservation.at(i)->commit();
-                                compOpScheduled = true;
+                                if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
+                                scheduled = true; compOpScheduled = true;
                                 auto it = reservation.erase(reservation.begin()+i);
                                 i = std::distance(reservation.begin(), it);
-                            } else i++;
-                        } else {
-                            computeQueue.push_back(reservation.at(i));
-                            reservation.at(i)->compute();
-                            reservation.at(i)->commit();
-                            hardware->updateDynamic(reservation.at(i)->_FunctionalUnit);
-                            compOpScheduled = true;
-                            auto it = reservation.erase(reservation.begin()+i);
-                            i = std::distance(reservation.begin(), it);
+                            }
                         }
-                    }
                 } else if ((reservation.at(i)->_OpCode != "ret")) {
                     if (reservation.size() < scheduling_threshold) {
-                        hardware->controlFlow();
+                        if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                         prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
-                        reservation.at(i)->compute(); // Send instruction to runtime computation simulator
+                        reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
                         currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
                         auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
                         i = std::distance(reservation.begin(), it);
                         scheduleBB(currBB);
                     } else i++;
-                }
+                } 
             } else {
                 if (reservation.at(i)->_OpCode == "ret"){
-                    if (dbg) DPRINTF(LLVMInterface, "Simulation Complete \n");
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
+                        if (dbg) DPRINTF(LLVMInterface, "Simulation Complete \n");
+                        running = false;
                         finalize();
+                        comm->finish();
                     }
                 }
                 i++;
@@ -337,6 +345,7 @@ LLVMInterface::constructBBList() {
     // m->dump();
     bool dbg = debug();
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
+    initFU();
     bbList = new std::list<BasicBlock*>(); // Create New Basic Block List
     regList = new RegisterList(); // Create New Register List
     typeList = new TypeList(); // Create New User Defined Types List
@@ -344,6 +353,9 @@ LLVMInterface::constructBBList() {
     Register* alwaysFalse = new Register("alwaysFalse", ((uint64_t) 0));
     regList->addRegister(alwaysTrue);
     regList->addRegister(alwaysFalse);
+    pwrUtil = new Utilization(clock_period, fu_clock_period, regList);
+    pwrUtil->setFPReuseFactor(1);
+    if (occupancy_tracking) _CycleOccList = new std::list<FunctionalUnits>();
     hardware = new Hardware(fu_latency); // Initialize Hardware Functional Units
     hardware->linkRegList(regList);
     std::ifstream llvmFile(filename, std::ifstream::in); // Open LLVM File
@@ -533,6 +545,21 @@ LLVMInterface::initialize() {
     running = true;
     cycle = 0;
     stalls = 0;
+    execnodes = 0;
+    loadOnly = 0;
+    storeOnly = 0;
+    compOnly = 0;
+    loadStore = 0;
+    loadComp = 0;
+    loadStoreComp = 0;
+    storeComp = 0;
+    loadOnlyStall = 0; 
+    storeOnlyStall = 0; 
+    compOnlyStall = 0; 
+    loadStoreStall = 0; 
+    loadCompStall = 0;
+    loadStoreCompStall = 0;
+    storeCompStall = 0;
     unlimitedFU = unlimitedMode(); // If all functional units are unlimited, decreases simulation time
     hardware->updateLimit(counter_units,
                                 int_adder_units,
@@ -589,43 +616,70 @@ LLVMInterface::unlimitedMode() {
 
 void
 LLVMInterface::occupancy() {
-        if (loadOpScheduled) {
+    if (loadOpScheduled) {
         if (storeOpScheduled) {
-            if (compOpScheduled) hardware->occ_scheduled.loadStoreComp++;
-            else hardware->occ_scheduled.loadStore++;
-        } else if (compOpScheduled) hardware->occ_scheduled.loadComp++;
-        else hardware->occ_scheduled.loadOnly++;
+            if (compOpScheduled) loadStoreComp++;
+            else loadStore++;
+        } else if (compOpScheduled) loadComp++;
+        else loadOnly++;
     } else if(storeOpScheduled) {
-        if (compOpScheduled) hardware->occ_scheduled.storeComp++;
-        else hardware->occ_scheduled.storeOnly++;
-    } else if (compOpScheduled) hardware->occ_scheduled.compOnly++;
+        if (compOpScheduled) storeComp++;
+        else storeOnly++;
+    } else if (compOpScheduled) compOnly++;
     else {
         stalls++;
         if(loadInFlight) {
             if(storeInFlight) {
-                if(compInFlight) hardware->occ_stalled.loadStoreComp++;
-                else hardware->occ_stalled.loadStore++;
-            } else if (compInFlight) hardware->occ_stalled.loadComp++;
-            else hardware->occ_stalled.loadOnly++;
+                if(compInFlight) loadStoreCompStall++;
+                else loadStoreStall++;
+            } else if (compInFlight) loadCompStall++;
+            else loadOnlyStall++;
         } else if(storeInFlight) {
-            if(compInFlight) hardware->occ_stalled.storeComp++;
-            else hardware->occ_stalled.storeOnly++;
-        } else if (compInFlight) hardware->occ_stalled.compOnly++;
+            if(compInFlight) storeCompStall++;
+            else storeOnlyStall++;
+        } else if (compInFlight) compOnlyStall++;
     }
-
 }
 
 void
 LLVMInterface::finalize() {
+    std::cout << "1\n";
     // Simulation Times
     running = false;
     simStop = std::chrono::high_resolution_clock::now();
     simTime = std::chrono::duration_cast<std::chrono::duration<double>>(simStop-timeStart);
+//    cache_size = comm->getCacheSize();
+    read_ports = comm->getReadPorts();
+    write_ports = comm->getWritePorts();
+    spm_size = comm->getPmemRange();
+    read_bus_width = comm->getReadBusWidth();
+    write_bus_width = comm->getWriteBusWidth();
+//    cache_ports = comm->getcachePorts();
+//    local_ports = comm->getlocalPorts();
+    runtime = (cycle*(1e-10));
+    execnodes = cycle-stalls-1;
+    AverageOccupancy();
+    pwrUtil->finalPowerUsage(_MaxFU, cycle);
+   
+    /*
+    // Experimental
+    // getCactiResults(int cache_size, int word_size, int ports, int type)
+    // SPM cache_type = 0  
+    _SPM.opt = pwrUtil->getCactiResults(regList->count()*(read_bus_width), (read_bus_width/8), (read_ports+write_ports), 0);
+    _SPM.leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
+    _SPM.dyn_read = pwrUtil->getCactiResults((int) (dma_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0); 
+    _SPM.dyn_write = pwrUtil->getCactiResults((int) (dma_stores*(write_bus_width/8)), (read_bus_width/8), (write_ports), 0); 
 
+    // Experimental
+    // Cache cache_type = 1
+    _Cache.leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
+    _Cache.dyn_read = pwrUtil->getCactiResults(dma_loads*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    _Cache.dyn_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    
+    */
     printPerformanceResults();
-    // comm->printResults() ?
-    hardware->printResults();
-    comm->finish();
+    // comm->printResults() 
+    // hardware->printResults();
 }
 
 void
@@ -646,22 +700,136 @@ LLVMInterface::printPerformanceResults() {
     std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
     std::cout << "   Executed Nodes:                  " << (cycle-stalls-1) << " cycles" << std::endl;
     std::cout << std::endl;
-}
-    /*
-    // getCactiResults(int cache_size, int word_size, int ports, int type)
-    // SPM cache_type = 0
-    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
-    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
-    //uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0);
-    //uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0);
 
-    // Cache cache_type = 1
-    // uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
-    // uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults(dma_loads*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
-    // uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
-    double exponential = 1e9; // Units correction
-    double leak = 1.0; // Remnant of old units difference
-    */
+    results = new Results(  (double)(setupTime.count()*exponential),
+                            (double)(simTime.count()*exponential),
+                            clock_period,
+                            fu_clock_period,
+                            cycle,
+                            runtime,
+                            stalls,
+                            execnodes,
+                            loadOnly,
+                            storeOnly,
+                            compOnly,
+                            loadStore,
+                            loadComp,
+                            loadStoreComp,
+                            storeComp,
+                            loadOnlyStall,
+                            storeOnlyStall,
+                            compOnlyStall,
+                            loadStoreStall,
+                            loadCompStall,
+                            loadStoreCompStall,
+                            storeCompStall,
+                            cache_size,
+                            spm_size,
+                            read_ports,
+                            write_ports,
+                            read_bus_width,
+                            write_bus_width,
+                            cache_ports,
+                            local_ports,
+                            (_SPM.leakage.power.readOp.leakage+_SPM.leakage.power.writeOp.leakage)*leak,
+                            _SPM.dyn_read.power.readOp.dynamic*exponential,
+                            _SPM.dyn_write.power.writeOp.dynamic*exponential,
+                            _SPM.leakage.area,
+                            (_SPM.opt.power.readOp.leakage+_SPM.opt.power.writeOp.leakage)*leak,
+                            _SPM.opt.area,
+                            (_Cache.leakage.power.readOp.leakage+_Cache.leakage.power.writeOp.leakage)*leak,
+                            _Cache.dyn_read.power.readOp.dynamic*exponential,
+                            _Cache.dyn_write.power.writeOp.dynamic*exponential,
+                            _Cache.leakage.area,
+                            _MaxFU.counter_units, 
+                            _RunningAverageOccupancy.counter_units,
+                            _MaxFU.int_adder_units, 
+                            _RunningAverageOccupancy.int_adder_units,
+                            _MaxFU.int_multiply_units, 
+                            _RunningAverageOccupancy.int_multiply_units,
+                            _MaxFU.int_shifter_units, 
+                            _RunningAverageOccupancy.int_shifter_units,
+                            _MaxFU.int_bit_units, 
+                            _RunningAverageOccupancy.int_bit_units,
+                            _MaxFU.fp_sp_adder, 
+                            _RunningAverageOccupancy.fp_sp_adder,
+                            _MaxFU.fp_dp_adder, 
+                            _RunningAverageOccupancy.fp_dp_adder,
+                            _MaxFU.fp_sp_multiply, 
+                            _RunningAverageOccupancy.fp_sp_multiply,
+                            _MaxFU.fp_dp_multiply, 
+                            _RunningAverageOccupancy.fp_dp_multiply,
+                            _MaxFU.compare, 
+                            _RunningAverageOccupancy.compare,
+                            _MaxFU.gep, 
+                            _RunningAverageOccupancy.gep,
+                            _MaxFU.conversion, 
+                            _RunningAverageOccupancy.conversion,
+                            _MaxParsed.counter_units,
+                            _MaxParsed.int_adder_units,
+                            _MaxParsed.int_multiply_units,
+                            _MaxParsed.int_shifter_units,
+                            _MaxParsed.int_bit_units,
+                            _MaxParsed.fp_sp_adder,
+                            _MaxParsed.fp_dp_adder,
+                            _MaxParsed.fp_sp_multiply,
+                            _MaxParsed.fp_dp_multiply,
+                            _MaxParsed.compare,
+                            _MaxParsed.gep,
+                            _MaxParsed.conversion,
+                            _MaxParsed.other,
+                            regList->size(),
+                            regList->count(),
+                            regList->average()/((double)cycle),
+                            regList->avgSize()/(regList->average()),
+                            pwrUtil->regUsage.reads,
+                            pwrUtil->regUsage.writes,
+                            memory_loads,
+                            memory_stores,
+                            dma_loads,
+                            dma_stores,
+                            pwrUtil->finalPwr.leakage_power,
+                            pwrUtil->totalPwr.dynamic_energy*runtime,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime,
+                            pwrUtil->totalPwr.reg_leakage_power,
+                            pwrUtil->totalPwr.reg_dynamic_energy*runtime,
+                            pwrUtil->totalPwr.reg_leakage_power + pwrUtil->totalPwr.reg_dynamic_energy*runtime,
+                            (pwrUtil->finalPwr.leakage_power) + (pwrUtil->totalPwr.dynamic_energy)*runtime + ((pwrUtil->totalPwr.reg_leakage_power) + (pwrUtil->totalPwr.reg_dynamic_energy)*runtime),
+                            pwrUtil->totalPwr.area,
+                            pwrUtil->totalPwr.reg_area,
+                            pwrUtil->totalPwr.area + pwrUtil->totalPwr.reg_area);
+
+    results->unitCorrections();
+    results->print();
+    //results->simpleStats();
+    //if (occupancy_tracking) printOccupancyList();
+    //regList->printRegNames();
+    delete results;
+}
+
+
+void
+LLVMInterface::printOccupancyList() {
+    std::cout << std::endl;
+    for (auto it = _CycleOccList->begin(); it != _CycleOccList->end(); ++it) {
+        std::cout << (*it).counter_units << ", ";
+        std::cout << (*it).int_adder_units << ", ";
+        std::cout << (*it).int_multiply_units << ", ";
+        std::cout << (*it).int_shifter_units << ", ";
+        std::cout << (*it).int_bit_units << ", ";
+        std::cout << (*it).fp_sp_adder << ", ";
+        std::cout << (*it).fp_dp_adder << ", ";
+        std::cout << (*it).fp_sp_multiply << ", ";
+        std::cout << (*it).fp_dp_multiply << ", ";
+        std::cout << (*it).compare << ", ";
+        std::cout << (*it).gep << ", ";
+        std::cout << (*it).conversion << ", ";
+        std::cout << (*it).other;
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
+
 
 void
 LLVMInterface::dumpQueues() {
@@ -692,4 +860,335 @@ LLVMInterface::dumpQueues() {
     std::cout << "*********************************************************\n"
               << "End of queue dump\n"
               << "*********************************************************\n";
+}
+
+
+void
+LLVMInterface::initFU() {
+    maxFU(_FunctionalUnits);
+    _FunctionalUnits.counter_units = 0;
+    _FunctionalUnits.int_adder_units = 0;
+    _FunctionalUnits.int_multiply_units = 0;
+    _FunctionalUnits.int_shifter_units = 0;
+    _FunctionalUnits.int_bit_units = 0;
+    _FunctionalUnits.fp_sp_adder = 0;
+    _FunctionalUnits.fp_dp_adder = 0;
+    _FunctionalUnits.fp_sp_multiply = 0;
+    _FunctionalUnits.fp_dp_multiply = 0;
+    _FunctionalUnits.compare = 0;
+    _FunctionalUnits.gep = 0;
+    _FunctionalUnits.conversion = 0;
+    _FunctionalUnits.other = 0;
+    _MaxParsed.counter_units = 0;
+    _MaxParsed.int_adder_units = 0;
+    _MaxParsed.int_multiply_units = 0;
+    _MaxParsed.int_shifter_units = 0;
+    _MaxParsed.int_bit_units = 0;
+    _MaxParsed.fp_sp_adder = 0;
+    _MaxParsed.fp_dp_adder = 0;
+    _MaxParsed.fp_sp_multiply = 0;
+    _MaxParsed.fp_dp_multiply = 0;
+    _MaxParsed.compare = 0;
+    _MaxParsed.gep = 0;
+    _MaxParsed.conversion = 0;
+    _MaxParsed.other = 0;
+    _MaxFU.counter_units = 0;
+    _MaxFU.int_adder_units = 0;
+    _MaxFU.int_multiply_units = 0;
+    _MaxFU.int_shifter_units = 0;
+    _MaxFU.int_bit_units = 0;
+    _MaxFU.fp_sp_adder = 0;
+    _MaxFU.fp_dp_adder = 0;
+    _MaxFU.fp_sp_multiply = 0;
+    _MaxFU.fp_dp_multiply = 0;
+    _MaxFU.compare = 0;
+    _MaxFU.gep = 0;
+    _MaxFU.conversion = 0;
+    _MaxFU.other = 0;
+    _AverageOccupancy.counter_units = 0;
+    _AverageOccupancy.int_adder_units = 0;
+    _AverageOccupancy.int_multiply_units = 0;
+    _AverageOccupancy.int_shifter_units = 0;
+    _AverageOccupancy.int_bit_units = 0;
+    _AverageOccupancy.fp_sp_adder = 0;
+    _AverageOccupancy.fp_dp_adder = 0;
+    _AverageOccupancy.fp_sp_multiply = 0;
+    _AverageOccupancy.fp_dp_multiply = 0;
+    _AverageOccupancy.compare = 0;
+    _AverageOccupancy.gep = 0;
+    _AverageOccupancy.conversion = 0;
+    _AverageOccupancy.other = 0;
+    _RunningAverageOccupancy.counter_units = 0;
+    _RunningAverageOccupancy.int_adder_units = 0;
+    _RunningAverageOccupancy.int_multiply_units = 0;
+    _RunningAverageOccupancy.int_shifter_units = 0;
+    _RunningAverageOccupancy.int_bit_units = 0;
+    _RunningAverageOccupancy.fp_sp_adder = 0;
+    _RunningAverageOccupancy.fp_dp_adder = 0;
+    _RunningAverageOccupancy.fp_sp_multiply = 0;
+    _RunningAverageOccupancy.fp_dp_multiply = 0;
+    _RunningAverageOccupancy.compare = 0;
+    _RunningAverageOccupancy.gep = 0;
+    _RunningAverageOccupancy.conversion = 0;
+    _RunningAverageOccupancy.other = 0;
+}
+
+
+void
+LLVMInterface::clearFU() {
+    maxFU(_FunctionalUnits);
+    Occupancy(_FunctionalUnits);
+    _FunctionalUnits.counter_units = 0;
+    _FunctionalUnits.int_adder_units = 0;
+    _FunctionalUnits.int_multiply_units = 0;
+    _FunctionalUnits.int_shifter_units = 0;
+    _FunctionalUnits.int_bit_units = 0;
+    _FunctionalUnits.fp_sp_adder = 0;
+    _FunctionalUnits.fp_dp_adder = 0;
+    _FunctionalUnits.fp_sp_multiply = 0;
+    _FunctionalUnits.fp_dp_multiply = 0;
+    _FunctionalUnits.compare = 0;
+    _FunctionalUnits.gep = 0;
+    _FunctionalUnits.conversion = 0;
+    _FunctionalUnits.other = 0;
+    _FunctionalUnits.fpDivision = 0;
+}
+
+void
+LLVMInterface::Occupancy(FunctionalUnits FU) {
+    _AverageOccupancy.counter_units += FU.counter_units;
+    _AverageOccupancy.int_adder_units += FU.int_adder_units;
+    _AverageOccupancy.int_multiply_units += FU.int_multiply_units;
+    _AverageOccupancy.int_shifter_units += FU.int_shifter_units;
+    _AverageOccupancy.int_bit_units += FU.int_bit_units;
+    _AverageOccupancy.fp_sp_adder += FU.fp_sp_adder;
+    _AverageOccupancy.fp_dp_adder += FU.fp_dp_adder;
+    _AverageOccupancy.fp_sp_multiply += FU.fp_sp_multiply;
+    _AverageOccupancy.fp_dp_multiply += FU.fp_dp_multiply;
+    _AverageOccupancy.compare += FU.compare;
+    _AverageOccupancy.gep += FU.gep;
+    _AverageOccupancy.conversion += FU.conversion;
+    _AverageOccupancy.other += FU.other;
+
+    _CycleOccupancy.counter_units = FU.counter_units;
+    _CycleOccupancy.int_adder_units = FU.int_adder_units;
+    _CycleOccupancy.int_multiply_units = FU.int_multiply_units;
+    _CycleOccupancy.int_shifter_units = FU.int_shifter_units;
+    _CycleOccupancy.int_bit_units = FU.int_bit_units;
+    _CycleOccupancy.fp_sp_adder = FU.fp_sp_adder;
+    _CycleOccupancy.fp_dp_adder = FU.fp_dp_adder;
+    _CycleOccupancy.fp_sp_multiply = FU.fp_sp_multiply;
+    _CycleOccupancy.fp_dp_multiply = FU.fp_dp_multiply;
+    _CycleOccupancy.compare = FU.compare;
+    _CycleOccupancy.gep = FU.gep;
+    _CycleOccupancy.conversion = FU.conversion;
+    _CycleOccupancy.other = FU.other;
+    if (occupancy_tracking) {
+        _CycleOccList->push_back(_CycleOccupancy);
+    }
+}
+
+
+void
+LLVMInterface::AverageOccupancy() {
+    if (_AverageOccupancy.counter_units != 0) _RunningAverageOccupancy.counter_units = (_AverageOccupancy.counter_units/_MaxFU.counter_units)/cycle;
+    if (_AverageOccupancy.int_adder_units != 0) _RunningAverageOccupancy.int_adder_units = (_AverageOccupancy.int_adder_units/_MaxFU.int_adder_units)/cycle;
+    if (_AverageOccupancy.int_multiply_units != 0) _RunningAverageOccupancy.int_multiply_units = (_AverageOccupancy.int_multiply_units/_MaxFU.int_multiply_units)/cycle;
+    if (_AverageOccupancy.int_shifter_units != 0) _RunningAverageOccupancy.int_shifter_units = (_AverageOccupancy.int_shifter_units/_MaxFU.int_shifter_units)/cycle;
+    if (_AverageOccupancy.int_bit_units != 0) _RunningAverageOccupancy.int_bit_units = (_AverageOccupancy.int_bit_units/_MaxFU.int_bit_units)/cycle;
+    if (_AverageOccupancy.fp_sp_adder != 0) _RunningAverageOccupancy.fp_sp_adder = (_AverageOccupancy.fp_sp_adder/_MaxFU.fp_sp_adder)/cycle;
+    if (_AverageOccupancy.fp_dp_adder != 0) _RunningAverageOccupancy.fp_dp_adder = (_AverageOccupancy.fp_dp_adder/_MaxFU.fp_dp_adder)/cycle;
+    if (_AverageOccupancy.fp_sp_multiply != 0) _RunningAverageOccupancy.fp_sp_multiply = (_AverageOccupancy.fp_sp_multiply/_MaxFU.fp_sp_multiply)/cycle;
+    if (_AverageOccupancy.fp_dp_multiply != 0) _RunningAverageOccupancy.fp_dp_multiply = (_AverageOccupancy.fp_dp_multiply/_MaxFU.fp_dp_multiply)/cycle;
+    if (_AverageOccupancy.compare != 0) _RunningAverageOccupancy.compare = (_AverageOccupancy.compare/_MaxFU.compare)/cycle;
+    if (_AverageOccupancy.gep != 0) _RunningAverageOccupancy.gep = (_AverageOccupancy.gep/_MaxFU.gep)/cycle;
+    if (_AverageOccupancy.conversion != 0) _RunningAverageOccupancy.conversion = (_AverageOccupancy.conversion/_MaxFU.conversion)/cycle;
+    if (_AverageOccupancy.other != 0) _RunningAverageOccupancy.other = (_AverageOccupancy.other/_MaxFU.other)/cycle;
+}
+
+void
+LLVMInterface::updateFU(int8_t FU) {
+    switch(FU) {
+        case COUNTER: _FunctionalUnits.counter_units++; break;
+        case INTADDER: _FunctionalUnits.int_adder_units++; break;
+        case INTMULTI: _FunctionalUnits.int_multiply_units++; break;
+        case INTSHIFTER:  _FunctionalUnits.int_shifter_units++; break;
+        case INTBITWISE: _FunctionalUnits.int_bit_units++; break;
+        case FPSPADDER: _FunctionalUnits.fp_sp_adder++; break;
+        case FPDPADDER: _FunctionalUnits.fp_dp_adder++; break;
+        case FPSPMULTI: _FunctionalUnits.fp_sp_multiply++; break;
+        case FPDPMULTI: _FunctionalUnits.fp_dp_multiply++; break;
+        case COMPARE: _FunctionalUnits.compare++; break;
+        case GETELEMENTPTR: _FunctionalUnits.gep++; break;
+        case CONVERSION: _FunctionalUnits.conversion++; break;
+        default: _FunctionalUnits.other++;
+    }
+}
+
+void
+LLVMInterface::updateParsedFU(int8_t FU) {
+    switch(FU) {
+        case COUNTER: _MaxParsed.counter_units++; break;
+        case INTADDER: _MaxParsed.int_adder_units++; break;
+        case INTMULTI: _MaxParsed.int_multiply_units++; break;
+        case INTSHIFTER:  _MaxParsed.int_shifter_units++; break;
+        case INTBITWISE: _MaxParsed.int_bit_units++; break;
+        case FPSPADDER: _MaxParsed.fp_sp_adder++; break;
+        case FPDPADDER: _MaxParsed.fp_dp_adder++; break;
+        case FPSPMULTI: _MaxParsed.fp_sp_multiply++; break;
+        case FPDPMULTI: _MaxParsed.fp_dp_multiply++; break;
+        case COMPARE: _MaxParsed.compare++; break;
+        case GETELEMENTPTR: _MaxParsed.gep++; break;
+        case CONVERSION: _MaxParsed.conversion++; break;
+        default: _MaxParsed.other++; break;
+    }
+}
+
+void
+LLVMInterface::maxFU(FunctionalUnits FU) {
+    if(FU.counter_units > _MaxFU.counter_units) _MaxFU.counter_units = FU.counter_units;
+    if(FU.int_adder_units > _MaxFU.int_adder_units) _MaxFU.int_adder_units = FU.int_adder_units;
+    if(FU.int_multiply_units > _MaxFU.int_multiply_units) _MaxFU.int_multiply_units = FU.int_multiply_units;
+    if(FU.int_shifter_units > _MaxFU.int_shifter_units) _MaxFU.int_shifter_units = FU.int_shifter_units;
+    if(FU.int_bit_units > _MaxFU.int_bit_units) _MaxFU.int_bit_units = FU.int_bit_units;
+    if(FU.fp_sp_adder > _MaxFU.fp_sp_adder) _MaxFU.fp_sp_adder = FU.fp_sp_adder;
+    if(FU.fp_dp_adder > _MaxFU.fp_dp_adder) _MaxFU.fp_dp_adder = FU.fp_dp_adder;
+    if(FU.fp_sp_multiply > _MaxFU.fp_sp_multiply) _MaxFU.fp_sp_multiply = FU.fp_sp_multiply;
+    if(FU.fp_dp_multiply > _MaxFU.fp_dp_multiply) _MaxFU.fp_dp_multiply = FU.fp_dp_multiply;
+    if(FU.compare > _MaxFU.compare) _MaxFU.compare = FU.compare;
+    if(FU.gep > _MaxFU.gep) _MaxFU.gep = FU.gep;
+    if(FU.conversion > _MaxFU.conversion) _MaxFU.conversion = FU.conversion;
+    if(FU.other > _MaxFU.other) _MaxFU.other = FU.other;
+}
+
+bool
+LLVMInterface::limitedFU(int8_t FU) {
+    bool available = false;
+    switch(FU) {
+        case COUNTER: { 
+            if(counter_units == -1) {
+                _FunctionalUnits.counter_units++; 
+                available = true;
+            } else if(_FunctionalUnits.counter_units < counter_units) {
+                _FunctionalUnits.counter_units++; 
+                available = true; 
+            }
+            break;
+        }
+        case INTADDER: {
+            if(int_adder_units == -1) {
+                _FunctionalUnits.int_adder_units++; 
+                available = true;
+            } else if(_FunctionalUnits.int_adder_units < int_adder_units) {
+                _FunctionalUnits.int_adder_units++; 
+                available = true; 
+            }
+            break;
+        }
+        case INTMULTI: {
+            if(int_multiply_units == -1) {
+                _FunctionalUnits.int_multiply_units++; 
+                available = true;
+            } else if(_FunctionalUnits.int_multiply_units < int_multiply_units) {
+                _FunctionalUnits.int_multiply_units++; 
+                available = true; 
+            }
+            break;
+        }
+        case INTSHIFTER: {
+            if(int_shifter_units == -1) {
+                _FunctionalUnits.int_shifter_units++; 
+                available = true;
+            } else if(_FunctionalUnits.int_shifter_units < int_shifter_units) {
+                _FunctionalUnits.int_shifter_units++; 
+                available = true; 
+            }
+            break;
+        }
+        case INTBITWISE: {
+            if(int_bit_units == -1) {
+                _FunctionalUnits.int_bit_units++; 
+                available = true;
+            } else if(_FunctionalUnits.int_bit_units < int_bit_units) {
+                _FunctionalUnits.int_bit_units++; 
+                available = true; 
+            }
+            break;
+        }
+        case FPSPADDER: {
+            if(fp_sp_adder == -1) {
+                _FunctionalUnits.fp_sp_adder++; 
+                available = true;
+            } else if(_FunctionalUnits.fp_sp_adder < fp_sp_adder) {
+                _FunctionalUnits.fp_sp_adder++; 
+                available = true; 
+            }
+            break;
+        }
+        case FPDPADDER: {
+            if(fp_dp_adder == -1) {
+                _FunctionalUnits.fp_dp_adder++; 
+                available = true;
+            } else if(_FunctionalUnits.fp_dp_adder < fp_dp_adder) {
+                _FunctionalUnits.fp_dp_adder++; 
+                available = true; 
+            }
+            break;
+        }
+        case FPSPMULTI: {
+            if(fp_sp_multiply == -1) {
+                _FunctionalUnits.fp_sp_multiply++; 
+                available = true;
+            } else if(_FunctionalUnits.fp_sp_multiply < fp_sp_multiply) {
+                _FunctionalUnits.fp_sp_multiply++; 
+                available = true; 
+            }
+            break;
+        }
+        case FPDPMULTI: {
+            if(fp_dp_multiply == -1) {
+                _FunctionalUnits.fp_dp_multiply++; 
+                available = true;
+            } else if(_FunctionalUnits.fp_dp_multiply < fp_dp_multiply) {
+                _FunctionalUnits.fp_dp_multiply++; 
+                available = true; 
+            }
+            break;
+        }
+        case COMPARE: {
+            if(compare == -1) {
+                _FunctionalUnits.compare++; 
+                available = true;
+            } else if(_FunctionalUnits.compare < compare) {
+                _FunctionalUnits.compare++; 
+                available = true; 
+            }
+            break;
+        }
+        case GETELEMENTPTR: {
+            if(gep == -1) {
+                _FunctionalUnits.gep++; 
+                available = true;
+            } else if(_FunctionalUnits.gep < gep) {
+                _FunctionalUnits.gep++; 
+                available = true; 
+            }
+            break;
+        }
+        case CONVERSION: {
+            if(conversion == -1) {
+                _FunctionalUnits.conversion++; 
+                available = true;
+            } else if(_FunctionalUnits.conversion < conversion) {
+                _FunctionalUnits.conversion++; 
+                available = true; 
+            }
+            break;
+        }
+        default: {
+            available = true;
+            break;
+        }
+    }
+    return available;
 }

@@ -6,6 +6,7 @@
 #include "llvm_types.hh"
 #include "debug_flags.hh"
 #include "registers.hh"
+#include "base_instruction.hh"
 //#include "instructions.hh"
 //#include "utilization.hh"
 //------------------------------------------//
@@ -105,6 +106,7 @@ class InstructionBase {
         int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
         uint64_t _CurrCycle;
         uint64_t _CurrStage;
+        uint64_t _Usage; // Counter for times instruction is used
         std::string _PrevBB;
         bool _Terminator = false;
         std::string _Dest;
@@ -112,6 +114,8 @@ class InstructionBase {
         std::vector<int64_t> _Ops;
         int8_t _FunctionalUnit;
         Register* _RawCheck = NULL;
+        bool _Stall = false;
+        bool _Global = false;
         bool _debug = false;
         std::string _DebugName;
         // ---- Constructor
@@ -178,7 +182,10 @@ class InstructionBase {
         virtual void compute()           = 0;
         virtual InstructionBase* clone() const = 0;
         virtual std::vector<Register*> runtimeDependencies(std::string PrevBB);
+        virtual bool isGlobal() { return false; }
         // ---- Memory Functions
+        void setGlobal(bool Global) { _Global = Global; }
+        bool dmaAccess() { return _Global; }
         MemoryRequest * getReq() { return _Req; }
         // ---- Dependency Tracking
         void fetchDependency(Register*);
@@ -186,6 +193,8 @@ class InstructionBase {
         void registerChild(InstructionBase*);
         void registerParent(InstructionBase*);
         void signalChildren();
+        // ---- Hardware Usage Functions
+        void used() { _Usage++; }
         // ---- Communications Setup
         void setCommInterface(CommInterface *newComm) { _Comm = newComm; }
         // ---- Data Storage
