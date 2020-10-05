@@ -9,6 +9,7 @@ namespace SALAM {
         // Fetch the operands of the instruction
     	llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
     	assert(iruser);
+        // auto * li = llvm::dyn_cast<llvm::Instruction>(irval);
     	for (auto op : iruser->operand_values()) {
     		auto mapit = irmap->find(op);
     		std::shared_ptr<SALAM::Value> opval;
@@ -54,7 +55,8 @@ namespace SALAM {
     }
 
     void
-    initializeBrInst() {
+    initializeBrInst(SALAM::Br &brInst) {
+        TRACEOUT("SALAM::initializeBrInst");
 
     }
 
@@ -72,8 +74,9 @@ namespace SALAM {
     }
 
     void
-    initializeSwitchInst() {
-        
+    initializeSwitchInst(SALAM::Switch &switchInst) {
+        TRACEOUT("SALAM::initializeSwitchInst");
+
     }
 
     void
@@ -89,8 +92,9 @@ namespace SALAM {
     }
 
     void
-    initializeAddInst() {
-        
+    initializeAddInst(SALAM::Add &addInst) {
+        TRACEOUT("SALAM::initializeAddInst");
+        addInst.setA().setB();
     }
 
     void
@@ -111,8 +115,8 @@ namespace SALAM {
     }
 
     void
-    initializeFAddInst() {
-        
+    initializeFAddInst(SALAM::FAdd &faddInst) {
+        TRACEOUT("SALAM::initializeFAddInst");
     }
 
     void
@@ -130,8 +134,9 @@ namespace SALAM {
     }
     
     void
-    initializeSubInst() {
-        
+    initializeSubInst(SALAM::Sub &subInst) {
+        TRACEOUT("SALAM::initializeSubInst");
+        // ****** //
     }
 
     void
@@ -152,8 +157,9 @@ namespace SALAM {
     }
 
     void
-    initializeFSubInst() {
-        
+    initializeFSubInst(SALAM::FSub &fsubInst) {
+        TRACEOUT("SALAM::initializeFSubInst");
+        // ****** //
     }
 
     void
@@ -171,8 +177,9 @@ namespace SALAM {
     }
 
     void
-    initializeMulInst() {
-        
+    initializeMulInst(SALAM::Mul &mulInst) {
+        TRACEOUT("SALAM::initializeMulInst");
+        // ****** //
     }
 
     void
@@ -193,8 +200,9 @@ namespace SALAM {
     }
 
     void
-    initializeFMulInst() {
-        
+    initializeFMulInst(SALAM::FMul &fmulInst) {
+        TRACEOUT("SALAM::initializeFMulInst");
+        // ****** //
     }
 
     void
@@ -212,8 +220,9 @@ namespace SALAM {
     }
 
     void
-    initializeUDivInst() {
-        
+    initializeUDivInst(SALAM::UDiv &udivInst) {
+        TRACEOUT("SALAM::initializeUDivInst");
+        // ****** //
     }
 
     void
@@ -230,8 +239,9 @@ namespace SALAM {
     }
 
     void
-    initializeSDivInst() {
-        
+    initializeSDivInst(SALAM::SDiv &sdivInst) {
+        TRACEOUT("SALAM::initializeSDivInst");
+        // ****** //
     }
 
     void
@@ -248,8 +258,9 @@ namespace SALAM {
     }
 
     void
-    initializeFDivInst() {
-        
+    initializeFDivInst(SALAM::FDiv &fdivInst) {
+        TRACEOUT("SALAM::initializeFDivInst");
+        // ****** //
     }
 
     void
@@ -267,8 +278,9 @@ namespace SALAM {
     }
 
     void
-    initializeURemInst() {
-        
+    initializeURemInst(SALAM::URem &uremInst) {
+        TRACEOUT("SALAM::initializeURemInst");
+        // ****** //
     }
 
     void
@@ -285,8 +297,9 @@ namespace SALAM {
     }
 
     void
-    initializeSRemInst() {
-        
+    initializeSRemInst(SALAM::SRem &sremInst) {
+        TRACEOUT("SALAM::initializeSRemInst");
+        // ****** //
     }
 
     void
@@ -303,8 +316,9 @@ namespace SALAM {
     }
 
     void
-    initializeFRemInst() {
-        
+    initializeFRemInst(SALAM::FRem &fremInst) {
+        TRACEOUT("SALAM::initializeFRemInst");
+        // ****** //
     }
 
     void
@@ -321,8 +335,9 @@ namespace SALAM {
     }
 
     void
-    initializeShlInst() {
-        
+    initializeShlInst(SALAM::Shl &shlInst) {
+        TRACEOUT("SALAM::initializeShlInst");
+        // ****** //
     }
 
     void
@@ -343,8 +358,9 @@ namespace SALAM {
     }
 
     void
-    initializeLShrInst() {
-        
+    initializeLShrInst(SALAM::LShr &lshlInst) {
+        TRACEOUT("SALAM::initializeLShrInst");
+        // ****** //
     }
 
     void
@@ -360,8 +376,9 @@ namespace SALAM {
     }
 
     void
-    initializeAShrInst() {
-        
+    initializeAShrInst(SALAM::AShr &ashlInst) {
+        TRACEOUT("SALAM::initializeAShrInst");
+        // ****** //
     }
 
     void
@@ -380,8 +397,9 @@ namespace SALAM {
     }
 
     void
-    initializeAndInst() {
-        
+    initializeAndInst(SALAM::And &andInst) {
+        TRACEOUT("SALAM::initializeAndInst");
+        // ****** //
     }
 
     void
@@ -399,8 +417,9 @@ namespace SALAM {
     }
 
     void
-    initializeOrInst() {
-        
+    initializeOrInst(SALAM::Or &orInst) {
+        TRACEOUT("SALAM::initializeOrInst");
+        // ****** //
     }
 
     void
@@ -418,8 +437,9 @@ namespace SALAM {
     }
 
     void
-    initializeXorInst() {
-        
+    initializeXorInst(SALAM::Xor &xorInst) {
+        TRACEOUT("SALAM::initializeXorInst");
+        // ****** //
     }
 
     void
@@ -437,8 +457,9 @@ namespace SALAM {
     }
 
     void
-    initializeLoadInst() {
-        
+    initializeLoadInst(SALAM::Load &loadInst) {
+        TRACEOUT("SALAM::initializeLoadInst");
+        // ****** //
     }
 
     void
@@ -454,8 +475,9 @@ namespace SALAM {
     }
 
     void
-    initializeStoreInst() {
-        
+    initializeStoreInst(SALAM::Store &storeInst) {
+        TRACEOUT("SALAM::initializeStoreInst");
+        // ****** //
     }
 
     void
@@ -471,8 +493,9 @@ namespace SALAM {
     }
 
     void
-    initializeGetElementPtrInst() {
-        
+    initializeGetElementPtrInst(SALAM::GetElementPtr &gepInst) {
+        TRACEOUT("SALAM::initializeGetElementPtrInst");
+        // ****** //
     }
 
     void
@@ -491,8 +514,9 @@ namespace SALAM {
     }
 
     void
-    initializeTruncInst() {
-        
+    initializeTruncInst(SALAM::Trunc &truncInst) {
+        TRACEOUT("SALAM::initializeTruncInst");
+        // ****** //
     }
 
     void
@@ -508,8 +532,9 @@ namespace SALAM {
     }
 
     void
-    initializeZExtInst() {
-        
+    initializeZExtInst(SALAM::ZExt &zextInst) {
+        TRACEOUT("SALAM::initializeZExtInst");
+        // ****** //
     }
 
     void
@@ -525,8 +550,9 @@ namespace SALAM {
     }
 
     void
-    initializeSExtInst() {
-        
+    initializeSExtInst(SALAM::SExt &sextInst) {
+        TRACEOUT("SALAM::initializeSExtInst");
+        // ****** //
     }
 
     void
@@ -542,8 +568,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPToUIInst() {
-        
+    initializeFPToUIInst(SALAM::FPToUI &fptouiInst) {
+        TRACEOUT("SALAM::initializeFPToUIInst");
+        // ****** //
     }
 
     void
@@ -559,8 +586,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPToSIInst() {
-        
+    initializeFPToSIInst(SALAM::FPToSI &fptosiInst) {
+        TRACEOUT("SALAM::initializeFPToSIInst");
+        // ****** //
     }
 
     void
@@ -576,8 +604,9 @@ namespace SALAM {
     }
 
     void
-    initializeUIToFPInst() {
-        
+    initializeUIToFPInst(SALAM::UIToFP &uitofpInst) {
+        TRACEOUT("SALAM::initializeUIToFPInst");
+        // ****** //
     }
 
     void
@@ -593,8 +622,9 @@ namespace SALAM {
     }
 
     void
-    initializeSIToFPInst() {
-        
+    initializeSIToFPInst(SALAM::SIToFP &sitofpInst) {
+        TRACEOUT("SALAM::initializeSIToFPInst");
+        // ****** //
     }
 
     void
@@ -610,8 +640,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPTruncInst() {
-        
+    initializeFPTruncInst(SALAM::FPTrunc &fptruncInst) {
+        TRACEOUT("SALAM::initializeFPTruncInst");
+        // ****** //
     }
 
     void
@@ -627,8 +658,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPExtInst() {
-        
+    initializeFPExtInst(SALAM::FPExt &fpextInst) {
+        TRACEOUT("SALAM::initializeFPExtInst");
+        // ****** //
     }
 
     void
@@ -644,8 +676,9 @@ namespace SALAM {
     }
 
     void
-    initializePtrToIntInst() {
-        
+    initializePtrToIntInst(SALAM::PtrToInt &ptrtointInst) {
+        TRACEOUT("SALAM::initializePtrToIntInst");
+        // ****** //
     }
 
     void
@@ -661,8 +694,9 @@ namespace SALAM {
     }
 
     void
-    initializeIntToPtrInst() {
-        
+    initializeIntToPtrInst(SALAM::IntToPtr &inttoptrInst) {
+        TRACEOUT("SALAM::initializeIntToPtrInst");
+        // ****** //
     }
 
     void
@@ -678,9 +712,11 @@ namespace SALAM {
     }
 
     void
-    initializeICmpInst() {
-        
+    initializeICmpInst(SALAM::ICmp &icmpInst) {
+        TRACEOUT("SALAM::initializeICmpInst");
+        // ****** //
     }
+
 
     void
     ICmp::compute() {
@@ -695,8 +731,9 @@ namespace SALAM {
     }
 
     void
-    initializeFCmpInst() {
-        
+    initializeFCmpInst(SALAM::FCmp &fcmpInst) {
+        TRACEOUT("SALAM::initializeFCmpInst");
+        // ****** //
     }
 
     void
@@ -712,8 +749,9 @@ namespace SALAM {
     }
 
     void
-    initializePhiInst() {
-        
+    initializePhiInst(SALAM::Phi &phiInst) {
+        TRACEOUT("SALAM::initializePhiInst");
+        // ****** //
     }
 
     void
@@ -729,8 +767,9 @@ namespace SALAM {
     }
 
     void
-    initializeCallInst() {
-        
+    initializeCallInst(SALAM::Call &callInst) {
+        TRACEOUT("SALAM::initializeCallInst");
+        // ****** //
     }
 
     void
@@ -746,8 +785,9 @@ namespace SALAM {
     }
 
     void
-    initializeSelectInst() {
-        
+    initializeSelectInst(SALAM::Select &selectInst) {
+        TRACEOUT("SALAM::initializeSelectInst");
+        // ****** //
     }
 
     void
