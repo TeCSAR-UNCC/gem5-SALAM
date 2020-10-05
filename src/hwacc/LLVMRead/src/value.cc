@@ -223,7 +223,7 @@ SALAM::GlobalConstant::initialize(llvm::Value * irval, SALAM::irvmap * irmap, SA
 void
 SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	TRACEOUT("SALAM::Argument::initialize");
-	addRegister();
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
+	addRegister();
 }

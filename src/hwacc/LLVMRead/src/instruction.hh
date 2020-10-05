@@ -8,7 +8,16 @@
 #include <llvm/IR/Instruction.h>
 #include "debug_flags.hh"
 
+// initialize value
+// initialize instruction data-struction first
+// initialize instruction values
+// initialize instruction sub-type
+// initialize register
 
+// value init
+// instruction init
+// register init
+// instruction sub type
 
 namespace SALAM { 
 
