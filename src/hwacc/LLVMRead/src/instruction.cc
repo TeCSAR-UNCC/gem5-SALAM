@@ -3,18 +3,33 @@
 
 namespace SALAM {
 
+/*
+    std::shared_ptr<SALAM::Value> attach(llvm::Value * irval, irvmap * irmap) {
+        auto inst = irmap->find(irval);
+        return (*inst).second;
+    } 
+*/
+
     void
-    Instruction::initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) {
-    	TRACEOUT("SALAM::Instruction::initialize");
+    Instruction::instantiate(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) {
+    	TRACEOUT("SALAM::Instruction::instantiate");
         // Fetch the operands of the instruction
     	llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
+        llvm::Instruction * inst = llvm::dyn_cast<llvm::Instruction>(irval);
     	assert(iruser);
-        // auto * li = llvm::dyn_cast<llvm::Instruction>(irval);
+        assert(inst);
+        int phiBB = 0;
+        DEBUGOUT("Instantiate Instruction Operands");
     	for (auto op : iruser->operand_values()) {
+            DEBUGITER("-");
     		auto mapit = irmap->find(op);
+            op->printAsOperand(llvm::errs());
+            llvm::errs() << " ";
     		std::shared_ptr<SALAM::Value> opval;
     		if(mapit == irmap->end()) {
     			// TODO: Handle constant data and constant expressions
+                DEBUGOUT("--Instantiate Operand as Constant Data/Expression");
+                DEBUGITER("--");
     			uint64_t id = valueList->back()->getUID() + 1;
     			std::shared_ptr<SALAM::Constant> con = std::make_shared<SALAM::Constant>(id);
 		        valueList->push_back(con);
@@ -22,10 +37,21 @@ namespace SALAM {
 		        con->initialize(op, irmap, valueList);
 		        opval = con;
     		} else {
+                DEBUGOUT("--Instantiate Operands on Value List");
     			opval = mapit->second;
     		}
-    		staticDependencies.push_back(opval);
+            DEBUGOUT("-Link Operand to Static Operands List");
+    		staticOperands.push_back(opval);
+            if(llvm::isa<llvm::PHINode>(inst)) {
+                llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(inst);
+                llvm::Value * bb = llvm::dyn_cast<llvm::Value>(phi->getIncomingBlock(phiBB));
+                mapit = irmap->find(bb);
+                opval = mapit->second;
+                staticOperands.push_back(opval);
+                ++phiBB;
+            }
     	}
+        DEBUGOUT("Initialize Value - Instruction::instantiate");
         SALAM::Value::initialize(irval, irmap);
     }
     
@@ -37,9 +63,11 @@ namespace SALAM {
     }
 
     void
-    initializeRetInst(SALAM::Ret &retInst) {
+    Ret::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeRetInst");
-        retInst.setA().setB();
+        
     }
 
     void
@@ -48,6 +76,7 @@ namespace SALAM {
     }
 
     // SALAM-Br // --------------------------------------------------------------//
+
     std::shared_ptr<SALAM::Instruction>
     createBrInst(uint64_t id, uint64_t OpCode) { 
         TRACEOUT("SALAM::createBrInst");
@@ -55,15 +84,27 @@ namespace SALAM {
     }
 
     void
-    initializeBrInst(SALAM::Br &brInst) {
-        TRACEOUT("SALAM::initializeBrInst");
+    Br::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
+        TRACEOUT("SALAM::Br::initialize");
+        llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
+        assert(br);
+        this->condition = getStaticOperands(0);
+        this->isConditional(br->isConditional());
+        if (this->isConditional()) {
+            this->trueDestination = getStaticOperands(1);
+            this->falseDestination = getStaticOperands(2);
+        }
+    }  
 
+    std::shared_ptr<SALAM::Value>
+    Br::execute() {
+        return nullptr;
     }
 
     void
     Br::compute() {
-        
-
     }
 
     // SALAM-Switch // ----------------------------------------------------------//
@@ -74,7 +115,9 @@ namespace SALAM {
     }
 
     void
-    initializeSwitchInst(SALAM::Switch &switchInst) {
+    Switch::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSwitchInst");
 
     }
@@ -92,9 +135,11 @@ namespace SALAM {
     }
 
     void
-    initializeAddInst(SALAM::Add &addInst) {
-        TRACEOUT("SALAM::initializeAddInst");
-        addInst.setA().setB();
+    Add::initialize(llvm::Value * irval, 
+                            irvmap * irmap, 
+                            SALAM::valueListTy * valueList) {
+        TRACEOUT("SALAM::Add::initialize");
+
     }
 
     void
@@ -115,7 +160,9 @@ namespace SALAM {
     }
 
     void
-    initializeFAddInst(SALAM::FAdd &faddInst) {
+    FAdd::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFAddInst");
     }
 
@@ -134,7 +181,9 @@ namespace SALAM {
     }
     
     void
-    initializeSubInst(SALAM::Sub &subInst) {
+    Sub::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSubInst");
         // ****** //
     }
@@ -157,7 +206,9 @@ namespace SALAM {
     }
 
     void
-    initializeFSubInst(SALAM::FSub &fsubInst) {
+    FSub::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFSubInst");
         // ****** //
     }
@@ -177,7 +228,9 @@ namespace SALAM {
     }
 
     void
-    initializeMulInst(SALAM::Mul &mulInst) {
+    Mul::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeMulInst");
         // ****** //
     }
@@ -200,7 +253,9 @@ namespace SALAM {
     }
 
     void
-    initializeFMulInst(SALAM::FMul &fmulInst) {
+    FMul::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFMulInst");
         // ****** //
     }
@@ -220,7 +275,9 @@ namespace SALAM {
     }
 
     void
-    initializeUDivInst(SALAM::UDiv &udivInst) {
+    UDiv::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeUDivInst");
         // ****** //
     }
@@ -239,7 +296,9 @@ namespace SALAM {
     }
 
     void
-    initializeSDivInst(SALAM::SDiv &sdivInst) {
+    SDiv::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSDivInst");
         // ****** //
     }
@@ -258,7 +317,9 @@ namespace SALAM {
     }
 
     void
-    initializeFDivInst(SALAM::FDiv &fdivInst) {
+    FDiv::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFDivInst");
         // ****** //
     }
@@ -278,7 +339,9 @@ namespace SALAM {
     }
 
     void
-    initializeURemInst(SALAM::URem &uremInst) {
+    URem::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeURemInst");
         // ****** //
     }
@@ -297,7 +360,9 @@ namespace SALAM {
     }
 
     void
-    initializeSRemInst(SALAM::SRem &sremInst) {
+    SRem::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSRemInst");
         // ****** //
     }
@@ -316,7 +381,9 @@ namespace SALAM {
     }
 
     void
-    initializeFRemInst(SALAM::FRem &fremInst) {
+    FRem::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFRemInst");
         // ****** //
     }
@@ -335,7 +402,9 @@ namespace SALAM {
     }
 
     void
-    initializeShlInst(SALAM::Shl &shlInst) {
+    Shl::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeShlInst");
         // ****** //
     }
@@ -358,7 +427,9 @@ namespace SALAM {
     }
 
     void
-    initializeLShrInst(SALAM::LShr &lshlInst) {
+    LShr::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeLShrInst");
         // ****** //
     }
@@ -376,7 +447,9 @@ namespace SALAM {
     }
 
     void
-    initializeAShrInst(SALAM::AShr &ashlInst) {
+    AShr::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeAShrInst");
         // ****** //
     }
@@ -397,7 +470,9 @@ namespace SALAM {
     }
 
     void
-    initializeAndInst(SALAM::And &andInst) {
+    And::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeAndInst");
         // ****** //
     }
@@ -417,7 +492,9 @@ namespace SALAM {
     }
 
     void
-    initializeOrInst(SALAM::Or &orInst) {
+    Or::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeOrInst");
         // ****** //
     }
@@ -437,7 +514,9 @@ namespace SALAM {
     }
 
     void
-    initializeXorInst(SALAM::Xor &xorInst) {
+    Xor::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeXorInst");
         // ****** //
     }
@@ -457,9 +536,12 @@ namespace SALAM {
     }
 
     void
-    initializeLoadInst(SALAM::Load &loadInst) {
-        TRACEOUT("SALAM::initializeLoadInst");
+    Load::initialize(llvm::Value * irval, 
+                    irvmap * irmap, 
+                    SALAM::valueListTy * valueList) {
+        TRACEOUT("SALAM::Load::initialize");
         // ****** //
+
     }
 
     void
@@ -475,8 +557,10 @@ namespace SALAM {
     }
 
     void
-    initializeStoreInst(SALAM::Store &storeInst) {
-        TRACEOUT("SALAM::initializeStoreInst");
+    Store::initialize(llvm::Value * irval, 
+                            irvmap * irmap, 
+                            SALAM::valueListTy * valueList) {
+        TRACEOUT("SALAM::Store::initialize");
         // ****** //
     }
 
@@ -493,9 +577,17 @@ namespace SALAM {
     }
 
     void
-    initializeGetElementPtrInst(SALAM::GetElementPtr &gepInst) {
-        TRACEOUT("SALAM::initializeGetElementPtrInst");
+    GetElementPtr::initialize(llvm::Value * irval, 
+                              irvmap * irmap, 
+                              SALAM::valueListTy * valueList) {
+        TRACEOUT("SALAM::GetElementPtr::initialize");
         // ****** //
+        llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
+        assert(iruser);
+        llvm::GetElementPtrInst * GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(irval);
+        assert(GEP);
+      
+        
     }
 
     void
@@ -514,7 +606,9 @@ namespace SALAM {
     }
 
     void
-    initializeTruncInst(SALAM::Trunc &truncInst) {
+    Trunc::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeTruncInst");
         // ****** //
     }
@@ -532,7 +626,9 @@ namespace SALAM {
     }
 
     void
-    initializeZExtInst(SALAM::ZExt &zextInst) {
+    ZExt::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeZExtInst");
         // ****** //
     }
@@ -550,7 +646,9 @@ namespace SALAM {
     }
 
     void
-    initializeSExtInst(SALAM::SExt &sextInst) {
+    SExt::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSExtInst");
         // ****** //
     }
@@ -568,7 +666,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPToUIInst(SALAM::FPToUI &fptouiInst) {
+    FPToUI::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPToUIInst");
         // ****** //
     }
@@ -586,7 +686,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPToSIInst(SALAM::FPToSI &fptosiInst) {
+    FPToSI::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPToSIInst");
         // ****** //
     }
@@ -604,7 +706,9 @@ namespace SALAM {
     }
 
     void
-    initializeUIToFPInst(SALAM::UIToFP &uitofpInst) {
+    UIToFP::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeUIToFPInst");
         // ****** //
     }
@@ -622,7 +726,9 @@ namespace SALAM {
     }
 
     void
-    initializeSIToFPInst(SALAM::SIToFP &sitofpInst) {
+    SIToFP::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSIToFPInst");
         // ****** //
     }
@@ -640,7 +746,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPTruncInst(SALAM::FPTrunc &fptruncInst) {
+    FPTrunc::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPTruncInst");
         // ****** //
     }
@@ -658,7 +766,9 @@ namespace SALAM {
     }
 
     void
-    initializeFPExtInst(SALAM::FPExt &fpextInst) {
+    FPExt::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPExtInst");
         // ****** //
     }
@@ -676,7 +786,9 @@ namespace SALAM {
     }
 
     void
-    initializePtrToIntInst(SALAM::PtrToInt &ptrtointInst) {
+    PtrToInt::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializePtrToIntInst");
         // ****** //
     }
@@ -694,7 +806,9 @@ namespace SALAM {
     }
 
     void
-    initializeIntToPtrInst(SALAM::IntToPtr &inttoptrInst) {
+    IntToPtr::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeIntToPtrInst");
         // ****** //
     }
@@ -712,7 +826,9 @@ namespace SALAM {
     }
 
     void
-    initializeICmpInst(SALAM::ICmp &icmpInst) {
+    ICmp::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeICmpInst");
         // ****** //
     }
@@ -731,7 +847,9 @@ namespace SALAM {
     }
 
     void
-    initializeFCmpInst(SALAM::FCmp &fcmpInst) {
+    FCmp::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFCmpInst");
         // ****** //
     }
@@ -749,9 +867,18 @@ namespace SALAM {
     }
 
     void
-    initializePhiInst(SALAM::Phi &phiInst) {
-        TRACEOUT("SALAM::initializePhiInst");
-        // ****** //
+    Phi::initialize(llvm::Value * irval, 
+                      irvmap * irmap, 
+                      SALAM::valueListTy * valueList) {
+        TRACEOUT("SALAM::Phi::initialize");
+        llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(irval);
+        assert(phi);
+        phiNode args;
+        for (int i = 0; i < getStaticOperands().size();) {
+            args.first = getStaticOperands(i); ++i;
+            args.second = getStaticOperands(i); ++i;
+            this->arguments.push_back(args);
+        }
     }
 
     void
@@ -767,7 +894,9 @@ namespace SALAM {
     }
 
     void
-    initializeCallInst(SALAM::Call &callInst) {
+    Call::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeCallInst");
         // ****** //
     }
@@ -785,7 +914,9 @@ namespace SALAM {
     }
 
     void
-    initializeSelectInst(SALAM::Select &selectInst) {
+    Select::initialize(llvm::Value * irval, 
+                   irvmap * irmap, 
+                   SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSelectInst");
         // ****** //
     }

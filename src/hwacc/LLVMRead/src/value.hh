@@ -31,9 +31,7 @@ namespace SALAM {
             	bool tracked;
             	bool isNULL = false;
             public:
-                Register(bool trk=true, bool nul=false) : tracked(trk), isNULL(nul) { 
-								  CLASSOUT("SALAM::Value::Register::Register", false);
-								}
+                Register(bool trk=true, bool nul=false) : tracked(trk), isNULL(nul) { TRACEOUT("SALAM::Value::Register::Register"); }
                 virtual llvm::APFloat * getFloatData() = 0;
                 virtual llvm::APSInt * getIntData() = 0;
                 virtual uint64_t * getPtrData() = 0;
@@ -50,6 +48,7 @@ namespace SALAM {
         		llvm::APFloat *data;
         	public:
         		APFloatRegister(llvm::Type * T, bool isTracked=true) : Register(isTracked) {
+					TRACEOUT("SALAM::Value::Register::APFloatRegister::APFloatRegister");
         			switch (T->getTypeID()) {
         				case llvm::Type::HalfTyID:
         				{
@@ -86,6 +85,7 @@ namespace SALAM {
         			}
         		}
         		APFloatRegister(const llvm::APFloat &RHS) : Register(false) {
+					TRACEOUT("SALAM::Value::Register::APFloatRegister::APFloatRegister");
         			data = new llvm::APFloat(RHS);
         		}
         		virtual llvm::APFloat * getFloatData() override { return data; }
@@ -104,11 +104,13 @@ namespace SALAM {
     			llvm::APSInt *data;
     		public:
     			APIntRegister(llvm::Type * T, bool isTracked=true) : Register(isTracked) {
+					TRACEOUT("SALAM::Value::Register::APIntRegister::APIntRegister");
     				llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
     				assert(it);
     				data = new llvm::APSInt(it->getBitWidth(), 0);
     			}
     			APIntRegister(const llvm::APInt &RHS) : Register(false) {
+					TRACEOUT("SALAM::Value::Register::APIntRegister::APIntRegister");
     				data = new llvm::APSInt(RHS);
     			}
     			virtual llvm::APSInt * getIntData() override { return data; }
@@ -126,8 +128,8 @@ namespace SALAM {
         	private:
         		uint64_t *pointer;
         	public:
-        		PointerRegister(bool isTracked=true, bool isNull=false) : Register(isTracked, isNull), pointer(new uint64_t(0)) { }
-        		PointerRegister(uint64_t val, bool isTracked=true, bool isNull=false) : Register(isTracked, isNull), pointer(new uint64_t(val)) { }
+        		PointerRegister(bool isTracked=true, bool isNull=false) : Register(isTracked, isNull), pointer(new uint64_t(0)) { TRACEOUT("SALAM::Value::Register::PointerRegister::PointerRegister"); }
+        		PointerRegister(uint64_t val, bool isTracked=true, bool isNull=false) : Register(isTracked, isNull), pointer(new uint64_t(val)) { TRACEOUT("SALAM::Value::Register::PointerRegister::PointerRegister"); }
         		virtual bool isPtr() override { return true; }
         		virtual uint64_t * getPtrData() override { return pointer; }
         		virtual llvm::APFloat * getFloatData() {
@@ -142,6 +144,7 @@ namespace SALAM {
 
 		protected:
 			uint64_t uid = 0;
+			uint64_t OpCode = 0;
 			llvm::Type * irtype;
 			Register * reg;
 			unsigned size;
@@ -159,9 +162,16 @@ namespace SALAM {
 				uid = id;
 				size = 0;
 			}
+			Value(uint64_t id, uint64_t Op) {
+				CLASSOUT("SALAM::Value::Value(uint64_t)", id);
+				uid = id;
+				OpCode = Op;
+				size = 0;
+			}
 			virtual void initialize(llvm::Value * irval, irvmap * irmap);
-			uint64_t getUID() { TRACEOUT("SALAM::Value::getUID()"); return uid; }
-			Register * getReg() { TRACEOUT("SALAM::Value::getReg()"); return reg; }
+			uint64_t getUID() { return uid; }
+			uint64_t getOpCode() { return OpCode; }
+			Register * getReg() { return reg; }
 
 			// virtual Value* clone() const = 0;
 	};
@@ -171,7 +181,7 @@ namespace SALAM {
 		protected:
 			SALAM::valueListTy operands;
 		public:
-			Constant(uint64_t id) : Value(id) { }
+			Constant(uint64_t id) : Value(id) { TRACEOUT("SALAM::Constant::Constant"); }
 			virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
 	};
 
@@ -179,7 +189,7 @@ namespace SALAM {
 		private:
 		protected:
 		public:
-			GlobalConstant(uint64_t id) : Constant(id) { }
+			GlobalConstant(uint64_t id) : Constant(id) { TRACEOUT("SALAM::GlobalConstant::GlobalConstant"); }
 			virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 	};
 
@@ -187,7 +197,7 @@ namespace SALAM {
 		private:
 		protected:
 		public:
-			Argument(uint64_t id) : Value(id) { }
+			Argument(uint64_t id) : Value(id) { TRACEOUT("SALAM::Argument::Argument"); }
 			virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 	};
 }

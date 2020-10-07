@@ -10,7 +10,7 @@
 
 
 // Debug Macro
-// #define NODEBUGOUT
+#define NODEBUGOUT
 #ifndef NODEBUGOUT
 #define DEBUGOUT(Out) do { if (true) \
                              std::cout << Out << std::endl; \
@@ -19,7 +19,8 @@
 #define DEBUGOUT(Out) do { } while (0)
 #endif
 
-// #define NOTRACEOUT
+
+#define NOTRACEOUT
 #ifndef NOTRACEOUT
 #define TRACEOUT(Out) do { if (true) \
                              std::cout << Out << std::endl; \
@@ -28,7 +29,18 @@
 #define TRACEOUT(Out) do { } while (0)
 #endif
 
-// #define NOCLASSOUT
+
+#define NODEBUGITER
+#ifndef NODEBUGITER
+#define DEBUGITER(Out) do { if (true) \
+                               std::cout << Out; \
+                           } while(0)
+#else
+#define DEBUGITER(Out) do { } while (0)
+#endif
+
+
+#define NOCLASSOUT
 #ifndef NOCLASSOUT
 #define CLASSOUT(Out, Id) do { if (Id) \
                                  std::cout << "  ID: " << std::setw(6) << Id << " | " << Out  << std::endl; \

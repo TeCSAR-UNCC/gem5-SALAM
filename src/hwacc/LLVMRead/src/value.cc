@@ -11,14 +11,14 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	} else {
 		size = irtype->getScalarSizeInBits();
 	}
-	
+	// Link Return Register
+
+	DEBUGOUT("Initialize Return Register");
 }
 
 void
 SALAM::Value::addRegister(bool istracked) {
 	TRACEOUT("SALAM::Value::addRegister");
-	DEBUGOUT("---");
-
 	if (irtype->isPointerTy()) {
 		reg = new PointerRegister(istracked);
 	} else if (irtype->isIntegerTy()) {

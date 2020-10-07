@@ -397,7 +397,9 @@ LLVMInterface::constructStaticGraph() {
     uint64_t valueID = 0;
     SALAM::irvmap vmap;
     // Generate SALAM::Values for llvm::GlobalVariables
+    DEBUGOUT("| Instantiate SALAM::GlobalConstants");
     for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
+        DEBUGITER("| -");
         llvm::GlobalVariable &glb = *glob_iter;
         std::shared_ptr<SALAM::GlobalConstant> sglb = std::make_shared<SALAM::GlobalConstant>(valueID);
         values.push_back(sglb);
@@ -405,7 +407,9 @@ LLVMInterface::constructStaticGraph() {
         valueID++;
     }
     // Generate SALAM::Functions
+    DEBUGOUT("| Instantiate SALAM::Functions");
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
+        DEBUGITER("| -");
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Function> sfunc = std::make_shared<SALAM::Function>(valueID);
         values.push_back(sfunc);
@@ -413,7 +417,9 @@ LLVMInterface::constructStaticGraph() {
         vmap.insert(SALAM::irvmaptype(&func, sfunc));
         valueID++;
         // Generate args for SALAM:Functions
+        DEBUGOUT("Instantiate SALAM::Functions::Arguments");
         for (auto arg_iter = func.arg_begin(); arg_iter != func.arg_end(); arg_iter++) {
+            DEBUGITER("| --");
             llvm::Argument &arg = *arg_iter;
             std::shared_ptr<SALAM::Argument> sarg = std::make_shared<SALAM::Argument>(valueID);
             values.push_back(sarg);
@@ -421,14 +427,18 @@ LLVMInterface::constructStaticGraph() {
             valueID++;
         }
         // Generate SALAM::BasicBlocks
+        DEBUGOUT("Instantiate SALAM::Functions::BasicBlocks");
         for (auto bb_iter = func.begin(); bb_iter != func.end(); bb_iter++) {
+            DEBUGITER("| --");
             llvm::BasicBlock &bb = *bb_iter;
             std::shared_ptr<SALAM::BasicBlock> sbb = std::make_shared<SALAM::BasicBlock>(valueID);
             values.push_back(sbb);
             vmap.insert(SALAM::irvmaptype(&bb, sbb));
             valueID++;
             //Generate SALAM::Instructions
+            DEBUGOUT("Instantiate SALAM::Functions::BasicBlocks::Instructions");
             for (auto inst_iter = bb.begin(); inst_iter != bb.end(); inst_iter++) {
+                DEBUGITER("| ---");
                 llvm::Instruction &inst = *inst_iter;
                 std::shared_ptr<SALAM::Instruction> sinst = createInstruction(&inst, valueID);
                 values.push_back(sinst);
@@ -437,25 +447,27 @@ LLVMInterface::constructStaticGraph() {
             }
         }
     }
-    std::cout << "Beginning Instruction Initialization\n";
+
     // Use value map to initialize SALAM::Values
+    DEBUGOUT("|+ Initialize SALAM::GlobalConstants");
     for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
+        DEBUGITER("|+ -");
         llvm::GlobalVariable &glb = *glob_iter;
         std::shared_ptr<SALAM::Value> glbval = vmap.find(&glb)->second;
         assert(glbval);
         std::shared_ptr<SALAM::GlobalConstant> sglb = std::dynamic_pointer_cast<SALAM::GlobalConstant>(glbval);
         assert(sglb);
-        std::cout << "Global Initialized\n";
         sglb->initialize(&glb, &vmap, &values);
     }
     // Functions will initialize BasicBlocks, which will initialize Instructions
+    DEBUGOUT("|+ Initialize SALAM::Functions");
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
+        DEBUGITER("|+ -");
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Value> funcval = vmap.find(&func)->second;
         assert(funcval);
         std::shared_ptr<SALAM::Function> sfunc = std::dynamic_pointer_cast<SALAM::Function>(funcval);
         assert(sfunc);
-        std::cout << "Function Initialized\n";
         sfunc->initialize(&func, &vmap, &values);
     }
 
