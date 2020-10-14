@@ -19,12 +19,11 @@ namespace SALAM {
     	assert(iruser);
         assert(inst);
         int phiBB = 0;
-        DEBUGOUT("Instantiate Instruction Operands");
-    	for (auto op : iruser->operand_values()) {
+    	for (auto const op : iruser->operand_values()) {
             DEBUGITER("-");
     		auto mapit = irmap->find(op);
-            op->printAsOperand(llvm::errs());
-            llvm::errs() << " ";
+            //op->printAsOperand(llvm::errs());
+            //llvm::errs() << " ";
     		std::shared_ptr<SALAM::Value> opval;
     		if(mapit == irmap->end()) {
     			// TODO: Handle constant data and constant expressions
@@ -118,8 +117,15 @@ namespace SALAM {
     Switch::initialize(llvm::Value * irval, 
                    irvmap * irmap, 
                    SALAM::valueListTy * valueList) {
-        TRACEOUT("SALAM::initializeSwitchInst");
-
+        TRACEOUT("SALAM::Switch::initialize");
+        llvm::SwitchInst * switchInst = llvm::dyn_cast<llvm::SwitchInst>(irval);
+        assert(switchInst);
+        caseArgs newArgs;
+        for (int i = 0; i < getStaticOperands().size();) {
+            newArgs.first = getStaticOperands(i); ++i;
+            newArgs.second = getStaticOperands(i); ++i;
+            this->arguments.push_back(newArgs);
+        }
     }
 
     void
@@ -917,7 +923,10 @@ namespace SALAM {
     Select::initialize(llvm::Value * irval, 
                    irvmap * irmap, 
                    SALAM::valueListTy * valueList) {
-        TRACEOUT("SALAM::initializeSelectInst");
+        TRACEOUT("SALAM::Select::initialize");
+        this->condition = getStaticOperands(0);
+        this->trueValue = getStaticOperands(1);
+        this->falseValue = getStaticOperands(2);
         // ****** //
     }
 

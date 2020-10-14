@@ -10,16 +10,6 @@
 //#include "basic_block.hh"
 #include "debug_flags.hh"
 
-// initialize value
-// initialize instruction data-struction first
-// initialize instruction values
-// initialize instruction sub-type
-// initialize register
-
-// value init
-// instruction init
-// register init
-// instruction sub type
 
 namespace SALAM { 
 
@@ -102,12 +92,11 @@ namespace SALAM {
     class Br : public Instruction {
         private:
             std::vector< std::vector<uint64_t> > conditions;
-            bool conditional = false;
             std::shared_ptr<SALAM::Value> condition;
             std::shared_ptr<SALAM::Value> trueDestination;
             std::shared_ptr<SALAM::Value> falseDestination;
+            bool conditional = false;
             
-
         protected:
         
         public:
@@ -129,10 +118,15 @@ namespace SALAM {
     std::shared_ptr<SALAM::Instruction> createBrInst(uint64_t id, uint64_t OpCode);
 
     // SALAM-Switch // ----------------------------------------------------------//
+    typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value>> caseArgs;
+    typedef std::vector< caseArgs> switchArgs;
 
     class Switch : public Instruction {
         private:
             std::vector< std::vector<uint64_t> > conditions;
+            // [0] [Switch Var, Default Dest]
+            // [1] [ Case Var, Case Dest ] .... [n]
+            switchArgs arguments;
         protected:
         
         public:
@@ -142,6 +136,7 @@ namespace SALAM {
             void initialize (llvm::Value * irval, 
                             irvmap * irmap, 
                             SALAM::valueListTy * valueList);
+            
             void compute()      override;
             virtual Switch* clone() const {  return new Switch(*this); }
     };
@@ -862,12 +857,13 @@ namespace SALAM {
 
     // SALAM-Phi // -------------------------------------------------------------//
 
-	typedef std::pair<std::shared_ptr<Value>, std::shared_ptr<Value>> phiNode; 
+	typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value>> phiNode; 
     typedef std::vector< phiNode> phiArgs;
 
     class Phi : public Instruction {
         private:
             std::vector< std::vector<uint64_t> > conditions;
+            // [Value, Previous BB]
             phiArgs arguments;
             
         protected:
@@ -910,6 +906,9 @@ namespace SALAM {
     class Select : public Instruction {
         private:
             std::vector< std::vector<uint64_t> > conditions;
+            std::shared_ptr<SALAM::Value> condition;
+            std::shared_ptr<SALAM::Value> trueValue;
+            std::shared_ptr<SALAM::Value> falseValue;
         protected:
 
         public:
