@@ -93,6 +93,7 @@ namespace SALAM {
         private:
             std::vector< std::vector<uint64_t> > conditions;
             std::shared_ptr<SALAM::Value> condition;
+            std::shared_ptr<SALAM::Value> defaultDestination;
             std::shared_ptr<SALAM::Value> trueDestination;
             std::shared_ptr<SALAM::Value> falseDestination;
             bool conditional = false;
@@ -109,8 +110,7 @@ namespace SALAM {
                             SALAM::valueListTy * valueList);
             Br &isConditional(bool conditional) { this->conditional = conditional; return *this; }
             bool isConditional() { return conditional; }
-            std::shared_ptr<SALAM::Value> execute();
-
+            std::shared_ptr<SALAM::Value> destination();
             void compute()      override;
             virtual Br* clone() const { return new Br(*this); }
     };
@@ -136,7 +136,8 @@ namespace SALAM {
             void initialize (llvm::Value * irval, 
                             irvmap * irmap, 
                             SALAM::valueListTy * valueList);
-            
+            std::shared_ptr<SALAM::Value> defaultDest() { return arguments[0].second; }
+            std::shared_ptr<SALAM::Value> destination(int switchVar);
             void compute()      override;
             virtual Switch* clone() const {  return new Switch(*this); }
     };
@@ -875,6 +876,7 @@ namespace SALAM {
             void initialize(llvm::Value * irval, 
                             irvmap * irmap, 
                             SALAM::valueListTy * valueList);
+            std::shared_ptr<SALAM::Value> evaluate(std::shared_ptr<SALAM::Value> previousBB);
             void compute()      override;
             virtual Phi* clone() const { return new Phi(*this); }
     };
@@ -919,6 +921,7 @@ namespace SALAM {
             void initialize (llvm::Value * irval, 
                             irvmap * irmap, 
                             SALAM::valueListTy * valueList);
+            std::shared_ptr<SALAM::Value> evaluate();
             void compute()      override;
             virtual Select* clone() const { return new Select(*this); }
     };

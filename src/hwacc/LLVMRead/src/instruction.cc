@@ -94,12 +94,16 @@ namespace SALAM {
         if (this->isConditional()) {
             this->trueDestination = getStaticOperands(1);
             this->falseDestination = getStaticOperands(2);
-        }
+        } else this->defaultDestination = getStaticOperands(1);
     }  
 
     std::shared_ptr<SALAM::Value>
-    Br::execute() {
-        return nullptr;
+    Br::destination() {
+        if(conditional) {
+            if(condition->getReg()->getIntData()->isOneValue()) return trueDestination;
+            else return falseDestination;
+        }
+        return defaultDestination; 
     }
 
     void
@@ -126,6 +130,14 @@ namespace SALAM {
             newArgs.second = getStaticOperands(i); ++i;
             this->arguments.push_back(newArgs);
         }
+    }
+
+    std::shared_ptr<SALAM::Value>
+    Switch::destination(int switchVar) {
+        for (int i = 2; i < this->arguments.size(); ++i) {
+            if (this->arguments.at(i).first->getReg()->getIntData()->getSExtValue() == switchVar) return this->arguments.at(i).second;
+        }
+        return this->defaultDest();
     }
 
     void
@@ -887,6 +899,14 @@ namespace SALAM {
         }
     }
 
+    std::shared_ptr<SALAM::Value> 
+    Phi::evaluate(std::shared_ptr<SALAM::Value> previousBB) {
+        for (auto const it : arguments) {
+            if(previousBB == it.second) return it.first;
+        }
+        return nullptr;
+    }
+
     void
     Phi::compute() {
 
@@ -928,6 +948,11 @@ namespace SALAM {
         this->trueValue = getStaticOperands(1);
         this->falseValue = getStaticOperands(2);
         // ****** //
+    }
+    std::shared_ptr<SALAM::Value>
+    Select::evaluate() {
+        if(condition->getReg()->getIntData()->isOneValue()) return trueValue;
+        return falseValue;
     }
 
     void
