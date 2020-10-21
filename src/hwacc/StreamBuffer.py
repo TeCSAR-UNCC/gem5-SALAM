@@ -13,3 +13,4 @@ class StreamBuffer(ClockedObject):
 	stream_address = Param.Addr("Address ")
 	stream_size = Param.Addr("Stream buffer width in bytes")
 	stream_latency = Param.Latency('1ns', 'Stream W/R latency')
+	bandwidth = Param.MemoryBandwidth('12.6GB/s', "Combined read and write bandwidth")

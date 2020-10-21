@@ -21,3 +21,5 @@ class StreamDma(DmaDevice) :
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
     rd_int = Param.UInt32(210, "Interrupt for read buffer")
     wr_int = Param.UInt32(211, "Interrupt for write buffer")
+
+    bandwidth = Param.MemoryBandwidth('12.6GB/s', "Combined read and write bandwidth")

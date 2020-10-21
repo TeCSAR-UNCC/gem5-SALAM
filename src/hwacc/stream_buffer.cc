@@ -24,9 +24,8 @@ StreamBuffer::StreamBuffer(Params *p) :
 	endian(p->system->getGuestByteOrder()),
 	streamAddr(p->stream_address),
 	streamSize(p->stream_size),
-	streamDelay(p->stream_latency) {
-	//
-}
+	streamDelay(p->stream_latency),
+	bandwidth(p->bandwidth) {}
 
 bool
 StreamBuffer::canReadStream(size_t len) {
@@ -112,9 +111,9 @@ StreamBuffer::streamRead(PacketPtr pkt) {
         panic("Read size too big?\n");
         break;
     }
-
+    Tick duration = pkt->getSize() * bandwidth;
     pkt->makeAtomicResponse();
-    return streamDelay;
+    return duration;
 }
 
 Tick

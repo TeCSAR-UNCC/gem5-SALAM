@@ -20,7 +20,8 @@ StreamDma::StreamDma(const Params *p)
     gic(p->gic),
     rdInt(p->rd_int),
     wrInt(p->wr_int),
-    tickEvent(this) {
+    tickEvent(this),
+    bandwidth(p->bandwidth) {
     readFifo = new DmaReadFifo(dmaPort, rdBufferSize, maxReqSize, maxPending);
     writeFifo = new DmaWriteFifo(dmaPort, wrBufferSize, maxReqSize, maxPending);
     mmreg = new uint8_t[32];
@@ -262,9 +263,11 @@ StreamDma::streamRead(PacketPtr pkt) {
         panic("Read size too big?\n");
         break;
     }
+    Tick duration = pkt->getSize() * bandwidth;
 
     pkt->makeAtomicResponse();
-    return pioDelay;
+
+    return duration;
 }
 
 Tick

@@ -17,6 +17,8 @@ class StreamBuffer : public ClockedObject {
   	Addr streamAddr;
   	Addr streamSize;
   	Tick streamDelay;
+    const double bandwidth;
+
   public:
   	typedef StreamBufferParams Params;
   	const Params *
@@ -49,6 +51,7 @@ class StreamBuffer : public ClockedObject {
 
   	void serialize(CheckpointOut &cp) const override;
   	void unserialize(CheckpointIn & cp) override;
+    double getBandwidth(){ return bandwidth; };
 };
 
 #endif // __HWACC_STREAM_BUFFER_HH__

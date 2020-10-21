@@ -35,31 +35,100 @@ class StreamSlavePort : public SimpleTimingPort {
  * Templated StreamSlavePort that functions similarly to the pio port on PioDevices.
  */
 template <class Device>
-class StreamSlavePortT : public StreamSlavePort {
-	friend class StreamMasterPort;
+class StreamSlavePortT : public StreamSlavePort
+{
+  friend class StreamMasterPort;
 
   private:
+    bool isBusy;
+    bool retryReq;
+
+    EventFunctionWrapper releaseEvent;
+
+    void
+    release() {
+        assert(isBusy);
+        isBusy = false;
+        if (retryReq) {
+            retryReq = false;
+            sendRetryReq();
+        }
+    }
+
   protected:
-  	Device *device;
+  Device *device;
 
   	virtual bool tvalid(PacketPtr pkt) { return device->tvalid(pkt); }
     virtual bool tvalid(size_t len, bool isRead) { return device->tvalid(len, isRead); }
-  	Tick recvAtomic(PacketPtr pkt) override {
-  		Tick receive_delay = pkt->headerDelay + pkt->payloadDelay;
-        pkt->headerDelay = pkt->payloadDelay = 0;
 
-        const Tick delay =
-            pkt->isRead() ? device->streamRead(pkt) : device->streamWrite(pkt);
-        assert(pkt->isResponse() || pkt->isError());
-        return delay + receive_delay;
+    bool
+    recvTimingReq(PacketPtr pkt) override {
+        // we should not get a new request after committing to retry the
+        // current one, but unfortunately the CPU violates this rule, so
+        // simply ignore it for now
+        if (retryReq)
+          return false;
+        // if we are busy with a read or write, remember that we have to
+        // retry
+        if (isBusy) {
+          retryReq = true;
+          return false;
+        }
+        // Make sure that the transfer is valid
+        if(!tvalid(pkt))
+          return false;
+        // the SimpleTimingPort should not be used anywhere where there is
+        // a need to deal with snoop responses and their flow control
+        // requirements
+        if (pkt->cacheResponding())
+            panic("SimpleTimingPort should never see packets with the "
+                  "cacheResponding flag set\n");
+
+        Tick duration = pkt->getSize() * device->getBandwidth();
+
+        if (duration != 0) {
+            device->schedule(releaseEvent, curTick() + duration);
+            isBusy = true;
+        }
+
+        bool needsResponse = pkt->needsResponse();
+
+        Tick latency = recvAtomic(pkt);
+
+        // turn packet around to go back to requester if response expected
+        if (needsResponse) {
+            // recvAtomic() should already have turned packet into
+            // atomic response
+            assert(pkt->isResponse());
+            schedTimingResp(pkt, curTick() + latency);
+        } else {
+            // queue the packet for deletion
+            pendingDelete.reset(pkt);
+        }
+        return true;
+    }
+
+    Tick recvAtomic(PacketPtr pkt) override {
+      Tick receive_delay = pkt->headerDelay + pkt->payloadDelay;
+      pkt->headerDelay = pkt->payloadDelay = 0;
+      const Tick delay =
+        pkt->isRead() ? device->streamRead(pkt) : device->streamWrite(pkt);
+      assert(pkt->isResponse() || pkt->isError());
+      return delay + receive_delay;
+    }
+
+    AddrRangeList getAddrRanges() const override {
+      return device->getStreamAddrRanges();
   	}
-  	AddrRangeList getAddrRanges() const override {
-  		return device->getStreamAddrRanges();
-  	}
+
   public:
   	StreamSlavePortT(Device *dev) :
-  		StreamSlavePort(dev->name() + ".stream", dev), device(dev) {}
-  	virtual ~StreamSlavePortT() {}
+      StreamSlavePort(dev->name() + ".stream", dev),
+      isBusy(false),
+      retryReq(false),
+      releaseEvent([this]{ release(); }, dev->name()),
+      device(dev) {}
+      virtual ~StreamSlavePortT() {}
 };
 
 /**
