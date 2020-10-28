@@ -343,6 +343,19 @@ LLVMInterface::tick() {
 // }
 
 void
+findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst) {
+    // The list of UIDs for any dependencies we want to find
+    std::vector<uint64_t> dep_uids;
+    // An instruction is a runtime dependency for itself since multiple
+    // instances of the same instruction shouldn't execute simultaneously
+    dep_uids.push_back(inst->getUID());
+    // Fetch the UIDs of static operands
+    for (auto dep : inst->getStaticOperands()) {
+        dep_uids.push_back(dep->getUID());
+    }
+}
+
+void
 LLVMInterface::dumpModule(llvm::Module *M) {
     M->print(llvm::outs(), nullptr);
     for (const llvm::Function &F : *M) {

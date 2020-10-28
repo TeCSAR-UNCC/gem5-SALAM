@@ -7,7 +7,7 @@ namespace SALAM {
     std::shared_ptr<SALAM::Value> attach(llvm::Value * irval, irvmap * irmap) {
         auto inst = irmap->find(irval);
         return (*inst).second;
-    } 
+    }
 */
 
     void
@@ -53,20 +53,27 @@ namespace SALAM {
         DEBUGOUT("Initialize Value - Instruction::instantiate");
         SALAM::Value::initialize(irval, irmap);
     }
-    
-    // SALAM-Ret // -------------------------------------------------------------//    
+
+    void
+    Instruction::signalUsers() {
+        for (auto user : dynamicUsers) {
+            user->fetchDependencyVal(this);
+        }
+    }
+
+    // SALAM-Ret // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createRetInst(uint64_t id, uint64_t OpCode) { 
+    createRetInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createRetInst");
         return std::make_shared<SALAM::Ret>(id, OpCode);
     }
 
     void
-    Ret::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Ret::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeRetInst");
-        
+
     }
 
     void
@@ -77,14 +84,14 @@ namespace SALAM {
     // SALAM-Br // --------------------------------------------------------------//
 
     std::shared_ptr<SALAM::Instruction>
-    createBrInst(uint64_t id, uint64_t OpCode) { 
+    createBrInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createBrInst");
         return std::make_shared<SALAM::Br>(id, OpCode);
     }
 
     void
-    Br::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Br::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Br::initialize");
         llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
@@ -95,7 +102,7 @@ namespace SALAM {
             this->trueDestination = getStaticOperands(1);
             this->falseDestination = getStaticOperands(2);
         } else this->defaultDestination = getStaticOperands(1);
-    }  
+    }
 
     std::shared_ptr<SALAM::Value>
     Br::destination() {
@@ -103,7 +110,7 @@ namespace SALAM {
             if(condition->getReg()->getIntData()->isOneValue()) return trueDestination;
             else return falseDestination;
         }
-        return defaultDestination; 
+        return defaultDestination;
     }
 
     void
@@ -112,14 +119,14 @@ namespace SALAM {
 
     // SALAM-Switch // ----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSwitchInst(uint64_t id, uint64_t OpCode) { 
+    createSwitchInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSwitchInst");
         return std::make_shared<SALAM::Switch>(id, OpCode);
     }
 
     void
-    Switch::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Switch::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Switch::initialize");
         llvm::SwitchInst * switchInst = llvm::dyn_cast<llvm::SwitchInst>(irval);
@@ -142,19 +149,19 @@ namespace SALAM {
 
     void
     Switch::compute() {
-    
+
     }
 
     // SALAM-Add // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createAddInst(uint64_t id, uint64_t OpCode) { 
+    createAddInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createAddInst");
         return std::make_shared<SALAM::Add>(id, OpCode);
     }
 
     void
-    Add::initialize(llvm::Value * irval, 
-                            irvmap * irmap, 
+    Add::initialize(llvm::Value * irval,
+                            irvmap * irmap,
                             SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Add::initialize");
 
@@ -169,17 +176,17 @@ namespace SALAM {
         // <result> = add nuw nsw <ty> <op1>, <op2>; yields ty : result
 
     }
-    
-    // SALAM-FAdd // ------------------------------------------------------------//    
+
+    // SALAM-FAdd // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFAddInst(uint64_t id, uint64_t OpCode) { 
+    createFAddInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFAddInst");
         return std::make_shared<SALAM::FAdd>(id, OpCode);
     }
 
     void
-    FAdd::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FAdd::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFAddInst");
     }
@@ -188,19 +195,19 @@ namespace SALAM {
     FAdd::compute() {
         // Floating point Addition
         // <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-        
+
     }
-    
+
     // SALAM-Sub // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSubInst(uint64_t id, uint64_t OpCode) { 
+    createSubInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSubInst");
         return std::make_shared<SALAM::Sub>(id, OpCode);
     }
-    
+
     void
-    Sub::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Sub::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSubInst");
         // ****** //
@@ -216,16 +223,16 @@ namespace SALAM {
 
     }
 
-    // SALAM-FSub // -------------------------------------------------------------//    
+    // SALAM-FSub // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFSubInst(uint64_t id, uint64_t OpCode) { 
+    createFSubInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFSubInst");
         return std::make_shared<SALAM::FSub>(id, OpCode);
     }
 
     void
-    FSub::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FSub::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFSubInst");
         // ****** //
@@ -235,19 +242,19 @@ namespace SALAM {
     FSub::compute() {
         // Floating point Subtraction
         // <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-        
+
     }
 
     // SALAM-Mul // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createMulInst(uint64_t id, uint64_t OpCode) { 
+    createMulInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createMulInst");
         return std::make_shared<SALAM::Mul>(id, OpCode);
     }
 
     void
-    Mul::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Mul::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeMulInst");
         // ****** //
@@ -260,19 +267,19 @@ namespace SALAM {
         // <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
         // <result> = mul nsw <ty> <op1>, <op2>; yields ty : result
         // <result> = mul nuw nsw <ty> <op1>, <op2>; yields ty : result
- 
+
     }
 
-    // SALAM-FMul // ------------------------------------------------------------//    
+    // SALAM-FMul // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFMulInst(uint64_t id, uint64_t OpCode) { 
+    createFMulInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFMulInst");
         return std::make_shared<SALAM::FMul>(id, OpCode);
     }
 
     void
-    FMul::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FMul::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFMulInst");
         // ****** //
@@ -282,19 +289,19 @@ namespace SALAM {
     FMul::compute() {
         // Floating point Multiplication
         // <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-        
+
     }
 
     // SALAM-UDiv // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createUDivInst(uint64_t id, uint64_t OpCode) { 
+    createUDivInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createUDivInst");
         return std::make_shared<SALAM::UDiv>(id, OpCode);
     }
 
     void
-    UDiv::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    UDiv::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeUDivInst");
         // ****** //
@@ -308,14 +315,14 @@ namespace SALAM {
 
     // SALAM-SDiv // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSDivInst(uint64_t id, uint64_t OpCode) { 
+    createSDivInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSDivInst");
         return std::make_shared<SALAM::SDiv>(id, OpCode);
     }
 
     void
-    SDiv::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    SDiv::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSDivInst");
         // ****** //
@@ -329,14 +336,14 @@ namespace SALAM {
 
     // SALAM-FDiv // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFDivInst(uint64_t id, uint64_t OpCode) { 
+    createFDivInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFDivInst");
         return std::make_shared<SALAM::FDiv>(id, OpCode);
     }
 
     void
-    FDiv::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FDiv::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFDivInst");
         // ****** //
@@ -346,19 +353,19 @@ namespace SALAM {
     FDiv::compute() {
         // Floating point Division
         // <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
-        
+
     }
 
     // SALAM-URem // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createURemInst(uint64_t id, uint64_t OpCode) { 
+    createURemInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createURemInst");
         return std::make_shared<SALAM::URem>(id, OpCode);
     }
 
     void
-    URem::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    URem::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeURemInst");
         // ****** //
@@ -372,14 +379,14 @@ namespace SALAM {
 
     // SALAM-SRem // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSRemInst(uint64_t id, uint64_t OpCode) { 
+    createSRemInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSRemInst");
         return std::make_shared<SALAM::SRem>(id, OpCode);
     }
 
     void
-    SRem::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    SRem::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSRemInst");
         // ****** //
@@ -388,19 +395,19 @@ namespace SALAM {
     void
     SRem::compute() {
         //Signed modulo division
-    
+
     }
 
     // SALAM-FRem // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFRemInst(uint64_t id, uint64_t OpCode) { 
+    createFRemInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFRemInst");
         return std::make_shared<SALAM::FRem>(id, OpCode);
     }
 
     void
-    FRem::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FRem::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFRemInst");
         // ****** //
@@ -409,19 +416,19 @@ namespace SALAM {
     void
     FRem::compute() {
         //Floating Point modulo division
-    
+
     }
 
     // SALAM-Shl // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createShlInst(uint64_t id, uint64_t OpCode) { 
+    createShlInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createShlInst");
         return std::make_shared<SALAM::Shl>(id, OpCode);
     }
 
     void
-    Shl::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Shl::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeShlInst");
         // ****** //
@@ -434,19 +441,19 @@ namespace SALAM {
         // <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
         // <result> = shl nsw <ty> <op1>, <op2>; yields ty : result
         // <result> = shl nuw nsw <ty> <op1>, <op2>; yields ty : result
-        
+
     }
 
     // SALAM-LShr // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createLShrInst(uint64_t id, uint64_t OpCode) { 
+    createLShrInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createLShrInst");
         return std::make_shared<SALAM::LShr>(id, OpCode);
     }
 
     void
-    LShr::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    LShr::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeLShrInst");
         // ****** //
@@ -454,19 +461,19 @@ namespace SALAM {
 
     void
     LShr::compute() {
-        
+
     }
 
     // SALAM-AShr // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createAShrInst(uint64_t id, uint64_t OpCode) { 
+    createAShrInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createAShrInst");
         return std::make_shared<SALAM::AShr>(id, OpCode);
     }
 
     void
-    AShr::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    AShr::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeAShrInst");
         // ****** //
@@ -477,19 +484,19 @@ namespace SALAM {
         // Arithmatic Shift Right Operation
         // <result> = ashr <ty> <op1>, <op2>; yields ty : result
         // <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
-        
+
     }
 
     // SALAM-And // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createAndInst(uint64_t id, uint64_t OpCode) { 
+    createAndInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createAndInst");
         return std::make_shared<SALAM::And>(id, OpCode);
     }
 
     void
-    And::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    And::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeAndInst");
         // ****** //
@@ -499,19 +506,19 @@ namespace SALAM {
     And::compute() {
         // And Operation
         // <result> = and <ty> <op1>, <op2>; yields ty : result
-        
+
     }
 
     // SALAM-Or // --------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createOrInst(uint64_t id, uint64_t OpCode) { 
+    createOrInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createOrInst");
         return std::make_shared<SALAM::Or>(id, OpCode);
     }
 
     void
-    Or::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Or::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeOrInst");
         // ****** //
@@ -521,19 +528,19 @@ namespace SALAM {
     Or::compute() {
         // Or Operation
         // <result> = or <ty> <op1>, <op2>; yields ty : result
-        
+
     }
 
     // SALAM-Xor // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createXorInst(uint64_t id, uint64_t OpCode) { 
+    createXorInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createXorInst");
         return std::make_shared<SALAM::Xor>(id, OpCode);
     }
 
     void
-    Xor::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Xor::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeXorInst");
         // ****** //
@@ -543,19 +550,19 @@ namespace SALAM {
     Xor::compute() {
         // Xor Operation
         // <result> = xor <ty> <op1>, <op2>; yields ty : result
-        
+
     }
-    
+
     // SALAM-Load // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createLoadInst(uint64_t id, uint64_t OpCode) { 
+    createLoadInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createLoadInst");
         return std::make_shared<SALAM::Load>(id, OpCode);
     }
 
     void
-    Load::initialize(llvm::Value * irval, 
-                    irvmap * irmap, 
+    Load::initialize(llvm::Value * irval,
+                    irvmap * irmap,
                     SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Load::initialize");
         // ****** //
@@ -564,19 +571,19 @@ namespace SALAM {
 
     void
     Load::compute() {
-        
+
     }
 
     // SALAM-Store // -----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createStoreInst(uint64_t id, uint64_t OpCode) { 
+    createStoreInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createStoreInst");
         return std::make_shared<SALAM::Store>(id, OpCode);
     }
 
     void
-    Store::initialize(llvm::Value * irval, 
-                            irvmap * irmap, 
+    Store::initialize(llvm::Value * irval,
+                            irvmap * irmap,
                             SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Store::initialize");
         // ****** //
@@ -584,19 +591,19 @@ namespace SALAM {
 
     void
     Store::compute() {
-        
+
     }
 
     // SALAM-GEP // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createGetElementPtrInst(uint64_t id, uint64_t OpCode) { 
+    createGetElementPtrInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createGetElementPtrInst");
         return std::make_shared<SALAM::GetElementPtr>(id, OpCode);
     }
 
     void
-    GetElementPtr::initialize(llvm::Value * irval, 
-                              irvmap * irmap, 
+    GetElementPtr::initialize(llvm::Value * irval,
+                              irvmap * irmap,
                               SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::GetElementPtr::initialize");
         // ****** //
@@ -604,8 +611,8 @@ namespace SALAM {
         assert(iruser);
         llvm::GetElementPtrInst * GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(irval);
         assert(GEP);
-      
-        
+
+
     }
 
     void
@@ -613,19 +620,19 @@ namespace SALAM {
         // <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
         // <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
         // <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
-        
+
     }
 
     // SALAM-Trunc // -----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createTruncInst(uint64_t id, uint64_t OpCode) { 
+    createTruncInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createTruncInst");
         return std::make_shared<SALAM::Trunc>(id, OpCode);
     }
 
     void
-    Trunc::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Trunc::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeTruncInst");
         // ****** //
@@ -633,19 +640,19 @@ namespace SALAM {
 
     void
     Trunc::compute() {
-        
+
     }
 
     // SALAM-ZExt // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createZExtInst(uint64_t id, uint64_t OpCode) { 
+    createZExtInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createZExtInst");
         return std::make_shared<SALAM::ZExt>(id, OpCode);
     }
 
     void
-    ZExt::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    ZExt::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeZExtInst");
         // ****** //
@@ -653,19 +660,19 @@ namespace SALAM {
 
     void
     ZExt::compute() {
-        
+
     }
 
     // SALAM-SExt // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSExtInst(uint64_t id, uint64_t OpCode) { 
+    createSExtInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSExtInst");
         return std::make_shared<SALAM::SExt>(id, OpCode);
     }
 
     void
-    SExt::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    SExt::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSExtInst");
         // ****** //
@@ -673,19 +680,19 @@ namespace SALAM {
 
     void
     SExt::compute() {
-        
+
     }
 
     // SALAM-FPToUI // ----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFPToUIInst(uint64_t id, uint64_t OpCode) { 
+    createFPToUIInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFPToUIInst");
         return std::make_shared<SALAM::FPToUI>(id, OpCode);
     }
 
     void
-    FPToUI::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FPToUI::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPToUIInst");
         // ****** //
@@ -693,19 +700,19 @@ namespace SALAM {
 
     void
     FPToUI::compute() {
-        
+
     }
 
     // SALAM-FPToSI // ----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFPToSIInst(uint64_t id, uint64_t OpCode) { 
+    createFPToSIInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFPToSIInst");
         return std::make_shared<SALAM::FPToSI>(id, OpCode);
     }
 
     void
-    FPToSI::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FPToSI::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPToSIInst");
         // ****** //
@@ -713,19 +720,19 @@ namespace SALAM {
 
     void
     FPToSI::compute() {
-        
+
     }
 
     // SALAM-UIToFP // ----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createUIToFPInst(uint64_t id, uint64_t OpCode) { 
+    createUIToFPInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createUIToFPInst");
         return std::make_shared<SALAM::UIToFP>(id, OpCode);
     }
 
     void
-    UIToFP::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    UIToFP::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeUIToFPInst");
         // ****** //
@@ -733,19 +740,19 @@ namespace SALAM {
 
     void
     UIToFP::compute() {
-        
+
     }
 
     // SALAM-SIToFP // ----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSIToFPInst(uint64_t id, uint64_t OpCode) { 
+    createSIToFPInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSIToFPInst");
         return std::make_shared<SALAM::SIToFP>(id, OpCode);
     }
 
     void
-    SIToFP::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    SIToFP::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeSIToFPInst");
         // ****** //
@@ -753,19 +760,19 @@ namespace SALAM {
 
     void
     SIToFP::compute() {
-        
+
     }
 
     // SALAM-FPTrunc // ---------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFPTruncInst(uint64_t id, uint64_t OpCode) { 
+    createFPTruncInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFPTruncInst");
         return std::make_shared<SALAM::FPTrunc>(id, OpCode);
     }
 
     void
-    FPTrunc::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FPTrunc::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPTruncInst");
         // ****** //
@@ -773,19 +780,19 @@ namespace SALAM {
 
     void
     FPTrunc::compute() {
-        
+
     }
 
     // SALAM-FPExt // -----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFPExtInst(uint64_t id, uint64_t OpCode) { 
+    createFPExtInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFPExtInst");
         return std::make_shared<SALAM::FPExt>(id, OpCode);
     }
 
     void
-    FPExt::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FPExt::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFPExtInst");
         // ****** //
@@ -793,59 +800,59 @@ namespace SALAM {
 
     void
     FPExt::compute() {
-        
+
     }
 
     // SALAM-PtrToInt // --------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createPtrToIntInst(uint64_t id, uint64_t OpCode) { 
+    createPtrToIntInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createPtrToIntInst");
         return std::make_shared<SALAM::PtrToInt>(id, OpCode);
     }
 
     void
-    PtrToInt::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    PtrToInt::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializePtrToIntInst");
         // ****** //
     }
 
     void
-    PtrToInt::compute() { 
+    PtrToInt::compute() {
 
     }
 
     // SALAM-IntToPtr // --------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createIntToPtrInst(uint64_t id, uint64_t OpCode) { 
+    createIntToPtrInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createIntToPtrInst");
         return std::make_shared<SALAM::IntToPtr>(id, OpCode);
     }
 
     void
-    IntToPtr::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    IntToPtr::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeIntToPtrInst");
         // ****** //
     }
 
     void
-    IntToPtr::compute() { 
-        
-    }  
+    IntToPtr::compute() {
+
+    }
 
     // SALAM-ICmp // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createICmpInst(uint64_t id, uint64_t OpCode) { 
+    createICmpInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createICmpInst");
         return std::make_shared<SALAM::ICmp>(id, OpCode);
     }
 
     void
-    ICmp::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    ICmp::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeICmpInst");
         // ****** //
@@ -854,19 +861,19 @@ namespace SALAM {
 
     void
     ICmp::compute() {
-       
+
     }
 
     // SALAM-FCmp // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createFCmpInst(uint64_t id, uint64_t OpCode) { 
+    createFCmpInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createFCmpInst");
         return std::make_shared<SALAM::FCmp>(id, OpCode);
     }
 
     void
-    FCmp::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    FCmp::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeFCmpInst");
         // ****** //
@@ -879,14 +886,14 @@ namespace SALAM {
 
     // SALAM-Phi // -------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createPHIInst(uint64_t id, uint64_t OpCode) { 
+    createPHIInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createPhiInst");
         return std::make_shared<SALAM::Phi>(id, OpCode);
     }
 
     void
-    Phi::initialize(llvm::Value * irval, 
-                      irvmap * irmap, 
+    Phi::initialize(llvm::Value * irval,
+                      irvmap * irmap,
                       SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Phi::initialize");
         llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(irval);
@@ -899,7 +906,7 @@ namespace SALAM {
         }
     }
 
-    std::shared_ptr<SALAM::Value> 
+    std::shared_ptr<SALAM::Value>
     Phi::evaluate(std::shared_ptr<SALAM::Value> previousBB) {
         for (auto const it : arguments) {
             if(previousBB == it.second) return it.first;
@@ -914,14 +921,14 @@ namespace SALAM {
 
     // SALAM-Call // ------------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createCallInst(uint64_t id, uint64_t OpCode) { 
+    createCallInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createCallInst");
         return std::make_shared<SALAM::Instruction>(id, OpCode);
     }
 
     void
-    Call::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Call::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::initializeCallInst");
         // ****** //
@@ -934,14 +941,14 @@ namespace SALAM {
 
     // SALAM-Select // ----------------------------------------------------------//
     std::shared_ptr<SALAM::Instruction>
-    createSelectInst(uint64_t id, uint64_t OpCode) { 
+    createSelectInst(uint64_t id, uint64_t OpCode) {
         TRACEOUT("SALAM::createSelectInst");
         return std::make_shared<SALAM::Select>(id, OpCode);
     }
 
     void
-    Select::initialize(llvm::Value * irval, 
-                   irvmap * irmap, 
+    Select::initialize(llvm::Value * irval,
+                   irvmap * irmap,
                    SALAM::valueListTy * valueList) {
         TRACEOUT("SALAM::Select::initialize");
         this->condition = getStaticOperands(0);
@@ -957,7 +964,7 @@ namespace SALAM {
 
     void
     Select::compute() {
-       
+
     }
 }
     //---------------------------------------------------------------------------//

@@ -75,7 +75,7 @@ class LLVMInterface : public ComputeUnit {
     std::chrono::high_resolution_clock::time_point simStop;
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
-    std::vector<SALAM::Instruction*> reservation;
+    // std::vector<SALAM::Instruction*> reservation;
     std::vector<SALAM::Instruction*> readQueue;
     std::vector<SALAM::Instruction*> writeQueue;
     std::vector<SALAM::Instruction*> computeQueue;
@@ -91,6 +91,8 @@ class LLVMInterface : public ComputeUnit {
     // InstructionBase* findParent(Register*);
     // InstructionBase* findParent(std::string);
     // InstructionBase* detectRAW(Register*);
+    void findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst);
+
     const std::string name() const { return comm->getName() + ".compute"; }
     //virtual bool debug() { return comm->debug(); }
     virtual bool debug() { return true; }  
