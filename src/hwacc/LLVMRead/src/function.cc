@@ -3,8 +3,8 @@
 using namespace SALAM;
 
 SALAM::Function::Function(uint64_t id) : SALAM::Value(id) {
-    CLASSOUT("SALAM::Function::Function", id);
-	//
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	
 }
 
 void
@@ -12,16 +12,15 @@ SALAM::Function::initialize(llvm::Value * irval,
 						   irvmap *vmap,
 						   SALAM::valueListTy *valueList,
 						   bool isTop) {
-    TRACEOUT("SALAM::Function::initialize");
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
 	top = isTop;
 	//Parse irval for function params
 	llvm::Function * func = llvm::dyn_cast<llvm::Function>(irval);
 	assert(func); //panic("Invalid llvm::Value type used to initialize function. Failed cast to llvm::Function.");
 
 	// Fill arguments
-    DEBUGOUT("Initialize Function Arguments");
+    if (dbg) DPRINTF(LLVMInterface, "Initialize Function Arguments\n");
 	for (auto arg_iter = func->arg_begin(); arg_iter != func->arg_end(); arg_iter++) {
-        DEBUGITER("-");
         llvm::Argument &arg = *arg_iter;
         std::shared_ptr<SALAM::Value> argval = vmap->find(&arg)->second;
         assert(argval);
@@ -32,9 +31,8 @@ SALAM::Function::initialize(llvm::Value * irval,
     }
 
     // Fill bbList
-    DEBUGOUT("Initialize BasicBlocks");
+    if (dbg) DPRINTF(LLVMInterface, "Initialize BasicBlocks\n");
     for (auto bb_iter = func->begin(); bb_iter != func->end(); bb_iter++) {
-        DEBUGITER("-");
         llvm::BasicBlock &bb = *bb_iter;
         std::shared_ptr<SALAM::Value> bbval = vmap->find(&bb)->second;
         assert(bbval);
@@ -44,6 +42,6 @@ SALAM::Function::initialize(llvm::Value * irval,
         bblock->initialize(&bb, vmap, valueList);
     }
 
-    DEBUGOUT("Initialize Values - Function::initialize");
+    if (dbg) DPRINTF(LLVMInterface, "Initialize Values - Function::initialize\n");
 	Value::initialize(irval, vmap);
 }

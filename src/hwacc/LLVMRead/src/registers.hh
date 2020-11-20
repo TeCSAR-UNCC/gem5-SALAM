@@ -1,120 +1,102 @@
-#ifndef REGISTERS_HH
-#define REGISTERS_HH
-//------------------------------------------//
-//#include "utilization.hh"
+#ifndef __HWACC_REGISTERS_HH__
+#define __HWACC_REGISTERS_HH__
+
 #include "debug_flags.hh"
-//------------------------------------------//
-#include <iostream>
-#include <cstdint>
-#include <cstring>
-#include <string>
-#include <list>
-//------------------------------------------//
+#include "llvm/IR/Value.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/ADT/APSInt.h"
+#include "llvm/ADT/APFloat.h"
+#include <llvm-c/Core.h>
 
-struct Reg_Usage {
-    uint64_t reads;
-    uint64_t writes;
-    uint64_t bytes_read;
-    uint64_t bytes_written;
-    Reg_Usage():reads(0), 
-                writes(0),
-                bytes_read(0),
-                bytes_written(0) {}
+namespace SALAM
+{
+/*****************************************************************************
+* Register is the data storage container for SALAM::Values.
+* Every instruction and function argument has a corresponding register that
+* is tracked for power/area/timing. Additionally Constants have corresponding
+* registers, which are not tracked, since they do not have a timing component.
+*****************************************************************************/
+class Register
+{
+    protected:
+        bool tracked;
+        bool isNULL = false;
+    public:
+        Register(bool trk=true,
+                 bool nul=false);
+        virtual llvm::APFloat *getFloatData() = 0;
+        virtual llvm::APSInt *getIntData() = 0;
+        virtual uint64_t *getPtrData() = 0;
+        virtual bool isInt() { return false; }
+        virtual bool isFP() { return false; }
+        virtual bool isPtr() { return false; }
+        bool isTracked() { return tracked; }
+        bool isNull() { return isNULL; }
+        void setNull(bool flag) { isNULL = flag; }
+        void setTracked(bool flag) { tracked = flag; }
 };
 
-
-class Register {
-    //-----------------------------------------------------------------------//
-    //----- Begin Private ---------------------------------------------------//
+class APFloatRegister : public Register
+{
     private:
-        std::string _Name;      // Name of reg in reg list
-        std::string _Data_Type; // Data type to be stored in reg
-        uint64_t _Value = 0;    // Register value (reflects memory)
-        uint64_t _Size;         // Reg size in bytes
-        bool _Hot;              // Register is ready/not ready
-        bool _Global = false;
-
-    //----- End Private -----------------------------------------------------//
-    //-----------------------------------------------------------------------//
-    //----- Begin Public ----------------------------------------------------//
+        llvm::APFloat *data;
     public:
-            bool            updated_this_cycle;
-            Reg_Usage       _Reg_Usage;   // Read/Write Usage
-        // ---- Constructor
-        Register(const std::string& Name, uint64_t Value):
-                _Name(Name),
-                _Data_Type("NA"),
-                _Value(Value),
-                _Size(8),
-                _Hot(false),
-                updated_this_cycle(false) {
-                    _Reg_Usage.reads = 0; 
-                    _Reg_Usage.writes = 0; 
-                    _Reg_Usage.bytes_read = 0; 
-                    _Reg_Usage.bytes_written = 0; 
-                }
-        // ---- Constructor
-        Register(const std::string& Name): 
-                _Name(Name),
-                _Data_Type("NA"),
-                _Value(0),
-                _Size(8),
-                _Hot(false),
-                updated_this_cycle(false) {
-                    _Reg_Usage.reads = 0; 
-                    _Reg_Usage.writes = 0; 
-                    _Reg_Usage.bytes_read = 0; 
-                    _Reg_Usage.bytes_written = 0; 
-                }
-        // ---- Get Functions
-        std::string getName()           { return _Name; }
-        std::string getType()           { return _Data_Type; }
-        Reg_Usage* usage()              { return &_Reg_Usage; }
-        uint64_t getValue()             { return _Value; }
-        uint64_t getSize()              { return _Size; }
-        bool getStatus()                { return _Hot; }
-        // ---- Set Functions
-        void commit()                   { _Hot = false; }
-        void reset()                    { _Hot = true; }
-        void update()                   { updated_this_cycle = !(updated_this_cycle); }
-        void setSize(const std::string& Data_Type); 
-        void setValue(void *data);
-        // ---- Increment Functions
-        void write()                    { _Reg_Usage.writes++; }
-        void read()                     { _Reg_Usage.reads++; }     
-    //----- End Public ------------------------------------------------------//
-    //-----------------------------------------------------------------------//
+        APFloatRegister(llvm::Type *T,
+                        bool isTracked=true);
+        APFloatRegister(const llvm::APFloat &RHS);
+        virtual llvm::APFloat * getFloatData() override { return data; }
+        virtual llvm::APSInt * getIntData() {
+            assert(0);
+            return NULL;
+        }
+        virtual uint64_t * getPtrData() {
+            assert(0);
+            return NULL;
+        }
+        virtual bool isFP() override { return true; }
 };
 
-
-class RegisterList {
-    //-----------------------------------------------------------------------//
-    //----- Begin Private ---------------------------------------------------//
-    private:  
-        std::list<Register*> *_RegList; // List of all registers
-        int maxCount;
-        int averageUsage;
-        double averageSize;
-
-    //----- End Private -----------------------------------------------------//
-    //-----------------------------------------------------------------------//
-    //----- Begin Public ----------------------------------------------------//
+class APIntRegister : public Register
+{
+    private:
+        llvm::APSInt *data;
     public:
-        // ---- Constructor
-        uint64_t count()                { return maxCount; }
-        uint64_t average()              { return averageUsage; }
-        double avgSize()                { return averageSize; }
-        RegisterList()                  { _RegList = new std::list<Register*>(); maxCount = 0; averageUsage = 0; averageSize = 0;}
-        // ---- Get Functions
-        uint64_t size()                 { return _RegList->size(); }
-        // ---- Helper Functions
-        Register* findRegister(std::string Name);
-        void addRegister(Register *Reg) { _RegList->push_back(Reg); }
-        void printRegNames();
-        void resetAccess();
-        void totalAccess(Reg_Usage *regUsage);
-    //----- End Public ------------------------------------------------------//
-    //-----------------------------------------------------------------------//
+        APIntRegister(llvm::Type * T,
+                      bool isTracked=true);
+        APIntRegister(const llvm::APInt &RHS);
+        virtual llvm::APSInt * getIntData() override { return data; }
+        virtual llvm::APFloat * getFloatData() {
+            assert(0);
+            return NULL;
+        }
+        virtual uint64_t * getPtrData() {
+            assert(0);
+            return NULL;
+        }
+        virtual bool isInt() override { return true; }
 };
 
-#endif //__REGISTERS_HH__
+class PointerRegister : public Register
+{
+    private:
+        uint64_t *pointer;
+    public:
+        PointerRegister(bool isTracked=true,
+                        bool isNull=false);
+        PointerRegister(uint64_t val,
+                        bool isTracked=true,
+                        bool isNull=false);
+        virtual bool isPtr() override { return true; }
+        virtual uint64_t * getPtrData() override { return pointer; }
+        virtual llvm::APFloat * getFloatData() {
+            assert(0);
+            return NULL;
+        }
+        virtual llvm::APSInt * getIntData() {
+            assert(0);
+            return NULL;
+        }
+};
+} // End SALAM Namespace
+#endif

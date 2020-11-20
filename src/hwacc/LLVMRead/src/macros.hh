@@ -2,57 +2,10 @@
 #define MACROS_HH
 //------------------------------------------//
 #include <iomanip>
-
-
+#include <iostream>
 
 // Function Macros
 #define MIN(a,b) (((a)<(b))?(a):(b))
-
-
-// Debug Macro
-#define NODEBUGOUT
-#ifndef NODEBUGOUT
-#define DEBUGOUT(Out) do { if (true) \
-                             std::cout << Out << std::endl; \
-                         } while (0)
-#else
-#define DEBUGOUT(Out) do { } while (0)
-#endif
-
-
-#define NOTRACEOUT
-#ifndef NOTRACEOUT
-#define TRACEOUT(Out) do { if (true) \
-                             std::cout << Out << std::endl; \
-                         } while(0)
-#else
-#define TRACEOUT(Out) do { } while (0)
-#endif
-
-
-#define NODEBUGITER
-#ifndef NODEBUGITER
-#define DEBUGITER(Out) do { if (true) \
-                               std::cout << Out; \
-                           } while(0)
-#else
-#define DEBUGITER(Out) do { } while (0)
-#endif
-
-
-#define NOCLASSOUT
-#ifndef NOCLASSOUT
-#define CLASSOUT(Out, Id) do { if (Id) \
-                                 std::cout << "  ID: " << std::setw(6) << Id << " | " << Out  << std::endl; \
-                               else std::cout << Out << std::endl; \
-                             } while(0)
-#else
-#define CLASSOUT(Out, Id) do { } while (0)
-#endif
-
-
-#define Details(name) DPRINTF(ClassDetail, "New Instance - %s \n", name)
-#define Destruct(name) DPRINTF(ClassDetail, "Deleting Instance - %s \n", name)
 
 // Data type sizing based off LLVM references
 #define SYSTEMSIZE          64  // Bit size of system

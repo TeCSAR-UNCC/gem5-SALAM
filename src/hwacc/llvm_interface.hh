@@ -7,7 +7,6 @@
 #include "hwacc/LLVMRead/src/function.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "hwacc/LLVMRead/src/utilization.hh"
 #include "hwacc/LLVMRead/src/cycle_count.hh"
 //------------------------------------------//
 #include <llvm/IR/Module.h>
@@ -38,10 +37,6 @@ class LLVMInterface : public ComputeUnit {
     llvm::SMDiagnostic error;
     bool lockstep;
     uint32_t scheduling_threshold;
-    // Functional Units
-    // -1 = Runtime Defined
-    //  0 = Static LLVM Defined
-    // >0 = User defined
     int32_t counter_units;
     int32_t int_adder_units;
     int32_t int_multiply_units;
@@ -82,11 +77,9 @@ class LLVMInterface : public ComputeUnit {
     // std::list<SALAM::BasicBlock*> *bbList;
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
-    RegisterList *regList;
     // SALAM::BasicBlock *currBB;
     // SALAM::BasicBlock *prevBB;
     TypeList *typeList;
-    Hardware* hardware;
   protected:
     // InstructionBase* findParent(Register*);
     // InstructionBase* findParent(std::string);
@@ -104,19 +97,16 @@ class LLVMInterface : public ComputeUnit {
     // SALAM::BasicBlock* findEntryBB();
     void startup();
     void initialize();
-    void printPerformanceResults();
     void finalize();
-    void occupancy();
-    //void statisticsWithMemory();
     // void scheduleBB(SALAM::BasicBlock *bb);
-    void readCommit(MemoryRequest * req);
-    void writeCommit(MemoryRequest * req);
-    void dumpQueues();
+    void readCommit(MemoryRequest *req);
+    void writeCommit(MemoryRequest *req);
     void dumpModule(llvm::Module *m);
     void scheduleFunction(std::shared_ptr<SALAM::Function> callee,
                           std::shared_ptr<SALAM::Instruction> caller,
                           std::vector<uint64_t> &args);
-    std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction * inst, uint64_t id);
+    std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
+                                                          uint64_t id);
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

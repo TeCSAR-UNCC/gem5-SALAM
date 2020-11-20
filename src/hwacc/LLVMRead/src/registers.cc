@@ -2,68 +2,94 @@
 #include "registers.hh"
 //------------------------------------------//
 
-void 
-Register::setSize(const std::string& Data_Type) {
-    // --- Store data type as register parameters ---------------------//
-    _Data_Type = Data_Type;
-    //  --- Determine needed register size based around data type -----//
-    //  --- Pointer Types ---------------------------------------------//
-    if (_Data_Type.compare("pointer") == COMPAREFOUND) _Size = POINTERSIZE;
-    else if (_Data_Type.back() == '*') _Size = POINTERSIZE;
-    //  --- Integer Types ---------------------------------------------//
-    else if (_Data_Type.front() == 'i') _Size = BYTESIZE(std::stoi(_Data_Type.substr(SKIPFIRST)));
-    //  --- Floating Point Types --------------------------------------//
-    else if (_Data_Type.compare("float") == COMPAREFOUND) _Size = FLOATSIZE;
-    else if (_Data_Type.compare("double") == COMPAREFOUND) _Size = DOUBLESIZE;
-    //  --- Void Type -------------------------------------------------//
-    else if (_Data_Type.compare("void") == COMPAREFOUND) _Size = VOIDSIZE;
-    //  --- LLVM Label Type -------------------------------------------//
-    else if (_Data_Type.compare("label") == COMPAREFOUND) _Size = LABELSIZE;
-    //  --- Unspecified or Unknown Data Type --------------------------//
-    else _Size = DEFAULTSIZE;
-}   //  --- End Function ----------------------------------------------//
+SALAM::Register::Register(bool trk,
+                          bool nul) :
+                          tracked(trk),
+                          isNULL(nul)
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+}
 
-void
-Register::setValue(void *Data) { // memcpy shortcut method
-    memcpy(&_Value, Data, _Size);
-}   //  --- End Function ----------------------------------------------//
-
-void
-RegisterList::printRegNames() { // Prints name of all current registers
-    for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
-        std::cout << (*it)->getName() << "Size: " << (*it)->getSize() << "\n";
-    }
-}   //  --- End Function ----------------------------------------------//
-
-void
-RegisterList::resetAccess() { 
-    int count = 0;
-    int size = 0;
-    for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
-        if((*it)->updated_this_cycle) { 
-            count++;
-            size += (*it)->getSize();
+SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
+                                        bool isTracked) :
+                                        Register(isTracked)
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    switch (T->getTypeID()) {
+        case llvm::Type::HalfTyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::IEEEhalf());
+            break;
         }
-        (*it)->updated_this_cycle = false;
+        case llvm::Type::FloatTyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::IEEEsingle());
+            break;
+        }
+        case llvm::Type::DoubleTyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::IEEEdouble());
+            break;
+        }
+        case llvm::Type::X86_FP80TyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::x87DoubleExtended());
+            break;
+        }
+        case llvm::Type::FP128TyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::IEEEquad());
+            break;
+        }
+        case llvm::Type::PPC_FP128TyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::PPCDoubleDouble());
+            break;
+        }
+        default:
+            assert(0);
     }
-    averageSize += size;
-    averageUsage += count;
-    if ( count > maxCount ) maxCount = count;
-}   //  --- End Function ----------------------------------------------//
+}
 
-void
-RegisterList::totalAccess(Reg_Usage* regUsage) { // Prints name of all current registers
-    for (auto it=_RegList->begin(); it!=_RegList->end(); ++it) {
-        regUsage->reads += (*it)->_Reg_Usage.reads;
-        regUsage->writes += (*it)->_Reg_Usage.writes;
-    }
-}   //  --- End Function ----------------------------------------------//
+SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
+                                        Register(false)
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    data = new llvm::APFloat(RHS);
+}
 
+SALAM::APIntRegister::APIntRegister(llvm::Type * T,
+                                    bool isTracked) :
+                                    Register(isTracked)
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
+    assert(it);
+    data = new llvm::APSInt(it->getBitWidth(), 0);
+}
 
-Register *
-RegisterList::findRegister(std::string Name) {
-    for (auto it = _RegList->begin(); it != _RegList->end(); ++it) {
-        if ((*it)->getName() == Name) return *it;
-    }
-    return NULL;
+SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
+                                    Register(false)
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    data = new llvm::APSInt(RHS);
+}
+
+SALAM::PointerRegister::PointerRegister(bool isTracked,
+                                        bool isNull) :
+                                        Register(isTracked,
+                                        isNull),
+                                        pointer(new uint64_t(0))
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+}
+
+SALAM::PointerRegister::PointerRegister(uint64_t val,
+                                        bool isTracked,
+                                        bool isNull) :
+                                        Register(isTracked,
+                                        isNull),
+                                        pointer(new uint64_t(val))
+{
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
 }
