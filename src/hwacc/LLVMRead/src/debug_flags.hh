@@ -12,8 +12,25 @@
 #include "debug/NoncoherentDma.hh"
 #include "debug/Runtime.hh"
 #include "debug/RuntimeQueues.hh"
+#include "debug/SALAM_Debug.hh"
 #include "debug/StreamDma.hh"
 #include "debug/Trace.hh"
+#include "base/trace.hh"
 
+namespace SALAM
+{
+class Debugger
+{
+    private:
+        bool dbg = false;
+    protected:
+    public:
+        Debugger();
+        ~Debugger() = default;
+        virtual void dumper() { };
+        bool enabled() { return dbg; }
+
+};
+}
 //------------------------------------------//
 #endif //__LLVMREAD_DEBUG_HH__

@@ -22,10 +22,11 @@ typedef std::pair<OperandValue*, void*> Ops;
 class OperandValue
 {   
     protected:
-        virtual ~OperandValue() = default;
         virtual void *allocate() const = 0;
         virtual void *cast(void *opType) const = 0; 
-
+    public:
+        OperandValue();
+        ~OperandValue() = default;
 };
 
 template<typename T> class OperandType : public OperandValue
@@ -41,6 +42,8 @@ class Operand
         std::vector<OperandValue *> opsValues;
         std::vector<Ops> ops;
     public:
+        Operand();
+        ~Operand() = default;
         OperandValue *setOp(llvm::Type *T, void *value); 
 
 };
@@ -51,6 +54,7 @@ class Constant: public Value {
         SALAM::valueListTy operands;
     public:
         Constant(uint64_t id);
+        ~Constant() = default;
         //Constant(const Constant&);
         Value *clone() { return new Constant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
@@ -61,6 +65,7 @@ class GlobalConstant : public Constant {
     protected:
     public:
         GlobalConstant(uint64_t id);
+        ~GlobalConstant() = default;
         Value *clone() { return new GlobalConstant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 };
@@ -70,6 +75,7 @@ class Argument : public Value {
     protected:
     public:
         Argument(uint64_t id);
+        ~Argument() = default;
         Value *clone() { return new Argument(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 };

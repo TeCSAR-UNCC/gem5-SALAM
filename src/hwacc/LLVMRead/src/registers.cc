@@ -7,14 +7,39 @@ SALAM::Register::Register(bool trk,
                           tracked(trk),
                           isNULL(nul)
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->reg_dbg = new Register_Debugger();
+    }
 }
+
+SALAM::Register::~Register() 
+{
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __func__);
+        //if (DTRACE(SALAM_Debug)) delete reg_dbg;
+}
+
+SALAM::Register::Register_Debugger::Register_Debugger()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+}
+
+void
+SALAM::Register::Register_Debugger::dumper()
+{
+    if (DTRACE(SALAM_Debug)) {
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+
+    }
+}
+
 
 SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
                                         bool isTracked) :
                                         Register(isTracked)
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     switch (T->getTypeID()) {
         case llvm::Type::HalfTyID:
         {
@@ -54,7 +79,7 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
 SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
                                         Register(false)
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     data = new llvm::APFloat(RHS);
 }
 
@@ -62,7 +87,7 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
                                     bool isTracked) :
                                     Register(isTracked)
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
     assert(it);
     data = new llvm::APSInt(it->getBitWidth(), 0);
@@ -71,7 +96,7 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
 SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
                                     Register(false)
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     data = new llvm::APSInt(RHS);
 }
 
@@ -81,7 +106,7 @@ SALAM::PointerRegister::PointerRegister(bool isTracked,
                                         isNull),
                                         pointer(new uint64_t(0))
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
 }
 
 SALAM::PointerRegister::PointerRegister(uint64_t val,
@@ -91,5 +116,5 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
                                         isNull),
                                         pointer(new uint64_t(val))
 {
-    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
 }

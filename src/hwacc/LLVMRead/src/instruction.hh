@@ -19,6 +19,7 @@ namespace SALAM {
 //--------- Instruction Base Class ------------------------------------------//
 //---------------------------------------------------------------------------//
 
+
 class Instruction : public Value, public Operand
 {
     private:
@@ -29,18 +30,28 @@ class Instruction : public Value, public Operand
         std::vector<Operand *> opList;
         uint64_t llvmOpCode;
         uint64_t cycleCount;
+        bool dbg = false;
         
     protected:
+        class Instruction_Debugger: public Debugger
+        {
+            public:
+                Instruction_Debugger();
+                ~Instruction_Debugger() = default;
+                void dumper()   override;
+        }; 
+
+       Instruction_Debugger* inst_dbg;
     public:
-        Instruction(uint64_t id);
-        Instruction(uint64_t id, uint64_t OpCode);
-        Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles);
-        ~Instruction() = default;
-        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) { };
+
+        Instruction(uint64_t id); //
+        Instruction(uint64_t id, uint64_t OpCode); //
+        Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles); //
+        ~Instruction(); //
+        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) { }; //
         void instantiate(llvm::Value * irval,
                         irvmap * irmap,
-                        SALAM::valueListTy * valueList);
-        void debug();
+                        SALAM::valueListTy * valueList); //
         // Create initialize function for instruction - common item containers
         valueListTy getStaticOperands() const { return staticOperands; }
         std::shared_ptr<SALAM::Value> getStaticOperands(int i) const { return staticOperands.at(i); }
@@ -66,7 +77,7 @@ class BadInstruction : public Instruction {
             uint64_t OpCode,
             uint64_t cycles);
         ~BadInstruction() = default;
-        void compute()      override { }
+        void compute()      override;
         virtual BadInstruction* clone() const { return new BadInstruction(*this); }
 };
 

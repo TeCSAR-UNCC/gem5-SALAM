@@ -29,13 +29,14 @@
 #include <ratio>
 #include <memory>
 //------------------------------------------//
+typedef std::vector<SALAM::Instruction*> queue;
+
 
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
-    bool lockstep;
     uint32_t scheduling_threshold;
     int32_t counter_units;
     int32_t int_adder_units;
@@ -65,15 +66,17 @@ class LLVMInterface : public ComputeUnit {
     bool loadOpScheduled;
     bool storeOpScheduled;
     bool compOpScheduled;
+    bool lockstep;
+    bool dbg;
     std::chrono::duration<double> setupTime;
     std::chrono::duration<double> simTime;
     std::chrono::high_resolution_clock::time_point simStop;
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
-    // std::vector<SALAM::Instruction*> reservation;
-    std::vector<SALAM::Instruction*> readQueue;
-    std::vector<SALAM::Instruction*> writeQueue;
-    std::vector<SALAM::Instruction*> computeQueue;
+    queue reservationQueue;
+    queue readQueue;
+    queue writeQueue;
+    queue computeQueue;
     // std::list<SALAM::BasicBlock*> *bbList;
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
@@ -81,9 +84,6 @@ class LLVMInterface : public ComputeUnit {
     // SALAM::BasicBlock *prevBB;
     TypeList *typeList;
   protected:
-    // InstructionBase* findParent(Register*);
-    // InstructionBase* findParent(std::string);
-    // InstructionBase* detectRAW(Register*);
     void findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst);
 
     const std::string name() const { return comm->getName() + ".compute"; }

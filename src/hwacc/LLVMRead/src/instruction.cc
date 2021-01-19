@@ -12,6 +12,10 @@ Instruction::Instruction(uint64_t id) :
                          Value(id)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->inst_dbg = new Instruction_Debugger();
+    }  
 }
 
 Instruction::Instruction(uint64_t id,
@@ -20,6 +24,10 @@ Instruction::Instruction(uint64_t id,
                          llvmOpCode(OpCode)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->inst_dbg = new Instruction_Debugger();
+    }
 }
 
 Instruction::Instruction(uint64_t id,
@@ -30,6 +38,30 @@ Instruction::Instruction(uint64_t id,
                          cycleCount(cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->inst_dbg = new Instruction_Debugger();
+    }
+}
+
+Instruction::~Instruction() 
+{
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __func__);
+        //if (DTRACE(SALAM_Debug)) delete inst_dbg;
+}
+
+Instruction::Instruction_Debugger::Instruction_Debugger()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+}
+
+void
+Instruction::Instruction_Debugger::dumper()
+{
+    if (DTRACE(SALAM_Debug)) {
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+
+    }
 }
 
 void
@@ -51,7 +83,7 @@ Instruction::instantiate(llvm::Value *irval,
         std::shared_ptr<SALAM::Value> opval;
         if(mapit == irmap->end()) {
             // TODO: Handle constant data and constant expressions
-            if (dbg) DPRINTF(LLVMInterface, "Instantiate Operand as Constant Data/Expression\n");
+            DPRINTF(LLVMInterface, "Instantiate Operand as Constant Data/Expression\n");
             uint64_t id = valueList->back()->getUID() + 1;
             std::shared_ptr<SALAM::Constant> con = std::make_shared<SALAM::Constant>(id);
             valueList->push_back(con);
@@ -59,10 +91,10 @@ Instruction::instantiate(llvm::Value *irval,
             con->initialize(op, irmap, valueList);
             opval = con;
         } else {
-            if (dbg) DPRINTF(LLVMInterface, "Instantiate Operands on Value List\n");
+            DPRINTF(LLVMInterface, "Instantiate Operands on Value List\n");
             opval = mapit->second;
         }
-        if (dbg) DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
+        DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
         staticOperands.push_back(opval);
         if(llvm::isa<llvm::PHINode>(inst)) {
             llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(inst);
@@ -73,7 +105,7 @@ Instruction::instantiate(llvm::Value *irval,
             ++phiBB;
         }
     }
-    if (dbg) DPRINTF(LLVMInterface, "Initialize Value - Instruction::instantiate\n");
+    DPRINTF(LLVMInterface, "Initialize Value - Instruction::instantiate\n");
     SALAM::Value::initialize(irval, irmap);
 }
 

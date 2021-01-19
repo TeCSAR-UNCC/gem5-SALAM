@@ -24,12 +24,9 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     pipelined(p->FU_pipelined),
     fu_latency(p->FU_clock_period),
     clock_period(p->clock_period) {
-    // bbList = NULL;
-    // currBB = NULL;
-    // prevBB = NULL;
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     typeList = NULL;
     clock_period = clock_period * 1000;
-    //process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
 // SALAM::Instruction* createClone(const std::shared_ptr<SALAM::Instruction>& b) {
@@ -54,13 +51,11 @@ LLVMInterface::tick() {
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
-    bool dbg = debug();
-    if (dbg) {
-        DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
-            "********************************************************************************",
-            "   Cycle", cycle,
-            "********************************************************************************");
-    }
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
+        "********************************************************************************",
+        "   Cycle", cycle,
+        "********************************************************************************");
     cycle++;
     comm->refreshMemPorts();
    
@@ -72,6 +67,7 @@ LLVMInterface::tick() {
 
 void
 findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst) {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     // The list of UIDs for any dependencies we want to find
     std::vector<uint64_t> dep_uids;
     // An instruction is a runtime dependency for itself since multiple
@@ -85,6 +81,7 @@ findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * i
 
 void
 LLVMInterface::dumpModule(llvm::Module *M) {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     M->print(llvm::outs(), nullptr);
     for (const llvm::Function &F : *M) {
         for (const llvm::BasicBlock &BB : F) {
@@ -102,10 +99,8 @@ LLVMInterface::constructStaticGraph() {
 
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine.
 *********************************************************************************************/
-    
-    bool dbg = debug();
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
-    if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
+    DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     // bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
     typeList = new TypeList(); // Create New User Defined Types List
 
@@ -134,7 +129,7 @@ LLVMInterface::constructStaticGraph() {
     uint64_t valueID = 0;
     SALAM::irvmap vmap;
     // Generate SALAM::Values for llvm::GlobalVariables
-    if (dbg) DPRINTF(LLVMInterface, "Instantiate SALAM::GlobalConstants\n");
+    DPRINTF(LLVMInterface, "Instantiate SALAM::GlobalConstants\n");
     for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
         llvm::GlobalVariable &glb = *glob_iter;
         std::shared_ptr<SALAM::GlobalConstant> sglb = std::make_shared<SALAM::GlobalConstant>(valueID);
@@ -143,7 +138,7 @@ LLVMInterface::constructStaticGraph() {
         valueID++;
     }
     // Generate SALAM::Functions
-    if (dbg) DPRINTF(LLVMInterface, "Instantiate SALAM::Functions\n");
+    DPRINTF(LLVMInterface, "Instantiate SALAM::Functions\n");
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Function> sfunc = std::make_shared<SALAM::Function>(valueID);
@@ -152,7 +147,7 @@ LLVMInterface::constructStaticGraph() {
         vmap.insert(SALAM::irvmaptype(&func, sfunc));
         valueID++;
         // Generate args for SALAM:Functions
-        if (dbg) DPRINTF(LLVMInterface, "Instantiate SALAM::Functions::Arguments\n");
+        DPRINTF(LLVMInterface, "Instantiate SALAM::Functions::Arguments\n");
         for (auto arg_iter = func.arg_begin(); arg_iter != func.arg_end(); arg_iter++) {
             llvm::Argument &arg = *arg_iter;
             std::shared_ptr<SALAM::Argument> sarg = std::make_shared<SALAM::Argument>(valueID);
@@ -161,7 +156,7 @@ LLVMInterface::constructStaticGraph() {
             valueID++;
         }
         // Generate SALAM::BasicBlocks
-        if (dbg) DPRINTF(LLVMInterface, "Instantiate SALAM::Functions::BasicBlocks\n");
+        DPRINTF(LLVMInterface, "Instantiate SALAM::Functions::BasicBlocks\n");
         for (auto bb_iter = func.begin(); bb_iter != func.end(); bb_iter++) {
             llvm::BasicBlock &bb = *bb_iter;
             std::shared_ptr<SALAM::BasicBlock> sbb = std::make_shared<SALAM::BasicBlock>(valueID);
@@ -169,7 +164,7 @@ LLVMInterface::constructStaticGraph() {
             vmap.insert(SALAM::irvmaptype(&bb, sbb));
             valueID++;
             //Generate SALAM::Instructions
-            if (dbg) DPRINTF(LLVMInterface, "Instantiate SALAM::Functions::BasicBlocks::Instructions\n");
+            DPRINTF(LLVMInterface, "Instantiate SALAM::Functions::BasicBlocks::Instructions\n");
             for (auto inst_iter = bb.begin(); inst_iter != bb.end(); inst_iter++) {
                 llvm::Instruction &inst = *inst_iter;
                 std::shared_ptr<SALAM::Instruction> sinst = createInstruction(&inst, valueID);
@@ -181,7 +176,7 @@ LLVMInterface::constructStaticGraph() {
     }
 
     // Use value map to initialize SALAM::Values
-    if (dbg) DPRINTF(LLVMInterface, "Initialize SALAM::GlobalConstants\n");
+    DPRINTF(LLVMInterface, "Initialize SALAM::GlobalConstants\n");
     for (auto glob_iter = m->global_begin(); glob_iter != m->global_end(); glob_iter++) {
         llvm::GlobalVariable &glb = *glob_iter;
         std::shared_ptr<SALAM::Value> glbval = vmap.find(&glb)->second;
@@ -191,7 +186,7 @@ LLVMInterface::constructStaticGraph() {
         sglb->initialize(&glb, &vmap, &values);
     }
     // Functions will initialize BasicBlocks, which will initialize Instructions
-    if (dbg) DPRINTF(LLVMInterface, "Initialize SALAM::Functions\n");
+    DPRINTF(LLVMInterface, "Initialize SALAM::Functions\n");
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Value> funcval = vmap.find(&func)->second;
