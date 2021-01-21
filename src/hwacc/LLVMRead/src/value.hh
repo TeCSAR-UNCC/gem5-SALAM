@@ -45,7 +45,7 @@ class Value
             public:
                 Value_Debugger();
                 ~Value_Debugger() = default;
-                void dumper()   override;
+                virtual void dumper();
         }; 
 
         Value_Debugger* value_dbg;
@@ -60,6 +60,7 @@ class Value
         Register *getReg() { return reg; }
         llvm::Type *getType() { return irtype; }
         //virtual Value *clone() = 0;
+        void value_dump() { if (dbg) value_dbg->dumper(); }
 };
 } // End SALAM Namespace
 

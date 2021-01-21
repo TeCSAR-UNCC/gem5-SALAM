@@ -3,7 +3,7 @@
 using namespace SALAM;
 
 SALAM::Function::Function(uint64_t id) : SALAM::Value(id) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);	
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);	
 }
 
 void
@@ -11,7 +11,7 @@ SALAM::Function::initialize(llvm::Value * irval,
 						   irvmap *vmap,
 						   SALAM::valueListTy *valueList,
 						   bool isTop) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	top = isTop;
 	//Parse irval for function params
 	llvm::Function * func = llvm::dyn_cast<llvm::Function>(irval);

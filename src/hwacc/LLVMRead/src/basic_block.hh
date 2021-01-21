@@ -16,16 +16,29 @@
 //------------------------------------------//
 
 namespace SALAM {
+  class Instruction; // Do not remove
+
   class BasicBlock : public Value {
     private:
       std::vector<SALAM::BasicBlock*> predecessors;
       std::vector<std::shared_ptr<SALAM::Instruction>> instructions;
-      bool _debug = false;
+      bool dbg = false;
     protected:
+      class BasicBlock_Debugger: public Debugger
+        {
+            public:
+                BasicBlock_Debugger();
+                ~BasicBlock_Debugger() = default;
+                virtual void dumper();
+        }; 
+
+       BasicBlock_Debugger* bb_dbg;  
     public:
       BasicBlock(uint64_t id);
+      ~BasicBlock();
       void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList);
       std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() { return &instructions; }
+      void dump() { if (dbg) bb_dbg->dumper(); }
   };
 }
 

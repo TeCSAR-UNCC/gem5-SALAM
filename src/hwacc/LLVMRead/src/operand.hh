@@ -16,36 +16,15 @@
  
 namespace SALAM
 {
-class OperandValue;
-typedef std::pair<OperandValue*, void*> Ops; 
 
-class OperandValue
-{   
-    protected:
-        virtual void *allocate() const = 0;
-        virtual void *cast(void *opType) const = 0; 
-    public:
-        OperandValue();
-        ~OperandValue() = default;
-};
-
-template<typename T> class OperandType : public OperandValue
-{
-    protected:
-        virtual void *allocate() const { return new T; }
-        virtual void *cast(void *opType) const { return static_cast<T*>(opType); }
-};
-
-class Operand
-{
-    protected:
-        std::vector<OperandValue *> opsValues;
-        std::vector<Ops> ops;
-    public:
-        Operand();
-        ~Operand() = default;
-        OperandValue *setOp(llvm::Type *T, void *value); 
-
+struct Operands {
+    llvm::Type *type;
+    SALAM::Register *reg;
+    SALAM::Value *base;
+    bool set;
+    Operands(): type(nullptr),
+                reg(nullptr),
+                set(false) { }
 };
 
 class Constant: public Value {
@@ -84,3 +63,16 @@ class Argument : public Value {
 
 //------------------------------------------//
 #endif //__HWACC_OPERAND_HH__
+
+
+/*
+struct Instruction {
+    bool for each child
+    ptr to each child
+}
+
+
+
+
+
+*/

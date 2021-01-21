@@ -85,7 +85,6 @@ class LLVMInterface : public ComputeUnit {
     TypeList *typeList;
   protected:
     void findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst);
-
     const std::string name() const { return comm->getName() + ".compute"; }
     //virtual bool debug() { return comm->debug(); }
     virtual bool debug() { return true; }  
@@ -98,6 +97,7 @@ class LLVMInterface : public ComputeUnit {
     void startup();
     void initialize();
     void finalize();
+    void debug(uint64_t flags);
     // void scheduleBB(SALAM::BasicBlock *bb);
     void readCommit(MemoryRequest *req);
     void writeCommit(MemoryRequest *req);

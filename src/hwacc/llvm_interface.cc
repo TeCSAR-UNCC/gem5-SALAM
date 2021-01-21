@@ -24,7 +24,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     pipelined(p->FU_pipelined),
     fu_latency(p->FU_clock_period),
     clock_period(p->clock_period) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     typeList = NULL;
     clock_period = clock_period * 1000;
 }
@@ -51,7 +51,7 @@ LLVMInterface::tick() {
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
         "********************************************************************************",
         "   Cycle", cycle,
@@ -67,7 +67,7 @@ LLVMInterface::tick() {
 
 void
 findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // The list of UIDs for any dependencies we want to find
     std::vector<uint64_t> dep_uids;
     // An instruction is a runtime dependency for itself since multiple
@@ -81,7 +81,7 @@ findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * i
 
 void
 LLVMInterface::dumpModule(llvm::Module *M) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     M->print(llvm::outs(), nullptr);
     for (const llvm::Function &F : *M) {
         for (const llvm::BasicBlock &BB : F) {
@@ -99,7 +99,7 @@ LLVMInterface::constructStaticGraph() {
 
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine.
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     // bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
     typeList = new TypeList(); // Create New User Defined Types List
@@ -195,8 +195,6 @@ LLVMInterface::constructStaticGraph() {
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values);
     }
-
-    panic("Killing Sim");
 }
 
 void
@@ -234,8 +232,13 @@ LLVMInterface::initialize() {
  Calls function that constructs the basic block list, initializes the reservation table and
  read, write, and compute queues. Set all data collection variables to zero.
 *********************************************************************************************/
-    if (debug()) DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
+    DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
     constructStaticGraph();
+    DPRINTF(LLVMInterface, "================================================================\n");
+    debug(1);
+
+
+    panic("Kill Simulation");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");
@@ -250,6 +253,25 @@ LLVMInterface::initialize() {
     tick();
 }
 
+void
+LLVMInterface::debug(uint64_t flags) {
+    // Dump 
+    for (auto func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
+        // Function Level
+        // (*func_iter)->dump(); 
+        for (auto bb_iter = (*func_iter)->getBBList()->begin(); bb_iter != (*func_iter)->getBBList()->end(); bb_iter++) {
+            // Basic Block Level
+            (*bb_iter)->dump();
+            for (auto inst_iter = (*bb_iter)->Instructions()->begin(); inst_iter != (*bb_iter)->Instructions()->end(); inst_iter++) {
+                // Instruction Level
+                (*inst_iter)->dump();
+            }
+        }
+    }
+    // Dump
+    // SALAM::Operand test;
+    // test.setOp()
+}
 
 void
 LLVMInterface::startup() {
@@ -267,8 +289,6 @@ LLVMInterfaceParams::create() {
     return new LLVMInterface(this);
 }
 
-
-
 void
 LLVMInterface::finalize() {
     // Simulation Times
@@ -284,7 +304,7 @@ LLVMInterface::scheduleFunction(std::shared_ptr<SALAM::Function> callee,
 
 std::shared_ptr<SALAM::Instruction>
 LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     uint64_t OpCode = inst->Instruction::getOpcode();
     if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
     switch(OpCode) { 

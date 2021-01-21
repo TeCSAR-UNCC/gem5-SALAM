@@ -1,26 +1,16 @@
 #include "operand.hh"
 
 
-SALAM::OperandValue::OperandValue()
-{
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
-}
-
-SALAM::Operand::Operand()
-{
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
-}
-
 SALAM::Constant::Constant(uint64_t id) :
 						  Value(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 /*
 SALAM::Constant::Constant(const Constant&)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 */
 
@@ -29,7 +19,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
 							SALAM::irvmap * irmap,
 							SALAM::valueListTy * values) 
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
 	// Parse the constant value
@@ -177,7 +167,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
 SALAM::GlobalConstant::GlobalConstant(uint64_t id) :
 									  Constant(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -185,7 +175,7 @@ SALAM::GlobalConstant::initialize(llvm::Value * irval,
 								  SALAM::irvmap * irmap,
 								  SALAM::valueListTy * values)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	// Parse the initializer of the value
 	auto glb = llvm::dyn_cast<llvm::GlobalVariable>(irval);
 	assert(glb);
@@ -199,13 +189,13 @@ SALAM::GlobalConstant::initialize(llvm::Value * irval,
 SALAM::Argument::Argument(uint64_t id) :
 						  Value(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
 	addRegister();

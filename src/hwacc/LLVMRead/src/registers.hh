@@ -20,6 +20,7 @@ namespace SALAM
 class Register
 {
     protected:
+        uint64_t* raw;
         bool tracked;
         bool isNULL = false;
         bool dbg = false;
@@ -29,7 +30,7 @@ class Register
             public:
                 Register_Debugger();
                 ~Register_Debugger() = default;
-                void dumper()   override;
+                virtual void dumper();
         }; 
 
         Register_Debugger* reg_dbg;
@@ -48,6 +49,7 @@ class Register
         bool isNull() { return isNULL; }
         void setNull(bool flag) { isNULL = flag; }
         void setTracked(bool flag) { tracked = flag; }
+        void dump() { if (dbg) reg_dbg->dumper(); }
 };
 
 class APFloatRegister : public Register
