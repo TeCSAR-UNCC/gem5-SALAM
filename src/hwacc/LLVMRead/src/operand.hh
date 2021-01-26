@@ -16,33 +16,15 @@
  
 namespace SALAM
 {
-class OperandValue;
-typedef std::pair<OperandValue*, void*> Ops; 
 
-class OperandValue
-{   
-    protected:
-        virtual ~OperandValue() = default;
-        virtual void *allocate() const = 0;
-        virtual void *cast(void *opType) const = 0; 
-
-};
-
-template<typename T> class OperandType : public OperandValue
-{
-    protected:
-        virtual void *allocate() const { return new T; }
-        virtual void *cast(void *opType) const { return static_cast<T*>(opType); }
-};
-
-class Operand
-{
-    protected:
-        std::vector<OperandValue *> opsValues;
-        std::vector<Ops> ops;
-    public:
-        OperandValue *setOp(llvm::Type *T, void *value); 
-
+struct Operands {
+    llvm::Type *type;
+    SALAM::Register *reg;
+    SALAM::Value *base;
+    bool set;
+    Operands(): type(nullptr),
+                reg(nullptr),
+                set(false) { }
 };
 
 class Constant: public Value {
@@ -51,6 +33,7 @@ class Constant: public Value {
         SALAM::valueListTy operands;
     public:
         Constant(uint64_t id);
+        ~Constant() = default;
         //Constant(const Constant&);
         Value *clone() { return new Constant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
@@ -61,6 +44,7 @@ class GlobalConstant : public Constant {
     protected:
     public:
         GlobalConstant(uint64_t id);
+        ~GlobalConstant() = default;
         Value *clone() { return new GlobalConstant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 };
@@ -70,6 +54,7 @@ class Argument : public Value {
     protected:
     public:
         Argument(uint64_t id);
+        ~Argument() = default;
         Value *clone() { return new Argument(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 };
@@ -78,3 +63,16 @@ class Argument : public Value {
 
 //------------------------------------------//
 #endif //__HWACC_OPERAND_HH__
+
+
+/*
+struct Instruction {
+    bool for each child
+    ptr to each child
+}
+
+
+
+
+
+*/

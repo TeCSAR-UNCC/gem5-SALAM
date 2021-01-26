@@ -3,51 +3,70 @@
 
 #include <cstdlib>
 #include <iostream>
-#include "value.hh"
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Instructions.h>
+#include "basic_block.hh"
 #include "operand.hh"
 #include "cycle_count.hh"
-//#include "basic_block.hh"
 #include "debug_flags.hh"
+#include "value.hh"
 
 
 namespace SALAM {
+
+class BasicBlock; // Do Not Remove
+
 
 //---------------------------------------------------------------------------//
 //--------- Instruction Base Class ------------------------------------------//
 //---------------------------------------------------------------------------//
 
-class Instruction : public Value, public Operand
+
+class Instruction : public Value
 {
     private:
-        Value *returnRegister;
         valueListTy staticOperands;
         std::vector<Instruction *> dynamicDependencies;
         std::vector<Instruction *> dynamicUsers;
-        std::vector<Operand *> opList;
         uint64_t llvmOpCode;
         uint64_t cycleCount;
+        bool dbg = false;
         
     protected:
+        std::vector<Operands> operands;
+        bool running = false;
+
+        class Instruction_Debugger: public Debugger
+        {
+            public:
+                Instruction_Debugger();
+                ~Instruction_Debugger() = default;
+                virtual void dumper(Instruction * inst);
+        }; 
+
+       Instruction_Debugger* inst_dbg;
     public:
-        Instruction(uint64_t id);
-        Instruction(uint64_t id, uint64_t OpCode);
-        Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles);
-        ~Instruction() = default;
-        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) { };
+        Instruction(uint64_t id); //
+        Instruction(uint64_t id, uint64_t OpCode); //
+        Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles); //
+        ~Instruction(); //
+        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) { }; //
         void instantiate(llvm::Value * irval,
                         irvmap * irmap,
-                        SALAM::valueListTy * valueList);
-        void debug();
+                        SALAM::valueListTy * valueList); //
         // Create initialize function for instruction - common item containers
         valueListTy getStaticOperands() const { return staticOperands; }
         std::shared_ptr<SALAM::Value> getStaticOperands(int i) const { return staticOperands.at(i); }
         void signalUsers();
         virtual void compute() { }
+        virtual void commit() {  }
         virtual void fetchDependencyVal(Instruction * dep) {} //TODO: This will be changed to purely virtual
         virtual Instruction* clone() const { return new Instruction(*this); }
+        void dump() { if (dbg) inst_dbg->dumper(this); }
+        /*
+            TODO: link up the findDynamicDeps function from llvm_interface
+        */
 };
 
 //---------------------------------------------------------------------------//
@@ -66,7 +85,8 @@ class BadInstruction : public Instruction {
             uint64_t OpCode,
             uint64_t cycles);
         ~BadInstruction() = default;
-        void compute()      override { }
+        void compute()      override;
+        void commit()       override;
         virtual BadInstruction* clone() const { return new BadInstruction(*this); }
 };
 
@@ -93,7 +113,7 @@ class Ret : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
-       // void getCycleCount() override { setCycleCount(cycles->ret_inst); }
+        void commit()       override;
         virtual Ret* clone() const { return new Ret(*this); }
 };
 
@@ -128,6 +148,7 @@ class Br : public Instruction {
         bool isConditional() { return conditional; }
         std::shared_ptr<SALAM::Value> destination();
         void compute()      override;
+        void commit()       override;
         virtual Br* clone() const { return new Br(*this); }
 };
 
@@ -159,6 +180,7 @@ class Switch : public Instruction {
         std::shared_ptr<SALAM::Value> defaultDest() { return arguments[0].second; }
         std::shared_ptr<SALAM::Value> destination(int switchVar);
         void compute()      override;
+        void commit()       override;
         virtual Switch* clone() const {  return new Switch(*this); }
 };
 
@@ -187,7 +209,8 @@ class Add : public Instruction
                         SALAM::irvmap *irmap,
                         SALAM::valueListTy *valueList) override;
         void compute() override;
-       // void getCycleCount() override { setCycleCount(cycles->add_inst); }
+        void commit()       override;
+
         virtual Add* clone() const { return new Add(*this); }
 };
 
@@ -212,6 +235,7 @@ class FAdd : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FAdd* clone() const { return new FAdd(*this); }
 };
 
@@ -235,6 +259,7 @@ class Sub : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Sub* clone() const { return new Sub(*this); }
 };
 
@@ -258,6 +283,7 @@ class FSub : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FSub* clone() const { return new FSub(*this); }
 };
 
@@ -282,6 +308,7 @@ class Mul : public Instruction {
                         SALAM::irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Mul* clone() const { return new Mul(*this); }
 };
 
@@ -305,6 +332,7 @@ class FMul : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FMul* clone() const { return new FMul(*this); }
 };
 
@@ -328,6 +356,7 @@ class UDiv : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual UDiv* clone() const { return new UDiv(*this); }
 };
 
@@ -351,6 +380,7 @@ class SDiv : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual SDiv* clone() const { return new SDiv(*this); }
 };
 
@@ -374,6 +404,7 @@ class FDiv : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FDiv* clone() const { return new FDiv(*this); }
 };
 
@@ -397,6 +428,7 @@ class URem : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual URem* clone() const { return new URem(*this); }
 };
 
@@ -420,6 +452,7 @@ class SRem : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual SRem* clone() const { return new SRem(*this); }
 };
 
@@ -443,6 +476,7 @@ class FRem : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FRem* clone() const { return new FRem(*this); }
 };
 
@@ -470,6 +504,7 @@ class Shl : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Shl* clone() const { return new Shl(*this); }
 };
 
@@ -493,6 +528,7 @@ class LShr : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual LShr* clone() const { return new LShr(*this); }
 };
 
@@ -516,6 +552,7 @@ class AShr : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual AShr* clone() const { return new AShr(*this); }
 };
 
@@ -539,6 +576,7 @@ class And : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual And* clone() const { return new And(*this); }
 };
 
@@ -562,6 +600,7 @@ class Or : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Or* clone() const { return new Or(*this); }
 };
 
@@ -585,6 +624,7 @@ class Xor : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Xor* clone() const { return new Xor(*this); }
 };
 
@@ -613,6 +653,7 @@ class Load : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Load* clone() const { return new Load(*this); }
 };
 
@@ -636,6 +677,7 @@ class Store : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Store* clone() const { return new Store(*this); }
 };
 
@@ -661,6 +703,7 @@ class GetElementPtr : public Instruction {
         GetElementPtr &setA() { std::cout << "a\n"; return *this; }
         GetElementPtr &setB() { std::cout << "b\n"; return *this; }
         void compute()      override;
+        void commit()       override;
         virtual GetElementPtr* clone() const { return new GetElementPtr(*this); }
 };
 
@@ -688,6 +731,7 @@ class Trunc : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Trunc* clone() const { return new Trunc(*this); }
 };
 
@@ -711,6 +755,7 @@ class ZExt : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual ZExt* clone() const { return new ZExt(*this); }
 };
 
@@ -734,6 +779,7 @@ class SExt : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual SExt* clone() const { return new SExt(*this); }
 };
 
@@ -759,6 +805,7 @@ class FPToUI : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FPToUI* clone() const { return new FPToUI(*this); }
 };
 
@@ -782,6 +829,7 @@ class FPToSI : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FPToSI* clone() const { return new FPToSI(*this); }
 };
 
@@ -805,6 +853,7 @@ class UIToFP : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual UIToFP* clone() const { return new UIToFP(*this); }
 };
 
@@ -828,6 +877,7 @@ class SIToFP : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual SIToFP* clone() const { return new SIToFP(*this); }
 };
 
@@ -851,6 +901,7 @@ class FPTrunc : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FPTrunc* clone() const { return new FPTrunc(*this); }
 };
 
@@ -874,6 +925,7 @@ class FPExt : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FPExt* clone() const { return new FPExt(*this); }
 };
 
@@ -897,6 +949,7 @@ class PtrToInt : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual PtrToInt* clone() const { return new PtrToInt(*this); }
 };
 
@@ -920,6 +973,7 @@ class IntToPtr : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual IntToPtr* clone() const { return new IntToPtr(*this); }
 };
 
@@ -947,6 +1001,7 @@ class ICmp : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual ICmp* clone() const { return new ICmp(*this); }
 };
 
@@ -970,6 +1025,7 @@ class FCmp : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual FCmp* clone() const { return new FCmp(*this); }
 };
 
@@ -983,15 +1039,15 @@ createFCmpInst(uint64_t id,
 
 // SALAM-Phi // -------------------------------------------------------------//
 
-typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value>> phiNode;
+typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock> > phiNode;
+
+//typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value> > phiNode;
 typedef std::vector< phiNode> phiArgs;
 
 class Phi : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // [Value, Previous BB]
-        phiArgs arguments;
-
+        phiArgs arguments; // [Value, Previous BB]
     protected:
 
     public:
@@ -1002,8 +1058,8 @@ class Phi : public Instruction {
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        std::shared_ptr<SALAM::Value> evaluate(std::shared_ptr<SALAM::Value> previousBB);
-        void compute()      override;
+        void compute();
+        std::weak_ptr<SALAM::Value> commit(std::shared_ptr<SALAM::BasicBlock> previousBB);
         virtual Phi* clone() const { return new Phi(*this); }
 };
 
@@ -1027,6 +1083,7 @@ class Call : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         void compute()      override;
+        void commit()       override;
         virtual Call* clone() const { return new Call(*this); }
 };
 
@@ -1055,6 +1112,7 @@ class Select : public Instruction {
                         SALAM::valueListTy * valueList);
         std::shared_ptr<SALAM::Value> evaluate();
         void compute()      override;
+        void commit()       override;
         virtual Select* clone() const { return new Select(*this); }
 };
 

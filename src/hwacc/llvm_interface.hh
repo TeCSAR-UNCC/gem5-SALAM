@@ -30,13 +30,14 @@
 #include <ratio>
 #include <memory>
 //------------------------------------------//
+typedef std::vector<SALAM::Instruction*> queue;
+
 
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
-    bool lockstep;
     uint32_t scheduling_threshold;
     int32_t counter_units;
     int32_t int_adder_units;
@@ -66,6 +67,8 @@ class LLVMInterface : public ComputeUnit {
     bool loadOpScheduled;
     bool storeOpScheduled;
     bool compOpScheduled;
+    bool lockstep;
+    bool dbg;
     std::chrono::duration<double> setupTime;
     std::chrono::duration<double> simTime;
     std::chrono::high_resolution_clock::time_point simStop;
@@ -84,9 +87,10 @@ class LLVMInterface : public ComputeUnit {
     } ActiveFunction;
 
     std::deque<ActiveFunction> activeFunctions;
-    std::vector<std::shared_ptr<SALAM::Instruction>> readQueue;
-    std::vector<std::shared_ptr<SALAM::Instruction>> writeQueue;
-    std::vector<std::shared_ptr<SALAM::Instruction>> computeQueue;
+    std::deque<std::shared_ptr<SALAM::Instruction>> readQueue;
+    std::deque<std::shared_ptr<SALAM::Instruction>> writeQueue;
+    std::deque<std::shared_ptr<SALAM::Instruction>> computeQueue;
+
     // std::list<SALAM::BasicBlock*> *bbList;
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
@@ -94,11 +98,7 @@ class LLVMInterface : public ComputeUnit {
     // SALAM::BasicBlock *prevBB;
     TypeList *typeList;
   protected:
-    // InstructionBase* findParent(Register*);
-    // InstructionBase* findParent(std::string);
-    // InstructionBase* detectRAW(Register*);
     void findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst);
-
     const std::string name() const { return comm->getName() + ".compute"; }
     //virtual bool debug() { return comm->debug(); }
     virtual bool debug() { return true; }
@@ -111,6 +111,7 @@ class LLVMInterface : public ComputeUnit {
     void startup();
     void initialize();
     void finalize();
+    void debug(uint64_t flags);
     // void scheduleBB(SALAM::BasicBlock *bb);
     void readCommit(MemoryRequest *req);
     void writeCommit(MemoryRequest *req);

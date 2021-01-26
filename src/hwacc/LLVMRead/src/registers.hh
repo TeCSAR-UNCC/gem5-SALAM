@@ -20,11 +20,25 @@ namespace SALAM
 class Register
 {
     protected:
+        uint64_t* raw;
         bool tracked;
         bool isNULL = false;
+        bool dbg = false;
+
+        class Register_Debugger: public Debugger
+        {
+            public:
+                Register_Debugger();
+                ~Register_Debugger() = default;
+                virtual void dumper();
+        }; 
+
+        Register_Debugger* reg_dbg;
+
     public:
         Register(bool trk=true,
                  bool nul=false);
+        ~Register();
         virtual llvm::APFloat *getFloatData() = 0;
         virtual llvm::APSInt *getIntData() = 0;
         virtual uint64_t *getPtrData() = 0;
@@ -35,6 +49,7 @@ class Register
         bool isNull() { return isNULL; }
         void setNull(bool flag) { isNULL = flag; }
         void setTracked(bool flag) { tracked = flag; }
+        void dump() { if (dbg) reg_dbg->dumper(); }
 };
 
 class APFloatRegister : public Register

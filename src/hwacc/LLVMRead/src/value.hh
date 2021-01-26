@@ -28,7 +28,7 @@ class Value
         uint64_t size = 0;
         llvm::Type *irtype;
         Register *reg;
-        bool dbg = true;
+        bool dbg = false;
 
         void addRegister(bool isTracked=true);
         void addAPIntRegister(const llvm::APInt & val);
@@ -40,19 +40,27 @@ class Value
                                 bool isTracked=true,
                                 bool isNull=false);
 
-    public:
-        Value(uint64_t id) {
-            //CLASSOUT("SALAM::Value::Value(uint64_t)", id);
-            uid = id;
-            size = 0;
-        }
+        class Value_Debugger: public Debugger
+        {
+            public:
+                Value_Debugger();
+                ~Value_Debugger() = default;
+                virtual void dumper();
+        }; 
 
+        Value_Debugger* value_dbg;
+
+    public:
+        Value(uint64_t id);
+        ~Value();
         virtual void initialize(llvm::Value *irval,
                                 SALAM::irvmap *irmap);
+        uint64_t getSize() { return size; }
         uint64_t getUID() { return uid; }
         Register *getReg() { return reg; }
         llvm::Type *getType() { return irtype; }
         //virtual Value *clone() = 0;
+        void value_dump() { if (dbg) value_dbg->dumper(); }
 };
 } // End SALAM Namespace
 

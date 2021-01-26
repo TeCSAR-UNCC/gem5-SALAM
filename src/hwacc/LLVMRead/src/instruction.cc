@@ -1,17 +1,21 @@
 #include "instruction.hh"
 
-
-namespace SALAM {
+namespace SALAM
+{
 
 //---------------------------------------------------------------------------//
 //--------- Instruction Base Class ------------------------------------------//
 //---------------------------------------------------------------------------//
 
 
-Instruction::Instruction(uint64_t id) :
+SALAM::Instruction::Instruction(uint64_t id) :
                          Value(id)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->inst_dbg = new Instruction_Debugger();
+    }  
 }
 
 Instruction::Instruction(uint64_t id,
@@ -19,7 +23,11 @@ Instruction::Instruction(uint64_t id,
                          Value(id),
                          llvmOpCode(OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->inst_dbg = new Instruction_Debugger();
+    }
 }
 
 Instruction::Instruction(uint64_t id,
@@ -29,7 +37,35 @@ Instruction::Instruction(uint64_t id,
                          llvmOpCode(OpCode),
                          cycleCount(cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->inst_dbg = new Instruction_Debugger();
+    }
+}
+
+Instruction::~Instruction() 
+{
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
+        //if (DTRACE(SALAM_Debug)) delete inst_dbg;
+}
+
+Instruction::Instruction_Debugger::Instruction_Debugger()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+}
+
+void
+Instruction::Instruction_Debugger::dumper(Instruction * inst)
+{
+    if (DTRACE(SALAM_Debug)) {
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+        DPRINTF(SALAM_Debug, "| %s | %s %d  \n", 
+            "************** Instruction Dump **************",
+            "\nUID: ", inst->getUID()
+        );
+        if(inst->getReg()) inst->value_dump();
+    }
 }
 
 void
@@ -37,21 +73,22 @@ Instruction::instantiate(llvm::Value *irval,
                          irvmap *irmap,
                          SALAM::valueListTy *valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Fetch the operands of the instruction
     llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
     llvm::Instruction * inst = llvm::dyn_cast<llvm::Instruction>(irval);
     assert(iruser);
     assert(inst);
-    int phiBB = 0;
     for (auto const op : iruser->operand_values()) {
         auto mapit = irmap->find(op);
-        //op->printAsOperand(llvm::errs());
-        //llvm::errs() << " ";
+        if(dbg) {
+            op->printAsOperand(llvm::errs());
+            llvm::errs() << " ";
+        }
         std::shared_ptr<SALAM::Value> opval;
         if(mapit == irmap->end()) {
             // TODO: Handle constant data and constant expressions
-            if (dbg) DPRINTF(LLVMInterface, "Instantiate Operand as Constant Data/Expression\n");
+            DPRINTF(LLVMInterface, "Instantiate Operand as Constant Data/Expression\n");
             uint64_t id = valueList->back()->getUID() + 1;
             std::shared_ptr<SALAM::Constant> con = std::make_shared<SALAM::Constant>(id);
             valueList->push_back(con);
@@ -59,28 +96,29 @@ Instruction::instantiate(llvm::Value *irval,
             con->initialize(op, irmap, valueList);
             opval = con;
         } else {
-            if (dbg) DPRINTF(LLVMInterface, "Instantiate Operands on Value List\n");
+            DPRINTF(LLVMInterface, "Instantiate Operands on Value List\n");
             opval = mapit->second;
         }
-        if (dbg) DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
+        DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
         staticOperands.push_back(opval);
         if(llvm::isa<llvm::PHINode>(inst)) {
+            uint64_t phiBB = 0;
             llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(inst);
             llvm::Value * bb = llvm::dyn_cast<llvm::Value>(phi->getIncomingBlock(phiBB));
             mapit = irmap->find(bb);
             opval = mapit->second;
             staticOperands.push_back(opval);
             ++phiBB;
-        }
+        } 
     }
-    if (dbg) DPRINTF(LLVMInterface, "Initialize Value - Instruction::instantiate\n");
+    DPRINTF(LLVMInterface, "Initialize Value - Instruction::instantiate\n");
     SALAM::Value::initialize(irval, irmap);
 }
 
 void
 Instruction::signalUsers()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     for (auto user : dynamicUsers) {
         user->fetchDependencyVal(this);
     }
@@ -92,7 +130,7 @@ createRetInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Ret>(id, OpCode, cycles);
 }
 
@@ -101,7 +139,7 @@ Ret::Ret(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -109,7 +147,7 @@ Ret::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -118,6 +156,11 @@ Ret::compute()
 
 }
 
+void
+Ret::commit()
+{
+
+}
 // SALAM-Br // --------------------------------------------------------------//
 
 std::shared_ptr<SALAM::Instruction>
@@ -125,7 +168,7 @@ createBrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Br>(id, OpCode, cycles);
 }
 
@@ -134,7 +177,7 @@ Br::Br(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -142,7 +185,7 @@ Br::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
     assert(br);
     isConditional(br->isConditional());
@@ -158,7 +201,7 @@ Br::initialize(llvm::Value * irval,
 std::shared_ptr<SALAM::Value>
 Br::destination()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if(conditional) {
         if(condition->getReg()->getIntData()->isOneValue()) return trueDestination;
         else return falseDestination;
@@ -172,13 +215,19 @@ Br::compute()
     // See destination
 }
 
+void
+Br::commit()
+{
+
+}
+
 // SALAM-Switch // ----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSwitchInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Switch>(id, OpCode, cycles);
 }
 
@@ -187,7 +236,7 @@ Switch::Switch(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -195,7 +244,7 @@ Switch::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     llvm::SwitchInst * switchInst = llvm::dyn_cast<llvm::SwitchInst>(irval);
     assert(switchInst);
     caseArgs newArgs;
@@ -209,7 +258,7 @@ Switch::initialize(llvm::Value * irval,
 std::shared_ptr<SALAM::Value>
 Switch::destination(int switchVar)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     for (int i = 2; i < this->arguments.size(); ++i) {
         if (this->arguments.at(i).first->getReg()->getIntData()->getSExtValue() == switchVar) return this->arguments.at(i).second;
     }
@@ -222,13 +271,18 @@ Switch::compute()
     // See destination
 }
 
+void
+Switch::commit() 
+{
+
+}
 // SALAM-Add // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createAddInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Add>(id, OpCode, cycles);
 }
 
@@ -237,7 +291,7 @@ Add::Add(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -245,13 +299,28 @@ Add::initialize(llvm::Value *irval,
                 SALAM::irvmap *irmap,
                 SALAM::valueListTy *valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Add::compute()
 {
-    
+
+
+    // do computation using llvm::Type
+    // llvm::Type *getType() { return irtype; }
+    // llvm::Type* variable1 = this->getType(); - worked
+
+
+
+
+
+}
+
+void
+Add::commit() 
+{
+
 }
 
 // SALAM-FAdd // ------------------------------------------------------------//
@@ -259,7 +328,7 @@ std::shared_ptr<SALAM::Instruction>
 createFAddInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FAdd>(id, OpCode, cycles);
 }
 
@@ -268,14 +337,14 @@ FAdd::FAdd(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FAdd::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -285,12 +354,19 @@ FAdd::compute() {
 
 }
 
+void
+FAdd::commit() 
+{
+
+}
+
+
 // SALAM-Sub // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSubInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Sub>(id, OpCode, cycles);
 }
 
@@ -299,14 +375,14 @@ Sub::Sub(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Sub::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -320,12 +396,19 @@ Sub::compute() {
 
 }
 
+void
+Sub::commit() 
+{
+
+}
+
+
 // SALAM-FSub // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFSubInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FSub>(id, OpCode, cycles);
 }
 
@@ -334,14 +417,14 @@ FSub::FSub(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FSub::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -352,12 +435,19 @@ FSub::compute() {
 
 }
 
+void
+FSub::commit() 
+{
+
+}
+
+
 // SALAM-Mul // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createMulInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Mul>(id, OpCode, cycles);
 }
 
@@ -366,14 +456,14 @@ Mul::Mul(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Mul::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -387,12 +477,19 @@ Mul::compute() {
 
 }
 
+void
+Mul::commit() 
+{
+
+}
+
+
 // SALAM-FMul // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFMulInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FMul>(id, OpCode, cycles);
 }
 
@@ -401,14 +498,14 @@ FMul::FMul(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FMul::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -419,12 +516,19 @@ FMul::compute() {
 
 }
 
+void
+FMul::commit() 
+{
+
+}
+
+
 // SALAM-UDiv // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createUDivInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::UDiv>(id, OpCode, cycles);
 }
 
@@ -433,14 +537,14 @@ UDiv::UDiv(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 UDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -450,12 +554,19 @@ UDiv::compute() {
 
 }
 
+void
+UDiv::commit() 
+{
+
+}
+
+
 // SALAM-SDiv // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSDivInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SDiv>(id, OpCode, cycles);
 }
 
@@ -464,14 +575,14 @@ SDiv::SDiv(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -481,12 +592,19 @@ SDiv::compute() {
 
 }
 
+void
+SDiv::commit() 
+{
+
+}
+
+
 // SALAM-FDiv // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFDivInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FDiv>(id, OpCode, cycles);
 }
 
@@ -495,14 +613,14 @@ FDiv::FDiv(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -513,12 +631,19 @@ FDiv::compute() {
 
 }
 
+void
+FDiv::commit() 
+{
+
+}
+
+
 // SALAM-URem // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createURemInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::URem>(id, OpCode, cycles);
 }
 
@@ -527,14 +652,14 @@ URem::URem(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 URem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -544,12 +669,19 @@ URem::compute() {
 
 }
 
+void
+URem::commit() 
+{
+
+}
+
+
 // SALAM-SRem // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSRemInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SRem>(id, OpCode, cycles);
 }
 
@@ -558,14 +690,14 @@ SRem::SRem(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SRem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -575,12 +707,19 @@ SRem::compute() {
 
 }
 
+void
+SRem::commit() 
+{
+
+}
+
+
 // SALAM-FRem // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFRemInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FRem>(id, OpCode, cycles);
 }
 
@@ -589,14 +728,14 @@ FRem::FRem(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FRem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -606,12 +745,19 @@ FRem::compute() {
 
 }
 
+void
+FRem::commit() 
+{
+
+}
+
+
 // SALAM-Shl // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createShlInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Shl>(id, OpCode, cycles);
 }
 
@@ -620,14 +766,14 @@ Shl::Shl(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Shl::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -641,12 +787,19 @@ Shl::compute() {
 
 }
 
+void
+Shl::commit() 
+{
+
+}
+
+
 // SALAM-LShr // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createLShrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::LShr>(id, OpCode, cycles);
 }
 
@@ -655,14 +808,14 @@ LShr::LShr(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 LShr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -671,12 +824,19 @@ LShr::compute() {
 
 }
 
+void
+LShr::commit() 
+{
+
+}
+
+
 // SALAM-AShr // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createAShrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::AShr>(id, OpCode, cycles);
 }
 
@@ -685,14 +845,14 @@ AShr::AShr(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 AShr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -704,12 +864,19 @@ AShr::compute() {
 
 }
 
+void
+AShr::commit() 
+{
+
+}
+
+
 // SALAM-And // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createAndInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::And>(id, OpCode, cycles);
 }
 
@@ -718,14 +885,14 @@ And::And(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 And::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -736,12 +903,19 @@ And::compute() {
 
 }
 
+void
+And::commit() 
+{
+
+}
+
+
 // SALAM-Or // --------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createOrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Or>(id, OpCode, cycles);
 }
 
@@ -750,14 +924,14 @@ Or::Or(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Or::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -768,12 +942,19 @@ Or::compute() {
 
 }
 
+void
+Or::commit() 
+{
+
+}
+
+
 // SALAM-Xor // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createXorInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Xor>(id, OpCode, cycles);
 }
 
@@ -782,14 +963,14 @@ Xor::Xor(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Xor::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -800,12 +981,19 @@ Xor::compute() {
 
 }
 
+void
+Xor::commit() 
+{
+
+}
+
+
 // SALAM-Load // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createLoadInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Load>(id, OpCode, cycles);
 }
 
@@ -814,14 +1002,14 @@ Load::Load(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Load::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 
 }
@@ -831,12 +1019,19 @@ Load::compute() {
 
 }
 
+void
+Load::commit() 
+{
+
+}
+
+
 // SALAM-Store // -----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createStoreInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Store>(id, OpCode, cycles);
 }
 
@@ -845,14 +1040,14 @@ Store::Store(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Store::initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -861,12 +1056,19 @@ Store::compute() {
 
 }
 
+void
+Store::commit() 
+{
+
+}
+
+
 // SALAM-GEP // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createGetElementPtrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::GetElementPtr>(id, OpCode, cycles);
 }
 
@@ -875,14 +1077,14 @@ GetElementPtr::GetElementPtr(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 GetElementPtr::initialize(llvm::Value * irval,
                             irvmap * irmap,
                             SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
     llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
     assert(iruser);
@@ -900,12 +1102,19 @@ GetElementPtr::compute() {
 
 }
 
+void
+GetElementPtr::commit() 
+{
+
+}
+
+
 // SALAM-Trunc // -----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createTruncInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Trunc>(id, OpCode, cycles);
 }
 
@@ -914,14 +1123,14 @@ Trunc::Trunc(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Trunc::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -930,12 +1139,19 @@ Trunc::compute() {
 
 }
 
+void
+Trunc::commit() 
+{
+
+}
+
+
 // SALAM-ZExt // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createZExtInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::ZExt>(id, OpCode, cycles);
 }
 
@@ -944,14 +1160,14 @@ ZExt::ZExt(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 ZExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -960,12 +1176,19 @@ ZExt::compute() {
 
 }
 
+void
+ZExt::commit() 
+{
+
+}
+
+
 // SALAM-SExt // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSExtInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SExt>(id, OpCode, cycles);
 }
 
@@ -974,14 +1197,14 @@ SExt::SExt(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -990,12 +1213,19 @@ SExt::compute() {
 
 }
 
+void
+SExt::commit() 
+{
+
+}
+
+
 // SALAM-FPToUI // ----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFPToUIInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPToUI>(id, OpCode, cycles);
 }
 
@@ -1004,14 +1234,14 @@ FPToUI::FPToUI(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FPToUI::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1020,12 +1250,19 @@ FPToUI::compute() {
 
 }
 
+void
+FPToUI::commit() 
+{
+
+}
+
+
 // SALAM-FPToSI // ----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFPToSIInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPToSI>(id, OpCode, cycles);
 }
 
@@ -1034,14 +1271,14 @@ FPToSI::FPToSI(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FPToSI::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1050,12 +1287,19 @@ FPToSI::compute() {
 
 }
 
+void
+FPToSI::commit() 
+{
+
+}
+
+
 // SALAM-UIToFP // ----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createUIToFPInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::UIToFP>(id, OpCode, cycles);
 }
 
@@ -1064,14 +1308,14 @@ UIToFP::UIToFP(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 UIToFP::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1080,12 +1324,19 @@ UIToFP::compute() {
 
 }
 
+void
+UIToFP::commit() 
+{
+
+}
+
+
 // SALAM-SIToFP // ----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSIToFPInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SIToFP>(id, OpCode, cycles);
 }
 
@@ -1094,14 +1345,14 @@ SIToFP::SIToFP(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SIToFP::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1110,12 +1361,19 @@ SIToFP::compute() {
 
 }
 
+void
+SIToFP::commit() 
+{
+
+}
+
+
 // SALAM-FPTrunc // ---------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFPTruncInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPTrunc>(id, OpCode, cycles);
 }
 
@@ -1124,14 +1382,14 @@ FPTrunc::FPTrunc(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FPTrunc::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1140,12 +1398,19 @@ FPTrunc::compute() {
 
 }
 
+void
+FPTrunc::commit() 
+{
+
+}
+
+
 // SALAM-FPExt // -----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFPExtInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPExt>(id, OpCode, cycles);
 }
 
@@ -1154,14 +1419,14 @@ FPExt::FPExt(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FPExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1170,12 +1435,19 @@ FPExt::compute() {
 
 }
 
+void
+FPExt::commit() 
+{
+
+}
+
+
 // SALAM-PtrToInt // --------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createPtrToIntInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::PtrToInt>(id, OpCode, cycles);
 }
 
@@ -1184,14 +1456,14 @@ PtrToInt::PtrToInt(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 PtrToInt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1200,12 +1472,19 @@ PtrToInt::compute() {
 
 }
 
+void
+PtrToInt::commit() 
+{
+
+}
+
+
 // SALAM-IntToPtr // --------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createIntToPtrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::IntToPtr>(id, OpCode, cycles);
 }
 
@@ -1214,14 +1493,14 @@ IntToPtr::IntToPtr(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 IntToPtr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1230,12 +1509,19 @@ IntToPtr::compute() {
 
 }
 
+void
+IntToPtr::commit() 
+{
+
+}
+
+
 // SALAM-ICmp // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createICmpInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::ICmp>(id, OpCode, cycles);
 }
 
@@ -1244,14 +1530,14 @@ ICmp::ICmp(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 ICmp::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1261,12 +1547,19 @@ ICmp::compute() {
 
 }
 
+void
+ICmp::commit() 
+{
+
+}
+
+
 // SALAM-FCmp // ------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createFCmpInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FCmp>(id, OpCode, cycles);
 }
 
@@ -1275,14 +1568,14 @@ FCmp::FCmp(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 FCmp::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1291,12 +1584,19 @@ FCmp::compute() {
 
 }
 
+void
+FCmp::commit() 
+{
+
+}
+
+
 // SALAM-Phi // -------------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createPHIInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Phi>(id, OpCode, cycles);
 }
 
@@ -1305,35 +1605,38 @@ Phi::Phi(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Phi::initialize(llvm::Value * irval,
                     irvmap * irmap,
                     SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(irval);
     assert(phi);
     phiNode args;
     for (int i = 0; i < getStaticOperands().size();) {
         args.first = getStaticOperands(i); ++i;
-        args.second = getStaticOperands(i); ++i;
+        //args.second = getStaticOperands(i); ++i;
+        //std::shared_ptr<SALAM::BasicBlock> newptr = std::dynamic_pointer_cast<SALAM::BasicBlock>(getStaticOperands(i));
+        args.second = std::dynamic_pointer_cast<SALAM::BasicBlock>(getStaticOperands(i)); ++i;
         this->arguments.push_back(args);
     }
 }
 
-std::shared_ptr<SALAM::Value>
-Phi::evaluate(std::shared_ptr<SALAM::Value> previousBB) {
+void
+Phi::compute() 
+{
+    // return true when ready
+}
+
+std::weak_ptr<SALAM::Value>
+Phi::commit(std::shared_ptr<SALAM::BasicBlock> previousBB) {
     for (auto const it : arguments) {
         if(previousBB == it.second) return it.first;
     }
-    return nullptr;
-}
-
-void
-Phi::compute() {
-
+    return std::dynamic_pointer_cast<SALAM::BasicBlock>(previousBB);
 }
 
 // SALAM-Call // ------------------------------------------------------------//
@@ -1341,7 +1644,7 @@ std::shared_ptr<SALAM::Instruction>
 createCallInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Instruction>(id, OpCode, cycles);
 }
 
@@ -1350,14 +1653,14 @@ Call::Call(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Call::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
 }
 
@@ -1366,12 +1669,19 @@ Call::compute() {
 
 }
 
+void
+Call::commit() 
+{
+
+}
+
+
 // SALAM-Select // ----------------------------------------------------------//
 std::shared_ptr<SALAM::Instruction>
 createSelectInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Select>(id, OpCode, cycles);
 }
 
@@ -1380,14 +1690,14 @@ Select::Select(uint64_t id,
          uint64_t cycles) :
          Instruction(id, OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 Select::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     this->condition = getStaticOperands(0);
     this->trueValue = getStaticOperands(1);
     this->falseValue = getStaticOperands(2);
@@ -1404,5 +1714,13 @@ void
 Select::compute() {
 
 }
+
+void
+Select::commit() 
+{
+
 }
+
+} // namespace SALAM
+
 //---------------------------------------------------------------------------//
