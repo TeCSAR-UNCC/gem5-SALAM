@@ -63,7 +63,7 @@ LLVMInterface::tick() {
     }
     cycle++;
     comm->refreshMemPorts();
-   
+
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + clock_period);// * process_delay);
@@ -102,7 +102,7 @@ LLVMInterface::constructStaticGraph() {
 
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine.
 *********************************************************************************************/
-    
+
     bool dbg = debug();
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
@@ -200,8 +200,6 @@ LLVMInterface::constructStaticGraph() {
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values);
     }
-
-    panic("Killing Sim");
 }
 
 void
@@ -245,10 +243,10 @@ LLVMInterface::initialize() {
     //if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing computeQueue List!\n");
-    //if (debug()) DPRINTF(LLVMInterface, "\n%s\n%s\n%s\n",
-    //        "*******************************************************************************",
-    //        "*                 Begin Runtime Simulation Computation Engine                 *",
-    //        "*******************************************************************************");
+    if (debug()) DPRINTF(LLVMInterface, "\n%s\n%s\n%s\n",
+           "*******************************************************************************",
+           "*                 Begin Runtime Simulation Computation Engine                 *",
+           "*******************************************************************************");
     running = true;
     cycle = 0;
     stalls = 0;
@@ -281,10 +279,79 @@ LLVMInterface::finalize() {
 }
 
 void
-LLVMInterface::scheduleFunction(std::shared_ptr<SALAM::Function> callee,
-                                  std::shared_ptr<SALAM::Instruction> caller,
-                                  std::vector<uint64_t> &args) {
+LLVMInterface::printPerformanceResults() {
+    Tick cycle_time = clock_period/1000;
+/*********************************************************************************************
+ Prints usage statistics of how many times each instruction was accessed during runtime
+*********************************************************************************************/
+    std::cout << "********************************************************************************" << std::endl;
+    std::cout << name() << std::endl;
+    std::cout << "   ========= Performance Analysis =============" << std::endl;
+    std::cout << "   Setup Time:                      " << (double)(setupTime.count()) << "seconds" << std::endl;
+    std::cout << "   Simulation Time:                 " << (double)(simTime.count()) << "seconds" << std::endl;
+    std::cout << "   System Clock:                    " << 1.0/(cycle_time) << "GHz" << std::endl;
+    std::cout << "   Transistor Latency:              " << fu_latency << "ns" << std::endl;
+    std::cout << "   Runtime:                         " << cycle << " cycles" << std::endl;
+    std::cout << "   Runtime:                         " << (cycle*cycle_time*(1e-3)) << " us" << std::endl;
+    std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
+    std::cout << "   Executed Nodes:                  " << (cycle-stalls-1) << " cycles" << std::endl;
+    std::cout << std::endl;
+}
+    /*
+    // getCactiResults(int cache_size, int word_size, int ports, int type)
+    // SPM cache_type = 0
+    uca_org_t cacti_result_spm_opt = pwrUtil->getCactiResults(regList->count()*512, (read_bus_width/8), (read_ports+write_ports), 0);
+    uca_org_t cacti_result_spm_leakage = pwrUtil->getCactiResults(spm_size, (read_bus_width/8), (read_ports+write_ports), 0);
+    //uca_org_t cacti_result_spm_dynamic_read = pwrUtil->getCactiResults((int) (memory_loads*(read_bus_width/8)), (read_bus_width/8), (read_ports), 0);
+    //uca_org_t cacti_result_spm_dynamic_write = pwrUtil->getCactiResults((int) (memory_stores*(read_bus_width/8)), (read_bus_width/8), (write_ports), 0);
 
+    // Cache cache_type = 1
+    // uca_org_t cacti_result_cache_leakage = pwrUtil->getCactiResults(cache_size, (read_bus_width/8), cache_ports, 1);
+    // uca_org_t cacti_result_cache_dynamic_read = pwrUtil->getCactiResults(dma_loads*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    // uca_org_t cacti_result_cache_dynamic_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
+    double exponential = 1e9; // Units correction
+    double leak = 1.0; // Remnant of old units difference
+    */
+
+void
+LLVMInterface::dumpQueues() {
+    // std::cout << "*********************************************************\n"
+    //           << "Compute Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto compute : computeQueue) {
+    //     std::cout << compute->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "Read Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto read : readQueue) {
+    //     std::cout << read->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "Write Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto write : writeQueue) {
+    //     std::cout << write->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "Reservation Queue\n"
+    //           << "*********************************************************\n";
+    // for (auto reserved : reservation) {
+    //     std::cout << reserved->_LLVMLine << std::endl;
+    // }
+    // std::cout << "*********************************************************\n"
+    //           << "End of queue dump\n"
+    //           << "*********************************************************\n";
+}
+
+void
+LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
+                                  SALAM::Instruction * caller,
+                                  std::vector<uint64_t> &args) {
+    // Add the callee to our list of active functions
+    activeFunctions.push_back(ActiveFunction(callee, caller, new std::vector<std::shared_ptr<SALAM::Instruction>>()));
+
+    // Start scheduling the new function
 }
 
 std::shared_ptr<SALAM::Instruction>
@@ -292,7 +359,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __func__);
     uint64_t OpCode = inst->Instruction::getOpcode();
     if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
-    switch(OpCode) { 
+    switch(OpCode) {
         case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, cycles->ret_inst); break;
         case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, cycles->br_inst); break;
         case llvm::Instruction::Switch: return SALAM::createSwitchInst(id, OpCode, cycles->switch_inst); break;

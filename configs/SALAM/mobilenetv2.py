@@ -588,8 +588,8 @@ def makeHWAcc(options, system):
     system.body = AccCluster()
     buildBody(options, system, system.body)
 
-    # system.tail = AccCluster()
-    # buildTail(options, system, system.tail)
+    system.tail = AccCluster()
+    buildTail(options, system, system.tail)
 
-    # system.classifier = AccCluster()
-    # buildClassifier(options, system, system.classifier)
+    system.classifier = AccCluster()
+    buildClassifier(options, system, system.classifier)

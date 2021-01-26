@@ -21,6 +21,7 @@
 //------------------------------------------//
 #include <list>
 #include <queue>
+#include <deque>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -70,10 +71,22 @@ class LLVMInterface : public ComputeUnit {
     std::chrono::high_resolution_clock::time_point simStop;
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
-    // std::vector<SALAM::Instruction*> reservation;
-    std::vector<SALAM::Instruction*> readQueue;
-    std::vector<SALAM::Instruction*> writeQueue;
-    std::vector<SALAM::Instruction*> computeQueue;
+
+    typedef struct ActiveFunction {
+        std::shared_ptr<SALAM::Function> func;
+        SALAM::Instruction * caller;
+        std::vector<std::shared_ptr<SALAM::Instruction>> * reservation;
+
+        ActiveFunction(std::shared_ptr<SALAM::Function> _func,
+                       SALAM::Instruction * _caller,
+                       std::vector<std::shared_ptr<SALAM::Instruction>> * _reservation) :
+                       func(_func), caller(_caller), reservation(_reservation) {}
+    } ActiveFunction;
+
+    std::deque<ActiveFunction> activeFunctions;
+    std::vector<std::shared_ptr<SALAM::Instruction>> readQueue;
+    std::vector<std::shared_ptr<SALAM::Instruction>> writeQueue;
+    std::vector<std::shared_ptr<SALAM::Instruction>> computeQueue;
     // std::list<SALAM::BasicBlock*> *bbList;
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
@@ -88,7 +101,7 @@ class LLVMInterface : public ComputeUnit {
 
     const std::string name() const { return comm->getName() + ".compute"; }
     //virtual bool debug() { return comm->debug(); }
-    virtual bool debug() { return true; }  
+    virtual bool debug() { return true; }
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
@@ -102,11 +115,13 @@ class LLVMInterface : public ComputeUnit {
     void readCommit(MemoryRequest *req);
     void writeCommit(MemoryRequest *req);
     void dumpModule(llvm::Module *m);
-    void scheduleFunction(std::shared_ptr<SALAM::Function> callee,
-                          std::shared_ptr<SALAM::Instruction> caller,
+    void printPerformanceResults();
+    void launchFunction(std::shared_ptr<SALAM::Function> callee,
+                          SALAM::Instruction * caller,
                           std::vector<uint64_t> &args);
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
                                                           uint64_t id);
+    void dumpQueues();
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__
