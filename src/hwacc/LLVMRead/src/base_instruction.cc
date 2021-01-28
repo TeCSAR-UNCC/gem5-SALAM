@@ -32,7 +32,11 @@ InstructionBase::commit() {
 	return false;
 }
 
-
+void
+InstructionBase::removeParents() {
+    _Parents.clear();
+    _Children.clear();
+}
 
 std::vector<Register*>
 InstructionBase::runtimeDependencies(std::string PrevBB) {
@@ -81,13 +85,14 @@ InstructionBase::signalChildren() {
 
 // Adds a child node to the current node
 void
-InstructionBase::registerChild(InstructionBase* child) {
+InstructionBase::registerChild(std::shared_ptr<InstructionBase> child) {
     _Children.push_back(child);
 }
 
 // Adds a parent to the current node and increments number of active parents
 void
-InstructionBase::registerParent(InstructionBase* parent) {
+InstructionBase::registerParent(std::shared_ptr<InstructionBase> parent) {
     _Parents.push_back(parent);
     _ActiveParents++;
 }
+

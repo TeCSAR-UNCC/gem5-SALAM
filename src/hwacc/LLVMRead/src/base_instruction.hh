@@ -12,6 +12,7 @@
 //------------------------------------------//
 #include <string>
 #include <vector>
+#include <memory>
 //------------------------------------------//
 //---------------------------------------------------------------------------//
 //--------- Begin Immediate Value Sub Classes -------------------------------//
@@ -89,7 +90,6 @@ class FloatingPointDP {
 //---------------------------------------------------------------------------//
 class InstructionBase {
     public:
-
         MemoryRequest* _Req; // Pointer for creating a memory access request
         std::string _LLVMLine;
         std::string _OpCode;
@@ -101,8 +101,8 @@ class InstructionBase {
         uint64_t _Stages = 3;  // Current power profile used 3 stage floating point FU's,
         std::vector<Register*> _Dependencies;
         CommInterface* _Comm; // Pointer to add basic block to queues
-        std::vector<InstructionBase*> _Parents; // Parent Nodes
-        std::vector<InstructionBase*> _Children; // Child Nodes
+        std::vector<std::shared_ptr<InstructionBase> > _Parents; // Parent Nodes
+        std::vector<std::shared_ptr<InstructionBase> > _Children; // Child Nodes
         int _ActiveParents; //Number of active parents. Instruction can call compute() when _ActiveParents==0
         uint64_t _CurrCycle;
         uint64_t _CurrStage;
@@ -173,14 +173,17 @@ class InstructionBase {
                           _DebugName = LLVMLine;
                           }
         // ---- Get Functions
+        void removeParents();
         std::string getLLVMLine()      { return _LLVMLine; }
         std::string getOpCode()        { return _OpCode; }
         std::string getInstrType()     { return _InstructionType; }
         // ---- Virtual Functions
-        virtual ~InstructionBase()     { Destruct("Base Instruction: Instruction Base"); }
+        virtual ~InstructionBase()     { if(SHAREDDEBUG) std::cout << "Deleting: " << _DebugName << " | 0 \n"; 
+                                         Destruct("Base Instruction: Instruction Base"); }
         virtual bool commit();
-        virtual void compute()           = 0;
-        virtual InstructionBase* clone() const = 0;
+        virtual void compute() { };
+        std::shared_ptr<InstructionBase> clone() const { return createClone(); }
+        virtual std::shared_ptr<InstructionBase> createClone() const { return std::shared_ptr<InstructionBase>(new InstructionBase(*this)); }
         virtual std::vector<Register*> runtimeDependencies(std::string PrevBB);
         virtual bool isGlobal() { return false; }
         // ---- Memory Functions
@@ -190,8 +193,8 @@ class InstructionBase {
         // ---- Dependency Tracking
         void fetchDependency(Register*);
         void fetchDependency(int);
-        void registerChild(InstructionBase*);
-        void registerParent(InstructionBase*);
+        void registerChild(std::shared_ptr<InstructionBase>);
+        void registerParent(std::shared_ptr<InstructionBase>);
         void signalChildren();
         // ---- Hardware Usage Functions
         void used() { _Usage++; }

@@ -22,7 +22,7 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     gep(p->FU_GEP),
     conversion(p->FU_conversion),
     pipelined(p->FU_pipelined),
-    fu_latency(p->FU_clock_period),
+    fu_latency(p->clock_period),
     clock_period(p->clock_period) {
     bbList = NULL;
     regList = NULL;
@@ -40,8 +40,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     //process_delay = 1; //Number of cycles a compute_node needs to complete
 }
 
-InstructionBase* createClone(const std::shared_ptr<InstructionBase>& b) {
-    InstructionBase* clone = b->clone();
+std::shared_ptr<InstructionBase> createClone(const std::shared_ptr<InstructionBase>& b) {
+    std::shared_ptr<InstructionBase> clone = b->clone();
     return clone;
 }
 
@@ -73,7 +73,7 @@ LLVMInterface::tick() {
     comm->refreshMemPorts();
     //hardware->update();
     ///////////////////////////
-    pwrUtil->updatePowerConsumption(_FunctionalUnits);
+    //pwrUtil->updatePowerConsumption(_FunctionalUnits);
     regList->resetAccess();
     clearFU();
     loadOpScheduled = false;
@@ -92,12 +92,16 @@ LLVMInterface::tick() {
              if(unlimitedFU) {
                 updateFU(reservation.at(i)->_FunctionalUnit);
                 if(computeQueue.at(i)->commit()) {
+                    computeQueue.at(i)->removeParents();
+                    if(SHAREDDEBUG) std::cout << "Ptr Refs: " << computeQueue.at(i)->name() << " | " << computeQueue.at(i).use_count() << "\n";
                     auto it = computeQueue.erase(computeQueue.begin() + i);
                     i = std::distance(computeQueue.begin(), it);
                 }
                 else i++;
             } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
                 if(computeQueue.at(i)->commit()) {
+                    computeQueue.at(i)->removeParents();
+                    if(SHAREDDEBUG) std::cout << "Ptr Refs: " << computeQueue.at(i)->name() << " | " << computeQueue.at(i).use_count() << "\n";
                     auto it = computeQueue.erase(computeQueue.begin() + i);
                     i = std::distance(computeQueue.begin(), it);
                 } else i++;
@@ -106,12 +110,16 @@ LLVMInterface::tick() {
             if(unlimitedFU) {
                 updateFU(reservation.at(i)->_FunctionalUnit);
                 if(computeQueue.at(i)->commit()) {
+                    computeQueue.at(i)->removeParents();
+                    if(SHAREDDEBUG) std::cout << "Ptr Refs: " << computeQueue.at(i)->name() << " | " << computeQueue.at(i).use_count() << "\n";
                     auto it = computeQueue.erase(computeQueue.begin() + i);
                     i = std::distance(computeQueue.begin(), it);
                 }
                 else i++;
             } else if(limitedFU(reservation.at(i)->_FunctionalUnit)) {
                 if(computeQueue.at(i)->commit()) {
+                    computeQueue.at(i)->removeParents();
+                    if(SHAREDDEBUG) std::cout << "Ptr Refs: " << computeQueue.at(i)->name() << " | " << computeQueue.at(i).use_count() << "\n";
                     auto it = computeQueue.erase(computeQueue.begin() + i);
                     i = std::distance(computeQueue.begin(), it);
                 } else i++;
@@ -143,6 +151,7 @@ LLVMInterface::tick() {
                             else memory_loads++; 
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                             scheduled = true;
+                            //  reservation.at(i)->removeParents();
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_OpCode == "store") {
@@ -153,6 +162,7 @@ LLVMInterface::tick() {
                             else memory_stores++;
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                             scheduled = true;
+                            //  reservation.at(i)->removeParents();
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else if(reservation.at(i)->_MaxCycle==0) {
@@ -160,6 +170,7 @@ LLVMInterface::tick() {
                             reservation.at(i)->commit(); 
                             if(unlimitedFU) updateFU(reservation.at(i)->_FunctionalUnit);
                             scheduled = true; compOpScheduled = true;
+                            reservation.at(i)->removeParents();
                             auto it = reservation.erase(reservation.begin()+i);
                             i = std::distance(reservation.begin(), it);
                         } else { // Computation Units
@@ -190,11 +201,12 @@ LLVMInterface::tick() {
                         prevBB = currBB; // Store current BB as previous BB for use with Phi instructions
                         reservation.at(i)->compute(); // Send instruction to runtime computation simulator 
                         currBB = findBB(reservation.at(i)->_Dest); // Set pointer to next basic block
+                        //  reservation.at(i)->removeParents();
                         auto it = reservation.erase(reservation.begin()+i); // Remove instruction from reservation table
                         i = std::distance(reservation.begin(), it);
                         scheduleBB(currBB);
                     } else i++;
-                } 
+                }
             } else {
                 if (reservation.at(i)->_OpCode == "ret"){
                     if (i==0 && computeQueue.empty() && readQueue.empty() && writeQueue.empty()) {
@@ -208,7 +220,7 @@ LLVMInterface::tick() {
             }
         }
     }
-    occupancy();
+    //occupancy();
 
     if (running && !tickEvent.scheduled())
     {
@@ -231,7 +243,7 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
         if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
         reservation.push_back(createClone(bb->_Nodes.at(i)));
         if (reservation.back()->_ReturnRegister) { //Search for other instances of the same instruction
-            InstructionBase * parent = findParent(reservation.back()->_LLVMLine);
+            std::shared_ptr<InstructionBase> parent = findParent(reservation.back()->_LLVMLine);
             if (parent) {
                 if (debug()) DPRINTF(LLVMOp, "Previous instance found\n");
                 reservation.back()->registerParent(parent);
@@ -241,7 +253,7 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
             }
         }
         if (reservation.back()->_OpCode == "load") {
-            InstructionBase * parent = detectRAW(dynamic_cast<Load*>(reservation.back())->_RawCheck);
+            std::shared_ptr<InstructionBase> parent = detectRAW(static_pointer_cast<Load>(reservation.back())->_RawCheck);
             if (parent) {
                 if (debug()) DPRINTF(LLVMOp, "Memory RAW dependency corrected!\n");
                 reservation.back()->registerParent(parent);
@@ -251,21 +263,21 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
             }
         }
         if (reservation.back()->_OpCode == "getelementptr") {
-            InstructionBase * parent = findParent(dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal);
+            std::shared_ptr<InstructionBase> parent = findParent(std::static_pointer_cast<GetElementPtr>(reservation.back())->_PtrVal);
             if (parent) {
-                if (debug()) DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
+                if (debug()) DPRINTF(LLVMOp, "Parent returning to base register:%s found\n", std::static_pointer_cast<GetElementPtr>(reservation.back())->_PtrVal->getName());
                 reservation.back()->registerParent(parent);
                 parent->registerChild(reservation.back());
             } else {
-                if (debug()) DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getName());
-                dynamic_cast<GetElementPtr*>(reservation.back())->_ActivePtr = dynamic_cast<GetElementPtr*>(reservation.back())->_PtrVal->getValue();
+                if (debug()) DPRINTF(LLVMOp, "No parent returning to base register:%s found\n", std::static_pointer_cast<GetElementPtr>(reservation.back())->_PtrVal->getName());
+                std::static_pointer_cast<GetElementPtr>(reservation.back())->_ActivePtr = std::static_pointer_cast<GetElementPtr>(reservation.back())->_PtrVal->getValue();
             }
         }
         std::vector<Register*> depList = reservation.back()->runtimeDependencies(prevBB->getName());
         if (depList.size() > 0) {
             for (auto j = 0; j < depList.size(); j++) { //Search for parent nodes in scheduling and in-flight queues
                 if (depList.at(j)!=NULL) {
-                    InstructionBase * parent = findParent(depList.at(j));
+                    std::shared_ptr<InstructionBase> parent = findParent(depList.at(j));
                     if (parent) {
                         if (debug()) DPRINTF(LLVMOp, "Parent returning to register:%s found\n", depList.at(j)->getName());
                         reservation.back()->registerParent(parent);
@@ -289,7 +301,7 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
     }
 }
 
-InstructionBase *
+std::shared_ptr<InstructionBase>
 LLVMInterface::detectRAW(Register* reg) {
     for(int i = reservation.size()-2; i >= 0; i--) { //Start with the second to last node to avoid linking a node to itself
         if(reservation.at(i)->_OpCode == "store") {
@@ -302,7 +314,7 @@ LLVMInterface::detectRAW(Register* reg) {
     return NULL;
 }
 
-InstructionBase *
+std::shared_ptr<InstructionBase>
 LLVMInterface::findParent(Register* reg) {
     //Search queues with return registers for last instance of a node with the same return register as our target reg
     //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
@@ -318,7 +330,7 @@ LLVMInterface::findParent(Register* reg) {
     return NULL;
 }
 
-InstructionBase *
+std::shared_ptr<InstructionBase>
 LLVMInterface::findParent(std::string line) {
     //Search queues with return registers for last instance of a node with the same instruction
     //Check the reservation queue first to ensure we get the last instance if multiple instances exist in queues
@@ -333,6 +345,8 @@ LLVMInterface::findParent(std::string line) {
     }
     return NULL;
 }
+
+
 
 void
 LLVMInterface::constructBBList() {
@@ -505,6 +519,8 @@ LLVMInterface::readCommit(MemoryRequest * req) {
         if(readQueue.at(i)->getReq() == req) {
             readQueue.at(i)->setResult(req->buffer);
             readQueue.at(i)->commit();
+            readQueue.at(i)->removeParents();
+            if(SHAREDDEBUG) std::cout << "Ptr Refs: " << readQueue.at(i)->name() << " | " << readQueue.at(i).use_count() << "\n";
             readQueue.erase(readQueue.begin() + i);
         }
     }
@@ -518,6 +534,8 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
    for (auto i = 0; i < writeQueue.size(); i++ ) {
         if(writeQueue.at(i)->getReq() == req) {
             writeQueue.at(i)->commit();
+            writeQueue.at(i)->removeParents();
+            if(SHAREDDEBUG) std::cout << "Ptr Refs: " << writeQueue.at(i)->name() << " | " << writeQueue.at(i).use_count() << "\n";
             writeQueue.erase(writeQueue.begin() + i);
         }
     }

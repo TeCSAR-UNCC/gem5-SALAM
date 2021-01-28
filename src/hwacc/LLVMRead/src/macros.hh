@@ -5,6 +5,8 @@
 // Function Macros
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
+// Debug Shared Points
+#define SHAREDDEBUG         0
 
 // Debug Macros 
 #define Function(name) DPRINTF(SALAMRuntime, "Function Call - %s \n", name)

@@ -23,6 +23,7 @@
 #include <ctime>
 #include <chrono>
 #include <ratio>
+#include <memory>
 //------------------------------------------//
 
 class LLVMInterface : public ComputeUnit {
@@ -35,7 +36,7 @@ class LLVMInterface : public ComputeUnit {
     bool storeOpScheduled;
     bool compOpScheduled;
     bool scheduled;
-    bool occupancy_tracking = true;
+    bool occupancy_tracking = false;
     uint32_t scheduling_threshold;
     // Functional Units
     // -1 = Runtime Defined
@@ -111,10 +112,10 @@ class LLVMInterface : public ComputeUnit {
     std::chrono::high_resolution_clock::time_point simStop;
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
-    std::vector<InstructionBase*> reservation;
-    std::vector<InstructionBase*> readQueue;
-    std::vector<InstructionBase*> writeQueue;
-    std::vector<InstructionBase*> computeQueue;
+    std::vector<std::shared_ptr<InstructionBase> > reservation;
+    std::vector<std::shared_ptr<InstructionBase> > readQueue;
+    std::vector<std::shared_ptr<InstructionBase> > writeQueue;
+    std::vector<std::shared_ptr<InstructionBase> > computeQueue;
     std::list<BasicBlock*> *bbList;
     RegisterList *regList;
     BasicBlock *currBB;
@@ -123,9 +124,9 @@ class LLVMInterface : public ComputeUnit {
     Hardware* hardware;
     Results *results;
   protected:
-    InstructionBase* findParent(Register*);
-    InstructionBase* findParent(std::string);
-    InstructionBase* detectRAW(Register*);
+    std::shared_ptr<InstructionBase> findParent(Register*);
+    std::shared_ptr<InstructionBase> findParent(std::string);
+    std::shared_ptr<InstructionBase> detectRAW(Register*);
     const std::string name() const { return comm->getName() + ".compute"; }
     virtual bool debug() { return comm->debug(); }
     Utilization* pwrUtil;

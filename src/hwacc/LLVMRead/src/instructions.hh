@@ -95,7 +95,8 @@ class Terminator : public InstructionBase {
                             _Terminator = true;
                             Details("Terminator"); }
         virtual ~Terminator() { Destruct("Terminator"); }
-        virtual Terminator* clone() const { return new Terminator(*this); }
+        std::shared_ptr<Terminator> clone() const { return std::static_pointer_cast<Terminator>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Terminator>(new Terminator(*this)); }
         virtual void compute() { }
 
 };
@@ -122,7 +123,8 @@ class BadInstruction : public InstructionBase {
                             Details("Bad Instruction"); }
         ~BadInstruction() { Destruct("Bad Instruction"); }
         void compute()      override { }
-        virtual BadInstruction* clone() const { return new BadInstruction(*this); }
+        std::shared_ptr<BadInstruction> clone() const { return std::static_pointer_cast<BadInstruction>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<BadInstruction>(new BadInstruction(*this)); }
 };
 
 class Br : public Terminator {
@@ -180,7 +182,8 @@ class Br : public Terminator {
                             Details("Br"); }
         ~Br()             { Destruct("Br"); }
         void compute()      override;
-        virtual Br* clone() const { return new Br(*this); }
+        std::shared_ptr<Br> clone() const { return std::static_pointer_cast<Br>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Br>(new Br(*this)); }
 };
 
 
@@ -204,19 +207,20 @@ class Ret : public Terminator {
                             MaxCycle,
                             Dependencies,
                             Comm) {
-                            _Parents.push_back(new BadInstruction(Line,
-                            OpCode,
-                            ReturnType,
-                            InstructionType,
-                            ReturnRegister,
-                            MaxCycle,
-                            Dependencies,
-                            Comm));
+                            // _Parents.push_back(new BadInstruction(Line,
+                            // OpCode,
+                            // ReturnType,
+                            // InstructionType,
+                            // ReturnRegister,
+                            // MaxCycle,
+                            // Dependencies,
+                            // Comm));
                             _ActiveParents++;
                             Details("Ret"); }
         ~Ret()            { Destruct("Ret"); }
         void compute()      override;
-        virtual Ret* clone() const { return new Ret(*this); }
+        std::shared_ptr<Ret> clone() const { return std::static_pointer_cast<Ret>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Ret>(new Ret(*this)); }
 };
 
 class LLVMSwitch : public Terminator {
@@ -259,7 +263,8 @@ class LLVMSwitch : public Terminator {
                             }
         ~LLVMSwitch()         { Destruct("Switch"); }
         void compute()      override;
-        virtual LLVMSwitch* clone() const {  return new LLVMSwitch(*this); }
+        std::shared_ptr<LLVMSwitch> clone() const { return std::static_pointer_cast<LLVMSwitch>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<LLVMSwitch>(new LLVMSwitch(*this)); }
 };
 
 class IndirectBr : public Terminator {
@@ -329,7 +334,8 @@ class Binary : public InstructionBase {
                             Details("Binary"); }
         virtual ~Binary() { Destruct("Binary"); }
         virtual void compute() { }
-        virtual Binary* clone() const { return new Binary(*this); }
+        std::shared_ptr<Binary> clone() const { return std::static_pointer_cast<Binary>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Binary>(new Binary(*this)); }
 };
 // ---- Binary ---- Integer Instructions
 
@@ -366,7 +372,8 @@ class Add : public Binary, public Integer {
                             Details("Add"); }
         ~Add()            { Destruct("Add"); }
         void compute()      override;
-        virtual Add* clone() const { return new Add(*this); }
+        std::shared_ptr<Add> clone() const { return std::static_pointer_cast<Add>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Add>(new Add(*this)); }
 };
 
 class Sub : public Binary, public Integer {
@@ -402,7 +409,8 @@ class Sub : public Binary, public Integer {
                             Details("Sub"); }
         ~Sub()            { Destruct("Sub"); }
         void compute()      override;
-        virtual Sub* clone() const { return new Sub(*this); }
+        std::shared_ptr<Sub> clone() const { return std::static_pointer_cast<Sub>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Sub>(new Sub(*this)); }
 };
 
 class Mul : public Binary, public Integer {
@@ -438,7 +446,8 @@ class Mul : public Binary, public Integer {
                             Details("Mul"); }
         ~Mul()            { Destruct("Mul"); }
         void compute()      override;
-        virtual Mul* clone() const { return new Mul(*this); }
+        std::shared_ptr<Mul> clone() const { return std::static_pointer_cast<Mul>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Mul>(new Mul(*this)); }
 };
 
 class UDiv : public Binary, public Integer, public Unsigned {
@@ -475,7 +484,8 @@ class UDiv : public Binary, public Integer, public Unsigned {
                             Details("UDiv"); }
         ~UDiv()           { Destruct("UDiv"); }
         void compute()      override;
-        virtual UDiv* clone() const { return new UDiv(*this); }
+        std::shared_ptr<UDiv> clone() const { return std::static_pointer_cast<UDiv>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<UDiv>(new UDiv(*this)); }
 };
 
 class SDiv : public Binary, public Integer, public Signed {
@@ -512,7 +522,8 @@ class SDiv : public Binary, public Integer, public Signed {
                             Details("SDiv"); }
         ~SDiv()           { Destruct("SDiv"); }
         void compute()      override;
-        virtual SDiv* clone() const { return new SDiv(*this); }
+        std::shared_ptr<SDiv> clone() const { return std::static_pointer_cast<SDiv>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<SDiv>(new SDiv(*this)); }
 };
 
 class URem : public Binary, public Integer, public Unsigned {
@@ -549,7 +560,8 @@ class URem : public Binary, public Integer, public Unsigned {
                             Details("URem"); }
         ~URem()           { Destruct("URem"); }
         void compute()      override;
-        virtual URem* clone() const { return new URem(*this); }
+        std::shared_ptr<URem> clone() const { return std::static_pointer_cast<URem>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<URem>(new URem(*this)); }
 };
 
 class SRem : public Binary, public Integer, public Signed {
@@ -586,7 +598,8 @@ class SRem : public Binary, public Integer, public Signed {
                             Details("SRem"); }
         ~SRem()           { Destruct("SRem"); }
         void compute()      override;
-        virtual SRem* clone() const { return new SRem(*this); }
+        std::shared_ptr<SRem> clone() const { return std::static_pointer_cast<SRem>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<SRem>(new SRem(*this)); }
 };
 
 // ---- Binary ---- Floating Point Instructions
@@ -625,7 +638,8 @@ class FAdd : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Details("FAdd"); }
         ~FAdd()           { Destruct("FAdd"); }
         void compute()      override;
-        virtual FAdd* clone() const { return new FAdd(*this); }
+        std::shared_ptr<FAdd> clone() const { return std::static_pointer_cast<FAdd>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FAdd>(new FAdd(*this)); }
 };
 
 class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
@@ -662,7 +676,8 @@ class FSub : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Details("FSub"); }
         ~FSub()           { Destruct("FSub"); }
         void compute()      override;
-        virtual FSub* clone() const { return new FSub(*this); }
+        std::shared_ptr<FSub> clone() const { return std::static_pointer_cast<FSub>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FSub>(new FSub(*this)); }
 };
 
 class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
@@ -699,7 +714,8 @@ class FMul : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Details("FMul"); }
         ~FMul()           { Destruct("FMul"); }
         void compute()      override;
-        virtual FMul* clone() const { return new FMul(*this); }
+        std::shared_ptr<FMul> clone() const { return std::static_pointer_cast<FMul>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FMul>(new FMul(*this)); }
 };
 
 class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
@@ -736,7 +752,8 @@ class FDiv : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Details("FDiv"); }
         ~FDiv()           { Destruct("FDiv"); }
         void compute()      override;
-        virtual FDiv* clone() const { return new FDiv(*this); }
+        std::shared_ptr<FDiv> clone() const { return std::static_pointer_cast<FDiv>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FDiv>(new FDiv(*this)); }
 };
 
 class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
@@ -773,7 +790,8 @@ class FRem : public Binary, public FloatingPointSP, public FloatingPointDP {
                             Details("FRem"); }
         ~FRem()           { Destruct("FRem"); }
         void compute()      override;
-        virtual FRem* clone() const { return new FRem(*this); }
+        std::shared_ptr<FRem> clone() const { return std::static_pointer_cast<FRem>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FRem>(new FRem(*this)); }
 };
 
 //---------------------------------------------------------------------------//
@@ -816,7 +834,8 @@ class Bitwise : public InstructionBase {
                             Details("Bitwise"); }
         virtual ~Bitwise(){ Destruct("Bitwise"); }
         virtual void compute() { }
-        virtual Bitwise* clone() const { return new Bitwise(*this); }
+        std::shared_ptr<Bitwise> clone() const { return std::static_pointer_cast<Bitwise>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Bitwise>(new Bitwise(*this)); }
 };
 // ---- Bitwise Instructions
 
@@ -853,7 +872,8 @@ class Shl : public Bitwise, public Integer {
                             Details("Shl"); }
         ~Shl()            { Destruct("Shl"); }
         void compute()      override;
-        virtual Shl* clone() const { return new Shl(*this); }
+        std::shared_ptr<Shl> clone() const { return std::static_pointer_cast<Shl>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Shl>(new Shl(*this)); }
 };
 
 class LShr : public Bitwise, public Integer {
@@ -889,7 +909,8 @@ class LShr : public Bitwise, public Integer {
                             Details("LShr"); }
         ~LShr()           { Destruct("LShr"); }
         void compute()      override;
-        virtual LShr* clone() const { return new LShr(*this); }
+        std::shared_ptr<LShr> clone() const { return std::static_pointer_cast<LShr>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<LShr>(new LShr(*this)); }
 };
 
 class AShr : public Bitwise, public Integer {
@@ -925,7 +946,8 @@ class AShr : public Bitwise, public Integer {
                             Details("AShr"); }
         ~AShr()           { Destruct("AShr"); }
         void compute()      override;
-        virtual AShr* clone() const { return new AShr(*this); }
+        std::shared_ptr<AShr> clone() const { return std::static_pointer_cast<AShr>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<AShr>(new AShr(*this)); }
 };
 
 class And : public Bitwise, public Integer {
@@ -961,7 +983,8 @@ class And : public Bitwise, public Integer {
                             Details("And"); }
         ~And()            { Destruct("And"); }
         void compute()      override;
-        virtual And* clone() const { return new And(*this); }
+        std::shared_ptr<And> clone() const { return std::static_pointer_cast<And>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<And>(new And(*this)); }
 };
 
 class Or : public Bitwise, public Integer {
@@ -997,7 +1020,8 @@ class Or : public Bitwise, public Integer {
                             Details("Or"); }
         ~Or()             { Destruct("Or"); }
         void compute()      override;
-        virtual Or* clone() const { return new Or(*this); }
+        std::shared_ptr<Or> clone() const { return std::static_pointer_cast<Or>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Or>(new Or(*this)); }
 };
 
 class Xor : public Bitwise, public Integer {
@@ -1033,7 +1057,8 @@ class Xor : public Bitwise, public Integer {
                             Details("Xor"); }
         ~Xor()            { Destruct("Xor"); }
         void compute()      override;
-        virtual Xor* clone() const { return new Xor(*this); }
+        std::shared_ptr<Xor> clone() const { return std::static_pointer_cast<Xor>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Xor>(new Xor(*this)); }
 };
 
 //---------------------------------------------------------------------------//
@@ -1074,7 +1099,8 @@ class Conversion : public InstructionBase {
                             Details("Conversion"); }
         virtual ~Conversion() { Destruct("Conversion"); }
         virtual void compute() { }
-        virtual Conversion* clone() const { return new Conversion(*this); }
+        std::shared_ptr<Conversion> clone() const { return std::static_pointer_cast<Conversion>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Conversion>(new Conversion(*this)); }
 };
 // ---- Conversion Instructions
 
@@ -1105,7 +1131,8 @@ class Trunc : public Conversion {
                             Details("Trunc"); }
         ~Trunc()          { Destruct("Trunc"); }
         void compute()      override;
-        virtual Trunc* clone() const { return new Trunc(*this); }
+        std::shared_ptr<Trunc> clone() const { return std::static_pointer_cast<Trunc>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Trunc>(new Trunc(*this)); }
 };
 
 class ZExt : public Conversion {
@@ -1135,7 +1162,8 @@ class ZExt : public Conversion {
                             Details("ZExt"); }
         ~ZExt()           { Destruct("ZExt"); }
         void compute()      override;
-        virtual ZExt* clone() const { return new ZExt(*this); }
+        std::shared_ptr<ZExt> clone() const { return std::static_pointer_cast<ZExt>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<ZExt>(new ZExt(*this)); }
 };
 
 class SExt : public Conversion {
@@ -1165,7 +1193,8 @@ class SExt : public Conversion {
                             Details("SExt"); }
         ~SExt()           { Destruct("SExt"); }
         void compute()      override;
-        virtual SExt* clone() const { return new SExt(*this); }
+        std::shared_ptr<SExt> clone() const { return std::static_pointer_cast<SExt>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<SExt>(new SExt(*this)); }
 };
 
 class FPToUI : public Conversion {
@@ -1195,7 +1224,8 @@ class FPToUI : public Conversion {
                             Details("FPToUI"); }
         ~FPToUI()         { Destruct("FPToUI"); }
         void compute()      override;
-        virtual FPToUI* clone() const { return new FPToUI(*this); }
+        std::shared_ptr<FPToUI> clone() const { return std::static_pointer_cast<FPToUI>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FPToUI>(new FPToUI(*this)); }
 };
 
 class FPToSI : public Conversion {
@@ -1225,7 +1255,8 @@ class FPToSI : public Conversion {
                             Details("FPToSI"); }
         ~FPToSI()         { Destruct("FPToSI"); }
         void compute()      override;
-        virtual FPToSI* clone() const { return new FPToSI(*this); }
+        std::shared_ptr<FPToSI> clone() const { return std::static_pointer_cast<FPToSI>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FPToSI>(new FPToSI(*this)); }
 };
 
 class UIToFP : public Conversion {
@@ -1255,7 +1286,8 @@ class UIToFP : public Conversion {
                             Details("UIToFP"); }
         ~UIToFP()         { Destruct("UIToFP"); }
         void compute()      override;
-        virtual UIToFP* clone() const { return new UIToFP(*this); }
+        std::shared_ptr<UIToFP> clone() const { return std::static_pointer_cast<UIToFP>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<UIToFP>(new UIToFP(*this)); }
 };
 
 class SIToFP : public Conversion {
@@ -1285,7 +1317,8 @@ class SIToFP : public Conversion {
                             Details("SIToFP"); }
         ~SIToFP()         { Destruct("SIToFP"); }
         void compute()      override;
-        virtual SIToFP* clone() const { return new SIToFP(*this); }
+        std::shared_ptr<SIToFP> clone() const { return std::static_pointer_cast<SIToFP>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<SIToFP>(new SIToFP(*this)); }
 };
 
 class FPTrunc : public Conversion {
@@ -1315,7 +1348,8 @@ class FPTrunc : public Conversion {
                             Details("FPTrunc"); }
         ~FPTrunc()        { Destruct("FPTrunc"); }
         void compute()      override;
-        virtual FPTrunc* clone() const { return new FPTrunc(*this); }
+        std::shared_ptr<FPTrunc> clone() const { return std::static_pointer_cast<FPTrunc>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FPTrunc>(new FPTrunc(*this)); }
 };
 
 class FPExt : public Conversion {
@@ -1345,7 +1379,8 @@ class FPExt : public Conversion {
                             Details("FPExt"); }
         ~FPExt()          { Destruct("FPExt"); }
         void compute()      override;
-        virtual FPExt* clone() const { return new FPExt(*this); }
+        std::shared_ptr<FPExt> clone() const { return std::static_pointer_cast<FPExt>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FPExt>(new FPExt(*this)); }
 };
 
 class PtrToInt : public Conversion {
@@ -1375,7 +1410,8 @@ class PtrToInt : public Conversion {
                             Details("PtrToInt"); }
         ~PtrToInt()       { Destruct("PtrToInt"); }
         void compute()      override;
-        virtual PtrToInt* clone() const { return new PtrToInt(*this); }
+        std::shared_ptr<PtrToInt> clone() const { return std::static_pointer_cast<PtrToInt>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<PtrToInt>(new PtrToInt(*this)); }
 };
 
 class IntToPtr : public Conversion {
@@ -1405,7 +1441,8 @@ class IntToPtr : public Conversion {
                             Details("IntToPtr"); }
         ~IntToPtr()       { Destruct("IntToPtr"); }
         void compute()      override;
-        virtual IntToPtr* clone() const { return new IntToPtr(*this); }
+        std::shared_ptr<IntToPtr> clone() const { return std::static_pointer_cast<IntToPtr>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<IntToPtr>(new IntToPtr(*this)); }
 };
 
 class BitCast : public Conversion {
@@ -1435,7 +1472,8 @@ class BitCast : public Conversion {
                             Details("BitCast"); }
         ~BitCast()        { Destruct("BitCast"); }
         void compute()      override;
-        virtual BitCast* clone() const { return new BitCast(*this); }
+        std::shared_ptr<BitCast> clone() const { return std::static_pointer_cast<BitCast>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<BitCast>(new BitCast(*this)); }
 };
 
 class AddrSpaceCast : public Conversion {
@@ -1465,7 +1503,8 @@ class AddrSpaceCast : public Conversion {
                             Details("AddrSpaceCast"); }
         ~AddrSpaceCast()  { Destruct("AddrSpaceCast"); }
         void compute()      override;
-        virtual AddrSpaceCast* clone() const { return new AddrSpaceCast(*this); }
+        std::shared_ptr<AddrSpaceCast> clone() const { return std::static_pointer_cast<AddrSpaceCast>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<AddrSpaceCast>(new AddrSpaceCast(*this)); }
 };
 
 //---------------------------------------------------------------------------//
@@ -1516,7 +1555,8 @@ class Memory : public InstructionBase {
                             FunctionalUnit) {
                             Details("Memory"); }
         virtual ~Memory()   { Destruct("Memory"); }
-        virtual Memory* clone() const { return new Memory(*this); }
+        std::shared_ptr<Memory> clone() const { return std::static_pointer_cast<Memory>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Memory>(new Memory(*this)); }
         virtual void compute () { }
 };
 
@@ -1549,7 +1589,8 @@ class Load : public Memory {
                             _RawCheck = _Pointer;}
         ~Load()           { Destruct("Load"); }
         void compute()      override;
-        virtual Load* clone() const { return new Load(*this); }
+        std::shared_ptr<Load> clone() const { return std::static_pointer_cast<Load>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Load>(new Load(*this)); }
 };
 
 class Store : public Memory {
@@ -1590,7 +1631,8 @@ class Store : public Memory {
                             _RawCheck = _Pointer;}
         ~Store()          { Destruct("Store"); }
         void compute()      override;
-        virtual Store* clone() const { return new Store(*this); }
+        std::shared_ptr<Store> clone() const { return std::static_pointer_cast<Store>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Store>(new Store(*this)); }
 };
 
 class GetElementPtr : public Memory {
@@ -1644,7 +1686,8 @@ class GetElementPtr : public Memory {
         ~GetElementPtr()  { Destruct("GetElementPtr"); }
         void compute()      override;
         bool isGlobal()     override {return _Global; }
-        virtual GetElementPtr* clone() const { return new GetElementPtr(*this); }
+        std::shared_ptr<GetElementPtr> clone() const { return std::static_pointer_cast<GetElementPtr>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<GetElementPtr>(new GetElementPtr(*this)); }
 };
 //---------------------------------------------------------------------------//
 //--------- End Memory Instruction Base -------------------------------------//
@@ -1693,7 +1736,8 @@ class Other : public InstructionBase {
                             FunctionalUnit) {
                             Details("Other"); }
         virtual ~Other()  { Destruct("Other"); }
-        virtual Other* clone() const { return new Other(*this); }
+        std::shared_ptr<Other> clone() const { return std::static_pointer_cast<Other>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Other>(new Other(*this)); }
         virtual void compute () { }
 };
 
@@ -1731,7 +1775,8 @@ class Phi : public Other {
                             Details("Phi"); }
         ~Phi()            { Destruct("Phi"); }
         void compute()      override;
-        virtual Phi* clone() const { return new Phi(*this); }
+        std::shared_ptr<Phi> clone() const { return std::static_pointer_cast<Phi>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Phi>(new Phi(*this)); }
         std::vector<Register*> runtimeDependencies(std::string PrevBB) override;
 };
 
@@ -1773,7 +1818,8 @@ class Select : public Other {
                             Details("Select"); }
         ~Select()         { Destruct("Select"); }
         void compute()      override;
-        virtual Select* clone() const { return new Select(*this); }
+        std::shared_ptr<Select> clone() const { return std::static_pointer_cast<Select>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Select>(new Select(*this)); }
 };
 // ---- Other Sub Type ---- Compare
 class Compare : public Other {
@@ -1808,7 +1854,8 @@ class Compare : public Other {
         , _Flags (          Flags) {
                             Details("Compare"); }
         virtual ~Compare(){ Destruct("Compare"); }
-        virtual Compare* clone() const { return new Compare(*this); }
+        std::shared_ptr<Compare> clone() const { return std::static_pointer_cast<Compare>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<Compare>(new Compare(*this)); }
         virtual void compute() { }
 };
 
@@ -1843,7 +1890,8 @@ class ICmp : public Compare, public Integer, public Unsigned, public Signed {
                             Details("ICmp"); }
         ~ICmp()           { Destruct("ICmp"); }
         void compute()      override;
-        virtual ICmp* clone() const { return new ICmp(*this); }
+        std::shared_ptr<ICmp> clone() const { return std::static_pointer_cast<ICmp>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<ICmp>(new ICmp(*this)); }
 };
 
 class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
@@ -1876,7 +1924,8 @@ class FCmp : public Compare, public FloatingPointSP, public FloatingPointDP {
                             Details("FCmp"); }
         ~FCmp()           { Destruct("FCmp"); }
         void compute()      override;
-        virtual FCmp* clone() const { return new FCmp(*this); }
+        std::shared_ptr<FCmp> clone() const { return std::static_pointer_cast<FCmp>(createClone()); }
+        virtual std::shared_ptr<InstructionBase> createClone() const override { return std::shared_ptr<FCmp>(new FCmp(*this)); }
 };
 //---------------------------------------------------------------------------//
 //--------- End Other Instruction Base --------------------------------------//

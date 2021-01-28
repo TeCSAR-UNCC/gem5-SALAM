@@ -22,7 +22,7 @@ Utilization::Utilization(int clock_period, int fu_clock_period, RegisterList* Li
 
     _Clock_Period = clock_period;
     regList = List;
-    int transistorTime = fu_clock_period;
+    int transistorTime = 10;
     totalPwr.cycleTime = transistorTime;
     regPwr.cycleTime = transistorTime;
     getRegisterPowerArea(transistorTime, &regPwr.internal_power, &regPwr.switch_power, &regPwr.dynamic_power, &regPwr.dynamic_energy, &regPwr.leakage_power, &regPwr.area);
