@@ -30,7 +30,7 @@
 #include <ratio>
 #include <memory>
 //------------------------------------------//
-typedef std::vector<SALAM::Instruction*> queue;
+//typedef std::vector<SALAM::Instruction*> queue;
 
 
 class LLVMInterface : public ComputeUnit {

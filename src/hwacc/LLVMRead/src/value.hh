@@ -59,8 +59,9 @@ class Value
         uint64_t getUID() { return uid; }
         Register *getReg() { return reg; }
         llvm::Type *getType() { return irtype; }
-        //virtual Value *clone() = 0;
         void value_dump() { if (dbg) value_dbg->dumper(); }
+        std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
+        virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
 };
 } // End SALAM Namespace
 

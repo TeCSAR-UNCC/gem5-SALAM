@@ -63,16 +63,3 @@ class Argument : public Value {
 
 //------------------------------------------//
 #endif //__HWACC_OPERAND_HH__
-
-
-/*
-struct Instruction {
-    bool for each child
-    ptr to each child
-}
-
-
-
-
-
-*/

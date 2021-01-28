@@ -29,10 +29,10 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     clock_period = clock_period * 1000;
 }
 
-// SALAM::Instruction* createClone(const std::shared_ptr<SALAM::Instruction>& b) {
-//     SALAM::Instruction* clone = b->clone();
-//     return clone;
-// }
+std::shared_ptr<SALAM::Value> createClone(const std::shared_ptr<SALAM::Value>& b) {
+     std::shared_ptr<SALAM::Value> clone = b->clone();
+     return clone;
+}
 
 void
 LLVMInterface::tick() {
