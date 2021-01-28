@@ -115,6 +115,8 @@ class StreamDma : public DmaDevice {
 
     TickEvent tickEvent;
 
+    const double bandwidth;
+
     uint8_t * mmreg;
     uint8_t * FLAGS;
     uint16_t * CONFIG;
@@ -170,6 +172,8 @@ class StreamDma : public DmaDevice {
 
     bool tvalid(PacketPtr pkt);
     bool tvalid(size_t len, bool isRead);
+
+    double getBandwidth(){ return bandwidth; };
 
     Port &getPort(const std::string &if_name,
             PortID idx=InvalidPortID) override;
