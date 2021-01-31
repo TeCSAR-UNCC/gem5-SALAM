@@ -77,19 +77,29 @@ class LLVMInterface : public ComputeUnit {
 
     typedef struct ActiveFunction {
         std::shared_ptr<SALAM::Function> func;
-        SALAM::Instruction * caller;
-        std::vector<std::shared_ptr<SALAM::Instruction>> * reservation;
+        std::shared_ptr<SALAM::Instruction> caller;
+        
+        // Note: Would something like: 
+        // std::list<std::list<std::shared_ptr<SALAM::Instruction> > > queues;
+        // Be useful here? Could push the queues all onto the queues list,
+        // Then pass that list as the argument to ActiveFunction,
+        // now that all the queues are internal. 
+        
+        std::list<std::shared_ptr<SALAM::Instruction>> reservation;
+        std::list<std::shared_ptr<SALAM::Instruction>> readQueue;
+        std::list<std::shared_ptr<SALAM::Instruction>> writeQueue;
+        std::list<std::shared_ptr<SALAM::Instruction>> computeQueue;
 
+        std::shared_ptr<SALAM::BasicBlock> previousBB;
         ActiveFunction(std::shared_ptr<SALAM::Function> _func,
-                       SALAM::Instruction * _caller,
-                       std::vector<std::shared_ptr<SALAM::Instruction>> * _reservation) :
+                       std::shared_ptr<SALAM::Instruction> _caller,
+                       std::list<std::shared_ptr<SALAM::Instruction>> _reservation):
                        func(_func), caller(_caller), reservation(_reservation) {}
     } ActiveFunction;
 
-    std::deque<ActiveFunction> activeFunctions;
-    std::deque<std::shared_ptr<SALAM::Instruction>> readQueue;
-    std::deque<std::shared_ptr<SALAM::Instruction>> writeQueue;
-    std::deque<std::shared_ptr<SALAM::Instruction>> computeQueue;
+    std::list<ActiveFunction> activeFunctions;
+    std::list<std::shared_ptr<SALAM::Instruction> > globalReadQueue;
+    std::list<std::shared_ptr<SALAM::Instruction> > globalWriteQueue;
 
     // std::list<SALAM::BasicBlock*> *bbList;
     std::vector<std::shared_ptr<SALAM::Function>> functions;
@@ -118,8 +128,8 @@ class LLVMInterface : public ComputeUnit {
     void dumpModule(llvm::Module *m);
     void printPerformanceResults();
     void launchFunction(std::shared_ptr<SALAM::Function> callee,
-                          SALAM::Instruction * caller,
-                          std::vector<uint64_t> &args);
+                        std::shared_ptr<SALAM::Instruction> caller,
+                        std::vector<uint64_t> &args);
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
                                                           uint64_t id);
     void dumpQueues();

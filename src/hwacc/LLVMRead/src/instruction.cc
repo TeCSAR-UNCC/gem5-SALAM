@@ -151,7 +151,7 @@ Ret::initialize(llvm::Value * irval,
 }
 
 void
-Ret::compute()
+Ret::launch()
 {
 
 }
@@ -178,6 +178,12 @@ Br::Br(uint64_t id,
          Instruction(id, OpCode)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+}
+
+std::shared_ptr<SALAM::BasicBlock>
+Br::getTarget() {
+    
+    return nullptr;
 }
 
 void
@@ -210,7 +216,7 @@ Br::destination()
 }
 
 void
-Br::compute()
+Br::launch()
 {
     // See destination
 }
@@ -237,6 +243,12 @@ Switch::Switch(uint64_t id,
          Instruction(id, OpCode)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+}
+
+std::shared_ptr<SALAM::BasicBlock>
+Switch::getTarget() {
+    
+    return nullptr;
 }
 
 void
@@ -266,7 +278,7 @@ Switch::destination(int switchVar)
 }
 
 void
-Switch::compute()
+Switch::launch()
 {
     // See destination
 }
@@ -303,7 +315,7 @@ Add::initialize(llvm::Value *irval,
 }
 
 void
-Add::compute()
+Add::launch()
 {
 
 
@@ -348,7 +360,7 @@ FAdd::initialize(llvm::Value * irval,
 }
 
 void
-FAdd::compute() {
+FAdd::launch() {
     // Floating point Addition
     // <result> = fadd [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
@@ -387,7 +399,7 @@ Sub::initialize(llvm::Value * irval,
 }
 
 void
-Sub::compute() {
+Sub::launch() {
     // Subtract Instruction
     // <result> = sub <ty> <op1>, <op2>; yields ty : result
     // <result> = sub nuw <ty> <op1>, <op2>; yields ty : result
@@ -429,7 +441,7 @@ FSub::initialize(llvm::Value * irval,
 }
 
 void
-FSub::compute() {
+FSub::launch() {
     // Floating point Subtraction
     // <result> = fsub [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
@@ -468,7 +480,7 @@ Mul::initialize(llvm::Value * irval,
 }
 
 void
-Mul::compute() {
+Mul::launch() {
     // Multiply Instruction
     // <result> = mul <ty> <op1>, <op2>          ; yields ty:result
     // <result> = mul nuw <ty> <op1>, <op2>; yields ty : result
@@ -510,7 +522,7 @@ FMul::initialize(llvm::Value * irval,
 }
 
 void
-FMul::compute() {
+FMul::launch() {
     // Floating point Multiplication
     // <result> = fmul [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
@@ -549,7 +561,7 @@ UDiv::initialize(llvm::Value * irval,
 }
 
 void
-UDiv::compute() {
+UDiv::launch() {
     // Unsigned Division
 
 }
@@ -587,7 +599,7 @@ SDiv::initialize(llvm::Value * irval,
 }
 
 void
-SDiv::compute() {
+SDiv::launch() {
     // Signed Division
 
 }
@@ -625,7 +637,7 @@ FDiv::initialize(llvm::Value * irval,
 }
 
 void
-FDiv::compute() {
+FDiv::launch() {
     // Floating point Division
     // <result> = fdiv [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
 
@@ -664,7 +676,7 @@ URem::initialize(llvm::Value * irval,
 }
 
 void
-URem::compute() {
+URem::launch() {
     //Unsigned modulo division
 
 }
@@ -702,7 +714,7 @@ SRem::initialize(llvm::Value * irval,
 }
 
 void
-SRem::compute() {
+SRem::launch() {
     //Signed modulo division
 
 }
@@ -740,7 +752,7 @@ FRem::initialize(llvm::Value * irval,
 }
 
 void
-FRem::compute() {
+FRem::launch() {
     //Floating Point modulo division
 
 }
@@ -778,7 +790,7 @@ Shl::initialize(llvm::Value * irval,
 }
 
 void
-Shl::compute() {
+Shl::launch() {
     // Shift Left Operation
     // <result> = shl <ty> <op1>, <op2>; yields ty : result
     // <result> = shl nuw <ty> <op1>, <op2>; yields ty : result
@@ -820,7 +832,7 @@ LShr::initialize(llvm::Value * irval,
 }
 
 void
-LShr::compute() {
+LShr::launch() {
 
 }
 
@@ -857,7 +869,7 @@ AShr::initialize(llvm::Value * irval,
 }
 
 void
-AShr::compute() {
+AShr::launch() {
     // Arithmatic Shift Right Operation
     // <result> = ashr <ty> <op1>, <op2>; yields ty : result
     // <result> = ashr exact <ty> <op1>, <op2>; yields ty : result
@@ -897,7 +909,7 @@ And::initialize(llvm::Value * irval,
 }
 
 void
-And::compute() {
+And::launch() {
     // And Operation
     // <result> = and <ty> <op1>, <op2>; yields ty : result
 
@@ -936,7 +948,7 @@ Or::initialize(llvm::Value * irval,
 }
 
 void
-Or::compute() {
+Or::launch() {
     // Or Operation
     // <result> = or <ty> <op1>, <op2>; yields ty : result
 
@@ -975,7 +987,7 @@ Xor::initialize(llvm::Value * irval,
 }
 
 void
-Xor::compute() {
+Xor::launch() {
     // Xor Operation
     // <result> = xor <ty> <op1>, <op2>; yields ty : result
 
@@ -1015,7 +1027,7 @@ Load::initialize(llvm::Value * irval,
 }
 
 void
-Load::compute() {
+Load::launch() {
 
 }
 
@@ -1052,7 +1064,7 @@ Store::initialize(llvm::Value * irval,
 }
 
 void
-Store::compute() {
+Store::launch() {
 
 }
 
@@ -1095,7 +1107,7 @@ GetElementPtr::initialize(llvm::Value * irval,
 }
 
 void
-GetElementPtr::compute() {
+GetElementPtr::launch() {
     // <result> = getelementptr <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
     // <result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*
     // <result> = getelementptr <ty>, <ptr vector> <ptrval>, [inrange] <vector index type> <idx>
@@ -1135,7 +1147,7 @@ Trunc::initialize(llvm::Value * irval,
 }
 
 void
-Trunc::compute() {
+Trunc::launch() {
 
 }
 
@@ -1172,7 +1184,7 @@ ZExt::initialize(llvm::Value * irval,
 }
 
 void
-ZExt::compute() {
+ZExt::launch() {
 
 }
 
@@ -1209,7 +1221,7 @@ SExt::initialize(llvm::Value * irval,
 }
 
 void
-SExt::compute() {
+SExt::launch() {
 
 }
 
@@ -1246,7 +1258,7 @@ FPToUI::initialize(llvm::Value * irval,
 }
 
 void
-FPToUI::compute() {
+FPToUI::launch() {
 
 }
 
@@ -1283,7 +1295,7 @@ FPToSI::initialize(llvm::Value * irval,
 }
 
 void
-FPToSI::compute() {
+FPToSI::launch() {
 
 }
 
@@ -1320,7 +1332,7 @@ UIToFP::initialize(llvm::Value * irval,
 }
 
 void
-UIToFP::compute() {
+UIToFP::launch() {
 
 }
 
@@ -1357,7 +1369,7 @@ SIToFP::initialize(llvm::Value * irval,
 }
 
 void
-SIToFP::compute() {
+SIToFP::launch() {
 
 }
 
@@ -1394,7 +1406,7 @@ FPTrunc::initialize(llvm::Value * irval,
 }
 
 void
-FPTrunc::compute() {
+FPTrunc::launch() {
 
 }
 
@@ -1431,7 +1443,7 @@ FPExt::initialize(llvm::Value * irval,
 }
 
 void
-FPExt::compute() {
+FPExt::launch() {
 
 }
 
@@ -1468,7 +1480,7 @@ PtrToInt::initialize(llvm::Value * irval,
 }
 
 void
-PtrToInt::compute() {
+PtrToInt::launch() {
 
 }
 
@@ -1505,7 +1517,7 @@ IntToPtr::initialize(llvm::Value * irval,
 }
 
 void
-IntToPtr::compute() {
+IntToPtr::launch() {
 
 }
 
@@ -1543,7 +1555,7 @@ ICmp::initialize(llvm::Value * irval,
 
 
 void
-ICmp::compute() {
+ICmp::launch() {
 
 }
 
@@ -1580,7 +1592,7 @@ FCmp::initialize(llvm::Value * irval,
 }
 
 void
-FCmp::compute() {
+FCmp::launch() {
 
 }
 
@@ -1626,7 +1638,7 @@ Phi::initialize(llvm::Value * irval,
 }
 
 void
-Phi::compute() 
+Phi::launch() 
 {
     // return true when ready
 }
@@ -1665,7 +1677,7 @@ Call::initialize(llvm::Value * irval,
 }
 
 void
-Call::compute() {
+Call::launch() {
 
 }
 
@@ -1711,7 +1723,7 @@ Select::evaluate() {
 }
 
 void
-Select::compute() {
+Select::launch() {
 
 }
 

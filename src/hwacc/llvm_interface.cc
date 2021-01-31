@@ -34,6 +34,90 @@ std::shared_ptr<SALAM::Value> createClone(const std::shared_ptr<SALAM::Value>& b
      return clone;
 }
 
+/*
+
+// ===== BB Level 
+
+Sams
+
+basicBlockScheduler( std::shared_ptr<SALAM::BasicBlock> )
+Br - std::shared_ptr<SALAM::BasicBlock> getTarget()
+// Per Active Function
+std::list<ActiveFunction> activeFunctions
+    // Instruction Sheduling
+    - While instructions from BB onto reserve queue (std::list<std::shared_ptr<SALAM::Instruction> > reservation)
+        - clone()
+        - If unconditional branch
+            - Immediately begin scheduling next basic block
+            - remove from queue
+        - else
+            - link dependencies
+JS                - findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>, std::shared_ptr<SALAM::Instruction>)
+                - only parse queue once for each instruction until all dependencies are found
+                - include self in dependency list
+                    - Register dynamicUser/dynamicDependencies std::deque<std::shared_ptr<SALAM::Instructon> >
+
+
+// ===== Runtime Queue Level - tick()
+
+        During Runtime
+
+        // First
+        // (std::list<std::shared_ptr<SALAM::Instruction> > computeQueue)
+        - bool commit()
+            - if(cycleCount()) // Completed its cycle count
+                - // 0 cycles commit immediately 
+                - // Perform computation
+                - // Set return register with result
+                - // Signal users
+                - Instruction alerts users its ready, user reads from register when ready
+                - Removes itself from dependencies list
+                - return true
+            - else
+                - cycleCount++
+                - return false
+
+        // Second
+        // std::list<std::shared_ptr<SALAM::Instruction> > reservation
+        
+Sam      - bool ready(return specific) // checks dependencies, return true if satisfied 
+
+
+JS       - bool ready() // checks dependencies, return true if satisfied 
+
+        // Make special case for return, queue must also be empty 
+
+        - if(ready())
+            // Return true if no dependencies remain
+            - When dependencies list has no elements other than self
+            - if (launch())
+                - // finished
+                - return true
+            - else
+                - Move to computeQueue
+                - return false
+        - else
+            // Do nothing
+
+        - bool launch()
+            - Sams Special Cases
+                - // Call Instructions
+                    
+                - // Load 
+
+                - // Store
+
+                - // Conditional Terminator
+                    - BB getTarget()
+
+                - // Return Instruction
+
+            - // Anything Else
+            - Performs computation
+            //Internally calls commit
+            - return commit();
+*/
+
 void
 LLVMInterface::tick() {
 /*********************************************************************************************
@@ -65,7 +149,7 @@ LLVMInterface::tick() {
     }
 }
 
-void
+void // Add third argument, previous BB
 findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // The list of UIDs for any dependencies we want to find
@@ -74,9 +158,19 @@ findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * i
     // instances of the same instruction shouldn't execute simultaneously
     dep_uids.push_back(inst->getUID());
     // Fetch the UIDs of static operands
-    for (auto dep : inst->getStaticOperands()) {
-        dep_uids.push_back(dep->getUID());
-    }
+    // if (instruction == phi)
+        // Add special case for phi, pass previous BB
+        // Phi's only dependency should be itself
+    // else
+        for (auto dep : inst->getStaticOperands()) {
+            dep_uids.push_back(dep->getUID());
+        }
+    // Find dependencies currently in queues
+        // Add as runtime dependencies
+
+    // Fetch results from any unfound dependencies
+        // Static / Immediate / Anything Executed
+
 }
 
 void
@@ -365,10 +459,12 @@ LLVMInterface::dumpQueues() {
 
 void
 LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
-                                  SALAM::Instruction * caller,
-                                  std::vector<uint64_t> &args) {
+                              std::shared_ptr<SALAM::Instruction> caller,
+                              std::vector<uint64_t> &args) { 
     // Add the callee to our list of active functions
-    activeFunctions.push_back(ActiveFunction(callee, caller, new std::vector<std::shared_ptr<SALAM::Instruction>>()));
+    
+    // I didn't fix this, don't think this will remain this format
+    // activeFunctions.push_back(ActiveFunction(callee, caller, new std::list<std::shared_ptr<SALAM::Instruction>>()));
 
     // Start scheduling the new function
 }
