@@ -71,9 +71,9 @@ LLVMInterface::tick() {
     }
     cycle++;
     comm->refreshMemPorts();
-    //hardware->update();
+    hardware->update();
     ///////////////////////////
-    //pwrUtil->updatePowerConsumption(_FunctionalUnits);
+    pwrUtil->updatePowerConsumption(_FunctionalUnits);
     regList->resetAccess();
     clearFU();
     loadOpScheduled = false;
@@ -220,7 +220,7 @@ LLVMInterface::tick() {
             }
         }
     }
-    //occupancy();
+    occupancy();
 
     if (running && !tickEvent.scheduled())
     {
@@ -411,7 +411,9 @@ LLVMInterface::constructBBList() {
                         linePos = percPos + 1;
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
-                    currBB = new BasicBlock("0", name(), bbnum, dbg); // First basic block is always defined as BB 0
+                    getline(llvmFile, line);
+                    std::string first_bb = line.substr(0, line.find(':'));
+                    currBB = new BasicBlock(first_bb, name(), bbnum, dbg); // First basic block is always defined as BB 0
                     if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
