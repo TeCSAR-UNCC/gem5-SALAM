@@ -86,6 +86,7 @@ int main(void) {
 	    }
 	}
 #endif
-	*(char *)(0x7fffffff) = 0;
-  	//m5_exit();
+	//*(char *)(0x7fffffff) = 0;
+	m5_dump_stats();
+  	m5_exit();
 }
