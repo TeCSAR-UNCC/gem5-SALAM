@@ -66,9 +66,10 @@ StreamDma::getStreamAddrRanges() const {
 
 void
 StreamDma::tick() {
+
     if (!rdRunning && ((*FLAGS&RD_START_MASK)==RD_START_MASK)) {
         rdRunning = true;
-        *FLAGS &= !RD_START_MASK;
+        *FLAGS &= ~RD_START_MASK;
         *FLAGS |= RD_RUNNING_MASK;
         readAddr = *RD_ADDR;
         readPtr = readAddr;
@@ -77,14 +78,13 @@ StreamDma::tick() {
         readFrameBuffSize = *RD_FRAME_BUFF_SIZE;
         framesRead = 0;
         readIntFrames = *(uint8_t *)CONFIG;
-
         DPRINTF(StreamDma, "Initializing frame read from 0x%016x with frame size of %d Bytes\n", readPtr, readFrameSize);
         readFifo->startFill(readPtr, readFrameSize);
     }
 
     if (!wrRunning && ((*FLAGS&WR_START_MASK)==WR_START_MASK)) {
         wrRunning = true;
-        *FLAGS &= !WR_START_MASK;
+        *FLAGS &= ~WR_START_MASK;
         *FLAGS |= WR_RUNNING_MASK;
         writeAddr = *WR_ADDR;
         writePtr = writeAddr;
@@ -93,7 +93,7 @@ StreamDma::tick() {
         writeFrameBuffSize = *WR_FRAME_BUFF_SIZE;
         framesWritten = 0;
         writeIntFrames = *CONFIG>>8;
-
+        DPRINTF(StreamDma, "MMR After Write: %08x\n", *FLAGS);
         DPRINTF(StreamDma, "Initializing frame write to 0x%016x with frame size of %d Bytes\n", writePtr, writeFrameSize);
         writeFifo->startEmpty(writePtr, writeFrameSize);
     }
@@ -117,7 +117,7 @@ StreamDma::tick() {
         }
         if ((framesToRead != 0) && (framesRead >= framesToRead)) {
             rdRunning = false;
-            *FLAGS &= !RD_RUNNING_MASK;
+            *FLAGS &= ~RD_RUNNING_MASK;
         } else {
             assert(readFrameBuffSize != 0);
             readPtr = readAddr + ((framesRead % readFrameBuffSize) * readFrameSize);
@@ -137,7 +137,7 @@ StreamDma::tick() {
         }
         if ((framesToWrite != 0) && (framesWritten >= framesToWrite)) {
             wrRunning = false;
-            *FLAGS &= !WR_RUNNING_MASK;
+            *FLAGS &= ~WR_RUNNING_MASK;
         } else {
             assert(writeFrameBuffSize != 0);
             writePtr = writeAddr + ((framesWritten % writeFrameBuffSize) * writeFrameSize);
@@ -147,7 +147,6 @@ StreamDma::tick() {
     }
 
     running = rdRunning || wrRunning;
-
     if (!tickEvent.scheduled() && running) {
         schedule(tickEvent, nextCycle());
     }
