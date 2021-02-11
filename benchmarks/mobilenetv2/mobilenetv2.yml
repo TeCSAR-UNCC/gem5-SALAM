@@ -1,0 +1,262 @@
+---
+acc_cluster:
+  - Name: head
+  - DMA:
+    - Name: dma
+      BufferSize: 128
+      MaxReq: 4
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - DMA:
+    - Name: stream_dma0
+      PIOMaster: LocalBus
+      Size: 8
+      Type: Stream
+      ReadInt: 210
+      WriteInt: 211
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/mobilenetv2/hw/ir/head/top.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/top.ini
+      PIOSize: 65
+      PIOMaster: LocalBus
+      # Local to PIO
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: NormalConv
+      IrPath: benchmarks/mobilenetv2/hw/ir/head/NormalConv.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/NormalConv.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamOut: stream_dma0
+      Debug: False
+    - Var:
+      - Name: NormalConvWindow
+        Type: SPM
+        Size: 4704
+        Ports: 27
+    - Var:
+      - Name: NormalConvWeights
+        Type: SPM
+        Size: 112896
+        Ports: 1
+    - Var:
+      - Name: NormalConvQParams
+        Type: SPM
+        Size: 216
+        Ports: 1
+    - Var:
+      - Name: NormalConvQBuffer
+        Type: SPM
+        Size: 4032
+        Ports: 1
+    - Var:
+      - Name: NormalConvOut
+        Type: Stream
+        StreamSize: 1
+        BufferSize: 8
+        InCon: NormalConv
+        OutCon: DWConv
+  - Accelerator:
+    - Name: DWConv
+      IrPath: benchmarks/mobilenetv2/hw/ir/head/DWConv.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/DWConv.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: DWConvWindow
+        Type: SPM
+        Size: 1176
+        Ports: 27
+    - Var:
+      - Name: DWConvWeights
+        Type: SPM
+        Size: 1200
+        Ports: 1
+    - Var:
+      - Name: DWConvQParams
+        Type: SPM
+        Size: 144
+        Ports: 1
+    - Var:
+      - Name: DWConvQBuffer
+        Type: SPM
+        Size: 11520
+        Ports: 1
+    - Var:
+      - Name: DWConvOutBuffer
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: DWConvOut
+        Type: Stream
+        StreamSize: 1
+        BufferSize: 8
+        InCon: DWConv
+        OutCon: PWConv
+  - Accelerator:
+    - Name: PWConv
+      IrPath: benchmarks/mobilenetv2/hw/ir/head/PWConv.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/PWConv.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: stream_dma0
+    - Var:
+      - Name: PWConvLocalFeatSize
+        Type: SPM
+        Size: 24
+        Ports: 27
+    - Var:
+      - Name: PWConvWeights
+        Type: SPM
+        Size: 384
+        Ports: 1
+    - Var:
+      - Name: PWConvQParams
+        Type: SPM
+        Size: 96
+        Ports: 1
+---
+acc_cluster:
+  - Name: body
+  - DMA:
+    - Name: dma
+      BufferSize: 128
+      MaxReq: 4
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 96
+  - DMA:
+    - Name: stream_dma0
+      PIOMaster: LocalBus
+      Size: 8
+      Type: Stream
+      ReadInt: 212
+      WriteInt: 213
+  - DMA:
+    - Name: stream_dma1
+      PIOMaster: LocalBus
+      Size: 8
+      Type: Stream
+      ReadInt: 214
+      WriteInt: 215
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/mobilenetv2/hw/ir/body/top.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/top.ini
+      Debug: False
+      PIOSize: 81
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+  - Accelerator:
+    - Name: residual
+      IrPath: benchmarks/mobilenetv2/hw/ir/body/Residual.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/Residual.ini
+      Debug: False
+      PIOSize: 6
+      PIOMaster: LocalBus
+      StreamOut: stream_dma0,stream_dma1
+    - Var:
+      - Name: ResidualOut
+        Type: Stream
+        StreamSize: 1
+        BufferSize: 8
+        InCon: residual
+        OutCon: PWConv0
+  - Accelerator:
+    - Name: PWConv0
+      IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv0.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv0.ini
+      Debug: False
+      PIOSize: 20
+      PIOMaster: LocalBus
+    - Var:
+      - Name: PWConv0LocalFeatSize
+        Type: SPM
+        Size: 120
+        Ports: 27
+    - Var:
+      - Name: PWConv0Weights
+        Type: SPM
+        Size: 86400
+        Ports: 1
+    - Var:
+      - Name: PWConv0QParams
+        Type: SPM
+        Size: 4320
+        Ports: 1
+    - Var:
+      - Name: PWConv0Out
+        Type: Stream
+        StreamSize: 1
+        BufferSize: 8
+        InCon: PWConv0
+        OutCon: DWConv
+  - Accelerator:
+    - Name: DWConv
+      IrPath: benchmarks/mobilenetv2/hw/ir/body/DWConv.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/DWConv.ini
+      Debug: False
+      PIOSize: 24
+      PIOMaster: LocalBus
+    - Var:
+      - Name: DWConvWindow
+        Type: SPM
+        Size: 7200
+        Ports: 27
+    - Var:
+      - Name: DWConvWeights
+        Type: SPM
+        Size: 1200
+        Ports: 1
+    - Var:
+      - Name: DWConvQParams
+        Type: SPM
+        Size: 4320
+        Ports: 1
+    - Var:
+      - Name: DWConvBuffer
+        Type: SPM
+        Size: 115200
+        Ports: 1
+    - Var:
+      - Name: DWConvOutBuffer
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: DWConvOut
+        Type: Stream
+        StreamSize: 1
+        BufferSize: 8
+        InCon: DWConv
+        OutCon: PWConv1
+  - Accelerator:
+    - Name: PWConv1
+      IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv1.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv1.ini
+      Debug: False
+      PIOSize: 38
+      PIOMaster: LocalBus
+      StreamIn: stream_dma0
+    - Var:
+      - Name: PWConv1LocalFeatSize
+        Type: SPM
+        Size: 720
+        Ports: 27
+    - Var:
+      - Name: PWConv1Weights
+        Type: SPM
+        Size: 172800
+        Ports: 1
+    - Var:
+      - Name: PWConv1QParams
+        Type: SPM
+        Size: 1440
+        Ports: 1
