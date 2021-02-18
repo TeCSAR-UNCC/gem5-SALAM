@@ -39,56 +39,56 @@ void top(uint64_t img_rd_addr, uint64_t feat_wr_addr,
 	//Start Stream DMAs
 	*StrDmaFlags = STR_DMA_INIT_RD | STR_DMA_INIT_WR;
 
-	//Transfer Weights and Quantization Params from DRAM to SPMs
-	//Start Norm Conv Weight Xfer
-	*MemDmaRdAddr  = conv_weights;
-	*MemDmaWrAddr  = ConvWeights;
-	*MemDmaCopyLen = ConvWeightSize;
-	*MemDmaFlags   = MEM_DMA_INIT;
-	//Poll DMA for finish
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start Norm Conv QParams Xfer
-	*MemDmaRdAddr  = conv_quant;
-	*MemDmaWrAddr  = ConvBias;
-	*MemDmaCopyLen = ConvQParamSize;
-	*MemDmaFlags   = MEM_DMA_INIT;
-	//Poll DMA for finish
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start DW Conv Weight Xfer
-	*MemDmaRdAddr  = dw_weights;
-	*MemDmaWrAddr  = DWWeights;
-	*MemDmaCopyLen = DWWeightSize;
-	*MemDmaFlags   = MEM_DMA_INIT;
-	//Poll DMA for finish
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start DW Conv QParams Xfer
-	*MemDmaRdAddr  = dw_quant;
-	*MemDmaWrAddr  = DWBias;
-	*MemDmaCopyLen = DWQParamSize;
-	*MemDmaFlags   = MEM_DMA_INIT;
-	//Poll DMA for finish
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start PW Conv Weight Xfer
-	*MemDmaRdAddr  = pw_weights;
-	*MemDmaWrAddr  = PWWeights;
-	*MemDmaCopyLen = PWWeightSize;
-	*MemDmaFlags   = MEM_DMA_INIT;
-	//Poll DMA for finish
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start PW Conv QParams Xfer
-	*MemDmaRdAddr  = pw_quant;
-	*MemDmaWrAddr  = PWBias;
-	*MemDmaCopyLen = PWQParamSize;
-	*MemDmaFlags   = MEM_DMA_INIT;
-	//Poll DMA for finish
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	// //Transfer Weights and Quantization Params from DRAM to SPMs
+	// //Start Norm Conv Weight Xfer
+	// *MemDmaRdAddr  = conv_weights;
+	// *MemDmaWrAddr  = ConvWeights;
+	// *MemDmaCopyLen = ConvWeightSize;
+	// *MemDmaFlags   = MEM_DMA_INIT;
+	// //Poll DMA for finish
+	// while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	// //Start Norm Conv QParams Xfer
+	// *MemDmaRdAddr  = conv_quant;
+	// *MemDmaWrAddr  = ConvBias;
+	// *MemDmaCopyLen = ConvQParamSize;
+	// *MemDmaFlags   = MEM_DMA_INIT;
+	// //Poll DMA for finish
+	// while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	// //Start DW Conv Weight Xfer
+	// *MemDmaRdAddr  = dw_weights;
+	// *MemDmaWrAddr  = DWWeights;
+	// *MemDmaCopyLen = DWWeightSize;
+	// *MemDmaFlags   = MEM_DMA_INIT;
+	// //Poll DMA for finish
+	// while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	// //Start DW Conv QParams Xfer
+	// *MemDmaRdAddr  = dw_quant;
+	// *MemDmaWrAddr  = DWBias;
+	// *MemDmaCopyLen = DWQParamSize;
+	// *MemDmaFlags   = MEM_DMA_INIT;
+	// //Poll DMA for finish
+	// while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	// //Start PW Conv Weight Xfer
+	// *MemDmaRdAddr  = pw_weights;
+	// *MemDmaWrAddr  = PWWeights;
+	// *MemDmaCopyLen = PWWeightSize;
+	// *MemDmaFlags   = MEM_DMA_INIT;
+	// //Poll DMA for finish
+	// while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	// //Start PW Conv QParams Xfer
+	// *MemDmaRdAddr  = pw_quant;
+	// *MemDmaWrAddr  = PWBias;
+	// *MemDmaCopyLen = PWQParamSize;
+	// *MemDmaFlags   = MEM_DMA_INIT;
+	// //Poll DMA for finish
+	// while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 
 	//Start Norm Conv
-	*NormConv = 0x01;
-	//Start DW Conv
-	*DWConv = 0x01;
-	//Start PW Conv
-	*PWConv = 0x01;
+	// *NormConv = 0x01;
+	// //Start DW Conv
+	// *DWConv = 0x01;
+	// //Start PW Conv
+	// *PWConv = 0x01;
 
 	//Wait for all accelerators to finish before sending interrupt to CPU
 	while ((*StrDmaFlags & STR_DMA_WR_INTR) != STR_DMA_WR_INTR);

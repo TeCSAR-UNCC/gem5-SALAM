@@ -21,8 +21,8 @@ def AccConfig(acc, config_file, bench_file):
                 dict1[option] = None
         return dict1
     # Setup comm interface
-    acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
-    acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
+    # acc.pio_addr=ConfigSectionMap("CommInterface")['pio_addr']
+    # acc.pio_size=ConfigSectionMap("CommInterface")['pio_size']
     acc.flags_size = ConfigSectionMap("AccConfig")['flags_size']
     acc.config_size = ConfigSectionMap("AccConfig")['config_size']
     acc.int_num = ConfigSectionMap("AccConfig")['int_num']
