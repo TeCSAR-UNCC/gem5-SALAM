@@ -1,5 +1,5 @@
 #include "../common/support.h"
-
+#include "../../../head_hw_defines.h"
 /***********************************************************
  * Computation Defines
  ***********************************************************/
@@ -7,8 +7,8 @@
 #define HALF_SIZE		(((KERNEL_SIZE)-1) / 2)
 
 // Normal Conv
-#define CONV_IN_SIZE	160
-#define CONV_OUT_SIZE	80
+#define CONV_IN_SIZE	96
+#define CONV_OUT_SIZE	40
 #define CONV_IN_CH		3
 #define CONV_OUT_CH		24
 #define CONV_STRIDE		2
@@ -22,8 +22,8 @@
 #define ConvQParamSize	CONV_OUT_CH*6
 
 // DW Conv
-#define DW_IN_SIZE		80
-#define DW_OUT_SIZE		80
+#define DW_IN_SIZE		40
+#define DW_OUT_SIZE		40
 #define DW_IN_CH		24
 #define DW_OUT_CH		24
 #define DW_STRIDE		1
@@ -36,8 +36,8 @@
 #define DWQParamSize	DW_OUT_CH*6
 
 // PW Conv
-#define PW_IN_SIZE		80
-#define PW_OUT_SIZE		80
+#define PW_IN_SIZE		40
+#define PW_OUT_SIZE		40
 #define PW_IN_CH		24
 #define PW_OUT_CH		16
 #define PW_CORE_SIZE	24
@@ -53,57 +53,53 @@
 #define OUTPUT_SIZE		PW_OUT_SIZE*PW_OUT_SIZE*PW_OUT_CH
 
 /***********************************************************
- * Cluster Base Address
- ***********************************************************/
-#define BASE			0x2F000000
-/***********************************************************
  * MMR Addresses
  ***********************************************************/
-#define TOP_MMR			BASE + 0x0000
-#define STREAM_DMA_MMR	BASE + 0x0041
-#define CLUSTER_DMA_MMR	BASE + 0x0069
-#define CONV_MMR		BASE + 0x007E
-#define DW_MMR			BASE + 0x007F
-#define PW_MMR			BASE + 0x0080
+#define TOP_MMR			TOP
+#define STREAM_DMA_MMR	STREAM_DMA0_Flags
+#define CLUSTER_DMA_MMR	DMA_Flags
+#define CONV_MMR		NORMALCONV
+#define DW_MMR			DWCONV
+#define PW_MMR			PWCONV
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define StreamIn		BASE + 0x0061
-#define StreamOut		BASE + 0x0061
+#define StreamIn		STREAM_DMA0_Stream
+#define StreamOut		STREAM_DMA0_Stream
 
 #define ConvIn 			StreamIn
-#define ConvBuffer		BASE + 0x0081
-#define ConvWindow		BASE + 0x0441
-#define ConvWeights		BASE + 0x045C
-#define ConvBias		BASE + 0x06E4
-#define ConvIMultBias	BASE + 0x06FC
-#define ConvNShiftBias  BASE + 0x0714
-#define ConvIMultOut	BASE + 0x072C
-#define ConvNShiftOut	BASE + 0x0744
-#define ConvWeightZP	BASE + 0x075C
-#define ConvOut			BASE + 0x0774
+#define ConvBuffer		NormalConvQBuffer
+#define ConvWindow		NormalConvWindow
+#define ConvWeights		NormalConvWeights
+#define ConvBias		NormalConvQParams
+#define ConvIMultBias	NormalConvQParams
+#define ConvNShiftBias  NormalConvQParams
+#define ConvIMultOut	NormalConvQParams
+#define ConvNShiftOut	NormalConvQParams
+#define ConvWeightZP	NormalConvQParams
+#define ConvOut			NormalConvOut
 
 #define DWIn 			ConvOut
-#define DWBuffer		BASE + 0x0775
-#define DWWindow		BASE + 0x1675
-#define DWOutBuffer		BASE + 0x174D
-#define DWWeights		BASE + 0x1765
-#define DWBias			BASE + 0x1855
-#define DWIMultBias		BASE + 0x186D
-#define DWNShiftBias  	BASE + 0x1885
-#define DWIMultOut		BASE + 0x189D
-#define DWNShiftOut		BASE + 0x18B5
-#define DWWeightZP		BASE + 0x18CD
-#define DWOut			BASE + 0x18E5
+#define DWBuffer		DWConvQBuffer
+#define DWWindow		DWConvWindow
+#define DWOutBuffer		DWConvOutBuffer
+#define DWWeights		DWConvWeights
+#define DWBias			DWConvQParams
+#define DWIMultBias		DWConvQParams
+#define DWNShiftBias  	DWConvQParams
+#define DWIMultOut		DWConvQParams
+#define DWNShiftOut		DWConvQParams
+#define DWWeightZP		DWConvQParams
+#define DWOut			DWConvOut
 
 #define PWIn 			DWOut
-#define PWLocalFeat		BASE + 0x18E6
-#define PWWeights		BASE + 0x18FE
-#define PWBias			BASE + 0x1A7E
-#define PWIMultBias		BASE + 0x1A8E
-#define PWNShiftBias  	BASE + 0x1A9E
-#define PWIMultOut		BASE + 0x1AAE
-#define PWNShiftOut		BASE + 0x1ABE
-#define PWWeightZP		BASE + 0x1ACE
+#define PWLocalFeat		PWConvLocalFeatSize
+#define PWWeights		PWConvWeights
+#define PWBias			PWConvQParams
+#define PWIMultBias		PWConvQParams
+#define PWNShiftBias  	PWConvQParams
+#define PWIMultOut		PWConvQParams
+#define PWNShiftOut		PWConvQParams
+#define PWWeightZP		PWConvQParams
 #define PWOut			StreamOut

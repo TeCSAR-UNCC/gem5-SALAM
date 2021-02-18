@@ -7,7 +7,7 @@ from HWAccConfig import *
 def buildhead(options, system, clstr):
 
 	local_low = 0x10020000
-	local_high = 0x10041563
+	local_high = 0x100211de
 	local_range = AddrRange(local_low, local_high)
 	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]
 	system.iobus.master = clstr.local_bus.slave
@@ -50,14 +50,14 @@ def buildhead(options, system, clstr):
 	acc = "dwconv"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/head/DWConv.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/head/DWConv.ll"
-	clstr.dwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x1003dc78, pio_size=1)
+	clstr.dwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x100205f3, pio_size=1)
 	AccConfig(clstr.dwconv, config, ir)
 	
 	# pwconv Definition
 	acc = "pwconv"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/head/PWConv.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/head/PWConv.ll"
-	clstr.pwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x1004136a, pio_size=1)
+	clstr.pwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x10020fe5, pio_size=1)
 	AccConfig(clstr.pwconv, config, ir)
 	
 	# top Config
@@ -72,7 +72,7 @@ def buildhead(options, system, clstr):
 	
 	# NormalConvWindow (Variable)
 	addr = 0x1002007f
-	spmRange = AddrRange(addr, addr + 0x1260)
+	spmRange = AddrRange(addr, addr + 0x1b)
 	clstr.normalconvwindow = ScratchpadMemory(range = spmRange)
 	clstr.normalconvwindow.conf_table_reported = False
 	clstr.normalconvwindow.ready_mode = False
@@ -81,8 +81,8 @@ def buildhead(options, system, clstr):
 		clstr.normalconv.spm = clstr.normalconvwindow.spm_ports
 	
 	# NormalConvWeights (Variable)
-	addr = 0x100212df
-	spmRange = AddrRange(addr, addr + 0x1b900)
+	addr = 0x1002009a
+	spmRange = AddrRange(addr, addr + 0x288)
 	clstr.normalconvweights = ScratchpadMemory(range = spmRange)
 	clstr.normalconvweights.conf_table_reported = False
 	clstr.normalconvweights.ready_mode = False
@@ -91,8 +91,8 @@ def buildhead(options, system, clstr):
 		clstr.normalconv.spm = clstr.normalconvweights.spm_ports
 	
 	# NormalConvQParams (Variable)
-	addr = 0x1003cbdf
-	spmRange = AddrRange(addr, addr + 0xd8)
+	addr = 0x10020322
+	spmRange = AddrRange(addr, addr + 0x90)
 	clstr.normalconvqparams = ScratchpadMemory(range = spmRange)
 	clstr.normalconvqparams.conf_table_reported = False
 	clstr.normalconvqparams.ready_mode = False
@@ -101,8 +101,8 @@ def buildhead(options, system, clstr):
 		clstr.normalconv.spm = clstr.normalconvqparams.spm_ports
 	
 	# NormalConvQBuffer (Variable)
-	addr = 0x1003ccb7
-	spmRange = AddrRange(addr, addr + 0xfc0)
+	addr = 0x100203b2
+	spmRange = AddrRange(addr, addr + 0x240)
 	clstr.normalconvqbuffer = ScratchpadMemory(range = spmRange)
 	clstr.normalconvqbuffer.conf_table_reported = False
 	clstr.normalconvqbuffer.ready_mode = False
@@ -111,7 +111,7 @@ def buildhead(options, system, clstr):
 		clstr.normalconv.spm = clstr.normalconvqbuffer.spm_ports
 	
 	# NormalConvOut (Stream Variable)
-	addr = 0x1003dc77
+	addr = 0x100205f2
 	clstr.normalconvout = StreamBuffer(stream_address = addr, stream_size = 1, buffer_size = 8)
 	clstr.normalconv.stream = clstr.normalconvout.stream_in
 	clstr.dwconv.stream = clstr.normalconvout.stream_out
@@ -121,8 +121,8 @@ def buildhead(options, system, clstr):
 	clstr.dwconv.enable_debug_msgs = False
 	
 	# DWConvWindow (Variable)
-	addr = 0x1003dc79
-	spmRange = AddrRange(addr, addr + 0x498)
+	addr = 0x100205f4
+	spmRange = AddrRange(addr, addr + 0xd8)
 	clstr.dwconvwindow = ScratchpadMemory(range = spmRange)
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
@@ -131,8 +131,8 @@ def buildhead(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
-	addr = 0x1003e111
-	spmRange = AddrRange(addr, addr + 0x4b0)
+	addr = 0x100206cc
+	spmRange = AddrRange(addr, addr + 0xf0)
 	clstr.dwconvweights = ScratchpadMemory(range = spmRange)
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
@@ -141,7 +141,7 @@ def buildhead(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
-	addr = 0x1003e5c1
+	addr = 0x100207bc
 	spmRange = AddrRange(addr, addr + 0x90)
 	clstr.dwconvqparams = ScratchpadMemory(range = spmRange)
 	clstr.dwconvqparams.conf_table_reported = False
@@ -151,8 +151,8 @@ def buildhead(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvqparams.spm_ports
 	
 	# DWConvQBuffer (Variable)
-	addr = 0x1003e651
-	spmRange = AddrRange(addr, addr + 0x2d00)
+	addr = 0x1002084c
+	spmRange = AddrRange(addr, addr + 0x780)
 	clstr.dwconvqbuffer = ScratchpadMemory(range = spmRange)
 	clstr.dwconvqbuffer.conf_table_reported = False
 	clstr.dwconvqbuffer.ready_mode = False
@@ -161,7 +161,7 @@ def buildhead(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvqbuffer.spm_ports
 	
 	# DWConvOutBuffer (Variable)
-	addr = 0x10041351
+	addr = 0x10020fcc
 	spmRange = AddrRange(addr, addr + 0x18)
 	clstr.dwconvoutbuffer = ScratchpadMemory(range = spmRange)
 	clstr.dwconvoutbuffer.conf_table_reported = False
@@ -171,7 +171,7 @@ def buildhead(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvoutbuffer.spm_ports
 	
 	# DWConvOut (Stream Variable)
-	addr = 0x10041369
+	addr = 0x10020fe4
 	clstr.dwconvout = StreamBuffer(stream_address = addr, stream_size = 1, buffer_size = 8)
 	clstr.dwconv.stream = clstr.dwconvout.stream_in
 	clstr.pwconv.stream = clstr.dwconvout.stream_out
@@ -179,10 +179,10 @@ def buildhead(options, system, clstr):
 	# pwconv Config
 	clstr.pwconv.pio = clstr.local_bus.master
 	clstr.pwconv.stream = clstr.stream_dma0.stream_in
-	clstr.pwconv.enable_debug_msgs = False
+	clstr.pwconv.enable_debug_msgs = True
 	
 	# PWConvLocalFeatSize (Variable)
-	addr = 0x1004136b
+	addr = 0x10020fe6
 	spmRange = AddrRange(addr, addr + 0x18)
 	clstr.pwconvlocalfeatsize = ScratchpadMemory(range = spmRange)
 	clstr.pwconvlocalfeatsize.conf_table_reported = False
@@ -192,7 +192,7 @@ def buildhead(options, system, clstr):
 		clstr.pwconv.spm = clstr.pwconvlocalfeatsize.spm_ports
 	
 	# PWConvWeights (Variable)
-	addr = 0x10041383
+	addr = 0x10020ffe
 	spmRange = AddrRange(addr, addr + 0x180)
 	clstr.pwconvweights = ScratchpadMemory(range = spmRange)
 	clstr.pwconvweights.conf_table_reported = False
@@ -202,7 +202,7 @@ def buildhead(options, system, clstr):
 		clstr.pwconv.spm = clstr.pwconvweights.spm_ports
 	
 	# PWConvQParams (Variable)
-	addr = 0x10041503
+	addr = 0x1002117e
 	spmRange = AddrRange(addr, addr + 0x60)
 	clstr.pwconvqparams = ScratchpadMemory(range = spmRange)
 	clstr.pwconvqparams.conf_table_reported = False
@@ -213,8 +213,8 @@ def buildhead(options, system, clstr):
 	
 def buildbody(options, system, clstr):
 
-	local_low = 0x10041564
-	local_high = 0x100a1b3d
+	local_low = 0x100211df
+	local_high = 0x100817b8
 	local_range = AddrRange(local_low, local_high)
 	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]
 	system.iobus.master = clstr.local_bus.slave
@@ -222,7 +222,7 @@ def buildbody(options, system, clstr):
 	gic = system.realview.gic
 
 	# Noncoherent DMA
-	clstr.dma = NoncoherentDma(pio_addr=0x10041564, pio_size = 21, gic=gic, int_num=96)
+	clstr.dma = NoncoherentDma(pio_addr=0x100211df, pio_size = 21, gic=gic, int_num=96)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
 	clstr.dma.max_req_size = 4
 	clstr.dma.buffer_size = 128
@@ -230,8 +230,8 @@ def buildbody(options, system, clstr):
 	clstr.local_bus.master = clstr.dma.pio
 	
 	# Stream DMA
-	clstr.stream_dma0 = StreamDma(pio_addr=0x10041579, pio_size = 32, gic=gic, max_pending = 32)
-	clstr.stream_dma0.stream_addr = 0x10041579 + 32
+	clstr.stream_dma0 = StreamDma(pio_addr=0x100211f4, pio_size = 32, gic=gic, max_pending = 32)
+	clstr.stream_dma0.stream_addr = 0x100211f4 + 32
 	clstr.stream_dma0.stream_size = 8
 	clstr.stream_dma0.pio_delay = '1ns'
 	clstr.stream_dma0.rd_int = 212
@@ -240,8 +240,8 @@ def buildbody(options, system, clstr):
 	clstr.local_bus.master = clstr.stream_dma0.pio
 	
 	# Stream DMA
-	clstr.stream_dma1 = StreamDma(pio_addr=0x100415a1, pio_size = 32, gic=gic, max_pending = 32)
-	clstr.stream_dma1.stream_addr = 0x100415a1 + 32
+	clstr.stream_dma1 = StreamDma(pio_addr=0x1002121c, pio_size = 32, gic=gic, max_pending = 32)
+	clstr.stream_dma1.stream_addr = 0x1002121c + 32
 	clstr.stream_dma1.stream_size = 8
 	clstr.stream_dma1.pio_delay = '1ns'
 	clstr.stream_dma1.rd_int = 214
@@ -253,35 +253,35 @@ def buildbody(options, system, clstr):
 	acc = "top"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/body/top.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/body/top.ll"
-	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x100415c9, pio_size=81)
+	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10021244, pio_size=81)
 	AccConfig(clstr.top, config, ir)
 	
 	# residual Definition
 	acc = "residual"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/body/Residual.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/body/Residual.ll"
-	clstr.residual = CommInterface(devicename=acc, gic=gic, pio_addr=0x1004161a, pio_size=6)
+	clstr.residual = CommInterface(devicename=acc, gic=gic, pio_addr=0x10021295, pio_size=6)
 	AccConfig(clstr.residual, config, ir)
 	
 	# pwconv0 Definition
 	acc = "pwconv0"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/body/PWConv0.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/body/PWConv0.ll"
-	clstr.pwconv0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10041621, pio_size=20)
+	clstr.pwconv0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002129c, pio_size=20)
 	AccConfig(clstr.pwconv0, config, ir)
 	
 	# dwconv Definition
 	acc = "dwconv"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/body/DWConv.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/body/DWConv.ll"
-	clstr.dwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x1005790e, pio_size=24)
+	clstr.dwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x10037589, pio_size=24)
 	AccConfig(clstr.dwconv, config, ir)
 	
 	# pwconv1 Definition
 	acc = "pwconv1"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/body/PWConv1.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/body/PWConv1.ll"
-	clstr.pwconv1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10076fa7, pio_size=38)
+	clstr.pwconv1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10056c22, pio_size=38)
 	AccConfig(clstr.pwconv1, config, ir)
 	
 	# top Config
@@ -296,7 +296,7 @@ def buildbody(options, system, clstr):
 	clstr.residual.enable_debug_msgs = False
 	
 	# ResidualOut (Stream Variable)
-	addr = 0x10041620
+	addr = 0x1002129b
 	clstr.residualout = StreamBuffer(stream_address = addr, stream_size = 1, buffer_size = 8)
 	clstr.residual.stream = clstr.residualout.stream_in
 	clstr.pwconv0.stream = clstr.residualout.stream_out
@@ -306,7 +306,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0.enable_debug_msgs = False
 	
 	# PWConv0LocalFeatSize (Variable)
-	addr = 0x10041635
+	addr = 0x100212b0
 	spmRange = AddrRange(addr, addr + 0x78)
 	clstr.pwconv0localfeatsize = ScratchpadMemory(range = spmRange)
 	clstr.pwconv0localfeatsize.conf_table_reported = False
@@ -316,7 +316,7 @@ def buildbody(options, system, clstr):
 		clstr.pwconv0.spm = clstr.pwconv0localfeatsize.spm_ports
 	
 	# PWConv0Weights (Variable)
-	addr = 0x100416ad
+	addr = 0x10021328
 	spmRange = AddrRange(addr, addr + 0x15180)
 	clstr.pwconv0weights = ScratchpadMemory(range = spmRange)
 	clstr.pwconv0weights.conf_table_reported = False
@@ -326,7 +326,7 @@ def buildbody(options, system, clstr):
 		clstr.pwconv0.spm = clstr.pwconv0weights.spm_ports
 	
 	# PWConv0QParams (Variable)
-	addr = 0x1005682d
+	addr = 0x100364a8
 	spmRange = AddrRange(addr, addr + 0x10e0)
 	clstr.pwconv0qparams = ScratchpadMemory(range = spmRange)
 	clstr.pwconv0qparams.conf_table_reported = False
@@ -336,7 +336,7 @@ def buildbody(options, system, clstr):
 		clstr.pwconv0.spm = clstr.pwconv0qparams.spm_ports
 	
 	# PWConv0Out (Stream Variable)
-	addr = 0x1005790d
+	addr = 0x10037588
 	clstr.pwconv0out = StreamBuffer(stream_address = addr, stream_size = 1, buffer_size = 8)
 	clstr.pwconv0.stream = clstr.pwconv0out.stream_in
 	clstr.dwconv.stream = clstr.pwconv0out.stream_out
@@ -346,7 +346,7 @@ def buildbody(options, system, clstr):
 	clstr.dwconv.enable_debug_msgs = False
 	
 	# DWConvWindow (Variable)
-	addr = 0x10057926
+	addr = 0x100375a1
 	spmRange = AddrRange(addr, addr + 0x1c20)
 	clstr.dwconvwindow = ScratchpadMemory(range = spmRange)
 	clstr.dwconvwindow.conf_table_reported = False
@@ -356,7 +356,7 @@ def buildbody(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
-	addr = 0x10059546
+	addr = 0x100391c1
 	spmRange = AddrRange(addr, addr + 0x4b0)
 	clstr.dwconvweights = ScratchpadMemory(range = spmRange)
 	clstr.dwconvweights.conf_table_reported = False
@@ -366,7 +366,7 @@ def buildbody(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
-	addr = 0x100599f6
+	addr = 0x10039671
 	spmRange = AddrRange(addr, addr + 0x10e0)
 	clstr.dwconvqparams = ScratchpadMemory(range = spmRange)
 	clstr.dwconvqparams.conf_table_reported = False
@@ -376,7 +376,7 @@ def buildbody(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvqparams.spm_ports
 	
 	# DWConvBuffer (Variable)
-	addr = 0x1005aad6
+	addr = 0x1003a751
 	spmRange = AddrRange(addr, addr + 0x1c200)
 	clstr.dwconvbuffer = ScratchpadMemory(range = spmRange)
 	clstr.dwconvbuffer.conf_table_reported = False
@@ -386,7 +386,7 @@ def buildbody(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvbuffer.spm_ports
 	
 	# DWConvOutBuffer (Variable)
-	addr = 0x10076cd6
+	addr = 0x10056951
 	spmRange = AddrRange(addr, addr + 0x2d0)
 	clstr.dwconvoutbuffer = ScratchpadMemory(range = spmRange)
 	clstr.dwconvoutbuffer.conf_table_reported = False
@@ -396,7 +396,7 @@ def buildbody(options, system, clstr):
 		clstr.dwconv.spm = clstr.dwconvoutbuffer.spm_ports
 	
 	# DWConvOut (Stream Variable)
-	addr = 0x10076fa6
+	addr = 0x10056c21
 	clstr.dwconvout = StreamBuffer(stream_address = addr, stream_size = 1, buffer_size = 8)
 	clstr.dwconv.stream = clstr.dwconvout.stream_in
 	clstr.pwconv1.stream = clstr.dwconvout.stream_out
@@ -407,7 +407,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv1.enable_debug_msgs = False
 	
 	# PWConv1LocalFeatSize (Variable)
-	addr = 0x10076fcd
+	addr = 0x10056c48
 	spmRange = AddrRange(addr, addr + 0x2d0)
 	clstr.pwconv1localfeatsize = ScratchpadMemory(range = spmRange)
 	clstr.pwconv1localfeatsize.conf_table_reported = False
@@ -417,7 +417,7 @@ def buildbody(options, system, clstr):
 		clstr.pwconv1.spm = clstr.pwconv1localfeatsize.spm_ports
 	
 	# PWConv1Weights (Variable)
-	addr = 0x1007729d
+	addr = 0x10056f18
 	spmRange = AddrRange(addr, addr + 0x2a300)
 	clstr.pwconv1weights = ScratchpadMemory(range = spmRange)
 	clstr.pwconv1weights.conf_table_reported = False
@@ -427,7 +427,7 @@ def buildbody(options, system, clstr):
 		clstr.pwconv1.spm = clstr.pwconv1weights.spm_ports
 	
 	# PWConv1QParams (Variable)
-	addr = 0x100a159d
+	addr = 0x10081218
 	spmRange = AddrRange(addr, addr + 0x5a0)
 	clstr.pwconv1qparams = ScratchpadMemory(range = spmRange)
 	clstr.pwconv1qparams.conf_table_reported = False

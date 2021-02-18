@@ -32,26 +32,25 @@ acc_cluster:
       PIOSize: 1
       PIOMaster: LocalBus
       StreamOut: stream_dma0
-      Debug: False
     - Var:
       - Name: NormalConvWindow
         Type: SPM
-        Size: 4704
+        Size: 27
         Ports: 27
     - Var:
       - Name: NormalConvWeights
         Type: SPM
-        Size: 112896
+        Size: 648
         Ports: 1
     - Var:
       - Name: NormalConvQParams
         Type: SPM
-        Size: 216
+        Size: 144
         Ports: 1
     - Var:
       - Name: NormalConvQBuffer
         Type: SPM
-        Size: 4032
+        Size: 576
         Ports: 1
     - Var:
       - Name: NormalConvOut
@@ -70,12 +69,12 @@ acc_cluster:
     - Var:
       - Name: DWConvWindow
         Type: SPM
-        Size: 1176
+        Size: 216
         Ports: 27
     - Var:
       - Name: DWConvWeights
         Type: SPM
-        Size: 1200
+        Size: 240
         Ports: 1
     - Var:
       - Name: DWConvQParams
@@ -85,7 +84,7 @@ acc_cluster:
     - Var:
       - Name: DWConvQBuffer
         Type: SPM
-        Size: 11520
+        Size: 1920
         Ports: 1
     - Var:
       - Name: DWConvOutBuffer
@@ -103,7 +102,7 @@ acc_cluster:
     - Name: PWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/PWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/PWConv.ini
-      Debug: False
+      Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
       StreamIn: stream_dma0

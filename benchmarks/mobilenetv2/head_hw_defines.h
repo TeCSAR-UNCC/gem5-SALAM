@@ -21,21 +21,21 @@
 //Accelerator: NORMALCONV
 #define NORMALCONV 0x1002007e
 #define NormalConvWindow 0x1002007f
-#define NormalConvWeights 0x100212df
-#define NormalConvQParams 0x1003cbdf
-#define NormalConvQBuffer 0x1003ccb7
-#define NormalConvOut 0x1003dc77
+#define NormalConvWeights 0x1002009a
+#define NormalConvQParams 0x10020322
+#define NormalConvQBuffer 0x100203b2
+#define NormalConvOut 0x100205f2
 //Accelerator: DWCONV
-#define DWCONV 0x1003dc78
-#define DWConvWindow 0x1003dc79
-#define DWConvWeights 0x1003e111
-#define DWConvQParams 0x1003e5c1
-#define DWConvQBuffer 0x1003e651
-#define DWConvOutBuffer 0x10041351
-#define DWConvOut 0x10041369
+#define DWCONV 0x100205f3
+#define DWConvWindow 0x100205f4
+#define DWConvWeights 0x100206cc
+#define DWConvQParams 0x100207bc
+#define DWConvQBuffer 0x1002084c
+#define DWConvOutBuffer 0x10020fcc
+#define DWConvOut 0x10020fe4
 //Accelerator: PWCONV
-#define PWCONV 0x1004136a
-#define PWConvLocalFeatSize 0x1004136b
-#define PWConvWeights 0x10041383
-#define PWConvQParams 0x10041503
+#define PWCONV 0x10020fe5
+#define PWConvLocalFeatSize 0x10020fe6
+#define PWConvWeights 0x10020ffe
+#define PWConvQParams 0x1002117e
 //END GENERATED CODE
