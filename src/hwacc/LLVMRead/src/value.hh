@@ -62,6 +62,11 @@ class Value
         void value_dump() { if (dbg) value_dbg->dumper(); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
         virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
+
+        void setRegisterValue(const llvm::APInt &data);
+        void setRegisterValue(const llvm::APFloat &data);
+        void setRegisterValue(const uint64_t data);
+        void setRegisterValue(uint8_t * data);
 };
 } // End SALAM Namespace
 

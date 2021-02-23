@@ -89,3 +89,73 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
 	assert(irtype->isPointerTy());
 	reg = new PointerRegister(val, istracked, isnull);
 }
+
+void
+SALAM::Value::setRegisterValue(const llvm::APInt &data) {
+	if (reg->isInt()) {
+		llvm::APInt * regData = reg->getIntData();
+		*regData = data;
+	} else {
+		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place integer data in non-integer register.\n");
+	}
+}
+void
+SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
+	if (reg->isFP()) {
+		llvm::APFloat * regData = reg->getFloatData();
+		*regData = data;
+	} else {
+		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place float data in non-float register.\n");
+	}
+}
+void
+SALAM::Value::setRegisterValue(const uint64_t data) {
+	if (reg->isPtr()) {
+		uint64_t * regData = reg->getPtrData();
+		*regData = data;
+	} else {
+		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place Ptr data in non-Ptr register.\n");
+	}
+}
+void
+SALAM::Value::setRegisterValue(uint8_t * data) {
+	switch (irtype->getTypeID()) {
+        case llvm::Type::FloatTyID:
+        {
+            float tmpData;
+            std::memcpy(&tmpData, data, sizeof(float));
+            llvm::APFloat * regData = reg->getFloatData();
+            *regData = llvm::APFloat(tmpData);
+            break;
+        }
+        case llvm::Type::DoubleTyID:
+        {
+            double tmpData;
+            std::memcpy(&tmpData, data, sizeof(double));
+            llvm::APFloat * regData = reg->getFloatData();
+            *regData = llvm::APFloat(tmpData);
+            break;
+        }
+        case llvm::Type::IntegerTyID:
+        {
+            llvm::APInt * regData = reg->getIntData();
+            if (size > 64) {
+                size_t bigIntLen = ((size - 1) / 64) + 1;
+                *regData = llvm::APInt(size, llvm::ArrayRef<uint64_t>((uint64_t *)data, bigIntLen));
+            } else {
+                *regData = llvm::APInt(size, *(uint64_t *)(data));
+            }
+            break;
+        }
+        case llvm::Type::PointerTyID:
+        {
+            std::memcpy(reg->getPtrData(), data, 8);
+            break;
+        }
+        default:
+        {
+            DPRINTF(Runtime, "Unsupported type for register operation\n");
+            assert(0);
+        }
+    }
+}
