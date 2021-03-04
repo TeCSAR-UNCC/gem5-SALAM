@@ -52,10 +52,11 @@ std::list<ActiveFunction> activeFunctions
             - remove from queue
         - else
             - link dependencies
-JS                - findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>, std::shared_ptr<SALAM::Instruction>)
+JS              - findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>, std::shared_ptr<SALAM::Instruction>)
                 - only parse queue once for each instruction until all dependencies are found
                 - include self in dependency list
                     - Register dynamicUser/dynamicDependencies std::deque<std::shared_ptr<SALAM::Instructon> >
+
 
 
 // ===== Runtime Queue Level - tick()
@@ -100,7 +101,7 @@ JS       - bool ready() // checks dependencies, return true if satisfied
             // Do nothing
 
         - bool launch()
-            - Sams Special Cases
+            - Sam - Special Cases
                 - // Call Instructions
                     
                 - // Load 
@@ -112,7 +113,7 @@ JS       - bool ready() // checks dependencies, return true if satisfied
 
                 - // Return Instruction
 
-            - // Anything Else
+            - JS - // Anything Else
             - Performs computation
             //Internally calls commit
             - return commit();
@@ -149,28 +150,56 @@ LLVMInterface::tick() {
     }
 }
 
+
+/*********************************************************************************************
+- findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>, std::shared_ptr<SALAM::Instruction>)
+- only parse queue once for each instruction until all dependencies are found
+- include self in dependency list
+- Register dynamicUser/dynamicDependencies std::deque<std::shared_ptr<SALAM::Instructon> >
+*********************************************************************************************/
 void // Add third argument, previous BB
-findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst) {
+findDynamicDeps(std::list<std::shared_ptr<SALAM::Instruction>> queue, std::shared_ptr<SALAM::Instruction> inst, std::shared_ptr<SALAM::BasicBlock> prevBB) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // The list of UIDs for any dependencies we want to find
     std::vector<uint64_t> dep_uids;
+    std::map<uint64_t , std::shared_ptr<SALAM::Value>> dependencies;
     // An instruction is a runtime dependency for itself since multiple
     // instances of the same instruction shouldn't execute simultaneously
     dep_uids.push_back(inst->getUID());
+    dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(inst->getUID(), std::dynamic_pointer_cast<SALAM::Value>(inst)));
     // Fetch the UIDs of static operands
-    // if (instruction == phi)
+    if (inst->isPhi()) {
         // Add special case for phi, pass previous BB
         // Phi's only dependency should be itself
-    // else
-        for (auto dep : inst->getStaticOperands()) {
-            dep_uids.push_back(dep->getUID());
+        inst->addRuntimeDependency(inst);
+        // inst->setPrev(prevBB);
+    } else {
+        for (auto static_dep : inst->getStaticDependencies()) {
+            dep_uids.push_back(static_dep->getUID());
+            dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(static_dep->getUID(), static_dep));
         }
-    // Find dependencies currently in queues
-        // Add as runtime dependencies
-
-    // Fetch results from any unfound dependencies
-        // Static / Immediate / Anything Executed
-
+        // Find dependencies currently in queues
+        for (auto queued_inst : queue) {
+            // Look at each instruction in runtime queue once
+            for (auto dep : dep_uids) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == dep) {
+                    // If dependency found, create two way link 
+                    inst->addRuntimeDependency(queued_inst); 
+                    queued_inst->addRuntimeUser(inst);
+                    // Remove UID if dependency exists
+                    dependencies.erase(dep);
+                }
+            }
+        }
+        
+        // Fetch values for resolved dependencies, static elements, and immediate values
+        if (!dependencies.empty()) {
+            for (auto resolved : dependencies) {
+                // check operands list, store value
+            }
+        }
+    }
 }
 
 void

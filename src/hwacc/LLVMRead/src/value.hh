@@ -45,7 +45,7 @@ class Value
             public:
                 Value_Debugger();
                 ~Value_Debugger() = default;
-                virtual void dumper();
+                virtual void dumper(SALAM::Value * value);
         }; 
 
         Value_Debugger* value_dbg;
@@ -59,7 +59,7 @@ class Value
         uint64_t getUID() { return uid; }
         Register *getReg() { return reg; }
         llvm::Type *getType() { return irtype; }
-        void value_dump() { if (dbg) value_dbg->dumper(); }
+        void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
         virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
 

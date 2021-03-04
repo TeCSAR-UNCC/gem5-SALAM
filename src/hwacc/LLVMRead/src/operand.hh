@@ -17,29 +17,15 @@
 namespace SALAM
 {
 
+template <typename T>
 struct Operands { // Type (ReturnType) 
     llvm::Type *type; // For typing everything
     SALAM::Value *base; // For getting temp value
     // Type ReturnType
-    uint64_t UID; // For convience
+    uint64_t UID; 
+    T stored_value;
     bool set; 
-    //Operands(): type(nullptr),
-    //            reg(nullptr),
-    //            set(false) { }
-
-    //  Type value = getRegValue();
-
 };
-
-/*
-
-Base Operands Class
-
-Inherited Operands Classes for Raw Values
-
-*/
-
-
 
 class Constant: public Value {
     private:

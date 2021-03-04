@@ -30,7 +30,7 @@ class Register
             public:
                 Register_Debugger();
                 ~Register_Debugger() = default;
-                virtual void dumper();
+                virtual void dumper(SALAM::Register *reg);
         }; 
 
         Register_Debugger* reg_dbg;
@@ -49,7 +49,7 @@ class Register
         bool isNull() { return isNULL; }
         void setNull(bool flag) { isNULL = flag; }
         void setTracked(bool flag) { tracked = flag; }
-        void dump() { if (dbg) reg_dbg->dumper(); }
+        void dump() { if (dbg) reg_dbg->dumper(this); }
 };
 
 class APFloatRegister : public Register

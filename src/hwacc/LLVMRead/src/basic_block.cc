@@ -24,7 +24,7 @@ SALAM::BasicBlock::BasicBlock_Debugger::BasicBlock_Debugger()
 }
 
 void
-SALAM::BasicBlock::BasicBlock_Debugger::dumper()
+SALAM::BasicBlock::BasicBlock_Debugger::dumper(SALAM::BasicBlock *bb)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);

@@ -26,7 +26,7 @@ SALAM::Register::Register_Debugger::Register_Debugger()
 }
 
 void
-SALAM::Register::Register_Debugger::dumper()
+SALAM::Register::Register_Debugger::dumper(SALAM::Register *reg)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s\n", __PRETTY_FUNCTION__);

@@ -20,6 +20,9 @@
 #include <llvm-c/Core.h>
 //------------------------------------------//
 #include <list>
+#include <map>
+#include <typeinfo>
+#include <type_traits>
 #include <queue>
 #include <deque>
 #include <iostream>
@@ -108,7 +111,9 @@ class LLVMInterface : public ComputeUnit {
     // SALAM::BasicBlock *prevBB;
     TypeList *typeList;
   protected:
-    void findDynamicDeps(std::vector<SALAM::Instruction *> * resv, SALAM::Instruction * inst);
+    void findDynamicDeps(std::list<std::shared_ptr<SALAM::Instruction>> queue,
+						 std::shared_ptr<SALAM::Instruction> inst,
+						 std::shared_ptr<SALAM::BasicBlock> = nullptr);
     const std::string name() const { return comm->getName() + ".compute"; }
     //virtual bool debug() { return comm->debug(); }
     virtual bool debug() { return true; }

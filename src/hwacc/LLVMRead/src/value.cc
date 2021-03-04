@@ -24,13 +24,14 @@ SALAM::Value::Value_Debugger::Value_Debugger()
 }
 
 void
-SALAM::Value::Value_Debugger::dumper()
+SALAM::Value::Value_Debugger::dumper(SALAM::Value *value)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
         DPRINTF(SALAM_Debug, "%s \n", 
             "************** Value Dump **************"
         );
+		//if(value->getReg()) value->getReg()->dump();
     }
 }
 
