@@ -57,6 +57,7 @@ class Instruction : public Value
                         SALAM::valueListTy * valueList); //
         uint64_t getDependencyCount() { return dynamicDependencies.size(); }
         uint64_t getCycleCount() { return cycleCount; }
+        uint64_t getOpode() { return llvmOpCode; }
         virtual uint64_t getCurrentCycle() { return cycleCount; }
         valueListTy getStaticDependencies() const { return staticDependencies; }
         std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }

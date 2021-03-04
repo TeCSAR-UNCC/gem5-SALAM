@@ -78,42 +78,34 @@ class LLVMInterface : public ComputeUnit {
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
 
-    typedef struct ActiveFunction {
+    class ActiveFunction {
+    private:
         std::shared_ptr<SALAM::Function> func;
         std::shared_ptr<SALAM::Instruction> caller;
-        
-        // Note: Would something like: 
-        // std::list<std::list<std::shared_ptr<SALAM::Instruction> > > queues;
-        // Be useful here? Could push the queues all onto the queues list,
-        // Then pass that list as the argument to ActiveFunction,
-        // now that all the queues are internal. 
-        
         std::list<std::shared_ptr<SALAM::Instruction>> reservation;
-        std::list<std::shared_ptr<SALAM::Instruction>> readQueue;
-        std::list<std::shared_ptr<SALAM::Instruction>> writeQueue;
+        std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> readQueue;
+        std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> writeQueue;
         std::list<std::shared_ptr<SALAM::Instruction>> computeQueue;
-
         std::shared_ptr<SALAM::BasicBlock> previousBB;
+    public:
         ActiveFunction(std::shared_ptr<SALAM::Function> _func,
                        std::shared_ptr<SALAM::Instruction> _caller,
                        std::list<std::shared_ptr<SALAM::Instruction>> _reservation):
                        func(_func), caller(_caller), reservation(_reservation) {}
-    } ActiveFunction;
+        void readCommit(MemoryRequest *req);
+        void writeCommit(MemoryRequest *req);
+        void findDynamicDeps(std::shared_ptr<SALAM::Instruction> inst);
+        void scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb);
+    };
 
     std::list<ActiveFunction> activeFunctions;
-    std::list<std::shared_ptr<SALAM::Instruction> > globalReadQueue;
-    std::list<std::shared_ptr<SALAM::Instruction> > globalWriteQueue;
+    std::map<MemoryRequest *, ActiveFunction *> globalReadQueue;
+    std::map<MemoryRequest *, ActiveFunction *> globalWriteQueue;
 
-    // std::list<SALAM::BasicBlock*> *bbList;
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
-    // SALAM::BasicBlock *currBB;
-    // SALAM::BasicBlock *prevBB;
     TypeList *typeList;
   protected:
-    void findDynamicDeps(std::list<std::shared_ptr<SALAM::Instruction>> queue,
-						 std::shared_ptr<SALAM::Instruction> inst,
-						 std::shared_ptr<SALAM::BasicBlock> = nullptr);
     const std::string name() const { return comm->getName() + ".compute"; }
     //virtual bool debug() { return comm->debug(); }
     virtual bool debug() { return true; }
@@ -121,13 +113,10 @@ class LLVMInterface : public ComputeUnit {
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();
     void constructStaticGraph();
-    // SALAM::BasicBlock* findBB(std::string bbname);
-    // SALAM::BasicBlock* findEntryBB();
     void startup();
     void initialize();
     void finalize();
     void debug(uint64_t flags);
-    // void scheduleBB(SALAM::BasicBlock *bb);
     void readCommit(MemoryRequest *req);
     void writeCommit(MemoryRequest *req);
     void dumpModule(llvm::Module *m);

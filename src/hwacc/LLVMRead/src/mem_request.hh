@@ -31,8 +31,14 @@ class MemoryRequest {
   public:
     MemoryRequest(Addr add, size_t len);
     MemoryRequest(Addr add, uint8_t *data, size_t len);
+    ~MemoryRequest() {
+        delete readsDone;
+        delete buffer;
+        if (pkt) delete pkt;
+    }
     void setCarrierPort(MasterPort * _port) { port = _port; }
     MasterPort * getCarrierPort() { return port; }
+    uint8_t * getBuffer() { return buffer; }
 };
 
 #endif //__MEM_REQUEST_HH__

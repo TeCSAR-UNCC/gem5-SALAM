@@ -56,9 +56,28 @@ JS              - findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>
                 - only parse queue once for each instruction until all dependencies are found
                 - include self in dependency list
                     - Register dynamicUser/dynamicDependencies std::deque<std::shared_ptr<SALAM::Instructon> >
-
-
-
+*/
+void
+LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb) {
+    auto instruction_list = *(bb->Instructions());
+    for (auto inst : instruction_list) {
+        std::shared_ptr<SALAM::Instruction> clone_inst = inst->clone();
+        auto branch = std::dynamic_pointer_cast<SALAM::Br>(clone_inst);
+        if (branch && !(branch->isConditional())) {
+            previousBB = bb;
+            scheduleBB(branch->getTarget());
+        } else {
+            if (clone_inst->isPhi()) {
+                auto phi = std::dynamic_pointer_cast<SALAM::Phi>(clone_inst);
+                if (phi) phi->setPrevBB(previousBB);
+            }
+            findDynamicDeps(clone_inst);
+            reservation.push_back(clone_inst);
+        }
+    }
+    previousBB = bb;
+}
+/*
 // ===== Runtime Queue Level - tick()
 
         During Runtime
@@ -158,8 +177,9 @@ LLVMInterface::tick() {
 - Register dynamicUser/dynamicDependencies std::deque<std::shared_ptr<SALAM::Instructon> >
 *********************************************************************************************/
 void // Add third argument, previous BB
-findDynamicDeps(std::list<std::shared_ptr<SALAM::Instruction>> queue, std::shared_ptr<SALAM::Instruction> inst, std::shared_ptr<SALAM::BasicBlock> prevBB) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instruction> inst) {
+
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // The list of UIDs for any dependencies we want to find
     std::vector<uint64_t> dep_uids;
     std::map<uint64_t , std::shared_ptr<SALAM::Value>> dependencies;
@@ -179,20 +199,69 @@ findDynamicDeps(std::list<std::shared_ptr<SALAM::Instruction>> queue, std::share
             dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(static_dep->getUID(), static_dep));
         }
         // Find dependencies currently in queues
-        for (auto queued_inst : queue) {
+
+        // Reverse search the reservation queue because we want to link only the last instance of each dep
+        for (auto it = reservation.rbegin(); it != reservation.rend(); ++it) {
+            auto queued_inst = *it;
             // Look at each instruction in runtime queue once
             for (auto dep : dep_uids) {
                 // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
                 if (queued_inst->getUID() == dep) {
-                    // If dependency found, create two way link 
-                    inst->addRuntimeDependency(queued_inst); 
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
                     queued_inst->addRuntimeUser(inst);
                     // Remove UID if dependency exists
                     dependencies.erase(dep);
                 }
             }
         }
-        
+
+        // The other queues do not need to be reverse-searched since only 1 instance of any instruction can exist in them
+        // Check the compute queue
+        for (auto queued_inst : computeQueue) {
+            // Look at each instruction in runtime queue once
+            for (auto dep : dep_uids) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == dep) {
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
+                    queued_inst->addRuntimeUser(inst);
+                    // Remove UID if dependency exists
+                    dependencies.erase(dep);
+                }
+            }
+        }
+        // Check the memory read queue
+        for (auto queued_read : readQueue) {
+            auto queued_inst = queued_read.second;
+            // Look at each instruction in runtime queue once
+            for (auto dep : dep_uids) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == dep) {
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
+                    queued_inst->addRuntimeUser(inst);
+                    // Remove UID if dependency exists
+                    dependencies.erase(dep);
+                }
+            }
+        }
+        // Check the memory write queue
+        for (auto queued_write : writeQueue) {
+            auto queued_inst = queued_write.second;
+            // Look at each instruction in runtime queue once
+            for (auto dep : dep_uids) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == dep) {
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
+                    queued_inst->addRuntimeUser(inst);
+                    // Remove UID if dependency exists
+                    dependencies.erase(dep);
+                }
+            }
+        }
+
         // Fetch values for resolved dependencies, static elements, and immediate values
         if (!dependencies.empty()) {
             for (auto resolved : dependencies) {
@@ -327,13 +396,31 @@ LLVMInterface::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Read Request
 *********************************************************************************************/
-    // for (auto i = 0; i < readQueue.size(); i++ ) {
-    //     if(readQueue.at(i)->getReq() == req) {
-    //         readQueue.at(i)->setResult(req->buffer);
-    //         readQueue.at(i)->commit();
-    //         readQueue.erase(readQueue.begin() + i);
-    //     }
-    // }
+    auto it = globalReadQueue.find(req);
+    if (it != globalReadQueue.end()) {
+        it->second->readCommit(req);
+        delete it->first;
+        globalReadQueue.erase(it);
+    } else {
+        panic("Could not find memory request in global read queue!");
+    }
+}
+
+void
+LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
+/*********************************************************************************************
+ Commit Memory Read Request
+*********************************************************************************************/
+    auto it = readQueue.find(req);
+    if (it != readQueue.end()) {
+        auto load_inst = it->second;
+        uint8_t * readBuff = req->getBuffer();
+        load_inst->setRegisterValue(readBuff);
+        load_inst->commit();
+        readQueue.erase(it);
+    } else {
+        panic("Could not find memory request in read queue for function %u!", func->getUID());
+    }
 }
 
 void
@@ -341,12 +428,28 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Write Request
 *********************************************************************************************/
-   // for (auto i = 0; i < writeQueue.size(); i++ ) {
-   //      if(writeQueue.at(i)->getReq() == req) {
-   //          writeQueue.at(i)->commit();
-   //          writeQueue.erase(writeQueue.begin() + i);
-   //      }
-   //  }
+    auto it = globalWriteQueue.find(req);
+    if (it != globalWriteQueue.end()) {
+        it->second->writeCommit(req);
+        delete it->first;
+        globalWriteQueue.erase(it);
+    } else {
+        panic("Could not find memory request in global write queue!");
+    }
+}
+
+void
+LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
+/*********************************************************************************************
+ Commit Memory Write Request
+*********************************************************************************************/
+    auto it = writeQueue.find(req);
+    if (it != writeQueue.end()) {
+        it->second->commit();
+        writeQueue.erase(it);
+    } else {
+        panic("Could not find memory request in write queue for function %u!", func->getUID());
+    }
 }
 
 void
