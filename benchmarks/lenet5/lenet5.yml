@@ -25,19 +25,19 @@ acc_cluster:
       PIOMaster: LocalBus
       Debug: False
     - Var:
-      - Name: Conv0Window
+      - Name: Conv0Input
         Type: SPM
-        Size: 8192
+        Size: 1024
         Ports: 1
     - Var:
       - Name: Conv0Weights
         Type: SPM
-        Size: 1200
+        Size: 150
         Ports: 1
     - Var:
       - Name: Conv0Output
         Type: SPM
-        Size: 37632
+        Size: 4704
         Ports: 1
   - Accelerator:
     - Name: pool0
@@ -47,19 +47,14 @@ acc_cluster:
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: pool0Window
+      - Name: pool0Input
         Type: SPM
-        Size: 37632
-        Ports: 1
-    - Var:
-      - Name: pool0Weights
-        Type: SPM
-        Size: 192
+        Size: 4704
         Ports: 1
     - Var:
       - Name: pool0Output
         Type: SPM
-        Size: 9408
+        Size: 1176
         Ports: 1
   - Accelerator:
     - Name: conv1
@@ -70,19 +65,19 @@ acc_cluster:
       PIOMaster: LocalBus
       Debug: False
     - Var:
-      - Name: Conv1Window
+      - Name: Conv1Input
         Type: SPM
-        Size: 9408
+        Size: 1176
         Ports: 1
     - Var:
       - Name: Conv1Weights
         Type: SPM
-        Size: 3200
+        Size: 400
         Ports: 1
     - Var:
       - Name: Conv1Output
         Type: SPM
-        Size: 12800
+        Size: 1600
         Ports: 1
   - Accelerator:
     - Name: pool1
@@ -92,40 +87,12 @@ acc_cluster:
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: pool1Window
+      - Name: pool1Input
         Type: SPM
-        Size: 12800
-        Ports: 1
-    - Var:
-      - Name: pool1Weights
-        Type: SPM
-        Size: 512
+        Size: 1600
         Ports: 1
     - Var:
       - Name: pool1Output
         Type: SPM
-        Size: 3200
-        Ports: 1
-  - Accelerator:
-    - Name: conv2
-      IrPath: benchmarks/lenet5/hw/conv2.ll
-      ConfigPath: benchmarks/lenet5/hw/conv2.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-      Debug: False
-    - Var:
-      - Name: Conv2Window
-        Type: SPM
-        Size: 3200
-        Ports: 1
-    - Var:
-      - Name: Conv2Weights
-        Type: SPM
-        Size: 24000
-        Ports: 1
-    - Var:
-      - Name: Conv2Output
-        Type: SPM
-        Size: 960
+        Size: 400
         Ports: 1

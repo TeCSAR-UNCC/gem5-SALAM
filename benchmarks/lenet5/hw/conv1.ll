@@ -7,156 +7,201 @@ define void @conv1() #0 {
 entry:
   br label %for.cond1.preheader
 
-for.cond1.preheader:                              ; preds = %for.inc52, %entry
-  %k.011 = phi i32 [ 0, %entry ], [ %inc53, %for.inc52 ]
+for.cond1.preheader:                              ; preds = %for.inc63, %entry
+  %indvars.iv36 = phi i64 [ 0, %entry ], [ %indvars.iv.next37, %for.inc63 ]
+  %0 = mul nuw nsw i64 %indvars.iv36, 25
+  %1 = add nuw nsw i64 %0, 12
+  %2 = mul nuw nsw i64 %indvars.iv36, 100
+  %3 = add nsw i64 %2, -22
+  %4 = add nsw i64 %0, 10
+  %5 = add nsw i64 %0, 11
+  %6 = add nsw i64 %0, 13
+  %7 = add nsw i64 %0, 17
+  %arrayidx36.3.2 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %7
+  %arrayidx36.2.2 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %1
+  %8 = add nsw i64 %0, 7
+  %arrayidx36.1.2 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %8
+  %9 = add nsw i64 %0, 2
+  %arrayidx36.251 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %9
+  %10 = add nsw i64 %0, 16
+  %arrayidx36.3.1 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %10
+  %arrayidx36.2.1 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %5
+  %11 = add nsw i64 %0, 6
+  %arrayidx36.1.1 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %11
+  %12 = add nsw i64 %0, 1
+  %arrayidx36.145 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %12
+  %13 = add nsw i64 %0, 15
+  %arrayidx36.3 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %13
+  %arrayidx36.2 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %4
+  %14 = add nsw i64 %0, 5
+  %arrayidx36.1 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %14
+  %arrayidx36 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %0
+  %15 = add nsw i64 %0, 3
+  %arrayidx36.357 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %15
+  %16 = add nsw i64 %0, 8
+  %arrayidx36.1.3 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %16
+  %arrayidx36.2.3 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %6
+  %17 = add nsw i64 %0, 18
+  %arrayidx36.3.3 = getelementptr inbounds i8, i8* inttoptr (i64 268579495 to i8*), i64 %17
   br label %for.cond4.preheader
 
-for.cond4.preheader:                              ; preds = %for.inc49, %for.cond1.preheader
-  %indvars.iv29 = phi i64 [ 1, %for.cond1.preheader ], [ %indvars.iv.next30, %for.inc49 ]
-  %0 = add nsw i64 %indvars.iv29, -2
-  %1 = shl i64 %indvars.iv29, 5
+for.cond4.preheader:                              ; preds = %for.inc60, %for.cond1.preheader
+  %indvars.iv32 = phi i64 [ 0, %for.cond1.preheader ], [ %indvars.iv.next33, %for.inc60 ]
+  %18 = mul nuw nsw i64 %indvars.iv32, 196
   br label %for.cond7.preheader
 
-for.cond7.preheader:                              ; preds = %for.end41, %for.cond4.preheader
-  %indvars.iv24 = phi i64 [ 1, %for.cond4.preheader ], [ %indvars.iv.next25, %for.end41 ]
-  %2 = add nsw i64 %indvars.iv24, -2
-  %3 = add nsw i64 %indvars.iv24, -1
-  %4 = add nsw i64 %indvars.iv24, 1
-  %5 = add nsw i64 %indvars.iv24, 2
-  br label %for.cond10.preheader
+for.cond7.preheader:                              ; preds = %for.inc57, %for.cond4.preheader
+  %indvars.iv27 = phi i64 [ 0, %for.cond4.preheader ], [ %indvars.iv.next28, %for.inc57 ]
+  %cmp12 = icmp slt i64 %indvars.iv27, 2
+  %19 = add nuw nsw i64 %indvars.iv27, 2
+  %cmp17 = icmp sgt i64 %19, 13
+  %20 = mul nuw nsw i64 %indvars.iv27, 10
+  %21 = add nsw i64 %3, %20
+  %22 = mul i64 %indvars.iv27, 14
+  %23 = add i64 %22, -28
+  %24 = mul i64 %indvars.iv27, 14
+  %25 = add i64 %24, -14
+  %26 = mul nsw i64 %indvars.iv27, 14
+  %27 = mul i64 %indvars.iv27, 14
+  %28 = add i64 %27, 14
+  br label %for.body9
 
-for.cond10.preheader:                             ; preds = %for.inc39, %for.cond7.preheader
-  %sum.08 = phi i8 [ 0, %for.cond7.preheader ], [ %sum.3.4.lcssa, %for.inc39 ]
-  %c.07 = phi i32 [ 0, %for.cond7.preheader ], [ %inc40, %for.inc39 ]
-  br label %for.body15
+for.body9:                                        ; preds = %for.inc54, %for.cond7.preheader
+  %indvars.iv21 = phi i64 [ 0, %for.cond7.preheader ], [ %indvars.iv.next22, %for.inc54 ]
+  %cmp10 = icmp slt i64 %indvars.iv21, 2
+  %or.cond = or i1 %cmp12, %cmp10
+  %29 = add nuw nsw i64 %indvars.iv21, 2
+  %cmp14 = icmp sgt i64 %29, 13
+  %or.cond1 = or i1 %or.cond, %cmp14
+  %or.cond2 = or i1 %cmp17, %or.cond1
+  br i1 %or.cond2, label %for.inc54, label %for.inc.3
 
-for.body15:                                       ; preds = %for.cond10.preheader, %for.inc.4
-  %indvars.iv15 = phi i64 [ 0, %for.cond10.preheader ], [ %indvars.iv.next16, %for.inc.4 ]
-  %sum.16 = phi i8 [ %sum.08, %for.cond10.preheader ], [ %sum.3.4, %for.inc.4 ]
-  %6 = sub nuw nsw i64 4, %indvars.iv15
-  %7 = add nsw i64 %0, %indvars.iv15
-  %8 = shl i64 %7, 5
-  %9 = mul nuw nsw i64 %6, 5
-  %10 = or i64 %2, %7
-  %11 = trunc i64 %10 to i32
-  %12 = icmp ult i32 %11, 32
-  br i1 %12, label %if.then, label %for.inc
+for.inc54:                                        ; preds = %for.body9, %for.inc.3
+  %indvars.iv.next22 = add nuw nsw i64 %indvars.iv21, 1
+  %exitcond26 = icmp eq i64 %indvars.iv.next22, 14
+  br i1 %exitcond26, label %for.inc57, label %for.body9
 
-if.then:                                          ; preds = %for.body15
-  %13 = add nuw nsw i64 %9, 4
-  %14 = add nsw i64 %2, %8
-  %arrayidx = getelementptr inbounds i8, i8* inttoptr (i64 268660817 to i8*), i64 %14
-  %15 = load i8, i8* %arrayidx, align 1
-  %arrayidx30 = getelementptr inbounds i8, i8* inttoptr (i64 268670225 to i8*), i64 %13
-  %16 = load i8, i8* %arrayidx30, align 1
-  %mul32 = mul i8 %16, %15
-  %add34 = add i8 %mul32, %sum.16
-  br label %for.inc
+for.inc57:                                        ; preds = %for.inc54
+  %indvars.iv.next28 = add nuw nsw i64 %indvars.iv27, 1
+  %exitcond31 = icmp eq i64 %indvars.iv.next28, 14
+  br i1 %exitcond31, label %for.inc60, label %for.cond7.preheader
 
-for.inc:                                          ; preds = %for.body15, %if.then
-  %sum.3 = phi i8 [ %add34, %if.then ], [ %sum.16, %for.body15 ]
-  %17 = or i64 %3, %7
-  %18 = trunc i64 %17 to i32
-  %19 = icmp ult i32 %18, 32
-  br i1 %19, label %if.then.1, label %for.inc.1
+for.inc60:                                        ; preds = %for.inc57
+  %indvars.iv.next33 = add nuw nsw i64 %indvars.iv32, 1
+  %exitcond35 = icmp eq i64 %indvars.iv.next33, 6
+  br i1 %exitcond35, label %for.inc63, label %for.cond4.preheader
 
-for.inc39:                                        ; preds = %for.inc.4
-  %sum.3.4.lcssa = phi i8 [ %sum.3.4, %for.inc.4 ]
-  %inc40 = add nuw nsw i32 %c.07, 1
-  %exitcond23 = icmp eq i32 %inc40, 16
-  br i1 %exitcond23, label %for.end41, label %for.cond10.preheader
+for.inc63:                                        ; preds = %for.inc60
+  %indvars.iv.next37 = add nuw nsw i64 %indvars.iv36, 1
+  %exitcond42 = icmp eq i64 %indvars.iv.next37, 16
+  br i1 %exitcond42, label %for.end65, label %for.cond1.preheader
 
-for.end41:                                        ; preds = %for.inc39
-  %sum.3.4.lcssa.lcssa = phi i8 [ %sum.3.4.lcssa, %for.inc39 ]
-  %20 = add nuw nsw i64 %indvars.iv24, %1
-  %arrayidx45 = getelementptr inbounds i8, i8* inttoptr (i64 268673425 to i8*), i64 %20
-  store i8 %sum.3.4.lcssa.lcssa, i8* %arrayidx45, align 1
-  %indvars.iv.next25 = add nuw nsw i64 %indvars.iv24, 1
-  %exitcond28 = icmp eq i64 %indvars.iv.next25, 31
-  br i1 %exitcond28, label %for.inc49, label %for.cond7.preheader
-
-for.inc49:                                        ; preds = %for.end41
-  %indvars.iv.next30 = add nuw nsw i64 %indvars.iv29, 1
-  %exitcond33 = icmp eq i64 %indvars.iv.next30, 31
-  br i1 %exitcond33, label %for.inc52, label %for.cond4.preheader
-
-for.inc52:                                        ; preds = %for.inc49
-  %inc53 = add nuw nsw i32 %k.011, 1
-  %exitcond34 = icmp eq i32 %inc53, 6
-  br i1 %exitcond34, label %for.end54, label %for.cond1.preheader
-
-for.end54:                                        ; preds = %for.inc52
+for.end65:                                        ; preds = %for.inc63
   ret void
 
-if.then.1:                                        ; preds = %for.inc
-  %21 = add nsw i64 %3, %8
-  %arrayidx.1 = getelementptr inbounds i8, i8* inttoptr (i64 268660817 to i8*), i64 %21
-  %22 = load i8, i8* %arrayidx.1, align 1
-  %23 = add nsw i64 %9, 3
-  %arrayidx30.1 = getelementptr inbounds i8, i8* inttoptr (i64 268670225 to i8*), i64 %23
-  %24 = load i8, i8* %arrayidx30.1, align 1
-  %mul32.1 = mul i8 %24, %22
-  %add34.1 = add i8 %mul32.1, %sum.3
-  br label %for.inc.1
-
-for.inc.1:                                        ; preds = %if.then.1, %for.inc
-  %sum.3.1 = phi i8 [ %add34.1, %if.then.1 ], [ %sum.3, %for.inc ]
-  %25 = or i64 %indvars.iv24, %7
-  %26 = trunc i64 %25 to i32
-  %27 = icmp ult i32 %26, 32
-  br i1 %27, label %if.then.2, label %for.inc.2
-
-if.then.2:                                        ; preds = %for.inc.1
-  %28 = add nsw i64 %indvars.iv24, %8
-  %arrayidx.2 = getelementptr inbounds i8, i8* inttoptr (i64 268660817 to i8*), i64 %28
-  %29 = load i8, i8* %arrayidx.2, align 1
-  %30 = add nsw i64 %9, 2
-  %arrayidx30.2 = getelementptr inbounds i8, i8* inttoptr (i64 268670225 to i8*), i64 %30
-  %31 = load i8, i8* %arrayidx30.2, align 1
-  %mul32.2 = mul i8 %31, %29
-  %add34.2 = add i8 %mul32.2, %sum.3.1
-  br label %for.inc.2
-
-for.inc.2:                                        ; preds = %if.then.2, %for.inc.1
-  %sum.3.2 = phi i8 [ %add34.2, %if.then.2 ], [ %sum.3.1, %for.inc.1 ]
-  %32 = or i64 %4, %7
-  %33 = trunc i64 %32 to i32
-  %34 = icmp ult i32 %33, 32
-  br i1 %34, label %if.then.3, label %for.inc.3
-
-if.then.3:                                        ; preds = %for.inc.2
-  %35 = add nsw i64 %4, %8
-  %arrayidx.3 = getelementptr inbounds i8, i8* inttoptr (i64 268660817 to i8*), i64 %35
-  %36 = load i8, i8* %arrayidx.3, align 1
-  %37 = add nsw i64 %9, 1
-  %arrayidx30.3 = getelementptr inbounds i8, i8* inttoptr (i64 268670225 to i8*), i64 %37
-  %38 = load i8, i8* %arrayidx30.3, align 1
-  %mul32.3 = mul i8 %38, %36
-  %add34.3 = add i8 %mul32.3, %sum.3.2
-  br label %for.inc.3
-
-for.inc.3:                                        ; preds = %if.then.3, %for.inc.2
-  %sum.3.3 = phi i8 [ %add34.3, %if.then.3 ], [ %sum.3.2, %for.inc.2 ]
-  %39 = or i64 %5, %7
-  %40 = trunc i64 %39 to i32
-  %41 = icmp ult i32 %40, 32
-  br i1 %41, label %if.then.4, label %for.inc.4
-
-if.then.4:                                        ; preds = %for.inc.3
-  %42 = add nsw i64 %5, %8
-  %arrayidx.4 = getelementptr inbounds i8, i8* inttoptr (i64 268660817 to i8*), i64 %42
-  %43 = load i8, i8* %arrayidx.4, align 1
-  %arrayidx30.4 = getelementptr inbounds i8, i8* inttoptr (i64 268670225 to i8*), i64 %9
-  %44 = load i8, i8* %arrayidx30.4, align 1
-  %mul32.4 = mul i8 %44, %43
-  %add34.4 = add i8 %mul32.4, %sum.3.3
-  br label %for.inc.4
-
-for.inc.4:                                        ; preds = %if.then.4, %for.inc.3
-  %sum.3.4 = phi i8 [ %add34.4, %if.then.4 ], [ %sum.3.3, %for.inc.3 ]
-  %indvars.iv.next16 = add nuw nsw i64 %indvars.iv15, 1
-  %exitcond22 = icmp eq i64 %indvars.iv.next16, 5
-  br i1 %exitcond22, label %for.inc39, label %for.body15
+for.inc.3:                                        ; preds = %for.body9
+  %30 = add nuw nsw i64 %indvars.iv21, %18
+  %31 = add nsw i64 %30, %23
+  %32 = add nsw i64 %30, %25
+  %33 = add nsw i64 %30, %26
+  %34 = add nsw i64 %30, %28
+  %35 = load i8, i8* %arrayidx36.3.2, align 1
+  %36 = add nsw i64 %33, 1
+  %arrayidx.3.2 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %36
+  %37 = load i8, i8* %arrayidx.3.2, align 1
+  %mul38.3.2 = mul i8 %35, %37
+  %38 = load i8, i8* %arrayidx36.2.2, align 1
+  %arrayidx.2.2 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %33
+  %39 = load i8, i8* %arrayidx.2.2, align 1
+  %mul38.2.2 = mul i8 %38, %39
+  %40 = load i8, i8* %arrayidx36.1.2, align 1
+  %41 = add nsw i64 %33, -1
+  %arrayidx.1.2 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %41
+  %42 = load i8, i8* %arrayidx.1.2, align 1
+  %mul38.1.2 = mul i8 %40, %42
+  %43 = load i8, i8* %arrayidx36.251, align 1
+  %44 = add nsw i64 %33, -2
+  %arrayidx.249 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %44
+  %45 = load i8, i8* %arrayidx.249, align 1
+  %mul38.253 = mul i8 %43, %45
+  %46 = load i8, i8* %arrayidx36.3.1, align 1
+  %47 = add nsw i64 %32, 1
+  %arrayidx.3.1 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %47
+  %48 = load i8, i8* %arrayidx.3.1, align 1
+  %mul38.3.1 = mul i8 %46, %48
+  %49 = load i8, i8* %arrayidx36.2.1, align 1
+  %arrayidx.2.1 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %32
+  %50 = load i8, i8* %arrayidx.2.1, align 1
+  %mul38.2.1 = mul i8 %49, %50
+  %51 = load i8, i8* %arrayidx36.1.1, align 1
+  %52 = add nsw i64 %32, -1
+  %arrayidx.1.1 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %52
+  %53 = load i8, i8* %arrayidx.1.1, align 1
+  %mul38.1.1 = mul i8 %51, %53
+  %54 = load i8, i8* %arrayidx36.145, align 1
+  %55 = add nsw i64 %32, -2
+  %arrayidx.143 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %55
+  %56 = load i8, i8* %arrayidx.143, align 1
+  %mul38.147 = mul i8 %54, %56
+  %57 = load i8, i8* %arrayidx36.3, align 1
+  %58 = add nsw i64 %31, 1
+  %arrayidx.3 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %58
+  %59 = load i8, i8* %arrayidx.3, align 1
+  %mul38.3 = mul i8 %57, %59
+  %60 = load i8, i8* %arrayidx36.2, align 1
+  %arrayidx.2 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %31
+  %61 = load i8, i8* %arrayidx.2, align 1
+  %mul38.2 = mul i8 %60, %61
+  %62 = load i8, i8* %arrayidx36.1, align 1
+  %63 = add nsw i64 %31, -1
+  %arrayidx.1 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %63
+  %64 = load i8, i8* %arrayidx.1, align 1
+  %mul38.1 = mul i8 %62, %64
+  %65 = load i8, i8* %arrayidx36, align 1
+  %66 = add nsw i64 %31, -2
+  %arrayidx = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %66
+  %67 = load i8, i8* %arrayidx, align 1
+  %mul38 = mul i8 %65, %67
+  %add39.1 = add i8 %mul38.1, %mul38
+  %add39.2 = add i8 %mul38.2, %add39.1
+  %add39.3 = add i8 %mul38.3, %add39.2
+  %add39.148 = add i8 %mul38.147, %add39.3
+  %add39.1.1 = add i8 %mul38.1.1, %add39.148
+  %add39.2.1 = add i8 %mul38.2.1, %add39.1.1
+  %add39.3.1 = add i8 %mul38.3.1, %add39.2.1
+  %add39.254 = add i8 %mul38.253, %add39.3.1
+  %add39.1.2 = add i8 %mul38.1.2, %add39.254
+  %add39.2.2 = add i8 %mul38.2.2, %add39.1.2
+  %add39.3.2 = add i8 %mul38.3.2, %add39.2.2
+  %68 = add nsw i64 %34, -2
+  %arrayidx.355 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %68
+  %69 = load i8, i8* %arrayidx.355, align 1
+  %70 = load i8, i8* %arrayidx36.357, align 1
+  %mul38.359 = mul i8 %70, %69
+  %add39.360 = add i8 %mul38.359, %add39.3.2
+  %71 = add nsw i64 %34, -1
+  %arrayidx.1.3 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %71
+  %72 = load i8, i8* %arrayidx.1.3, align 1
+  %73 = load i8, i8* %arrayidx36.1.3, align 1
+  %mul38.1.3 = mul i8 %73, %72
+  %add39.1.3 = add i8 %mul38.1.3, %add39.360
+  %arrayidx.2.3 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %34
+  %74 = load i8, i8* %arrayidx.2.3, align 1
+  %75 = load i8, i8* %arrayidx36.2.3, align 1
+  %mul38.2.3 = mul i8 %75, %74
+  %add39.2.3 = add i8 %mul38.2.3, %add39.1.3
+  %76 = add nsw i64 %34, 1
+  %arrayidx.3.3 = getelementptr inbounds i8, i8* inttoptr (i64 268578319 to i8*), i64 %76
+  %77 = load i8, i8* %arrayidx.3.3, align 1
+  %78 = load i8, i8* %arrayidx36.3.3, align 1
+  %mul38.3.3 = mul i8 %78, %77
+  %add39.3.3 = add i8 %mul38.3.3, %add39.2.3
+  %79 = add nsw i64 %21, %indvars.iv21
+  %arrayidx50 = getelementptr inbounds i8, i8* inttoptr (i64 268579895 to i8*), i64 %79
+  %80 = load i8, i8* %arrayidx50, align 1
+  %add52 = add i8 %80, %add39.3.3
+  store i8 %add52, i8* %arrayidx50, align 1
+  br label %for.inc54
 }
 
 attributes #0 = { norecurse nounwind uwtable "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2" "unsafe-fp-math"="false" "use-soft-float"="false" }

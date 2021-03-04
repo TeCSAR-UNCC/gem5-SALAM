@@ -7,88 +7,73 @@ define void @pool0() #0 {
 entry:
   br label %for.cond1.preheader
 
-for.cond1.preheader:                              ; preds = %for.inc53, %entry
-  %k.011 = phi i32 [ 0, %entry ], [ %inc54, %for.inc53 ]
+for.cond1.preheader:                              ; preds = %for.inc38, %entry
+  %indvars.iv20 = phi i64 [ 0, %entry ], [ %indvars.iv.next21, %for.inc38 ]
+  %0 = mul nuw nsw i64 %indvars.iv20, 784
+  %1 = mul nuw nsw i64 %indvars.iv20, 196
+  %2 = trunc i64 %1 to i32
   br label %for.cond4.preheader
 
-for.cond4.preheader:                              ; preds = %for.cond1.preheader, %for.inc50
-  %indvars.iv27 = phi i64 [ 1, %for.cond1.preheader ], [ %indvars.iv.next28, %for.inc50 ]
-  %0 = trunc i64 %indvars.iv27 to i32
-  %div = sdiv i32 %0, 2
-  %mul42 = mul nsw i32 %div, 28
-  %1 = mul i64 %indvars.iv27, 28
-  %2 = add i64 %1, -28
-  %3 = mul nuw nsw i64 %indvars.iv27, 28
-  br label %for.cond7.preheader
+for.cond4.preheader:                              ; preds = %for.cond1.preheader, %for.inc35
+  %indvars.iv18 = phi i64 [ 0, %for.cond1.preheader ], [ %indvars.iv.next19, %for.inc35 ]
+  %3 = trunc i64 %indvars.iv18 to i32
+  %div22 = sdiv i32 %3, 2
+  %mul23 = mul nsw i32 %div22, 14
+  %add24 = add nsw i32 %mul23, %2
+  %4 = mul nuw nsw i64 %indvars.iv18, 28
+  %5 = or i64 %indvars.iv18, 1
+  %6 = mul nuw nsw i64 %5, 28
+  br label %for.inc.1
 
-for.cond7.preheader:                              ; preds = %for.cond4.preheader, %for.cond7.preheader
-  %indvars.iv24 = phi i64 [ 1, %for.cond4.preheader ], [ %indvars.iv.next25, %for.cond7.preheader ]
-  %4 = add nsw i64 %indvars.iv24, -1
-  %5 = add nuw nsw i64 %4, %2
-  %arrayidx = getelementptr inbounds i8, i8* inttoptr (i64 268613584 to i8*), i64 %5
-  %6 = load i8, i8* %arrayidx, align 1
-  %7 = load i8, i8* inttoptr (i64 268651219 to i8*), align 1
-  %mul32 = mul i8 %7, %6
-  %8 = add nuw nsw i64 %indvars.iv24, %2
-  %arrayidx.1 = getelementptr inbounds i8, i8* inttoptr (i64 268613584 to i8*), i64 %8
-  %9 = load i8, i8* %arrayidx.1, align 1
-  %10 = load i8, i8* inttoptr (i64 268651218 to i8*), align 2
-  %mul32.1 = mul i8 %10, %9
-  %11 = add nuw nsw i64 %4, %3
-  %arrayidx.131 = getelementptr inbounds i8, i8* inttoptr (i64 268613584 to i8*), i64 %11
-  %12 = load i8, i8* %arrayidx.131, align 1
-  %13 = load i8, i8* inttoptr (i64 268651217 to i8*), align 1
-  %mul32.133 = mul i8 %13, %12
-  %14 = add nuw nsw i64 %indvars.iv24, %3
-  %arrayidx.1.1 = getelementptr inbounds i8, i8* inttoptr (i64 268613584 to i8*), i64 %14
-  %15 = load i8, i8* %arrayidx.1.1, align 1
-  %16 = load i8, i8* inttoptr (i64 268651216 to i8*), align 16
-  %mul32.1.1 = mul i8 %16, %15
-  %add34.1 = add i8 %mul32.1, %mul32
-  %add34.134 = add i8 %mul32.133, %add34.1
-  %add34.1.1 = add i8 %mul32.1.1, %add34.134
-  %add34.138 = add i8 %mul32, %add34.1.1
-  %add34.1.139 = add i8 %mul32.1, %add34.138
-  %add34.134.1 = add i8 %mul32.133, %add34.1.139
-  %add34.1.1.1 = add i8 %mul32.1.1, %add34.134.1
-  %add34.2 = add i8 %mul32, %add34.1.1.1
-  %add34.1.2 = add i8 %mul32.1, %add34.2
-  %add34.134.2 = add i8 %mul32.133, %add34.1.2
-  %add34.1.1.2 = add i8 %mul32.1.1, %add34.134.2
-  %add34.3 = add i8 %mul32, %add34.1.1.2
-  %add34.1.3 = add i8 %mul32.1, %add34.3
-  %add34.134.3 = add i8 %mul32.133, %add34.1.3
-  %add34.1.1.3 = add i8 %mul32.1.1, %add34.134.3
-  %add34.4 = add i8 %mul32, %add34.1.1.3
-  %add34.1.4 = add i8 %mul32.1, %add34.4
-  %add34.134.4 = add i8 %mul32.133, %add34.1.4
-  %add34.1.1.4 = add i8 %mul32.1.1, %add34.134.4
-  %add34.5 = add i8 %mul32, %add34.1.1.4
-  %add34.1.5 = add i8 %mul32.1, %add34.5
-  %add34.134.5 = add i8 %mul32.133, %add34.1.5
-  %add34.1.1.5 = add i8 %mul32.1.1, %add34.134.5
-  %17 = trunc i64 %indvars.iv24 to i32
-  %div43 = sdiv i32 %17, 2
-  %add44 = add nsw i32 %div43, %mul42
-  %idxprom45 = sext i32 %add44 to i64
-  %arrayidx46 = getelementptr inbounds i8, i8* inttoptr (i64 268651408 to i8*), i64 %idxprom45
-  store i8 %add34.1.1.5, i8* %arrayidx46, align 1
-  %indvars.iv.next25 = add nuw nsw i64 %indvars.iv24, 2
-  %cmp5 = icmp slt i64 %indvars.iv.next25, 27
-  br i1 %cmp5, label %for.cond7.preheader, label %for.inc50
+for.inc35:                                        ; preds = %for.inc.1
+  %indvars.iv.next19 = add nuw nsw i64 %indvars.iv18, 2
+  %cmp2 = icmp slt i64 %indvars.iv.next19, 28
+  br i1 %cmp2, label %for.cond4.preheader, label %for.inc38
 
-for.inc50:                                        ; preds = %for.cond7.preheader
-  %indvars.iv.next28 = add nuw nsw i64 %indvars.iv27, 2
-  %cmp2 = icmp slt i64 %indvars.iv.next28, 27
-  br i1 %cmp2, label %for.cond4.preheader, label %for.inc53
+for.inc38:                                        ; preds = %for.inc35
+  %indvars.iv.next21 = add nuw nsw i64 %indvars.iv20, 1
+  %exitcond24 = icmp eq i64 %indvars.iv.next21, 6
+  br i1 %exitcond24, label %for.end40, label %for.cond1.preheader
 
-for.inc53:                                        ; preds = %for.inc50
-  %inc54 = add nuw nsw i32 %k.011, 1
-  %exitcond30 = icmp eq i32 %inc54, 6
-  br i1 %exitcond30, label %for.end55, label %for.cond1.preheader
-
-for.end55:                                        ; preds = %for.inc53
+for.end40:                                        ; preds = %for.inc38
   ret void
+
+for.inc.1:                                        ; preds = %for.inc.1, %for.cond4.preheader
+  %indvars.iv15 = phi i64 [ 0, %for.cond4.preheader ], [ %indvars.iv.next16, %for.inc.1 ]
+  %7 = add nuw nsw i64 %indvars.iv15, %0
+  %8 = add nuw nsw i64 %7, %4
+  %9 = add nuw nsw i64 %7, %6
+  %10 = or i64 %8, 1
+  %arrayidx.1 = getelementptr inbounds i8, i8* inttoptr (i64 268572438 to i8*), i64 %10
+  %11 = load i8, i8* %arrayidx.1, align 1
+  %conv.1 = zext i8 %11 to i32
+  %arrayidx = getelementptr inbounds i8, i8* inttoptr (i64 268572438 to i8*), i64 %8
+  %12 = load i8, i8* %arrayidx, align 2
+  %conv = zext i8 %12 to i32
+  %add17.1 = add nuw nsw i32 %conv.1, %conv
+  %arrayidx.125 = getelementptr inbounds i8, i8* inttoptr (i64 268572438 to i8*), i64 %9
+  %13 = load i8, i8* %arrayidx.125, align 2
+  %conv.126 = zext i8 %13 to i32
+  %add17.127 = add nuw nsw i32 %conv.126, %add17.1
+  %14 = or i64 %9, 1
+  %arrayidx.1.1 = getelementptr inbounds i8, i8* inttoptr (i64 268572438 to i8*), i64 %14
+  %15 = load i8, i8* %arrayidx.1.1, align 1
+  %conv.1.1 = zext i8 %15 to i32
+  %add17.1.1 = add nuw nsw i32 %conv.1.1, %add17.127
+  %div = lshr i32 %add17.1.1, 2
+  %16 = trunc i64 %indvars.iv15 to i32
+  %div25 = sdiv i32 %16, 2
+  %add26 = add nsw i32 %add24, %div25
+  %idxprom27 = sext i32 %add26 to i64
+  %arrayidx28 = getelementptr inbounds i8, i8* inttoptr (i64 268577142 to i8*), i64 %idxprom27
+  %17 = load i8, i8* %arrayidx28, align 1
+  %conv29 = zext i8 %17 to i32
+  %add30 = add nuw nsw i32 %conv29, %div
+  %conv31 = trunc i32 %add30 to i8
+  store i8 %conv31, i8* %arrayidx28, align 1
+  %indvars.iv.next16 = add nuw nsw i64 %indvars.iv15, 2
+  %cmp5 = icmp slt i64 %indvars.iv.next16, 28
+  br i1 %cmp5, label %for.inc.1, label %for.inc35
 }
 
 attributes #0 = { norecurse nounwind uwtable "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2" "unsafe-fp-math"="false" "use-soft-float"="false" }

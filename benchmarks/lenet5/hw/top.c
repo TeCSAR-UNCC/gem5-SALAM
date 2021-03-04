@@ -7,7 +7,6 @@ void top(uint64_t mainMem) {
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;
 	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
-	volatile uint8_t  * CONV2Flags  = (uint8_t *)CONV2;
 	// Define DMA MMR
 	volatile uint8_t  * DmaFlags   = (uint8_t  *)(DMA_Flags);
 	volatile uint64_t * DmaRdAddr  = (uint64_t *)(DMA_RdAddr);
@@ -16,8 +15,8 @@ void top(uint64_t mainMem) {
 
 	//Transfer Input Features
 	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = Conv0Window;
-	*DmaCopyLen = conv0InputSize;
+	*DmaWrAddr  = Conv0Input;
+	*DmaCopyLen = conv0InSize;
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
@@ -41,15 +40,8 @@ void top(uint64_t mainMem) {
 
 	//Transfer POOL0 Features
 	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = pool0Window;
-	*DmaCopyLen = pool0InputSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Transfer POOL0 Weights
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = pool0Weights;
-	*DmaCopyLen = pool0WeightSize;
+	*DmaWrAddr  = pool0Input;
+	*DmaCopyLen = pool0InSize;
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
@@ -66,8 +58,8 @@ void top(uint64_t mainMem) {
 
 	//Transfer Input Features
 	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = Conv1Window;
-	*DmaCopyLen = conv1InputSize;
+	*DmaWrAddr  = Conv1Input;
+	*DmaCopyLen = conv1InSize;
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
@@ -91,15 +83,8 @@ void top(uint64_t mainMem) {
 
 	//Transfer Input Features
 	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = pool1Window;
-	*DmaCopyLen = pool1InputSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Transfer Input Weights
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = pool1Weights;
-	*DmaCopyLen = pool1WeightSize;
+	*DmaWrAddr  = pool1Input;
+	*DmaCopyLen = pool1InSize;
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
@@ -111,31 +96,6 @@ void top(uint64_t mainMem) {
 	*DmaRdAddr  = pool1Output;
 	*DmaWrAddr  = 0x90000000;
 	*DmaCopyLen = pool1OutputSize;
-	*DmaFlags   = DEV_INIT;
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-
-	//Transfer Input Features
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = Conv2Window;
-	*DmaCopyLen = conv2InputSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Transfer Input Weights
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = Conv2Weights;
-	*DmaCopyLen = conv2WeightSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the conv2
-	*CONV2Flags = DEV_INIT;
-	//Poll function for finish
-	while ((*CONV2Flags & DEV_INTR) != DEV_INTR);
-	//Transfer Results Back to Main Memory
-	*DmaRdAddr  = Conv2Output;
-	*DmaWrAddr  = 0x90000000;
-	*DmaCopyLen = conv2OutputSize;
 	*DmaFlags   = DEV_INIT;
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 	return;

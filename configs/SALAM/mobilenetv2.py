@@ -179,7 +179,7 @@ def buildhead(options, system, clstr):
 	# pwconv Config
 	clstr.pwconv.pio = clstr.local_bus.master
 	clstr.pwconv.stream = clstr.stream_dma0.stream_in
-	clstr.pwconv.enable_debug_msgs = True
+	clstr.pwconv.enable_debug_msgs = False
 	
 	# PWConvLocalFeatSize (Variable)
 	addr = 0x10020fe6

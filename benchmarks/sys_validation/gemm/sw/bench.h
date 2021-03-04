@@ -22,4 +22,3 @@ void genData(gemm_struct * ges) {
         }
     }
 }
-

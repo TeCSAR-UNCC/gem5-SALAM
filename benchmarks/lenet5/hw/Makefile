@@ -1,4 +1,4 @@
-TARGET=top.ll conv0.ll conv1.ll conv2.ll pool0.ll pool1.ll
+TARGET=top.ll conv0.ll conv1.ll pool0.ll pool1.ll
 %.o : %.c
 	clang -emit-llvm -c -o $@ $<
 %.bc : %.o

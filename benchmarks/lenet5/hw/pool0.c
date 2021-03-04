@@ -1,33 +1,24 @@
 #include "../lenet5_hw_defines.h"
 
+#define InputIdx3D(i,j,k) (pool0InDim*pool0InDim*(k) + pool0InDim*(j) + i)
+#define KIdx3D(i,j,k) (pool0KSize*pool0KSize*(k) + pool0KSize*(i) + j)
+#define OutIdx3D(i,j,k) (pool0OutDim*pool0OutDim*(k) + pool0OutDim*(j/pool0KSize) + i/pool0KSize)
+
 void pool0() {
-    uint8_t* convWindow = (uint8_t*)pool0Window;
-    uint8_t* kernel = (uint8_t*)pool0Weights;
+    uint8_t* convInput = (uint8_t*)pool0Input;
     uint8_t* convOut = (uint8_t*)pool0Output;
-    // find center position of kernel (half of kernel size)
-    int kCenter = POOL0KSIZE / 2;
-    int i,j,k,c,m,n;
-    for(k = 0; k < POOL0Channels; k++) {
-        for (i = 1; i < POOL0InputDim-1; i+=POOL0KSIZE) {
-            // #pragma clang loop unroll_count(8)
-            for (j = 1; j < POOL0InputDim-1; j+=POOL0KSIZE) {
-                uint8_t sum = 0;
-                // TODO: Fix memory accesses and sizes to properly write channels out
-                for(c = 0; c < POOL0Channels; c++){
-                    for (m = 0; m < POOL0KSIZE; m++) {
-                        int mm = POOL0KSIZE - 1 - m;
-                        for (n = 0; n < POOL0KSIZE; n++) {
-                            int nn = POOL0KSIZE - 1 - n;
-                            // index of input signal, used for checking boundary
-                            int ii = i + (m - kCenter);
-                            int jj = j + (n - kCenter);
-                            // ignore input samples which are out of bound
-                            if (ii >= 0 && ii < POOL0InputDim && jj >= 0 && jj < POOL0InputDim)
-                            sum += convWindow[ii*POOL0InputDim + jj] * kernel[mm*POOL0KSIZE + nn];
-                        }
+
+    int i, j, k, l, m;
+    for (k = 0; k < pool0InChan; k++){
+        for ( j = 0; j < pool0InDim; j+=2) {
+            for ( i = 0; i < pool0InDim; i+=2) {
+                int sum = 0;
+                for (m = 0; m < pool0KSize; m++) {
+                    for ( l = 0; l < pool0KSize; l++) {
+                        sum += convInput[InputIdx3D(i+l, j+m, k)];
                     }
                 }
-                convOut[i/POOL0KSIZE*POOL0InputDim + j/POOL0KSIZE]=sum;
+                convOut[OutIdx3D(i,j,k)] += sum/(pool0KSize*pool0KSize);
             }
         }
     }
