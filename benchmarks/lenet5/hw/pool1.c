@@ -9,11 +9,16 @@ void pool1() {
     uint8_t* convOut = (uint8_t*)pool1Output;
 
     int i, j, k, l, m;
+    #pragma clang loop unroll(disable)
     for (k = 0; k < pool1InChan; k++){
-        for ( j = 0; j < pool1InDim; j+=2) {
-            for ( i = 0; i < pool1InDim; i+=2) {
+        #pragma clang loop unroll(disable)
+        for ( j = 0; j < pool1InDim; j+=pool1KSize) {
+            #pragma clang loop unroll(disable)
+            for ( i = 0; i < pool1InDim; i+=pool1KSize) {
                 int sum = 0;
+                #pragma clang loop unroll(disable)
                 for (m = 0; m < pool1KSize; m++) {
+                    #pragma clang loop unroll(disable)
                     for ( l = 0; l < pool1KSize; l++) {
                         sum += convInput[InputIdx3D(i+l, j+m, k)];
                     }

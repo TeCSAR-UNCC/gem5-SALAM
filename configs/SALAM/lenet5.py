@@ -21,51 +21,51 @@ def buildlenet5(options, system, clstr):
 	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
-	
+
 	# top Definition
 	acc = "top"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/top.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/top.ll"
-	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10020015, pio_size=9)
+	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10020015, pio_size=9, int_num=96)
 	AccConfig(clstr.top, config, ir)
-	
+
 	# conv0 Definition
 	acc = "conv0"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv0.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv0.ll"
 	clstr.conv0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002001e, pio_size=1)
 	AccConfig(clstr.conv0, config, ir)
-	
+
 	# pool0 Definition
 	acc = "pool0"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool0.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool0.ll"
 	clstr.pool0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10021715, pio_size=1)
 	AccConfig(clstr.pool0, config, ir)
-	
+
 	# conv1 Definition
 	acc = "conv1"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv1.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv1.ll"
 	clstr.conv1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10022e0e, pio_size=1)
 	AccConfig(clstr.conv1, config, ir)
-	
+
 	# pool1 Definition
 	acc = "pool1"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool1.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool1.ll"
 	clstr.pool1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10023a77, pio_size=1)
 	AccConfig(clstr.pool1, config, ir)
-	
+
 	# top Config
 	clstr.top.local = clstr.local_bus.slave
 	clstr.top.pio = clstr.local_bus.master
 	clstr.top.enable_debug_msgs = False
-	
+
 	# conv0 Config
 	clstr.conv0.pio = clstr.local_bus.master
 	clstr.conv0.enable_debug_msgs = False
-	
+
 	# Conv0Input (Variable)
 	addr = 0x1002001f
 	spmRange = AddrRange(addr, addr + 0x400)
@@ -75,7 +75,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0input.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.conv0.spm = clstr.conv0input.spm_ports
-	
+
 	# Conv0Weights (Variable)
 	addr = 0x1002041f
 	spmRange = AddrRange(addr, addr + 0x96)
@@ -85,7 +85,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0weights.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.conv0.spm = clstr.conv0weights.spm_ports
-	
+
 	# Conv0Output (Variable)
 	addr = 0x100204b5
 	spmRange = AddrRange(addr, addr + 0x1260)
@@ -95,11 +95,11 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0output.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.conv0.spm = clstr.conv0output.spm_ports
-	
+
 	# pool0 Config
 	clstr.pool0.pio = clstr.local_bus.master
 	clstr.pool0.enable_debug_msgs = False
-	
+
 	# pool0Input (Variable)
 	addr = 0x10021716
 	spmRange = AddrRange(addr, addr + 0x1260)
@@ -109,7 +109,7 @@ def buildlenet5(options, system, clstr):
 	clstr.pool0input.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.pool0.spm = clstr.pool0input.spm_ports
-	
+
 	# pool0Output (Variable)
 	addr = 0x10022976
 	spmRange = AddrRange(addr, addr + 0x498)
@@ -119,11 +119,11 @@ def buildlenet5(options, system, clstr):
 	clstr.pool0output.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.pool0.spm = clstr.pool0output.spm_ports
-	
+
 	# conv1 Config
 	clstr.conv1.pio = clstr.local_bus.master
 	clstr.conv1.enable_debug_msgs = False
-	
+
 	# Conv1Input (Variable)
 	addr = 0x10022e0f
 	spmRange = AddrRange(addr, addr + 0x498)
@@ -133,7 +133,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv1input.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.conv1.spm = clstr.conv1input.spm_ports
-	
+
 	# Conv1Weights (Variable)
 	addr = 0x100232a7
 	spmRange = AddrRange(addr, addr + 0x190)
@@ -143,7 +143,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv1weights.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.conv1.spm = clstr.conv1weights.spm_ports
-	
+
 	# Conv1Output (Variable)
 	addr = 0x10023437
 	spmRange = AddrRange(addr, addr + 0x640)
@@ -153,11 +153,11 @@ def buildlenet5(options, system, clstr):
 	clstr.conv1output.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.conv1.spm = clstr.conv1output.spm_ports
-	
+
 	# pool1 Config
 	clstr.pool1.pio = clstr.local_bus.master
 	clstr.pool1.enable_debug_msgs = False
-	
+
 	# pool1Input (Variable)
 	addr = 0x10023a78
 	spmRange = AddrRange(addr, addr + 0x640)
@@ -167,7 +167,7 @@ def buildlenet5(options, system, clstr):
 	clstr.pool1input.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.pool1.spm = clstr.pool1input.spm_ports
-	
+
 	# pool1Output (Variable)
 	addr = 0x100240b8
 	spmRange = AddrRange(addr, addr + 0x190)
@@ -177,7 +177,7 @@ def buildlenet5(options, system, clstr):
 	clstr.pool1output.port = clstr.local_bus.master
 	for i in range(1):
 		clstr.pool1.spm = clstr.pool1output.spm_ports
-	
+
 def makeHWAcc(options, system):
 
 	system.lenet5 = AccCluster()
