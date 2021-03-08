@@ -9,7 +9,7 @@ void pool1() {
     uint8_t* convOut = (uint8_t*)pool1Output;
 
     int i, j, k, l, m;
-    #pragma clang loop unroll(disable)
+    #pragma clang loop unroll_count(pool1UnrollFactor)
     for (k = 0; k < pool1InChan; k++){
         #pragma clang loop unroll(disable)
         for ( j = 0; j < pool1InDim; j+=pool1KSize) {

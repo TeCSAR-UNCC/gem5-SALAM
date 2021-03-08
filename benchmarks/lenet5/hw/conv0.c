@@ -8,10 +8,12 @@ void conv0() {
     uint8_t* convInput = (uint8_t*)Conv0Input;
     uint8_t* kernel = (uint8_t*)Conv0Weights;
     uint8_t* convOut = (uint8_t*)Conv0Output;
+    uint8_t* convLUT = (uint8_t*)Conv0LUT;
+    
     int i, j, k, l, m, n;
     #pragma clang loop unroll(disable)
     for (n = 0; n < conv0OutChan; n++){
-        #pragma clang loop unroll(disable)
+        #pragma clang loop unroll_count(conv0UnrollFactor)
         for (k = 0; k < conv0InChan; k++){
             #pragma clang loop unroll(disable)
             for ( j = 0; j < conv0InDim; j++) {
@@ -32,6 +34,17 @@ void conv0() {
                         convOut[OutIdx3D(i,j,n)] += sum;
                     }
                 }
+            }
+        }
+    }
+    // Apply the activation function
+    #pragma clang loop unroll(disable)
+    for (n = 0; n < conv0OutChan; n++){
+        #pragma clang loop unroll(disable)
+        for ( j = 0; j < conv0InDim; j++) {
+            #pragma clang loop unroll(disable)
+            for ( i = 0; i < conv0InDim; i++) {
+                convOut[OutIdx3D(i,j,n)] *= convLUT[0];
             }
         }
     }

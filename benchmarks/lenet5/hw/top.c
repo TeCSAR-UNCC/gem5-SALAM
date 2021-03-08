@@ -7,6 +7,8 @@ void top(uint64_t mainMem) {
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;
 	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
+	volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
+	volatile uint8_t  * FC1Flags  = (uint8_t *)FC1;
 	// Define DMA MMR
 	volatile uint8_t  * DmaFlags   = (uint8_t  *)(DMA_Flags);
 	volatile uint64_t * DmaRdAddr  = (uint64_t *)(DMA_RdAddr);
@@ -96,6 +98,42 @@ void top(uint64_t mainMem) {
 	*DmaRdAddr  = pool1Output;
 	*DmaWrAddr  = 0x90000000;
 	*DmaCopyLen = pool1OutputSize;
+	*DmaFlags   = DEV_INIT;
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+
+	//Transfer Input Features
+	*DmaRdAddr  = 0x90000000;
+	*DmaWrAddr  = fc0Input;
+	*DmaCopyLen = fc0InSize;
+	*DmaFlags   = DEV_INIT;
+	//Poll DMA for finish
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	//Start the fc0
+	*FC0Flags = DEV_INIT;
+	//Poll function for finish
+	while ((*FC0Flags & DEV_INTR) != DEV_INTR);
+	//Transfer Results Back to Main Memory
+	*DmaRdAddr  = fc0Output;
+	*DmaWrAddr  = 0x90000000;
+	*DmaCopyLen = fc0OutputSize;
+	*DmaFlags   = DEV_INIT;
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+
+	//Transfer Input Features
+	*DmaRdAddr  = 0x90000000;
+	*DmaWrAddr  = fc1Input;
+	*DmaCopyLen = fc1InSize;
+	*DmaFlags   = DEV_INIT;
+	//Poll DMA for finish
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	//Start the fc1
+	*FC1Flags = DEV_INIT;
+	//Poll function for finish
+	while ((*FC1Flags & DEV_INTR) != DEV_INTR);
+	//Transfer Results Back to Main Memory
+	*DmaRdAddr  = fc1Output;
+	*DmaWrAddr  = 0x90000000;
+	*DmaCopyLen = fc1OutputSize;
 	*DmaFlags   = DEV_INIT;
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 	return;

@@ -27,17 +27,22 @@ acc_cluster:
     - Var:
       - Name: Conv0Input
         Type: SPM
-        Size: 1024
+        Size: 4096
         Ports: 1
     - Var:
       - Name: Conv0Weights
         Type: SPM
-        Size: 150
+        Size: 600
         Ports: 1
     - Var:
       - Name: Conv0Output
         Type: SPM
-        Size: 4704
+        Size: 18816
+        Ports: 1
+    - Var:
+      - Name: Conv0LUT
+        Type: SPM
+        Size: 4
         Ports: 1
   - Accelerator:
     - Name: pool0
@@ -49,12 +54,12 @@ acc_cluster:
     - Var:
       - Name: pool0Input
         Type: SPM
-        Size: 4704
+        Size: 18816
         Ports: 1
     - Var:
       - Name: pool0Output
         Type: SPM
-        Size: 1176
+        Size: 4704
         Ports: 1
   - Accelerator:
     - Name: conv1
@@ -67,17 +72,22 @@ acc_cluster:
     - Var:
       - Name: Conv1Input
         Type: SPM
-        Size: 1176
+        Size: 4704
         Ports: 1
     - Var:
       - Name: Conv1Weights
         Type: SPM
-        Size: 400
+        Size: 1600
         Ports: 1
     - Var:
       - Name: Conv1Output
         Type: SPM
-        Size: 1600
+        Size: 6400
+        Ports: 1
+    - Var:
+      - Name: Conv1LUT
+        Type: SPM
+        Size: 4
         Ports: 1
   - Accelerator:
     - Name: pool1
@@ -89,10 +99,66 @@ acc_cluster:
     - Var:
       - Name: pool1Input
         Type: SPM
-        Size: 1600
+        Size: 6400
         Ports: 1
     - Var:
       - Name: pool1Output
         Type: SPM
-        Size: 400
+        Size: 1600
+        Ports: 1
+  - Accelerator:
+    - Name: fc0
+      IrPath: benchmarks/lenet5/hw/fc0.ll
+      ConfigPath: benchmarks/lenet5/hw/fc0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      Debug: False
+    - Var:
+      - Name: fc0Input
+        Type: SPM
+        Size: 1600
+        Ports: 1
+    - Var:
+      - Name: fc0Weights
+        Type: SPM
+        Size: 12000
+        Ports: 1
+    - Var:
+      - Name: fc0Output
+        Type: SPM
+        Size: 480
+        Ports: 1
+    - Var:
+      - Name: fc0LUT
+        Type: SPM
+        Size: 4
+        Ports: 1
+  - Accelerator:
+    - Name: fc1
+      IrPath: benchmarks/lenet5/hw/fc1.ll
+      ConfigPath: benchmarks/lenet5/hw/fc1.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      Debug: False
+    - Var:
+      - Name: fc1Input
+        Type: SPM
+        Size: 480
+        Ports: 1
+    - Var:
+      - Name: fc1Weights
+        Type: SPM
+        Size: 336
+        Ports: 1
+    - Var:
+      - Name: fc1Output
+        Type: SPM
+        Size: 336
+        Ports: 1
+    - Var:
+      - Name: fc1LUT
+        Type: SPM
+        Size: 4
         Ports: 1

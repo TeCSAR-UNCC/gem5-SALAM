@@ -5,11 +5,11 @@
 #define OutIdx3D(i,j,k) (pool0OutDim*pool0OutDim*(k) + pool0OutDim*(j/pool0KSize) + i/pool0KSize)
 
 void pool0() {
-    uint8_t* convInput = (uint8_t*)pool0Input;
-    uint8_t* convOut = (uint8_t*)pool0Output;
+    TYPE* convInput = (TYPE*)pool0Input;
+    TYPE* convOut = (TYPE*)pool0Output;
 
     int i, j, k, l, m;
-    #pragma clang loop unroll(disable)
+    #pragma clang loop unroll_count(pool0UnrollFactor)
     for (k = 0; k < pool0InChan; k++){
         #pragma clang loop unroll(disable)
         for ( j = 0; j < pool0InDim; j+=pool0KSize) {
