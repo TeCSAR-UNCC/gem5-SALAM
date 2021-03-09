@@ -22,6 +22,7 @@ void top(uint64_t mainMem) {
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	
 	//Transfer Input Weights
 	*DmaRdAddr  = 0x90000000;
 	*DmaWrAddr  = Conv0Weights;
