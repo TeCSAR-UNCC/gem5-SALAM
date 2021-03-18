@@ -177,7 +177,7 @@ bool
 Ret::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -204,6 +204,7 @@ Ret::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -300,7 +301,7 @@ bool
 Br::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -327,6 +328,7 @@ Br::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -420,7 +422,7 @@ bool
 Switch::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -447,6 +449,7 @@ Switch::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -519,7 +522,7 @@ bool
 Add::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -546,6 +549,7 @@ Add::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -614,7 +618,7 @@ bool
 FAdd::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -641,6 +645,7 @@ FAdd::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -709,7 +714,7 @@ bool
 Sub::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -736,6 +741,7 @@ Sub::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -804,7 +810,7 @@ bool
 FSub::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -831,6 +837,7 @@ FSub::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -899,7 +906,7 @@ bool
 Mul::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -926,6 +933,7 @@ Mul::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -994,7 +1002,7 @@ bool
 FMul::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1021,6 +1029,7 @@ FMul::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1089,7 +1098,7 @@ bool
 UDiv::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1116,6 +1125,7 @@ UDiv::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1184,7 +1194,7 @@ bool
 SDiv::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1211,6 +1221,7 @@ SDiv::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1279,7 +1290,7 @@ bool
 FDiv::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1306,6 +1317,7 @@ FDiv::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1374,7 +1386,7 @@ bool
 URem::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1401,6 +1413,7 @@ URem::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1469,7 +1482,7 @@ bool
 SRem::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1496,6 +1509,7 @@ SRem::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1564,7 +1578,7 @@ bool
 FRem::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1591,6 +1605,7 @@ FRem::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1659,7 +1674,7 @@ bool
 Shl::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1686,6 +1701,7 @@ Shl::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1754,7 +1770,7 @@ bool
 LShr::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1781,6 +1797,7 @@ LShr::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1849,7 +1866,7 @@ bool
 AShr::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1876,6 +1893,7 @@ AShr::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -1944,7 +1962,7 @@ bool
 And::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -1971,6 +1989,7 @@ And::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2039,7 +2058,7 @@ bool
 Or::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2066,6 +2085,7 @@ Or::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2134,7 +2154,7 @@ bool
 Xor::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2161,6 +2181,7 @@ Xor::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2230,7 +2251,7 @@ bool
 Load::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2257,6 +2278,7 @@ Load::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2325,7 +2347,7 @@ bool
 Store::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2352,6 +2374,7 @@ Store::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2426,7 +2449,7 @@ bool
 GetElementPtr::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2453,6 +2476,7 @@ GetElementPtr::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2521,7 +2545,7 @@ bool
 Trunc::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2548,6 +2572,7 @@ Trunc::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2616,7 +2641,7 @@ bool
 ZExt::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2643,6 +2668,7 @@ ZExt::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2711,7 +2737,7 @@ bool
 SExt::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2738,6 +2764,7 @@ SExt::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2806,7 +2833,7 @@ bool
 FPToUI::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2833,6 +2860,7 @@ FPToUI::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2901,7 +2929,7 @@ bool
 FPToSI::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -2928,6 +2956,7 @@ FPToSI::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -2996,7 +3025,7 @@ bool
 UIToFP::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3023,6 +3052,7 @@ UIToFP::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3091,7 +3121,7 @@ bool
 SIToFP::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3118,6 +3148,7 @@ SIToFP::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3186,7 +3217,7 @@ bool
 FPTrunc::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3213,6 +3244,7 @@ FPTrunc::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3281,7 +3313,7 @@ bool
 FPExt::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3308,6 +3340,7 @@ FPExt::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3376,7 +3409,7 @@ bool
 PtrToInt::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3403,6 +3436,7 @@ PtrToInt::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3471,7 +3505,7 @@ bool
 IntToPtr::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3498,6 +3532,7 @@ IntToPtr::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3566,7 +3601,7 @@ bool
 ICmp::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3593,6 +3628,7 @@ ICmp::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3661,7 +3697,7 @@ bool
 FCmp::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3688,6 +3724,7 @@ FCmp::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3764,7 +3801,7 @@ Phi::ready(std::shared_ptr<SALAM::BasicBlock> previousBB) {
     if (getDependencyCount() == 0) {
         isready = true;
         setPrevBB(previousBB);
-        launch();
+
         return true;
     }
     return false;
@@ -3796,6 +3833,7 @@ Phi::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3864,7 +3902,7 @@ bool
 Call::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3891,6 +3929,7 @@ Call::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;
@@ -3968,7 +4007,7 @@ bool
 Select::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        launch();
+
         return true;
     }
     return false;
@@ -3995,6 +4034,7 @@ Select::commit()
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
+        committed = true;
         return true;
     } else {
         currentCycle--;

@@ -36,6 +36,7 @@ class ComputeUnit : public SimObject {
     virtual void initialize() {}
     virtual void readCommit(MemoryRequest * req) {}
     virtual void writeCommit(MemoryRequest * req) {}
+    CommInterface * getCommInterface() { return comm; }
 };
 
 #endif //__HWACC_COMPUTE_UNIT_HH__

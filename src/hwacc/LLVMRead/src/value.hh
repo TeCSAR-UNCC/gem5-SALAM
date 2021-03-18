@@ -56,6 +56,7 @@ class Value
         virtual void initialize(llvm::Value *irval,
                                 SALAM::irvmap *irmap);
         uint64_t getSize() { return size; }
+        uint64_t getSizeInBytes() { return ((size - 1) >> 3) + 1; }
         uint64_t getUID() { return uid; }
         Register *getReg() { return reg; }
         llvm::Type *getType() { return irtype; }

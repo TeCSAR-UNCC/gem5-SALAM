@@ -16,9 +16,10 @@ namespace SALAM {
 		std::vector<Instruction *> reservation;
 	public:
 		Function(uint64_t id);
-		void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList, bool isTop=false);
+		void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList, std::string topName);
 		bool isTop() { return top; }
 		std::vector<std::shared_ptr<SALAM::BasicBlock>> * getBBList() { return &bbList; }
+		std::vector<std::shared_ptr<SALAM::Value>> * getArguments() { return & arguments; }
 		std::shared_ptr<SALAM::BasicBlock> entry() { return bbList.front(); }
 		std::vector<Instruction *> *getReservationQueue() { return &reservation; }
 		void test() { std::cout << "Function Test\n"; }

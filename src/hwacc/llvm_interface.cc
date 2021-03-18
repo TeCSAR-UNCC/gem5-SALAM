@@ -5,6 +5,7 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
+    topName(p->top_name),
     lockstep(p->lockstep_mode),
     scheduling_threshold(p->sched_threshold),
     counter_units(p->FU_counter),
@@ -62,10 +63,12 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
     auto instruction_list = *(bb->Instructions());
     for (auto inst : instruction_list) {
         std::shared_ptr<SALAM::Instruction> clone_inst = inst->clone();
-        auto branch = std::dynamic_pointer_cast<SALAM::Br>(clone_inst);
-        if (branch && !(branch->isConditional())) {
-            previousBB = bb;
-            scheduleBB(branch->getTarget());
+        if (clone_inst->isBr()) {
+            auto branch = std::dynamic_pointer_cast<SALAM::Br>(clone_inst);
+            if (branch && !(branch->isConditional())) {
+                previousBB = bb;
+                scheduleBB(branch->getTarget());
+            }
         } else {
             if (clone_inst->isPhi()) {
                 auto phi = std::dynamic_pointer_cast<SALAM::Phi>(clone_inst);
@@ -139,6 +142,36 @@ JS       - bool ready() // checks dependencies, return true if satisfied
 */
 
 void
+LLVMInterface::ActiveFunction::processQueues() {
+    for (auto active_inst : computeQueue) {
+        active_inst->commit();
+    }
+    if (canReturn()) {
+        // Handle function return
+    } else {
+        for (auto it = reservation.begin(); it != reservation.end();) {
+            if ((*it)->isReturn() == false) {
+                if ((*it)->ready()) {
+                    (*it)->launch();
+                    if ((*it)->isLoad()) {
+
+                    } else if ((*it)->isStore()) {
+
+                    } else if ((*it)->isTerminator()) {
+                        scheduleBB((*it)->getTarget());
+                    } else if ((*it)->isCommitted() == false) {
+                        computeQueue.push_back(*it);
+                    }
+                    reservation.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+    }
+}
+
+void
 LLVMInterface::tick() {
 /*********************************************************************************************
  CN Scheduling
@@ -161,7 +194,17 @@ LLVMInterface::tick() {
         "   Cycle", cycle,
         "********************************************************************************");
     cycle++;
-    comm->refreshMemPorts();
+    // comm->refreshMemPorts(); // Deprecated
+
+    // Process Queues in Active Functions
+    if (activeFunctions.empty()) {
+        // We are finished executing all functions. Signal completion to the CommInterface
+        finalize();
+    } else {
+        for (auto activeFunc : activeFunctions) {
+            activeFunc.processQueues();
+        }
+    }
 
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
@@ -387,7 +430,7 @@ LLVMInterface::constructStaticGraph() {
         assert(funcval);
         std::shared_ptr<SALAM::Function> sfunc = std::dynamic_pointer_cast<SALAM::Function>(funcval);
         assert(sfunc);
-        sfunc->initialize(&func, &vmap, &values);
+        sfunc->initialize(&func, &vmap, &values, topName);
     }
 }
 
@@ -591,14 +634,44 @@ LLVMInterface::dumpQueues() {
 
 void
 LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
-                              std::shared_ptr<SALAM::Instruction> caller,
-                              std::vector<uint64_t> &args) { 
+                              std::shared_ptr<SALAM::Instruction> caller) {
     // Add the callee to our list of active functions
-    
-    // I didn't fix this, don't think this will remain this format
-    // activeFunctions.push_back(ActiveFunction(callee, caller, new std::list<std::shared_ptr<SALAM::Instruction>>()));
+    activeFunctions.push_back(ActiveFunction(this, callee, caller));
+    activeFunctions.back().launch();
+}
 
-    // Start scheduling the new function
+void
+LLVMInterface::launchTopFunction() {
+    for (auto func : functions) {
+        if (func->isTop()) {
+            // Launch the top level function
+            launchFunction(func, nullptr);
+            return;
+        }
+    }
+    // Fallback if no function was marked as the top-level
+    panic("No function marked as top-level. Set the top_name parameter for your LLVMInterface to the name of the top-level function\n");
+}
+
+void LLVMInterface::ActiveFunction::launch() {
+    // Fetch the arguments
+    std::vector<std::shared_ptr<SALAM::Value>> funcArgs = *(func->getArguments());
+    if (func->isTop()) {
+        // We need to fetch argument values from the memory mapped registers
+        CommInterface * comm = owner->getCommInterface();
+        unsigned argOffset = 0;
+        for (auto arg : funcArgs) {
+            uint64_t argSizeInBytes = arg->getSizeInBytes();
+            uint64_t regValue = comm->getGlobalVar(argOffset, argSizeInBytes);
+            arg->setRegisterValue(regValue);
+            argOffset += argSizeInBytes;
+        }
+    } else {
+        // We need to fetch argument values from the calling function
+        panic("Handling of subfunction calls is not yet supported");
+    }
+    // Schedule the first BB
+    scheduleBB(func->entry());
 }
 
 std::shared_ptr<SALAM::Instruction>

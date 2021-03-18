@@ -32,7 +32,7 @@ class Instruction : public Value
         uint64_t llvmOpCode;
         uint64_t cycleCount;
         bool dbg = false;
-        
+
     protected:
         // std::vector<Operands> operands;
         // operand 
@@ -44,7 +44,10 @@ class Instruction : public Value
                 ~Instruction_Debugger() = default;
                 virtual void dumper(SALAM::Instruction *inst);
         }; 
-       Instruction_Debugger* inst_dbg;
+        Instruction_Debugger* inst_dbg;
+        bool launched = false;
+        bool committed = false;
+        bool isready = false;
     public:
         Instruction(uint64_t id); //
         Instruction(uint64_t id, uint64_t OpCode); //
@@ -64,10 +67,14 @@ class Instruction : public Value
         void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) { dynamicDependencies.push_back(dep); }
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
+        bool isCommitted() { return committed; }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }
         virtual bool isCall() { return false; }
+        virtual bool isBr() { return false; }
+        virtual bool isLoad() { return false; }
+        virtual bool isStore() {return false; }
         virtual bool launch() { return false; }
         virtual bool commit() { return false; }
         virtual bool ready(std::shared_ptr<SALAM::BasicBlock> prevBB = nullptr) { return false; }
@@ -117,9 +124,7 @@ class Ret : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
 
     protected:
 
@@ -162,9 +167,7 @@ class Br : public Instruction {
         std::shared_ptr<SALAM::Value> falseDestination;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
         bool conditional = false;
 
     protected:
@@ -183,6 +186,7 @@ class Br : public Instruction {
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
         std::shared_ptr<SALAM::Value> destination();
         bool isTerminator() override { return true; }
+        bool isBr() override { return true; }
         bool launch();
         bool commit();
         bool ready();
@@ -214,9 +218,7 @@ class Switch : public Instruction {
         switchArgs arguments;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
         
     protected:
 
@@ -262,9 +264,7 @@ class Add : public Instruction
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -301,9 +301,7 @@ class FAdd : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -339,9 +337,7 @@ class Sub : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -377,9 +373,7 @@ class FSub : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -416,9 +410,7 @@ class Mul : public Instruction {
         SALAM::APIntRegister *op1, *op2;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -454,9 +446,7 @@ class FMul : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -492,9 +482,7 @@ class UDiv : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -530,9 +518,7 @@ class SDiv : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -568,9 +554,7 @@ class FDiv : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -606,9 +590,7 @@ class URem : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -644,9 +626,7 @@ class SRem : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -682,9 +662,7 @@ class FRem : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -724,9 +702,7 @@ class Shl : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -762,9 +738,7 @@ class LShr : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -800,9 +774,7 @@ class AShr : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -838,9 +810,7 @@ class And : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -876,9 +846,7 @@ class Or : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -914,9 +882,7 @@ class Xor : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -956,9 +922,7 @@ class Load : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
 
@@ -970,6 +934,7 @@ class Load : public Instruction {
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
+        bool isLoad() override { return true; }
         bool launch();
         bool commit();
         bool ready();
@@ -995,9 +960,7 @@ class Store : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1008,6 +971,7 @@ class Store : public Instruction {
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
+        bool isStore() override { return true; }
         bool launch();
         bool commit();
         bool ready();
@@ -1042,9 +1006,7 @@ class GetElementPtr : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1086,9 +1048,7 @@ class Trunc : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1124,9 +1084,7 @@ class ZExt : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1162,9 +1120,7 @@ class SExt : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1202,9 +1158,7 @@ class FPToUI : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1240,9 +1194,7 @@ class FPToSI : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1278,9 +1230,7 @@ class UIToFP : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1316,9 +1266,7 @@ class SIToFP : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1354,9 +1302,7 @@ class FPTrunc : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1392,9 +1338,7 @@ class FPExt : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1430,9 +1374,7 @@ class PtrToInt : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1468,9 +1410,7 @@ class IntToPtr : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1510,9 +1450,7 @@ class ICmp : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1548,9 +1486,7 @@ class FCmp : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1597,9 +1533,7 @@ class Phi : public Instruction {
         phiArgs arguments; // [Value, Previous BB]
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1637,9 +1571,7 @@ class Call : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:
@@ -1679,9 +1611,7 @@ class Select : public Instruction {
         std::shared_ptr<SALAM::Value> falseValue;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        bool launched = false;
-        bool committed = false;
-        bool isready = false;
+
     protected:
 
     public:

@@ -39,6 +39,7 @@
 class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
+    std::string topName;
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
     uint32_t scheduling_threshold;
@@ -80,6 +81,7 @@ class LLVMInterface : public ComputeUnit {
 
     class ActiveFunction {
     private:
+        LLVMInterface * owner;
         std::shared_ptr<SALAM::Function> func;
         std::shared_ptr<SALAM::Instruction> caller;
         std::list<std::shared_ptr<SALAM::Instruction>> reservation;
@@ -88,14 +90,18 @@ class LLVMInterface : public ComputeUnit {
         std::list<std::shared_ptr<SALAM::Instruction>> computeQueue;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
     public:
-        ActiveFunction(std::shared_ptr<SALAM::Function> _func,
-                       std::shared_ptr<SALAM::Instruction> _caller,
-                       std::list<std::shared_ptr<SALAM::Instruction>> _reservation):
-                       func(_func), caller(_caller), reservation(_reservation) {}
+        ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,
+                       std::shared_ptr<SALAM::Instruction> _caller):
+                       owner(_owner), func(_func), caller(_caller), previousBB(nullptr) {}
         void readCommit(MemoryRequest *req);
         void writeCommit(MemoryRequest *req);
         void findDynamicDeps(std::shared_ptr<SALAM::Instruction> inst);
         void scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb);
+        void processQueues();
+        void launch();
+        bool canReturn() {
+            return (readQueue.empty() && writeQueue.empty() && computeQueue.empty() && reservation.front()->isReturn());
+        }
     };
 
     std::list<ActiveFunction> activeFunctions;
@@ -122,8 +128,8 @@ class LLVMInterface : public ComputeUnit {
     void dumpModule(llvm::Module *m);
     void printPerformanceResults();
     void launchFunction(std::shared_ptr<SALAM::Function> callee,
-                        std::shared_ptr<SALAM::Instruction> caller,
-                        std::vector<uint64_t> &args);
+                        std::shared_ptr<SALAM::Instruction> caller);
+    void launchTopFunction();
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
                                                           uint64_t id);
     void dumpQueues();

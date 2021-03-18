@@ -10,13 +10,12 @@ void
 SALAM::Function::initialize(llvm::Value * irval,
 						   irvmap *vmap,
 						   SALAM::valueListTy *valueList,
-						   bool isTop) {
+						   std::string topName) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	top = isTop;
 	//Parse irval for function params
 	llvm::Function * func = llvm::dyn_cast<llvm::Function>(irval);
 	assert(func); //panic("Invalid llvm::Value type used to initialize function. Failed cast to llvm::Function.");
-
+    if (func->getName() == topName) top = true;
 	// Fill arguments
     DPRINTF(LLVMInterface, "Initialize Function Arguments\n");
 	for (auto arg_iter = func->arg_begin(); arg_iter != func->arg_end(); arg_iter++) {
