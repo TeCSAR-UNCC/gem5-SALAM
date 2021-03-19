@@ -1,8 +1,9 @@
 #include "../lenet5_hw_defines.h"
 
-#define InputIdx3D(i,j,k) (fc0InDim*fc0InDim*(k) + fc0InDim*(j) + i)
-#define KIdx3D(i,j,k) (fc0KSize*fc0KSize*(k) + fc0KSize*(i) + j)
-#define OutIdx3D(i,j,k) (fc0OutDim*fc0OutDim*(k) + fc0OutDim*(j-fc0KSize/2) + i-fc0KSize/2)
+// HWC Memory Accesses
+#define InputIdx3D(h,w,c) ((h * fc0InDim*fc0InChan + w * fc0InChan + c)*sizeof(TYPE))
+#define KIdx4D(h,w,c,n) ((n * fc0KSize*fc0KSize*fc0InChan + h *fc0KSize*fc0InChan + w * fc0InChan + c)*sizeof(TYPE))
+#define OutIdx3D(h,w,c) ((h * fc0InDim*fc0InChan + w * fc0InChan + c)*sizeof(TYPE))
 
 void fc0() {
     uint8_t* fcInput = (uint8_t*)fc0Input;
@@ -10,41 +11,44 @@ void fc0() {
     uint8_t* fcOut = (uint8_t*)fc0Output;
     uint8_t* fcLUT = (uint8_t*)fc0LUT;
 
-    int i, j, k, l, m, n;
+    // HWC Implementation for Convolution
+    int h,w,c,cc,x,y;
+    // Input X
     #pragma clang loop unroll(disable)
-    for (n = 0; n < fc0OutChan; n++){
-        #pragma clang loop unroll(disable)
-        for (k = 0; k < fc0InChan; k++){
-            #pragma clang loop unroll(disable)
-            for ( j = 0; j < fc0InDim; j++) {
+    for (h = 0; h < fc0InDim; h++) {
+        // Input Y
+        for (w = 0; w < fc0InDim; w++) {
+            // Check that the window is valid
+            if(!(w+fc0KSize>fc0InDim || h+fc0KSize>fc0InDim)) {
+                // Kernel X
                 #pragma clang loop unroll(disable)
-                for ( i = 0; i < fc0InDim; i++) {
-                    if(!(i-fc0KSize/2<0 || j-fc0KSize/2<0
-                        || i+fc0KSize/2>=fc0InDim
-                        || j+fc0KSize/2 >= fc0InDim)){
-                        int sum = 0;
+                // Output Channels
+                for(cc = 0; cc < fc0OutChan; cc++) {
+                    for (x = 0; x < fc0KSize; x++) {
+                        // Kernel Y
                         #pragma clang loop unroll(disable)
-                        for ( m = -fc0KSize/2; m < fc0KSize/2; m++) {
+                        for (y = 0; y < fc0KSize; y++) {
+                            int sum = 0;
                             #pragma clang loop unroll(disable)
-                            for ( l = -fc0KSize/2; l < fc0KSize/2; l++) {
-                                sum += fcInput[InputIdx3D(i+l, j+m, k)]
-                                * kernel[KIdx3D(l+fc0KSize/2, m+fc0KSize/2, n)];
+                            // Input Channels
+                            for(c = 0; c < fc0InChan; c++) {
+                                sum += fcInput[InputIdx3D(h+x, w+y, c)]
+                                * kernel[KIdx4D(x,y,c,cc)];
                             }
+                            fcOut[OutIdx3D(h,w,cc)] += sum;
                         }
-                        fcOut[OutIdx3D(i,j,n)] += sum;
                     }
                 }
             }
         }
     }
+
     // Apply the activation function
-    #pragma clang loop unroll(disable)
-    for (n = 0; n < fc0OutChan; n++){
-        #pragma clang loop unroll(disable)
-        for ( j = 0; j < fc0InDim; j++) {
+    for (h = 0; h < fc0OutDim; h++){
+        for ( w = 0; w < fc0OutDim; w++) {
             #pragma clang loop unroll(disable)
-            for ( i = 0; i < fc0InDim; i++) {
-                fcOut[OutIdx3D(i,j,n)] *= fcLUT[0];
+            for ( c = 0; c < fc0OutChan; c++) {
+                fcOut[OutIdx3D(h,w,c)] *= fcLUT[0];
             }
         }
     }

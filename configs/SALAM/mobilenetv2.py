@@ -87,7 +87,7 @@ def buildhead(options, system, clstr):
 	clstr.normalconvweights.conf_table_reported = False
 	clstr.normalconvweights.ready_mode = False
 	clstr.normalconvweights.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(27):
 		clstr.normalconv.spm = clstr.normalconvweights.spm_ports
 	
 	# NormalConvQParams (Variable)
@@ -127,7 +127,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(10):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
@@ -137,7 +137,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(10):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
@@ -188,7 +188,7 @@ def buildhead(options, system, clstr):
 	clstr.pwconvlocalfeatsize.conf_table_reported = False
 	clstr.pwconvlocalfeatsize.ready_mode = False
 	clstr.pwconvlocalfeatsize.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(24):
 		clstr.pwconv.spm = clstr.pwconvlocalfeatsize.spm_ports
 	
 	# PWConvWeights (Variable)
@@ -198,7 +198,7 @@ def buildhead(options, system, clstr):
 	clstr.pwconvweights.conf_table_reported = False
 	clstr.pwconvweights.ready_mode = False
 	clstr.pwconvweights.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(24):
 		clstr.pwconv.spm = clstr.pwconvweights.spm_ports
 	
 	# PWConvQParams (Variable)
@@ -312,7 +312,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0localfeatsize.conf_table_reported = False
 	clstr.pwconv0localfeatsize.ready_mode = False
 	clstr.pwconv0localfeatsize.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(24):
 		clstr.pwconv0.spm = clstr.pwconv0localfeatsize.spm_ports
 	
 	# PWConv0Weights (Variable)
@@ -322,7 +322,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0weights.conf_table_reported = False
 	clstr.pwconv0weights.ready_mode = False
 	clstr.pwconv0weights.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(24):
 		clstr.pwconv0.spm = clstr.pwconv0weights.spm_ports
 	
 	# PWConv0QParams (Variable)
@@ -352,7 +352,7 @@ def buildbody(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(10):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
@@ -362,7 +362,7 @@ def buildbody(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(10):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
@@ -413,7 +413,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv1localfeatsize.conf_table_reported = False
 	clstr.pwconv1localfeatsize.ready_mode = False
 	clstr.pwconv1localfeatsize.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(120):
 		clstr.pwconv1.spm = clstr.pwconv1localfeatsize.spm_ports
 	
 	# PWConv1Weights (Variable)
@@ -423,7 +423,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv1weights.conf_table_reported = False
 	clstr.pwconv1weights.ready_mode = False
 	clstr.pwconv1weights.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(120):
 		clstr.pwconv1.spm = clstr.pwconv1weights.spm_ports
 	
 	# PWConv1QParams (Variable)

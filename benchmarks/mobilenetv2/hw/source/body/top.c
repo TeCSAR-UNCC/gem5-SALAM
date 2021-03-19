@@ -615,6 +615,6 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 	*MemDmaFlags   = MEM_DMA_INIT;
 
 	//Wait for all accelerators to finish before sending interrupt to CPU
-	while ((*StrDma0Flags & STR_DMA_WR_INTR) != STR_DMA_WR_INTR);
+	while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
 	return;
 }

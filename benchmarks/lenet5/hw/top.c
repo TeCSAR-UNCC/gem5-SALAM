@@ -22,7 +22,7 @@ void top(uint64_t mainMem) {
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	
+
 	//Transfer Input Weights
 	*DmaRdAddr  = 0x90000000;
 	*DmaWrAddr  = Conv0Weights;
@@ -51,7 +51,7 @@ void top(uint64_t mainMem) {
 	//Start the pool0
 	*POOL0Flags = DEV_INIT;
 	//Poll function for finish
-	while ((*CONV0Flags & DEV_INTR) != DEV_INTR);
+	while ((*POOL0Flags & DEV_INTR) != DEV_INTR);
 	//Transfer Results Back to Main Memory
 	*DmaRdAddr  = pool0Output;
 	*DmaWrAddr  = 0x90000000;

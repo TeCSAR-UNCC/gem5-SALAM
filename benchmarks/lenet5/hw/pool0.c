@@ -1,29 +1,38 @@
 #include "../lenet5_hw_defines.h"
 
-#define InputIdx3D(i,j,k) (pool0InDim*pool0InDim*(k) + pool0InDim*(j) + i)
-#define KIdx3D(i,j,k) (pool0KSize*pool0KSize*(k) + pool0KSize*(i) + j)
-#define OutIdx3D(i,j,k) (pool0OutDim*pool0OutDim*(k) + pool0OutDim*(j/pool0KSize) + i/pool0KSize)
+// HWC Memory Accesses
+#define InputIdx3D(h,w,c) ((h * pool0InDim*pool0InChan + w * pool0InChan + c)*sizeof(TYPE))
+#define OutIdx3D(h,w,c) ((h * pool0InDim*pool0InChan + w * pool0InChan + c)*sizeof(TYPE))
 
 void pool0() {
     uint8_t* convInput = (uint8_t*)pool0Input;
     uint8_t* convOut = (uint8_t*)pool0Output;
 
-    int i, j, k, l, m;
+    // HWC Implementation for Convolution
+    int h,w,c,cc,x,y;
+    // Input X
     #pragma clang loop unroll(disable)
-    for (k = 0; k < pool0InChan; k++){
+    for (h = 0; h < conv0InDim; h+=pool0KSize) {
+        // Input Y
         #pragma clang loop unroll(disable)
-        for ( j = 0; j < pool0InDim; j+=pool0KSize) {
-            #pragma clang loop unroll(disable)
-            for ( i = 0; i < pool0InDim; i+=pool0KSize) {
-                int sum = 0;
+        for (w = 0; w < conv0InDim; w+=pool0KSize) {
+            // Check that the window is valid
+            if(!(w+conv0KSize>conv0InDim || h+conv0KSize>conv0InDim)) {
+                // Kernel X
                 #pragma clang loop unroll(disable)
-                for (m = 0; m < pool0KSize; m++) {
+                for (x = 0; x < conv0KSize; x++) {
+                    // Kernel Y
                     #pragma clang loop unroll(disable)
-                    for ( l = 0; l < pool0KSize; l++) {
-                        sum += convInput[InputIdx3D(i+l, j+m, k)];
+                    for (y = 0; y < conv0KSize; y++) {
+                        // Input Channels
+                        int sum = 0;
+                        #pragma clang loop unroll(disable)
+                        for(c = 0; c < conv0InChan; c++) {
+                            sum += convInput[InputIdx3D(h+x, w+y, c)];
+                        }
+                        convOut[OutIdx3D(h,w,cc)] += sum/(pool0KSize*pool0KSize);
                     }
                 }
-                convOut[OutIdx3D(i,j,k)] += sum/(pool0KSize*pool0KSize);
             }
         }
     }

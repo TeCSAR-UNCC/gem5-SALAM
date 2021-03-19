@@ -41,7 +41,7 @@ acc_cluster:
       - Name: NormalConvWeights
         Type: SPM
         Size: 648
-        Ports: 1
+        Ports: 27
     - Var:
       - Name: NormalConvQParams
         Type: SPM
@@ -70,12 +70,12 @@ acc_cluster:
       - Name: DWConvWindow
         Type: SPM
         Size: 216
-        Ports: 27
+        Ports: 10
     - Var:
       - Name: DWConvWeights
         Type: SPM
         Size: 240
-        Ports: 1
+        Ports: 10
     - Var:
       - Name: DWConvQParams
         Type: SPM
@@ -102,7 +102,7 @@ acc_cluster:
     - Name: PWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/PWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/PWConv.ini
-      Debug: True
+      Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
       StreamIn: stream_dma0
@@ -110,12 +110,12 @@ acc_cluster:
       - Name: PWConvLocalFeatSize
         Type: SPM
         Size: 24
-        Ports: 27
+        Ports: 24
     - Var:
       - Name: PWConvWeights
         Type: SPM
         Size: 384
-        Ports: 1
+        Ports: 24
     - Var:
       - Name: PWConvQParams
         Type: SPM
@@ -179,12 +179,12 @@ acc_cluster:
       - Name: PWConv0LocalFeatSize
         Type: SPM
         Size: 120
-        Ports: 27
+        Ports: 24
     - Var:
       - Name: PWConv0Weights
         Type: SPM
         Size: 86400
-        Ports: 1
+        Ports: 24
     - Var:
       - Name: PWConv0QParams
         Type: SPM
@@ -208,12 +208,12 @@ acc_cluster:
       - Name: DWConvWindow
         Type: SPM
         Size: 7200
-        Ports: 27
+        Ports: 10
     - Var:
       - Name: DWConvWeights
         Type: SPM
         Size: 1200
-        Ports: 1
+        Ports: 10
     - Var:
       - Name: DWConvQParams
         Type: SPM
@@ -248,12 +248,12 @@ acc_cluster:
       - Name: PWConv1LocalFeatSize
         Type: SPM
         Size: 720
-        Ports: 27
+        Ports: 120
     - Var:
       - Name: PWConv1Weights
         Type: SPM
         Size: 172800
-        Ports: 1
+        Ports: 120
     - Var:
       - Name: PWConv1QParams
         Type: SPM

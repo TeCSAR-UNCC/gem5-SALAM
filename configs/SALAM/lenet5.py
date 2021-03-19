@@ -7,7 +7,7 @@ from HWAccConfig import *
 def buildlenet5(options, system, clstr):
 
 	local_low = 0x10020000
-	local_high = 0x1003444c
+	local_high = 0x1006bedc
 	local_range = AddrRange(local_low, local_high)
 	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]
 	system.iobus.master = clstr.local_bus.slave
@@ -54,21 +54,21 @@ def buildlenet5(options, system, clstr):
 	acc = "pool1"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool1.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool1.ll"
-	clstr.pool1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002e981, pio_size=1)
+	clstr.pool1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x100308c1, pio_size=1)
 	AccConfig(clstr.pool1, config, ir)
 	
 	# fc0 Definition
 	acc = "fc0"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc0.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc0.ll"
-	clstr.fc0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x100308c2, pio_size=1)
+	clstr.fc0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10032802, pio_size=1)
 	AccConfig(clstr.fc0, config, ir)
 	
 	# fc1 Definition
 	acc = "fc1"
 	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc1.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc1.ll"
-	clstr.fc1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10033fc7, pio_size=1)
+	clstr.fc1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10061e27, pio_size=1)
 	AccConfig(clstr.fc1, config, ir)
 	
 	# top Config
@@ -87,7 +87,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0input.conf_table_reported = False
 	clstr.conv0input.ready_mode = False
 	clstr.conv0input.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.conv0.spm = clstr.conv0input.spm_ports
 	
 	# Conv0Weights (Variable)
@@ -97,7 +97,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0weights.conf_table_reported = False
 	clstr.conv0weights.ready_mode = False
 	clstr.conv0weights.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.conv0.spm = clstr.conv0weights.spm_ports
 	
 	# Conv0Output (Variable)
@@ -107,7 +107,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0output.conf_table_reported = False
 	clstr.conv0output.ready_mode = False
 	clstr.conv0output.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.conv0.spm = clstr.conv0output.spm_ports
 	
 	# Conv0LUT (Variable)
@@ -117,7 +117,7 @@ def buildlenet5(options, system, clstr):
 	clstr.conv0lut.conf_table_reported = False
 	clstr.conv0lut.ready_mode = False
 	clstr.conv0lut.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.conv0.spm = clstr.conv0lut.spm_ports
 	
 	# pool0 Config
@@ -131,7 +131,7 @@ def buildlenet5(options, system, clstr):
 	clstr.pool0input.conf_table_reported = False
 	clstr.pool0input.ready_mode = False
 	clstr.pool0input.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.pool0.spm = clstr.pool0input.spm_ports
 	
 	# pool0Output (Variable)
@@ -141,7 +141,7 @@ def buildlenet5(options, system, clstr):
 	clstr.pool0output.conf_table_reported = False
 	clstr.pool0output.ready_mode = False
 	clstr.pool0output.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.pool0.spm = clstr.pool0output.spm_ports
 	
 	# conv1 Config
@@ -155,37 +155,37 @@ def buildlenet5(options, system, clstr):
 	clstr.conv1input.conf_table_reported = False
 	clstr.conv1input.ready_mode = False
 	clstr.conv1input.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(400):
 		clstr.conv1.spm = clstr.conv1input.spm_ports
 	
 	# Conv1Weights (Variable)
 	addr = 0x1002ca3d
-	spmRange = AddrRange(addr, addr + 0x640)
+	spmRange = AddrRange(addr, addr + 0x2580)
 	clstr.conv1weights = ScratchpadMemory(range = spmRange)
 	clstr.conv1weights.conf_table_reported = False
 	clstr.conv1weights.ready_mode = False
 	clstr.conv1weights.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(400):
 		clstr.conv1.spm = clstr.conv1weights.spm_ports
 	
 	# Conv1Output (Variable)
-	addr = 0x1002d07d
+	addr = 0x1002efbd
 	spmRange = AddrRange(addr, addr + 0x1900)
 	clstr.conv1output = ScratchpadMemory(range = spmRange)
 	clstr.conv1output.conf_table_reported = False
 	clstr.conv1output.ready_mode = False
 	clstr.conv1output.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(400):
 		clstr.conv1.spm = clstr.conv1output.spm_ports
 	
 	# Conv1LUT (Variable)
-	addr = 0x1002e97d
+	addr = 0x100308bd
 	spmRange = AddrRange(addr, addr + 0x4)
 	clstr.conv1lut = ScratchpadMemory(range = spmRange)
 	clstr.conv1lut.conf_table_reported = False
 	clstr.conv1lut.ready_mode = False
 	clstr.conv1lut.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(14):
 		clstr.conv1.spm = clstr.conv1lut.spm_ports
 	
 	# pool1 Config
@@ -193,23 +193,23 @@ def buildlenet5(options, system, clstr):
 	clstr.pool1.enable_debug_msgs = False
 	
 	# pool1Input (Variable)
-	addr = 0x1002e982
+	addr = 0x100308c2
 	spmRange = AddrRange(addr, addr + 0x1900)
 	clstr.pool1input = ScratchpadMemory(range = spmRange)
 	clstr.pool1input.conf_table_reported = False
 	clstr.pool1input.ready_mode = False
 	clstr.pool1input.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.pool1.spm = clstr.pool1input.spm_ports
 	
 	# pool1Output (Variable)
-	addr = 0x10030282
+	addr = 0x100321c2
 	spmRange = AddrRange(addr, addr + 0x640)
 	clstr.pool1output = ScratchpadMemory(range = spmRange)
 	clstr.pool1output.conf_table_reported = False
 	clstr.pool1output.ready_mode = False
 	clstr.pool1output.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.pool1.spm = clstr.pool1output.spm_ports
 	
 	# fc0 Config
@@ -217,43 +217,43 @@ def buildlenet5(options, system, clstr):
 	clstr.fc0.enable_debug_msgs = False
 	
 	# fc0Input (Variable)
-	addr = 0x100308c3
+	addr = 0x10032803
 	spmRange = AddrRange(addr, addr + 0x640)
 	clstr.fc0input = ScratchpadMemory(range = spmRange)
 	clstr.fc0input.conf_table_reported = False
 	clstr.fc0input.ready_mode = False
 	clstr.fc0input.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc0.spm = clstr.fc0input.spm_ports
 	
 	# fc0Weights (Variable)
-	addr = 0x10030f03
-	spmRange = AddrRange(addr, addr + 0x2ee0)
+	addr = 0x10032e43
+	spmRange = AddrRange(addr, addr + 0x2ee00)
 	clstr.fc0weights = ScratchpadMemory(range = spmRange)
 	clstr.fc0weights.conf_table_reported = False
 	clstr.fc0weights.ready_mode = False
 	clstr.fc0weights.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc0.spm = clstr.fc0weights.spm_ports
 	
 	# fc0Output (Variable)
-	addr = 0x10033de3
+	addr = 0x10061c43
 	spmRange = AddrRange(addr, addr + 0x1e0)
 	clstr.fc0output = ScratchpadMemory(range = spmRange)
 	clstr.fc0output.conf_table_reported = False
 	clstr.fc0output.ready_mode = False
 	clstr.fc0output.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc0.spm = clstr.fc0output.spm_ports
 	
 	# fc0LUT (Variable)
-	addr = 0x10033fc3
+	addr = 0x10061e23
 	spmRange = AddrRange(addr, addr + 0x4)
 	clstr.fc0lut = ScratchpadMemory(range = spmRange)
 	clstr.fc0lut.conf_table_reported = False
 	clstr.fc0lut.ready_mode = False
 	clstr.fc0lut.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc0.spm = clstr.fc0lut.spm_ports
 	
 	# fc1 Config
@@ -261,43 +261,43 @@ def buildlenet5(options, system, clstr):
 	clstr.fc1.enable_debug_msgs = False
 	
 	# fc1Input (Variable)
-	addr = 0x10033fc8
+	addr = 0x10061e28
 	spmRange = AddrRange(addr, addr + 0x1e0)
 	clstr.fc1input = ScratchpadMemory(range = spmRange)
 	clstr.fc1input.conf_table_reported = False
 	clstr.fc1input.ready_mode = False
 	clstr.fc1input.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc1.spm = clstr.fc1input.spm_ports
 	
 	# fc1Weights (Variable)
-	addr = 0x100341a8
-	spmRange = AddrRange(addr, addr + 0x150)
+	addr = 0x10062008
+	spmRange = AddrRange(addr, addr + 0x9d80)
 	clstr.fc1weights = ScratchpadMemory(range = spmRange)
 	clstr.fc1weights.conf_table_reported = False
 	clstr.fc1weights.ready_mode = False
 	clstr.fc1weights.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc1.spm = clstr.fc1weights.spm_ports
 	
 	# fc1Output (Variable)
-	addr = 0x100342f8
+	addr = 0x1006bd88
 	spmRange = AddrRange(addr, addr + 0x150)
 	clstr.fc1output = ScratchpadMemory(range = spmRange)
 	clstr.fc1output.conf_table_reported = False
 	clstr.fc1output.ready_mode = False
 	clstr.fc1output.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc1.spm = clstr.fc1output.spm_ports
 	
 	# fc1LUT (Variable)
-	addr = 0x10034448
+	addr = 0x1006bed8
 	spmRange = AddrRange(addr, addr + 0x4)
 	clstr.fc1lut = ScratchpadMemory(range = spmRange)
 	clstr.fc1lut.conf_table_reported = False
 	clstr.fc1lut.ready_mode = False
 	clstr.fc1lut.port = clstr.local_bus.master
-	for i in range(25):
+	for i in range(1):
 		clstr.fc1.spm = clstr.fc1lut.spm_ports
 	
 def makeHWAcc(options, system):
