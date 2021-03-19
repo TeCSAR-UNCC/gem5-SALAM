@@ -30,8 +30,14 @@ SALAM::Register::Register_Debugger::dumper(SALAM::Register *reg)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s\n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "| %s  \n", 
-            "************** Register Dump **************"
+        std::string type = "N/A";
+        if (reg->isInt()) type = "Int";
+        else if (reg->isFP()) type = "FP";
+        else if (reg->isPtr()) type = "Ptr";
+
+        DPRINTF(SALAM_Debug, "| %s |\n\t\t %s %s  \n\n", 
+            "************** Register Dump **************",
+            "   Type: ", type
         );
     }
 }

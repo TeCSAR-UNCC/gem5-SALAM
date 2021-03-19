@@ -200,3 +200,37 @@ SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 	SALAM::Value::initialize(irval, irmap);
 	addRegister();
 }
+
+SALAM::Operand::Operand(uint64_t id) :
+						Value(id)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+}
+
+void
+SALAM::Operand::setInstructionReg(std::shared_ptr<SALAM::Register> resultReg, llvm::Type *irtype)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	bool istracked = false;
+	this->irtype = irtype;
+	if (irtype->isPointerTy()) {
+		lockedValue = new PointerRegister(istracked);
+	} else if (irtype->isIntegerTy()) {
+		lockedValue = new APIntRegister(irtype, istracked);
+	} else if (irtype->isFloatingPointTy()) {
+		lockedValue = new APFloatRegister(irtype, istracked);
+	} else {
+		//assert(0); // Type is invalid for a register
+		lockedValue = nullptr;
+	}
+}
+
+
+void
+SALAM::Operand::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	//Initialize SALAM::Value
+	SALAM::Value::initialize(irval, irmap);
+	//addRegister();
+}

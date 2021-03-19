@@ -60,11 +60,11 @@ Instruction::Instruction_Debugger::dumper(Instruction * inst)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "| %s | %s %d  \n", 
+        DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n", 
             "************** Instruction Dump **************",
-            "\nUID: ", inst->getUID()
+            "    UID: ", inst->getUID()
         );
-        if(inst->getReg()) inst->value_dump();
+        inst->value_dump();
     }
 }
 
@@ -82,8 +82,8 @@ Instruction::instantiate(llvm::Value *irval,
     for (auto const op : iruser->operand_values()) {
         auto mapit = irmap->find(op);
         if(dbg) {
-            op->printAsOperand(llvm::errs());
             std::cout << "| Operand Found: ";
+            op->printAsOperand(llvm::errs());
             llvm::errs() << "\n";
         }
         std::shared_ptr<SALAM::Value> opval;
@@ -102,6 +102,8 @@ Instruction::instantiate(llvm::Value *irval,
         }
         DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
         staticDependencies.push_back(opval);
+        // Push back pointers to registers for operands
+        opReg.push_back(opval->getReg());
         if(llvm::isa<llvm::PHINode>(inst)) {
             uint64_t phiBB = 0;
             llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(inst);
@@ -261,6 +263,14 @@ Br::Br(uint64_t id,
     base_params.push_back(cycles);
     conditions.push_back(base_params);
 }
+
+/*
+void
+Br::linkOperands() 
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+}
+*/
 
 std::shared_ptr<SALAM::BasicBlock>
 Br::getTarget() {

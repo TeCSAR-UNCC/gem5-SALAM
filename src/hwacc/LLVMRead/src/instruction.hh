@@ -34,8 +34,6 @@ class Instruction : public Value
         bool dbg = false;
 
     protected:
-        // std::vector<Operands> operands;
-        // operand 
         bool running = false;
         class Instruction_Debugger: public Debugger
         {
@@ -68,6 +66,7 @@ class Instruction : public Value
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
         bool isCommitted() { return committed; }
+        //virtual void linkOperands();
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }
@@ -192,6 +191,7 @@ class Br : public Instruction {
         bool ready();
         void reset();
         void compute();
+        //void linkOperands();
         void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();

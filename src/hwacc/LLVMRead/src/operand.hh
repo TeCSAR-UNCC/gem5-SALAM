@@ -10,6 +10,7 @@
 #include <llvm-c/Core.h>
 #include "debug_flags.hh"
 #include "value.hh"
+#include "registers.hh"
 #include <map>
 #include <memory>
 #include <vector>
@@ -17,6 +18,7 @@
 namespace SALAM
 {
 
+/*
 template <typename T>
 struct Operands { // Type (ReturnType) 
     llvm::Type *type; // For typing everything
@@ -25,6 +27,25 @@ struct Operands { // Type (ReturnType)
     uint64_t UID; 
     T stored_value;
     bool set; 
+};
+*/
+
+class Operand: public Value
+{
+    private:
+        Register *lockedValue;
+        //std::shared_ptr<SALAM::Register> resultReg;
+        //llvm::Type * irtype;
+
+    protected:
+    public:
+        void setInstructionReg(std::shared_ptr<SALAM::Register> resultReg, llvm::Type *irtype);
+        Operand(uint64_t id);
+        ~Operand() = default;
+        Value *clone() { return new Operand(*this); }
+        virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
+
+
 };
 
 class Constant: public Value {

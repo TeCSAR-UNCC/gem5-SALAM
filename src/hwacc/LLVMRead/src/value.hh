@@ -20,6 +20,7 @@ class Value;
 typedef std::pair<llvm::Value *, std::shared_ptr<Value>> irvmaptype;
 typedef std::map<llvm::Value *, std::shared_ptr<Value>> irvmap;
 typedef std::vector<std::shared_ptr<Value>> valueListTy;
+typedef std::vector<std::shared_ptr<SALAM::Register>> Ops;
 
 class Value
 {
@@ -27,9 +28,12 @@ class Value
         uint64_t uid = 0;
         uint64_t size = 0;
         llvm::Type *irtype;
-        Register *reg;
+        std::shared_ptr<SALAM::Register> returnReg;
+        Ops opReg;
+
         bool dbg = false;
 
+        //void linkOperands();
         void addRegister(bool isTracked=true);
         void addAPIntRegister(const llvm::APInt & val);
         void addAPIntRegister(const llvm::APSInt & val);
@@ -58,16 +62,16 @@ class Value
         uint64_t getSize() { return size; }
         uint64_t getSizeInBytes() { return ((size - 1) >> 3) + 1; }
         uint64_t getUID() { return uid; }
-        Register *getReg() { return reg; }
+        std::shared_ptr<SALAM::Register> getReg() { return returnReg; }
         llvm::Type *getType() { return irtype; }
-        void value_dump() { if (dbg) value_dbg->dumper(this); }
-        std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
-        virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
-
         void setRegisterValue(const llvm::APInt &data);
         void setRegisterValue(const llvm::APFloat &data);
         void setRegisterValue(const uint64_t data);
         void setRegisterValue(uint8_t * data);
+        void value_dump() { if (dbg) value_dbg->dumper(this); }
+        std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
+        virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
+
 };
 } // End SALAM Namespace
 
