@@ -25,14 +25,14 @@ void fc1() {
                 #pragma clang loop unroll(disable)
                 for(cc = 0; cc < fc1OutChan; cc++) {
                     // Kernel X
-                    #pragma clang loop unroll(disable)
+                    #pragma clang loop unroll(full)
                     for (x = 0; x < fc1KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(disable)
+                        #pragma clang loop unroll(full)
                         for (y = 0; y < fc1KSize; y++) {
                             // Input Channels
                             int sum = 0;
-                            #pragma clang loop unroll(disable)
+                            #pragma clang loop unroll(full)
                             for(c = 0; c < fc1InChan; c++) {
                                 sum += fcInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];
@@ -48,7 +48,7 @@ void fc1() {
     // Apply the activation function
     for (h = 0; h < fc1OutDim; h++){
         for ( w = 0; w < fc1OutDim; w++) {
-            #pragma clang loop unroll(disable)
+            #pragma clang loop unroll(full)
             for ( c = 0; c < fc1OutChan; c++) {
                 fcOut[OutIdx3D(h,w,c)] *= fcLUT[0];
             }

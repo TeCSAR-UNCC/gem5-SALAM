@@ -30,14 +30,14 @@ void conv1() {
                 #pragma clang loop unroll(disable)
                 for(cc = 0; cc < conv1OutChan; cc++) {
                     // Kernel X
-                    #pragma clang loop unroll(disable)
+                    #pragma clang loop unroll(full)
                     for (x = 0; x < conv1KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(disable)
+                        #pragma clang loop unroll(full)
                         for (y = 0; y < conv1KSize; y++) {
                             // Input Channels
                             int sum = 0;
-                            #pragma clang loop unroll(disable)
+                            #pragma clang loop unroll(full)
                             for(c = 0; c < conv1InChan; c++) {
                                 sum += convInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];
@@ -82,7 +82,7 @@ void conv1() {
     // Apply the activation function
     for (h = 0; h < conv1OutDim; h++){
         for ( w = 0; w < conv1OutDim; w++) {
-            #pragma clang loop unroll(disable)
+            #pragma clang loop unroll(full)
             for ( c = 0; c < conv1OutChan; c++) {
                 convOut[OutIdx3D(h,w,c)] *= convLUT[0];
             }

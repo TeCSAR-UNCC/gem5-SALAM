@@ -20,16 +20,17 @@ void fc0() {
         for (w = 0; w < fc0InDim; w++) {
             // Check that the window is valid
             if(!(w+fc0KSize>fc0InDim || h+fc0KSize>fc0InDim)) {
-                // Kernel X
-                #pragma clang loop unroll(disable)
                 // Output Channels
+                #pragma clang loop unroll(disable)
                 for(cc = 0; cc < fc0OutChan; cc++) {
+                    // Kernel X
+                    #pragma clang loop unroll(full)
                     for (x = 0; x < fc0KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(disable)
+                        #pragma clang loop unroll(full)
                         for (y = 0; y < fc0KSize; y++) {
                             int sum = 0;
-                            #pragma clang loop unroll(disable)
+                            #pragma clang loop unroll(full)
                             // Input Channels
                             for(c = 0; c < fc0InChan; c++) {
                                 sum += fcInput[InputIdx3D(h+x, w+y, c)]
@@ -46,7 +47,7 @@ void fc0() {
     // Apply the activation function
     for (h = 0; h < fc0OutDim; h++){
         for ( w = 0; w < fc0OutDim; w++) {
-            #pragma clang loop unroll(disable)
+            #pragma clang loop unroll(full)
             for ( c = 0; c < fc0OutChan; c++) {
                 fcOut[OutIdx3D(h,w,c)] *= fcLUT[0];
             }

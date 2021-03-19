@@ -12,22 +12,22 @@ void pool1() {
     int h,w,c,cc,x,y;
     // Input X
     #pragma clang loop unroll(disable)
-    for (h = 0; h < conv0InDim; h+=pool1KSize) {
+    for (h = 0; h < pool1InDim; h+=pool1KSize) {
         // Input Y
         #pragma clang loop unroll(disable)
-        for (w = 0; w < conv0InDim; w+=pool1KSize) {
+        for (w = 0; w < pool1InDim; w+=pool1KSize) {
             // Check that the window is valid
-            if(!(w+conv0KSize>conv0InDim || h+conv0KSize>conv0InDim)) {
+            if(!(w+pool1KSize>pool1InDim || h+pool1KSize>pool1InDim)) {
                 // Kernel X
-                #pragma clang loop unroll(disable)
-                for (x = 0; x < conv0KSize; x++) {
+                #pragma clang loop unroll(full)
+                for (x = 0; x < pool1KSize; x++) {
                     // Kernel Y
-                    #pragma clang loop unroll(disable)
-                    for (y = 0; y < conv0KSize; y++) {
+                    #pragma clang loop unroll(full)
+                    for (y = 0; y < pool1KSize; y++) {
                         // Input Channels
                         int sum = 0;
-                        #pragma clang loop unroll(disable)
-                        for(c = 0; c < conv0InChan; c++) {
+                        #pragma clang loop unroll(full)
+                        for(c = 0; c < pool1InChan; c++) {
                             sum += convInput[InputIdx3D(h+x, w+y, c)];
                         }
                         convOut[OutIdx3D(h,w,cc)] += sum/(pool1KSize*pool1KSize);

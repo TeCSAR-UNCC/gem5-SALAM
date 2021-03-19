@@ -22,17 +22,17 @@ void conv0() {
             // Check that the window is valid
             if(!(w+conv0KSize>conv0InDim || h+conv0KSize>conv0InDim)) {
                 // Output Channels
-                #pragma clang loop unroll(disable)
+                #pragma clang loop unroll(full)
                 for(cc = 0; cc < conv0OutChan; cc++) {
                     // Kernel X
-                    #pragma clang loop unroll(disable)
+                    #pragma clang loop unroll(full)
                     for (x = 0; x < conv0KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(disable)
+                        #pragma clang loop unroll(full)
                         for (y = 0; y < conv0KSize; y++) {
                             // Input Channels
                             int sum = 0;
-                            #pragma clang loop unroll(disable)
+                            #pragma clang loop unroll(full)
                             for(c = 0; c < conv0InChan; c++) {
                                 sum += convInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];
@@ -50,7 +50,7 @@ void conv0() {
     for (h = 0; h < conv0OutDim; h++){
         #pragma clang loop unroll(disable)
         for ( w = 0; w < conv0OutDim; w++) {
-            #pragma clang loop unroll(disable)
+            #pragma clang loop unroll(full)
             for ( c = 0; c < conv0OutChan; c++) {
                 convOut[OutIdx3D(h,w,c)] *= convLUT[0];
             }
