@@ -36,16 +36,16 @@ class Operand: public Value
         Register *lockedValue;
         //std::shared_ptr<SALAM::Register> resultReg;
         //llvm::Type * irtype;
+        bool set = false;
 
     protected:
     public:
         void setInstructionReg(std::shared_ptr<SALAM::Register> resultReg, llvm::Type *irtype);
         Operand(uint64_t id);
+        //Operand(llvm::Value * irval);
         ~Operand() = default;
         Value *clone() { return new Operand(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
-
-
 };
 
 class Constant: public Value {

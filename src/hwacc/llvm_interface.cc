@@ -60,6 +60,7 @@ JS              - findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>
 */
 void
 LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb) {
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto instruction_list = *(bb->Instructions());
     for (auto inst : instruction_list) {
         std::shared_ptr<SALAM::Instruction> clone_inst = inst->clone();
@@ -143,6 +144,8 @@ JS       - bool ready() // checks dependencies, return true if satisfied
 
 void
 LLVMInterface::ActiveFunction::processQueues() {
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // First pass, computeQueue is empty 
     for (auto active_inst : computeQueue) {
         active_inst->commit();
     }
@@ -154,7 +157,7 @@ LLVMInterface::ActiveFunction::processQueues() {
                 if ((*it)->ready()) {
                     (*it)->launch();
                     if ((*it)->isLoad()) {
-
+                        // 
                     } else if ((*it)->isStore()) {
 
                     } else if ((*it)->isTerminator()) {
@@ -166,6 +169,8 @@ LLVMInterface::ActiveFunction::processQueues() {
                 } else {
                     ++it;
                 }
+            } else {
+                ++it;
             }
         }
     }
@@ -240,6 +245,12 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
         for (auto static_dep : inst->getStaticDependencies()) {
             dep_uids.push_back(static_dep->getUID());
             dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(static_dep->getUID(), static_dep));
+            // Inintialize the operands here
+            // +++ call constructor for Operand
+            //      copy constructor for value
+            //      with an extra register, and functions for that register
+            // Ordered the same as static dependencies
+            // Also matches order of IR 
         }
         // Find dependencies currently in queues
 
@@ -308,7 +319,7 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
         // Fetch values for resolved dependencies, static elements, and immediate values
         if (!dependencies.empty()) {
             for (auto resolved : dependencies) {
-                // check operands list, store value
+                // If this dependency exists, then lock value into operand
             }
         }
     }
@@ -507,6 +518,7 @@ LLVMInterface::initialize() {
     constructStaticGraph();
     DPRINTF(LLVMInterface, "================================================================\n");
     debug(1);
+    launchTopFunction();
 
 
     panic("Kill Simulation");
@@ -635,6 +647,7 @@ LLVMInterface::dumpQueues() {
 void
 LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
                               std::shared_ptr<SALAM::Instruction> caller) {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Add the callee to our list of active functions
     activeFunctions.push_back(ActiveFunction(this, callee, caller));
     activeFunctions.back().launch();
@@ -642,6 +655,7 @@ LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
 
 void
 LLVMInterface::launchTopFunction() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     for (auto func : functions) {
         if (func->isTop()) {
             // Launch the top level function
@@ -654,6 +668,7 @@ LLVMInterface::launchTopFunction() {
 }
 
 void LLVMInterface::ActiveFunction::launch() {
+    //if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Fetch the arguments
     std::vector<std::shared_ptr<SALAM::Value>> funcArgs = *(func->getArguments());
     if (func->isTop()) {

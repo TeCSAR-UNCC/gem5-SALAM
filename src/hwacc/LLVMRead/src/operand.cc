@@ -225,7 +225,6 @@ SALAM::Operand::setInstructionReg(std::shared_ptr<SALAM::Register> resultReg, ll
 	}
 }
 
-
 void
 SALAM::Operand::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 {

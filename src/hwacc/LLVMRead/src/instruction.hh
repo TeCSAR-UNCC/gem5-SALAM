@@ -16,6 +16,7 @@
 namespace SALAM {
 
 class BasicBlock; // Do Not Remove
+//class Operator;
 
 
 //---------------------------------------------------------------------------//
@@ -32,6 +33,9 @@ class Instruction : public Value
         uint64_t llvmOpCode;
         uint64_t cycleCount;
         bool dbg = false;
+
+        // Operands
+        std::vector<SALAM::Operand> operands;
 
     protected:
         bool running = false;

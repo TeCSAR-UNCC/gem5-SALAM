@@ -103,6 +103,7 @@ Instruction::instantiate(llvm::Value *irval,
         DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
         staticDependencies.push_back(opval);
         // Push back pointers to registers for operands
+        // TODO: Maybe remove this 
         opReg.push_back(opval->getReg());
         if(llvm::isa<llvm::PHINode>(inst)) {
             uint64_t phiBB = 0;
@@ -112,8 +113,9 @@ Instruction::instantiate(llvm::Value *irval,
             opval = mapit->second;
             staticDependencies.push_back(opval);
             ++phiBB;
-        } 
+        }
     }
+
     DPRINTF(LLVMInterface, "Initialize Value - Instruction::instantiate\n");
     SALAM::Value::initialize(irval, irmap);
 }
@@ -176,7 +178,8 @@ Ret::initialize(llvm::Value * irval,
 }
 
 bool
-Ret::ready() {
+Ret::ready()
+{
     if (getDependencyCount() == 0) {
         isready = true;
 
