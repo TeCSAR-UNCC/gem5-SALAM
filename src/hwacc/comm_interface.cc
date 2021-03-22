@@ -157,8 +157,8 @@ CommInterface::recvPacket(PacketPtr pkt) {
         if (!(writeReq->needToWrite)) {
             if (debug()) DPRINTF(CommInterface, "Done writing\n");
             cu->writeCommit(writeReq);
-            delete[] writeReq->buffer;
-            delete[] writeReq->readsDone;
+            // delete[] writeReq->buffer;
+            // delete[] writeReq->readsDone;
             clearMemRequest(writeReq, false);
             delete writeReq;
         } else {
