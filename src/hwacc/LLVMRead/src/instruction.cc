@@ -2273,30 +2273,22 @@ Load::ready() {
 bool
 Load::launch()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
+    // UNUSED
+    return true;
 }
 
 void
 Load::compute() {
-    // Perform computations
-    // Store results in temp location
+    // UNUSED
 }
 
 bool
 Load::commit()
 {
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
+    reset();
+    signalUsers();
+    committed = true;
+    return true;
 }
 
 void
@@ -2307,6 +2299,14 @@ Load::getDependencyValue(Instruction *dep) {
 void
 Load::reset() {
     // Lock results from temp location
+}
+
+MemoryRequest *
+Load::createMemoryRequest() {
+    Addr memAddr = *(operands.front().getPtrRegValue());
+    size_t reqLen = operands.front().getSizeInBytes();
+
+    return new MemoryRequest(memAddr, reqLen);
 }
 
 // SALAM-Store // -----------------------------------------------------------//
@@ -2369,30 +2369,46 @@ Store::ready() {
 bool
 Store::launch()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
+    // UNUSED
+    return true;
 }
 
 void
 Store::compute() {
-    // Perform computations
-    // Store results in temp location
+    // UNUSED
 }
 
 bool
 Store::commit()
 {
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
+    reset();
+    signalUsers();
+    committed = true;
+    return true;
+}
+
+MemoryRequest *
+Store::createMemoryRequest() {
+    Addr memAddr = *(operands.front().getPtrRegValue());
+    size_t reqLen = operands.front().getSizeInBytes();
+
+    MemoryRequest * req;
+
+    auto dataRegister = operands.at(1).getRegister();
+    // Copy data from the register
+    if (dataRegister->isPtr()) {
+        req = new MemoryRequest(memAddr, dataRegister->getPtrData(), reqLen);
     } else {
-        currentCycle--;
+        llvm::APInt regAPData;
+        if (dataRegister->isInt()) {
+            regAPData = *(dataRegister->getIntData());
+        } else {
+            regAPData = dataRegister->getFloatData()->bitcastToAPInt();
+        }
+        req = new MemoryRequest(memAddr, regAPData.getRawData(), reqLen);
     }
-    return false;
+
+    return req;
 }
 
 void

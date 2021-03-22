@@ -157,9 +157,11 @@ LLVMInterface::ActiveFunction::processQueues() {
                 if ((*it)->ready()) {
                     (*it)->launch();
                     if ((*it)->isLoad()) {
-                        // 
+                        auto memReq = (*it)->createMemoryRequest();
+                        readQueue.insert({memReq, (*it)});
                     } else if ((*it)->isStore()) {
-
+                        auto memReq = (*it)->createMemoryRequest();
+                        writeQueue.insert({memReq, (*it)});
                     } else if ((*it)->isTerminator()) {
                         scheduleBB((*it)->getTarget());
                     } else if ((*it)->isCommitted() == false) {

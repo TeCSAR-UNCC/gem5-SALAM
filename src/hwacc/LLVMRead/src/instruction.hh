@@ -11,7 +11,7 @@
 #include "cycle_count.hh"
 #include "debug_flags.hh"
 #include "value.hh"
-
+#include "mem_request.hh"
 
 namespace SALAM {
 
@@ -34,10 +34,10 @@ class Instruction : public Value
         uint64_t cycleCount;
         bool dbg = false;
 
+    protected:
         // Operands
         std::vector<SALAM::Operand> operands;
 
-    protected:
         bool running = false;
         class Instruction_Debugger: public Debugger
         {
@@ -90,6 +90,7 @@ class Instruction : public Value
         /*
             TODO: link up the findDynamicDeps function from llvm_interface
         */
+        virtual MemoryRequest * createMemoryRequest() { return nullptr; }
 };
 
 //---------------------------------------------------------------------------//
@@ -950,6 +951,8 @@ class Load : public Instruction {
         uint64_t getCurrentCycle() { return currentCycle; }
         std::shared_ptr<SALAM::Load> clone() const { return std::static_pointer_cast<SALAM::Load>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Load>(new SALAM::Load(*this)); }
+
+        MemoryRequest * createMemoryRequest() override;
 };
 
 std::shared_ptr<SALAM::Instruction>
@@ -987,6 +990,8 @@ class Store : public Instruction {
         uint64_t getCurrentCycle() { return currentCycle; }
         std::shared_ptr<SALAM::Store> clone() const { return std::static_pointer_cast<SALAM::Store>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Store>(new SALAM::Store(*this)); }
+
+        MemoryRequest * createMemoryRequest() override;
 };
 
 std::shared_ptr<SALAM::Instruction>
