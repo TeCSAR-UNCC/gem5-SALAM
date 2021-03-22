@@ -2389,12 +2389,12 @@ Store::commit()
 
 MemoryRequest *
 Store::createMemoryRequest() {
-    Addr memAddr = *(operands.front().getPtrRegValue());
+    Addr memAddr = *(operands.at(1).getPtrRegValue());
     size_t reqLen = operands.front().getSizeInBytes();
 
     MemoryRequest * req;
 
-    auto dataRegister = operands.at(1).getRegister();
+    auto dataRegister = operands.at(0).getRegister();
     // Copy data from the register
     if (dataRegister->isPtr()) {
         req = new MemoryRequest(memAddr, dataRegister->getPtrData(), reqLen);
