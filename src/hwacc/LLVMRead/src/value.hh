@@ -68,6 +68,10 @@ class Value
         void setRegisterValue(const llvm::APFloat &data);
         void setRegisterValue(const uint64_t data);
         void setRegisterValue(uint8_t * data);
+        uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
+        llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
+        llvm::APInt * getIntRegValue() { return returnReg->getIntData(); }
+        std::shared_ptr<SALAM::Register> getRegister() { return returnReg; }
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
         virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
