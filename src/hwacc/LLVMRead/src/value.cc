@@ -164,3 +164,14 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         }
     }
 }
+
+void
+SALAM::Value::setRegisterValue(std::shared_ptr<SALAM::Register> reg) {
+	if (reg->isPtr()) {
+		setRegisterValue(*(reg->getPtrData()));
+	} else if (reg->isFP()) {
+		setRegisterValue(*(reg->getFloatData()));
+	} else {
+		setRegisterValue(*(reg->getIntData()));
+	}
+}

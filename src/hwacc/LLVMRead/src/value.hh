@@ -68,6 +68,7 @@ class Value
         void setRegisterValue(const llvm::APFloat &data);
         void setRegisterValue(const uint64_t data);
         void setRegisterValue(uint8_t * data);
+        void setRegisterValue(std::shared_ptr<SALAM::Register> reg);
         uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
         llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
         llvm::APInt * getIntRegValue() { return returnReg->getIntData(); }
