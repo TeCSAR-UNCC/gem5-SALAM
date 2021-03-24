@@ -322,6 +322,7 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
         if (!dependencies.empty()) {
             for (auto resolved : dependencies) {
                 // If this dependency exists, then lock value into operand
+                inst->operandValueFetch(resolved.second);
             }
         }
     }
