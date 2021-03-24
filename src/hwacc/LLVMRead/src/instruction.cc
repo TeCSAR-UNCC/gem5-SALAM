@@ -129,6 +129,19 @@ Instruction::signalUsers()
     }
 }
 
+void
+Instruction::operandValueFetch(std::shared_ptr<SALAM::Value> val)
+{
+    uint64_t fetchedUID = val->getUID();
+    std::shared_ptr<SALAM::Register> fetchedRegister = val->getRegister();
+    for (auto op : operands) {
+        if (op.getUID() == fetchedUID) {
+            op.setRegisterValue(fetchedRegister);
+            break;
+        }
+    }
+}
+
 // SALAM-Ret // -------------------------------------------------------------//
 void // Debugging Interface 
 Ret::dumper() {
