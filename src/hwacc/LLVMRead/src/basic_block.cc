@@ -14,8 +14,8 @@ SALAM::BasicBlock::BasicBlock(uint64_t id) : SALAM::Value(id) {
 
 SALAM::BasicBlock::~BasicBlock() 
 {
-        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
-        //if (DTRACE(SALAM_Debug)) delete bb_dbg;
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
+    //if (DTRACE(SALAM_Debug)) delete bb_dbg;
 }
 
 SALAM::BasicBlock::BasicBlock_Debugger::BasicBlock_Debugger()

@@ -189,7 +189,6 @@ class Br : public Instruction {
         Br &isConditional(bool isConditional) { conditional = isConditional; return *this; }
         bool isConditional() { return conditional; }
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
-        std::shared_ptr<SALAM::Value> destination();
         bool isTerminator() override { return true; }
         bool isBr() override { return true; }
         bool launch();

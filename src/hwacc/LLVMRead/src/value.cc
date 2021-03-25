@@ -14,8 +14,8 @@ SALAM::Value::Value(uint64_t id) {
 
 SALAM::Value::~Value() 
 {
-        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s | UID:%d \n", __PRETTY_FUNCTION__, this->uid);
-        //if (DTRACE(SALAM_Debug)) delete value_dbg;
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s | UID:%d \n", __PRETTY_FUNCTION__, this->uid);
+    //if (DTRACE(SALAM_Debug)) delete value_dbg;
 }
 
 SALAM::Value::Value_Debugger::Value_Debugger()
@@ -97,6 +97,7 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
 
 void
 SALAM::Value::setRegisterValue(const llvm::APInt &data) {
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	if (returnReg->isInt()) {
 		llvm::APInt * regData = returnReg->getIntData();
 		*regData = data;
@@ -106,6 +107,7 @@ SALAM::Value::setRegisterValue(const llvm::APInt &data) {
 }
 void
 SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	if (returnReg->isFP()) {
 		llvm::APFloat * regData = returnReg->getFloatData();
 		*regData = data;
@@ -115,6 +117,7 @@ SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
 }
 void
 SALAM::Value::setRegisterValue(const uint64_t data) {
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	if (returnReg->isPtr()) {
 		uint64_t * regData = returnReg->getPtrData();
 		*regData = data;
@@ -124,6 +127,7 @@ SALAM::Value::setRegisterValue(const uint64_t data) {
 }
 void
 SALAM::Value::setRegisterValue(uint8_t * data) {
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	switch (irtype->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
@@ -167,6 +171,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 
 void
 SALAM::Value::setRegisterValue(std::shared_ptr<SALAM::Register> reg) {
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	if (reg->isPtr()) {
 		setRegisterValue(*(reg->getPtrData()));
 	} else if (reg->isFP()) {

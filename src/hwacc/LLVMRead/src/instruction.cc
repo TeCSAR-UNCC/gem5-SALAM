@@ -46,8 +46,8 @@ Instruction::Instruction(uint64_t id,
 
 Instruction::~Instruction() 
 {
-        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
-        //if (DTRACE(SALAM_Debug)) delete inst_dbg;
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
+    //if (DTRACE(SALAM_Debug)) delete inst_dbg;
 }
 
 Instruction::Instruction_Debugger::Instruction_Debugger()
@@ -132,6 +132,7 @@ Instruction::signalUsers()
 void
 Instruction::operandValueFetch(std::shared_ptr<SALAM::Value> val)
 {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     uint64_t fetchedUID = val->getUID();
     std::shared_ptr<SALAM::Register> fetchedRegister = val->getRegister();
     for (auto op : operands) {
@@ -193,6 +194,7 @@ Ret::initialize(llvm::Value * irval,
 bool
 Ret::ready()
 {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (getDependencyCount() == 0) {
         isready = true;
 
@@ -212,6 +214,7 @@ Ret::launch()
 
 void
 Ret::compute() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Perform computations
     // Store results in temp location
 }
@@ -219,6 +222,7 @@ Ret::compute() {
 bool
 Ret::commit()
 {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
@@ -232,11 +236,13 @@ Ret::commit()
 
 void
 Ret::getDependencyValue(Instruction *dep) {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Rework **
 }
 
 void
 Ret::reset() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Lock results from temp location
 }
 
@@ -290,8 +296,12 @@ Br::linkOperands()
 
 std::shared_ptr<SALAM::BasicBlock>
 Br::getTarget() {
-    
-    return nullptr;
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    if(conditional) {
+        if(condition->getReg()->getIntData()->isOneValue()) return std::dynamic_pointer_cast<SALAM::BasicBlock>(trueDestination);
+        else return std::dynamic_pointer_cast<SALAM::BasicBlock>(falseDestination);
+    }
+    return std::dynamic_pointer_cast<SALAM::BasicBlock>(defaultDestination);
 }
 
 void
@@ -312,19 +322,9 @@ Br::initialize(llvm::Value * irval,
     }
 }
 
-std::shared_ptr<SALAM::Value>
-Br::destination()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if(conditional) {
-        if(condition->getReg()->getIntData()->isOneValue()) return trueDestination;
-        else return falseDestination;
-    }
-    return defaultDestination;
-}
-
 bool
 Br::ready() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (getDependencyCount() == 0) {
         isready = true;
 
@@ -343,7 +343,9 @@ Br::launch()
 }
 
 void
-Br::compute() {
+Br::compute()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Perform computations
     // Store results in temp location
 }
@@ -351,6 +353,7 @@ Br::compute() {
 bool
 Br::commit()
 {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         reset();
         signalUsers();
@@ -364,11 +367,13 @@ Br::commit()
 
 void
 Br::getDependencyValue(Instruction *dep) {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Rework **
 }
 
 void
 Br::reset() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Lock results from temp location
 }
 
