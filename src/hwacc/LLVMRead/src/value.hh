@@ -25,15 +25,15 @@ typedef std::vector<std::shared_ptr<SALAM::Register>> Ops;
 class Value
 {
     public:
-        uint64_t uid = 0;
-        llvm::Type *irtype;
-        std::shared_ptr<SALAM::Register> returnReg;
-
-    protected:
         //uint64_t uid = 0;
-        uint64_t size = 0;
         //llvm::Type *irtype;
         //std::shared_ptr<SALAM::Register> returnReg;
+
+    protected:
+        uint64_t uid = 0;
+        uint64_t size = 0;
+        llvm::Type *irtype;
+        std::shared_ptr<SALAM::Register> returnReg;
         Ops opReg;
 
         bool dbg = false;

@@ -22,7 +22,9 @@ SALAM::Value::~Value()
 SALAM::Value::Value(const Value &copy_val)
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
-  	//*this = copy_val;
+  	uid = copy_val.uid;
+  	returnReg = copy_val.returnReg;
+	irtype = copy_val.irtype;
 }
 
 // operator equals
