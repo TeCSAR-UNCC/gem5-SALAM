@@ -201,28 +201,69 @@ SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 	addRegister();
 }
 
+/*
 SALAM::Operand::Operand(uint64_t id) :
 						Value(id)
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
+*/
+
+/*
+// base constructor
+SALAM::Operand::Operand(const Value &copy_val)
+{
+    *this = copy_val;
+}
+*/
+
+// copy constructor
+SALAM::Operand::Operand(const SALAM::Operand &copy_val):
+		   SALAM::Value(copy_val)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    uid = copy_val.uid;
+  	returnReg = copy_val.returnReg;
+	irtype = copy_val.irtype;
+}
+
+// copy constructor
+SALAM::Operand::Operand(const SALAM::Value &copy_val):
+		   SALAM::Value(copy_val)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    uid = copy_val.uid;
+  	returnReg = copy_val.returnReg;
+	irtype = copy_val.irtype;
+}
+
+// operator equals
+SALAM::Operand& 
+SALAM::Operand::operator = (SALAM::Operand &copy_val)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);
+    uid = copy_val.uid;
+  	returnReg = copy_val.returnReg;
+	irtype = copy_val.irtype;
+    return *this;
+}
 
 void
-SALAM::Operand::setInstructionReg(std::shared_ptr<SALAM::Register> resultReg, llvm::Type *irtype)
+SALAM::Operand::initOperandReg()
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	bool istracked = false;
-	this->irtype = irtype;
-	if (irtype->isPointerTy()) {
+	if (this->getType()->isPointerTy()) {
 		lockedValue = new PointerRegister(istracked);
-	} else if (irtype->isIntegerTy()) {
-		lockedValue = new APIntRegister(irtype, istracked);
-	} else if (irtype->isFloatingPointTy()) {
-		lockedValue = new APFloatRegister(irtype, istracked);
+	} else if (this->getType()->isIntegerTy()) {
+		lockedValue = new APIntRegister(this->getType(), istracked);
+	} else if (this->getType()->isFloatingPointTy()) {
+		lockedValue = new APFloatRegister(this->getType(), istracked);
 	} else {
 		//assert(0); // Type is invalid for a register
 		lockedValue = nullptr;
 	}
+    DPRINTF(Runtime, "Operand Register Initialized\n");
 }
 
 void

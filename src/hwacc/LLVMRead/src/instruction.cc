@@ -143,6 +143,17 @@ Instruction::operandValueFetch(std::shared_ptr<SALAM::Value> val)
     }
 }
 
+void
+Instruction::linkOperands(const SALAM::Operand &newOp)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Operand op_copy = newOp;
+    operands.push_back(op_copy);
+    DPRINTF(Runtime, "Begin Operand Init: [UID = %u]\n", op_copy.getUID());
+    operands.back().initOperandReg();
+
+}
+
 // SALAM-Ret // -------------------------------------------------------------//
 void // Debugging Interface 
 Ret::dumper() {

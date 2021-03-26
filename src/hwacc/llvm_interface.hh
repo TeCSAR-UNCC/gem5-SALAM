@@ -3,6 +3,7 @@
 //------------------------------------------//
 #include "params/LLVMInterface.hh"
 #include "hwacc/compute_unit.hh"
+#include "hwacc/LLVMRead/src/operand.hh"
 #include "hwacc/LLVMRead/src/basic_block.hh"
 #include "hwacc/LLVMRead/src/function.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
@@ -33,8 +34,6 @@
 #include <ratio>
 #include <memory>
 //------------------------------------------//
-//typedef std::vector<SALAM::Instruction*> queue;
-
 
 class LLVMInterface : public ComputeUnit {
   private:

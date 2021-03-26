@@ -258,6 +258,9 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
             // +++ call constructor for Operand
             //      copy constructor for value
             //      with an extra register, and functions for that register
+            // SALAM::Operand newOp(static_dep->getUID());
+            SALAM::Operand *newOp = new SALAM::Operand(*(static_dep.get()));
+            inst->linkOperands(*newOp);
             // Ordered the same as static dependencies
             // Also matches order of IR 
         }

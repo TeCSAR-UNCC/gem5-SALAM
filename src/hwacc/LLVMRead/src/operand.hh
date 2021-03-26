@@ -27,10 +27,13 @@ class Operand: public Value
 
     protected:
     public:
-        void setInstructionReg(std::shared_ptr<SALAM::Register> resultReg, llvm::Type *irtype);
-        Operand(uint64_t id);
+        void initOperandReg();
+        //Operand(uint64_t id);
+        Operand(const SALAM::Value &copy_val);
+        Operand(const Operand &copy_val);
+        Operand& operator = (Operand &copy_val);
         ~Operand() = default;
-        Value *clone() { return new Operand(*this); }
+        //Value *clone() { return new Operand(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 };
 
@@ -41,7 +44,7 @@ class Constant: public Value {
     public:
         Constant(uint64_t id);
         ~Constant() = default;
-        Value *clone() { return new Constant(*this); }
+        //Value *clone() { return new Constant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
 };
 
@@ -51,7 +54,7 @@ class GlobalConstant : public Constant {
     public:
         GlobalConstant(uint64_t id);
         ~GlobalConstant() = default;
-        Value *clone() { return new GlobalConstant(*this); }
+        //Value *clone() { return new GlobalConstant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 };
 
@@ -61,7 +64,7 @@ class Argument : public Value {
     public:
         Argument(uint64_t id);
         ~Argument() = default;
-        Value *clone() { return new Argument(*this); }
+        //Value *clone() { return new Argument(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 };
 

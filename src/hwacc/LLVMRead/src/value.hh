@@ -24,11 +24,16 @@ typedef std::vector<std::shared_ptr<SALAM::Register>> Ops;
 
 class Value
 {
-    protected:
+    public:
         uint64_t uid = 0;
-        uint64_t size = 0;
         llvm::Type *irtype;
         std::shared_ptr<SALAM::Register> returnReg;
+
+    protected:
+        //uint64_t uid = 0;
+        uint64_t size = 0;
+        //llvm::Type *irtype;
+        //std::shared_ptr<SALAM::Register> returnReg;
         Ops opReg;
 
         bool dbg = false;
@@ -53,9 +58,12 @@ class Value
         }; 
 
         Value_Debugger* value_dbg;
+        Value(const SALAM::Value &copy_val);
 
     public:
         Value(uint64_t id);
+        
+        Value& operator = (Value &copy_val);
         ~Value();
         virtual void initialize(llvm::Value *irval,
                                 SALAM::irvmap *irmap);

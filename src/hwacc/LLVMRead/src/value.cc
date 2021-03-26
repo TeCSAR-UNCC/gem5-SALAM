@@ -18,6 +18,24 @@ SALAM::Value::~Value()
     //if (DTRACE(SALAM_Debug)) delete value_dbg;
 }
 
+// copy constructor
+SALAM::Value::Value(const Value &copy_val)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+  	//*this = copy_val;
+}
+
+// operator equals
+SALAM::Value& 
+SALAM::Value::operator = (Value &copy_val)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);
+	uid = copy_val.uid;
+  	returnReg = copy_val.returnReg;
+	irtype = copy_val.irtype;
+  	return *this;
+}
+
 SALAM::Value::Value_Debugger::Value_Debugger()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
@@ -46,7 +64,6 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	}
 	// Link Return Register
 	addRegister(true);
-	//linkOperands();
 }
 
 void
