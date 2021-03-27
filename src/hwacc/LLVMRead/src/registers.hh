@@ -24,6 +24,8 @@ class Register
         bool tracked;
         bool isNULL = false;
         bool dbg = false;
+        unsigned reads = 0;
+        unsigned writes = 0;
 
         class Register_Debugger: public Debugger
         {
@@ -39,9 +41,27 @@ class Register
         Register(bool trk=true,
                  bool nul=false);
         ~Register();
-        virtual llvm::APFloat *getFloatData() = 0;
-        virtual llvm::APSInt *getIntData() = 0;
-        virtual uint64_t *getPtrData() = 0;
+        virtual llvm::APFloat *getFloatData(bool incReads=true) {
+            assert(0);
+            return NULL;
+        }
+        virtual llvm::APSInt *getIntData(bool incReads=true) {
+            assert(0);
+            return NULL;
+        }
+        virtual uint64_t *getPtrData(bool incReads=true) {
+            assert(0);
+            return NULL;
+        }
+        virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) {
+            assert(0);
+        }
+        virtual void writeIntData(llvm::APInt * api, bool incWrites=true) {
+            assert(0);
+        }
+        virtual void writePtrData(uint64_t * ptr, size_t len=8, bool incWrites=true) {
+            assert(0);
+        }
         virtual bool isInt() { return false; }
         virtual bool isFP() { return false; }
         virtual bool isPtr() { return false; }
@@ -60,15 +80,8 @@ class APFloatRegister : public Register
         APFloatRegister(llvm::Type *T,
                         bool isTracked=true);
         APFloatRegister(const llvm::APFloat &RHS);
-        virtual llvm::APFloat * getFloatData() override { return data; }
-        virtual llvm::APSInt * getIntData() {
-            assert(0);
-            return NULL;
-        }
-        virtual uint64_t * getPtrData() {
-            assert(0);
-            return NULL;
-        }
+        virtual llvm::APFloat * getFloatData(bool incReads=true) override;
+        virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) override;
         virtual bool isFP() override { return true; }
 };
 
@@ -80,15 +93,8 @@ class APIntRegister : public Register
         APIntRegister(llvm::Type * T,
                       bool isTracked=true);
         APIntRegister(const llvm::APInt &RHS);
-        virtual llvm::APSInt * getIntData() override { return data; }
-        virtual llvm::APFloat * getFloatData() {
-            assert(0);
-            return NULL;
-        }
-        virtual uint64_t * getPtrData() {
-            assert(0);
-            return NULL;
-        }
+        virtual llvm::APSInt * getIntData(bool incReads=true) override;
+        virtual void writeIntData(llvm::APInt * api, bool incWrites=true) override;
         virtual bool isInt() override { return true; }
 };
 
@@ -103,15 +109,8 @@ class PointerRegister : public Register
                         bool isTracked=true,
                         bool isNull=false);
         virtual bool isPtr() override { return true; }
-        virtual uint64_t * getPtrData() override { return pointer; }
-        virtual llvm::APFloat * getFloatData() {
-            assert(0);
-            return NULL;
-        }
-        virtual llvm::APSInt * getIntData() {
-            assert(0);
-            return NULL;
-        }
+        virtual uint64_t * getPtrData(bool incReads=true) override;
+        virtual void writePtrData(uint64_t * ptr, size_t len=8, bool incWrites=true) override;
 };
 } // End SALAM Namespace
 #endif

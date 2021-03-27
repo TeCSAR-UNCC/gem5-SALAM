@@ -6,7 +6,6 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
     topName(p->top_name),
-    lockstep(p->lockstep_mode),
     scheduling_threshold(p->sched_threshold),
     counter_units(p->FU_counter),
     int_adder_units(p->FU_int_adder),
@@ -24,7 +23,8 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     conversion(p->FU_conversion),
     pipelined(p->FU_pipelined),
     fu_latency(p->FU_clock_period),
-    clock_period(p->clock_period) {
+    clock_period(p->clock_period),
+    lockstep(p->lockstep_mode) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     typeList = NULL;
     clock_period = clock_period * 1000;
@@ -332,7 +332,7 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
         if (!dependencies.empty()) {
             for (auto resolved : dependencies) {
                 // If this dependency exists, then lock value into operand
-                inst->operandValueFetch(resolved.second);
+                inst->operandValueFetch(resolved.first);
             }
         }
     }

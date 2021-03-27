@@ -130,14 +130,12 @@ Instruction::signalUsers()
 }
 
 void
-Instruction::operandValueFetch(std::shared_ptr<SALAM::Value> val)
+Instruction::operandValueFetch(uint64_t uid)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    uint64_t fetchedUID = val->getUID();
-    std::shared_ptr<SALAM::Register> fetchedRegister = val->getRegister();
     for (auto op : operands) {
-        if (op.getUID() == fetchedUID) {
-            op.setRegisterValue(fetchedRegister);
+        if (op.getUID() == uid) {
+            op.updateOperandRegister();
             break;
         }
     }

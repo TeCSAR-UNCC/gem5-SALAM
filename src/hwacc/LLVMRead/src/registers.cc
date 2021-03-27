@@ -44,8 +44,8 @@ SALAM::Register::Register_Debugger::dumper(SALAM::Register *reg)
 
 
 SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
-                                        bool isTracked) :
-                                        Register(isTracked)
+                                        bool tracked) :
+                                        Register(tracked)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     switch (T->getTypeID()) {
@@ -92,8 +92,8 @@ SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
 }
 
 SALAM::APIntRegister::APIntRegister(llvm::Type * T,
-                                    bool isTracked) :
-                                    Register(isTracked)
+                                    bool tracked) :
+                                    Register(tracked)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
@@ -108,9 +108,9 @@ SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
     data = new llvm::APSInt(RHS);
 }
 
-SALAM::PointerRegister::PointerRegister(bool isTracked,
+SALAM::PointerRegister::PointerRegister(bool tracked,
                                         bool isNull) :
-                                        Register(isTracked,
+                                        Register(tracked,
                                         isNull),
                                         pointer(new uint64_t(0))
 {
@@ -118,11 +118,53 @@ SALAM::PointerRegister::PointerRegister(bool isTracked,
 }
 
 SALAM::PointerRegister::PointerRegister(uint64_t val,
-                                        bool isTracked,
+                                        bool tracked,
                                         bool isNull) :
-                                        Register(isTracked,
+                                        Register(tracked,
                                         isNull),
                                         pointer(new uint64_t(val))
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+}
+
+llvm::APFloat *
+SALAM::APFloatRegister::getFloatData(bool incReads)
+{
+    if (incReads && tracked) reads++;
+    return data;
+}
+
+void
+SALAM::APFloatRegister::writeFloatData(llvm::APFloat * apf, bool incWrites)
+{
+    if (incWrites && tracked) writes++;
+    *data = *apf;
+}
+
+llvm::APSInt *
+SALAM::APIntRegister::getIntData(bool incReads)
+{
+    if (incReads && tracked) reads++;
+    return data;
+}
+
+void
+SALAM::APIntRegister::writeIntData(llvm::APInt * api, bool incWrites)
+{
+    if (incWrites && tracked) writes++;
+    *data = *api;
+}
+
+uint64_t *
+SALAM::PointerRegister::getPtrData(bool incReads)
+{
+    if (incReads && tracked) reads++;
+    return pointer;
+}
+
+void
+SALAM::PointerRegister::writePtrData(uint64_t * ptr, size_t len, bool incWrites)
+{
+    if (incWrites && tracked) writes++;
+    std::memcpy(pointer, ptr, len);
 }

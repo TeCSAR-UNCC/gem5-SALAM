@@ -250,12 +250,12 @@ SALAM::Operand::initOperandReg()
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	bool istracked = false;
-	if (this->getType()->isPointerTy()) {
+	if (irtype->isPointerTy()) {
 		lockedValue = new PointerRegister(istracked);
-	} else if (this->getType()->isIntegerTy()) {
-		lockedValue = new APIntRegister(this->getType(), istracked);
-	} else if (this->getType()->isFloatingPointTy()) {
-		lockedValue = new APFloatRegister(this->getType(), istracked);
+	} else if (irtype->isIntegerTy()) {
+		lockedValue = new APIntRegister(irtype, istracked);
+	} else if (irtype->isFloatingPointTy()) {
+		lockedValue = new APFloatRegister(irtype, istracked);
 	} else {
 		//assert(0); // Type is invalid for a register
 		lockedValue = nullptr;
@@ -270,4 +270,16 @@ SALAM::Operand::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
 	//addRegister();
+}
+
+void
+SALAM::Operand::updateOperandRegister() {
+	assert(lockedValue);
+	if (irtype->isPointerTy()) {
+		lockedValue->writePtrData(returnReg->getPtrData(true), getSizeInBytes());
+	} else if (irtype->isIntegerTy()) {
+		lockedValue->writeIntData(returnReg->getIntData(true));
+	} else if (irtype->isFloatingPointTy()) {
+		lockedValue->writeFloatData(returnReg->getFloatData(true));
+	}
 }

@@ -72,14 +72,25 @@ class Value
         uint64_t getUID() { return uid; }
         std::shared_ptr<SALAM::Register> getReg() { return returnReg; }
         llvm::Type *getType() { return irtype; }
+
+        // Helper functions for setting the value of the return register directly from the value
+        // Using these functions will increment the write counters on tracked registers
+        // If you'd like to avoid incrementing write counters, directly pull the register and
+        // use its appropriate write function
         void setRegisterValue(const llvm::APInt &data);
         void setRegisterValue(const llvm::APFloat &data);
         void setRegisterValue(const uint64_t data);
         void setRegisterValue(uint8_t * data);
         void setRegisterValue(std::shared_ptr<SALAM::Register> reg);
+
+        // Helper functions for getting the value of the return register directly from the value
+        // Using these functions will increment the read counters on tracked registers
+        // If you'd like to avoid incrementing read counters, directly pull the register and
+        // use its appropriate read function
         uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
         llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
         llvm::APInt * getIntRegValue() { return returnReg->getIntData(); }
+
         std::shared_ptr<SALAM::Register> getRegister() { return returnReg; }
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }

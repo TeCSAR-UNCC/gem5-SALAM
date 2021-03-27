@@ -91,7 +91,7 @@ class Instruction : public Value
             TODO: link up the findDynamicDeps function from llvm_interface
         */
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
-        void operandValueFetch(std::shared_ptr<SALAM::Value> val);
+        void operandValueFetch(uint64_t uid);
 };
 
 //---------------------------------------------------------------------------//

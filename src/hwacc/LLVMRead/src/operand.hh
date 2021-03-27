@@ -35,6 +35,7 @@ class Operand: public Value
         ~Operand() = default;
         //Value *clone() { return new Operand(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
+        void updateOperandRegister();
 };
 
 class Constant: public Value {
