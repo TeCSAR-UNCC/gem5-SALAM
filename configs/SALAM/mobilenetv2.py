@@ -97,7 +97,7 @@ def buildhead(options, system, clstr):
 	clstr.normalconvqparams.conf_table_reported = False
 	clstr.normalconvqparams.ready_mode = False
 	clstr.normalconvqparams.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(27):
 		clstr.normalconv.spm = clstr.normalconvqparams.spm_ports
 	
 	# NormalConvQBuffer (Variable)
@@ -107,7 +107,7 @@ def buildhead(options, system, clstr):
 	clstr.normalconvqbuffer.conf_table_reported = False
 	clstr.normalconvqbuffer.ready_mode = False
 	clstr.normalconvqbuffer.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(27):
 		clstr.normalconv.spm = clstr.normalconvqbuffer.spm_ports
 	
 	# NormalConvOut (Stream Variable)
@@ -127,7 +127,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
-	for i in range(10):
+	for i in range(24):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
@@ -137,7 +137,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
-	for i in range(10):
+	for i in range(24):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
@@ -157,7 +157,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvqbuffer.conf_table_reported = False
 	clstr.dwconvqbuffer.ready_mode = False
 	clstr.dwconvqbuffer.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(24):
 		clstr.dwconv.spm = clstr.dwconvqbuffer.spm_ports
 	
 	# DWConvOutBuffer (Variable)

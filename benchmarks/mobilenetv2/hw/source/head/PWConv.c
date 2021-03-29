@@ -35,10 +35,13 @@ void PWConv() {
     dType_Reg 	i_c_size		= IN_CH;
 
 pw_convYaxis:
+    #pragma clang loop unroll(disable)
     for (int y = 0; y < o_size; y++) {
     pw_convXaxis:
+        #pragma clang loop unroll(disable)
         for (int x = 0; x < o_size; x++) {
         rd_buff_loop_img:
+            #pragma clang loop unroll(disable)
             for (int i = 0; i < t_MAX_INPUT_CHANNEL; i++) {
                 if (i < i_c_size) {
                     localFeature[i] = *inFifo;
@@ -47,6 +50,7 @@ pw_convYaxis:
                 }
             }
         convOutchan:
+            #pragma clang loop unroll(disable)
             for (int oc = 0; oc < o_c_size; oc++) {
                 dType_8u bias = biases_local[oc];
                 dType_Reg sum = 0;
@@ -55,8 +59,10 @@ pw_convYaxis:
                 dType_8u weight_zp_local = weight_zp[oc];
             // Runs over filter window
             convInchan_perCore:
+                #pragma clang loop unroll(full)
                 for (dType_16u i = 0; i < (t_MAX_INPUT_CHANNEL / t_CORE_SIZE); i++) {
                 ADDER_TREE_LOOP:
+                    #pragma clang loop unroll(full)
                     for (dType_16u j = 0; j < t_CORE_SIZE; j++) {
                         dType_Reg input = i * t_CORE_SIZE + j;
                         dType_16t input_recalib = localFeature[input] - input_zp;
@@ -82,7 +88,7 @@ pw_convYaxis:
                 t_ACCUMULATE_TYPE scaled_output = biased_input * signed_imul;
                 out_i32 = (scaled_output >> nShift_output[oc]) + output_zp;
                 t_OUTPUT_TYPE out_nBit = (t_OUTPUT_TYPE)(MAX(0,MIN(out_i32,255)));
-                *outFifo =out_nBit;
+                *outFifo = out_nBit;
             }
         }
     }

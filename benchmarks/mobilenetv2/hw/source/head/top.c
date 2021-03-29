@@ -83,7 +83,7 @@ void top(uint64_t img_rd_addr, uint64_t feat_wr_addr,
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 
-	// // Start Norm Conv
+	// Start Norm Conv
 	*NormConv = 0x01;
 	//Start DW Conv
 	*DWConv = 0x01;

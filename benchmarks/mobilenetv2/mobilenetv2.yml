@@ -46,12 +46,12 @@ acc_cluster:
       - Name: NormalConvQParams
         Type: SPM
         Size: 144
-        Ports: 1
+        Ports: 27
     - Var:
       - Name: NormalConvQBuffer
         Type: SPM
         Size: 576
-        Ports: 1
+        Ports: 27
     - Var:
       - Name: NormalConvOut
         Type: Stream
@@ -70,12 +70,12 @@ acc_cluster:
       - Name: DWConvWindow
         Type: SPM
         Size: 216
-        Ports: 10
+        Ports: 24
     - Var:
       - Name: DWConvWeights
         Type: SPM
         Size: 240
-        Ports: 10
+        Ports: 24
     - Var:
       - Name: DWConvQParams
         Type: SPM
@@ -85,7 +85,7 @@ acc_cluster:
       - Name: DWConvQBuffer
         Type: SPM
         Size: 1920
-        Ports: 1
+        Ports: 24
     - Var:
       - Name: DWConvOutBuffer
         Type: SPM

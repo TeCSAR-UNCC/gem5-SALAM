@@ -517,15 +517,15 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 			*PW1InputZP  = 0;
 			*PW1OutputZP = 0;
 	}
-	//Start Res
-	*ResEnable = resEnable;
-	*ResFlags = 0x01;
-	//Start PW Conv 0
-	*PW0Flags = 0x01;
-	//Start DW Conv
-	*DW0Flags = 0x01;
-	//Start PW Conv 1
-	*PW1Flags = 0x01;
+	// //Start Res
+	// *ResEnable = resEnable;
+	// *ResFlags = 0x01;
+	// //Start PW Conv 0
+	// *PW0Flags = 0x01;
+	// //Start DW Conv
+	// *DW0Flags = 0x01;
+	// //Start PW Conv 1
+	// *PW1Flags = 0x01;
 
 	//Initialize DMAs
 	//StreamDma0
@@ -614,7 +614,7 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 	*MemDmaCopyLen = PW1QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 
-	//Wait for all accelerators to finish before sending interrupt to CPU
-	while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
+	// //Wait for all accelerators to finish before sending interrupt to CPU
+	// while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
 	return;
 }
