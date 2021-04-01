@@ -39,13 +39,13 @@ void fc1() {
                 for(cc = 0; cc < fc1OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
-                    #pragma clang loop unroll(full)
+                    #pragma clang loop unroll(disable)
                     for (x = 0; x < fc1KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(full)
+                        #pragma clang loop unroll(disable)
                         for (y = 0; y < fc1KSize; y++) {
                             // Input Channels
-                            #pragma clang loop unroll(full)
+                            #pragma clang loop unroll(disable)
                             for(c = 0; c < fc1InChan; c++) {
                                 sum += convInput[InputIdx3D(x, y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];

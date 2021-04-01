@@ -31,7 +31,7 @@ void conv1() {
                 for(cc = 0; cc < conv1OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
-                    #pragma clang loop unroll(full)
+                    #pragma clang loop unroll(disable)
                     for (x = 0; x < conv1KSize; x++) {
                         // Kernel Y
                         #pragma clang loop unroll(full)

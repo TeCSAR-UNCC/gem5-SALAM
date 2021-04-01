@@ -3,8 +3,8 @@ acc_cluster:
   - Name: head
   - DMA:
     - Name: dma
-      BufferSize: 128
-      MaxReq: 4
+      BufferSize: 2
+      MaxReq: 1
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
@@ -46,12 +46,12 @@ acc_cluster:
       - Name: NormalConvQParams
         Type: SPM
         Size: 144
-        Ports: 27
+        Ports: 1
     - Var:
       - Name: NormalConvQBuffer
         Type: SPM
         Size: 576
-        Ports: 27
+        Ports: 2
     - Var:
       - Name: NormalConvOut
         Type: Stream
@@ -70,12 +70,12 @@ acc_cluster:
       - Name: DWConvWindow
         Type: SPM
         Size: 216
-        Ports: 24
+        Ports: 9
     - Var:
       - Name: DWConvWeights
         Type: SPM
         Size: 240
-        Ports: 24
+        Ports: 9
     - Var:
       - Name: DWConvQParams
         Type: SPM
@@ -85,7 +85,7 @@ acc_cluster:
       - Name: DWConvQBuffer
         Type: SPM
         Size: 1920
-        Ports: 24
+        Ports: 2
     - Var:
       - Name: DWConvOutBuffer
         Type: SPM
@@ -126,8 +126,8 @@ acc_cluster:
   - Name: body
   - DMA:
     - Name: dma
-      BufferSize: 128
-      MaxReq: 4
+      BufferSize: 8
+      MaxReq: 1
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 96
@@ -179,12 +179,12 @@ acc_cluster:
       - Name: PWConv0LocalFeatSize
         Type: SPM
         Size: 120
-        Ports: 24
+        Ports: 120
     - Var:
       - Name: PWConv0Weights
         Type: SPM
         Size: 86400
-        Ports: 24
+        Ports: 120
     - Var:
       - Name: PWConv0QParams
         Type: SPM
@@ -208,12 +208,12 @@ acc_cluster:
       - Name: DWConvWindow
         Type: SPM
         Size: 7200
-        Ports: 10
+        Ports: 9
     - Var:
       - Name: DWConvWeights
         Type: SPM
         Size: 1200
-        Ports: 10
+        Ports: 9
     - Var:
       - Name: DWConvQParams
         Type: SPM
@@ -223,7 +223,7 @@ acc_cluster:
       - Name: DWConvBuffer
         Type: SPM
         Size: 115200
-        Ports: 1
+        Ports: 2
     - Var:
       - Name: DWConvOutBuffer
         Type: SPM

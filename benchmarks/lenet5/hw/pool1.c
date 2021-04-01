@@ -20,7 +20,7 @@ void pool1() {
             if(!(w+pool1KSize>pool1InDim || h+pool1KSize>pool1InDim)) {
                 int sum = 0;
                 // Kernel X
-                #pragma clang loop unroll(full)
+                #pragma clang loop unroll(disable)
                 for (x = 0; x < pool1KSize; x++) {
                     // Kernel Y
                     #pragma clang loop unroll(full)

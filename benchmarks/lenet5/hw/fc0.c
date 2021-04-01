@@ -25,14 +25,13 @@ void fc0() {
                 for(cc = 0; cc < fc0OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
-                    #pragma clang loop unroll(full)
+                    #pragma clang loop unroll(disable)
                     for (x = 0; x < fc0KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(full)
+                        #pragma clang loop unroll(disable)
                         for (y = 0; y < fc0KSize; y++) {
-
-                            #pragma clang loop unroll(full)
                             // Input Channels
+                            #pragma clang loop unroll(full)
                             for(c = 0; c < fc0InChan; c++) {
                                 sum += fcInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];

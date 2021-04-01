@@ -71,13 +71,13 @@ buf_y_n:
     }
 
 win_y_n:
-	#pragma clang loop unroll(full)
+	#pragma clang loop unroll(disable)
     for (dType_8u y = HALF_SIZE; y < t_KSIZE; y++) {
     win_x_n:
-		#pragma clang loop unroll(full)
+		#pragma clang loop unroll(disable)
         for (dType_8u x = HALF_SIZE; x < t_KSIZE; x++) {
         win_itr_channel:
-			#pragma clang loop unroll(full)
+			#pragma clang loop unroll(disable)
             for (dType_Reg ch = 0; ch < i_c_size; ch++) {
                 // WINDOW[ch][y][x] = BUFFER[ch][y - 1][x + i_size - t_KSIZE];
                 WINDOW[ch*t_KSIZE*t_KSIZE + y*t_KSIZE + x] = BUFFER[ch*(t_KSIZE-1)*i_size + (y-1)*i_size + (x+i_size-t_KSIZE)];
@@ -112,7 +112,7 @@ for_y_n:
 			    int count = 0;
 
 			win_i_n:
-				#pragma clang loop unroll(disable)
+				#pragma clang loop unroll(full)
 			    for (int i = -HALF_SIZE; i <= HALF_SIZE; i++) {
 			    win_j_n:
 					#pragma clang loop unroll(full)
@@ -151,7 +151,7 @@ for_y_n:
         		}
         	}
 		Data_movement_loop:
-			#pragma clang loop unroll(full)
+			#pragma clang loop unroll(disable)
 		    for (dType_Reg ch = 0; ch < i_c_size; ch++) {
 		    shift_win_y:
 				#pragma clang loop unroll(full)

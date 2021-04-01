@@ -17,8 +17,8 @@ def buildhead(options, system, clstr):
 	# Noncoherent DMA
 	clstr.dma = NoncoherentDma(pio_addr=0x10020000, pio_size = 21, gic=gic, int_num=95)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
-	clstr.dma.max_req_size = 4
-	clstr.dma.buffer_size = 128
+	clstr.dma.max_req_size = 1
+	clstr.dma.buffer_size = 2
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
 	
@@ -97,7 +97,7 @@ def buildhead(options, system, clstr):
 	clstr.normalconvqparams.conf_table_reported = False
 	clstr.normalconvqparams.ready_mode = False
 	clstr.normalconvqparams.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(1):
 		clstr.normalconv.spm = clstr.normalconvqparams.spm_ports
 	
 	# NormalConvQBuffer (Variable)
@@ -107,7 +107,7 @@ def buildhead(options, system, clstr):
 	clstr.normalconvqbuffer.conf_table_reported = False
 	clstr.normalconvqbuffer.ready_mode = False
 	clstr.normalconvqbuffer.port = clstr.local_bus.master
-	for i in range(27):
+	for i in range(2):
 		clstr.normalconv.spm = clstr.normalconvqbuffer.spm_ports
 	
 	# NormalConvOut (Stream Variable)
@@ -127,7 +127,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
-	for i in range(24):
+	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
@@ -137,7 +137,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
-	for i in range(24):
+	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
@@ -157,7 +157,7 @@ def buildhead(options, system, clstr):
 	clstr.dwconvqbuffer.conf_table_reported = False
 	clstr.dwconvqbuffer.ready_mode = False
 	clstr.dwconvqbuffer.port = clstr.local_bus.master
-	for i in range(24):
+	for i in range(2):
 		clstr.dwconv.spm = clstr.dwconvqbuffer.spm_ports
 	
 	# DWConvOutBuffer (Variable)
@@ -224,8 +224,8 @@ def buildbody(options, system, clstr):
 	# Noncoherent DMA
 	clstr.dma = NoncoherentDma(pio_addr=0x100211df, pio_size = 21, gic=gic, int_num=96)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
-	clstr.dma.max_req_size = 4
-	clstr.dma.buffer_size = 128
+	clstr.dma.max_req_size = 1
+	clstr.dma.buffer_size = 8
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
 	
@@ -312,7 +312,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0localfeatsize.conf_table_reported = False
 	clstr.pwconv0localfeatsize.ready_mode = False
 	clstr.pwconv0localfeatsize.port = clstr.local_bus.master
-	for i in range(24):
+	for i in range(120):
 		clstr.pwconv0.spm = clstr.pwconv0localfeatsize.spm_ports
 	
 	# PWConv0Weights (Variable)
@@ -322,7 +322,7 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0weights.conf_table_reported = False
 	clstr.pwconv0weights.ready_mode = False
 	clstr.pwconv0weights.port = clstr.local_bus.master
-	for i in range(24):
+	for i in range(120):
 		clstr.pwconv0.spm = clstr.pwconv0weights.spm_ports
 	
 	# PWConv0QParams (Variable)
@@ -352,7 +352,7 @@ def buildbody(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
-	for i in range(10):
+	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
 	# DWConvWeights (Variable)
@@ -362,7 +362,7 @@ def buildbody(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
-	for i in range(10):
+	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
 	# DWConvQParams (Variable)
@@ -382,7 +382,7 @@ def buildbody(options, system, clstr):
 	clstr.dwconvbuffer.conf_table_reported = False
 	clstr.dwconvbuffer.ready_mode = False
 	clstr.dwconvbuffer.port = clstr.local_bus.master
-	for i in range(1):
+	for i in range(2):
 		clstr.dwconv.spm = clstr.dwconvbuffer.spm_ports
 	
 	# DWConvOutBuffer (Variable)

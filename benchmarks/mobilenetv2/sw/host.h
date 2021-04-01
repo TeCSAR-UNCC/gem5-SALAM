@@ -4,7 +4,7 @@
 #define weights     0x91000000
 #define qparams     0x93000000
 #define head_top    0x1002003d
-#define body_top    0x100415c9
+#define body_top    0x10021244
 #define tail_top    0x2f063000
 #define class_top   0x2f0b8000
 #define stage       *(uint8_t *)0x8effffff

@@ -1,5 +1,5 @@
 #include "../common/support.h"
-
+#include "../../../body_hw_defines.h"
 /***********************************************************
  * Base Computation Defines
  ***********************************************************/
@@ -32,63 +32,63 @@
 /***********************************************************
  * Cluster Base Address
  ***********************************************************/
-#define BASE			0x2F002000
+// #define BASE			0x2F002000
 /***********************************************************
  * MMR Addresses
  ***********************************************************/
-#define TOP_MMR			BASE + 0x000000
-#define STREAM_DMA0_MMR	BASE + 0x00004A
-#define STREAM_DMA1_MMR	BASE + 0x000072
-#define CLUSTER_DMA_MMR	BASE + 0x00009A
-#define RES_MMR			BASE + 0x0000AF
-#define PW0_MMR			BASE + 0x0000B5
-#define DW0_MMR			BASE + 0x0000C9
-#define PW1_MMR			BASE + 0x0000E1
+#define TOP_MMR			TOP
+#define STREAM_DMA0_MMR	STREAM_DMA0_Flags
+#define STREAM_DMA1_MMR	STREAM_DMA1_Flags
+#define CLUSTER_DMA_MMR	DMA_Flags
+#define RES_MMR			RESIDUAL
+#define PW0_MMR			PWCONV0
+#define DW0_MMR			DWCONV
+#define PW1_MMR			PWCONV1
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define StreamIn0		BASE + 0x00006A
-#define StreamOut		BASE + 0x00006A
-#define StreamIn1		BASE + 0x000092
+#define StreamIn0		STREAM_DMA0_Stream
+#define StreamOut		STREAM_DMA0_Stream
+#define StreamIn1		STREAM_DMA1_Stream
 
 #define ResIn0			StreamIn0
 #define ResIn1			StreamIn1
-#define ResOut			BASE + 0x0000F5
+#define ResOut			ResidualOut
 
 #define PW0In 			ResOut
-#define PW0LocalFeat	BASE + 0x0000F6
-#define PW0Weights		BASE + 0x00016E
-#define PW0Bias			BASE + 0x0152EE
-#define PW0IMultBias	BASE + 0x0155BE
-#define PW0NShiftBias  	BASE + 0x01588E
-#define PW0IMultOut		BASE + 0x015B5E
-#define PW0NShiftOut	BASE + 0x015E2E
-#define PW0WeightZP		BASE + 0x0160FE
-#define PW0Out			BASE + 0x0163CE
+#define PW0LocalFeat	PWConv0LocalFeatSize
+#define PW0Weights		PWConv0Weights
+#define PW0Bias			PWConv0QParams
+#define PW0IMultBias	PWConv0QParams
+#define PW0NShiftBias  	PWConv0QParams
+#define PW0IMultOut		PWConv0QParams
+#define PW0NShiftOut	PWConv0QParams
+#define PW0WeightZP		PWConv0QParams
+#define PW0Out			PWConv0Out
 
 #define DW0In 			PW0Out
-#define DW0Buffer		BASE + 0x0163CF
-#define DW0Window		BASE + 0x0325CF
-#define DW0OutBuffer	BASE + 0x033F1F
-#define DW0Weights		BASE + 0x0341EF
-#define DW0Bias			BASE + 0x035E0F
-#define DW0IMultBias	BASE + 0x0360DF
-#define DW0NShiftBias  	BASE + 0x0363AF
-#define DW0IMultOut		BASE + 0x03667F
-#define DW0NShiftOut	BASE + 0x03694F
-#define DW0WeightZP		BASE + 0x036C1F
-#define DW0Out			BASE + 0x036EEF
+#define DW0Buffer		DWConvBuffer
+#define DW0Window		DWConvWindow
+#define DW0OutBuffer	DWConvOutBuffer
+#define DW0Weights		DWConvWeights
+#define DW0Bias			DWConvQParams
+#define DW0IMultBias	DWConvQParams
+#define DW0NShiftBias  	DWConvQParams
+#define DW0IMultOut		DWConvQParams
+#define DW0NShiftOut	DWConvQParams
+#define DW0WeightZP		DWConvQParams
+#define DW0Out			DWConvOut
 
 #define PW1In 			DW0Out
-#define PW1LocalFeat	BASE + 0x036EF0
-#define PW1Weights		BASE + 0x0371C0
-#define PW1Bias			BASE + 0x0614C0
-#define PW1IMultBias	BASE + 0x0615B0
-#define PW1NShiftBias  	BASE + 0x0616A0
-#define PW1IMultOut		BASE + 0x061790
-#define PW1NShiftOut	BASE + 0x061880
-#define PW1WeightZP		BASE + 0x061970
+#define PW1LocalFeat	PWConv1LocalFeatSize
+#define PW1Weights		PWConv1Weights
+#define PW1Bias			PWConv1QParams
+#define PW1IMultBias	PWConv1QParams
+#define PW1NShiftBias  	PWConv1QParams
+#define PW1IMultOut		PWConv1QParams
+#define PW1NShiftOut	PWConv1QParams
+#define PW1WeightZP		PWConv1QParams
 #define PW1Out			StreamOut
 
 /***********************************************************

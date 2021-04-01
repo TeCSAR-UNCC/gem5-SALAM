@@ -2,7 +2,7 @@
 
 #define t_MAX_INPUT_CHANNEL		PW0_IN_CH_MAX
 #define t_MAX_OUTPUT_CHANNEL	PW0_OUT_CH_MAX
-#define t_CORE_SIZE				PW0_IN_CH_MAX
+#define t_CORE_SIZE				PW1_CORE_SIZE
 #define t_ACCUMULATE_TYPE		dType_Reg
 #define t_OUTPUT_TYPE			dType_8u
 
@@ -21,10 +21,13 @@ void PWConv0(dType_Reg o_size, dType_Reg i_size,
     volatile dType_8u * 	localFeature 	= (dType_8u *)(PW0LocalFeat); // dType_8u[t_MAX_INPUT_CHANNEL]
 
 pw_convYaxis:
+    #pragma clang loop unroll(disable)
     for (int y = 0; y < o_size; y++) {
     pw_convXaxis:
+        #pragma clang loop unroll(disable)
         for (int x = 0; x < o_size; x++) {
         rd_buff_loop_img:
+            #pragma clang loop unroll(disable)
             for (int i = 0; i < t_MAX_INPUT_CHANNEL; i++) {
                 if (i < i_c_size) {
                     localFeature[i] = *inFifo;
@@ -33,6 +36,7 @@ pw_convYaxis:
                 }
             }
         convOutchan:
+            #pragma clang loop unroll(disable)
             for (int oc = 0; oc < o_c_size; oc++) {
                 dType_8u bias = biases_local[oc];
                 dType_Reg sum = 0;
@@ -41,8 +45,10 @@ pw_convYaxis:
                 dType_8u weight_zp_local = weight_zp[oc];
             // Runs over filter window
             convInchan_perCore:
+                #pragma clang loop unroll(disable)
                 for (dType_16u i = 0; i < (t_MAX_INPUT_CHANNEL / t_CORE_SIZE); i++) {
                 ADDER_TREE_LOOP:
+                    #pragma clang loop unroll(full)
                     for (dType_16u j = 0; j < t_CORE_SIZE; j++) {
                         dType_Reg input = i * t_CORE_SIZE + j;
                         dType_16t input_recalib = localFeature[input] - input_zp;

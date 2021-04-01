@@ -31,10 +31,10 @@ void pool0() {
                 for(c = 0; c < pool0InChan; c++) {
                     int sum = 0;
                     // Kernel X
-                    #pragma clang loop unroll(full)
+                    #pragma clang loop unroll(disable)
                     for (x = 0; x < pool0KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(full)
+                        #pragma clang loop unroll(disable)
                         for (y = 0; y < pool0KSize; y++) {
                             // Input Channels
                             sum += convInput[InputIdx3D(h+x, w+y, c)];

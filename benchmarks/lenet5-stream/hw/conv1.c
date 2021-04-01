@@ -49,19 +49,20 @@ void conv1() {
                 for(cc = 0; cc < conv1OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
-                    #pragma clang loop unroll(full)
+                    #pragma clang loop unroll(disable)
                     for (x = 0; x < conv1KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(full)
+                        #pragma clang loop unroll(disable)
                         for (y = 0; y < conv1KSize; y++) {
                             // Input Channels
-                            #pragma clang loop unroll(full)
+                            #pragma clang loop unroll(disable)
                             for(c = 0; c < conv1InChan; c++) {
                                 sum += convInput[InputIdx3D(x, y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];
                             }
                         }
                     }
+                    sum *= convLUT[0];
                     *strOut = sum;
                 }
             }

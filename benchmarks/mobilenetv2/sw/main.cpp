@@ -51,8 +51,20 @@ int main(void) {
                 stage += 1;
                 break;
             case 1:
-                // Start Head
-                runHead(feats+0x00000000,feats+0x00100000,
+                // // Start Head
+                // runHead(feats+0x00000000,feats+0x00100000,
+                //         weights, qparams,
+                //         weights, qparams,
+                //         weights, qparams);
+                // Start Body_0
+                phase = 0;
+                rs_offset = (phase + 0) * 0x00100000;
+                rd_offset = (phase + 1) * 0x00100000;
+                wr_offset = (phase + 2) * 0x00100000;
+                runBody(phase,
+                        feats+0x00000000,
+                        feats+0x00000000,
+                        feats+0x00000000,
                         weights, qparams,
                         weights, qparams,
                         weights, qparams);

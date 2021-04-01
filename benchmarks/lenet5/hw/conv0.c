@@ -22,7 +22,7 @@ void conv0() {
             // Check that the window is valid
             if(!(w+conv0KSize>conv0InDim || h+conv0KSize>conv0InDim)) {
                 // Output Channels
-                #pragma clang loop unroll(full)
+                #pragma clang loop unroll_count(3)
                 for(cc = 0; cc < conv0OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
