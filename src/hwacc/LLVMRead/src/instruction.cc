@@ -106,6 +106,7 @@ Instruction::instantiate(llvm::Value *irval,
         // TODO: Maybe remove this 
         opReg.push_back(opval->getReg());
         if(llvm::isa<llvm::PHINode>(inst)) {
+            DPRINTF(LLVMInterface, "Phi Node Initiated\n");
             uint64_t phiBB = 0;
             llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(inst);
             llvm::Value * bb = llvm::dyn_cast<llvm::Value>(phi->getIncomingBlock(phiBB));
@@ -113,6 +114,10 @@ Instruction::instantiate(llvm::Value *irval,
             opval = mapit->second;
             staticDependencies.push_back(opval);
             ++phiBB;
+        } else if(llvm::isa<llvm::CmpInst>(inst)) {
+            DPRINTF(LLVMInterface, "Compare Instruction Initiated\n");
+
+            
         }
     }
 
@@ -377,7 +382,9 @@ Br::commit()
 void
 Br::getDependencyValue(Instruction *dep) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Rework **
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -579,8 +586,9 @@ Add::launch()
 
 void
 Add::compute() {
-    // Perform computations
-    // Store results in temp location
+    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
+    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    setRegisterValue(op1 + op2);
 }
 
 bool
@@ -599,7 +607,10 @@ Add::commit()
 
 void
 Add::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -963,8 +974,9 @@ Mul::launch()
 
 void
 Mul::compute() {
-    // Perform computations
-    // Store results in temp location
+    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
+    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    setRegisterValue(op1 * op2);
 }
 
 bool
@@ -983,7 +995,10 @@ Mul::commit()
 
 void
 Mul::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -2284,7 +2299,9 @@ Load::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
-
+    llvm::LoadInst * inst = llvm::dyn_cast<llvm::LoadInst>(irval);
+    this->align = inst->getAlignment();
+    DPRINTF(SALAM_Debug, "Load Instruction %d \n", inst->getPointerAddressSpace());
 }
 
 bool
@@ -2320,7 +2337,10 @@ Load::commit()
 
 void
 Load::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -2381,6 +2401,9 @@ Store::initialize(llvm::Value * irval,
                         SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
+    llvm::StoreInst * inst = llvm::dyn_cast<llvm::StoreInst>(irval);
+    this->align = inst->getAlignment();
+    DPRINTF(SALAM_Debug, "Load Instruction %d \n", inst->getPointerAddressSpace());
 }
 
 bool
@@ -2421,7 +2444,7 @@ Store::createMemoryRequest() {
 
     MemoryRequest * req;
 
-    auto dataRegister = operands.at(0).getRegister();
+    auto dataRegister = operands.at(0).getReg();
     // Copy data from the register
     if (dataRegister->isPtr()) {
         req = new MemoryRequest(memAddr, dataRegister->getPtrData(), reqLen);
@@ -2440,7 +2463,10 @@ Store::createMemoryRequest() {
 
 void
 Store::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -2542,7 +2568,10 @@ GetElementPtr::commit()
 
 void
 GetElementPtr::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -3651,6 +3680,10 @@ ICmp::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
+    llvm::CmpInst * inst = llvm::dyn_cast<llvm::CmpInst>(irval);
+    this->predicate = inst->getPredicate();
+    DPRINTF(SALAM_Debug, "Integer Comparison Predicate [%i | %s]\n", this->predicate, inst->getPredicateName(inst->getPredicate()).str());
+    
 }
 
 bool
@@ -3674,8 +3707,21 @@ ICmp::launch()
 
 void
 ICmp::compute() {
-    // Perform computations
-    // Store results in temp location
+    switch(predicate) 
+    {
+        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(operands.at(0).getIntRegValue() == operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_NE: { setRegisterValue(operands.at(0).getIntRegValue() !=  operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(operands.at(0).getIntRegValue() <  operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(operands.at(0).getIntRegValue() < operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue()); break; }
+        default: break;
+
+    }
 }
 
 bool
@@ -3694,7 +3740,10 @@ ICmp::commit()
 
 void
 ICmp::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void
@@ -3747,6 +3796,10 @@ FCmp::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // ****** //
+    llvm::CmpInst * inst = llvm::dyn_cast<llvm::CmpInst>(irval);
+    this->predicate = inst->getPredicate();
+    DPRINTF(SALAM_Debug, "Floating-Point Comparison Predicate [%i | %s]\n", this->predicate, inst->getPredicateName(inst->getPredicate()).str());
+
 }
 
 bool
@@ -3899,7 +3952,10 @@ Phi::commit()
 
 void
 Phi::getDependencyValue(Instruction *dep) {
-    // Rework **
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
 }
 
 void

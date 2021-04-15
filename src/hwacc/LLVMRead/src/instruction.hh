@@ -925,6 +925,7 @@ class Load : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
+        uint64_t align;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -965,6 +966,7 @@ class Store : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
+        uint64_t align;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1456,6 +1458,7 @@ createIntToPtrInst(uint64_t id,
 class ICmp : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
+        uint64_t predicate;
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
@@ -1492,6 +1495,7 @@ createICmpInst(uint64_t id,
 class FCmp : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
+        uint64_t predicate;
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;

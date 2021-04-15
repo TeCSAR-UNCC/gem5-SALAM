@@ -233,7 +233,7 @@ SALAM::Operand::Operand(const SALAM::Value &copy_val):
 { // Update here for values in the copied value base class
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
     //uid = copy_val.getUID();
-  	//returnReg = copy_val.getRegister();
+  	//returnReg = copy_val.getReg();
 	//irtype = copy_val.getType();
 }
 
