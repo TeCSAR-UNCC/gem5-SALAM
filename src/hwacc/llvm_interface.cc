@@ -539,7 +539,7 @@ LLVMInterface::initialize() {
     launchTopFunction();
 
 
-    panic("Kill Simulation");
+    // panic("Kill Simulation");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing writeQueue Queue!\n");

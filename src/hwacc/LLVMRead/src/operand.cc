@@ -222,9 +222,8 @@ SALAM::Operand::Operand(const SALAM::Operand &copy_val):
 		   SALAM::Value(copy_val)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
-    //uid = copy_val.uid;
-  	//returnReg = copy_val.returnReg;
-	//irtype = copy_val.irtype;
+    lockedValue = copy_val.lockedValue;
+    set = copy_val.set;
 }
 
 // copy constructor from base
@@ -232,9 +231,7 @@ SALAM::Operand::Operand(const SALAM::Value &copy_val):
 		   SALAM::Value(copy_val)
 { // Update here for values in the copied value base class
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
-    //uid = copy_val.getUID();
-  	//returnReg = copy_val.getReg();
-	//irtype = copy_val.getType();
+    initOperandReg();
 }
 
 // operator equals
@@ -242,6 +239,12 @@ SALAM::Operand&
 SALAM::Operand::operator = (SALAM::Operand &copy_val)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);
+    uid = copy_val.uid;
+  	returnReg = copy_val.returnReg;
+	irtype = copy_val.irtype;
+	size = copy_val.size;
+	lockedValue = copy_val.lockedValue;
+    set = copy_val.set;
     return *this;
 }
 

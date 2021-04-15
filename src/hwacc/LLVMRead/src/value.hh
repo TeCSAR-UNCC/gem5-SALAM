@@ -68,7 +68,12 @@ class Value
         virtual void initialize(llvm::Value *irval,
                                 SALAM::irvmap *irmap);
         uint64_t getSize() { return size; }
-        uint64_t getSizeInBytes() { return ((size - 1) >> 3) + 1; }
+        uint64_t getSizeInBytes() {
+            if (size==0)
+                return 0;
+            else
+                return ((size - 1) >> 3) + 1;
+        }
         uint64_t getUID() { return uid; }
         std::shared_ptr<SALAM::Register> getReg() { return returnReg; }
         llvm::Type *getType() { return irtype; }

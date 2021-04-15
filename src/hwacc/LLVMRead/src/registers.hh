@@ -54,12 +54,15 @@ class Register
             return NULL;
         }
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) {
+            printf("Attempted to write float data on non-float register");
             assert(0);
         }
         virtual void writeIntData(llvm::APInt * api, bool incWrites=true) {
+            printf("Attempted to write interger data on non-integer register");
             assert(0);
         }
         virtual void writePtrData(uint64_t * ptr, size_t len=8, bool incWrites=true) {
+            printf("Attempted to write pointer data on non-pointer register");
             assert(0);
         }
         virtual bool isInt() { return false; }

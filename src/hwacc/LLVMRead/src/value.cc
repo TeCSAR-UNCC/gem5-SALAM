@@ -25,6 +25,7 @@ SALAM::Value::Value(const Value &copy_val)
   	uid = copy_val.uid;
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
+	size = copy_val.size;
 }
 
 // operator equals
@@ -35,6 +36,7 @@ SALAM::Value::operator = (Value &copy_val)
 	uid = copy_val.uid;
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
+	size = copy_val.size;
   	return *this;
 }
 
