@@ -64,7 +64,7 @@ class Instruction : public Value
         uint64_t getCycleCount() { return cycleCount; }
         uint64_t getOpode() { return llvmOpCode; }
         virtual uint64_t getCurrentCycle() { return cycleCount; }
-        valueListTy getStaticDependencies() const { return staticDependencies; }
+        virtual valueListTy getStaticDependencies() const { return staticDependencies; }
         std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }
         void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) { dynamicDependencies.push_back(dep); }
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
@@ -80,7 +80,7 @@ class Instruction : public Value
         virtual bool isStore() {return false; }
         virtual bool launch() { return false; }
         virtual bool commit() { return false; }
-        virtual bool ready(std::shared_ptr<SALAM::BasicBlock> prevBB = nullptr) { return false; }
+        virtual bool ready() { return false; }
         virtual void compute() { }
         virtual void reset() { }
         virtual void getDependencyValue(Instruction *dep) { }
@@ -1533,17 +1533,17 @@ createFCmpInst(uint64_t id,
 
 // SALAM-Phi // -------------------------------------------------------------//
 
-typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock> > phiNode;
+typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock> > phiArgTy;
 
 //typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value> > phiNode;
-typedef std::vector< phiNode> phiArgs;
+typedef std::vector< phiArgTy> phiArgsTy;
 
 class Phi : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
         std::shared_ptr<SALAM::BasicBlock> previousBB;
-        phiArgs arguments; // [Value, Previous BB]
+        phiArgsTy phiArgs; // [Value, Previous BB]
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1561,9 +1561,10 @@ class Phi : public Instruction {
         void setPrevBB(std::shared_ptr<SALAM::BasicBlock> prevBB) { previousBB = prevBB; }
         bool launch();
         bool commit();
-        bool ready(std::shared_ptr<SALAM::BasicBlock> previousBB);
+        bool ready();
         void reset();
         void compute();
+        virtual valueListTy getStaticDependencies() const override;
         void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();

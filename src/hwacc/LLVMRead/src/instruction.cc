@@ -3897,19 +3897,19 @@ Phi::initialize(llvm::Value * irval,
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(irval);
     assert(phi);
-    phiNode args;
-    for (int i = 0; i < getStaticDependencies().size();) {
-        args.first = getStaticDependencies(i); ++i;
-        args.second = std::dynamic_pointer_cast<SALAM::BasicBlock>(getStaticDependencies(i)); ++i;
-        this->arguments.push_back(args);
+    phiArgTy args;
+    for (int i = 0; i < Instruction::getStaticDependencies().size();) {
+        args.first = Instruction::getStaticDependencies(i); ++i;
+        args.second = std::dynamic_pointer_cast<SALAM::BasicBlock>(Instruction::getStaticDependencies(i)); ++i;
+        this->phiArgs.push_back(args);
     }
 }
 
 bool
-Phi::ready(std::shared_ptr<SALAM::BasicBlock> previousBB) {
+Phi::ready() {
     if (getDependencyCount() == 0) {
         isready = true;
-        setPrevBB(previousBB);
+        // setPrevBB(previousBB);
 
         return true;
     }
@@ -3929,11 +3929,13 @@ void
 Phi::compute() {
     // Perform computations
     // Store results in temp location
-    std::shared_ptr<SALAM::Value> node;
-    for (auto const it : arguments) {
-        if(previousBB == it.second) node = it.first;
-    }
+    // std::shared_ptr<SALAM::Value> node;
+    // for (auto const it : arguments) {
+    //     if(previousBB == it.second) node = it.first;
+    // }
     // node is pointer where value help
+
+    setRegisterValue(operands.at(0).getReg());
 }
 
 bool
@@ -3948,6 +3950,17 @@ Phi::commit()
         currentCycle--;
     }
     return false;
+}
+
+valueListTy
+Phi::getStaticDependencies() const {
+    valueListTy deps;
+
+    for (auto phiArg : phiArgs) {
+        if (phiArg.second == previousBB) deps.push_back(phiArg.first);
+    }
+
+    return deps;
 }
 
 void
