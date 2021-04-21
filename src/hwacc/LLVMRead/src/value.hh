@@ -32,6 +32,7 @@ class Value
     protected:
         uint64_t uid = 0;
         uint64_t size = 0;
+        std::string ir_string;
         llvm::Type *irtype;
         std::shared_ptr<SALAM::Register> returnReg;
         Ops opReg;
@@ -77,6 +78,7 @@ class Value
         uint64_t getUID() { return uid; }
         std::shared_ptr<SALAM::Register> getReg() { return returnReg; }
         llvm::Type *getType() { return irtype; }
+        std::string getIRString() { return ir_string; }
 
         // Helper functions for setting the value of the return register directly from the value
         // Using these functions will increment the write counters on tracked registers

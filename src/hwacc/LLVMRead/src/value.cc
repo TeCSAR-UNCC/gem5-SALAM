@@ -54,6 +54,10 @@ SALAM::Value::Value_Debugger::dumper(SALAM::Value *value)
             "************** Value Dump **************"
         );
 		if(value->getReg()) value->getReg()->dump();
+		DPRINTF(SALAM_Debug, "%s\n%s\n",
+			"************** LLVM IR Dump **************",
+			value->getIRString()
+		);
     }
 }
 
@@ -68,6 +72,11 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	}
 	// Link Return Register
 	addRegister(true);
+
+	std::string tmpstr;
+	llvm::raw_string_ostream ss(ir_string);
+	ss << *irval;
+	ir_string = ss.str();
 }
 
 void

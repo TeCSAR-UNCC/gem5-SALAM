@@ -55,11 +55,11 @@ class Instruction : public Value
         Instruction(uint64_t id, uint64_t OpCode); //
         Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles); //
         ~Instruction(); //
-        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList) { }; //
+        virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList); //
         virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  { return nullptr; }
-        void instantiate(llvm::Value * irval,
-                        irvmap * irmap,
-                        SALAM::valueListTy * valueList); //
+        // void instantiate(llvm::Value * irval,
+        //                 irvmap * irmap,
+        //                 SALAM::valueListTy * valueList); //
         uint64_t getDependencyCount() { return dynamicDependencies.size(); }
         uint64_t getCycleCount() { return cycleCount; }
         uint64_t getOpode() { return llvmOpCode; }

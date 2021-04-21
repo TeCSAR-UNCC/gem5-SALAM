@@ -49,7 +49,6 @@ SALAM::BasicBlock::initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueLis
         std::shared_ptr<SALAM::Instruction> instruct = std::dynamic_pointer_cast<SALAM::Instruction>(instval);
         assert(instruct);
         instructions.push_back(instruct);
-        instruct->instantiate(&inst, vmap, valueList);
         instruct->initialize(&inst, vmap, valueList);
         DPRINTF(LLVMInterface, "Instruction (UID: %d) Initialization Complete\n", instruct->getUID());
     }

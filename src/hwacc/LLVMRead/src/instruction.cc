@@ -69,11 +69,13 @@ Instruction::Instruction_Debugger::dumper(Instruction * inst)
 }
 
 void
-Instruction::instantiate(llvm::Value *irval,
+Instruction::initialize(llvm::Value *irval,
                          irvmap *irmap,
                          SALAM::valueListTy *valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(LLVMInterface, "Initialize Value - Instruction::initialize\n");
+    SALAM::Value::initialize(irval, irmap);
     // Fetch the operands of the instruction
     llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
     llvm::Instruction * inst = llvm::dyn_cast<llvm::Instruction>(irval);
@@ -120,9 +122,6 @@ Instruction::instantiate(llvm::Value *irval,
             
         }
     }
-
-    DPRINTF(LLVMInterface, "Initialize Value - Instruction::instantiate\n");
-    SALAM::Value::initialize(irval, irmap);
 }
 
 void
@@ -203,6 +202,7 @@ Ret::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
 bool
@@ -324,6 +324,7 @@ Br::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
     assert(br);
     isConditional(br->isConditional());
@@ -445,6 +446,7 @@ Switch::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     llvm::SwitchInst * switchInst = llvm::dyn_cast<llvm::SwitchInst>(irval);
     assert(switchInst);
     caseArgs newArgs;
@@ -560,6 +562,7 @@ Add::initialize(llvm::Value *irval,
                 SALAM::valueListTy *valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
 // do computation using llvm::Type
@@ -663,6 +666,7 @@ FAdd::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
 bool
@@ -758,6 +762,7 @@ Sub::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -854,6 +859,7 @@ FSub::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -950,6 +956,7 @@ Mul::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1050,6 +1057,7 @@ FMul::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1146,6 +1154,7 @@ UDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1242,6 +1251,7 @@ SDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1338,6 +1348,7 @@ FDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1434,6 +1445,7 @@ URem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1530,6 +1542,7 @@ SRem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1626,6 +1639,7 @@ FRem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1722,6 +1736,7 @@ Shl::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1818,6 +1833,7 @@ LShr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -1914,6 +1930,7 @@ AShr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2010,6 +2027,7 @@ And::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2106,6 +2124,7 @@ Or::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2202,6 +2221,7 @@ Xor::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2298,6 +2318,7 @@ Load::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::LoadInst * inst = llvm::dyn_cast<llvm::LoadInst>(irval);
     this->align = inst->getAlignment();
@@ -2400,6 +2421,7 @@ Store::initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::StoreInst * inst = llvm::dyn_cast<llvm::StoreInst>(irval);
     this->align = inst->getAlignment();
@@ -2518,6 +2540,7 @@ GetElementPtr::initialize(llvm::Value * irval,
                             irvmap * irmap,
                             SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
     assert(iruser);
@@ -2623,6 +2646,7 @@ Trunc::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2719,6 +2743,7 @@ ZExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2815,6 +2840,7 @@ SExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -2911,6 +2937,7 @@ FPToUI::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3007,6 +3034,7 @@ FPToSI::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3103,6 +3131,7 @@ UIToFP::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3199,6 +3228,7 @@ SIToFP::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3295,6 +3325,7 @@ FPTrunc::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3391,6 +3422,7 @@ FPExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3487,6 +3519,7 @@ PtrToInt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3583,6 +3616,7 @@ IntToPtr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -3679,6 +3713,7 @@ ICmp::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::CmpInst * inst = llvm::dyn_cast<llvm::CmpInst>(irval);
     this->predicate = inst->getPredicate();
@@ -3795,6 +3830,7 @@ FCmp::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::CmpInst * inst = llvm::dyn_cast<llvm::CmpInst>(irval);
     this->predicate = inst->getPredicate();
@@ -3895,6 +3931,7 @@ Phi::initialize(llvm::Value * irval,
                     irvmap * irmap,
                     SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(irval);
     assert(phi);
     phiArgTy args;
@@ -4020,6 +4057,7 @@ Call::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
@@ -4116,6 +4154,7 @@ Select::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
     this->condition = getStaticDependencies(0);
     this->trueValue = getStaticDependencies(1);
     this->falseValue = getStaticDependencies(2);
