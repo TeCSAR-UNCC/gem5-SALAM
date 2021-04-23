@@ -108,6 +108,8 @@ class System(SimObject):
     kernel_addr_check = Param.Bool(True,
         "whether to address check on kernel (disable for baremetal)")
     kernel_extras = VectorParam.String([],"Additional object files to load")
+    kernel_extras_addrs = VectorParam.Addr([],
+        "Load addresses for additional object files")
     readfile = Param.String("", "file to read startup script from")
     symbolfile = Param.String("", "file to get the symbols from")
     load_addr_mask = Param.UInt64(0xffffffffffffffff,
