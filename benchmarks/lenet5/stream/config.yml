@@ -17,16 +17,16 @@ acc_cluster:
       WriteInt: 211
   - Accelerator:
     - Name: top
-      IrPath: benchmarks/lenet5-stream/hw/top.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/top.ini
+      IrPath: benchmarks/lenet5/stream/hw/top.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/top.ini
       PIOSize: 9
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
     - Name: conv0
-      IrPath: benchmarks/lenet5-stream/hw/conv0.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/conv0.ini
+      IrPath: benchmarks/lenet5/stream/hw/conv0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/conv0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -55,8 +55,8 @@ acc_cluster:
         OutCon: pool0
   - Accelerator:
     - Name: pool0
-      IrPath: benchmarks/lenet5-stream/hw/pool0.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/pool0.ini
+      IrPath: benchmarks/lenet5/stream/hw/pool0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/pool0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -74,8 +74,8 @@ acc_cluster:
         OutCon: conv1
   - Accelerator:
     - Name: conv1
-      IrPath: benchmarks/lenet5-stream/hw/conv1.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/conv1.ini
+      IrPath: benchmarks/lenet5/stream/hw/conv1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/conv1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -103,8 +103,8 @@ acc_cluster:
         OutCon: pool1
   - Accelerator:
     - Name: pool1
-      IrPath: benchmarks/lenet5-stream/hw/pool1.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/pool1.ini
+      IrPath: benchmarks/lenet5/stream/hw/pool1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/pool1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -127,8 +127,8 @@ acc_cluster:
         OutCon: fc0
   - Accelerator:
     - Name: fc0
-      IrPath: benchmarks/lenet5-stream/hw/fc0.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/fc0.ini
+      IrPath: benchmarks/lenet5/stream/hw/fc0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/fc0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -156,8 +156,8 @@ acc_cluster:
         OutCon: fc1
   - Accelerator:
     - Name: fc1
-      IrPath: benchmarks/lenet5-stream/hw/fc1.ll
-      ConfigPath: benchmarks/lenet5-stream/hw/fc1.ini
+      IrPath: benchmarks/lenet5/stream/hw/fc1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/fc1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

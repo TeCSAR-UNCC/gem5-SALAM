@@ -24,50 +24,50 @@ def buildlenet5(options, system, clstr):
 	
 	# top Definition
 	acc = "top"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/top.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/top.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/top.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/top.ll"
 	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10020015, pio_size=9)
 	AccConfig(clstr.top, config, ir)
 	
 	# conv0 Definition
 	acc = "conv0"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv0.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv0.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/conv0.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/conv0.ll"
 	clstr.conv0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002001e, pio_size=1)
 	AccConfig(clstr.conv0, config, ir)
 	
 	# pool0 Definition
 	acc = "pool0"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool0.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool0.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/pool0.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/pool0.ll"
 	clstr.pool0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10025bfb, pio_size=1)
 	AccConfig(clstr.pool0, config, ir)
 	
 	# conv1 Definition
 	acc = "conv1"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv1.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/conv1.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/conv1.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/conv1.ll"
 	clstr.conv1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002b7dc, pio_size=1)
 	AccConfig(clstr.conv1, config, ir)
 	
 	# pool1 Definition
 	acc = "pool1"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool1.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/pool1.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/pool1.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/pool1.ll"
 	clstr.pool1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x100308c1, pio_size=1)
 	AccConfig(clstr.pool1, config, ir)
 	
 	# fc0 Definition
 	acc = "fc0"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc0.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc0.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/fc0.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/fc0.ll"
 	clstr.fc0 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10032802, pio_size=1)
 	AccConfig(clstr.fc0, config, ir)
 	
 	# fc1 Definition
 	acc = "fc1"
-	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc1.ini"
-	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/hw/fc1.ll"
+	config = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/fc1.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/lenet5/naive/hw/fc1.ll"
 	clstr.fc1 = CommInterface(devicename=acc, gic=gic, pio_addr=0x10061e27, pio_size=1)
 	AccConfig(clstr.fc1, config, ir)
 	

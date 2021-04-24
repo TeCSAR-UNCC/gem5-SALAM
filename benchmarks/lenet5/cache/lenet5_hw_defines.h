@@ -91,33 +91,29 @@
 //Accelerator: CONV0
 #define CONV0 0x10020046
 #define Conv0Window 0x10020047
-// #define Conv0Weights 0x100200ab
-#define Conv0LUT 0x10020303
-#define Conv0Out 0x10020307
+#define Conv0LUT 0x100202c7
+#define Conv0Out 0x100202cb
 //Accelerator: POOL0
-#define POOL0 0x1002030b
-#define Pool0Window 0x1002030c
-#define Pool0Out 0x1002084c
+#define POOL0 0x100202cf
+#define Pool0Window 0x100202d0
+#define Pool0Out 0x10020810
 //Accelerator: CONV1
-#define CONV1 0x10020850
-#define Conv1Window 0x10020851
-#define Conv1Weights 0x10020ee1
-#define Conv1LUT 0x10023461
-#define Conv1Out 0x10023465
+#define CONV1 0x10020814
+#define Conv1Window 0x10020815
+#define Conv1LUT 0x10020ea5
+#define Conv1Out 0x10020ea9
 //Accelerator: POOL1
-#define POOL1 0x10023469
-#define Pool1Window 0x1002346a
-#define Pool1LUT 0x100240ea
-#define Pool1Out 0x100240ee
+#define POOL1 0x10020ead
+#define Pool1Window 0x10020eae
+#define Pool1LUT 0x10021b2e
+#define Pool1Out 0x10021b32
 //Accelerator: FC0
-#define FC0 0x100240f2
-#define fc0Window 0x100240f3
-#define fc0Weights 0x10024733
-#define fc0LUT 0x10053533
-#define fc0Out 0x10053537
+#define FC0 0x10021b36
+#define fc0Window 0x10021b37
+#define fc0LUT 0x10022177
+#define fc0Out 0x1002217b
 //Accelerator: FC1
-#define FC1 0x1005353b
-#define fc1Window 0x1005353c
-#define fc1Weights 0x1005371c
-#define fc1LUT 0x1005d49c
+#define FC1 0x1002217f
+#define fc1Window 0x10022180
+#define fc1LUT 0x10022360
 //END GENERATED CODE

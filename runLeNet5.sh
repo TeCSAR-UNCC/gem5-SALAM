@@ -3,9 +3,12 @@ FLAGS="HWACC"
 DEBUG="false"
 PRINT_TO_FILE="false"
 
-while getopts ":f:dp" opt
+while getopts ":b:f:dp" opt
 	do
 		case $opt in
+			b )
+				BENCH=${OPTARG}
+				;;
 			d )
 				DEBUG="true"
 				;;
@@ -17,10 +20,17 @@ while getopts ":f:dp" opt
 				;;
 			* )
 				echo "Invalid argument: ${OPTARG}"
+				echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d))"
 				exit 1
 				;;
 		esac
 done
+
+if [ "${BENCH}" == "" ]; then
+	echo "No benchmark specified."
+	echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
+	exit 2
+fi
 
 if [ "${DEBUG}" == "true" ]; then
 	BINARY="ddd --gdb --args ${M5_PATH}/build/ARM/gem5.debug"
@@ -28,7 +38,7 @@ else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
-KERNEL=$M5_PATH/benchmarks/lenet5/sw/main.elf
+KERNEL=$M5_PATH/benchmarks/lenet5/$BENCH/sw/main.elf
 SYS_OPTS="--mem-size=4GB \
           --kernel=$KERNEL \
           --disk-image=$M5_PATH/baremetal/common/fake.iso \
@@ -40,7 +50,7 @@ CACHE_OPTS="--caches --l2cache"
 OUTDIR=BM_ARM_OUT/LeNet5
 
 RUN_SCRIPT="$BINARY --debug-flags=$FLAGS --outdir=$OUTDIR \
-			configs/SALAM/fs_lenet5.py $SYS_OPTS \
+			configs/SALAM/fs_lenet5_$BENCH.py $SYS_OPTS \
 			--accpath=$M5_PATH/benchmarks $CACHE_OPTS"
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
@@ -51,7 +61,6 @@ else
 fi
 
 # Debug Flags List
-#
 # IOAcc
 # ClassDetail
 # CommInterface

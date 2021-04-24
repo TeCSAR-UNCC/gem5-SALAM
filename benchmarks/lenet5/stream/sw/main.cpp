@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "../../common/m5ops.h"
+#include "../../../common/m5ops.h"
 #include "bench.h"
 #define TYPE uint8_t
 volatile uint8_t  * top   = (uint8_t  *)0x1002003d;
