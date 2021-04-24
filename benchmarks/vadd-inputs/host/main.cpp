@@ -21,11 +21,11 @@ int main(void) {
   // uint64_t base_input = 0x90c00000;
   // uint32_t* input = (uint32_t*)0x90c00000;
   for (int i = 0; i < N; i++) {
-            printf("%p %d\n",m1+i,m1[i]);
+            printf("%p %ld\n",m1+i,m1[i]);
   }
 
   for (int i = 0; i < N; i++) {
-            printf("%p %d\n",m2+i,m2[i]);
+            printf("%p %ld\n",m2+i,m2[i]);
   }
 #ifdef SPM
   TYPE *spm1 = (TYPE *)spm_base;
@@ -56,21 +56,26 @@ int main(void) {
 #ifdef SPM
   dmacpy(m3, spm3, sizeof(TYPE) * N);
   while (!pollDma());
+  resetDma();
 #endif
   acc = 0x00;
 
   for (int i = 0; i < N; i++) {
-    printf("%p %d\n",m3+i,m3[i]);
+   printf("M3 %p %ld\n",m3+i,m3[i]);
   }
 
 #ifdef CHECK
   bool fail = false;
   for (int i = 0; i < N; i++) {
-    printf("Actual:%d\n",m3[i]);
-    printf("%p %d\n",m3+i,m3[i]);
-    if ((m1[i] + m2[i]) != check[i])
-      fail = true;
-  }
+    printf("M1: %p %ld\n",m1+i,m1[i]);
+    printf("M2: %p %ld\n",m2+i,m2[i]);
+    if ((m1[i] + m2[i]) != m3[i])
+      {
+
+	printf("Expected : %ld  Actual : %ld\n",m1[i]+m2[i],m3[i]);
+	fail = true;
+      }
+    }
 
   if (fail)
     printf("Check Failed\n");

@@ -33,7 +33,7 @@ void gemm(TYPE m1[N], TYPE m2[N], TYPE prod[N] ){
     TYPE mult;
     #pragma clang loop unroll_count(8)
     for(i=0;i<N;i++) {
-            prod[i]  = m1[0] + m2[0];
+            prod[i]  = m1[i] + m2[i];
         
     }
 }
