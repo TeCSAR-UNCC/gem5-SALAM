@@ -30,7 +30,7 @@ pw_convYaxis:
             #pragma clang loop unroll(disable)
             for (int i = 0; i < t_MAX_INPUT_CHANNEL; i++) {
                 if (i < i_c_size) {
-                    localFeature[i] = *inFifo;
+                    localFeature[i] = 1;
                 } else {
                     localFeature[i] = input_zp;
                 }
@@ -74,7 +74,7 @@ pw_convYaxis:
                 t_ACCUMULATE_TYPE scaled_output = biased_input * signed_imul;
                 out_i32 = (scaled_output >> nShift_output[oc]) + output_zp;
                 t_OUTPUT_TYPE out_nBit = (t_OUTPUT_TYPE)(MAX(0,MIN(out_i32,255)));
-                *outFifo =out_nBit;
+                // *outFifo =out_nBit;
             }
         }
     }
