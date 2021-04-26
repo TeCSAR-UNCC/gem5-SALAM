@@ -2,7 +2,7 @@
 #define __DEFINES_H__
 
 #define SPM
-//#define CHECK
+#define CHECK
 
 #define TYPE double
 #define ROW 64
