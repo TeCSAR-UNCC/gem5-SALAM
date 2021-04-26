@@ -75,7 +75,7 @@ class Value
             else
                 return ((size - 1) >> 3) + 1;
         }
-        uint64_t getUID() { return uid; }
+        uint64_t getUID() const { return uid; }
         std::shared_ptr<SALAM::Register> getReg() { return returnReg; }
         llvm::Type *getType() { return irtype; }
         std::string getIRString() { return ir_string; }

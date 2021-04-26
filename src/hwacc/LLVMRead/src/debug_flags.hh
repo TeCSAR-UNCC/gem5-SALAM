@@ -15,11 +15,11 @@
 #include "debug/SALAM_Debug.hh"
 #include "debug/StreamDma.hh"
 #include "debug/Trace.hh"
+#include "debug/Step.hh"
 #include "base/trace.hh"
 
 namespace SALAM
 {
-
 
 class Debugger
 {

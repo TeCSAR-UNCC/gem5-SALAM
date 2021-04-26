@@ -133,6 +133,65 @@ Instruction::signalUsers()
     }
 }
 
+bool
+Instruction::ready()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(Runtime, "Remaining Dependencies: %i \n", getDependencyCount());
+    if (getDependencyCount() == 0) {
+        isready = true;
+        DPRINTF(Runtime, " <=== Return: %s\n", isready ? "true" : "false");
+        return true;
+    }
+    DPRINTF(Runtime, " <=== Return: %s\n", isready ? "true" : "false");
+    return false;
+}
+
+bool
+Instruction::launch()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    launched = true;
+    compute();
+    commit();
+    //DPRINTF(Runtime, " <=== Return: %s\n", launched ? "true" : "false");
+    return committed;
+}
+
+bool
+Instruction::commit()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(Runtime, "Current Cycle: %i\n", getCurrentCycle());
+    if (getCurrentCycle() == 0) { // Instruction ready to be committed
+        signalUsers();
+        committed = true;
+        DPRINTF(Runtime, " <=== Return: %s\n", committed ? "true" : "false");
+        return true;
+    } else {
+        currentCycle--;
+    }
+    DPRINTF(Runtime, " <=== Return: %s\n", committed ? "true" : "false");
+    return false;
+}
+
+void
+Instruction::getDependencyValue(Instruction *dep) {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    for (auto ops : operands) {
+        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+    }
+}
+
+void
+Instruction::reset() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    isready = false;
+    launched = false;
+    committed = false;
+}
+
+
 void
 Instruction::operandValueFetch(uint64_t uid)
 {
@@ -205,59 +264,11 @@ Ret::initialize(llvm::Value * irval,
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
-bool
-Ret::ready()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Ret::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Ret::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Ret::commit()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Ret::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Rework **
-}
-
-void
-Ret::reset() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Lock results from temp location
 }
 
 // SALAM-Br // --------------------------------------------------------------//
@@ -337,61 +348,12 @@ Br::initialize(llvm::Value * irval,
     }
 }
 
-bool
-Br::ready() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Br::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Br::compute()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Br::commit()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Br::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-Br::reset() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Lock results from temp location
 }
 
 // SALAM-Switch // ----------------------------------------------------------//
@@ -467,53 +429,11 @@ Switch::destination(int switchVar)
     return this->defaultDest();
 }
 
-bool
-Switch::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Switch::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
 
 void
 Switch::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Switch::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Switch::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Switch::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Add // -------------------------------------------------------------//
@@ -565,62 +485,12 @@ Add::initialize(llvm::Value *irval,
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
-// do computation using llvm::Type
-// llvm::Type *getType() { return irtype; }
-// llvm::Type* variable1 = this->getType(); - worked
-bool
-Add::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Add::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Add::compute() {
     llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
     setRegisterValue(op1 + op2);
 }
-
-bool
-Add::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Add::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-Add::reset() {
-    // Lock results from temp location
-}
-
 
 // SALAM-FAdd // ------------------------------------------------------------//
 void // Debugging Interface 
@@ -669,53 +539,10 @@ FAdd::initialize(llvm::Value * irval,
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
-bool
-FAdd::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FAdd::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FAdd::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FAdd::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FAdd::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FAdd::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Sub // -------------------------------------------------------------//
@@ -766,53 +593,10 @@ Sub::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Sub::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Sub::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Sub::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Sub::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Sub::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Sub::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FSub // -------------------------------------------------------------//
@@ -863,53 +647,10 @@ FSub::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FSub::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FSub::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FSub::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FSub::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FSub::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FSub::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Mul // -------------------------------------------------------------//
@@ -960,57 +701,11 @@ Mul::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Mul::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Mul::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Mul::compute() {
     llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
     setRegisterValue(op1 * op2);
-}
-
-bool
-Mul::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Mul::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-Mul::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FMul // ------------------------------------------------------------//
@@ -1061,53 +756,10 @@ FMul::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FMul::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FMul::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FMul::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FMul::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FMul::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FMul::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-UDiv // ------------------------------------------------------------//
@@ -1158,53 +810,10 @@ UDiv::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-UDiv::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-UDiv::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 UDiv::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-UDiv::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-UDiv::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-UDiv::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-SDiv // ------------------------------------------------------------//
@@ -1255,53 +864,10 @@ SDiv::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-SDiv::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-SDiv::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 SDiv::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-SDiv::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-SDiv::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-SDiv::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FDiv // ------------------------------------------------------------//
@@ -1352,53 +918,10 @@ FDiv::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FDiv::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FDiv::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FDiv::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FDiv::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FDiv::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FDiv::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-URem // ------------------------------------------------------------//
@@ -1449,53 +972,10 @@ URem::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-URem::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-URem::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 URem::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-URem::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-URem::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-URem::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-SRem // ------------------------------------------------------------//
@@ -1546,53 +1026,10 @@ SRem::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-SRem::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-SRem::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 SRem::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-SRem::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-SRem::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-SRem::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FRem // ------------------------------------------------------------//
@@ -1643,53 +1080,10 @@ FRem::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FRem::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FRem::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FRem::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FRem::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FRem::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FRem::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Shl // -------------------------------------------------------------//
@@ -1740,53 +1134,10 @@ Shl::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Shl::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Shl::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Shl::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Shl::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Shl::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Shl::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-LShr // ------------------------------------------------------------//
@@ -1837,53 +1188,10 @@ LShr::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-LShr::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-LShr::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 LShr::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-LShr::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-LShr::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-LShr::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-AShr // ------------------------------------------------------------//
@@ -1934,53 +1242,10 @@ AShr::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-AShr::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-AShr::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 AShr::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-AShr::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-AShr::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-AShr::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-And // -------------------------------------------------------------//
@@ -2031,53 +1296,10 @@ And::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-And::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-And::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 And::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-And::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-And::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-And::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Or // --------------------------------------------------------------//
@@ -2128,53 +1350,10 @@ Or::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Or::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Or::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Or::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Or::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Or::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Or::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Xor // -------------------------------------------------------------//
@@ -2225,53 +1404,10 @@ Xor::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Xor::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Xor::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Xor::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Xor::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Xor::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Xor::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Load // ------------------------------------------------------------//
@@ -2325,48 +1461,9 @@ Load::initialize(llvm::Value * irval,
     DPRINTF(SALAM_Debug, "Load Instruction %d \n", inst->getPointerAddressSpace());
 }
 
-bool
-Load::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Load::launch()
-{
-    // UNUSED
-    return true;
-}
-
 void
 Load::compute() {
     // UNUSED
-}
-
-bool
-Load::commit()
-{
-    reset();
-    signalUsers();
-    committed = true;
-    return true;
-}
-
-void
-Load::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-Load::reset() {
-    // Lock results from temp location
 }
 
 MemoryRequest *
@@ -2428,35 +1525,9 @@ Store::initialize(llvm::Value * irval,
     DPRINTF(SALAM_Debug, "Load Instruction %d \n", inst->getPointerAddressSpace());
 }
 
-bool
-Store::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Store::launch()
-{
-    // UNUSED
-    return true;
-}
-
 void
 Store::compute() {
     // UNUSED
-}
-
-bool
-Store::commit()
-{
-    reset();
-    signalUsers();
-    committed = true;
-    return true;
 }
 
 MemoryRequest *
@@ -2481,19 +1552,6 @@ Store::createMemoryRequest() {
     }
 
     return req;
-}
-
-void
-Store::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-Store::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-GEP // -------------------------------------------------------------//
@@ -2550,56 +1608,10 @@ GetElementPtr::initialize(llvm::Value * irval,
 
 }
 
-bool
-GetElementPtr::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-GetElementPtr::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 GetElementPtr::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-GetElementPtr::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-GetElementPtr::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-GetElementPtr::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Trunc // -----------------------------------------------------------//
@@ -2650,53 +1662,10 @@ Trunc::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Trunc::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Trunc::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Trunc::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Trunc::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Trunc::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Trunc::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-ZExt // ------------------------------------------------------------//
@@ -2747,53 +1716,10 @@ ZExt::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-ZExt::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-ZExt::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 ZExt::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-ZExt::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-ZExt::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-ZExt::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-SExt // ------------------------------------------------------------//
@@ -2844,53 +1770,10 @@ SExt::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-SExt::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-SExt::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 SExt::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-SExt::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-SExt::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-SExt::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FPToUI // ----------------------------------------------------------//
@@ -2941,53 +1824,10 @@ FPToUI::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FPToUI::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FPToUI::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FPToUI::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FPToUI::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FPToUI::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FPToUI::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FPToSI // ----------------------------------------------------------//
@@ -3038,53 +1878,10 @@ FPToSI::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FPToSI::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FPToSI::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FPToSI::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FPToSI::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FPToSI::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FPToSI::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-UIToFP // ----------------------------------------------------------//
@@ -3135,53 +1932,10 @@ UIToFP::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-UIToFP::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-UIToFP::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 UIToFP::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-UIToFP::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-UIToFP::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-UIToFP::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-SIToFP // ----------------------------------------------------------//
@@ -3232,53 +1986,10 @@ SIToFP::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-SIToFP::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-SIToFP::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 SIToFP::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-SIToFP::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-SIToFP::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-SIToFP::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FPTrunc // ---------------------------------------------------------//
@@ -3329,53 +2040,10 @@ FPTrunc::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FPTrunc::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FPTrunc::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FPTrunc::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FPTrunc::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FPTrunc::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FPTrunc::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FPExt // -----------------------------------------------------------//
@@ -3426,53 +2094,10 @@ FPExt::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-FPExt::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FPExt::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FPExt::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FPExt::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FPExt::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FPExt::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-PtrToInt // --------------------------------------------------------//
@@ -3523,53 +2148,10 @@ PtrToInt::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-PtrToInt::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-PtrToInt::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 PtrToInt::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-PtrToInt::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-PtrToInt::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-PtrToInt::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-IntToPtr // --------------------------------------------------------//
@@ -3620,53 +2202,10 @@ IntToPtr::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-IntToPtr::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-IntToPtr::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 IntToPtr::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-IntToPtr::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-IntToPtr::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-IntToPtr::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-ICmp // ------------------------------------------------------------//
@@ -3721,25 +2260,6 @@ ICmp::initialize(llvm::Value * irval,
     
 }
 
-bool
-ICmp::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-ICmp::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 ICmp::compute() {
     switch(predicate) 
@@ -3757,33 +2277,6 @@ ICmp::compute() {
         default: break;
 
     }
-}
-
-bool
-ICmp::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-ICmp::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-ICmp::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-FCmp // ------------------------------------------------------------//
@@ -3838,53 +2331,10 @@ FCmp::initialize(llvm::Value * irval,
 
 }
 
-bool
-FCmp::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-FCmp::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 FCmp::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-FCmp::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-FCmp::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-FCmp::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Phi // -------------------------------------------------------------//
@@ -3942,28 +2392,10 @@ Phi::initialize(llvm::Value * irval,
     }
 }
 
-bool
-Phi::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-        // setPrevBB(previousBB);
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Phi::launch()
-{   
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Phi::compute() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    
     // Perform computations
     // Store results in temp location
     // std::shared_ptr<SALAM::Value> node;
@@ -3971,22 +2403,8 @@ Phi::compute() {
     //     if(previousBB == it.second) node = it.first;
     // }
     // node is pointer where value help
-
+    
     setRegisterValue(operands.at(0).getReg());
-}
-
-bool
-Phi::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
 }
 
 valueListTy
@@ -4000,18 +2418,6 @@ Phi::getStaticDependencies() const {
     return deps;
 }
 
-void
-Phi::getDependencyValue(Instruction *dep) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
-    }
-}
-
-void
-Phi::reset() {
-    // Lock results from temp location
-}
 
 // SALAM-Call // ------------------------------------------------------------//
 void // Debugging Interface 
@@ -4061,53 +2467,10 @@ Call::initialize(llvm::Value * irval,
     // ****** //
 }
 
-bool
-Call::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Call::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Call::compute() {
     // Perform computations
     // Store results in temp location
-}
-
-bool
-Call::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Call::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Call::reset() {
-    // Lock results from temp location
 }
 
 // SALAM-Select // ----------------------------------------------------------//
@@ -4167,55 +2530,11 @@ Select::evaluate() {
     return falseValue;
 }
 
-bool
-Select::ready() {
-    if (getDependencyCount() == 0) {
-        isready = true;
-
-        return true;
-    }
-    return false;
-}
-
-bool
-Select::launch()
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    launched = true;
-    compute();
-    return commit();
-}
-
 void
 Select::compute() {
     // Perform computations
     // Store results in temp location
 }
-
-bool
-Select::commit()
-{
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
-        reset();
-        signalUsers();
-        committed = true;
-        return true;
-    } else {
-        currentCycle--;
-    }
-    return false;
-}
-
-void
-Select::getDependencyValue(Instruction *dep) {
-    // Rework **
-}
-
-void
-Select::reset() {
-    // Lock results from temp location
-}
-
 
 } // namespace SALAM
 

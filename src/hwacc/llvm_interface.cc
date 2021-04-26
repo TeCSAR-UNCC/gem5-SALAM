@@ -154,7 +154,7 @@ LLVMInterface::ActiveFunction::processQueues()
     // First pass, computeQueue is empty 
     for (auto active_inst : computeQueue) {
         DPRINTFR(Runtime, "\t\t Compute Instruction: %s - UID[%i]\n", llvm::Instruction::getOpcodeName(active_inst->getOpode()), active_inst->getUID());
-        active_inst->commit();
+        if(active_inst->commit()) active_inst->reset();
     }
     if (canReturn()) {
         // Handle function return
@@ -174,7 +174,12 @@ LLVMInterface::ActiveFunction::processQueues()
                         scheduleBB((*it)->getTarget());
                     } else if ((*it)->isCommitted() == false) {
                         computeQueue.push_back(*it);
+                    }  else if ((*it)->isCommitted()) {
+                        (*it)->reset();
+                    } else {
+                        panic("Unknown Scheduler Argument!");
                     }
+                    DPRINTFR(Runtime, "\t\t Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
                     it = reservation.erase(it);
                 } else {
                     ++it;
@@ -215,20 +220,23 @@ LLVMInterface::tick()
 
     ////////////////////
     char response;
+
+    if (DTRACE(Step)) {
     do
-    {
-    std::cout << '\n' << "Press enter key to continue...";
-    response = std::cin.get();
-    if (response == 'q') panic("Exit Program");
-    } while (response != '\n');
+        {
+        std::cout << '\n' << "Press enter key to continue, or q then enter key to exit...";
+        response = std::cin.get();
+        if (response == 'q') panic("Exit Program");
+        } while (response != '\n');
+    }
 
     // Process Queues in Active Functions
     if (activeFunctions.empty()) {
         // We are finished executing all functions. Signal completion to the CommInterface
         finalize();
     } else {
-        for (auto activeFunc : activeFunctions) {
-            activeFunc.processQueues();
+        for (auto it = activeFunctions.begin(); it != activeFunctions.end(); ++it) {
+            it->processQueues();
         }
     }
 

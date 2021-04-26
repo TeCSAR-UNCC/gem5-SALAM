@@ -49,6 +49,7 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('StreamBuffer')
     DebugFlag('StreamDma')
     DebugFlag('Trace')
+    DebugFlag('Step')
 
-    CompoundFlag('JDEV', ['LLVMInterface', 'Runtime', 'SALAM_Debug', 'Trace'])
+    CompoundFlag('JDEV', ['LLVMInterface', 'Runtime', 'SALAM_Debug', 'Trace', 'Step'])
     CompoundFlag('HWACC', ['CommInterface', 'LLVMInterface'])

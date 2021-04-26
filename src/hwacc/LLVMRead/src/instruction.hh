@@ -32,6 +32,7 @@ class Instruction : public Value
         std::deque<std::shared_ptr<SALAM::Instruction>> dynamicUsers;
         uint64_t llvmOpCode;
         uint64_t cycleCount;
+        uint64_t currentCycle;
         bool dbg = false;
 
     protected:
@@ -55,6 +56,8 @@ class Instruction : public Value
         Instruction(uint64_t id, uint64_t OpCode); //
         Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles); //
         ~Instruction(); //
+        bool operator == (const std::shared_ptr<SALAM::Instruction> inst) const { return this->getUID() == inst->getUID(); }
+        bool operator != (const std::shared_ptr<SALAM::Instruction> inst) const { return !operator==(inst); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList); //
         virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  { return nullptr; }
         // void instantiate(llvm::Value * irval,
@@ -79,12 +82,12 @@ class Instruction : public Value
         virtual bool isBr() { return false; }
         virtual bool isLoad() { return false; }
         virtual bool isStore() {return false; }
-        virtual bool launch() { return false; }
-        virtual bool commit() { return false; }
-        virtual bool ready() { return false; }
+        virtual bool launch();
+        virtual bool commit();
+        virtual bool ready();
         virtual void compute() { }
-        virtual void reset() { }
-        virtual void getDependencyValue(Instruction *dep) { }
+        virtual void reset();
+        virtual void getDependencyValue(Instruction *dep);
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
@@ -105,8 +108,8 @@ class BadInstruction : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
-    protected:
 
+    protected:
     public:
         BadInstruction(uint64_t id,
             uint64_t OpCode,
@@ -131,9 +134,7 @@ class Ret : public Instruction {
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
-
     protected:
-
     public:
         Ret(uint64_t id,
             uint64_t OpCode,
@@ -143,12 +144,7 @@ class Ret : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         bool isReturn() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -173,11 +169,9 @@ class Br : public Instruction {
         std::shared_ptr<SALAM::Value> falseDestination;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-
         bool conditional = false;
 
     protected:
-
     public:
         // Branch Constructor
         Br(uint64_t id,
@@ -192,13 +186,7 @@ class Br : public Instruction {
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
         bool isTerminator() override { return true; }
         bool isBr() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        //void linkOperands();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -224,10 +212,8 @@ class Switch : public Instruction {
         switchArgs arguments;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-
         
     protected:
-
     public:
         Switch(uint64_t id,
             uint64_t OpCode,
@@ -240,12 +226,7 @@ class Switch : public Instruction {
         std::shared_ptr<SALAM::Value> destination(int switchVar);
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
         bool isTerminator() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -272,7 +253,6 @@ class Add : public Instruction
         uint64_t currentCycle;
 
     protected:
-
     public:
         Add(uint64_t id,
             uint64_t OpCode,
@@ -281,12 +261,7 @@ class Add : public Instruction
         void initialize(llvm::Value *irval,
                         SALAM::irvmap *irmap,
                         SALAM::valueListTy *valueList) override;
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -309,7 +284,6 @@ class FAdd : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FAdd(uint64_t id,
             uint64_t OpCode,
@@ -318,12 +292,7 @@ class FAdd : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -345,7 +314,6 @@ class Sub : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Sub(uint64_t id,
             uint64_t OpCode,
@@ -354,12 +322,7 @@ class Sub : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -381,7 +344,6 @@ class FSub : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FSub(uint64_t id,
             uint64_t OpCode,
@@ -390,12 +352,7 @@ class FSub : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -418,7 +375,6 @@ class Mul : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Mul(uint64_t id,
             uint64_t OpCode,
@@ -427,12 +383,7 @@ class Mul : public Instruction {
         void initialize (llvm::Value * irval,
                         SALAM::irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -454,7 +405,6 @@ class FMul : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FMul(uint64_t id,
             uint64_t OpCode,
@@ -463,12 +413,7 @@ class FMul : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -490,7 +435,6 @@ class UDiv : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         UDiv(uint64_t id,
             uint64_t OpCode,
@@ -499,12 +443,7 @@ class UDiv : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -526,7 +465,6 @@ class SDiv : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         SDiv(uint64_t id,
             uint64_t OpCode,
@@ -535,12 +473,7 @@ class SDiv : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -562,7 +495,6 @@ class FDiv : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FDiv(uint64_t id,
             uint64_t OpCode,
@@ -571,12 +503,7 @@ class FDiv : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -598,7 +525,6 @@ class URem : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         URem(uint64_t id,
             uint64_t OpCode,
@@ -607,12 +533,7 @@ class URem : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -634,7 +555,6 @@ class SRem : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         SRem(uint64_t id,
             uint64_t OpCode,
@@ -643,12 +563,7 @@ class SRem : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -670,7 +585,6 @@ class FRem : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FRem(uint64_t id,
             uint64_t OpCode,
@@ -679,12 +593,7 @@ class FRem : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -710,7 +619,6 @@ class Shl : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Shl(uint64_t id,
             uint64_t OpCode,
@@ -719,12 +627,7 @@ class Shl : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -746,7 +649,6 @@ class LShr : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         LShr(uint64_t id,
             uint64_t OpCode,
@@ -755,12 +657,7 @@ class LShr : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -782,7 +679,6 @@ class AShr : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         AShr(uint64_t id,
             uint64_t OpCode,
@@ -791,12 +687,7 @@ class AShr : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -818,7 +709,6 @@ class And : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         And(uint64_t id,
             uint64_t OpCode,
@@ -827,12 +717,7 @@ class And : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -852,7 +737,6 @@ class Or : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-
     protected:
 
     public:
@@ -863,12 +747,7 @@ class Or : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -890,7 +769,6 @@ class Xor : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Xor(uint64_t id,
             uint64_t OpCode,
@@ -899,12 +777,7 @@ class Xor : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -931,8 +804,6 @@ class Load : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
-
     public:
         Load(uint64_t id,
             uint64_t OpCode,
@@ -942,12 +813,7 @@ class Load : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         bool isLoad() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
-        void compute();
-        void getDependencyValue(Instruction *dep);
+        void compute(); 
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -972,7 +838,6 @@ class Store : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Store (uint64_t id,
             uint64_t OpCode,
@@ -982,12 +847,7 @@ class Store : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         bool isStore() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1010,8 +870,6 @@ The GEP indecies will by APSInts, so cast to int64_t for calculating offset insi
 
 */
 
-
-
 class GetElementPtr : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
@@ -1031,12 +889,7 @@ class GetElementPtr : public Instruction {
                         SALAM::valueListTy * valueList);
         GetElementPtr &setA() { std::cout << "a\n"; return *this; }
         GetElementPtr &setB() { std::cout << "b\n"; return *this; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1062,7 +915,6 @@ class Trunc : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Trunc(uint64_t id,
             uint64_t OpCode,
@@ -1071,12 +923,7 @@ class Trunc : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1098,7 +945,6 @@ class ZExt : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         ZExt(uint64_t id,
             uint64_t OpCode,
@@ -1107,12 +953,7 @@ class ZExt : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1134,7 +975,6 @@ class SExt : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         SExt(uint64_t id,
             uint64_t OpCode,
@@ -1143,12 +983,7 @@ class SExt : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1172,7 +1007,6 @@ class FPToUI : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FPToUI(uint64_t id,
             uint64_t OpCode,
@@ -1181,12 +1015,7 @@ class FPToUI : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1217,12 +1046,7 @@ class FPToSI : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1244,7 +1068,6 @@ class UIToFP : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         UIToFP(uint64_t id,
             uint64_t OpCode,
@@ -1253,12 +1076,7 @@ class UIToFP : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1280,7 +1098,6 @@ class SIToFP : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         SIToFP(uint64_t id,
             uint64_t OpCode,
@@ -1289,12 +1106,7 @@ class SIToFP : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1316,7 +1128,6 @@ class FPTrunc : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FPTrunc(uint64_t id,
             uint64_t OpCode,
@@ -1325,12 +1136,7 @@ class FPTrunc : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1352,7 +1158,6 @@ class FPExt : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         FPExt(uint64_t id,
             uint64_t OpCode,
@@ -1361,12 +1166,7 @@ class FPExt : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1397,12 +1197,7 @@ class PtrToInt : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1424,7 +1219,6 @@ class IntToPtr : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         IntToPtr(uint64_t id,
             uint64_t OpCode,
@@ -1433,12 +1227,7 @@ class IntToPtr : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1474,12 +1263,7 @@ class ICmp : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1511,12 +1295,7 @@ class FCmp : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1560,13 +1339,8 @@ class Phi : public Instruction {
                         SALAM::valueListTy * valueList);
         bool isPhi() override { return true; }
         void setPrevBB(std::shared_ptr<SALAM::BasicBlock> prevBB) { previousBB = prevBB; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
         virtual valueListTy getStaticDependencies() const override;
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1588,7 +1362,6 @@ class Call : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         Call (uint64_t id,
             uint64_t OpCode,
@@ -1598,12 +1371,7 @@ class Call : public Instruction {
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
         bool isCall() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
@@ -1628,7 +1396,6 @@ class Select : public Instruction {
         uint64_t currentCycle;
 
     protected:
-
     public:
         // ---- Constructor
         Select (uint64_t id,
@@ -1640,12 +1407,7 @@ class Select : public Instruction {
                         SALAM::valueListTy * valueList);
         std::shared_ptr<SALAM::Value> evaluate();
         bool isTerminator() override { return true; }
-        bool launch();
-        bool commit();
-        bool ready();
-        void reset();
         void compute();
-        void getDependencyValue(Instruction *dep);
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         uint64_t getCurrentCycle() { return currentCycle; }
