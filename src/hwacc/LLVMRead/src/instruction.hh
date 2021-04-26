@@ -70,6 +70,7 @@ class Instruction : public Value
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
         bool isCommitted() { return committed; }
+        bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }

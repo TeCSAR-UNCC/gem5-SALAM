@@ -217,11 +217,34 @@ SALAM::Operand::Operand(const Value &copy_val)
 }
 */
 
+
+SALAM::Operand::Operand_Debugger::Operand_Debugger()
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
+}
+
+void
+SALAM::Operand::Operand_Debugger::dumper(Operand * op)
+ {
+    if (DTRACE(SALAM_Debug)) {
+        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+        DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n", 
+            "************** Instruction Dump **************",
+            "    UID: ", op->getUID()
+        );
+        op->value_dump();
+    }
+ }
+
 // copy constructor
 SALAM::Operand::Operand(const SALAM::Operand &copy_val):
 		   SALAM::Value(copy_val)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->op_dbg = new Operand_Debugger();
+    }
     lockedValue = copy_val.lockedValue;
     set = copy_val.set;
 }
@@ -231,6 +254,10 @@ SALAM::Operand::Operand(const SALAM::Value &copy_val):
 		   SALAM::Value(copy_val)
 { // Update here for values in the copied value base class
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->op_dbg = new Operand_Debugger();
+    }
     initOperandReg();
 }
 

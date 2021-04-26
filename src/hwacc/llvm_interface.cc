@@ -153,12 +153,14 @@ LLVMInterface::ActiveFunction::processQueues()
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // First pass, computeQueue is empty 
     for (auto active_inst : computeQueue) {
+        DPRINTFR(Runtime, "\t\t Compute Instruction: %s - UID[%i]\n", llvm::Instruction::getOpcodeName(active_inst->getOpode()), active_inst->getUID());
         active_inst->commit();
     }
     if (canReturn()) {
         // Handle function return
     } else {
         for (auto it = reservation.begin(); it != reservation.end();) {
+            DPRINTFR(Runtime, "\t\t Reserve Instruction: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
             if ((*it)->isReturn() == false) {
                 if ((*it)->ready()) {
                     (*it)->launch();
@@ -187,6 +189,7 @@ LLVMInterface::ActiveFunction::processQueues()
 void
 LLVMInterface::tick()
 {
+
 /*********************************************************************************************
  CN Scheduling
 
@@ -209,6 +212,15 @@ LLVMInterface::tick()
         "********************************************************************************");
     cycle++;
     // comm->refreshMemPorts(); // Deprecated
+
+    ////////////////////
+    char response;
+    do
+    {
+    std::cout << '\n' << "Press enter key to continue...";
+    response = std::cin.get();
+    if (response == 'q') panic("Exit Program");
+    } while (response != '\n');
 
     // Process Queues in Active Functions
     if (activeFunctions.empty()) {

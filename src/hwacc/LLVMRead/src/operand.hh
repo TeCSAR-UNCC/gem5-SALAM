@@ -23,10 +23,21 @@ class Operand: public Value
 {
     private:
         Register *lockedValue;
+        bool dbg = false;
         bool set = false;
 
     protected:
+        class Operand_Debugger: public Debugger
+        {
+            public:
+                Operand_Debugger();
+                ~Operand_Debugger() = default;
+                virtual void dumper(SALAM::Operand *op);
+        }; 
+
+        Operand_Debugger* op_dbg;
     public:
+        void dump() { if (dbg) op_dbg->dumper(this); }
         void initOperandReg();
         //Operand(uint64_t id);
         Operand(const SALAM::Value &copy_val);
