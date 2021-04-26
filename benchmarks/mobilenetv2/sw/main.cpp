@@ -51,7 +51,7 @@ int main(void) {
                 stage += 1;
                 break;
             case 1:
-                // // Start Head
+                // Start Head
                 // runHead(feats+0x00000000,feats+0x00100000,
                 //         weights, qparams,
                 //         weights, qparams,
@@ -62,9 +62,9 @@ int main(void) {
                 rd_offset = (phase + 1) * 0x00100000;
                 wr_offset = (phase + 2) * 0x00100000;
                 runBody(phase,
-                        feats+0x00000000,
-                        feats+0x00000000,
-                        feats+0x00000000,
+                        feats+rd_offset,
+                        feats+rs_offset,
+                        feats+wr_offset,
                         weights, qparams,
                         weights, qparams,
                         weights, qparams);
@@ -346,9 +346,8 @@ void runBody(uint8_t phase, uint64_t feat_rd_addr,
              uint64_t dw0_weights, uint64_t dw0_quant,
              uint64_t pw1_weights, uint64_t pw1_quant) {
     uint8_t  * MMR  = (uint8_t  *)(body_top);
-    uint64_t * ARGS = (uint64_t *)(body_top+2);
+    uint64_t * ARGS = (uint64_t *)(body_top+1);
     printf("Setting args for BODY\n");
-    MMR[1]  = phase;
     ARGS[0] = feat_rd_addr;
     ARGS[1] = res_rd_addr;
     ARGS[2] = feat_wr_addr;
@@ -358,6 +357,7 @@ void runBody(uint8_t phase, uint64_t feat_rd_addr,
     ARGS[6] = dw0_quant;
     ARGS[7] = pw1_weights;
     ARGS[8] = pw1_quant;
+    ARGS[9]  = phase;
     printf("Running BODY\n");
     MMR[0]  = 0x01;
 

@@ -1,10 +1,11 @@
 #include "body_defines.h"
 
-void top(uint8_t stage, uint64_t feat_rd_addr,
+void top(uint64_t feat_rd_addr,
 		 uint64_t res_rd_addr, uint64_t feat_wr_addr,
 		 uint64_t pw0_weights, uint64_t pw0_quant,
 		 uint64_t dw0_weights, uint64_t dw0_quant,
-		 uint64_t pw1_weights, uint64_t pw1_quant) {
+		 uint64_t pw1_weights, uint64_t pw1_quant,
+		 uint64_t stage) {
 
 	uint32_t InputSize;
 	uint32_t OutputSize;
@@ -42,30 +43,30 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 
 	InputSize    = PW0_0_I_SIZE * PW0_0_I_SIZE * PW0_0_IC_SIZE;
 	OutputSize   = PW1_0_O_SIZE * PW1_0_O_SIZE * PW1_0_OC_SIZE;
-	*ResLength   = InputSize;
-	resEnable    = RES_0_ENABLE;
-	*PW0OSize    = PW0_0_O_SIZE;
-	*PW0ISize    = PW0_0_I_SIZE;
-	*PW0ICSize   = PW0_0_IC_SIZE;
-	*PW0OCSize   = PW0_0_OC_SIZE;
-	*PW0BiasZP   = PW0_0_BIAS_ZP;
-	*PW0InputZP  = PW0_0_IN_ZP;
-	*PW0OutputZP = PW0_0_OUT_ZP;
-	*DW0OSize    = DW0_0_O_SIZE;
-	*DW0ISize    = DW0_0_I_SIZE;
-	*DW0ICSize   = DW0_0_IC_SIZE;
-	*DW0OCSize   = DW0_0_OC_SIZE;
-	*DW0Stride   = DW0_0_STRIDE;
-	*DW0BiasZP   = DW0_0_BIAS_ZP;
-	*DW0InputZP  = DW0_0_IN_ZP;
-	*DW0OutputZP = DW0_0_OUT_ZP;
-	*PW1OSize    = PW1_0_O_SIZE;
-	*PW1ISize    = PW1_0_I_SIZE;
-	*PW1ICSize   = PW1_0_IC_SIZE;
-	*PW1OCSize   = PW1_0_OC_SIZE;
-	*PW1BiasZP   = PW1_0_BIAS_ZP;
-	*PW1InputZP  = PW1_0_IN_ZP;
-	*PW1OutputZP = PW1_0_OUT_ZP;
+	// *ResLength   = InputSize;
+	// resEnable    = RES_0_ENABLE;
+	// *PW0OSize    = PW0_0_O_SIZE;
+	// *PW0ISize    = PW0_0_I_SIZE;
+	// *PW0ICSize   = PW0_0_IC_SIZE;
+	// *PW0OCSize   = PW0_0_OC_SIZE;
+	// *PW0BiasZP   = PW0_0_BIAS_ZP;
+	// *PW0InputZP  = PW0_0_IN_ZP;
+	// *PW0OutputZP = PW0_0_OUT_ZP;
+	// *DW0OSize    = DW0_0_O_SIZE;
+	// *DW0ISize    = DW0_0_I_SIZE;
+	// *DW0ICSize   = DW0_0_IC_SIZE;
+	// *DW0OCSize   = DW0_0_OC_SIZE;
+	// *DW0Stride   = DW0_0_STRIDE;
+	// *DW0BiasZP   = DW0_0_BIAS_ZP;
+	// *DW0InputZP  = DW0_0_IN_ZP;
+	// *DW0OutputZP = DW0_0_OUT_ZP;
+	// *PW1OSize    = PW1_0_O_SIZE;
+	// *PW1ISize    = PW1_0_I_SIZE;
+	// *PW1ICSize   = PW1_0_IC_SIZE;
+	// *PW1OCSize   = PW1_0_OC_SIZE;
+	// *PW1BiasZP   = PW1_0_BIAS_ZP;
+	// *PW1InputZP  = PW1_0_IN_ZP;
+	// *PW1OutputZP = PW1_0_OUT_ZP;
 
 	//Initialize DMAs
 	//StreamDma0
@@ -94,17 +95,17 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 	volatile uint64_t * MemDmaWrAddr			= (uint64_t *)(CLUSTER_DMA_MMR+9);
 	volatile uint32_t * MemDmaCopyLen			= (uint32_t *)(CLUSTER_DMA_MMR+17);
 	//Initialize DRAM-Stream DMA
-	*StrDma0RdAddr = 0x8f000000;
+	*StrDma0RdAddr = feat_rd_addr;
 	*StrDma0RdFrameSize = InputSize;
 	*StrDma0NumRdFrames = 1;
 	*StrDma0RdFrameBuffSize = 1;
 	//Initialize Stream-DRAM DMA
-	*StrDma0WrAddr = 0x9f000000;
-	*StrDma0WrFrameSize = 100;
+	*StrDma0WrAddr = feat_wr_addr;
+	*StrDma0WrFrameSize = OutputSize;
 	*StrDma0NumWrFrames = 1;
 	*StrDma0WrFrameBuffSize = 1;
 	//Initialize Res DMA
-	*StrDma1RdAddr = 0x8f100000;
+	*StrDma1RdAddr = res_rd_addr;
 	*StrDma1RdFrameSize = InputSize;
 	*StrDma1NumRdFrames = 1;
 	*StrDma1RdFrameBuffSize = 1;
@@ -114,53 +115,52 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 
 	//Transfer Weights and Quantization Params from DRAM to SPMs
 	//Start PW0 Conv Weight Xfer
-	*MemDmaRdAddr  = 0x8f000000;
+	*MemDmaRdAddr  = pw0_weights;
 	*MemDmaWrAddr  = PW0Weights;
 	*MemDmaCopyLen = PW0WeightSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 	//Start PW0 Conv QParams Xfer
-	*MemDmaRdAddr  = 0x8f000000;
+	*MemDmaRdAddr  = pw0_quant;
 	*MemDmaWrAddr  = PW0Bias;
 	*MemDmaCopyLen = PW0QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 	//Start DW0 Conv Weight Xfer
-	*MemDmaRdAddr  = 0x8f000000;
+	*MemDmaRdAddr  = dw0_weights;
 	*MemDmaWrAddr  = DW0Weights;
 	*MemDmaCopyLen = DW0WeightSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 	//Start DW0 Conv QParams Xfer
-	*MemDmaRdAddr  = 0x8f000000;
+	*MemDmaRdAddr  = dw0_quant;
 	*MemDmaWrAddr  = DW0Bias;
 	*MemDmaCopyLen = DW0QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 	//Start PW1 Conv Weight Xfer
-	*MemDmaRdAddr  = 0x8f000000;
+	*MemDmaRdAddr  = pw1_weights;
 	*MemDmaWrAddr  = PW1Weights;
 	*MemDmaCopyLen = PW1WeightSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 	//Start PW1 Conv QParams Xfer
-	*MemDmaRdAddr  = 0x8f000000;
+	*MemDmaRdAddr  = pw1_quant;
 	*MemDmaWrAddr  = PW1Bias;
 	*MemDmaCopyLen = PW1QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
-	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 
 	//Start Res
 	*ResEnable = resEnable;
 	*ResFlags = 0x01;
 	//Start PW Conv 0
 	*PW0Flags = 0x01;
-	//Start DW Conv
+	// Start DW Conv
 	*DW0Flags = 0x01;
 	//Start PW Conv 1
 	*PW1Flags = 0x01;

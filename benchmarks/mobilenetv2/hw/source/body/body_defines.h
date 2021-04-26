@@ -97,16 +97,16 @@
 // Iteration 0
 #define RES_0_ENABLE	0
 
-#define PW0_0_I_SIZE 	80
-#define PW0_0_O_SIZE 	80
+#define PW0_0_I_SIZE 	40
+#define PW0_0_O_SIZE 	40
 #define PW0_0_IC_SIZE	16
 #define PW0_0_OC_SIZE	96
 #define PW0_0_BIAS_ZP	0
 #define PW0_0_IN_ZP		0
 #define PW0_0_OUT_ZP	0
 
-#define DW0_0_I_SIZE 	80
-#define DW0_0_O_SIZE 	40
+#define DW0_0_I_SIZE 	40
+#define DW0_0_O_SIZE 	20
 #define DW0_0_IC_SIZE	96
 #define DW0_0_OC_SIZE	96
 #define DW0_0_STRIDE	2
@@ -114,8 +114,8 @@
 #define DW0_0_IN_ZP		0
 #define DW0_0_OUT_ZP	0
 
-#define PW1_0_I_SIZE 	40
-#define PW1_0_O_SIZE 	40
+#define PW1_0_I_SIZE 	20
+#define PW1_0_O_SIZE 	20
 #define PW1_0_IC_SIZE	96
 #define PW1_0_OC_SIZE	24
 #define PW1_0_BIAS_ZP	0
