@@ -411,12 +411,21 @@ LLVMInterface::constructBBList() {
                         linePos = percPos + 1;
                         percPos = line.find("%", linePos); // Check if another register exists within the function definition
                     }
+                    streampos oldpos = llvmFile.tellg();
                     getline(llvmFile, line);
+                    if (line.find(':') != std::string::npos) {
                     std::string first_bb = line.substr(0, line.find(':'));
                     currBB = new BasicBlock(first_bb, name(), bbnum, dbg); // First basic block is always defined as BB 0
                     if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
                     bbnum++; // Increment BB count
                     bbList->push_back(currBB); // Add BB to BB list
+                    } else {
+                    currBB = new BasicBlock("0", name(), bbnum, dbg); // First basic block is always defined as BB 0
+                    if (dbg) DPRINTF(LLVMParse, "Found Basic Block: (%s)\n", currBB->_Name);
+                    bbnum++; // Increment BB count
+                    bbList->push_back(currBB); // Add BB to BB list
+                    llvmFile.seekg (oldpos);
+                    }
                 }
             } else { // Already within a function, begin defining basic blocks and compute nodes
                 if (line.find("\n") > 0) { // Skip blank lines

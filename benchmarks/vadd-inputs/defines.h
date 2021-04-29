@@ -4,8 +4,7 @@
 #define SPM
 #define CHECK
 
-#define TYPE double
-#define ROW 64
-#define COL 64
+#define TYPE uint64_t
+#define N 8
 
 #endif
