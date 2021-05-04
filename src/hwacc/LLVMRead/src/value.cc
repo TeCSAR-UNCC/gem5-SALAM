@@ -50,14 +50,17 @@ SALAM::Value::Value_Debugger::dumper(SALAM::Value *value)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "%s \n", 
-            "************** Value Dump **************"
+        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n", 
+            "|-(Value Base) ",
+            " | LLVM IR: ", value->getIRString(),
+            " | UID: ", value->getUID(),
+            " | Size: ", value->getSize(), " bits [", value->getSizeInBytes(), " bytes]"
         );
 		if(value->getReg()) value->getReg()->dump();
-		DPRINTF(SALAM_Debug, "%s\n%s\n",
-			"************** LLVM IR Dump **************",
-			value->getIRString()
-		);
+		//DPRINTF(SALAM_Debug, "%s\n%s\n",
+		//	"************** LLVM IR Dump **************",
+		//	value->getIRString()
+		//);
     }
 }
 
@@ -128,6 +131,7 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
 void
 SALAM::Value::setRegisterValue(const llvm::APInt &data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(Runtime, "| APInt Register\n");
 	if (returnReg->isInt()) {
 		llvm::APInt * regData = returnReg->getIntData();
 		*regData = data;
@@ -138,6 +142,7 @@ SALAM::Value::setRegisterValue(const llvm::APInt &data) {
 void
 SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(Runtime, "| APFloat Register\n");
 	if (returnReg->isFP()) {
 		llvm::APFloat * regData = returnReg->getFloatData();
 		*regData = data;
@@ -148,7 +153,8 @@ SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
 void
 SALAM::Value::setRegisterValue(const uint64_t data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	if (returnReg->isPtr()) {
+	DPRINTF(Runtime, "| Ptr Register\n");
+    if (returnReg->isPtr()) {
 		uint64_t * regData = returnReg->getPtrData();
 		*regData = data;
 	} else {
@@ -158,7 +164,8 @@ SALAM::Value::setRegisterValue(const uint64_t data) {
 void
 SALAM::Value::setRegisterValue(uint8_t * data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	switch (irtype->getTypeID()) {
+	DPRINTF(Runtime, "| Set Register Data\n");
+    switch (irtype->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
             float tmpData;
@@ -202,6 +209,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 void
 SALAM::Value::setRegisterValue(std::shared_ptr<SALAM::Register> reg) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++setRegisterValue()\n");
 	if (reg->isPtr()) {
 		setRegisterValue(*(reg->getPtrData()));
 	} else if (reg->isFP()) {
@@ -209,4 +217,5 @@ SALAM::Value::setRegisterValue(std::shared_ptr<SALAM::Register> reg) {
 	} else {
 		setRegisterValue(*(reg->getIntData()));
 	}
+    DPRINTF(Runtime, "||==setRegisterValue====\n");
 }

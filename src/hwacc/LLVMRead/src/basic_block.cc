@@ -28,8 +28,9 @@ SALAM::BasicBlock::BasicBlock_Debugger::dumper(SALAM::BasicBlock *bb)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "%s \n", 
-            "************** Basic Block Dump **************"
+        DPRINTF(SALAM_Debug, "%s \n\t\t\t %s %d  \n", 
+            "************** Basic Block Dump **************",
+            "UID: ", bb->getUID()
         );
     }
 }

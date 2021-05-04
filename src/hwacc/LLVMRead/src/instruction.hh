@@ -68,13 +68,17 @@ class Instruction : public Value
         uint64_t getOpode() { return llvmOpCode; }
         virtual uint64_t getCurrentCycle() { return cycleCount; }
         virtual valueListTy getStaticDependencies() const { return staticDependencies; }
+        std::deque<std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
         std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }
+        std::shared_ptr<SALAM::Value> getDynamicDependencies(int i) const { return dynamicDependencies.at(i); }
+        void removeDynamicDependency(int i) { dynamicDependencies.erase(dynamicDependencies.begin()+i); }
         void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) { dynamicDependencies.push_back(dep); }
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
         bool isCommitted() { return committed; }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
+        void setOperandValue(uint64_t uid);
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }
@@ -87,7 +91,7 @@ class Instruction : public Value
         virtual bool ready();
         virtual void compute() { }
         virtual void reset();
-        virtual void getDependencyValue(Instruction *dep);
+        virtual void setOperandValue(Instruction *dep);
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
@@ -95,7 +99,7 @@ class Instruction : public Value
             TODO: link up the findDynamicDeps function from llvm_interface
         */
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
-        void operandValueFetch(uint64_t uid);
+        //void operandValueFetch(uint64_t uid);
 };
 
 //---------------------------------------------------------------------------//

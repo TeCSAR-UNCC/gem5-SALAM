@@ -20,14 +20,11 @@ class Value;
 typedef std::pair<llvm::Value *, std::shared_ptr<Value>> irvmaptype;
 typedef std::map<llvm::Value *, std::shared_ptr<Value>> irvmap;
 typedef std::vector<std::shared_ptr<Value>> valueListTy;
-typedef std::vector<std::shared_ptr<SALAM::Register>> Ops;
+//typedef std::vector<std::shared_ptr<SALAM::Register>> Ops;
 
 class Value
 {
     public:
-        //uint64_t uid = 0;
-        //llvm::Type *irtype;
-        //std::shared_ptr<SALAM::Register> returnReg;
 
     protected:
         uint64_t uid = 0;
@@ -35,11 +32,9 @@ class Value
         std::string ir_string;
         llvm::Type *irtype;
         std::shared_ptr<SALAM::Register> returnReg;
-        Ops opReg;
-
+        //Ops opReg;
         bool dbg = false;
 
-        //void linkOperands();
         void addRegister(bool isTracked=true);
         void addAPIntRegister(const llvm::APInt & val);
         void addAPIntRegister(const llvm::APSInt & val);
@@ -62,8 +57,10 @@ class Value
         Value(const SALAM::Value &copy_val);
 
     public:
+        /** Class Constructor.
+         * @param id 
+         */
         Value(uint64_t id);
-        
         Value& operator = (Value &copy_val);
         ~Value();
         virtual void initialize(llvm::Value *irval,

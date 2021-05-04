@@ -5,7 +5,8 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
-    topName(p->top_name),
+    topName("vadd"),
+    //topName(p->top_name),
     scheduling_threshold(p->sched_threshold),
     counter_units(p->FU_counter),
     int_adder_units(p->FU_int_adder),
@@ -64,19 +65,22 @@ void
 LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
 {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else DPRINTFR(Runtime,"|---[Schedule BB - UID:%i ]\n", bb->getUID());
     auto instruction_list = *(bb->Instructions());
     for (auto inst : instruction_list) {
         std::shared_ptr<SALAM::Instruction> clone_inst = inst->clone();
-        DPRINTFR(Runtime, "Instruction Cloned [UID: %d] \n", inst->getUID());
+        DPRINTFR(Runtime, "\t\t Instruction Cloned [UID: %d] \n", inst->getUID());
         if (clone_inst->isBr()) {
-            DPRINTFR(Runtime, "Branch Instruction Found\n");
+            DPRINTFR(Runtime, "\t\t Branch Instruction Found\n");
             auto branch = std::dynamic_pointer_cast<SALAM::Br>(clone_inst);
             if (branch && !(branch->isConditional())) {
+                DPRINTFR(Runtime, "\t\t Unconditional Branch, Scheduling Next BB\n");
                 previousBB = bb;
                 scheduleBB(branch->getTarget());
             }
         } else {
             if (clone_inst->isPhi()) {
+                DPRINTFR(Runtime, "\t\t Phi Instruction Found\n");
                 auto phi = std::dynamic_pointer_cast<SALAM::Phi>(clone_inst);
                 if (phi) phi->setPrevBB(previousBB);
             }
@@ -151,6 +155,7 @@ void
 LLVMInterface::ActiveFunction::processQueues()
 {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else DPRINTFR(Runtime,"|-------[Process Queues]\n");
     // First pass, computeQueue is empty 
     for (auto active_inst : computeQueue) {
         DPRINTFR(Runtime, "\t\t Compute Instruction: %s - UID[%i]\n", llvm::Instruction::getOpcodeName(active_inst->getOpode()), active_inst->getUID());
@@ -158,9 +163,14 @@ LLVMInterface::ActiveFunction::processQueues()
     }
     if (canReturn()) {
         // Handle function return
+        DPRINTFR(Runtime, "[[Function Return]]\n\n");
     } else {
         for (auto it = reservation.begin(); it != reservation.end();) {
-            DPRINTFR(Runtime, "\t\t Reserve Instruction: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
+            DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
+                " |-[Reserve Queue]--------------", 
+                " | Instruction: ", llvm::Instruction::getOpcodeName((*it)->getOpode()),
+                " | UID[", (*it)->getUID(), "]"
+                );
             if ((*it)->isReturn() == false) {
                 if ((*it)->ready()) {
                     (*it)->launch();
@@ -173,13 +183,15 @@ LLVMInterface::ActiveFunction::processQueues()
                     } else if ((*it)->isTerminator()) {
                         scheduleBB((*it)->getTarget());
                     } else if ((*it)->isCommitted() == false) {
+                        DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
                         computeQueue.push_back(*it);
                     }  else if ((*it)->isCommitted()) {
+                        DPRINTFR(Runtime, "\t\t  | Instruction Committed: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
                         (*it)->reset();
                     } else {
                         panic("Unknown Scheduler Argument!");
                     }
-                    DPRINTFR(Runtime, "\t\t Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
+                    DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
                     it = reservation.erase(it);
                 } else {
                     ++it;
@@ -191,9 +203,7 @@ LLVMInterface::ActiveFunction::processQueues()
     }
 }
 
-void
-LLVMInterface::tick()
-{
+
 
 /*********************************************************************************************
  CN Scheduling
@@ -210,6 +220,19 @@ LLVMInterface::tick()
  during device init, or when a br op commits. For each CN in a BB we reset the CN, evaluate
  if it is a phi or uncond br, and add it to our reservation table otherwise.
 *********************************************************************************************/
+void
+LLVMInterface::tick()
+{
+        if (DTRACE(Step)) {
+        char response;
+        do
+        {
+            std::cout << '\n' << "Press enter key to continue, or q then enter key to exit...";
+            response = std::cin.get();
+            if (response == 'q') panic("Exit Program");
+        } while (response != '\n');
+    }
+
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
         "********************************************************************************",
@@ -217,18 +240,6 @@ LLVMInterface::tick()
         "********************************************************************************");
     cycle++;
     // comm->refreshMemPorts(); // Deprecated
-
-    ////////////////////
-    char response;
-
-    if (DTRACE(Step)) {
-    do
-        {
-        std::cout << '\n' << "Press enter key to continue, or q then enter key to exit...";
-        response = std::cin.get();
-        if (response == 'q') panic("Exit Program");
-        } while (response != '\n');
-    }
 
     // Process Queues in Active Functions
     if (activeFunctions.empty()) {
@@ -348,7 +359,7 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
     if (!dependencies.empty()) {
         for (auto resolved : dependencies) {
             // If this dependency exists, then lock value into operand
-            inst->operandValueFetch(resolved.first);
+            inst->setOperandValue(resolved.first);
         }
     }
 }
@@ -550,7 +561,7 @@ LLVMInterface::initialize() {
     DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
     constructStaticGraph();
     DPRINTF(LLVMInterface, "================================================================\n");
-    debug(1);
+    //debug(1);
     launchTopFunction();
 
 

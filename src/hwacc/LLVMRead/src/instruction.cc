@@ -56,13 +56,13 @@ Instruction::Instruction_Debugger::Instruction_Debugger()
 }
 
 void
-Instruction::Instruction_Debugger::dumper(Instruction * inst)
+Instruction::Instruction_Debugger::dumper(Instruction *inst)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n", 
-            "************** Instruction Dump **************",
-            "    UID: ", inst->getUID()
+        DPRINTF(SALAM_Debug, "%s \n\t\t %s%d \n", 
+            "|-(Instruction Base) ",
+            " | UID: ", inst->getUID()
         );
         inst->value_dump();
     }
@@ -106,7 +106,7 @@ Instruction::initialize(llvm::Value *irval,
         staticDependencies.push_back(opval);
         // Push back pointers to registers for operands
         // TODO: Maybe remove this 
-        opReg.push_back(opval->getReg());
+        // opReg.push_back(opval->getReg());
         if(llvm::isa<llvm::PHINode>(inst)) {
             DPRINTF(LLVMInterface, "Phi Node Initiated\n");
             uint64_t phiBB = 0;
@@ -128,22 +128,43 @@ void
 Instruction::signalUsers()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++signalUsers()\n");
+    uint64_t count = 0;
     for (auto user : dynamicUsers) {
-        user->getDependencyValue(this);
+        DPRINTF(Runtime, "|| User[%i] =============\n", count);
+        if(DTRACE(SALAM_Debug)) {
+            user->dump();
+            user->value_dump();
+        }
+        user->setOperandValue(this);
+        user->removeDynamicDependency(count);
+        count++;
     }
+    DPRINTF(Runtime, "||==signalUsers==========\n");
 }
 
 bool
 Instruction::ready()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(Runtime, "Remaining Dependencies: %i \n", getDependencyCount());
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++ready()\n");
+    DPRINTF(Runtime, "|| Remaining Dependencies: %i \n", getDependencyCount());
     if (getDependencyCount() == 0) {
         isready = true;
-        DPRINTF(Runtime, " <=== Return: %s\n", isready ? "true" : "false");
+        DPRINTF(Runtime, "||==Return: %s\n", isready ? "true" : "false");
+        DPRINTF(Runtime, "||==ready=================\n");
         return true;
+    } else {
+        if(DTRACE(SALAM_Debug)) {
+            uint64_t count = 0;
+            for (auto deps : getDynamicDependencies()) { 
+                DPRINTF(Runtime, "|| -Dep[%i] = UID[%i]\n", count, getDynamicDependencies(count)->getUID());
+                count++; 
+            }
+        }
     }
-    DPRINTF(Runtime, " <=== Return: %s\n", isready ? "true" : "false");
+    DPRINTF(Runtime, "||==Return: %s\n", isready ? "true" : "false");
+    DPRINTF(Runtime, "||==ready=================\n");
     return false;
 }
 
@@ -151,10 +172,12 @@ bool
 Instruction::launch()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
     launched = true;
     compute();
     commit();
     //DPRINTF(Runtime, " <=== Return: %s\n", launched ? "true" : "false");
+    DPRINTF(Runtime, "||==launch================\n");
     return committed;
 }
 
@@ -162,40 +185,43 @@ bool
 Instruction::commit()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(Runtime, "Current Cycle: %i\n", getCurrentCycle());
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++commit()\n");
+    DPRINTF(Runtime, "||  Current Cycle: %i\n", getCurrentCycle());
     if (getCurrentCycle() == 0) { // Instruction ready to be committed
         signalUsers();
         committed = true;
-        DPRINTF(Runtime, " <=== Return: %s\n", committed ? "true" : "false");
+        DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
+        DPRINTF(Runtime, "||==commit================\n");
         return true;
     } else {
         currentCycle--;
+        DPRINTF(Runtime, "||  Remaining Cycles: %i\n", getCurrentCycle());
     }
-    DPRINTF(Runtime, " <=== Return: %s\n", committed ? "true" : "false");
+    DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
+    DPRINTF(Runtime, "||==commit================\n");
     return false;
 }
 
 void
-Instruction::getDependencyValue(Instruction *dep) {
+Instruction::setOperandValue(Instruction *dep)
+{
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++setOperandValue()\n");
+    uint64_t count = 0;
     for (auto ops : operands) {
-        if (dep->getUID() == ops.getUID()) ops.setRegisterValue(dep->getReg());
+        if (dep->getUID() == ops.getUID()) {
+            DPRINTF(Runtime, "|| Storing Value in Op[%i]\n", count++);
+            ops.setRegisterValue(dep->getReg());
+            break;
+        } else count++;
     }
 }
 
 void
-Instruction::reset() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    isready = false;
-    launched = false;
-    committed = false;
-}
-
-
-void
-Instruction::operandValueFetch(uint64_t uid)
+Instruction::setOperandValue(uint64_t uid)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--setOperandValue()\n");
     for (auto op : operands) {
         if (op.getUID() == uid) {
             op.updateOperandRegister();
@@ -203,6 +229,18 @@ Instruction::operandValueFetch(uint64_t uid)
         }
     }
 }
+
+void
+Instruction::reset() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--reset()\n");
+    isready = false;
+    launched = false;
+    committed = false;
+    DPRINTF(Runtime, "||==reset=================\n");
+}
+
+
 
 void
 Instruction::linkOperands(const SALAM::Operand &newOp)
@@ -276,11 +314,10 @@ void // Debugging Interface
 Br::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -322,6 +359,7 @@ Br::linkOperands()
 std::shared_ptr<SALAM::BasicBlock>
 Br::getTarget() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
     if(conditional) {
         if(condition->getReg()->getIntData()->isOneValue()) return std::dynamic_pointer_cast<SALAM::BasicBlock>(trueDestination);
         else return std::dynamic_pointer_cast<SALAM::BasicBlock>(falseDestination);
@@ -352,8 +390,7 @@ void
 Br::compute()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Perform computations
-    // Store results in temp location
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
 }
 
 // SALAM-Switch // ----------------------------------------------------------//
@@ -441,11 +478,10 @@ void // Debugging Interface
 Add::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -487,8 +523,14 @@ Add::initialize(llvm::Value *irval,
 
 void
 Add::compute() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt result = op1 + op2;
+    //llvm::outs() << op1+op2;
+    DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
+    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
     setRegisterValue(op1 + op2);
 }
 
@@ -658,11 +700,10 @@ void // Debugging Interface
 Mul::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -703,6 +744,8 @@ Mul::initialize(llvm::Value * irval,
 
 void
 Mul::compute() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
     setRegisterValue(op1 * op2);
@@ -1415,11 +1458,10 @@ void // Debugging Interface
 Load::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -1463,14 +1505,18 @@ Load::initialize(llvm::Value * irval,
 
 void
 Load::compute() {
-    // UNUSED
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    setRegisterValue(10);
 }
 
 MemoryRequest *
 Load::createMemoryRequest() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++createMemoryRequest()\n");
     Addr memAddr = *(operands.front().getPtrRegValue());
     size_t reqLen = operands.front().getSizeInBytes();
-
+    DPRINTF(Runtime, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
     return new MemoryRequest(memAddr, reqLen);
 }
 
@@ -1479,11 +1525,10 @@ void // Debugging Interface
 Store::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -1527,7 +1572,8 @@ Store::initialize(llvm::Value * irval,
 
 void
 Store::compute() {
-    // UNUSED
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
 }
 
 MemoryRequest *
@@ -1559,11 +1605,10 @@ void // Debugging Interface
 GetElementPtr::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -1610,8 +1655,9 @@ GetElementPtr::initialize(llvm::Value * irval,
 
 void
 GetElementPtr::compute() {
-    // Perform computations
-    // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    setRegisterValue(10);
 }
 
 // SALAM-Trunc // -----------------------------------------------------------//
@@ -2213,11 +2259,10 @@ void // Debugging Interface
 ICmp::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -2262,6 +2307,8 @@ ICmp::initialize(llvm::Value * irval,
 
 void
 ICmp::compute() {
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     switch(predicate) 
     {
         case SALAM::Predicate::ICMP_EQ: { setRegisterValue(operands.at(0).getIntRegValue() == operands.at(1).getIntRegValue()); break; }
@@ -2342,11 +2389,10 @@ void // Debugging Interface
 Phi::dumper() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n", 
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",  
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
+        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n", 
+            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+            " | Opcode: ", conditions.at(0).at(1),
+            " | Latency: ", conditions.at(0).at(2), " Cycles"
         );
     }
 }
@@ -2395,7 +2441,8 @@ Phi::initialize(llvm::Value * irval,
 void
 Phi::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+
     // Perform computations
     // Store results in temp location
     // std::shared_ptr<SALAM::Value> node;

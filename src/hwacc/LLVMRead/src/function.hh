@@ -22,7 +22,6 @@ namespace SALAM {
 		std::vector<std::shared_ptr<SALAM::Value>> * getArguments() { return & arguments; }
 		std::shared_ptr<SALAM::BasicBlock> entry() { return bbList.front(); }
 		std::vector<Instruction *> *getReservationQueue() { return &reservation; }
-		void test() { std::cout << "Function Test\n"; }
 	};
 }
 
