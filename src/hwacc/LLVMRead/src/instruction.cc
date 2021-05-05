@@ -15,7 +15,8 @@ SALAM::Instruction::Instruction(uint64_t id) :
     if (DTRACE(SALAM_Debug)) {
         this->dbg = true;
         this->inst_dbg = new Instruction_Debugger();
-    }  
+    }
+    currentCycle = 0;
 }
 
 Instruction::Instruction(uint64_t id,
@@ -28,6 +29,7 @@ Instruction::Instruction(uint64_t id,
         this->dbg = true;
         this->inst_dbg = new Instruction_Debugger();
     }
+    currentCycle = 0;
 }
 
 Instruction::Instruction(uint64_t id,
@@ -42,6 +44,7 @@ Instruction::Instruction(uint64_t id,
         this->dbg = true;
         this->inst_dbg = new Instruction_Debugger();
     }
+    currentCycle = 0;
 }
 
 Instruction::~Instruction() 
@@ -174,11 +177,23 @@ Instruction::launch()
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
     launched = true;
-    compute();
-    commit();
-    //DPRINTF(Runtime, " <=== Return: %s\n", launched ? "true" : "false");
+    //////////////////////////////
+    //DPRINTF(Runtime, "||  Current Cycle: %i\n", getCurrentCycle());
+    if (getCycleCount() == 0) { // Instruction ready to be committed
+        DPRINTF(Runtime, "||  0 Cycle Instruction\n");
+        compute();
+        commit();
+        //signalUsers();
+        //DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
+        //DPRINTF(Runtime, "||==commit================\n");
+        //return committed;
+    } 
+    /////////////////////////////
+    //compute();
+    //commit();
+    DPRINTF(Runtime, "||==Return: %s\n", launched ? "true" : "false");
     DPRINTF(Runtime, "||==launch================\n");
-    return committed;
+    return launched;
 }
 
 bool
@@ -187,15 +202,15 @@ Instruction::commit()
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++commit()\n");
     DPRINTF(Runtime, "||  Current Cycle: %i\n", getCurrentCycle());
-    if (getCurrentCycle() == 0) { // Instruction ready to be committed
+    if (getCurrentCycle() == getCycleCount()) { // Instruction ready to be committed
         signalUsers();
         committed = true;
         DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
         DPRINTF(Runtime, "||==commit================\n");
         return true;
     } else {
-        currentCycle--;
-        DPRINTF(Runtime, "||  Remaining Cycles: %i\n", getCurrentCycle());
+        currentCycle++;
+        DPRINTF(Runtime, "||  Remaining Cycles: %i\n", getCycleCount() - getCurrentCycle());
     }
     DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
     DPRINTF(Runtime, "||==commit================\n");
@@ -237,6 +252,7 @@ Instruction::reset() {
     isready = false;
     launched = false;
     committed = false;
+    currentCycle = 0;
     DPRINTF(Runtime, "||==reset=================\n");
 }
 
@@ -285,7 +301,6 @@ Ret::Ret(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -340,7 +355,6 @@ Br::Br(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -425,7 +439,6 @@ Switch::Switch(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -504,7 +517,6 @@ Add::Add(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -531,7 +543,7 @@ Add::compute() {
     //llvm::outs() << op1+op2;
     DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
-    setRegisterValue(op1 + op2);
+    setRegisterValue(result);
 }
 
 // SALAM-FAdd // ------------------------------------------------------------//
@@ -565,7 +577,6 @@ FAdd::FAdd(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -618,7 +629,6 @@ Sub::Sub(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -672,7 +682,6 @@ FSub::FSub(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -725,7 +734,6 @@ Mul::Mul(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -748,7 +756,10 @@ Mul::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
-    setRegisterValue(op1 * op2);
+    llvm::APInt result = op1 * op2;
+    DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
+    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    setRegisterValue(result);
 }
 
 // SALAM-FMul // ------------------------------------------------------------//
@@ -782,7 +793,6 @@ FMul::FMul(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -836,7 +846,6 @@ UDiv::UDiv(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -890,7 +899,6 @@ SDiv::SDiv(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -944,7 +952,6 @@ FDiv::FDiv(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -998,7 +1005,6 @@ URem::URem(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1052,7 +1058,6 @@ SRem::SRem(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1106,7 +1111,6 @@ FRem::FRem(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1160,7 +1164,6 @@ Shl::Shl(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1214,7 +1217,6 @@ LShr::LShr(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1268,7 +1270,6 @@ AShr::AShr(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1322,7 +1323,6 @@ And::And(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1376,7 +1376,6 @@ Or::Or(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1430,7 +1429,6 @@ Xor::Xor(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1483,7 +1481,6 @@ Load::Load(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1550,7 +1547,6 @@ Store::Store(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1630,7 +1626,6 @@ GetElementPtr::GetElementPtr(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1657,7 +1652,12 @@ void
 GetElementPtr::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    setRegisterValue(10);
+    uint64_t op1 = *(operands.at(0).getPtrRegValue());
+    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    uint64_t result = op1 + op2.getSExtValue();
+    DPRINTF(Runtime, "|| Ptr[%x]  Offset[%s]\n", op1, op2.toString(10, true));
+    DPRINTF(Runtime, "|| Result: Addr[%x]\n", result);
+    setRegisterValue(result);
 }
 
 // SALAM-Trunc // -----------------------------------------------------------//
@@ -1691,7 +1691,6 @@ Trunc::Trunc(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1745,7 +1744,6 @@ ZExt::ZExt(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1799,7 +1797,6 @@ SExt::SExt(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1853,7 +1850,6 @@ FPToUI::FPToUI(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1907,7 +1903,6 @@ FPToSI::FPToSI(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1961,7 +1956,6 @@ UIToFP::UIToFP(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2015,7 +2009,6 @@ SIToFP::SIToFP(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2069,7 +2062,6 @@ FPTrunc::FPTrunc(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2123,7 +2115,6 @@ FPExt::FPExt(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2177,7 +2168,6 @@ PtrToInt::PtrToInt(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2231,7 +2221,6 @@ IntToPtr::IntToPtr(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2284,7 +2273,6 @@ ICmp::ICmp(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2357,7 +2345,6 @@ FCmp::FCmp(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2414,7 +2401,6 @@ Phi::Phi(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2497,7 +2483,6 @@ Call::Call(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2551,7 +2536,6 @@ Select::Select(uint64_t id,
     if (DTRACE(SALAM_Debug)) {
         this->dbgr = new Debugger();
     }
-    currentCycle = 0;
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);

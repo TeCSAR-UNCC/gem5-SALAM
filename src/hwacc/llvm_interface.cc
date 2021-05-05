@@ -38,29 +38,6 @@ std::shared_ptr<SALAM::Value> createClone(const std::shared_ptr<SALAM::Value>& b
     return clone;
 }
 
-/*
-
-// ===== BB Level 
-
-Sams
-
-basicBlockScheduler( std::shared_ptr<SALAM::BasicBlock> )
-Br - std::shared_ptr<SALAM::BasicBlock> getTarget()
-// Per Active Function
-std::list<ActiveFunction> activeFunctions
-    // Instruction Sheduling
-    - While instructions from BB onto reserve queue (std::list<std::shared_ptr<SALAM::Instruction> > reservation)
-        - clone()
-        - If unconditional branch
-            - Immediately begin scheduling next basic block
-            - remove from queue
-        - else
-            - link dependencies
-JS              - findDynamicDeps(std::list<std::shared_ptr<SALAM::Instructions>, std::shared_ptr<SALAM::Instruction>)
-                - only parse queue once for each instruction until all dependencies are found
-                - include self in dependency list
-                    - Register dynamicUser/dynamicDependencies std::deque<std::shared_ptr<SALAM::Instructon> >
-*/
 void
 LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
 {
@@ -77,6 +54,10 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
                 DPRINTFR(Runtime, "\t\t Unconditional Branch, Scheduling Next BB\n");
                 previousBB = bb;
                 scheduleBB(branch->getTarget());
+            } else {
+                //TODO: Fix br to work with these functions
+                findDynamicDeps(clone_inst);
+                reservation.push_back(clone_inst);
             }
         } else {
             if (clone_inst->isPhi()) {
@@ -90,114 +71,61 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
     }
     previousBB = bb;
 }
-/*
-// ===== Runtime Queue Level - tick()
-
-        During Runtime
-
-        // First
-        // (std::list<std::shared_ptr<SALAM::Instruction> > computeQueue)
-        - bool commit()
-            - if(cycleCount()) // Completed its cycle count
-                - // 0 cycles commit immediately 
-                - // Perform computation
-                - // Set return register with result
-                - // Signal users
-                - Instruction alerts users its ready, user reads from register when ready
-                - Removes itself from dependencies list
-                - return true
-            - else
-                - cycleCount++
-                - return false
-
-        // Second
-        // std::list<std::shared_ptr<SALAM::Instruction> > reservation
-        
-Sam      - bool ready(return specific) // checks dependencies, return true if satisfied 
-
-
-JS       - bool ready() // checks dependencies, return true if satisfied 
-
-        // Make special case for return, queue must also be empty 
-
-        - if(ready())
-            // Return true if no dependencies remain
-            - When dependencies list has no elements other than self
-            - if (launch())
-                - // finished
-                - return true
-            - else
-                - Move to computeQueue
-                - return false
-        - else
-            // Do nothing
-
-        - bool launch()
-            - Sam - Special Cases
-                - // Call Instructions
-                    
-                - // Load 
-
-                - // Store
-
-                - // Conditional Terminator
-                    - BB getTarget()
-
-                - // Return Instruction
-
-            - JS - // Anything Else
-            - Performs computation
-            //Internally calls commit
-            - return commit();
-*/
 
 void
 LLVMInterface::ActiveFunction::processQueues()
 {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else DPRINTFR(Runtime,"|-------[Process Queues]\n");
+    else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
     // First pass, computeQueue is empty 
-    for (auto active_inst : computeQueue) {
-        DPRINTFR(Runtime, "\t\t Compute Instruction: %s - UID[%i]\n", llvm::Instruction::getOpcodeName(active_inst->getOpode()), active_inst->getUID());
-        if(active_inst->commit()) active_inst->reset();
+    for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end();) {
+        DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
+        " |-[Compute Queue]--------------", 
+        " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
+        " | UID[", (*queue_iter)->getUID(), "]"
+        );        
+        if((*queue_iter)->commit()) {
+            (*queue_iter)->reset();
+            queue_iter = computeQueue.erase(queue_iter);
+        } else ++queue_iter;
     }
     if (canReturn()) {
         // Handle function return
         DPRINTFR(Runtime, "[[Function Return]]\n\n");
     } else {
-        for (auto it = reservation.begin(); it != reservation.end();) {
+        for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
             DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
                 " |-[Reserve Queue]--------------", 
-                " | Instruction: ", llvm::Instruction::getOpcodeName((*it)->getOpode()),
-                " | UID[", (*it)->getUID(), "]"
+                " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
+                " | UID[", (*queue_iter)->getUID(), "]"
                 );
-            if ((*it)->isReturn() == false) {
-                if ((*it)->ready()) {
-                    (*it)->launch();
-                    if ((*it)->isLoad()) {
-                        auto memReq = (*it)->createMemoryRequest();
-                        readQueue.insert({memReq, (*it)});
-                    } else if ((*it)->isStore()) {
-                        auto memReq = (*it)->createMemoryRequest();
-                        writeQueue.insert({memReq, (*it)});
-                    } else if ((*it)->isTerminator()) {
-                        scheduleBB((*it)->getTarget());
-                    } else if ((*it)->isCommitted() == false) {
-                        DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
-                        computeQueue.push_back(*it);
-                    }  else if ((*it)->isCommitted()) {
-                        DPRINTFR(Runtime, "\t\t  | Instruction Committed: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
-                        (*it)->reset();
+            if ((*queue_iter)->isReturn() == false) {
+                if ((*queue_iter)->ready()) {
+                    (*queue_iter)->launch();
+                    if ((*queue_iter)->isLoad()) {
+                        auto memReq = (*queue_iter)->createMemoryRequest();
+                        readQueue.insert({memReq, (*queue_iter)});
+                    } else if ((*queue_iter)->isStore()) {
+                        auto memReq = (*queue_iter)->createMemoryRequest();
+                        writeQueue.insert({memReq, (*queue_iter)});
+                    } else if ((*queue_iter)->isTerminator()) {
+                        scheduleBB((*queue_iter)->getTarget());
+                    } else if ((*queue_iter)->isCommitted() == false) {
+                        DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        computeQueue.push_back(*queue_iter);
+                    }  else if ((*queue_iter)->isCommitted()) {
+                        DPRINTFR(Runtime, "\t\t  | Instruction Committed: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        (*queue_iter)->reset();
                     } else {
                         panic("Unknown Scheduler Argument!");
                     }
-                    DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*it)->getOpode()), (*it)->getUID());
-                    it = reservation.erase(it);
+                    DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                    queue_iter = reservation.erase(queue_iter);
                 } else {
-                    ++it;
+                    ++queue_iter;
                 }
             } else {
-                ++it;
+                ++queue_iter;
             }
         }
     }
@@ -246,8 +174,8 @@ LLVMInterface::tick()
         // We are finished executing all functions. Signal completion to the CommInterface
         finalize();
     } else {
-        for (auto it = activeFunctions.begin(); it != activeFunctions.end(); ++it) {
-            it->processQueues();
+        for (auto func_iter = activeFunctions.begin(); func_iter != activeFunctions.end(); ++func_iter) {
+            func_iter->processQueues();
         }
     }
 
@@ -294,8 +222,8 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
     // Find dependencies currently in queues
 
     // Reverse search the reservation queue because we want to link only the last instance of each dep
-    for (auto it = reservation.rbegin(); it != reservation.rend(); ++it) {
-        auto queued_inst = *it;
+    for (auto queue_iter = reservation.rbegin(); queue_iter != reservation.rend(); ++queue_iter) {
+        auto queued_inst = *queue_iter;
         // Look at each instruction in runtime queue once
         for (auto dep : dep_uids) {
             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
@@ -490,11 +418,11 @@ LLVMInterface::readCommit(MemoryRequest * req) {
  Commit Memory Read Request
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    auto it = globalReadQueue.find(req);
-    if (it != globalReadQueue.end()) {
-        it->second->readCommit(req);
-        delete it->first;
-        globalReadQueue.erase(it);
+    auto queue_iter = globalReadQueue.find(req);
+    if (queue_iter != globalReadQueue.end()) {
+        queue_iter->second->readCommit(req);
+        delete queue_iter->first;
+        globalReadQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in global read queue!");
     }
@@ -506,13 +434,13 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
  Commit Memory Read Request
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    auto it = readQueue.find(req);
-    if (it != readQueue.end()) {
-        auto load_inst = it->second;
+    auto queue_iter = readQueue.find(req);
+    if (queue_iter != readQueue.end()) {
+        auto load_inst = queue_iter->second;
         uint8_t * readBuff = req->getBuffer();
         load_inst->setRegisterValue(readBuff);
         load_inst->commit();
-        readQueue.erase(it);
+        readQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in read queue for function %u!", func->getUID());
     }
@@ -524,11 +452,11 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
  Commit Memory Write Request
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    auto it = globalWriteQueue.find(req);
-    if (it != globalWriteQueue.end()) {
-        it->second->writeCommit(req);
-        delete it->first;
-        globalWriteQueue.erase(it);
+    auto queue_iter = globalWriteQueue.find(req);
+    if (queue_iter != globalWriteQueue.end()) {
+        queue_iter->second->writeCommit(req);
+        delete queue_iter->first;
+        globalWriteQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in global write queue!");
     }
@@ -540,10 +468,10 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
  Commit Memory Write Request
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    auto it = writeQueue.find(req);
-    if (it != writeQueue.end()) {
-        it->second->commit();
-        writeQueue.erase(it);
+    auto queue_iter = writeQueue.find(req);
+    if (queue_iter != writeQueue.end()) {
+        queue_iter->second->commit();
+        writeQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in write queue for function %u!", func->getUID());
     }
