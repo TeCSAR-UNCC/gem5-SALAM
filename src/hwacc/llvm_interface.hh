@@ -101,6 +101,8 @@ class LLVMInterface : public ComputeUnit {
         bool canReturn() {
             return (readQueue.empty() && writeQueue.empty() && computeQueue.empty() && reservation.front()->isReturn());
         }
+        void launchRead(std::shared_ptr<SALAM::Instruction> readInst);
+        void launchWrite(std::shared_ptr<SALAM::Instruction> writeInst);
     };
 
     std::list<ActiveFunction> activeFunctions;
@@ -129,6 +131,8 @@ class LLVMInterface : public ComputeUnit {
     void launchFunction(std::shared_ptr<SALAM::Function> callee,
                         std::shared_ptr<SALAM::Instruction> caller);
     void launchTopFunction();
+    void launchRead(MemoryRequest * memReq, ActiveFunction * func);
+    void launchWrite(MemoryRequest * memReq, ActiveFunction * func);
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
                                                           uint64_t id);
     void dumpQueues();

@@ -34,7 +34,7 @@ class MemoryRequest {
     ~MemoryRequest() {
         delete[] readsDone;
         delete[] buffer;
-        if (pkt) delete pkt;
+        // if (pkt) delete pkt;
     }
     void setCarrierPort(MasterPort * _port) { port = _port; }
     MasterPort * getCarrierPort() { return port; }

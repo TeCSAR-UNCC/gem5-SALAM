@@ -114,12 +114,10 @@ LLVMInterface::ActiveFunction::processQueues()
                 if ((*queue_iter)->ready()) {
                     if ((*queue_iter)->isLoad()) {
                         (*queue_iter)->launch();
-                        auto memReq = (*queue_iter)->createMemoryRequest();
-                        readQueue.insert({memReq, (*queue_iter)});
+                        launchRead(*queue_iter);
                     } else if ((*queue_iter)->isStore()) {
                         (*queue_iter)->launch();
-                        auto memReq = (*queue_iter)->createMemoryRequest();
-                        writeQueue.insert({memReq, (*queue_iter)});
+                        launchWrite(*queue_iter);
                     } else if ((*queue_iter)->isTerminator()) {
                         (*queue_iter)->launch();
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
@@ -426,6 +424,32 @@ LLVMInterface::constructStaticGraph() {
 }
 
 void
+LLVMInterface::launchRead(MemoryRequest * memReq, ActiveFunction * func) {
+    globalReadQueue.insert({memReq, func});
+    comm->enqueueRead(memReq);
+}
+
+void
+LLVMInterface::ActiveFunction::launchRead(std::shared_ptr<SALAM::Instruction> readInst) {
+    auto memReq = (readInst)->createMemoryRequest();
+    readQueue.insert({memReq, (readInst)});
+    owner->launchRead(memReq, this);
+}
+
+void
+LLVMInterface::launchWrite(MemoryRequest * memReq, ActiveFunction * func) {
+    globalWriteQueue.insert({memReq, func});
+    comm->enqueueWrite(memReq);
+}
+
+void
+LLVMInterface::ActiveFunction::launchWrite(std::shared_ptr<SALAM::Instruction> writeInst) {
+    auto memReq = (writeInst)->createMemoryRequest();
+    writeQueue.insert({memReq, (writeInst)});
+    owner->launchWrite(memReq, this);
+}
+
+void
 LLVMInterface::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Read Request
@@ -434,7 +458,7 @@ LLVMInterface::readCommit(MemoryRequest * req) {
     auto queue_iter = globalReadQueue.find(req);
     if (queue_iter != globalReadQueue.end()) {
         queue_iter->second->readCommit(req);
-        delete queue_iter->first;
+        // delete queue_iter->first; // The CommInterface will ultimately delete this memory request
         globalReadQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in global read queue!");
@@ -468,7 +492,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
     auto queue_iter = globalWriteQueue.find(req);
     if (queue_iter != globalWriteQueue.end()) {
         queue_iter->second->writeCommit(req);
-        delete queue_iter->first;
+        // delete queue_iter->first; // The CommInterface will ultimately delete this memory request
         globalWriteQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in global write queue!");

@@ -1482,7 +1482,7 @@ void
 Load::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    setRegisterValue(10);
+    // setRegisterValue(10);
 }
 
 MemoryRequest *
