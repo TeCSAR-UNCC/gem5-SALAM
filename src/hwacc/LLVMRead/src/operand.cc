@@ -281,25 +281,27 @@ SALAM::Operand::initOperandReg()
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	bool istracked = false;
 	if (irtype->isPointerTy()) {
+        DPRINTF(Runtime, "Operand Ptr Register Initialized\n");
 		lockedValue = new PointerRegister(istracked);
 	} else if (irtype->isIntegerTy()) {
+        DPRINTF(Runtime, "Operand Int Register Initialized\n");
 		lockedValue = new APIntRegister(irtype, istracked);
 	} else if (irtype->isFloatingPointTy()) {
+        DPRINTF(Runtime, "Operand FP Register Initialized\n");
 		lockedValue = new APFloatRegister(irtype, istracked);
 	} else {
 		//assert(0); // Type is invalid for a register
-		lockedValue = nullptr;
+		DPRINTF(Runtime, "Unknown Register Type, Base Register Initialized\n");
+        inform("This seems to happen for label operands on branch instructions\n");
+        lockedValue = new Register(istracked);
 	}
-    DPRINTF(Runtime, "Operand Register Initialized\n");
 }
 
 void
 SALAM::Operand::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
-	//addRegister();
 }
 
 void

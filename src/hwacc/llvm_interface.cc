@@ -5,7 +5,7 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
-    topName("vadd"),
+    topName("vadd"), // TODO: Revert
     //topName(p->top_name),
     scheduling_threshold(p->sched_threshold),
     counter_units(p->FU_counter),
@@ -55,7 +55,6 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
                 previousBB = bb;
                 scheduleBB(branch->getTarget());
             } else {
-                //TODO: Fix br to work with these functions
                 findDynamicDeps(clone_inst);
                 reservation.push_back(clone_inst);
             }
@@ -77,14 +76,26 @@ LLVMInterface::ActiveFunction::processQueues()
 {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
+
+    // Temp Solution
+    // TODO: How do we know when a load or store is finished?
+    readQueue.clear();
+    writeQueue.clear();
+
     // First pass, computeQueue is empty 
     for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end();) {
         DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
         " |-[Compute Queue]--------------", 
         " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
         " | UID[", (*queue_iter)->getUID(), "]"
-        );        
-        if((*queue_iter)->commit()) {
+        );
+        if ((*queue_iter)->isTerminator()) {
+            if (reservation.empty() && (computeQueue.size() == 1)) {
+                scheduleBB((*queue_iter)->getTarget());
+                (*queue_iter)->reset();
+                queue_iter = computeQueue.erase(queue_iter);
+            } else ++queue_iter;
+        } else if((*queue_iter)->commit()) {
             (*queue_iter)->reset();
             queue_iter = computeQueue.erase(queue_iter);
         } else ++queue_iter;
@@ -101,23 +112,23 @@ LLVMInterface::ActiveFunction::processQueues()
                 );
             if ((*queue_iter)->isReturn() == false) {
                 if ((*queue_iter)->ready()) {
-                    (*queue_iter)->launch();
                     if ((*queue_iter)->isLoad()) {
+                        (*queue_iter)->launch();
                         auto memReq = (*queue_iter)->createMemoryRequest();
                         readQueue.insert({memReq, (*queue_iter)});
                     } else if ((*queue_iter)->isStore()) {
+                        (*queue_iter)->launch();
                         auto memReq = (*queue_iter)->createMemoryRequest();
                         writeQueue.insert({memReq, (*queue_iter)});
                     } else if ((*queue_iter)->isTerminator()) {
-                        scheduleBB((*queue_iter)->getTarget());
-                    } else if ((*queue_iter)->isCommitted() == false) {
-                        DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        (*queue_iter)->launch();
+                        DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         computeQueue.push_back(*queue_iter);
-                    }  else if ((*queue_iter)->isCommitted()) {
-                        DPRINTFR(Runtime, "\t\t  | Instruction Committed: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
-                        (*queue_iter)->reset();
                     } else {
-                        panic("Unknown Scheduler Argument!");
+                        if (!(*queue_iter)->launch()) {
+                            DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                            computeQueue.push_back(*queue_iter);
+                        }
                     }
                     DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                     queue_iter = reservation.erase(queue_iter);
@@ -196,12 +207,14 @@ void // Add third argument, previous BB
 LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instruction> inst)
 {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTFR(Runtime, "Linking Dynamic Dependencies [%s]\n", llvm::Instruction::getOpcodeName(inst->getOpode()));
     // The list of UIDs for any dependencies we want to find
     std::vector<uint64_t> dep_uids;
     std::map<uint64_t , std::shared_ptr<SALAM::Value>> dependencies;
+    
     // An instruction is a runtime dependency for itself since multiple
     // instances of the same instruction shouldn't execute simultaneously
-    dep_uids.push_back(inst->getUID());
+    // dep_uids.push_back(inst->getUID());
     // dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(inst->getUID(), std::dynamic_pointer_cast<SALAM::Value>(inst)));
 
     // Fetch the UIDs of static operands

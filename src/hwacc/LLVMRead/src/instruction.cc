@@ -107,9 +107,6 @@ Instruction::initialize(llvm::Value *irval,
         }
         DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
         staticDependencies.push_back(opval);
-        // Push back pointers to registers for operands
-        // TODO: Maybe remove this 
-        // opReg.push_back(opval->getReg());
         if(llvm::isa<llvm::PHINode>(inst)) {
             DPRINTF(LLVMInterface, "Phi Node Initiated\n");
             uint64_t phiBB = 0;
@@ -121,8 +118,6 @@ Instruction::initialize(llvm::Value *irval,
             ++phiBB;
         } else if(llvm::isa<llvm::CmpInst>(inst)) {
             DPRINTF(LLVMInterface, "Compare Instruction Initiated\n");
-
-            
         }
     }
 }
@@ -177,23 +172,17 @@ Instruction::launch()
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
     launched = true;
-    //////////////////////////////
-    //DPRINTF(Runtime, "||  Current Cycle: %i\n", getCurrentCycle());
     if (getCycleCount() == 0) { // Instruction ready to be committed
         DPRINTF(Runtime, "||  0 Cycle Instruction\n");
         compute();
         commit();
-        //signalUsers();
-        //DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
-        //DPRINTF(Runtime, "||==commit================\n");
-        //return committed;
-    } 
-    /////////////////////////////
-    //compute();
-    //commit();
-    DPRINTF(Runtime, "||==Return: %s\n", launched ? "true" : "false");
+    } else {
+        currentCycle++;
+        compute();
+    }
+    DPRINTF(Runtime, "||==Return: %s\n", isCommitted() ? "true" : "false");
     DPRINTF(Runtime, "||==launch================\n");
-    return launched;
+    return isCommitted();
 }
 
 bool
@@ -209,8 +198,8 @@ Instruction::commit()
         DPRINTF(Runtime, "||==commit================\n");
         return true;
     } else {
-        currentCycle++;
         DPRINTF(Runtime, "||  Remaining Cycles: %i\n", getCycleCount() - getCurrentCycle());
+        currentCycle++;
     }
     DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
     DPRINTF(Runtime, "||==commit================\n");
@@ -264,9 +253,6 @@ Instruction::linkOperands(const SALAM::Operand &newOp)
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Operand op_copy = newOp;
     operands.push_back(op_copy);
-    // DPRINTF(Runtime, "Begin Operand Init: [UID = %u]\n", op_copy.getUID());
-    // operands.back().initOperandReg();
-
 }
 
 // SALAM-Ret // -------------------------------------------------------------//
@@ -362,20 +348,12 @@ Br::Br(uint64_t id,
     conditions.push_back(base_params);
 }
 
-/*
-void
-Br::linkOperands() 
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-}
-*/
-
 std::shared_ptr<SALAM::BasicBlock>
 Br::getTarget() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
     if(conditional) {
-        if(condition->getReg()->getIntData()->isOneValue()) return std::dynamic_pointer_cast<SALAM::BasicBlock>(trueDestination);
+        if(!condition->getReg()->getIntData()->isOneValue()) return std::dynamic_pointer_cast<SALAM::BasicBlock>(trueDestination);
         else return std::dynamic_pointer_cast<SALAM::BasicBlock>(falseDestination);
     }
     return std::dynamic_pointer_cast<SALAM::BasicBlock>(defaultDestination);
@@ -2436,8 +2414,12 @@ Phi::compute() {
     //     if(previousBB == it.second) node = it.first;
     // }
     // node is pointer where value help
-    
-    setRegisterValue(operands.at(0).getReg());
+    uint64_t count = 0;
+    for (auto ops : operands) {
+        DPRINTF(Runtime, "|| Phi Arg[%d]\n", count++);
+        setRegisterValue(ops.getReg());
+    }
+    //setRegisterValue(operands.at(0).getReg());
 }
 
 valueListTy
