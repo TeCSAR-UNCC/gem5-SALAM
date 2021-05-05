@@ -312,7 +312,7 @@ CommInterface::processMemoryRequests() {
     if (!allPortsStalled()) {
         if (debug()) DPRINTF(CommInterface, "Checking read requests. %d requests in queue.\n", readQueue.size());
         for (auto it=readQueue.begin(); it!=readQueue.end(); ) {
-            Addr address = (*it)->address;
+            Addr address = (*it)->currentReadAddr;
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
@@ -357,7 +357,7 @@ CommInterface::processMemoryRequests() {
         }
         if (debug()) DPRINTF(CommInterface, "Checking write requests. %d requests in queue.\n", writeQueue.size());
         for (auto it=writeQueue.begin(); it!=writeQueue.end(); ) {
-            Addr address = (*it)->address;
+            Addr address = (*it)->currentWriteAddr;
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
