@@ -77,11 +77,6 @@ LLVMInterface::ActiveFunction::processQueues()
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
 
-    // Temp Solution
-    // TODO: How do we know when a load or store is finished?
-    readQueue.clear();
-    writeQueue.clear();
-
     // First pass, computeQueue is empty 
     for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end();) {
         DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
