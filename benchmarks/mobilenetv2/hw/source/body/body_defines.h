@@ -97,27 +97,27 @@
 // Iteration 0
 #define RES_0_ENABLE	0
 
-#define PW0_0_I_SIZE 	48
-#define PW0_0_O_SIZE 	48
-#define PW0_0_IC_SIZE	8
-#define PW0_0_OC_SIZE	48
+#define PW0_0_I_SIZE 	48/8
+#define PW0_0_O_SIZE 	48/8
+#define PW0_0_IC_SIZE	8/8
+#define PW0_0_OC_SIZE	48/8
 #define PW0_0_BIAS_ZP	0
 #define PW0_0_IN_ZP		0
 #define PW0_0_OUT_ZP	0
 
-#define DW0_0_I_SIZE 	48
-#define DW0_0_O_SIZE 	24
-#define DW0_0_IC_SIZE	48
-#define DW0_0_OC_SIZE	48
+#define DW0_0_I_SIZE 	48/8
+#define DW0_0_O_SIZE 	24/8
+#define DW0_0_IC_SIZE	48/8
+#define DW0_0_OC_SIZE	48/8
 #define DW0_0_STRIDE	2
 #define DW0_0_BIAS_ZP	0
 #define DW0_0_IN_ZP		0
 #define DW0_0_OUT_ZP	0
 
-#define PW1_0_I_SIZE 	24
-#define PW1_0_O_SIZE 	24
-#define PW1_0_IC_SIZE	48
-#define PW1_0_OC_SIZE	8
+#define PW1_0_I_SIZE 	24/8
+#define PW1_0_O_SIZE 	24/8
+#define PW1_0_IC_SIZE	48/8
+#define PW1_0_OC_SIZE	8/8
 #define PW1_0_BIAS_ZP	0
 #define PW1_0_IN_ZP		0
 #define PW1_0_OUT_ZP	0
@@ -125,27 +125,27 @@
 // Iteration 1
 #define RES_1_ENABLE	0
 
-#define PW0_1_I_SIZE 	40
-#define PW0_1_O_SIZE 	40
-#define PW0_1_IC_SIZE	24
-#define PW0_1_OC_SIZE	144
+#define PW0_1_I_SIZE 	40/20
+#define PW0_1_O_SIZE 	40/20
+#define PW0_1_IC_SIZE	24/4
+#define PW0_1_OC_SIZE	144/12
 #define PW0_1_BIAS_ZP	0
 #define PW0_1_IN_ZP		0
 #define PW0_1_OUT_ZP	0
 
-#define DW0_1_I_SIZE 	40
-#define DW0_1_O_SIZE 	40
-#define DW0_1_IC_SIZE	144
-#define DW0_1_OC_SIZE	144
+#define DW0_1_I_SIZE 	40/20
+#define DW0_1_O_SIZE 	40/20
+#define DW0_1_IC_SIZE	144/12
+#define DW0_1_OC_SIZE	144/12
 #define DW0_1_STRIDE	1
 #define DW0_1_BIAS_ZP	0
 #define DW0_1_IN_ZP		0
 #define DW0_1_OUT_ZP	0
 
-#define PW1_1_I_SIZE 	40
-#define PW1_1_O_SIZE 	40
-#define PW1_1_IC_SIZE	144
-#define PW1_1_OC_SIZE	24
+#define PW1_1_I_SIZE 	40/20
+#define PW1_1_O_SIZE 	40/20
+#define PW1_1_IC_SIZE	144/12
+#define PW1_1_OC_SIZE	24/4
 #define PW1_1_BIAS_ZP	0
 #define PW1_1_IN_ZP		0
 #define PW1_1_OUT_ZP	0

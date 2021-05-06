@@ -158,7 +158,7 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/body/Residual.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/Residual.ini
       Debug: False
-      PIOSize: 6
+      PIOSize: 17
       PIOMaster: LocalBus
       StreamOut: stream_dma0,stream_dma1
     - Var:
@@ -173,7 +173,7 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv0.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv0.ini
       Debug: False
-      PIOSize: 20
+      PIOSize: 57
       PIOMaster: LocalBus
     - Var:
       - Name: PWConv0LocalFeatSize
@@ -202,7 +202,7 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/body/DWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/DWConv.ini
       Debug: False
-      PIOSize: 24
+      PIOSize: 65
       PIOMaster: LocalBus
     - Var:
       - Name: DWConvWindow
@@ -241,7 +241,7 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv1.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv1.ini
       Debug: False
-      PIOSize: 38
+      PIOSize: 57
       PIOMaster: LocalBus
       StreamIn: stream_dma0
     - Var:

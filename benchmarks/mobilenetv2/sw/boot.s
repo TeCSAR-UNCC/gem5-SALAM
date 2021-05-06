@@ -122,7 +122,7 @@ config_gic_dist:
      */
 
     ldr r1, =GIC_Dist_Base + set_enable2    // r1 = Set-enable1 Reg Address
-    mov r2, #0x0f
+    mov r2, #0x00
     //IRQ ID - 32 => 5th bit = 1
     lsl r2, r2, #4
 

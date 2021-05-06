@@ -31,24 +31,24 @@
 #define TOP 0x10021244
 //Accelerator: RESIDUAL
 #define RESIDUAL 0x10021295
-#define ResidualOut 0x1002129b
+#define ResidualOut 0x100212a6
 //Accelerator: PWCONV0
-#define PWCONV0 0x1002129c
-#define PWConv0LocalFeatSize 0x100212b0
-#define PWConv0Weights 0x10021328
-#define PWConv0QParams 0x100364a8
-#define PWConv0Out 0x10037588
+#define PWCONV0 0x100212a7
+#define PWConv0LocalFeatSize 0x100212e0
+#define PWConv0Weights 0x10021358
+#define PWConv0QParams 0x100364d8
+#define PWConv0Out 0x100375b8
 //Accelerator: DWCONV
-#define DWCONV 0x10037589
-#define DWConvWindow 0x100375a1
-#define DWConvWeights 0x100391c1
-#define DWConvQParams 0x10039671
-#define DWConvBuffer 0x1003a751
-#define DWConvOutBuffer 0x10056951
-#define DWConvOut 0x10056c21
+#define DWCONV 0x100375b9
+#define DWConvWindow 0x100375fa
+#define DWConvWeights 0x1003921a
+#define DWConvQParams 0x100396ca
+#define DWConvBuffer 0x1003a7aa
+#define DWConvOutBuffer 0x100569aa
+#define DWConvOut 0x10056c7a
 //Accelerator: PWCONV1
-#define PWCONV1 0x10056c22
-#define PWConv1LocalFeatSize 0x10056c48
-#define PWConv1Weights 0x10056f18
-#define PWConv1QParams 0x10081218
+#define PWCONV1 0x10056c7b
+#define PWConv1LocalFeatSize 0x10056cb4
+#define PWConv1Weights 0x10056f84
+#define PWConv1QParams 0x10081284
 //END GENERATED CODE

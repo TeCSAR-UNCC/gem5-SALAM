@@ -43,301 +43,34 @@ int main(void) {
 	m5_reset_stats();
     int exitCond = 0;
     unsigned phase, rs_offset, rd_offset, wr_offset;
-    while (!exitCond) {
-        uint8_t currStage = stage;
-        switch (currStage) {
-            case 0:
-                // Init
-                stage += 1;
-                break;
-            case 1:
-                // Start Head
-                // runHead(feats+0x00000000,feats+0x00100000,
-                //         weights, qparams,
-                //         weights, qparams,
-                //         weights, qparams);
-                // Start Body_0
-                phase = 0;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 3:
-                // Start Body_0
-                phase = 0;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 5:
-                // Start Body_1
-                phase = 1;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 7:
-                // Start Body_2
-                phase = 2;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 9:
-                // Start Body_3
-                phase = 3;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 11:
-                // Start Body_4
-                phase = 4;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 13:
-                // Start Body_5
-                phase = 5;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 15:
-                // Start Body_6
-                phase = 6;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 17:
-                // Start Body_7
-                phase = 7;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 19:
-                // Start Body_8
-                phase = 8;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 21:
-                // Start Body_9
-                phase = 9;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 23:
-                // Start Body_10
-                phase = 10;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 25:
-                // Start Body_11
-                phase = 11;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 27:
-                // Start Body_12
-                phase = 12;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 29:
-                // Start Body_13
-                phase = 13;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 31:
-                // Start Body_14
-                phase = 14;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 33:
-                // Start Body_15
-                phase = 15;
-                rs_offset = (phase + 0) * 0x00100000;
-                rd_offset = (phase + 1) * 0x00100000;
-                wr_offset = (phase + 2) * 0x00100000;
-                runBody(phase,
-                        feats+rd_offset,
-                        feats+rs_offset,
-                        feats+wr_offset,
-                        weights, qparams,
-                        weights, qparams,
-                        weights, qparams);
-                break;
-            case 35:
-                // Start Tail
-                runTail(feats+0x01100000,
-                        feats+0x01200000,
-                        weights, qparams);
-                break;
-            case 37:
-                // Start Classifier
-                runClassifier(feats+0x01200000,
-                              feats+0x01300000,
-                              weights, qparams);
-                break;
-            case 39:
-                // Finished
-                exitCond = 1;
-                break;
-            default:
-                // Waiting for accelerator to finish
-                exitCond = 0;
-        }
-    }
-	m5_dump_stats();
+    // Start Head
+    // runHead(feats+0x00000000,feats+0x00100000,
+    //         weights, qparams,
+    //         weights, qparams,
+    //         weights, qparams);
+    // Start Body_0
+    phase = 0;
+    rs_offset = (phase + 0) * 0x00100000;
+    rd_offset = (phase + 1) * 0x00100000;
+    wr_offset = (phase + 2) * 0x00100000;
+    runBody(phase,
+            feats+rd_offset,
+            feats+rs_offset,
+            feats+wr_offset,
+            weights, qparams,
+            weights, qparams,
+            weights, qparams);
+    phase = 0;
+    runBody(phase,
+            feats+rd_offset,
+            feats+rs_offset,
+            feats+wr_offset,
+            weights, qparams,
+            weights, qparams,
+            weights, qparams);
+    m5_dump_stats();
 	m5_exit();
     return 0;
-}
-
-void runHead(uint64_t img_rd_addr, uint64_t feat_wr_addr,
-             uint64_t conv_weights, uint64_t conv_quant,
-             uint64_t dw_weights, uint64_t dw_quant,
-             uint64_t pw_weights, uint64_t pw_quant) {
-    uint8_t  * MMR  = (uint8_t  *)(head_top);
-    uint64_t * ARGS = (uint64_t *)(head_top+1);
-    printf("Setting args for HEAD\n");
-    ARGS[0] = img_rd_addr;
-    ARGS[1] = feat_wr_addr;
-    ARGS[2] = conv_weights;
-    ARGS[3] = conv_quant;
-    ARGS[4] = dw_weights;
-    ARGS[5] = dw_quant;
-    ARGS[6] = pw_weights;
-    ARGS[7] = pw_quant;
-    printf("Running HEAD\n");
-    MMR[0]  = 0x01;
-
-    stage += 1;
 }
 
 void runBody(uint8_t phase, uint64_t feat_rd_addr,
@@ -345,9 +78,11 @@ void runBody(uint8_t phase, uint64_t feat_rd_addr,
              uint64_t pw0_weights, uint64_t pw0_quant,
              uint64_t dw0_weights, uint64_t dw0_quant,
              uint64_t pw1_weights, uint64_t pw1_quant) {
-    uint8_t  * MMR  = (uint8_t  *)(body_top);
-    uint64_t * ARGS = (uint64_t *)(body_top+1);
-    printf("Setting args for BODY\n");
+    
+    volatile uint8_t  * MMR  = (uint8_t  *)(body_top);
+    volatile uint64_t * ARGS = (uint64_t *)(body_top+1);
+    volatile uint64_t count;
+
     ARGS[0] = feat_rd_addr;
     ARGS[1] = res_rd_addr;
     ARGS[2] = feat_wr_addr;
@@ -358,38 +93,9 @@ void runBody(uint8_t phase, uint64_t feat_rd_addr,
     ARGS[7] = pw1_weights;
     ARGS[8] = pw1_quant;
     ARGS[9]  = phase;
-    printf("Running BODY\n");
+
     MMR[0]  = 0x01;
-
-    stage += 1;
-}
-
-void runTail(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
-             uint64_t pw_weights, uint64_t pw_quant) {
-    uint8_t  * MMR  = (uint8_t  *)(tail_top);
-    uint64_t * ARGS = (uint64_t *)(tail_top+1);
-    printf("Setting args for TAIL\n");
-    ARGS[0] = feat_rd_addr;
-    ARGS[1] = feat_wr_addr;
-    ARGS[2] = pw_weights;
-    ARGS[3] = pw_quant;
-    printf("Running TAIL\n");
-    MMR[0]  = 0x01;
-
-    stage += 1;
-}
-
-void runClassifier(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
-                   uint64_t weight, uint64_t quant) {
-    uint8_t  * MMR  = (uint8_t  *)(class_top);
-    uint64_t * ARGS = (uint64_t *)(class_top+1);
-    printf("Setting args for CLASSIFIER\n");
-    ARGS[0] = feat_rd_addr;
-    ARGS[1] = feat_wr_addr;
-    ARGS[2] = weight;
-    ARGS[3] = quant;
-    printf("Running CLASSIFIER\n");
-    MMR[0]  = 0x01;
-
-    stage += 1;
+    while(MMR[0] & 0x01) count++;
+    while(MMR[0] & 0x02) count++;
+    count = 0;
 }

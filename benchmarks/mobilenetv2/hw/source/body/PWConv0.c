@@ -6,7 +6,9 @@
 #define t_ACCUMULATE_TYPE		dType_Reg
 #define t_OUTPUT_TYPE			dType_8u
 
-void PWConv0() {
+void PWConv0(uint64_t o_size, uint64_t i_size,
+             uint64_t o_c_size, uint64_t i_c_size,
+             uint64_t bias_zp, uint64_t input_zp, uint64_t output_z) {
 	volatile dType_8u * 	inFifo 			= (dType_8u *)(PW0In);
     volatile dType_8u * 	outFifo 		= (dType_8u *)(PW0Out);
     volatile dType_8u * 	weights 		= (dType_8u *)(PW0Weights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
@@ -20,26 +22,26 @@ void PWConv0() {
 
 pw_convYaxis:
     #pragma clang loop unroll(disable)
-    for (int y = 0; y < PW0_0_O_SIZE; y++) {
+    for (int y = 0; y < o_size; y++) {
     pw_convXaxis:
         #pragma clang loop unroll(disable)
-        for (int x = 0; x < PW0_0_O_SIZE; x++) {
+        for (int x = 0; x < o_size; x++) {
         rd_buff_loop_img:
             #pragma clang loop unroll(disable)
             for (int i = 0; i < t_MAX_INPUT_CHANNEL; i++) {
-                if (i < PW0_0_IC_SIZE) {
+                if (i < i_c_size) {
                     localFeature[i] = *inFifo;
                 } else {
-                    localFeature[i] = PW0_0_IN_ZP;
+                    localFeature[i] = input_zp;
                 }
             }
         convOutchan:
             #pragma clang loop unroll(disable)
-            for (int oc = 0; oc < PW0_0_OC_SIZE; oc++) {
+            for (int oc = 0; oc < o_c_size; oc++) {
                 dType_8u bias = biases_local[oc];
                 dType_Reg sum = 0;
                 // Holds temporary accumulator values
-                dType_32u weight_idx_offset = oc * PW0_0_IC_SIZE;
+                dType_32u weight_idx_offset = oc * i_c_size;
                 dType_8u weight_zp_local = weight_zp[oc];
             // Runs over filter window
             convInchan_perCore:
@@ -49,14 +51,14 @@ pw_convYaxis:
                     #pragma clang loop unroll(full)
                     for (dType_16u j = 0; j < t_CORE_SIZE; j++) {
                         dType_Reg input = i * t_CORE_SIZE + j;
-                        dType_16t input_recalib = localFeature[input] - PW0_0_IN_ZP;
+                        dType_16t input_recalib = localFeature[input] - input_zp;
                         dType_8t k_weight = weights[oc*t_MAX_INPUT_CHANNEL + input] - weight_zp_local;
                         dType_16t weighted_input = input_recalib * k_weight;
                         sum = sum + weighted_input;
                     }
                 }
                 dType_Reg scaled_bias;
-                dType_8t bias_calib = bias - PW0_0_BIAS_ZP;
+                dType_8t bias_calib = bias - bias_zp;
 
                 dType_16t weighted_bias = bias_calib * iMult_bias_acc[oc];
 
@@ -69,7 +71,7 @@ pw_convYaxis:
                 t_ACCUMULATE_TYPE out_i32;
                 dType_16t signed_imul = iMult_output[oc];
                 t_ACCUMULATE_TYPE scaled_output = biased_input * signed_imul;
-                out_i32 = (scaled_output >> nShift_output[oc]) + PW0_0_OUT_ZP;
+                out_i32 = (scaled_output >> nShift_output[oc]) + output_z;
                 t_OUTPUT_TYPE out_nBit = (t_OUTPUT_TYPE)(MAX(0,MIN(out_i32,255)));
                 *outFifo = out_nBit;
             }
