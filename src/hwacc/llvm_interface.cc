@@ -84,21 +84,24 @@ LLVMInterface::ActiveFunction::processQueues()
         " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
         " | UID[", (*queue_iter)->getUID(), "]"
         );
-        if ((*queue_iter)->isTerminator()) {
-            if (reservation.empty() && (computeQueue.size() == 1)) {
-                scheduleBB((*queue_iter)->getTarget());
-                (*queue_iter)->reset();
-                queue_iter = computeQueue.erase(queue_iter);
-            } else ++queue_iter;
-        } else if((*queue_iter)->commit()) {
+        // if ((*queue_iter)->isTerminator()) {
+        //     if (reservation.empty() && (computeQueue.size() == 1)) {
+        //         scheduleBB((*queue_iter)->getTarget());
+        //         (*queue_iter)->reset();
+        //         queue_iter = computeQueue.erase(queue_iter);
+        //     } else ++queue_iter;
+        // } else 
+        if((*queue_iter)->commit()) {
             (*queue_iter)->reset();
             queue_iter = computeQueue.erase(queue_iter);
         } else ++queue_iter;
     }
     if (canReturn()) {
         // Handle function return
+        
         DPRINTFR(Runtime, "[[Function Return]]\n\n");
     } else {
+        // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
             DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
                 " |-[Reserve Queue]--------------", 
@@ -115,8 +118,9 @@ LLVMInterface::ActiveFunction::processQueues()
                         launchWrite(*queue_iter);
                     } else if ((*queue_iter)->isTerminator()) {
                         (*queue_iter)->launch();
+                        scheduleBB((*queue_iter)->getTarget());
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
-                        computeQueue.push_back(*queue_iter);
+                        //computeQueue.push_back(*queue_iter);
                     } else {
                         if (!(*queue_iter)->launch()) {
                             DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
@@ -288,6 +292,28 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
             }
         }
     }
+
+    // for (dep = dependencies.begin(); dep != dependencies.end();) {
+    //     //for (deps_loop = (dep+1); deps_loop != dependencies.end(); ++deps_loop) {
+    //     while (inner != dependencies.end()) {
+    //         if ((*inner).first ==)
+    //     }
+    // }
+
+    DPRINTFR(Runtime, "Dynamic Dependencies List\n");
+    DPRINTFR(Runtime, "Instruction: %s\n", llvm::Instruction::getOpcodeName(inst->getOpode()));
+    uint64_t count = 0;
+    std::set<uint64_t> duplicateCheck;
+    for (auto deps : inst->getDynamicDependencies()) { 
+        if (duplicateCheck.find(inst->getDynamicDependencies(count)->getUID()) == duplicateCheck.end()) {
+            duplicateCheck.insert(inst->getDynamicDependencies(count)->getUID());
+            count++;
+        } else {
+            inst->removeDynamicDependency(count);
+        }
+    }
+
+
 
     // Fetch values for resolved dependencies, static elements, and immediate values
     if (!dependencies.empty()) {
