@@ -84,6 +84,7 @@ Instruction::initialize(llvm::Value *irval,
     llvm::Instruction * inst = llvm::dyn_cast<llvm::Instruction>(irval);
     assert(iruser);
     assert(inst);
+    uint64_t phiBB = 0;
     for (auto const op : iruser->operand_values()) {
         auto mapit = irmap->find(op);
         if(dbg) {
@@ -109,7 +110,6 @@ Instruction::initialize(llvm::Value *irval,
         staticDependencies.push_back(opval);
         if(llvm::isa<llvm::PHINode>(inst)) {
             DPRINTF(LLVMInterface, "Phi Node Initiated\n");
-            uint64_t phiBB = 0;
             llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(inst);
             llvm::Value * bb = llvm::dyn_cast<llvm::Value>(phi->getIncomingBlock(phiBB));
             mapit = irmap->find(bb);
@@ -2277,16 +2277,16 @@ ICmp::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     switch(predicate) 
     {
-        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() == operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_NE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() !=  operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() <  operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() < operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_NE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ne(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ugt(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->uge(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ult(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ule(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->sgt(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->sge(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->slt(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->sle(*(operands.at(1).getIntRegValue())))); break; }
         default: break;
 
     }
