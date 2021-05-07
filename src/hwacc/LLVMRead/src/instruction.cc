@@ -1632,7 +1632,7 @@ GetElementPtr::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     uint64_t op1 = *(operands.at(0).getPtrRegValue());
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
-    uint64_t result = op1 + op2.getSExtValue();
+    uint64_t result = op1 + op2.getSExtValue() * size;
     DPRINTF(Runtime, "|| Ptr[%x]  Offset[%s]\n", op1, op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: Addr[%x]\n", result);
     setRegisterValue(result);
@@ -2277,16 +2277,16 @@ ICmp::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     switch(predicate) 
     {
-        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(operands.at(0).getIntRegValue() == operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_NE: { setRegisterValue(operands.at(0).getIntRegValue() !=  operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(operands.at(0).getIntRegValue() <  operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(operands.at(0).getIntRegValue() < operands.at(1).getIntRegValue()); break; }
-        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue()); break; }
+        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() == operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_NE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() !=  operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() <  operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >  operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() >= operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() < operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue() <= operands.at(1).getIntRegValue())); break; }
         default: break;
 
     }

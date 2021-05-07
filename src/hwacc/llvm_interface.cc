@@ -98,7 +98,7 @@ LLVMInterface::ActiveFunction::processQueues()
     }
     if (canReturn()) {
         // Handle function return
-        
+
         DPRINTFR(Runtime, "[[Function Return]]\n\n");
     } else {
         // TODO: Look into for_each here
@@ -120,6 +120,7 @@ LLVMInterface::ActiveFunction::processQueues()
                         (*queue_iter)->launch();
                         scheduleBB((*queue_iter)->getTarget());
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        (*queue_iter)->commit();
                         //computeQueue.push_back(*queue_iter);
                     } else {
                         if (!(*queue_iter)->launch()) {
@@ -207,17 +208,16 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
     DPRINTFR(Runtime, "Linking Dynamic Dependencies [%s]\n", llvm::Instruction::getOpcodeName(inst->getOpode()));
     // The list of UIDs for any dependencies we want to find
     std::vector<uint64_t> dep_uids;
-    std::map<uint64_t , std::shared_ptr<SALAM::Value>> dependencies;
-    
+
+    assert(inst->getDependencyCount() == 0);
+
     // An instruction is a runtime dependency for itself since multiple
     // instances of the same instruction shouldn't execute simultaneously
-    // dep_uids.push_back(inst->getUID());
-    // dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(inst->getUID(), std::dynamic_pointer_cast<SALAM::Value>(inst)));
+    dep_uids.push_back(inst->getUID());
 
     // Fetch the UIDs of static operands
     for (auto static_dep : inst->getStaticDependencies()) {
         dep_uids.push_back(static_dep->getUID());
-        dependencies.insert(std::pair<uint64_t, std::shared_ptr<SALAM::Value>>(static_dep->getUID(), static_dep));
         // Inintialize the operands here
         // +++ call constructor for Operand
         //      copy constructor for value
@@ -226,7 +226,7 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
         SALAM::Operand *newOp = new SALAM::Operand(*(static_dep.get()));
         inst->linkOperands(*newOp);
         // Ordered the same as static dependencies
-        // Also matches order of IR 
+        // Also matches order of IR
     }
 
     // Find dependencies currently in queues
@@ -235,91 +235,78 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
     for (auto queue_iter = reservation.rbegin(); queue_iter != reservation.rend(); ++queue_iter) {
         auto queued_inst = *queue_iter;
         // Look at each instruction in runtime queue once
-        for (auto dep : dep_uids) {
+        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == dep) {
+            if (queued_inst->getUID() == *dep_it) {
                 // If dependency found, create two way link
                 inst->addRuntimeDependency(queued_inst);
                 queued_inst->addRuntimeUser(inst);
-                // Remove UID if dependency exists
-                dependencies.erase(dep);
+                dep_it = dep_uids.erase(dep_it);
+            } else {
+                dep_it++;
             }
         }
     }
 
     // The other queues do not need to be reverse-searched since only 1 instance of any instruction can exist in them
     // Check the compute queue
-    for (auto queued_inst : computeQueue) {
+    for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end(); ++queue_iter) {
+        auto queued_inst = *queue_iter;
         // Look at each instruction in runtime queue once
-        for (auto dep : dep_uids) {
+        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == dep) {
+            if (queued_inst->getUID() == *dep_it) {
                 // If dependency found, create two way link
                 inst->addRuntimeDependency(queued_inst);
                 queued_inst->addRuntimeUser(inst);
-                // Remove UID if dependency exists
-                dependencies.erase(dep);
+                dep_it = dep_uids.erase(dep_it);
+            } else {
+                dep_it++;
             }
         }
     }
     // Check the memory read queue
-    for (auto queued_read : readQueue) {
+    // for (auto queued_read : readQueue) {
+    for (auto rq_it = readQueue.begin(); rq_it != readQueue.end(); rq_it++) {
+        auto queued_read = *rq_it;
         auto queued_inst = queued_read.second;
         // Look at each instruction in runtime queue once
-        for (auto dep : dep_uids) {
+        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == dep) {
+            if (queued_inst->getUID() == *dep_it) {
                 // If dependency found, create two way link
                 inst->addRuntimeDependency(queued_inst);
                 queued_inst->addRuntimeUser(inst);
-                // Remove UID if dependency exists
-                dependencies.erase(dep);
+                dep_it = dep_uids.erase(dep_it);
+            } else {
+                dep_it++;
             }
         }
     }
     // Check the memory write queue
-    for (auto queued_write : writeQueue) {
+    // for (auto queued_write : writeQueue) {
+    for (auto wq_it = writeQueue.begin(); wq_it != writeQueue.end(); wq_it++) {
+        auto queued_write = *wq_it;
         auto queued_inst = queued_write.second;
         // Look at each instruction in runtime queue once
-        for (auto dep : dep_uids) {
+        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == dep) {
+            if (queued_inst->getUID() == *dep_it) {
                 // If dependency found, create two way link
                 inst->addRuntimeDependency(queued_inst);
                 queued_inst->addRuntimeUser(inst);
-                // Remove UID if dependency exists
-                dependencies.erase(dep);
+                dep_it = dep_uids.erase(dep_it);
+            } else {
+                dep_it++;
             }
         }
     }
 
-    // for (dep = dependencies.begin(); dep != dependencies.end();) {
-    //     //for (deps_loop = (dep+1); deps_loop != dependencies.end(); ++deps_loop) {
-    //     while (inner != dependencies.end()) {
-    //         if ((*inner).first ==)
-    //     }
-    // }
-
-    DPRINTFR(Runtime, "Dynamic Dependencies List\n");
-    DPRINTFR(Runtime, "Instruction: %s\n", llvm::Instruction::getOpcodeName(inst->getOpode()));
-    uint64_t count = 0;
-    std::set<uint64_t> duplicateCheck;
-    for (auto deps : inst->getDynamicDependencies()) { 
-        if (duplicateCheck.find(inst->getDynamicDependencies(count)->getUID()) == duplicateCheck.end()) {
-            duplicateCheck.insert(inst->getDynamicDependencies(count)->getUID());
-            count++;
-        } else {
-            inst->removeDynamicDependency(count);
-        }
-    }
-
-
-
     // Fetch values for resolved dependencies, static elements, and immediate values
-    if (!dependencies.empty()) {
-        for (auto resolved : dependencies) {
+    if (!dep_uids.empty()) {
+        for (auto resolved : dep_uids) {
             // If this dependency exists, then lock value into operand
-            inst->setOperandValue(resolved.first);
+            inst->setOperandValue(resolved);
         }
     }
 }
