@@ -1490,7 +1490,7 @@ Load::createMemoryRequest() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++createMemoryRequest()\n");
     Addr memAddr = *(operands.front().getPtrRegValue());
-    size_t reqLen = operands.front().getSizeInBytes();
+    size_t reqLen = getSizeInBytes();
     DPRINTF(Runtime, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
     return new MemoryRequest(memAddr, reqLen);
 }
@@ -1553,7 +1553,7 @@ Store::compute() {
 MemoryRequest *
 Store::createMemoryRequest() {
     Addr memAddr = *(operands.at(1).getPtrRegValue());
-    size_t reqLen = operands.front().getSizeInBytes();
+    size_t reqLen = getSizeInBytes();
 
     MemoryRequest * req;
 

@@ -481,11 +481,10 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto queue_iter = readQueue.find(req);
     if (queue_iter != readQueue.end()) {
-        auto load_inst = queue_iter->second;
         uint8_t * readBuff = req->getBuffer();
-        load_inst->setRegisterValue(readBuff);
-        load_inst->commit();
-        readQueue.erase(queue_iter);
+        queue_iter->second->setRegisterValue(readBuff);
+        queue_iter->second->commit();
+        queue_iter = readQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in read queue for function %u!", func->getUID());
     }
@@ -516,7 +515,7 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
     auto queue_iter = writeQueue.find(req);
     if (queue_iter != writeQueue.end()) {
         queue_iter->second->commit();
-        writeQueue.erase(queue_iter);
+        queue_iter = writeQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in write queue for function %u!", func->getUID());
     }
@@ -559,7 +558,7 @@ LLVMInterface::debug(uint64_t flags) {
     // Dump 
     for (auto func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
         // Function Level
-        // (*func_iter)->dump(); 
+        // (*func_iter)->dump();
         for (auto bb_iter = (*func_iter)->getBBList()->begin(); bb_iter != (*func_iter)->getBBList()->end(); bb_iter++) {
             // Basic Block Level
             (*bb_iter)->dump();
