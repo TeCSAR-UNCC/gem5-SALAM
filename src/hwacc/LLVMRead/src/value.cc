@@ -164,10 +164,11 @@ SALAM::Value::setRegisterValue(const uint64_t data) {
 void
 SALAM::Value::setRegisterValue(uint8_t * data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	DPRINTF(Runtime, "| Set Register Data\n");
+	DPRINTF(Runtime, "| Set Register Data - ");
     switch (irtype->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
+            DPRINTF(Runtime, "Float\n");
             float tmpData;
             std::memcpy(&tmpData, data, sizeof(float));
             llvm::APFloat * regData = returnReg->getFloatData();
@@ -176,6 +177,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         }
         case llvm::Type::DoubleTyID:
         {
+            DPRINTF(Runtime, "Double\n");
             double tmpData;
             std::memcpy(&tmpData, data, sizeof(double));
             llvm::APFloat * regData = returnReg->getFloatData();
@@ -184,6 +186,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         }
         case llvm::Type::IntegerTyID:
         {
+            DPRINTF(Runtime, "Integer Type | Size = %d\n", size);
             llvm::APInt * regData = returnReg->getIntData();
             if (size > 64) {
                 size_t bigIntLen = ((size - 1) / 64) + 1;
@@ -195,6 +198,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         }
         case llvm::Type::PointerTyID:
         {
+            DPRINTF(Runtime, "Pointer\n");
             std::memcpy(returnReg->getPtrData(), data, 8);
             break;
         }

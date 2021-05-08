@@ -111,17 +111,14 @@ LLVMInterface::ActiveFunction::processQueues()
             if ((*queue_iter)->isReturn() == false) {
                 if ((*queue_iter)->ready()) {
                     if ((*queue_iter)->isLoad()) {
-                        (*queue_iter)->launch();
                         launchRead(*queue_iter);
                     } else if ((*queue_iter)->isStore()) {
-                        (*queue_iter)->launch();
                         launchWrite(*queue_iter);
                     } else if ((*queue_iter)->isTerminator()) {
                         (*queue_iter)->launch();
                         scheduleBB((*queue_iter)->getTarget());
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         (*queue_iter)->commit();
-                        //computeQueue.push_back(*queue_iter);
                     } else {
                         if (!(*queue_iter)->launch()) {
                             DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
@@ -466,6 +463,7 @@ LLVMInterface::readCommit(MemoryRequest * req) {
     auto queue_iter = globalReadQueue.find(req);
     if (queue_iter != globalReadQueue.end()) {
         queue_iter->second->readCommit(req);
+        DPRINTFR(Runtime, "Global Read Commit\n");
         // delete queue_iter->first; // The CommInterface will ultimately delete this memory request
         globalReadQueue.erase(queue_iter);
     } else {
@@ -481,10 +479,12 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto queue_iter = readQueue.find(req);
     if (queue_iter != readQueue.end()) {
+        auto load_inst = queue_iter->second;
         uint8_t * readBuff = req->getBuffer();
-        queue_iter->second->setRegisterValue(readBuff);
-        queue_iter->second->commit();
-        queue_iter = readQueue.erase(queue_iter);
+        load_inst->setRegisterValue(readBuff);
+        DPRINTFR(Runtime, "Local Read Commit\n");
+        load_inst->commit();
+        readQueue.erase(queue_iter);
     } else {
         panic("Could not find memory request in read queue for function %u!", func->getUID());
     }

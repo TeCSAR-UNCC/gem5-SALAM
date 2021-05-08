@@ -1475,7 +1475,6 @@ Load::initialize(llvm::Value * irval,
     // ****** //
     llvm::LoadInst * inst = llvm::dyn_cast<llvm::LoadInst>(irval);
     this->align = inst->getAlignment();
-    DPRINTF(SALAM_Debug, "Load Instruction %d \n", inst->getPointerAddressSpace());
 }
 
 void
@@ -1541,7 +1540,6 @@ Store::initialize(llvm::Value * irval,
     // ****** //
     llvm::StoreInst * inst = llvm::dyn_cast<llvm::StoreInst>(irval);
     this->align = inst->getAlignment();
-    DPRINTF(SALAM_Debug, "Load Instruction %d \n", inst->getPointerAddressSpace());
 }
 
 void

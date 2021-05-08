@@ -140,8 +140,9 @@ CommInterface::recvPacket(PacketPtr pkt) {
 
         if (!readReq->needToRead)
         {
-            if (debug()) DPRINTF(CommInterface, "Done reading\n");
+            if (debug()) DPRINTF(CommInterface, "Done reading \n");
             cu->readCommit(readReq);
+            if (debug()) DPRINTF(CommInterface, "Clearing Request \n");
             clearMemRequest(readReq, true);
             delete readReq;
         } else {
