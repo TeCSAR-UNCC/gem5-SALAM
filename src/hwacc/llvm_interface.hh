@@ -88,6 +88,7 @@ class LLVMInterface : public ComputeUnit {
         std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> writeQueue;
         std::list<std::shared_ptr<SALAM::Instruction>> computeQueue;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
+        bool returned = false;
     public:
         ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,
                        std::shared_ptr<SALAM::Instruction> _caller):
@@ -103,6 +104,7 @@ class LLVMInterface : public ComputeUnit {
         }
         void launchRead(std::shared_ptr<SALAM::Instruction> readInst);
         void launchWrite(std::shared_ptr<SALAM::Instruction> writeInst);
+        bool hasReturned() { return returned; }
     };
 
     std::list<ActiveFunction> activeFunctions;
@@ -131,6 +133,7 @@ class LLVMInterface : public ComputeUnit {
     void launchFunction(std::shared_ptr<SALAM::Function> callee,
                         std::shared_ptr<SALAM::Instruction> caller);
     void launchTopFunction();
+    void endFunction(ActiveFunction * afunc);
     void launchRead(MemoryRequest * memReq, ActiveFunction * func);
     void launchWrite(MemoryRequest * memReq, ActiveFunction * func);
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 

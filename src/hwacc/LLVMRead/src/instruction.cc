@@ -1551,7 +1551,7 @@ Store::compute() {
 MemoryRequest *
 Store::createMemoryRequest() {
     Addr memAddr = *(operands.at(1).getPtrRegValue());
-    size_t reqLen = getSizeInBytes();
+    size_t reqLen = operands.at(0).getSizeInBytes();
 
     MemoryRequest * req;
 
@@ -1620,8 +1620,13 @@ GetElementPtr::initialize(llvm::Value * irval,
     assert(iruser);
     llvm::GetElementPtrInst * GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(irval);
     assert(GEP);
-
-
+    resultElementType = GEP->getResultElementType();
+    if (resultElementType->getTypeID() == llvm::Type::PointerTyID) {
+        resultElementSize = 64; //We assume a 64-bit memory address space
+    } else {
+        resultElementSize = resultElementType->getScalarSizeInBits();
+    }
+    resultElementSizeInBytes = ((resultElementSize - 1) >> 3) + 1;
 }
 
 void
@@ -1630,7 +1635,7 @@ GetElementPtr::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     uint64_t op1 = *(operands.at(0).getPtrRegValue());
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
-    uint64_t result = op1 + op2.getSExtValue() * size;
+    uint64_t result = op1 + op2.getSExtValue() * resultElementSizeInBytes;
     DPRINTF(Runtime, "|| Ptr[%x]  Offset[%s]\n", op1, op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: Addr[%x]\n", result);
     setRegisterValue(result);

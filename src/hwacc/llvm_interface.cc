@@ -98,8 +98,12 @@ LLVMInterface::ActiveFunction::processQueues()
     }
     if (canReturn()) {
         // Handle function return
-
         DPRINTFR(Runtime, "[[Function Return]]\n\n");
+        if (caller != nullptr) {
+            // Signal the calling instruction
+        }
+        returned = true;
+        return;
     } else {
         // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
@@ -176,15 +180,19 @@ LLVMInterface::tick()
     // comm->refreshMemPorts(); // Deprecated
 
     // Process Queues in Active Functions
-    if (activeFunctions.empty()) {
-        // We are finished executing all functions. Signal completion to the CommInterface
-        finalize();
-    } else {
-        for (auto func_iter = activeFunctions.begin(); func_iter != activeFunctions.end(); ++func_iter) {
-            func_iter->processQueues();
+    for (auto func_iter = activeFunctions.begin(); func_iter != activeFunctions.end();) {
+        func_iter->processQueues();
+        if (!(func_iter->hasReturned())) {
+            func_iter++;
+        } else {
+            func_iter = activeFunctions.erase(func_iter);
         }
     }
-
+    if (activeFunctions.empty()) {
+        // We are finished executing all functions. Signal completion to the CommInterface
+        running = false;
+        finalize();
+    }
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + clock_period);// * process_delay);

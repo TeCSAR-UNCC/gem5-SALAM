@@ -34,6 +34,7 @@ def makeHWAcc(options, system):
     system.acctest.acc_spm = ScratchpadMemory()
     AccSPMConfig(system.acctest.acc, system.acctest.acc_spm, acc_config)
     system.acctest._connect_spm(system.acctest.acc_spm)
+    system.acctest.acc_spm.reset_on_scratchpad_read = False
 
     # Connect the accelerator to the system's interrupt controller
     system.acctest.acc.gic = system.realview.gic

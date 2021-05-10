@@ -318,9 +318,9 @@ CommInterface::processMemoryRequests() {
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
-                mport = getValidStreamPort(address, (*it)->length, true);
+                mport = getValidStreamPort(address, (*it)->readLeft, true);
             } else if (inSPMRange(address)) {
-                mport = getValidSPMPort(address, (*it)->length, true);
+                mport = getValidSPMPort(address, (*it)->readLeft, true);
             } else if (inLocalRange(address)) {
                 mport = getValidLocalPort(address, true);
             } else if (inGlobalRange(address)) {
@@ -363,9 +363,9 @@ CommInterface::processMemoryRequests() {
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
-                mport = getValidStreamPort(address, (*it)->length, false);
+                mport = getValidStreamPort(address, (*it)->writeLeft, false);
             } else if (inSPMRange(address)) {
-                mport = getValidSPMPort(address, (*it)->length, false);
+                mport = getValidSPMPort(address, (*it)->writeLeft, false);
             } else if (inLocalRange(address)) {
                 mport = getValidLocalPort(address, false);
             } else if (inGlobalRange(address)) {

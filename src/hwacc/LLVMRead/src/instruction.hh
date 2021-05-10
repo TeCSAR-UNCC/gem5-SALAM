@@ -880,6 +880,9 @@ class GetElementPtr : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         //uint64_t currentCycle;
+        llvm::Type * resultElementType;
+        uint64_t resultElementSize;
+        uint64_t resultElementSizeInBytes;
 
     protected:
 
