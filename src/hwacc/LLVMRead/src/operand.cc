@@ -282,18 +282,18 @@ SALAM::Operand::initOperandReg()
 	bool istracked = false;
 	if (irtype->isPointerTy()) {
         DPRINTF(Runtime, "Operand Ptr Register Initialized\n");
-		lockedValue = new PointerRegister(istracked);
+		lockedValue = std::make_shared<PointerRegister>(istracked);
 	} else if (irtype->isIntegerTy()) {
         DPRINTF(Runtime, "Operand Int Register Initialized\n");
-		lockedValue = new APIntRegister(irtype, istracked);
+		lockedValue = std::make_shared<APIntRegister>(irtype, istracked);
 	} else if (irtype->isFloatingPointTy()) {
         DPRINTF(Runtime, "Operand FP Register Initialized\n");
-		lockedValue = new APFloatRegister(irtype, istracked);
+		lockedValue = std::make_shared<APFloatRegister>(irtype, istracked);
 	} else {
 		//assert(0); // Type is invalid for a register
 		DPRINTF(Runtime, "Unknown Register Type, Base Register Initialized\n");
-        inform("This seems to happen for label operands on branch instructions\n");
-        lockedValue = new Register(istracked);
+        // inform("This seems to happen for label operands on branch instructions\n");
+        lockedValue = std::make_shared<Register>(istracked);
 	}
 }
 

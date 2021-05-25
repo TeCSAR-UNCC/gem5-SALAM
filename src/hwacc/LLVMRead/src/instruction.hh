@@ -27,7 +27,6 @@ class BasicBlock; // Do Not Remove
 class Instruction : public Value
 {
     private:
-        valueListTy staticDependencies;
         std::deque<std::shared_ptr<SALAM::Instruction>> dynamicDependencies;
         std::deque<std::shared_ptr<SALAM::Instruction>> dynamicUsers;
         uint64_t llvmOpCode;
@@ -36,6 +35,7 @@ class Instruction : public Value
         bool dbg = false;
 
     protected:
+        valueListTy staticDependencies;
         // Operands
         std::vector<SALAM::Operand> operands;
 
@@ -46,7 +46,7 @@ class Instruction : public Value
                 Instruction_Debugger();
                 ~Instruction_Debugger() = default;
                 virtual void dumper(SALAM::Instruction *inst);
-        }; 
+        };
         Instruction_Debugger* inst_dbg;
         bool launched = false;
         bool committed = false;
@@ -79,6 +79,7 @@ class Instruction : public Value
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
         void setOperandValue(uint64_t uid);
+        std::vector<SALAM::Operand> * getOperands() { return &operands; }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }
@@ -1367,7 +1368,7 @@ class Call : public Instruction {
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-
+        std::shared_ptr<SALAM::Value> callee;
     protected:
     public:
         Call (uint64_t id,
@@ -1382,6 +1383,7 @@ class Call : public Instruction {
         void compute();
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
+        std::shared_ptr<SALAM::Value> getCalleeValue() { return callee; }
         std::shared_ptr<SALAM::Call> clone() const { return std::static_pointer_cast<SALAM::Call>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Call>(new SALAM::Call(*this)); }
 };

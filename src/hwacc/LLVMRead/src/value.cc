@@ -74,7 +74,7 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 		size = irtype->getScalarSizeInBits();
 	}
 	// Link Return Register
-	addRegister(true);
+	if (size>0) addRegister(true);
 
 	std::string tmpstr;
 	llvm::raw_string_ostream ss(ir_string);

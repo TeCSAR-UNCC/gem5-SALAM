@@ -3,7 +3,7 @@
 using namespace SALAM;
 
 SALAM::Function::Function(uint64_t id) : SALAM::Value(id) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);	
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void

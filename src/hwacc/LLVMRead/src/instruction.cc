@@ -2456,7 +2456,7 @@ createCallInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Instruction>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Call>(id, OpCode, cycles);
 }
 
 Call::Call(uint64_t id,
@@ -2481,6 +2481,8 @@ Call::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
+    callee = staticDependencies.back();
+    staticDependencies.pop_back();
     // ****** //
 }
 

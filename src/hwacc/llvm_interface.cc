@@ -5,8 +5,8 @@
 LLVMInterface::LLVMInterface(LLVMInterfaceParams *p) :
     ComputeUnit(p),
     filename(p->in_file),
-    topName("vadd"), // TODO: Revert
-    //topName(p->top_name),
+    // topName("vadd"), // TODO: Revert
+    topName(p->top_name),
     scheduling_threshold(p->sched_threshold),
     counter_units(p->FU_counter),
     int_adder_units(p->FU_int_adder),
@@ -84,13 +84,7 @@ LLVMInterface::ActiveFunction::processQueues()
         " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
         " | UID[", (*queue_iter)->getUID(), "]"
         );
-        // if ((*queue_iter)->isTerminator()) {
-        //     if (reservation.empty() && (computeQueue.size() == 1)) {
-        //         scheduleBB((*queue_iter)->getTarget());
-        //         (*queue_iter)->reset();
-        //         queue_iter = computeQueue.erase(queue_iter);
-        //     } else ++queue_iter;
-        // } else 
+
         if((*queue_iter)->commit()) {
             (*queue_iter)->reset();
             queue_iter = computeQueue.erase(queue_iter);
@@ -101,6 +95,13 @@ LLVMInterface::ActiveFunction::processQueues()
         DPRINTFR(Runtime, "[[Function Return]]\n\n");
         if (caller != nullptr) {
             // Signal the calling instruction
+            if (caller->getSize() > 0) {
+                auto retInst = reservation.front();
+                auto retOperand = retInst->getOperands()->front();
+                caller->setRegisterValue(retOperand.getOpRegister());
+            }
+            func->removeInstance();
+            caller->commit();
         }
         returned = true;
         return;
@@ -123,6 +124,16 @@ LLVMInterface::ActiveFunction::processQueues()
                         scheduleBB((*queue_iter)->getTarget());
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         (*queue_iter)->commit();
+                    } else if ((*queue_iter)->isCall()) {
+                        auto callInst = std::dynamic_pointer_cast<SALAM::Call>(*queue_iter);
+                        assert(callInst);
+                        auto calleeValue = callInst->getCalleeValue();
+                        auto callee = std::dynamic_pointer_cast<SALAM::Function>(calleeValue);
+                        assert(callee);
+                        if (callee->canLaunch()) {
+                            owner->launchFunction(callee, callInst);
+                        }
+                        computeQueue.push_back(*queue_iter);
                     } else {
                         if (!(*queue_iter)->launch()) {
                             DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
@@ -177,7 +188,6 @@ LLVMInterface::tick()
         "   Cycle", cycle,
         "********************************************************************************");
     cycle++;
-    // comm->refreshMemPorts(); // Deprecated
 
     // Process Queues in Active Functions
     for (auto func_iter = activeFunctions.begin(); func_iter != activeFunctions.end();) {
@@ -699,6 +709,8 @@ LLVMInterface::launchTopFunction() {
 
 void LLVMInterface::ActiveFunction::launch() {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTFR(LLVMInterface, "Launching Function\n");
+    // func->value_dump();
     // Fetch the arguments
     std::vector<std::shared_ptr<SALAM::Value>> funcArgs = *(func->getArguments());
     if (func->isTop()) {
@@ -713,8 +725,14 @@ void LLVMInterface::ActiveFunction::launch() {
         }
     } else {
         // We need to fetch argument values from the calling function
-        panic("Handling of subfunction calls is not yet supported");
+        std::vector<SALAM::Operand> callerArgs = *caller->getOperands();
+        if (funcArgs.size() != callerArgs.size())
+            panic("Function expects %d args. Got %d args.", funcArgs.size(), callerArgs.size());
+        for (auto i = 0; i < callerArgs.size(); i++) {
+            funcArgs.at(i)->setRegisterValue(callerArgs.at(i).getOpRegister());
+        }
     }
+    func->addInstance();
     // Schedule the first BB
     scheduleBB(func->entry());
 }

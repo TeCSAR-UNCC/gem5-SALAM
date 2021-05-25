@@ -91,9 +91,9 @@ class Value
         // Using these functions will increment the read counters on tracked registers
         // If you'd like to avoid incrementing read counters, directly pull the register and
         // use its appropriate read function
-        uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
-        llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
-        llvm::APInt * getIntRegValue() { return returnReg->getIntData(); }
+        virtual uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
+        virtual llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
+        virtual llvm::APInt * getIntRegValue() { return returnReg->getIntData(); }
 
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }

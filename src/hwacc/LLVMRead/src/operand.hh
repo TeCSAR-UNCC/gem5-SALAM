@@ -22,7 +22,7 @@ namespace SALAM
 class Operand: public Value
 {
     private:
-        Register *lockedValue;
+        std::shared_ptr<SALAM::Register> lockedValue;
         bool dbg = false;
         bool set = false;
 
@@ -47,6 +47,11 @@ class Operand: public Value
         //Value *clone() { return new Operand(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
         void updateOperandRegister();
+
+        // virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
+        // virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
+        // virtual llvm::APInt * getIntRegValue() { return lockedValue->getIntData(); }
+        std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
 };
 
 class Constant: public Value {
