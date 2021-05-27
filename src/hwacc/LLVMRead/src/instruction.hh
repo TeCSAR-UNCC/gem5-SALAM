@@ -78,7 +78,6 @@ class Instruction : public Value
         bool isCommitted() { return committed; }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
-        void setOperandValue(uint64_t uid);
         std::vector<SALAM::Operand> * getOperands() { return &operands; }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
@@ -92,7 +91,7 @@ class Instruction : public Value
         virtual bool ready();
         virtual void compute() { }
         virtual void reset();
-        virtual void setOperandValue(Instruction *dep);
+        virtual void setOperandValue(uint64_t uid);
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }

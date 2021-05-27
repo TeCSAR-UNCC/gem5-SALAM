@@ -14,7 +14,7 @@
 #include <map>
 #include <memory>
 #include <vector>
- 
+
 namespace SALAM
 {
 
@@ -33,7 +33,7 @@ class Operand: public Value
                 Operand_Debugger();
                 ~Operand_Debugger() = default;
                 virtual void dumper(SALAM::Operand *op);
-        }; 
+        };
 
         Operand_Debugger* op_dbg;
     public:
@@ -48,9 +48,9 @@ class Operand: public Value
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
         void updateOperandRegister();
 
-        // virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
-        // virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
-        // virtual llvm::APInt * getIntRegValue() { return lockedValue->getIntData(); }
+        virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
+        virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
+        virtual llvm::APInt * getIntRegValue() { return lockedValue->getIntData(); }
         std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
 };
 
