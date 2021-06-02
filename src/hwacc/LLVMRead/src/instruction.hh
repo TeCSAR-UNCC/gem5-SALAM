@@ -168,9 +168,9 @@ class Br : public Instruction {
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
         std::shared_ptr<SALAM::Value> condition;
-        std::shared_ptr<SALAM::Value> defaultDestination;
-        std::shared_ptr<SALAM::Value> trueDestination;
-        std::shared_ptr<SALAM::Value> falseDestination;
+        std::shared_ptr<SALAM::BasicBlock> defaultDestination;
+        std::shared_ptr<SALAM::BasicBlock> trueDestination;
+        std::shared_ptr<SALAM::BasicBlock> falseDestination;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
         bool conditional = false;

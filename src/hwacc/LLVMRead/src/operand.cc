@@ -290,10 +290,10 @@ SALAM::Operand::initOperandReg()
         DPRINTF(Runtime, "Operand FP Register Initialized\n");
 		lockedValue = std::make_shared<APFloatRegister>(irtype, istracked);
 	} else {
-		//assert(0); // Type is invalid for a register
-		DPRINTF(Runtime, "Unknown Register Type, Base Register Initialized\n");
+		assert(0); // Type is invalid for a register
+		// DPRINTF(Runtime, "Unknown Register Type, Base Register Initialized\n");
         // inform("This seems to happen for label operands on branch instructions\n");
-        lockedValue = std::make_shared<Register>(istracked);
+        // lockedValue = std::make_shared<Register>(istracked);
 	}
 }
 

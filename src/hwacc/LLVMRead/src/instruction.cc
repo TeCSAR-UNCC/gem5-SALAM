@@ -339,10 +339,10 @@ Br::getTarget() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
     if(conditional) {
-        if(!condition->getReg()->getIntData()->isOneValue()) return std::dynamic_pointer_cast<SALAM::BasicBlock>(trueDestination);
-        else return std::dynamic_pointer_cast<SALAM::BasicBlock>(falseDestination);
+        if(!condition->getReg()->getIntData()->isOneValue()) return trueDestination;
+        else return falseDestination;
     }
-    return std::dynamic_pointer_cast<SALAM::BasicBlock>(defaultDestination);
+    return defaultDestination;
 }
 
 void
@@ -351,16 +351,38 @@ Br::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    SALAM::Instruction::initialize(irval, irmap, valueList);
+    // SALAM::Instruction::initialize(irval, irmap, valueList); // We don't use the normal init fxn
     llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
     assert(br);
     isConditional(br->isConditional());
-    if (isConditional()) {
-        condition = getStaticDependencies(0);
-        trueDestination = getStaticDependencies(1);
-        falseDestination = getStaticDependencies(2);
+    llvm::Value * defaultDestValue = br->getSuccessor(0);
+    auto mapit = irmap->find(defaultDestValue);
+    if(mapit == irmap->end()) {
+        DPRINTF(Runtime, "ERROR. Could not find default successor for Br in IR map.");
+        assert(0);
     } else {
-        defaultDestination = getStaticDependencies(0);
+        defaultDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(mapit->second);
+    }
+    if (isConditional()) {
+        llvm::Value * condValue = br->getCondition();
+        mapit = irmap->find(condValue);
+        if(mapit == irmap->end()) {
+            DPRINTF(Runtime, "ERROR. Could not find condition for Br in IR map.");
+            assert(0);
+        } else {
+            condition = mapit->second;
+            staticDependencies.push_back(condition);
+            trueDestination = defaultDestination;
+
+            llvm::Value * falseDestValue = br->getSuccessor(1);
+            mapit = irmap->find(falseDestValue);
+            if(mapit == irmap->end()) {
+                DPRINTF(Runtime, "ERROR. Could not find secondary successor for Br in IR map.");
+                assert(0);
+            } else {
+                falseDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(mapit->second);
+            }
+        }
     }
 }
 
@@ -560,6 +582,20 @@ void
 FAdd::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat result = op1 + op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toString(op1str);
+    op2.toString(op2str);
+    result.toString(resstr);
+    DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1str.c_str(), op2str.c_str());
+    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    setRegisterValue(result);
 }
 
 // SALAM-Sub // -------------------------------------------------------------//
@@ -777,6 +813,20 @@ void
 FMul::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat result = op1 * op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toString(op1str);
+    op2.toString(op2str);
+    result.toString(resstr);
+    DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1str.c_str(), op2str.c_str());
+    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    setRegisterValue(result);
 }
 
 // SALAM-UDiv // ------------------------------------------------------------//
@@ -1148,6 +1198,15 @@ void
 Shl::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
+    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt result = op1 << op2;
+    //llvm::outs() << op1+op2;
+    DPRINTF(Runtime, "|| (op1) %s << (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
+    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    setRegisterValue(result);
 }
 
 // SALAM-LShr // ------------------------------------------------------------//
@@ -1307,6 +1366,14 @@ void
 And::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
+    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt result = op1 & op2;
+    DPRINTF(Runtime, "|| (op1) %s & (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
+    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    setRegisterValue(result);
 }
 
 // SALAM-Or // --------------------------------------------------------------//
@@ -1360,6 +1427,14 @@ void
 Or::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
+    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt result = op1 | op2;
+    DPRINTF(Runtime, "|| (op1) %s | (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
+    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    setRegisterValue(result);
 }
 
 // SALAM-Xor // -------------------------------------------------------------//
