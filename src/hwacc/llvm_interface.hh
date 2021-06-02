@@ -116,8 +116,8 @@ class LLVMInterface : public ComputeUnit {
     TypeList *typeList;
   protected:
     const std::string name() const { return comm->getName() + ".compute"; }
-    //virtual bool debug() { return comm->debug(); }
-    virtual bool debug() { return true; }
+    virtual bool debug() { return comm->debug(); }
+    // virtual bool debug() { return true; }
   public:
     LLVMInterface(LLVMInterfaceParams *p);
     void tick();

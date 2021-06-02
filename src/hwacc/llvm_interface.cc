@@ -183,7 +183,7 @@ LLVMInterface::tick()
     }
 
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
+    if (debug()) DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
         "********************************************************************************",
         "   Cycle", cycle,
         "********************************************************************************");
@@ -436,6 +436,7 @@ LLVMInterface::constructStaticGraph() {
     }
     // Functions will initialize BasicBlocks, which will initialize Instructions
     DPRINTF(LLVMInterface, "Initialize SALAM::Functions\n");
+    if (functions.size() == 1) functions.front()->setTop(true);
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Value> funcval = vmap.find(&func)->second;
@@ -696,10 +697,10 @@ LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
 void
 LLVMInterface::launchTopFunction() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (auto func : functions) {
-        if (func->isTop()) {
+    for (auto it = functions.begin(); it != functions.end(); it++) {
+        if ((*it)->isTop()) {
             // Launch the top level function
-            launchFunction(func, nullptr);
+            launchFunction((*it), nullptr);
             return;
         }
     }
