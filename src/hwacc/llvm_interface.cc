@@ -238,7 +238,7 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
  the only remaining instructions are unconditional branches such as pre-headers and crit-edges
  and immediately compute and commit.
 *********************************************************************************************/
-    if (debug()) DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
+    // if (debug()) DPRINTF(LLVMInterface, "Adding BB: (%s) to Reservation Table!\n", bb->getName());
     for (auto i = 0; i < bb->_Nodes.size(); i++) {
         if (debug()) DPRINTF(LLVMOp, "Adding %s to reservation table\n", bb->_Nodes.at(i)->_OpCode);
         reservation.push_back(createClone(bb->_Nodes.at(i)));
@@ -290,7 +290,7 @@ LLVMInterface::scheduleBB(BasicBlock* bb) {
             }
         }
     }
-    if (debug()) DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
+    // if (debug()) DPRINTF(LLVMInterface, "Adding BB: Complete!\n");
     if (debug()) DPRINTF(RuntimeQueues, "Active Scheduling Window\n");
     for (auto i = 0; i < reservation.size(); i++) {
         if (reservation.at(i)->_ReturnRegister == NULL) {
@@ -680,7 +680,12 @@ LLVMInterface::finalize() {
     execnodes = cycle-stalls-1;
     AverageOccupancy();
     pwrUtil->finalPowerUsage(_MaxFU, cycle);
-   
+    // Clear all queues
+    reservation.clear();
+    readQueue.clear();
+    writeQueue.clear();
+    computeQueue.clear();
+
     /*
     // Experimental
     // getCactiResults(int cache_size, int word_size, int ports, int type)

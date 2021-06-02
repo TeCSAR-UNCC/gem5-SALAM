@@ -565,6 +565,7 @@ switch(stage) {
 	*StrDma1RdFrameSize = InputSize;
 	*StrDma1NumRdFrames = 1;
 	*StrDma1RdFrameBuffSize = 1;
+
 	//Start Stream DMAs
 	*StrDma0Flags = STR_DMA_INIT_RD | STR_DMA_INIT_WR;
 	if (resEnable == 1) *StrDma1Flags = STR_DMA_INIT_RD;
@@ -624,5 +625,8 @@ switch(stage) {
 	
 	// Wait for all accelerators to finish before sending interrupt to CPU
 	while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
+	//Clear DMA Flags
+	*StrDma0Flags = 0x00;
+	*StrDma1Flags = 0x00;
 	return;
 }

@@ -23,7 +23,7 @@ while getopts ":f:dp" opt
 done
 
 if [ "${DEBUG}" == "true" ]; then
-	BINARY="ddd --gdb --args ${M5_PATH}/build/ARM/gem5.debug"
+	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi

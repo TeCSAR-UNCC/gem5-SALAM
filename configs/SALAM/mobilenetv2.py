@@ -49,7 +49,7 @@ def buildhead(options, system, clstr):
 	acc = "top"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/head/top.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/head/top.ll"
-	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002003d, pio_size=65)
+	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x1002003d, pio_size=65, int_num=68)
 	AccConfig(clstr.top, config, ir)
 	
 	# normalconv Definition
@@ -268,7 +268,7 @@ def buildbody(options, system, clstr):
 	acc = "top"
 	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/body/top.ini"
 	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/body/top.ll"
-	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10021244, pio_size=81)
+	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10021244, pio_size=81, int_num=68)
 	AccConfig(clstr.top, config, ir)
 	
 	# residual Definition
