@@ -42,28 +42,25 @@ class Register
                  bool nul=false);
         ~Register();
         virtual llvm::APFloat *getFloatData(bool incReads=true) {
-            assert(0);
+            assert(0 && "Attempted to read float data from non-float register");
             return NULL;
         }
         virtual llvm::APSInt *getIntData(bool incReads=true) {
-            assert(0);
+            assert(0 && "Attempted to read integer data from non-integer register");
             return NULL;
         }
         virtual uint64_t *getPtrData(bool incReads=true) {
-            assert(0);
+            assert(0 && "Attempted to read pointer data from non-pointer register");
             return NULL;
         }
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) {
-            printf("Attempted to write float data on non-float register");
-            assert(0);
+            assert(0 && "Attempted to write float data on non-float register");
         }
         virtual void writeIntData(llvm::APInt * api, bool incWrites=true) {
-            printf("Attempted to write interger data on non-integer register");
-            assert(0);
+            assert(0 && "Attempted to write interger data on non-integer register");
         }
         virtual void writePtrData(uint64_t * ptr, size_t len=8, bool incWrites=true) {
-            printf("Attempted to write pointer data on non-pointer register");
-            assert(0);
+            assert(0 && "Attempted to write pointer data on non-pointer register");
         }
         virtual bool isInt() { return false; }
         virtual bool isFP() { return false; }

@@ -41,6 +41,7 @@ class LLVMInterface : public ComputeUnit {
     std::string topName;
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
+    llvm::DataLayout * layout;
     uint32_t scheduling_threshold;
     int32_t counter_units;
     int32_t int_adder_units;
@@ -139,6 +140,8 @@ class LLVMInterface : public ComputeUnit {
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
                                                           uint64_t id);
     void dumpQueues();
+
+    llvm::DataLayout * getDataLayout() { return layout; }
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

@@ -1,4 +1,6 @@
 #include "instruction.hh"
+#include "llvm/IR/GetElementPtrTypeIterator.h"
+#include "llvm/IR/DataLayout.h"
 
 namespace SALAM
 {
@@ -372,15 +374,15 @@ Br::initialize(llvm::Value * irval,
         } else {
             condition = mapit->second;
             staticDependencies.push_back(condition);
-            trueDestination = defaultDestination;
+            falseDestination = defaultDestination;
 
-            llvm::Value * falseDestValue = br->getSuccessor(1);
-            mapit = irmap->find(falseDestValue);
+            llvm::Value * trueDestValue = br->getSuccessor(1);
+            mapit = irmap->find(trueDestValue);
             if(mapit == irmap->end()) {
                 DPRINTF(Runtime, "ERROR. Could not find secondary successor for Br in IR map.");
                 assert(0);
             } else {
-                falseDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(mapit->second);
+                trueDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(mapit->second);
             }
         }
     }
@@ -1243,7 +1245,7 @@ Shl::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
     llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
-    llvm::APInt result = op1.shl(op2);
+    llvm::APInt result = op1 << op2;
     DPRINTF(Runtime, "|| (op1) %s << (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
     setRegisterValue(result);
@@ -1752,16 +1754,52 @@ GetElementPtr::initialize(llvm::Value * irval,
         resultElementSize = resultElementType->getScalarSizeInBits();
     }
     resultElementSizeInBytes = ((resultElementSize - 1) >> 3) + 1;
+
+    llvm::Type * ElemTy = GEP->getSourceElementType();
+    auto it = iruser->operand_values().begin();
+    it++;
+    std::vector<llvm::Value *> indexValues;
+    for ( ; it != iruser->operand_values().end(); it++) {
+        indexValues.push_back(*it);
+    }
+    llvm::ArrayRef<llvm::Value *> Indices = llvm::ArrayRef<llvm::Value *>(indexValues);
+    llvm::generic_gep_type_iterator<llvm::Value* const*>
+        GTI = gep_type_begin(ElemTy, Indices),
+        GTE = gep_type_end(ElemTy, Indices);
+    for ( ; GTI != GTE; ++GTI) {
+        indexTypes.push_back(GTI.getIndexedType());
+    }
 }
 
 void
 GetElementPtr::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    uint64_t op1 = *(operands.at(0).getPtrRegValue());
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
-    uint64_t result = op1 + op2.getSExtValue() * resultElementSizeInBytes;
-    DPRINTF(Runtime, "|| Ptr[%x]  Offset[%s]\n", op1, op2.toString(10, true));
+    uint64_t ptr = *(operands.front().getPtrRegValue());
+    operands.pop_front();
+
+    int64_t offset = 0;
+    // offset += operands.front().getIntRegValue()->getSExtValue() * resultElementSizeInBytes;
+
+    for (int i = 0; i < operands.size(); i++) {
+        auto idx = operands.at(i);
+        auto idxty = indexTypes.at(i);
+        if (llvm::StructType *STy = llvm::dyn_cast<llvm::StructType>(idxty)) {
+            assert(idx.getType()->isIntegerTy(32) && "Illegal struct idx");
+            unsigned FieldNo = idx.getIntRegValue()->getZExtValue();
+
+            // Get structure layout information...
+            const llvm::StructLayout *Layout = layout->getStructLayout(STy);
+
+            offset += Layout->getElementOffset(FieldNo);
+        } else {
+            int64_t arrayIdx = idx.getIntRegValue()->getSExtValue();
+            offset += arrayIdx * layout->getTypeAllocSize(idxty);
+        }
+    }
+
+    uint64_t result = ptr + offset;
+    DPRINTF(Runtime, "|| Ptr[%x]  Offset[%x] (Flat Idx[%d])\n", ptr, offset, offset/resultElementSizeInBytes);
     DPRINTF(Runtime, "|| Result: Addr[%x]\n", result);
     setRegisterValue(result);
 }

@@ -37,7 +37,7 @@ class Instruction : public Value
     protected:
         valueListTy staticDependencies;
         // Operands
-        std::vector<SALAM::Operand> operands;
+        std::deque<SALAM::Operand> operands;
 
         bool running = false;
         class Instruction_Debugger: public Debugger
@@ -78,7 +78,7 @@ class Instruction : public Value
         bool isCommitted() { return committed; }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
-        std::vector<SALAM::Operand> * getOperands() { return &operands; }
+        std::deque<SALAM::Operand> * getOperands() { return &operands; }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }
@@ -86,6 +86,7 @@ class Instruction : public Value
         virtual bool isBr() { return false; }
         virtual bool isLoad() { return false; }
         virtual bool isStore() {return false; }
+        virtual bool isGEP() { return false; }
         virtual bool launch();
         virtual bool commit();
         virtual bool ready();
@@ -877,12 +878,14 @@ The GEP indecies will by APSInts, so cast to int64_t for calculating offset insi
 class GetElementPtr : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
+        std::vector<llvm::Type *> indexTypes;
         // conditions.at[0] == base params
         SALAM::Debugger *dbgr;
         //uint64_t currentCycle;
         llvm::Type * resultElementType;
         uint64_t resultElementSize;
         uint64_t resultElementSizeInBytes;
+        llvm::DataLayout * layout;
 
     protected:
 
@@ -897,6 +900,8 @@ class GetElementPtr : public Instruction {
         GetElementPtr &setA() { std::cout << "a\n"; return *this; }
         GetElementPtr &setB() { std::cout << "b\n"; return *this; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
+        void setDataLayout(llvm::DataLayout * dl) { layout = dl; }
+        virtual bool isGEP() override { return true; }
         void compute();
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();

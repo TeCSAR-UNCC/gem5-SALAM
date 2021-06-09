@@ -64,6 +64,10 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
                 auto phi = std::dynamic_pointer_cast<SALAM::Phi>(clone_inst);
                 if (phi) phi->setPrevBB(previousBB);
             }
+            if (clone_inst->isGEP()) {
+                auto gep = std::dynamic_pointer_cast<SALAM::GetElementPtr>(clone_inst);
+                if (gep) gep->setDataLayout(owner->getDataLayout());
+            }
             findDynamicDeps(clone_inst);
             reservation.push_back(clone_inst);
         }
@@ -77,10 +81,10 @@ LLVMInterface::ActiveFunction::processQueues()
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
 
-    // First pass, computeQueue is empty 
+    // First pass, computeQueue is empty
     for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end();) {
         DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
-        " |-[Compute Queue]--------------", 
+        " |-[Compute Queue]--------------",
         " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
         " | UID[", (*queue_iter)->getUID(), "]"
         );
@@ -109,7 +113,7 @@ LLVMInterface::ActiveFunction::processQueues()
         // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
             DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
-                " |-[Reserve Queue]--------------", 
+                " |-[Reserve Queue]--------------",
                 " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
                 " | UID[", (*queue_iter)->getUID(), "]"
                 );
@@ -373,6 +377,7 @@ LLVMInterface::constructStaticGraph() {
 
     std::unique_ptr<llvm::Module> m(llvm::parseIRFile(file, error, context));
     if(!m) panic("Error reading Module");
+    layout = new llvm::DataLayout(m.get());
 
     // Construct the LLVM::Value to SALAM::Value map
     uint64_t valueID = 0;
@@ -574,7 +579,7 @@ LLVMInterface::initialize() {
 void
 LLVMInterface::debug(uint64_t flags) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Dump 
+    // Dump
     for (auto func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
         // Function Level
         // (*func_iter)->dump();
@@ -726,7 +731,7 @@ void LLVMInterface::ActiveFunction::launch() {
         }
     } else {
         // We need to fetch argument values from the calling function
-        std::vector<SALAM::Operand> callerArgs = *caller->getOperands();
+        std::deque<SALAM::Operand> callerArgs = *caller->getOperands();
         if (funcArgs.size() != callerArgs.size())
             panic("Function expects %d args. Got %d args.", funcArgs.size(), callerArgs.size());
         for (auto i = 0; i < callerArgs.size(); i++) {
@@ -766,7 +771,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case llvm::Instruction::Or: return SALAM::createOrInst(id, OpCode, cycles->or_inst); break;
         case llvm::Instruction::Xor: return SALAM::createXorInst(id, OpCode, cycles->xor_inst); break;
         case llvm::Instruction::Load: return SALAM::createLoadInst(id, OpCode, cycles->load_inst); break;
-        case llvm::Instruction::Store: return SALAM::createStoreInst(id, OpCode, cycles->store_inst); break; 
+        case llvm::Instruction::Store: return SALAM::createStoreInst(id, OpCode, cycles->store_inst); break;
         case llvm::Instruction::GetElementPtr : return SALAM::createGetElementPtrInst(id, OpCode, cycles->gep_inst); break;
         case llvm::Instruction::Trunc: return SALAM::createTruncInst(id, OpCode, cycles->trunc_inst); break;
         case llvm::Instruction::ZExt: return SALAM::createZExtInst(id, OpCode, cycles->zext_inst); break;

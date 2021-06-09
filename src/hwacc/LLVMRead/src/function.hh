@@ -4,6 +4,7 @@
 #include "value.hh"
 #include "basic_block.hh"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/DataLayout.h"
 
 namespace SALAM {
 	class Function : public Value {
