@@ -50,7 +50,7 @@ class Operand: public Value
 
         virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
         virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
-        virtual llvm::APInt * getIntRegValue() { return lockedValue->getIntData(); }
+        virtual llvm::APSInt * getIntRegValue() { return lockedValue->getIntData(); }
         std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
 };
 

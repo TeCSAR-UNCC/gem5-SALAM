@@ -93,7 +93,7 @@ class Value
         // use its appropriate read function
         virtual uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
         virtual llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
-        virtual llvm::APInt * getIntRegValue() { return returnReg->getIntData(); }
+        virtual llvm::APSInt * getIntRegValue() { return returnReg->getIntData(); }
 
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
