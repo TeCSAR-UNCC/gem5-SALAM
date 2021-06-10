@@ -20,6 +20,7 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/head/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/top.ini
       PIOSize: 65
+      InterruptNum: 68
       PIOMaster: LocalBus
       # Local to PIO
       LocalSlaves: LocalBus
@@ -151,6 +152,7 @@ acc_cluster:
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/top.ini
       Debug: False
       PIOSize: 81
+      InterruptNum: 68
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
   - Accelerator:

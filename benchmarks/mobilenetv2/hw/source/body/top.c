@@ -496,7 +496,7 @@ switch(stage) {
 			break;
 		default:
 			InputSize    = 0;
-			OutputSize   = 1000;
+			OutputSize   = 0;
 			*ResLength   = 0;
 			resEnable    = 0;
 			*PW0OSize    = 0;
