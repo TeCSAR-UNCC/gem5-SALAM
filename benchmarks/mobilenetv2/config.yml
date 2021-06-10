@@ -3,8 +3,8 @@ acc_cluster:
   - Name: head
   - DMA:
     - Name: dma
-      BufferSize: 2
       MaxReq: 1
+      BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
@@ -127,8 +127,8 @@ acc_cluster:
   - Name: body
   - DMA:
     - Name: dma
-      BufferSize: 8
       MaxReq: 1
+      BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 96
@@ -260,4 +260,135 @@ acc_cluster:
       - Name: PWConv1QParams
         Type: SPM
         Size: 1440
+        Ports: 1
+---
+acc_cluster:
+  - Name: tail
+  - DMA:
+    - Name: dma
+      MaxReq: 1
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - DMA:
+    - Name: stream_dma0
+      PIOMaster: LocalBus
+      Size: 8
+      Type: Stream
+      ReadInt: 210
+      WriteInt: 211
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/top.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/top.ini
+      PIOSize: 65
+      InterruptNum: 68
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: PWConv
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/PWConv.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/PWConv.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamOut: stream_dma0
+    - Var:
+      - Name: PWConvLocalFeatSize
+        Type: SPM
+        Size: 240
+        Ports: 24
+    - Var:
+      - Name: PWConvWeights
+        Type: SPM
+        Size: 307200
+        Ports: 24
+    - Var:
+      - Name: PWConvQParams
+        Type: SPM
+        Size: 7680
+        Ports: 1
+    - Var:
+      - Name: PWConvOut
+        Type: Stream
+        StreamSize: 1
+        BufferSize: 8
+        InCon: PWConv
+        OutCon: Reshape
+  - Accelerator:
+    - Name: Reshape
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/Reshape.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/Reshape.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: ReshapeOut
+        Type: SPM
+        Size: 32000
+        Ports: 1
+  - Accelerator:
+    - Name: AvgPool
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/AvgPool.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: stream_dma0
+---
+acc_cluster:
+  - Name: classifier
+  - DMA:
+    - Name: dma
+      MaxReq: 1
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - DMA:
+    - Name: stream_dma0
+      PIOMaster: LocalBus
+      Size: 8
+      Type: Stream
+      ReadInt: 210
+      WriteInt: 211
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/mobilenetv2/hw/ir/classifier/top.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/top.ini
+      PIOSize: 65
+      InterruptNum: 68
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: Linear
+      IrPath: benchmarks/mobilenetv2/hw/ir/classifier/Linear.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/Linear.ini
+      PIOSize: 1
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+      StreamIn: stream_dma0
+    - Var:
+      - Name: LinearFeats
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: LinearWeights
+        Type: SPM
+        Size: 1280000
+        Ports: 1
+    - Var:
+      - Name: LinearQParams
+        Type: SPM
+        Size: 6000
+        Ports: 1
+    - Var:
+      - Name: LinearSum
+        Type: SPM
+        Size: 1000
         Ports: 1

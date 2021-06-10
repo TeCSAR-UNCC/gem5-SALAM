@@ -1,4 +1,5 @@
 #include "../common/support.h"
+#include "../../../head_hw_defines.h"
 
 /***********************************************************
  * Computation Defines

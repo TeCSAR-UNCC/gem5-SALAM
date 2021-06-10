@@ -31,7 +31,7 @@ def buildhead(options, system, clstr):
 	clstr.dma = NoncoherentDma(pio_addr=0x10020000, pio_size = 21, gic=gic, int_num=95)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
 	clstr.dma.max_req_size = 1
-	clstr.dma.buffer_size = 2
+	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
 	
@@ -240,7 +240,7 @@ def buildbody(options, system, clstr):
 	clstr.dma = NoncoherentDma(pio_addr=0x100211df, pio_size = 21, gic=gic, int_num=96)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
 	clstr.dma.max_req_size = 1
-	clstr.dma.buffer_size = 8
+	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
 	
@@ -454,6 +454,221 @@ def buildbody(options, system, clstr):
 	for i in range(1):
 		clstr.pwconv1.spm = clstr.pwconv1qparams.spm_ports
 	
+def buildtail(options, system, clstr):
+
+	local_low = 0x10081825
+	local_high = 0x100d6497
+	local_range = AddrRange(local_low, local_high)
+	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]
+	system.iobus.master = clstr.local_bus.slave
+	clstr._connect_caches(system, options, l2coherent=False)
+	gic = system.realview.gic
+
+	# Noncoherent DMA
+	clstr.dma = NoncoherentDma(pio_addr=0x10081825, pio_size = 21, gic=gic, int_num=95)
+	clstr.dma.cluster_dma = clstr.local_bus.slave
+	clstr.dma.max_req_size = 1
+	clstr.dma.buffer_size = 128
+	clstr.dma.dma = clstr.coherency_bus.slave
+	clstr.local_bus.master = clstr.dma.pio
+	
+	# Stream DMA
+	clstr.stream_dma0 = StreamDma(pio_addr=0x1008183a, pio_size = 32, gic=gic, max_pending = 32)
+	clstr.stream_dma0.stream_addr = 0x1008183a + 32
+	clstr.stream_dma0.stream_size = 8
+	clstr.stream_dma0.pio_delay = '1ns'
+	clstr.stream_dma0.rd_int = 210
+	clstr.stream_dma0.wr_int = 211
+	clstr.stream_dma0.dma = clstr.coherency_bus.slave
+	clstr.local_bus.master = clstr.stream_dma0.pio
+	
+	# top Definition
+	acc = "top"
+	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/tail/top.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/tail/top.ll"
+	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x10081862, pio_size=65, int_num=68)
+	AccConfig(clstr.top, config, ir)
+	
+	# pwconv Definition
+	acc = "pwconv"
+	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/tail/PWConv.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/tail/PWConv.ll"
+	clstr.pwconv = CommInterface(devicename=acc, gic=gic, pio_addr=0x100818a3, pio_size=1)
+	AccConfig(clstr.pwconv, config, ir)
+	
+	# reshape Definition
+	acc = "reshape"
+	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/tail/Reshape.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/tail/Reshape.ll"
+	clstr.reshape = CommInterface(devicename=acc, gic=gic, pio_addr=0x100ce795, pio_size=1)
+	AccConfig(clstr.reshape, config, ir)
+	
+	# avgpool Definition
+	acc = "avgpool"
+	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/tail/AvgPool.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll"
+	clstr.avgpool = CommInterface(devicename=acc, gic=gic, pio_addr=0x100d6496, pio_size=1)
+	AccConfig(clstr.avgpool, config, ir)
+	
+	# top Config
+	clstr.top.local = clstr.local_bus.slave
+	clstr.top.pio = clstr.local_bus.master
+	clstr.top.enable_debug_msgs = False
+	
+	# pwconv Config
+	clstr.pwconv.pio = clstr.local_bus.master
+	clstr.pwconv.stream = clstr.stream_dma0.stream_out
+	clstr.pwconv.enable_debug_msgs = False
+	
+	# PWConvLocalFeatSize (Variable)
+	addr = 0x100818a4
+	spmRange = AddrRange(addr, addr + 0xf0)
+	clstr.pwconvlocalfeatsize = ScratchpadMemory(range = spmRange)
+	clstr.pwconvlocalfeatsize.conf_table_reported = False
+	clstr.pwconvlocalfeatsize.ready_mode = False
+	clstr.pwconvlocalfeatsize.port = clstr.local_bus.master
+	for i in range(24):
+		clstr.pwconv.spm = clstr.pwconvlocalfeatsize.spm_ports
+	
+	# PWConvWeights (Variable)
+	addr = 0x10081994
+	spmRange = AddrRange(addr, addr + 0x4b000)
+	clstr.pwconvweights = ScratchpadMemory(range = spmRange)
+	clstr.pwconvweights.conf_table_reported = False
+	clstr.pwconvweights.ready_mode = False
+	clstr.pwconvweights.port = clstr.local_bus.master
+	for i in range(24):
+		clstr.pwconv.spm = clstr.pwconvweights.spm_ports
+	
+	# PWConvQParams (Variable)
+	addr = 0x100cc994
+	spmRange = AddrRange(addr, addr + 0x1e00)
+	clstr.pwconvqparams = ScratchpadMemory(range = spmRange)
+	clstr.pwconvqparams.conf_table_reported = False
+	clstr.pwconvqparams.ready_mode = False
+	clstr.pwconvqparams.port = clstr.local_bus.master
+	for i in range(1):
+		clstr.pwconv.spm = clstr.pwconvqparams.spm_ports
+	
+	# PWConvOut (Stream Variable)
+	addr = 0x100ce794
+	clstr.pwconvout = StreamBuffer(stream_address = addr, stream_size = 1, buffer_size = 8)
+	clstr.pwconv.stream = clstr.pwconvout.stream_in
+	clstr.reshape.stream = clstr.pwconvout.stream_out
+	
+	
+	# reshape Config
+	clstr.reshape.pio = clstr.local_bus.master
+	clstr.reshape.enable_debug_msgs = False
+	
+	# ReshapeOut (Variable)
+	addr = 0x100ce796
+	spmRange = AddrRange(addr, addr + 0x7d00)
+	clstr.reshapeout = ScratchpadMemory(range = spmRange)
+	clstr.reshapeout.conf_table_reported = False
+	clstr.reshapeout.ready_mode = False
+	clstr.reshapeout.port = clstr.local_bus.master
+	for i in range(1):
+		clstr.reshape.spm = clstr.reshapeout.spm_ports
+	
+	# avgpool Config
+	clstr.avgpool.pio = clstr.local_bus.master
+	clstr.avgpool.stream = clstr.stream_dma0.stream_in
+	clstr.avgpool.enable_debug_msgs = False
+	
+def buildclassifier(options, system, clstr):
+
+	local_low = 0x100d6498
+	local_high = 0x10210d6f
+	local_range = AddrRange(local_low, local_high)
+	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]
+	system.iobus.master = clstr.local_bus.slave
+	clstr._connect_caches(system, options, l2coherent=False)
+	gic = system.realview.gic
+
+	# Noncoherent DMA
+	clstr.dma = NoncoherentDma(pio_addr=0x100d6498, pio_size = 21, gic=gic, int_num=95)
+	clstr.dma.cluster_dma = clstr.local_bus.slave
+	clstr.dma.max_req_size = 1
+	clstr.dma.buffer_size = 128
+	clstr.dma.dma = clstr.coherency_bus.slave
+	clstr.local_bus.master = clstr.dma.pio
+	
+	# Stream DMA
+	clstr.stream_dma0 = StreamDma(pio_addr=0x100d64ad, pio_size = 32, gic=gic, max_pending = 32)
+	clstr.stream_dma0.stream_addr = 0x100d64ad + 32
+	clstr.stream_dma0.stream_size = 8
+	clstr.stream_dma0.pio_delay = '1ns'
+	clstr.stream_dma0.rd_int = 210
+	clstr.stream_dma0.wr_int = 211
+	clstr.stream_dma0.dma = clstr.coherency_bus.slave
+	clstr.local_bus.master = clstr.stream_dma0.pio
+	
+	# top Definition
+	acc = "top"
+	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/classifier/top.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/classifier/top.ll"
+	clstr.top = CommInterface(devicename=acc, gic=gic, pio_addr=0x100d64d5, pio_size=65, int_num=68)
+	AccConfig(clstr.top, config, ir)
+	
+	# linear Definition
+	acc = "linear"
+	config = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/configs/classifier/Linear.ini"
+	ir = "/home/he-man/gem5-SALAM/benchmarks/mobilenetv2/hw/ir/classifier/Linear.ll"
+	clstr.linear = CommInterface(devicename=acc, gic=gic, pio_addr=0x100d6516, pio_size=1)
+	AccConfig(clstr.linear, config, ir)
+	
+	# top Config
+	clstr.top.local = clstr.local_bus.slave
+	clstr.top.pio = clstr.local_bus.master
+	clstr.top.enable_debug_msgs = False
+	
+	# linear Config
+	clstr.linear.local = clstr.local_bus.slave
+	clstr.linear.pio = clstr.local_bus.master
+	clstr.linear.stream = clstr.stream_dma0.stream_in
+	clstr.linear.enable_debug_msgs = False
+	
+	# LinearFeats (Variable)
+	addr = 0x100d6517
+	spmRange = AddrRange(addr, addr + 0x500)
+	clstr.linearfeats = ScratchpadMemory(range = spmRange)
+	clstr.linearfeats.conf_table_reported = False
+	clstr.linearfeats.ready_mode = False
+	clstr.linearfeats.port = clstr.local_bus.master
+	for i in range(1):
+		clstr.linear.spm = clstr.linearfeats.spm_ports
+	
+	# LinearWeights (Variable)
+	addr = 0x100d6a17
+	spmRange = AddrRange(addr, addr + 0x138800)
+	clstr.linearweights = ScratchpadMemory(range = spmRange)
+	clstr.linearweights.conf_table_reported = False
+	clstr.linearweights.ready_mode = False
+	clstr.linearweights.port = clstr.local_bus.master
+	for i in range(1):
+		clstr.linear.spm = clstr.linearweights.spm_ports
+	
+	# LinearQParams (Variable)
+	addr = 0x1020f217
+	spmRange = AddrRange(addr, addr + 0x1770)
+	clstr.linearqparams = ScratchpadMemory(range = spmRange)
+	clstr.linearqparams.conf_table_reported = False
+	clstr.linearqparams.ready_mode = False
+	clstr.linearqparams.port = clstr.local_bus.master
+	for i in range(1):
+		clstr.linear.spm = clstr.linearqparams.spm_ports
+	
+	# LinearSum (Variable)
+	addr = 0x10210987
+	spmRange = AddrRange(addr, addr + 0x3e8)
+	clstr.linearsum = ScratchpadMemory(range = spmRange)
+	clstr.linearsum.conf_table_reported = False
+	clstr.linearsum.ready_mode = False
+	clstr.linearsum.port = clstr.local_bus.master
+	for i in range(1):
+		clstr.linear.spm = clstr.linearsum.spm_ports
+	
 def makeHWAcc(options, system):
 
 	system.head = AccCluster()
@@ -461,4 +676,10 @@ def makeHWAcc(options, system):
 
 	system.body = AccCluster()
 	buildbody(options, system, system.body)
+
+	system.tail = AccCluster()
+	buildtail(options, system, system.tail)
+
+	system.classifier = AccCluster()
+	buildclassifier(options, system, system.classifier)
 
