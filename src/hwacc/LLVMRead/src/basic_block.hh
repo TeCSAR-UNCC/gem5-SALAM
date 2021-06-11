@@ -36,6 +36,7 @@ namespace SALAM {
     public:
       BasicBlock(uint64_t id);
       ~BasicBlock();
+      virtual bool isBasicBlock() { return true; }
       void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList);
       std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() { return &instructions; }
       void dump() { if (dbg) bb_dbg->dumper(this); }

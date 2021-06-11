@@ -294,8 +294,7 @@ Ret::initialize(llvm::Value * irval,
 void
 Ret::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // Perform computations
-    // Store results in temp location
+    // Ret never calls compute. Special handling occurs in the scheduler.
 }
 
 // SALAM-Br // --------------------------------------------------------------//
@@ -393,6 +392,7 @@ Br::compute()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // Br does not use compute. Special handling occurs in the scheduler.
 }
 
 // SALAM-Switch // ----------------------------------------------------------//
@@ -713,6 +713,20 @@ void
 FSub::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat result = op1 - op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toString(op1str);
+    op2.toString(op2str);
+    result.toString(resstr);
+    DPRINTF(Runtime, "|| (op1) %s - (op2) %s \n", op1str.c_str(), op2str.c_str());
+    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    setRegisterValue(result);
 }
 
 // SALAM-Mul // -------------------------------------------------------------//
@@ -1013,6 +1027,20 @@ void
 FDiv::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat result = op1 / op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toString(op1str);
+    op2.toString(op2str);
+    result.toString(resstr);
+    DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1str.c_str(), op2str.c_str());
+    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    setRegisterValue(result);
 }
 
 // SALAM-URem // ------------------------------------------------------------//
@@ -1188,6 +1216,22 @@ void
 FRem::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat result = op1;
+    auto err = result.remainder(op2);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toString(op1str);
+    op2.toString(op2str);
+    result.toString(resstr);
+    DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1str.c_str(), op2str.c_str());
+    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    setRegisterValue(result);
 }
 
 // SALAM-Shl // -------------------------------------------------------------//
@@ -1602,13 +1646,20 @@ Load::initialize(llvm::Value * irval,
     // ****** //
     llvm::LoadInst * inst = llvm::dyn_cast<llvm::LoadInst>(irval);
     this->align = inst->getAlignment();
+    if (staticDependencies.front()->isGlobalConstant()) loadingInternal = true;
 }
 
 void
 Load::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    // setRegisterValue(10);
+    // Load does not use compute. Special handling is used in the scheduler.
+}
+
+void
+Load::loadInternal() {
+    setRegisterValue(operands.front().getOpRegister());
+    commit();
 }
 
 MemoryRequest *
@@ -1673,6 +1724,7 @@ void
 Store::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // Store does not use compute. Special handling is used in the scheduler.
 }
 
 MemoryRequest *
@@ -1779,7 +1831,6 @@ GetElementPtr::compute() {
     operands.pop_front();
 
     int64_t offset = 0;
-    // offset += operands.front().getIntRegValue()->getSExtValue() * resultElementSizeInBytes;
 
     for (int i = 0; i < operands.size(); i++) {
         auto idx = operands.at(i);
@@ -2029,6 +2080,15 @@ void
 FPToUI::compute() {
     // Perform computations
     // Store results in temp location
+    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    llvm::APSInt tmp(size, true);
+    bool exact;
+    auto opdata = operands.front().getFloatRegValue();
+    auto err = opdata->convertToInteger(tmp,
+                                      rounding,
+                                      &exact);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    setRegisterValue(tmp);
 }
 
 // SALAM-FPToSI // ----------------------------------------------------------//
@@ -2082,6 +2142,15 @@ void
 FPToSI::compute() {
     // Perform computations
     // Store results in temp location
+    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    llvm::APSInt tmp(size, false);
+    bool exact;
+    auto opdata = operands.front().getFloatRegValue();
+    auto err = opdata->convertToInteger(tmp,
+                                      rounding,
+                                      &exact);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    setRegisterValue(tmp);
 }
 
 // SALAM-UIToFP // ----------------------------------------------------------//
@@ -2135,6 +2204,12 @@ void
 UIToFP::compute() {
     // Perform computations
     // Store results in temp location
+    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    auto opdata = operands.front().getIntRegValue();
+    llvm::APFloat tmp(irtype->getFltSemantics());
+    auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    setRegisterValue(tmp);
 }
 
 // SALAM-SIToFP // ----------------------------------------------------------//
@@ -2188,6 +2263,12 @@ void
 SIToFP::compute() {
     // Perform computations
     // Store results in temp location
+    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    auto opdata = operands.front().getIntRegValue();
+    llvm::APFloat tmp(irtype->getFltSemantics());
+    auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    setRegisterValue(tmp);
 }
 
 // SALAM-FPTrunc // ---------------------------------------------------------//
@@ -2241,6 +2322,13 @@ void
 FPTrunc::compute() {
     // Perform computations
     // Store results in temp location
+    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    auto opdata = operands.front().getFloatRegValue();
+    llvm::APFloat tmp(*opdata);
+    bool losesInfo;
+    auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    setRegisterValue(tmp);
 }
 
 // SALAM-FPExt // -----------------------------------------------------------//
@@ -2294,6 +2382,13 @@ void
 FPExt::compute() {
     // Perform computations
     // Store results in temp location
+    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    auto opdata = operands.front().getFloatRegValue();
+    llvm::APFloat tmp(*opdata);
+    bool losesInfo;
+    auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
+    assert(err == llvm::APFloatBase::opStatus::opOK);
+    setRegisterValue(tmp);
 }
 
 // SALAM-PtrToInt // --------------------------------------------------------//
@@ -2347,6 +2442,8 @@ void
 PtrToInt::compute() {
     // Perform computations
     // Store results in temp location
+    auto opdata = operands.front().getPtrRegValue();
+    setRegisterValue(llvm::APInt(64, *opdata));
 }
 
 // SALAM-IntToPtr // --------------------------------------------------------//
@@ -2400,6 +2497,10 @@ void
 IntToPtr::compute() {
     // Perform computations
     // Store results in temp location
+    auto opdata = operands.front().getIntRegValue();
+    assert(opdata->isUnsigned());
+    int64_t tmp = opdata->getExtValue();
+    setRegisterValue(*(uint64_t *)&tmp);
 }
 
 // SALAM-ICmp // ------------------------------------------------------------//
@@ -2528,6 +2629,141 @@ void
 FCmp::compute() {
     // Perform computations
     // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    switch(predicate)
+    {
+        case SALAM::Predicate::FCMP_FALSE: {
+            setRegisterValue(false);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OEQ:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OGT:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OGE:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
+                          (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OLT:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OLE:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
+                          (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ONE:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) && 
+                          (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ORD:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UNO:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpUnordered);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UEQ:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UGT:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UGE:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ULT:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ULE:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
+                          (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UNE:   {
+            auto op1 = *operands.at(0).getFloatRegValue();
+            auto op2 = *operands.at(1).getFloatRegValue();
+            auto cmp = op1.compare(op2);
+            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_TRUE:  {
+            setRegisterValue(true);
+            break;
+        }
+    }
 }
 
 // SALAM-Phi // -------------------------------------------------------------//
@@ -2666,8 +2902,7 @@ Call::initialize(llvm::Value * irval,
 
 void
 Call::compute() {
-    // Perform computations
-    // Store results in temp location
+    // Call does not use compute. Special handling is used in the scheduler.
 }
 
 // SALAM-Select // ----------------------------------------------------------//

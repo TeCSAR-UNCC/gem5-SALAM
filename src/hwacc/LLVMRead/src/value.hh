@@ -85,6 +85,7 @@ class Value
         void setRegisterValue(const llvm::APFloat &data);
         void setRegisterValue(const uint64_t data);
         void setRegisterValue(uint8_t * data);
+        void setRegisterValue(bool data);
         void setRegisterValue(std::shared_ptr<SALAM::Register> reg);
 
         // Helper functions for getting the value of the return register directly from the value
@@ -94,6 +95,13 @@ class Value
         virtual uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
         virtual llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
         virtual llvm::APSInt * getIntRegValue() { return returnReg->getIntData(); }
+
+        virtual bool isConstant() { return false; }
+        virtual bool isGlobalConstant() { return false; }
+        virtual bool isArgument() { return false; }
+        virtual bool isFunction() { return false; }
+        virtual bool isBasicBlock() { return false; }
+        virtual bool isInstruction() { return false; }
 
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }

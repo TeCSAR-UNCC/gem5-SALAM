@@ -19,6 +19,7 @@ namespace SALAM {
 		void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList, std::string topName);
 		bool isTop() { return top; }
 		void setTop(bool isTop) { top = isTop; }
+		virtual bool isFunction() { return true; }
 		std::vector<std::shared_ptr<SALAM::BasicBlock>> * getBBList() { return &bbList; }
 		std::vector<std::shared_ptr<SALAM::Value>> * getArguments() { return & arguments; }
 		std::shared_ptr<SALAM::BasicBlock> entry() { return bbList.front(); }

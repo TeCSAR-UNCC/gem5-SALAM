@@ -460,9 +460,14 @@ LLVMInterface::launchRead(MemoryRequest * memReq, ActiveFunction * func) {
 
 void
 LLVMInterface::ActiveFunction::launchRead(std::shared_ptr<SALAM::Instruction> readInst) {
-    auto memReq = (readInst)->createMemoryRequest();
-    readQueue.insert({memReq, (readInst)});
-    owner->launchRead(memReq, this);
+    auto rdInst = std::dynamic_pointer_cast<SALAM::Load>(readInst);
+    if (rdInst->isLoadingInternal()) {
+        rdInst->loadInternal();
+    } else {
+        auto memReq = (readInst)->createMemoryRequest();
+        readQueue.insert({memReq, (readInst)});
+        owner->launchRead(memReq, this);
+    }
 }
 
 void

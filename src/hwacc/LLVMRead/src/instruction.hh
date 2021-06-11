@@ -94,6 +94,7 @@ class Instruction : public Value
         virtual void reset();
         virtual void setOperandValue(uint64_t uid);
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
+        virtual bool isInstruction() { return true; }
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
         /*
@@ -807,6 +808,7 @@ class Load : public Instruction {
         uint64_t align;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
+        bool loadingInternal = false;
 
     protected:
     public:
@@ -819,9 +821,11 @@ class Load : public Instruction {
                         SALAM::valueListTy * valueList);
         bool isLoad() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
-        void compute(); 
+        void compute();
+        void loadInternal();
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
+        bool isLoadingInternal() { return loadingInternal; }
         std::shared_ptr<SALAM::Load> clone() const { return std::static_pointer_cast<SALAM::Load>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Load>(new SALAM::Load(*this)); }
 

@@ -211,6 +211,22 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 }
 
 void
+SALAM::Value::setRegisterValue(bool data) {
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(Runtime, "| APInt Register\n");
+	if (returnReg->isInt()) {
+		llvm::APInt * regData = returnReg->getIntData();
+		if (data == true) {
+			*regData = llvm::APInt::getAllOnesValue(1);
+		} else {
+			*regData = llvm::APInt::getNullValue(1);
+		}
+	} else {
+		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place integer data in non-integer register.\n");
+	}
+}
+
+void
 SALAM::Value::setRegisterValue(std::shared_ptr<SALAM::Register> reg) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++setRegisterValue()\n");

@@ -61,6 +61,7 @@ class Constant: public Value {
     public:
         Constant(uint64_t id);
         ~Constant() = default;
+        virtual bool isConstant() { return true; }
         //Value *clone() { return new Constant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values);
 };
@@ -71,6 +72,7 @@ class GlobalConstant : public Constant {
     public:
         GlobalConstant(uint64_t id);
         ~GlobalConstant() = default;
+        virtual bool isGlobalConstant() { return true; }
         //Value *clone() { return new GlobalConstant(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * values) override;
 };
@@ -81,6 +83,7 @@ class Argument : public Value {
     public:
         Argument(uint64_t id);
         ~Argument() = default;
+        virtual bool isArgument() { return true; }
         //Value *clone() { return new Argument(*this); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
 };
