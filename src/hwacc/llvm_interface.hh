@@ -89,11 +89,14 @@ class LLVMInterface : public ComputeUnit {
         std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> writeQueue;
         std::list<std::shared_ptr<SALAM::Instruction>> computeQueue;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
+        uint32_t scheduling_threshold;
         bool returned = false;
     public:
         ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,
                        std::shared_ptr<SALAM::Instruction> _caller):
-                       owner(_owner), func(_func), caller(_caller), previousBB(nullptr) {}
+                       owner(_owner), func(_func), caller(_caller), previousBB(nullptr) {
+                          scheduling_threshold = owner->getSchedulingThreshold();
+                       }
         void readCommit(MemoryRequest *req);
         void writeCommit(MemoryRequest *req);
         void findDynamicDeps(std::shared_ptr<SALAM::Instruction> inst);
@@ -140,7 +143,7 @@ class LLVMInterface : public ComputeUnit {
     std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
                                                           uint64_t id);
     void dumpQueues();
-
+    uint32_t getSchedulingThreshold() { return scheduling_threshold; }
     llvm::DataLayout * getDataLayout() { return layout; }
 };
 

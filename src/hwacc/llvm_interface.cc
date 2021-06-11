@@ -118,7 +118,9 @@ LLVMInterface::ActiveFunction::processQueues()
                 " | UID[", (*queue_iter)->getUID(), "]"
                 );
             if ((*queue_iter)->isReturn() == false) {
-                if ((*queue_iter)->ready()) {
+                if ((*queue_iter)->isTerminator() && reservation.size() >= scheduling_threshold) {
+                    ++queue_iter;
+                } else if ((*queue_iter)->ready()) {
                     if ((*queue_iter)->isLoad()) {
                         launchRead(*queue_iter);
                     } else if ((*queue_iter)->isStore()) {
@@ -624,6 +626,7 @@ void
 LLVMInterface::finalize() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Simulation Times
+    printPerformanceResults();
     comm->finish();
 }
 

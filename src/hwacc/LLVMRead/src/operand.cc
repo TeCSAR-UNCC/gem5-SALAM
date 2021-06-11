@@ -232,7 +232,14 @@ SALAM::Operand::Operand_Debugger::dumper(Operand * op)
             "************** Instruction Dump **************",
             "    UID: ", op->getUID()
         );
-        op->value_dump();
+        // op->value_dump();
+        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n", 
+            "|-(Value Base) ",
+            " | LLVM IR: ", op->getIRString(),
+            " | UID: ", op->getUID(),
+            " | Size: ", op->getSize(), " bits [", op->getSizeInBytes(), " bytes]"
+        );
+		if(op->getReg()) op->getReg()->dump();
     }
  }
 
@@ -280,20 +287,19 @@ SALAM::Operand::initOperandReg()
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	bool istracked = false;
-	if (irtype->isPointerTy()) {
+	if (returnReg->isPtr()) {
         DPRINTF(Runtime, "Operand Ptr Register Initialized\n");
 		lockedValue = std::make_shared<PointerRegister>(istracked);
-	} else if (irtype->isIntegerTy()) {
+	} else if (returnReg->isInt()) {
         DPRINTF(Runtime, "Operand Int Register Initialized\n");
 		lockedValue = std::make_shared<APIntRegister>(irtype, istracked);
-	} else if (irtype->isFloatingPointTy()) {
+	} else if (returnReg->isFP()) {
         DPRINTF(Runtime, "Operand FP Register Initialized\n");
 		lockedValue = std::make_shared<APFloatRegister>(irtype, istracked);
 	} else {
+		DPRINTF(Runtime, "Invalid register type. Dumping Operand details\n");
+		dump();
 		assert(0); // Type is invalid for a register
-		// DPRINTF(Runtime, "Unknown Register Type, Base Register Initialized\n");
-        // inform("This seems to happen for label operands on branch instructions\n");
-        // lockedValue = std::make_shared<Register>(istracked);
 	}
 }
 
@@ -307,11 +313,11 @@ SALAM::Operand::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 void
 SALAM::Operand::updateOperandRegister() {
 	assert(lockedValue);
-	if (irtype->isPointerTy()) {
+	if (lockedValue->isPtr()) {
 		lockedValue->writePtrData(returnReg->getPtrData(true), getSizeInBytes());
-	} else if (irtype->isIntegerTy()) {
+	} else if (lockedValue->isInt()) {
 		lockedValue->writeIntData(returnReg->getIntData(true));
-	} else if (irtype->isFloatingPointTy()) {
+	} else if (lockedValue->isFP()) {
 		lockedValue->writeFloatData(returnReg->getFloatData(true));
 	}
 }
