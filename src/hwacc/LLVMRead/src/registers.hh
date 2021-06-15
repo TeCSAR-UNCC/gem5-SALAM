@@ -9,6 +9,8 @@
 #include "llvm/ADT/APFloat.h"
 #include <llvm-c/Core.h>
 
+#define USE_AP_VALUES
+
 namespace SALAM
 {
 /*****************************************************************************
@@ -41,6 +43,7 @@ class Register
         Register(bool trk=true,
                  bool nul=false);
         ~Register();
+    #ifdef USE_AP_VALUES
         virtual llvm::APFloat *getFloatData(bool incReads=true) {
             assert(0 && "Attempted to read float data from non-float register");
             return NULL;
@@ -49,16 +52,35 @@ class Register
             assert(0 && "Attempted to read integer data from non-integer register");
             return NULL;
         }
+    #else
+        virtual uint64_t *getFloatData(bool incReads=true) {
+            assert(0 && "Attempted to read float data from non-float register");
+            return NULL;
+        }
+        virtual uint64_t *getIntData(bool incReads=true) {
+            assert(0 && "Attempted to read integer data from non-integer register");
+            return NULL;
+        }
+    #endif
         virtual uint64_t *getPtrData(bool incReads=true) {
             assert(0 && "Attempted to read pointer data from non-pointer register");
             return NULL;
         }
+    #ifdef USE_AP_VALUES
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) {
             assert(0 && "Attempted to write float data on non-float register");
         }
         virtual void writeIntData(llvm::APInt * api, bool incWrites=true) {
             assert(0 && "Attempted to write interger data on non-integer register");
         }
+    #else
+        virtual void writeFloatData(void * apf, size_t len=8, bool incWrites=true) {
+            assert(0 && "Attempted to write float data on non-float register");
+        }
+        virtual void writeIntData(uint64_t * api, size_t len=8, bool incWrites=true) {
+            assert(0 && "Attempted to write interger data on non-integer register");
+        }
+    #endif
         virtual void writePtrData(uint64_t * ptr, size_t len=8, bool incWrites=true) {
             assert(0 && "Attempted to write pointer data on non-pointer register");
         }
@@ -75,26 +97,56 @@ class Register
 class APFloatRegister : public Register
 {
     private:
+    #ifdef USE_AP_VALUES
         llvm::APFloat *data;
+    #else
+        // We use uint64_t to store the bitcast of the FP value.
+        // Compute should be performed after bitcasting back to appropriate type
+        uint64_t * data;
+    #endif
     public:
         APFloatRegister(llvm::Type *T,
                         bool isTracked=true);
+        // This constructor is only used for constants.
         APFloatRegister(const llvm::APFloat &RHS);
+    #ifndef USE_AP_VALUES
+        // This constructor is only used for constants.
+        APFloatRegister(const uint64_t RHS) : Register(false) { data = new uint64_t(RHS); }
+    #endif
+    #ifdef USE_AP_VALUES
         virtual llvm::APFloat * getFloatData(bool incReads=true) override;
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) override;
+    #else
+        virtual uint64_t * getFloatData(bool incReads=true) override;
+        virtual void writeFloatData(void * apf, size_t len=8, bool incWrites=true) override;
+    #endif
         virtual bool isFP() override { return true; }
 };
 
 class APIntRegister : public Register
 {
     private:
+    #ifdef USE_AP_VALUES
         llvm::APSInt *data;
+    #else
+        uint64_t * data;
+    #endif
     public:
         APIntRegister(llvm::Type * T,
                       bool isTracked=true);
+        // This constructor is only used for constants.
         APIntRegister(const llvm::APInt &RHS);
+    #ifndef USE_AP_VALUES
+        // This constructor is only used for constants.
+        APIntRegister(const uint64_t RHS) : Register(false) { data = new uint64_t(RHS); }
+    #endif
+    #ifdef USE_AP_VALUES
         virtual llvm::APSInt * getIntData(bool incReads=true) override;
         virtual void writeIntData(llvm::APInt * api, bool incWrites=true) override;
+    #else
+        virtual uint64_t * getIntData(bool incReads=true) override;
+        virtual void writeIntData(uint64_t * api, size_t len=8, bool incWrites=true) override;
+    #endif
         virtual bool isInt() override { return true; }
 };
 

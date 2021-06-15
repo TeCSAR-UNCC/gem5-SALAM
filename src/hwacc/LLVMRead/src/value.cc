@@ -37,6 +37,7 @@ SALAM::Value::operator = (Value &copy_val)
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
 	size = copy_val.size;
+	bitmask = copy_val.bitmask;
   	return *this;
 }
 
@@ -75,6 +76,11 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	}
 	// Link Return Register
 	if (size>0) addRegister(true);
+	#ifndef USE_AP_VALUES
+		bitmask = 0;
+		assert((size <= 64) && "Only 64-bit and smaller values are supported when not using AP values.");
+		bitmask = (bitmask - 1) >> (64 - size);
+	#endif
 
 	std::string tmpstr;
 	llvm::raw_string_ostream ss(ir_string);
@@ -97,24 +103,40 @@ SALAM::Value::addRegister(bool istracked) {
 	}
 }
 
-void
-SALAM::Value::addAPIntRegister(const llvm::APInt & val) {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	assert(irtype->isIntegerTy());
-	returnReg = std::make_shared<APIntRegister>(val);
-}
-void
-SALAM::Value::addAPIntRegister(const llvm::APSInt & val) {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	assert(irtype->isIntegerTy());
-	returnReg = std::make_shared<APIntRegister>(val);
-}
-void
-SALAM::Value::addAPFloatRegister(const llvm::APFloat & val) {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	assert(irtype->isFloatingPointTy());
-	returnReg = std::make_shared<APFloatRegister>(val);
-}
+#ifdef USE_AP_VALUES
+	void
+	SALAM::Value::addAPIntRegister(const llvm::APInt & val) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+		assert(irtype->isIntegerTy());
+		returnReg = std::make_shared<APIntRegister>(val);
+	}
+	void
+	SALAM::Value::addAPIntRegister(const llvm::APSInt & val) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+		assert(irtype->isIntegerTy());
+		returnReg = std::make_shared<APIntRegister>(val);
+	}
+	void
+	SALAM::Value::addAPFloatRegister(const llvm::APFloat & val) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+		assert(irtype->isFloatingPointTy());
+		returnReg = std::make_shared<APFloatRegister>(val);
+	}
+#else
+	void
+	SALAM::Value::addAPIntRegister(const uint64_t & val) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+		assert(irtype->isIntegerTy());
+		returnReg = std::make_shared<APIntRegister>(val);
+	}
+	void
+	SALAM::Value::addAPFloatRegister(const uint64_t & val) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+		assert(irtype->isFloatingPointTy());
+		returnReg = std::make_shared<APFloatRegister>(val);
+	}
+#endif
+
 void
 SALAM::Value::addPointerRegister(bool istracked, bool isnull) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
@@ -128,37 +150,52 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
 	returnReg = std::make_shared<PointerRegister>(val, istracked, isnull);
 }
 
-void
-SALAM::Value::setRegisterValue(const llvm::APInt &data) {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(Runtime, "| APInt Register\n");
-	if (returnReg->isInt()) {
-		llvm::APInt * regData = returnReg->getIntData();
-		*regData = data;
-	} else {
-		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place integer data in non-integer register.\n");
+#ifdef USE_AP_VALUES
+	void
+	SALAM::Value::setRegisterValue(const llvm::APInt &data) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	    DPRINTF(Runtime, "| APInt Register\n");
+		if (returnReg->isInt()) {
+			llvm::APInt tmp = data;
+			returnReg->writeIntData(&tmp);
+		} else {
+			DPRINTF(Runtime, "Unsupported type for register operation. Tried to place integer data in non-integer register.\n");
+		}
 	}
-}
-void
-SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(Runtime, "| APFloat Register\n");
-	if (returnReg->isFP()) {
-		llvm::APFloat * regData = returnReg->getFloatData();
-		*regData = data;
-	} else {
-		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place float data in non-float register.\n");
+	void
+	SALAM::Value::setRegisterValue(const llvm::APFloat &data) {
+		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	    DPRINTF(Runtime, "| APFloat Register\n");
+		if (returnReg->isFP()) {
+			llvm::APFloat tmp = data;
+			returnReg->writeFloatData(&tmp);
+		} else {
+			DPRINTF(Runtime, "Unsupported type for register operation. Tried to place float data in non-float register.\n");
+		}
 	}
-}
+#endif
+
 void
 SALAM::Value::setRegisterValue(const uint64_t data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-	DPRINTF(Runtime, "| Ptr Register\n");
     if (returnReg->isPtr()) {
+    	DPRINTF(Runtime, "| Ptr Register\n");
 		uint64_t * regData = returnReg->getPtrData();
 		*regData = data;
 	} else {
+	#ifdef USE_AP_VALUES
 		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place Ptr data in non-Ptr register.\n");
+	#else
+		if (returnReg->isInt()) {
+			DPRINTF(Runtime, "| Int Register\n");
+			uint64_t * regData = returnReg->getIntData();
+			*regData = data & bitmask;
+		} else {
+			DPRINTF(Runtime, "| FP Register\n");
+			uint64_t * regData = returnReg->getPtrData();
+			*regData = data & bitmask;
+		}
+	#endif
 	}
 }
 void
@@ -166,6 +203,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	DPRINTF(Runtime, "| Set Register Data - ");
     switch (irtype->getTypeID()) {
+    #ifdef USE_AP_VALUES
         case llvm::Type::FloatTyID:
         {
             DPRINTF(Runtime, "Float\n");
@@ -196,10 +234,31 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
             }
             break;
         }
+    #else
+        case llvm::Type::FloatTyID:
+        {
+            DPRINTF(Runtime, "Float\n");
+            float tmpData;
+            returnReg->writeFloatData((uint64_t *)data, (size_t)4);
+            break;
+        }
+        case llvm::Type::DoubleTyID:
+        {
+            DPRINTF(Runtime, "Double\n");
+            returnReg->writeFloatData((uint64_t *)data, (size_t)8);
+            break;
+        }
+        case llvm::Type::IntegerTyID:
+        {
+            DPRINTF(Runtime, "Integer Type | Size = %d\n", size);
+            returnReg->writeIntData((uint64_t *)data, (size_t)getSizeInBytes);
+            break;
+        }
+    #endif
         case llvm::Type::PointerTyID:
         {
             DPRINTF(Runtime, "Pointer\n");
-            std::memcpy(returnReg->getPtrData(), data, 8);
+            returnReg->writePtrData((uint64_t *)data);
             break;
         }
         default:

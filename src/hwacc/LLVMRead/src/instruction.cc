@@ -525,8 +525,8 @@ void
 Add::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 + op2;
     //llvm::outs() << op1+op2;
     DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
@@ -653,8 +653,8 @@ Sub::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 - op2;
     //llvm::outs() << op1+op2;
     DPRINTF(Runtime, "|| (op1) %s - (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
@@ -779,8 +779,8 @@ void
 Mul::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 * op2;
     DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -907,8 +907,8 @@ UDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.udiv(op2);
     DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -968,8 +968,8 @@ SDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.sdiv(op2);
     DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1096,8 +1096,8 @@ URem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.urem(op2);
     DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1157,8 +1157,8 @@ SRem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.srem(op2);
     DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1287,8 +1287,8 @@ Shl::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 << op2;
     DPRINTF(Runtime, "|| (op1) %s << (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1348,8 +1348,8 @@ LShr::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.lshr(op2);
     DPRINTF(Runtime, "|| (op1) %s >> (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1409,8 +1409,8 @@ AShr::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.ashr(op2);
     DPRINTF(Runtime, "|| (op1) %s >> (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1470,8 +1470,8 @@ And::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 & op2;
     DPRINTF(Runtime, "|| (op1) %s & (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1531,8 +1531,8 @@ Or::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 | op2;
     DPRINTF(Runtime, "|| (op1) %s | (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
@@ -1592,8 +1592,8 @@ Xor::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    llvm::APInt op1 = operands.at(0).getIntRegValue()->trunc(size);
-    llvm::APInt op2 = operands.at(1).getIntRegValue()->trunc(size);
+    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
+    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 ^ op2;
     DPRINTF(Runtime, "|| (op1) %s ^ (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));

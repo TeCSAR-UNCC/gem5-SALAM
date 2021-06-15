@@ -29,6 +29,7 @@ class Value
     protected:
         uint64_t uid = 0;
         uint64_t size = 0;
+        uint64_t bitmask = 0; //Bitmask is used if we aren't using AP values
         std::string ir_string;
         llvm::Type *irtype;
         std::shared_ptr<SALAM::Register> returnReg;
@@ -36,9 +37,14 @@ class Value
         bool dbg = false;
 
         void addRegister(bool isTracked=true);
+    #ifdef USE_AP_VALUES
         void addAPIntRegister(const llvm::APInt & val);
         void addAPIntRegister(const llvm::APSInt & val);
         void addAPFloatRegister(const llvm::APFloat & val);
+    #else
+        void addAPIntRegister(const uint64_t & val);
+        void addAPFloatRegister(const uint64_t & val);
+    #endif
         void addPointerRegister(bool isTracked=true,
                                 bool isNull=false);
         void addPointerRegister(uint64_t val,
@@ -81,8 +87,10 @@ class Value
         // Using these functions will increment the write counters on tracked registers
         // If you'd like to avoid incrementing write counters, directly pull the register and
         // use its appropriate write function
+    #ifdef USE_AP_VALUES
         void setRegisterValue(const llvm::APInt &data);
         void setRegisterValue(const llvm::APFloat &data);
+    #endif
         void setRegisterValue(const uint64_t data);
         void setRegisterValue(uint8_t * data);
         void setRegisterValue(bool data);

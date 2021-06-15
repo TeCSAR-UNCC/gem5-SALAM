@@ -48,12 +48,8 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
                                         Register(tracked)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    #ifdef USE_AP_VALUES
     switch (T->getTypeID()) {
-        case llvm::Type::HalfTyID:
-        {
-            data = new llvm::APFloat(llvm::APFloat::IEEEhalf());
-            break;
-        }
         case llvm::Type::FloatTyID:
         {
             data = new llvm::APFloat(llvm::APFloat::IEEEsingle());
@@ -62,6 +58,11 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
         case llvm::Type::DoubleTyID:
         {
             data = new llvm::APFloat(llvm::APFloat::IEEEdouble());
+            break;
+        }
+        case llvm::Type::HalfTyID:
+        {
+            data = new llvm::APFloat(llvm::APFloat::IEEEhalf());
             break;
         }
         case llvm::Type::X86_FP80TyID:
@@ -80,15 +81,36 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
             break;
         }
         default:
-            assert(0);
+            assert(0 && "Specified Floating Point type is not supported");
     }
+    #else
+    switch (T->getTypeID()) {
+        case llvm::Type::FloatTyID:
+        {
+            data = new uint64_t();
+            break;
+        }
+        case llvm::Type::DoubleTyID:
+        {
+            data = new uint64_t();
+            break;
+        }
+        default:
+            assert(0 && "Specified Floating Point type is not supported");
+    }
+    #endif
 }
 
 SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
                                         Register(false)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    data = new llvm::APFloat(RHS);
+    #ifdef USE_AP_VALUES
+        data = new llvm::APFloat(RHS);
+    #else
+        auto bitcast = RHS.bitcastToAPInt();
+        data = new uint64_t(bitcast.getLimitedValue());
+    #endif
 }
 
 SALAM::APIntRegister::APIntRegister(llvm::Type * T,
@@ -98,7 +120,7 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
     assert(it);
-    data = new llvm::APSInt(it->getBitWidth(), 0);
+    data = new llvm::APSInt(it->getBitWidth(), true);
 }
 
 SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
@@ -127,34 +149,65 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
-llvm::APFloat *
-SALAM::APFloatRegister::getFloatData(bool incReads)
-{
-    if (incReads && tracked) reads++;
-    return data;
-}
+#ifdef USE_AP_VALUES
+    llvm::APFloat *
+    SALAM::APFloatRegister::getFloatData(bool incReads)
+    {
+        if (incReads && tracked) reads++;
+        return data;
+    }
 
-void
-SALAM::APFloatRegister::writeFloatData(llvm::APFloat * apf, bool incWrites)
-{
-    if (incWrites && tracked) writes++;
-    *data = *apf;
-}
+    void
+    SALAM::APFloatRegister::writeFloatData(llvm::APFloat * apf, bool incWrites)
+    {
+        if (incWrites && tracked) writes++;
+        *data = *apf;
+    }
+#else
+    uint64_t *
+    SALAM::APFloatRegister::getFloatData(bool incReads)
+    {
+        if (incReads && tracked) reads++;
+        return data;
+    }
 
-llvm::APSInt *
-SALAM::APIntRegister::getIntData(bool incReads)
-{
-    if (incReads && tracked) reads++;
-    return data;
-}
+    void
+    SALAM::APFloatRegister::writeFloatData(void * apf, size_t len, bool incWrites)
+    {
+        if (incWrites && tracked) writes++;
+        std::memcpy(data, apf, len);
+    }
+#endif
 
-void
-SALAM::APIntRegister::writeIntData(llvm::APInt * api, bool incWrites)
-{
-    if (incWrites && tracked) writes++;
-    *data = *api;
-}
+#ifdef USE_AP_VALUES
+    llvm::APSInt *
+    SALAM::APIntRegister::getIntData(bool incReads)
+    {
+        if (incReads && tracked) reads++;
+        return data;
+    }
 
+    void
+    SALAM::APIntRegister::writeIntData(llvm::APInt * api, bool incWrites)
+    {
+        if (incWrites && tracked) writes++;
+        *data = *api;
+    }
+#else
+    uint64_t *
+    SALAM::APIntRegister::getIntData(bool incReads)
+    {
+        if (incReads && tracked) reads++;
+        return data;
+    }
+
+    void
+    SALAM::APIntRegister::writeIntData(uint64_t * api, bool incWrites)
+    {
+        if (incWrites && tracked) writes++;
+        *data = *api;
+    }
+#endif
 uint64_t *
 SALAM::PointerRegister::getPtrData(bool incReads)
 {
