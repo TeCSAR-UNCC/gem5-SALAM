@@ -22,7 +22,7 @@ class AccCluster:
 					if 'PIOMaster' in i:
 						pioMasters.extend((i['PIOMaster'].split(',')))
 					dmaClass.append(Dma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
-						i['InterruptNum'], i['BufferSize'], i['MaxReq']))
+						i['InterruptNum'], i['BufferSize'], i['MaxReqSize']))
 					topAddress = topAddress + int(pioSize)
 				elif 'Stream' in i['Type']:
 					pioSize = 32

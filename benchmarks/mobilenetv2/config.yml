@@ -329,6 +329,7 @@ acc_cluster:
         Type: SPM
         Size: 32000
         Ports: 1
+        Connections: AvgPool:1
   - Accelerator:
     - Name: AvgPool
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll
