@@ -3,7 +3,7 @@ acc_cluster:
   - Name: head
   - DMA:
     - Name: dma
-      MaxReq: 1
+      MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
@@ -127,7 +127,7 @@ acc_cluster:
   - Name: body
   - DMA:
     - Name: dma
-      MaxReq: 1
+      MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
@@ -266,7 +266,7 @@ acc_cluster:
   - Name: tail
   - DMA:
     - Name: dma
-      MaxReq: 1
+      MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
@@ -342,7 +342,7 @@ acc_cluster:
   - Name: classifier
   - DMA:
     - Name: dma
-      MaxReq: 1
+      MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
