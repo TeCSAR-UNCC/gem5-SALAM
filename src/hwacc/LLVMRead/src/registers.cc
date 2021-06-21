@@ -87,12 +87,12 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
     switch (T->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
-            data = new uint64_t();
+            data = new uint64_t(0);
             break;
         }
         case llvm::Type::DoubleTyID:
         {
-            data = new uint64_t();
+            data = new uint64_t(0);
             break;
         }
         default:
@@ -118,16 +118,24 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
                                     Register(tracked)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
-    assert(it);
-    data = new llvm::APSInt(it->getBitWidth(), true);
+    #ifdef USE_AP_VALUES
+        llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
+        assert(it);
+        data = new llvm::APSInt(it->getBitWidth(), true);
+    #else
+        data = new uint64_t(0);
+    #endif
 }
 
 SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
                                     Register(false)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    data = new llvm::APSInt(RHS);
+    #ifdef USE_AP_VALUES
+        data = new llvm::APSInt(RHS);
+    #else
+        data = new uint64_t(RHS.getLimitedValue());
+    #endif
 }
 
 SALAM::PointerRegister::PointerRegister(bool tracked,
@@ -171,6 +179,18 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
         return data;
     }
 
+    float
+    SALAM::APFloatRegister::getFloat(bool incReads) {
+        if (incReads && tracked) reads++;
+        return *(float *)data;
+    }
+
+    double
+    SALAM::APFloatRegister::getDouble(bool incReads) {
+        if (incReads && tracked) reads++;
+        return *(double *)data;
+    }
+
     void
     SALAM::APFloatRegister::writeFloatData(void * apf, size_t len, bool incWrites)
     {
@@ -201,11 +221,51 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
         return data;
     }
 
+    uint64_t
+    SALAM::APIntRegister::getUnsignedInt(bool incReads) {
+        if (incReads && tracked) reads++;
+        return *data;
+    }
+
+    int64_t
+    SALAM::APIntRegister::getSignedInt(size_t sizeInBits, bool incReads) {
+        if (incReads && tracked) reads++;
+        int64_t tmp;
+        switch (sizeInBits) {
+            case 8:
+            {
+                tmp = (int64_t)((int8_t)(*data));
+                break;
+            }
+            case 16:
+            {
+                tmp = (int64_t)((int16_t)(*data));
+                break;
+            }
+            case 32:
+            {
+                tmp = (int64_t)((int32_t)(*data));
+                break;
+            }
+            case 64:
+            {
+                tmp = (int64_t)(*data);
+                break;
+            }
+            default:
+            {
+                assert(0 && "Must use AP values for nonstandard int sizes.");
+                break;
+            }
+        }
+        return tmp;
+    }
+
     void
-    SALAM::APIntRegister::writeIntData(uint64_t * api, bool incWrites)
+    SALAM::APIntRegister::writeIntData(uint64_t * api, size_t len, bool incWrites)
     {
         if (incWrites && tracked) writes++;
-        *data = *api;
+        std::memcpy(data, api, len);
     }
 #endif
 uint64_t *

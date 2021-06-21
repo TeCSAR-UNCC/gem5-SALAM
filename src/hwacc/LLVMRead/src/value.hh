@@ -29,7 +29,6 @@ class Value
     protected:
         uint64_t uid = 0;
         uint64_t size = 0;
-        uint64_t bitmask = 0; //Bitmask is used if we aren't using AP values
         std::string ir_string;
         llvm::Type *irtype;
         std::shared_ptr<SALAM::Register> returnReg;
@@ -101,8 +100,17 @@ class Value
         // If you'd like to avoid incrementing read counters, directly pull the register and
         // use its appropriate read function
         virtual uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
+    #ifdef USE_AP_VALUES
         virtual llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
         virtual llvm::APSInt * getIntRegValue() { return returnReg->getIntData(); }
+    #else
+        virtual uint64_t * getFloatRegValue() { return returnReg->getFloatData(); }
+        virtual float getFloatFromReg() { return returnReg->getFloat(); }
+        virtual double getDoubleFromReg() { return returnReg->getDouble(); }
+        virtual uint64_t * getIntRegValue() { return returnReg->getIntData(); }
+        virtual uint64_t getUIntRegValue() { return returnReg->getUnsignedInt(); }
+        virtual int64_t getSIntRegValue() { return returnReg->getSignedInt(size); }
+    #endif
 
         virtual bool isConstant() { return false; }
         virtual bool isGlobalConstant() { return false; }

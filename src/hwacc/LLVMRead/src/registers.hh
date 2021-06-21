@@ -57,9 +57,25 @@ class Register
             assert(0 && "Attempted to read float data from non-float register");
             return NULL;
         }
+        virtual float getFloat(bool incReads=true) {
+            assert(0 && "Attempted to read float data from non-float register");
+            return NAN;
+        }
+        virtual double getDouble(bool incReads=true) {
+            assert(0 && "Attempted to read float data from non-float register");
+            return NAN;
+        }
         virtual uint64_t *getIntData(bool incReads=true) {
             assert(0 && "Attempted to read integer data from non-integer register");
             return NULL;
+        }
+        virtual uint64_t getUnsignedInt(bool incReads=true) {
+            assert(0 && "Attempted to read integer data from non-integer register");
+            return 0;
+        }
+        virtual int64_t getSignedInt(size_t sizeInBits, bool incReads=true) {
+            assert(0 && "Attempted to read integer data from non-integer register");
+            return 0;
         }
     #endif
         virtual uint64_t *getPtrData(bool incReads=true) {
@@ -118,6 +134,8 @@ class APFloatRegister : public Register
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) override;
     #else
         virtual uint64_t * getFloatData(bool incReads=true) override;
+        virtual float getFloat(bool incReads=true) override;
+        virtual double getDouble(bool incReads=true) override;
         virtual void writeFloatData(void * apf, size_t len=8, bool incWrites=true) override;
     #endif
         virtual bool isFP() override { return true; }
@@ -145,6 +163,8 @@ class APIntRegister : public Register
         virtual void writeIntData(llvm::APInt * api, bool incWrites=true) override;
     #else
         virtual uint64_t * getIntData(bool incReads=true) override;
+        virtual uint64_t getUnsignedInt(bool incReads=true) override;
+        virtual int64_t getSignedInt(size_t sizeInBits, bool incReads=true) override;
         virtual void writeIntData(uint64_t * api, size_t len=8, bool incWrites=true) override;
     #endif
         virtual bool isInt() override { return true; }

@@ -29,10 +29,21 @@ SALAM::Constant::initialize(llvm::Value * irval,
 		// The constant is a llvm::ConstantData. Get it's value and store it in constValue
 		if (irtype->isFloatingPointTy()) {
 			llvm::ConstantFP * fp = llvm::dyn_cast<llvm::ConstantFP>(cd);
+		#ifdef USE_AP_VALUES
 			addAPFloatRegister(fp->getValueAPF());
+		#else
+			auto apfp = fp->getValueAPF();
+			auto api = apfp.bitcastToAPInt();
+			addAPFloatRegister(api.getLimitedValue());
+		#endif
 		} else if (irtype->isIntegerTy()) {
 			llvm::ConstantInt * in = llvm::dyn_cast<llvm::ConstantInt>(cd);
+		#ifdef USE_AP_VALUES
 			addAPIntRegister(in->getValue());
+		#else
+			auto api = in->getValue();
+			addAPIntRegister(api.getLimitedValue());
+		#endif
 		} else if (irtype->isPointerTy()) {
 			assert(llvm::dyn_cast<llvm::ConstantPointerNull>(cd));
 			addPointerRegister(false, true);
@@ -61,101 +72,220 @@ SALAM::Constant::initialize(llvm::Value * irval,
 
 		switch(ce->getOpcode()) {
 			case llvm::Instruction::Trunc:
-				{
-					auto opdata = operands.front()->getReg()->getIntData();
-					addAPIntRegister(opdata->trunc(size));
-					break;
-				}
+			{
+				auto opdata = operands.front()->getIntRegValue();
+			#ifdef USE_AP_VALUES
+				addAPIntRegister(opdata->trunc(size));
+			#else
+				addAPIntRegister(*opdata);
+			#endif
+				break;
+			}
 	        case llvm::Instruction::ZExt:
-	        	{
-					auto opdata = operands.front()->getReg()->getIntData();
-					opdata->setIsSigned(false);
-					addAPIntRegister(opdata->extend(size));
-					break;
-				}
+        	{
+				auto opdata = operands.front()->getIntRegValue();
+			#ifdef USE_AP_VALUES
+				opdata->setIsSigned(false);
+				addAPIntRegister(opdata->extend(size));
+			#else
+				addAPIntRegister(*opdata);
+			#endif
+				break;
+			}
 	        case llvm::Instruction::SExt:
-	        	{
-					auto opdata = operands.front()->getReg()->getIntData();
-					opdata->setIsSigned(true);
-					addAPIntRegister(opdata->extend(size));
-					break;
-				}
+        	{
+			#ifdef USE_AP_VALUES
+        		auto opdata = operands.front()->getIntRegValue();
+				opdata->setIsSigned(true);
+				addAPIntRegister(opdata->extend(size));
+			#else
+				int64_t tmp = operands.front()->getSIntRegValue();
+				addAPIntRegister((uint64_t)tmp);
+			#endif
+				break;
+			}
 	        case llvm::Instruction::FPToUI:
-	        	{
-	        		llvm::APSInt tmp(size, true);
-	        		bool exact;
-	        		auto opdata = operands.front()->getReg()->getFloatData();
-	        		auto err = opdata->convertToInteger(tmp,
-	        										  rounding,
-	        										  &exact);
-	        		assert(err == llvm::APFloatBase::opStatus::opOK);
-	        		addAPIntRegister(tmp);
-	        		break;
-	        	}
+        	{
+        	#ifdef USE_AP_VALUES	
+        		llvm::APSInt tmp(size, true);
+        		bool exact;
+        		auto opdata = operands.front()->getFloatRegValue();
+        		auto err = opdata->convertToInteger(tmp,
+        										  rounding,
+        										  &exact);
+        		assert(err == llvm::APFloatBase::opStatus::opOK);
+        		addAPIntRegister(tmp);
+        	#else
+        		if (operands.front()->getSize() == 32) {
+        			auto opdata = operands.front()->getFloatFromReg();
+        			addAPIntRegister((uint64_t)opdata);
+        		} else {
+        			auto opdata = operands.front()->getDoubleFromReg();
+        			addAPIntRegister((uint64_t)opdata);
+        		}
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::FPToSI:
-	        	{
-	        		llvm::APSInt tmp(size, false);
-	        		bool exact;
-	        		auto opdata = operands.front()->getReg()->getFloatData();
-	        		auto err = opdata->convertToInteger(tmp,
-	        										  rounding,
-	        										  &exact);
-	        		assert(err == llvm::APFloatBase::opStatus::opOK);
-	        		addAPIntRegister(tmp);
-	        		break;
-	        	}
+        	{
+        	#ifdef USE_AP_VALUES
+        		llvm::APSInt tmp(size, false);
+        		bool exact;
+        		auto opdata = operands.front()->getFloatRegValue();
+        		auto err = opdata->convertToInteger(tmp,
+        										  rounding,
+        										  &exact);
+        		assert(err == llvm::APFloatBase::opStatus::opOK);
+        		addAPIntRegister(tmp);
+        	#else
+        		if (operands.front()->getSize() == 32) {
+        			auto opdata = operands.front()->getFloatFromReg();
+        			addAPIntRegister((uint64_t)(int64_t)opdata);
+        		} else {
+        			auto opdata = operands.front()->getDoubleFromReg();
+        			addAPIntRegister((uint64_t)(int64_t)opdata);
+        		}
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::UIToFP:
-	        	{
-	        		auto opdata = operands.front()->getReg()->getIntData();
-	        		llvm::APFloat tmp(irtype->getFltSemantics());
-	        		auto err = tmp.convertFromAPInt(*opdata, false, rounding);
-	        		assert(err == llvm::APFloatBase::opStatus::opOK);
-	        		addAPFloatRegister(tmp);
-	        		break;
-	        	}
+        	{
+        	#ifdef USE_AP_VALUES
+        		auto opdata = operands.front()->getIntRegValue();
+        		llvm::APFloat tmp(irtype->getFltSemantics());
+        		auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+        		assert(err == llvm::APFloatBase::opStatus::opOK);
+        		addAPFloatRegister(tmp);
+        	#else
+        		auto opdata = operands.front()->getUIntRegValue();
+        		switch (size) {
+        			case 32:
+        			{
+        				float tmp = (float)opdata;
+        				addAPFloatRegister(*(uint64_t *)&tmp);
+        				break;
+        			}
+        			case 64:
+        			{
+        				double tmp = (double)opdata;
+        				addAPFloatRegister(*(uint64_t *)&tmp);
+        				break;
+        			}
+        			default:
+        			{
+        				assert(0 && "Must use AP values for nonstandard FP sizes.");
+						break;
+        			}
+        		}
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::SIToFP:
-	        	{
-	        		auto opdata = operands.front()->getReg()->getIntData();
-	        		llvm::APFloat tmp(irtype->getFltSemantics());
-	        		auto err = tmp.convertFromAPInt(*opdata, false, rounding);
-	        		assert(err == llvm::APFloatBase::opStatus::opOK);
-	        		addAPFloatRegister(tmp);
-	        		break;
-	        	}
+        	{
+        	#ifdef USE_AP_VALUES
+        		auto opdata = operands.front()->getIntRegValue();
+        		llvm::APFloat tmp(irtype->getFltSemantics());
+        		auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+        		assert(err == llvm::APFloatBase::opStatus::opOK);
+        		addAPFloatRegister(tmp);
+        	#else
+				auto opdata = operands.front()->getSIntRegValue();
+				switch (size) {
+        			case 32:
+        			{
+        				float tmp = (float)opdata;
+        				addAPFloatRegister(*(uint64_t *)&tmp);
+        				break;
+        			}
+        			case 64:
+        			{
+        				double tmp = (double)opdata;
+        				addAPFloatRegister(*(uint64_t *)&tmp);
+        				break;
+        			}
+        			default:
+        			{
+        				assert(0 && "Must use AP values for nonstandard FP sizes.");
+						break;
+        			}
+        		}
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::FPTrunc:
-	        	{
-	        		auto opdata = operands.front()->getReg()->getFloatData();
-	        		llvm::APFloat tmp(*opdata);
-	        		bool losesInfo;
-	        		auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
-	        		assert(err == llvm::APFloatBase::opStatus::opOK);
-	        		addAPFloatRegister(tmp);
-	        		break;
-	        	}
+        	{
+        	#ifdef USE_AP_VALUES
+        		auto opdata = operands.front()->getFloatRegValue();
+        		llvm::APFloat tmp(*opdata);
+        		bool losesInfo;
+        		auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
+        		assert(err == llvm::APFloatBase::opStatus::opOK);
+        		addAPFloatRegister(tmp);
+        	#else
+        		switch (operands.front()->getSize()) {
+        			case 64:
+        			{
+        				double opdata = operands.front()->getDoubleFromReg();
+        				float tmp = (float)opdata;
+        				addAPFloatRegister(*(uint64_t *)&tmp);
+        				break;
+        			}
+        			default:
+        			{
+        				assert(0 && "Must use AP values for nonstandard FP sizes.");
+        			}
+        		}
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::FPExt:
-	        	{
-	        		auto opdata = operands.front()->getReg()->getFloatData();
-	        		llvm::APFloat tmp(*opdata);
-	        		bool losesInfo;
-	        		auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
-	        		assert(err == llvm::APFloatBase::opStatus::opOK);
-	        		addAPFloatRegister(tmp);
-	        		break;
-	        	}
+        	{
+        	#ifdef USE_AP_VALUES
+        		auto opdata = operands.front()->getFloatRegValue();
+        		llvm::APFloat tmp(*opdata);
+        		bool losesInfo;
+        		auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
+        		assert(err == llvm::APFloatBase::opStatus::opOK);
+        		addAPFloatRegister(tmp);
+        	#else
+        		switch (operands.front()->getSize()) {
+        			case 32:
+        			{
+        				float opdata = operands.front()->getFloatFromReg();
+        				double tmp = (double)opdata;
+        				addAPFloatRegister(*(uint64_t *)&tmp);
+        				break;
+        			}
+        			default:
+        			{
+        				assert(0 && "Must use AP values for nonstandard FP sizes.");
+        			}
+        		}
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::PtrToInt:
-	        	{
-	        		auto opdata = operands.front()->getReg()->getPtrData();
-	        		addAPIntRegister(llvm::APInt(64, *opdata));
-	        		break;
-	        	}
+        	{
+        		auto opdata = operands.front()->getReg()->getPtrData();
+        	#ifdef USE_AP_VALUES
+        		addAPIntRegister(llvm::APInt(64, *opdata));
+        	#else
+        		addAPIntRegister(*opdata);
+        	#endif
+        		break;
+        	}
 	        case llvm::Instruction::IntToPtr:
-	        	{
-	        		auto opdata = operands.front()->getReg()->getIntData();
-	        		assert(opdata->isUnsigned());
-	        		int64_t tmp = opdata->getExtValue();
-	        		addPointerRegister(*(uint64_t *)&tmp, false, false);
-	        		break;
-	        	}
+        	{
+        		auto opdata = operands.front()->getIntRegValue();
+        	#ifdef USE_AP_VALUES
+        		assert(opdata->isUnsigned());
+        		int64_t tmp = opdata->getExtValue();
+        		addPointerRegister(*(uint64_t *)&tmp, false, false);
+        	#else
+        		addPointerRegister(*opdata, false, false);
+    		#endif
+        		break;
+        	}
 	        default:
 	        	assert(0); // We currently do not support this nested ConstantExpr
 		}

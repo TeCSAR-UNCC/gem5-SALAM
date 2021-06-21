@@ -2,6 +2,8 @@
 #include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/IR/DataLayout.h"
 
+#include <cmath>
+
 namespace SALAM
 {
 
@@ -340,8 +342,13 @@ Br::getTarget() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
     if(conditional) {
-        if(!condition->getReg()->getIntData()->isOneValue()) return trueDestination;
+    #ifdef USE_AP_VALUES
+        if(condition->getIntRegValue()->isOneValue()) return trueDestination;
         else return falseDestination;
+    #else
+        if(condition->getUIntRegValue() == 1) return trueDestination;
+        else return falseDestination;
+    #endif
     }
     return defaultDestination;
 }
@@ -373,15 +380,15 @@ Br::initialize(llvm::Value * irval,
         } else {
             condition = mapit->second;
             staticDependencies.push_back(condition);
-            falseDestination = defaultDestination;
+            trueDestination = defaultDestination;
 
-            llvm::Value * trueDestValue = br->getSuccessor(1);
-            mapit = irmap->find(trueDestValue);
+            llvm::Value * falseDestValue = br->getSuccessor(1);
+            mapit = irmap->find(falseDestValue);
             if(mapit == irmap->end()) {
                 DPRINTF(Runtime, "ERROR. Could not find secondary successor for Br in IR map.");
                 assert(0);
             } else {
-                trueDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(mapit->second);
+                falseDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(mapit->second);
             }
         }
     }
@@ -436,8 +443,25 @@ Switch::Switch(uint64_t id,
 
 std::shared_ptr<SALAM::BasicBlock>
 Switch::getTarget() {
+#ifdef USE_AP_VALUES
+    auto opdata = *(operands.front().getIntRegValue());
 
-    return nullptr;
+    for (auto it = cases.begin(); it != cases.end(); ++it) {
+        if (it->first->getIntRegValue()->eq(opdata)){
+            return it->second;
+        }
+    }
+    return defaultDestination;
+#else
+    auto opdata = operands.front().getSIntRegValue();
+
+    for (auto it = cases.begin(); it != cases.end(); ++it) {
+        if (it->first->getSIntRegValue() == opdata){
+            return it->second;
+        }
+    }
+    return defaultDestination;
+#endif
 }
 
 void
@@ -446,26 +470,60 @@ Switch::initialize(llvm::Value * irval,
                 SALAM::valueListTy * valueList)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    SALAM::Instruction::initialize(irval, irmap, valueList);
+    // SALAM::Instruction::initialize(irval, irmap, valueList);
+
+    llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
+    llvm::Instruction * inst = llvm::dyn_cast<llvm::Instruction>(irval);
+    assert(iruser);
+    assert(inst);
+
+    SALAM::valueListTy tmpStaticDeps;
+    for (auto const op : iruser->operand_values()) {
+        auto mapit = irmap->find(op);
+        std::shared_ptr<SALAM::Value> opval;
+        if(mapit == irmap->end()) {
+            // TODO: Handle constant data and constant expressions
+            DPRINTF(LLVMInterface, "Instantiate Operand as Constant Data/Expression\n");
+            uint64_t id = valueList->back()->getUID() + 1;
+            std::shared_ptr<SALAM::Constant> con = std::make_shared<SALAM::Constant>(id);
+            valueList->push_back(con);
+            irmap->insert(SALAM::irvmaptype(op, con));
+            con->initialize(op, irmap, valueList);
+            opval = con;
+        } else {
+            DPRINTF(LLVMInterface, "Instantiate Operands on Value List\n");
+            opval = mapit->second;
+        }
+        DPRINTF(LLVMInterface, "Link Operand to Static Operands List\n");
+        tmpStaticDeps.push_back(opval);
+    }
+
     llvm::SwitchInst * switchInst = llvm::dyn_cast<llvm::SwitchInst>(irval);
     assert(switchInst);
     caseArgs newArgs;
-    for (int i = 0; i < getStaticDependencies().size();) {
-        newArgs.first = getStaticDependencies(i); ++i;
-        newArgs.second = getStaticDependencies(i); ++i;
-        this->arguments.push_back(newArgs);
+    for (int i = 2; i < tmpStaticDeps.size();) {
+        newArgs.first = tmpStaticDeps.at(i); ++i;
+        newArgs.second = std::dynamic_pointer_cast<SALAM::BasicBlock>(tmpStaticDeps.at(i)); ++i;
+        this->cases.push_back(newArgs);
     }
+
+    staticDependencies.push_back(tmpStaticDeps.front());
+    defaultDestination = std::dynamic_pointer_cast<SALAM::BasicBlock>(tmpStaticDeps.at(1));
 }
 
-std::shared_ptr<SALAM::Value>
-Switch::destination(int switchVar)
-{
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    for (int i = 2; i < this->arguments.size(); ++i) {
-        if (this->arguments.at(i).first->getReg()->getIntData()->getSExtValue() == switchVar) return this->arguments.at(i).second;
-    }
-    return this->defaultDest();
-}
+// std::shared_ptr<SALAM::Value>
+// Switch::destination(int switchVar)
+// {
+//     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+//     for (int i = 2; i < this->arguments.size(); ++i) {
+//     #ifdef USE_AP_VALUES
+//         if (this->arguments.at(i).first->getReg()->getIntData()->getSExtValue() == switchVar) return this->arguments.at(i).second;
+//     #else
+//         if (this->arguments.at(i).first->getSIntRegValue() == switchVar) return this->arguments.at(i).second;
+//     #endif
+//     }
+//     return this->defaultDest();
+// }
 
 
 void
@@ -525,12 +583,19 @@ void
 Add::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 + op2;
-    //llvm::outs() << op1+op2;
     DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 + op2;
+    DPRINTF(Runtime, "|| (op1) %d + (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -586,6 +651,7 @@ FAdd::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 + op2;
@@ -598,6 +664,37 @@ FAdd::compute() {
     DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1str.c_str(), op2str.c_str());
     DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
     setRegisterValue(result);
+#else
+    uint64_t bitcastResult;
+    switch(size) {
+        case 32:
+        {
+            float op1 = operands.at(0).getFloatFromReg();
+            float op2 = operands.at(1).getFloatFromReg();
+            float result = op1 + op2;
+            DPRINTF(Runtime, "|| (op1) %f + (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        case 64:
+        {
+            double op1 = operands.at(0).getDoubleFromReg();
+            double op2 = operands.at(1).getDoubleFromReg();
+            double result = op1 + op2;
+            DPRINTF(Runtime, "|| (op1) %f + (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        default:
+        {
+            assert(0 && "Unsupported floating point type." &&
+                   "Compile with AP values enabled for extended FP support.");
+        }
+    }
+    setRegisterValue(bitcastResult);
+#endif
 }
 
 // SALAM-Sub // -------------------------------------------------------------//
@@ -653,12 +750,19 @@ Sub::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 - op2;
-    //llvm::outs() << op1+op2;
     DPRINTF(Runtime, "|| (op1) %s - (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 - op2;
+    DPRINTF(Runtime, "|| (op1) %d - (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -715,6 +819,7 @@ FSub::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 - op2;
@@ -727,6 +832,37 @@ FSub::compute() {
     DPRINTF(Runtime, "|| (op1) %s - (op2) %s \n", op1str.c_str(), op2str.c_str());
     DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
     setRegisterValue(result);
+#else
+    uint64_t bitcastResult;
+    switch(size) {
+        case 32:
+        {
+            float op1 = operands.at(0).getFloatFromReg();
+            float op2 = operands.at(1).getFloatFromReg();
+            float result = op1 - op2;
+            DPRINTF(Runtime, "|| (op1) %f - (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        case 64:
+        {
+            double op1 = operands.at(0).getDoubleFromReg();
+            double op2 = operands.at(1).getDoubleFromReg();
+            double result = op1 - op2;
+            DPRINTF(Runtime, "|| (op1) %f - (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        default:
+        {
+            assert(0 && "Unsupported floating point type." &&
+                   "Compile with AP values enabled for extended FP support.");
+        }
+    }
+    setRegisterValue(bitcastResult);
+#endif
 }
 
 // SALAM-Mul // -------------------------------------------------------------//
@@ -779,11 +915,19 @@ void
 Mul::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 * op2;
     DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 * op2;
+    DPRINTF(Runtime, "|| (op1) %d * (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -840,6 +984,7 @@ FMul::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 * op2;
@@ -852,6 +997,37 @@ FMul::compute() {
     DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1str.c_str(), op2str.c_str());
     DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
     setRegisterValue(result);
+#else
+    uint64_t bitcastResult;
+    switch(size) {
+        case 32:
+        {
+            float op1 = operands.at(0).getFloatFromReg();
+            float op2 = operands.at(1).getFloatFromReg();
+            float result = op1 * op2;
+            DPRINTF(Runtime, "|| (op1) %f * (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        case 64:
+        {
+            double op1 = operands.at(0).getDoubleFromReg();
+            double op2 = operands.at(1).getDoubleFromReg();
+            double result = op1 * op2;
+            DPRINTF(Runtime, "|| (op1) %f * (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        default:
+        {
+            assert(0 && "Unsupported floating point type." &&
+                   "Compile with AP values enabled for extended FP support.");
+        }
+    }
+    setRegisterValue(bitcastResult);
+#endif
 }
 
 // SALAM-UDiv // ------------------------------------------------------------//
@@ -907,11 +1083,19 @@ UDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.udiv(op2);
     DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 / op2;
+    DPRINTF(Runtime, "|| (op1) %d / (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -968,12 +1152,21 @@ SDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.sdiv(op2);
     DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
     setRegisterValue(result);
+#else
+    int64_t op1 = operands.at(0).getSIntRegValue();
+    int64_t op2 = operands.at(1).getSIntRegValue();
+    int64_t result = op1 / op2;
+    DPRINTF(Runtime, "|| (op1) %d / (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+    setRegisterValue((uint64_t)result);
+#endif
 }
 
 // SALAM-FDiv // ------------------------------------------------------------//
@@ -1029,6 +1222,7 @@ FDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 / op2;
@@ -1041,6 +1235,37 @@ FDiv::compute() {
     DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1str.c_str(), op2str.c_str());
     DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
     setRegisterValue(result);
+#else
+    uint64_t bitcastResult;
+    switch(size) {
+        case 32:
+        {
+            float op1 = operands.at(0).getFloatFromReg();
+            float op2 = operands.at(1).getFloatFromReg();
+            float result = op1 / op2;
+            DPRINTF(Runtime, "|| (op1) %f / (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        case 64:
+        {
+            double op1 = operands.at(0).getDoubleFromReg();
+            double op2 = operands.at(1).getDoubleFromReg();
+            double result = op1 / op2;
+            DPRINTF(Runtime, "|| (op1) %f / (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        default:
+        {
+            assert(0 && "Unsupported floating point type." &&
+                   "Compile with AP values enabled for extended FP support.");
+        }
+    }
+    setRegisterValue(bitcastResult);
+#endif
 }
 
 // SALAM-URem // ------------------------------------------------------------//
@@ -1096,11 +1321,19 @@ URem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.urem(op2);
     DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 % op2;
+    DPRINTF(Runtime, "|| (op1) %d % (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1157,12 +1390,21 @@ SRem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.srem(op2);
     DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
     setRegisterValue(result);
+#else
+    int64_t op1 = operands.at(0).getSIntRegValue();
+    int64_t op2 = operands.at(1).getSIntRegValue();
+    int64_t result = op1 % op2;
+    DPRINTF(Runtime, "|| (op1) %d % (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+    setRegisterValue((uint64_t)result);
+#endif
 }
 
 // SALAM-FRem // ------------------------------------------------------------//
@@ -1218,6 +1460,7 @@ FRem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1;
@@ -1232,6 +1475,37 @@ FRem::compute() {
     DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1str.c_str(), op2str.c_str());
     DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
     setRegisterValue(result);
+#else
+    uint64_t bitcastResult;
+    switch(size) {
+        case 32:
+        {
+            float op1 = operands.at(0).getFloatFromReg();
+            float op2 = operands.at(1).getFloatFromReg();
+            float result = std::remainderf(op1, op2);
+            DPRINTF(Runtime, "|| (op1) %f % (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        case 64:
+        {
+            double op1 = operands.at(0).getDoubleFromReg();
+            double op2 = operands.at(1).getDoubleFromReg();
+            double result = std::remainder(op1, op2);
+            DPRINTF(Runtime, "|| (op1) %f % (op2) %f\n", op1, op2);
+            DPRINTF(Runtime, "|| Result: %f\n", result);
+            bitcastResult = *(uint64_t *)&result;
+            break;
+        }
+        default:
+        {
+            assert(0 && "Unsupported floating point type." &&
+                   "Compile with AP values enabled for extended FP support.");
+        }
+    }
+    setRegisterValue(bitcastResult);
+#endif
 }
 
 // SALAM-Shl // -------------------------------------------------------------//
@@ -1287,11 +1561,19 @@ Shl::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 << op2;
     DPRINTF(Runtime, "|| (op1) %s << (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 << op2;
+    DPRINTF(Runtime, "|| (op1) %d << (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1348,11 +1630,19 @@ LShr::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.lshr(op2);
     DPRINTF(Runtime, "|| (op1) %s >> (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 >> op2;
+    DPRINTF(Runtime, "|| (op1) %d >> (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1409,12 +1699,21 @@ AShr::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.ashr(op2);
     DPRINTF(Runtime, "|| (op1) %s >> (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
     setRegisterValue(result);
+#else
+    int64_t op1 = operands.at(0).getSIntRegValue();
+    int64_t op2 = operands.at(1).getSIntRegValue();
+    int64_t result = op1 >> op2;
+    DPRINTF(Runtime, "|| (op1) %d >> (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+    setRegisterValue((uint64_t)result);
+#endif
 }
 
 // SALAM-And // -------------------------------------------------------------//
@@ -1470,11 +1769,19 @@ And::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 & op2;
     DPRINTF(Runtime, "|| (op1) %s & (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 & op2;
+    DPRINTF(Runtime, "|| (op1) %d & (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1531,11 +1838,19 @@ Or::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 | op2;
     DPRINTF(Runtime, "|| (op1) %s | (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 | op2;
+    DPRINTF(Runtime, "|| (op1) %d | (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1592,11 +1907,19 @@ Xor::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 ^ op2;
     DPRINTF(Runtime, "|| (op1) %s ^ (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    uint64_t op1 = operands.at(0).getUIntRegValue();
+    uint64_t op2 = operands.at(1).getUIntRegValue();
+    uint64_t result = op1 ^ op2;
+    DPRINTF(Runtime, "|| (op1) %d ^ (op2) %d\n", op1, op2);
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1739,6 +2062,7 @@ Store::createMemoryRequest() {
     if (dataRegister->isPtr()) {
         req = new MemoryRequest(memAddr, dataRegister->getPtrData(), reqLen);
     } else {
+    #ifdef USE_AP_VALUES
         llvm::APInt regAPData;
         if (dataRegister->isInt()) {
             regAPData = *(dataRegister->getIntData());
@@ -1746,6 +2070,15 @@ Store::createMemoryRequest() {
             regAPData = dataRegister->getFloatData()->bitcastToAPInt();
         }
         req = new MemoryRequest(memAddr, regAPData.getRawData(), reqLen);
+    #else
+        uint64_t * regData;
+        if (dataRegister->isInt()) {
+            regData = dataRegister->getIntData();
+        } else {
+            regData = dataRegister->getFloatData();
+        }
+        req = new MemoryRequest(memAddr, (uint8_t *)regData, reqLen);
+    #endif
     }
 
     return req;
@@ -1837,14 +2170,22 @@ GetElementPtr::compute() {
         auto idxty = indexTypes.at(i);
         if (llvm::StructType *STy = llvm::dyn_cast<llvm::StructType>(idxty)) {
             assert(idx.getType()->isIntegerTy(32) && "Illegal struct idx");
+        #ifdef USE_AP_VALUES
             unsigned FieldNo = idx.getIntRegValue()->getZExtValue();
+        #else
+            unsigned FieldNo = idx.getUIntRegValue();
+        #endif
 
             // Get structure layout information...
             const llvm::StructLayout *Layout = layout->getStructLayout(STy);
 
             offset += Layout->getElementOffset(FieldNo);
         } else {
+        #ifdef USE_AP_VALUES
             int64_t arrayIdx = idx.getIntRegValue()->getSExtValue();
+        #else
+            int64_t arrayIdx = idx.getSIntRegValue();
+        #endif
             offset += arrayIdx * layout->getTypeAllocSize(idxty);
         }
     }
@@ -1908,8 +2249,14 @@ Trunc::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue()->trunc(size);
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    // The trunc is handled automatically when we set the return register
+    uint64_t result = operands.at(0).getUIntRegValue();
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -1966,8 +2313,14 @@ ZExt::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue()->zext(size);
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+#else
+    // Unsigned data doesn't need any modification when ZExtending
+    uint64_t result = operands.at(0).getUIntRegValue();
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+#endif
     setRegisterValue(result);
 }
 
@@ -2024,9 +2377,15 @@ SExt::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue()->sext(size);
     DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
     setRegisterValue(result);
+#else
+    int64_t result = operands.at(0).getSIntRegValue();
+    DPRINTF(Runtime, "|| Result: %d\n", result);
+    setRegisterValue((uint64_t)result);
+#endif
 }
 
 // SALAM-FPToUI // ----------------------------------------------------------//
@@ -2078,8 +2437,7 @@ FPToUI::initialize(llvm::Value * irval,
 
 void
 FPToUI::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     llvm::APSInt tmp(size, true);
     bool exact;
@@ -2089,6 +2447,27 @@ FPToUI::compute() {
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+#else
+    switch (operands.front().getSize()) {
+        case 32:
+        {
+            float opdata = operands.front().getFloatFromReg();
+            setRegisterValue((uint64_t)opdata);
+            break;
+        }
+        case 64:
+        {
+            double opdata = operands.front().getDoubleFromReg();
+            setRegisterValue((uint64_t)opdata);
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+            break;
+        }
+    }
+#endif
 }
 
 // SALAM-FPToSI // ----------------------------------------------------------//
@@ -2140,8 +2519,7 @@ FPToSI::initialize(llvm::Value * irval,
 
 void
 FPToSI::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     llvm::APSInt tmp(size, false);
     bool exact;
@@ -2151,6 +2529,29 @@ FPToSI::compute() {
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+#else
+    switch (operands.front().getSize()) {
+        case 32:
+        {
+            float opdata = operands.front().getFloatFromReg();
+            int64_t tmp = (int64_t)opdata; // Truncate to integer
+            setRegisterValue((uint64_t)tmp);
+            break;
+        }
+        case 64:
+        {
+            double opdata = operands.front().getDoubleFromReg();
+            int64_t tmp = (int64_t)opdata; // Truncate to integer
+            setRegisterValue((uint64_t)tmp);
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+            break;
+        }
+    }
+#endif
 }
 
 // SALAM-UIToFP // ----------------------------------------------------------//
@@ -2202,14 +2603,35 @@ UIToFP::initialize(llvm::Value * irval,
 
 void
 UIToFP::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getIntRegValue();
     llvm::APFloat tmp(irtype->getFltSemantics());
     auto err = tmp.convertFromAPInt(*opdata, false, rounding);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+#else
+    auto opdata = operands.front().getUIntRegValue();
+    switch (size) {
+        case 32:
+        {
+            float tmp = (float)opdata; // Cast to float
+            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            break;
+        }
+        case 64:
+        {
+            double tmp = (double)opdata; // Cast to double
+            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+            break;
+        }
+    }
+#endif
 }
 
 // SALAM-SIToFP // ----------------------------------------------------------//
@@ -2261,14 +2683,35 @@ SIToFP::initialize(llvm::Value * irval,
 
 void
 SIToFP::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getIntRegValue();
     llvm::APFloat tmp(irtype->getFltSemantics());
     auto err = tmp.convertFromAPInt(*opdata, false, rounding);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+#else
+    auto opdata = operands.front().getSIntRegValue();
+    switch (size) {
+        case 32:
+        {
+            float tmp = (float)opdata; // Cast to float
+            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            break;
+        }
+        case 64:
+        {
+            double tmp = (double)opdata; // Cast to double
+            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+            break;
+        }
+    }
+#endif
 }
 
 // SALAM-FPTrunc // ---------------------------------------------------------//
@@ -2320,8 +2763,7 @@ FPTrunc::initialize(llvm::Value * irval,
 
 void
 FPTrunc::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getFloatRegValue();
     llvm::APFloat tmp(*opdata);
@@ -2329,6 +2771,21 @@ FPTrunc::compute() {
     auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+#else
+    switch (operands.front().getSize()) {
+        case 64:
+        {
+            double opdata = operands.front().getDoubleFromReg();
+            float tmp = (float)opdata; // Cast to float
+            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+        }
+    }
+#endif
 }
 
 // SALAM-FPExt // -----------------------------------------------------------//
@@ -2380,8 +2837,7 @@ FPExt::initialize(llvm::Value * irval,
 
 void
 FPExt::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getFloatRegValue();
     llvm::APFloat tmp(*opdata);
@@ -2389,6 +2845,21 @@ FPExt::compute() {
     auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+#else
+    switch (operands.front().getSize()) {
+        case 32:
+        {
+            float opdata = operands.front().getFloatFromReg();
+            double tmp = (double)opdata; // Cast to double
+            setRegisterValue(*(uint64_t *)&tmp); // Bitcast for writeback to reg
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+        }
+    }
+#endif
 }
 
 // SALAM-PtrToInt // --------------------------------------------------------//
@@ -2440,10 +2911,12 @@ PtrToInt::initialize(llvm::Value * irval,
 
 void
 PtrToInt::compute() {
-    // Perform computations
-    // Store results in temp location
     auto opdata = operands.front().getPtrRegValue();
+#ifdef USE_AP_VALUES
     setRegisterValue(llvm::APInt(64, *opdata));
+#else
+    setRegisterValue(*opdata);
+#endif
 }
 
 // SALAM-IntToPtr // --------------------------------------------------------//
@@ -2495,12 +2968,15 @@ IntToPtr::initialize(llvm::Value * irval,
 
 void
 IntToPtr::compute() {
-    // Perform computations
-    // Store results in temp location
+#ifdef USE_AP_VALUES
     auto opdata = operands.front().getIntRegValue();
     assert(opdata->isUnsigned());
     int64_t tmp = opdata->getExtValue();
     setRegisterValue(*(uint64_t *)&tmp);
+#else
+    auto opdata = operands.front().getUIntRegValue();
+    setRegisterValue(opdata);
+#endif
 }
 
 // SALAM-ICmp // ------------------------------------------------------------//
@@ -2557,6 +3033,7 @@ void
 ICmp::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
     switch(predicate)
     {
         case SALAM::Predicate::ICMP_EQ: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())))); break; }
@@ -2572,6 +3049,26 @@ ICmp::compute() {
         default: break;
 
     }
+#else
+    uint64_t uOp1 = operands.at(0).getUIntRegValue();
+    uint64_t uOp2 = operands.at(1).getUIntRegValue();
+    int64_t  sOp1 = operands.at(0).getSIntRegValue();
+    int64_t  sOp2 = operands.at(1).getSIntRegValue();
+
+    switch (predicate) {
+        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(uOp1 == uOp2); break; }
+        case SALAM::Predicate::ICMP_NE: { setRegisterValue(uOp1 != uOp2); break; }
+        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(uOp1 > uOp2); break; }
+        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(uOp1 >= uOp2); break; }
+        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(uOp1 < uOp2); break; }
+        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(uOp1 <= uOp2); break; }
+        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(sOp1 > sOp2); break; }
+        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(sOp1 >= sOp2); break; }
+        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(sOp1 < sOp2); break; }
+        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(sOp1 <= sOp2); break; }
+        default: break;
+    }
+#endif
 }
 
 // SALAM-FCmp // ------------------------------------------------------------//
@@ -2631,6 +3128,10 @@ FCmp::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+#ifdef USE_AP_VALUES
+    auto op1 = *operands.at(0).getFloatRegValue();
+    auto op2 = *operands.at(1).getFloatRegValue();
+    auto cmp = op1.compare(op2);
     switch(predicate)
     {
         case SALAM::Predicate::FCMP_FALSE: {
@@ -2638,94 +3139,62 @@ FCmp::compute() {
             break;
         }
         case SALAM::Predicate::FCMP_OEQ:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
+            
             bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_OGT:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_OGE:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
                           (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_OLT:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_OLE:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ONE:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) && 
                           (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ORD:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UNO:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp == llvm::APFloatBase::cmpResult::cmpUnordered);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UEQ:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UGT:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UGE:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
@@ -2733,18 +3202,12 @@ FCmp::compute() {
             break;
         }
         case SALAM::Predicate::FCMP_ULT:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
             setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ULE:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
@@ -2752,9 +3215,6 @@ FCmp::compute() {
             break;
         }
         case SALAM::Predicate::FCMP_UNE:   {
-            auto op1 = *operands.at(0).getFloatRegValue();
-            auto op2 = *operands.at(1).getFloatRegValue();
-            auto cmp = op1.compare(op2);
             bool result = (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
             setRegisterValue(result);
             break;
@@ -2764,6 +3224,109 @@ FCmp::compute() {
             break;
         }
     }
+#else
+    double op1, op2;
+    switch (operands.front().getSize()) {
+        case 32:
+        {
+            op1 = (double)operands.at(0).getFloatFromReg();
+            op2 = (double)operands.at(1).getFloatFromReg();
+            break;
+        }
+        case 64:
+        {
+            op1 = operands.at(0).getDoubleFromReg();
+            op2 = operands.at(1).getDoubleFromReg();
+            break;
+        }
+        default:
+        {
+            assert(0 && "Must use AP values for nonstandard FP sizes.");
+            break;
+        }
+    }
+    bool unordered = (std::isnan(op1) || std::isnan(op2));
+    switch (predicate) {
+        case SALAM::Predicate::FCMP_FALSE: {
+            setRegisterValue(false);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OEQ:   {
+            bool result = (!unordered && (op1 == op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OGT:   {
+            bool result = (!unordered && (op1 > op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OGE:   {
+            bool result = (!unordered && (op1 >= op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OLT:   {
+            bool result = (!unordered && (op1 < op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_OLE:   {
+            bool result = (!unordered && (op1 <= op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ONE:   {
+            bool result = (!unordered && (op1 != op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ORD:   {
+            bool result = (!unordered);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UNO:   {
+            bool result = (unordered);
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UEQ:   {
+            bool result = (unordered || (op1 == op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UGT:   {
+            bool result = (unordered || (op1 > op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UGE:   {
+            bool result = (unordered || (op1 >= op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ULT:   {
+            bool result = (unordered || (op1 < op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_ULE:   {
+            bool result = (unordered || (op1 <= op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_UNE:   {
+            bool result = (unordered || (op1 != op2));
+            setRegisterValue(result);
+            break;
+        }
+        case SALAM::Predicate::FCMP_TRUE:  {
+            setRegisterValue(true);
+            break;
+        }
+    }
+#endif
 }
 
 // SALAM-Phi // -------------------------------------------------------------//
@@ -2955,16 +3518,32 @@ Select::initialize(llvm::Value * irval,
     // ****** //
 }
 
-std::shared_ptr<SALAM::Value>
-Select::evaluate() {
-    if(condition->getReg()->getIntData()->isOneValue()) return trueValue;
-    return falseValue;
-}
+// std::shared_ptr<SALAM::Value>
+// Select::evaluate() {
+// #ifdef USE_AP_VALUES
+//     if(condition->getIntRegValue()->isOneValue()) return trueValue;
+//     return falseValue;
+// #else
+//     if(condition->getUIntRegValue() == 1) return trueValue;
+//     return falseValue;
+// #endif
+// }
 
 void
 Select::compute() {
-    // Perform computations
-    // Store results in temp location
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+
+    auto cond = operands.at(0);
+    auto trueVal = operands.at(1);
+    auto falseVal = operands.at(2);
+
+#ifdef USE_AP_VALUES
+    auto resultReg = (cond.getIntRegValue()->isOneValue()) ? trueVal.getOpRegister() : falseVal.getOpRegister();
+#else
+    auto resultReg = (cond.getUIntRegValue() == 1) ? trueVal.getOpRegister() : falseVal.getOpRegister();
+#endif
+    setRegisterValue(resultReg);
 }
 
 } // namespace SALAM

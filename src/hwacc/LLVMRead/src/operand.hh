@@ -49,8 +49,17 @@ class Operand: public Value
         void updateOperandRegister();
 
         virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
+    #ifdef USE_AP_VALUES
         virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
         virtual llvm::APSInt * getIntRegValue() { return lockedValue->getIntData(); }
+    #else
+        virtual uint64_t * getFloatRegValue() { return lockedValue->getFloatData(); }
+        virtual float getFloatFromReg() { return lockedValue->getFloat(); }
+        virtual double getDoubleFromReg() { return lockedValue->getDouble(); }
+        virtual uint64_t * getIntRegValue() { return lockedValue->getIntData(); }
+        virtual uint64_t getUIntRegValue() { return lockedValue->getUnsignedInt(); }
+        virtual int64_t getSIntRegValue() { return lockedValue->getSignedInt(size); }
+    #endif
         std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
 };
 

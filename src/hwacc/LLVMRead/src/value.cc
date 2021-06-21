@@ -37,7 +37,6 @@ SALAM::Value::operator = (Value &copy_val)
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
 	size = copy_val.size;
-	bitmask = copy_val.bitmask;
   	return *this;
 }
 
@@ -76,11 +75,6 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	}
 	// Link Return Register
 	if (size>0) addRegister(true);
-	#ifndef USE_AP_VALUES
-		bitmask = 0;
-		assert((size <= 64) && "Only 64-bit and smaller values are supported when not using AP values.");
-		bitmask = (bitmask - 1) >> (64 - size);
-	#endif
 
 	std::string tmpstr;
 	llvm::raw_string_ostream ss(ir_string);
@@ -127,13 +121,19 @@ SALAM::Value::addRegister(bool istracked) {
 	SALAM::Value::addAPIntRegister(const uint64_t & val) {
 		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 		assert(irtype->isIntegerTy());
-		returnReg = std::make_shared<APIntRegister>(val);
+		uint64_t bitmask = 0;
+		assert((size <= 64) && "Only 64-bit and smaller values are supported when not using AP values.");
+		bitmask = (bitmask - 1) >> (64 - size);
+		returnReg = std::make_shared<APIntRegister>(val & bitmask);
 	}
 	void
 	SALAM::Value::addAPFloatRegister(const uint64_t & val) {
 		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 		assert(irtype->isFloatingPointTy());
-		returnReg = std::make_shared<APFloatRegister>(val);
+		uint64_t bitmask = 0;
+		assert((size <= 64) && "Only 64-bit and smaller values are supported when not using AP values.");
+		bitmask = (bitmask - 1) >> (64 - size);
+		returnReg = std::make_shared<APFloatRegister>(val & bitmask);
 	}
 #endif
 
@@ -180,20 +180,20 @@ SALAM::Value::setRegisterValue(const uint64_t data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (returnReg->isPtr()) {
     	DPRINTF(Runtime, "| Ptr Register\n");
-		uint64_t * regData = returnReg->getPtrData();
-		*regData = data;
+		uint64_t tmp = data;
+		returnReg->writePtrData(&tmp);
 	} else {
 	#ifdef USE_AP_VALUES
 		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place Ptr data in non-Ptr register.\n");
 	#else
 		if (returnReg->isInt()) {
 			DPRINTF(Runtime, "| Int Register\n");
-			uint64_t * regData = returnReg->getIntData();
-			*regData = data & bitmask;
+			uint64_t tmp = data;
+			returnReg->writeIntData(&tmp, getSizeInBytes());
 		} else {
 			DPRINTF(Runtime, "| FP Register\n");
-			uint64_t * regData = returnReg->getPtrData();
-			*regData = data & bitmask;
+			uint64_t tmp = data;
+			returnReg->writeFloatData(&tmp, getSizeInBytes());
 		}
 	#endif
 	}
@@ -251,7 +251,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         case llvm::Type::IntegerTyID:
         {
             DPRINTF(Runtime, "Integer Type | Size = %d\n", size);
-            returnReg->writeIntData((uint64_t *)data, (size_t)getSizeInBytes);
+            returnReg->writeIntData((uint64_t *)data, (size_t)getSizeInBytes());
             break;
         }
     #endif
@@ -272,14 +272,21 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 void
 SALAM::Value::setRegisterValue(bool data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(Runtime, "| APInt Register\n");
+    DPRINTF(Runtime, "| Int Register\n");
 	if (returnReg->isInt()) {
-		llvm::APInt * regData = returnReg->getIntData();
+	#ifdef USE_AP_VALUES
 		if (data == true) {
-			*regData = llvm::APInt::getAllOnesValue(1);
+			setRegisterValue(llvm::APInt::getAllOnesValue(1));
 		} else {
-			*regData = llvm::APInt::getNullValue(1);
+			setRegisterValue(llvm::APInt::getNullValue(1));
 		}
+	#else
+		if (data == true) {
+			setRegisterValue((uint64_t)1);
+		} else {
+			setRegisterValue((uint64_t)0);
+		}
+	#endif
 	} else {
 		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place integer data in non-integer register.\n");
 	}

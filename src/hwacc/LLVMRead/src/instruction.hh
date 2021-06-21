@@ -206,7 +206,7 @@ createBrInst(uint64_t id,
               uint64_t cycles);
 
 // SALAM-Switch // ----------------------------------------------------------//
-typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value>> caseArgs;
+typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock>> caseArgs;
 typedef std::vector< caseArgs> switchArgs;
 
 class Switch : public Instruction {
@@ -215,10 +215,10 @@ class Switch : public Instruction {
         // conditions.at[0] == base params
         // [0] [Switch Var, Default Dest]
         // [1] [ Case Var, Case Dest ] .... [n]
-        switchArgs arguments;
+        switchArgs cases;
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
-        
+        std::shared_ptr<SALAM::BasicBlock> defaultDestination;
     protected:
     public:
         Switch(uint64_t id,
@@ -228,8 +228,8 @@ class Switch : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        std::shared_ptr<SALAM::Value> defaultDest() { return arguments[0].second; }
-        std::shared_ptr<SALAM::Value> destination(int switchVar);
+        // std::shared_ptr<SALAM::Value> defaultDest() { return arguments[0].second; }
+        // std::shared_ptr<SALAM::Value> destination(int switchVar);
         std::shared_ptr<SALAM::BasicBlock> getTarget() override;
         bool isTerminator() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
@@ -1422,8 +1422,8 @@ class Select : public Instruction {
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
-        std::shared_ptr<SALAM::Value> evaluate();
-        bool isTerminator() override { return true; }
+        // std::shared_ptr<SALAM::Value> evaluate();
+        // bool isTerminator() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
