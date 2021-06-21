@@ -1,13 +1,63 @@
 #include "../common/support.h"
 #include "../../../head_hw_defines.h"
 
+#define __FEATURES_16_CONV_0__INPUT_CHAN__          56
+#define __FEATURES_16_CONV_0__INPUT_SIZE__          3
+#define __FEATURES_16_CONV_0__OUTPUT_CHAN__         336
+#define __FEATURES_16_CONV_0__OUTPUT_SIZE__         3
+#define __FEATURES_16_CONV_0__KERNEL_SIZE__         1
+#define __FEATURES_16_CONV_0__STRIDE_SIZE__         1
+#define __FEATURES_16_CONV_0__PADDING_SIZE__        0
+#define __FEATURES_16_CONV_2__INPUT_CHAN__          336
+#define __FEATURES_16_CONV_2__INPUT_SIZE__          3
+#define __FEATURES_16_CONV_2__OUTPUT_CHAN__         336
+#define __FEATURES_16_CONV_2__OUTPUT_SIZE__         3
+#define __FEATURES_16_CONV_2__KERNEL_SIZE__         3
+#define __FEATURES_16_CONV_2__STRIDE_SIZE__         1
+#define __FEATURES_16_CONV_2__PADDING_SIZE__        1
+#define __FEATURES_16_CONV_4__INPUT_CHAN__          336
+#define __FEATURES_16_CONV_4__INPUT_SIZE__          3
+#define __FEATURES_16_CONV_4__OUTPUT_CHAN__         56
+#define __FEATURES_16_CONV_4__OUTPUT_SIZE__         3
+#define __FEATURES_16_CONV_4__KERNEL_SIZE__         1
+#define __FEATURES_16_CONV_4__STRIDE_SIZE__         1
+#define __FEATURES_16_CONV_4__PADDING_SIZE__        0
+#define __FEATURES_17_CONV_0__INPUT_CHAN__          56
+#define __FEATURES_17_CONV_0__INPUT_SIZE__          3
+#define __FEATURES_17_CONV_0__OUTPUT_CHAN__         336
+#define __FEATURES_17_CONV_0__OUTPUT_SIZE__         3
+#define __FEATURES_17_CONV_0__KERNEL_SIZE__         1
+#define __FEATURES_17_CONV_0__STRIDE_SIZE__         1
+#define __FEATURES_17_CONV_0__PADDING_SIZE__        0
+#define __FEATURES_17_CONV_2__INPUT_CHAN__          336
+#define __FEATURES_17_CONV_2__INPUT_SIZE__          3
+#define __FEATURES_17_CONV_2__OUTPUT_CHAN__         336
+#define __FEATURES_17_CONV_2__OUTPUT_SIZE__         3
+#define __FEATURES_17_CONV_2__KERNEL_SIZE__         3
+#define __FEATURES_17_CONV_2__STRIDE_SIZE__         1
+#define __FEATURES_17_CONV_2__PADDING_SIZE__        1
+#define __FEATURES_17_CONV_4__INPUT_CHAN__          336
+#define __FEATURES_17_CONV_4__INPUT_SIZE__          3
+#define __FEATURES_17_CONV_4__OUTPUT_CHAN__         112
+#define __FEATURES_17_CONV_4__OUTPUT_SIZE__         3
+#define __FEATURES_17_CONV_4__KERNEL_SIZE__         1
+#define __FEATURES_17_CONV_4__STRIDE_SIZE__         1
+#define __FEATURES_17_CONV_4__PADDING_SIZE__        0
+#define __CONV_0__INPUT_CHAN__                      112
+#define __CONV_0__INPUT_SIZE__                      3
+#define __CONV_0__OUTPUT_CHAN__                     1280
+#define __CONV_0__OUTPUT_SIZE__                     3
+#define __CONV_0__KERNEL_SIZE__                     1
+#define __CONV_0__STRIDE_SIZE__                     1
+#define __CONV_0__PADDING_SIZE__                    0
+
 /***********************************************************
  * Computation Defines
  ***********************************************************/
 
 // PW Conv
-#define PW_IN_SIZE		5
-#define PW_OUT_SIZE		5
+#define PW_IN_SIZE		3
+#define PW_OUT_SIZE		3
 #define PW_IN_CH		240
 #define PW_OUT_CH		1280
 #define PW_CORE_SIZE	80
@@ -19,12 +69,12 @@
 #define PWOutputSize	PW_OUT_SIZE*PW_OUT_SIZE*PW_OUT_CH
 
 // Reshape (Matrix Transpose)
-#define RS_OUT_SIZE		5
+#define RS_OUT_SIZE		3
 #define RS_OUT_CH		1280
 
 // Avg Pooling
 #define POOL_CH			1280
-#define POOL_SIZE		5
+#define POOL_SIZE		3
 #define POOL_IMULT		163
 #define POOL_NSHIFT		12
 

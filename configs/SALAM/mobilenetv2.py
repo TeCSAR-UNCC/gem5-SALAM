@@ -1,3 +1,4 @@
+# type: ignore
 import m5
 from m5.objects import *
 from m5.util import *
@@ -30,7 +31,7 @@ def buildhead(options, system, clstr):
 	# Noncoherent DMA
 	clstr.dma = NoncoherentDma(pio_addr=0x10020000, pio_size = 21, gic=gic, int_num=95)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
-	clstr.dma.max_req_size = 1
+	clstr.dma.max_req_size = 64
 	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
@@ -90,6 +91,8 @@ def buildhead(options, system, clstr):
 	clstr.normalconvwindow.conf_table_reported = False
 	clstr.normalconvwindow.ready_mode = False
 	clstr.normalconvwindow.port = clstr.local_bus.master
+	
+	# Connecting NormalConvWindow to NormalConv
 	for i in range(27):
 		clstr.normalconv.spm = clstr.normalconvwindow.spm_ports
 	
@@ -100,6 +103,8 @@ def buildhead(options, system, clstr):
 	clstr.normalconvweights.conf_table_reported = False
 	clstr.normalconvweights.ready_mode = False
 	clstr.normalconvweights.port = clstr.local_bus.master
+	
+	# Connecting NormalConvWeights to NormalConv
 	for i in range(27):
 		clstr.normalconv.spm = clstr.normalconvweights.spm_ports
 	
@@ -110,6 +115,8 @@ def buildhead(options, system, clstr):
 	clstr.normalconvqparams.conf_table_reported = False
 	clstr.normalconvqparams.ready_mode = False
 	clstr.normalconvqparams.port = clstr.local_bus.master
+	
+	# Connecting NormalConvQParams to NormalConv
 	for i in range(1):
 		clstr.normalconv.spm = clstr.normalconvqparams.spm_ports
 	
@@ -120,6 +127,8 @@ def buildhead(options, system, clstr):
 	clstr.normalconvqbuffer.conf_table_reported = False
 	clstr.normalconvqbuffer.ready_mode = False
 	clstr.normalconvqbuffer.port = clstr.local_bus.master
+	
+	# Connecting NormalConvQBuffer to NormalConv
 	for i in range(2):
 		clstr.normalconv.spm = clstr.normalconvqbuffer.spm_ports
 	
@@ -141,6 +150,8 @@ def buildhead(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
+	
+	# Connecting DWConvWindow to DWConv
 	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
@@ -151,6 +162,8 @@ def buildhead(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
+	
+	# Connecting DWConvWeights to DWConv
 	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
@@ -161,6 +174,8 @@ def buildhead(options, system, clstr):
 	clstr.dwconvqparams.conf_table_reported = False
 	clstr.dwconvqparams.ready_mode = False
 	clstr.dwconvqparams.port = clstr.local_bus.master
+	
+	# Connecting DWConvQParams to DWConv
 	for i in range(1):
 		clstr.dwconv.spm = clstr.dwconvqparams.spm_ports
 	
@@ -171,6 +186,8 @@ def buildhead(options, system, clstr):
 	clstr.dwconvqbuffer.conf_table_reported = False
 	clstr.dwconvqbuffer.ready_mode = False
 	clstr.dwconvqbuffer.port = clstr.local_bus.master
+	
+	# Connecting DWConvQBuffer to DWConv
 	for i in range(2):
 		clstr.dwconv.spm = clstr.dwconvqbuffer.spm_ports
 	
@@ -181,6 +198,8 @@ def buildhead(options, system, clstr):
 	clstr.dwconvoutbuffer.conf_table_reported = False
 	clstr.dwconvoutbuffer.ready_mode = False
 	clstr.dwconvoutbuffer.port = clstr.local_bus.master
+	
+	# Connecting DWConvOutBuffer to DWConv
 	for i in range(1):
 		clstr.dwconv.spm = clstr.dwconvoutbuffer.spm_ports
 	
@@ -203,6 +222,8 @@ def buildhead(options, system, clstr):
 	clstr.pwconvlocalfeatsize.conf_table_reported = False
 	clstr.pwconvlocalfeatsize.ready_mode = False
 	clstr.pwconvlocalfeatsize.port = clstr.local_bus.master
+	
+	# Connecting PWConvLocalFeatSize to PWConv
 	for i in range(24):
 		clstr.pwconv.spm = clstr.pwconvlocalfeatsize.spm_ports
 	
@@ -213,6 +234,8 @@ def buildhead(options, system, clstr):
 	clstr.pwconvweights.conf_table_reported = False
 	clstr.pwconvweights.ready_mode = False
 	clstr.pwconvweights.port = clstr.local_bus.master
+	
+	# Connecting PWConvWeights to PWConv
 	for i in range(24):
 		clstr.pwconv.spm = clstr.pwconvweights.spm_ports
 	
@@ -223,6 +246,8 @@ def buildhead(options, system, clstr):
 	clstr.pwconvqparams.conf_table_reported = False
 	clstr.pwconvqparams.ready_mode = False
 	clstr.pwconvqparams.port = clstr.local_bus.master
+	
+	# Connecting PWConvQParams to PWConv
 	for i in range(1):
 		clstr.pwconv.spm = clstr.pwconvqparams.spm_ports
 	
@@ -239,7 +264,7 @@ def buildbody(options, system, clstr):
 	# Noncoherent DMA
 	clstr.dma = NoncoherentDma(pio_addr=0x100211df, pio_size = 21, gic=gic, int_num=96)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
-	clstr.dma.max_req_size = 1
+	clstr.dma.max_req_size = 64
 	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
@@ -328,6 +353,8 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0localfeatsize.conf_table_reported = False
 	clstr.pwconv0localfeatsize.ready_mode = False
 	clstr.pwconv0localfeatsize.port = clstr.local_bus.master
+	
+	# Connecting PWConv0LocalFeatSize to PWConv0
 	for i in range(120):
 		clstr.pwconv0.spm = clstr.pwconv0localfeatsize.spm_ports
 	
@@ -338,6 +365,8 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0weights.conf_table_reported = False
 	clstr.pwconv0weights.ready_mode = False
 	clstr.pwconv0weights.port = clstr.local_bus.master
+	
+	# Connecting PWConv0Weights to PWConv0
 	for i in range(120):
 		clstr.pwconv0.spm = clstr.pwconv0weights.spm_ports
 	
@@ -348,6 +377,8 @@ def buildbody(options, system, clstr):
 	clstr.pwconv0qparams.conf_table_reported = False
 	clstr.pwconv0qparams.ready_mode = False
 	clstr.pwconv0qparams.port = clstr.local_bus.master
+	
+	# Connecting PWConv0QParams to PWConv0
 	for i in range(1):
 		clstr.pwconv0.spm = clstr.pwconv0qparams.spm_ports
 	
@@ -369,6 +400,8 @@ def buildbody(options, system, clstr):
 	clstr.dwconvwindow.conf_table_reported = False
 	clstr.dwconvwindow.ready_mode = False
 	clstr.dwconvwindow.port = clstr.local_bus.master
+	
+	# Connecting DWConvWindow to DWConv
 	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvwindow.spm_ports
 	
@@ -379,6 +412,8 @@ def buildbody(options, system, clstr):
 	clstr.dwconvweights.conf_table_reported = False
 	clstr.dwconvweights.ready_mode = False
 	clstr.dwconvweights.port = clstr.local_bus.master
+	
+	# Connecting DWConvWeights to DWConv
 	for i in range(9):
 		clstr.dwconv.spm = clstr.dwconvweights.spm_ports
 	
@@ -389,6 +424,8 @@ def buildbody(options, system, clstr):
 	clstr.dwconvqparams.conf_table_reported = False
 	clstr.dwconvqparams.ready_mode = False
 	clstr.dwconvqparams.port = clstr.local_bus.master
+	
+	# Connecting DWConvQParams to DWConv
 	for i in range(1):
 		clstr.dwconv.spm = clstr.dwconvqparams.spm_ports
 	
@@ -399,6 +436,8 @@ def buildbody(options, system, clstr):
 	clstr.dwconvbuffer.conf_table_reported = False
 	clstr.dwconvbuffer.ready_mode = False
 	clstr.dwconvbuffer.port = clstr.local_bus.master
+	
+	# Connecting DWConvBuffer to DWConv
 	for i in range(2):
 		clstr.dwconv.spm = clstr.dwconvbuffer.spm_ports
 	
@@ -409,6 +448,8 @@ def buildbody(options, system, clstr):
 	clstr.dwconvoutbuffer.conf_table_reported = False
 	clstr.dwconvoutbuffer.ready_mode = False
 	clstr.dwconvoutbuffer.port = clstr.local_bus.master
+	
+	# Connecting DWConvOutBuffer to DWConv
 	for i in range(1):
 		clstr.dwconv.spm = clstr.dwconvoutbuffer.spm_ports
 	
@@ -431,6 +472,8 @@ def buildbody(options, system, clstr):
 	clstr.pwconv1localfeatsize.conf_table_reported = False
 	clstr.pwconv1localfeatsize.ready_mode = False
 	clstr.pwconv1localfeatsize.port = clstr.local_bus.master
+	
+	# Connecting PWConv1LocalFeatSize to PWConv1
 	for i in range(120):
 		clstr.pwconv1.spm = clstr.pwconv1localfeatsize.spm_ports
 	
@@ -441,6 +484,8 @@ def buildbody(options, system, clstr):
 	clstr.pwconv1weights.conf_table_reported = False
 	clstr.pwconv1weights.ready_mode = False
 	clstr.pwconv1weights.port = clstr.local_bus.master
+	
+	# Connecting PWConv1Weights to PWConv1
 	for i in range(120):
 		clstr.pwconv1.spm = clstr.pwconv1weights.spm_ports
 	
@@ -451,6 +496,8 @@ def buildbody(options, system, clstr):
 	clstr.pwconv1qparams.conf_table_reported = False
 	clstr.pwconv1qparams.ready_mode = False
 	clstr.pwconv1qparams.port = clstr.local_bus.master
+	
+	# Connecting PWConv1QParams to PWConv1
 	for i in range(1):
 		clstr.pwconv1.spm = clstr.pwconv1qparams.spm_ports
 	
@@ -467,7 +514,7 @@ def buildtail(options, system, clstr):
 	# Noncoherent DMA
 	clstr.dma = NoncoherentDma(pio_addr=0x10081825, pio_size = 21, gic=gic, int_num=95)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
-	clstr.dma.max_req_size = 1
+	clstr.dma.max_req_size = 64
 	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
@@ -527,6 +574,8 @@ def buildtail(options, system, clstr):
 	clstr.pwconvlocalfeatsize.conf_table_reported = False
 	clstr.pwconvlocalfeatsize.ready_mode = False
 	clstr.pwconvlocalfeatsize.port = clstr.local_bus.master
+	
+	# Connecting PWConvLocalFeatSize to PWConv
 	for i in range(24):
 		clstr.pwconv.spm = clstr.pwconvlocalfeatsize.spm_ports
 	
@@ -537,6 +586,8 @@ def buildtail(options, system, clstr):
 	clstr.pwconvweights.conf_table_reported = False
 	clstr.pwconvweights.ready_mode = False
 	clstr.pwconvweights.port = clstr.local_bus.master
+	
+	# Connecting PWConvWeights to PWConv
 	for i in range(24):
 		clstr.pwconv.spm = clstr.pwconvweights.spm_ports
 	
@@ -547,6 +598,8 @@ def buildtail(options, system, clstr):
 	clstr.pwconvqparams.conf_table_reported = False
 	clstr.pwconvqparams.ready_mode = False
 	clstr.pwconvqparams.port = clstr.local_bus.master
+	
+	# Connecting PWConvQParams to PWConv
 	for i in range(1):
 		clstr.pwconv.spm = clstr.pwconvqparams.spm_ports
 	
@@ -568,8 +621,14 @@ def buildtail(options, system, clstr):
 	clstr.reshapeout.conf_table_reported = False
 	clstr.reshapeout.ready_mode = False
 	clstr.reshapeout.port = clstr.local_bus.master
+	
+	# Connecting ReshapeOut to Reshape
 	for i in range(1):
 		clstr.reshape.spm = clstr.reshapeout.spm_ports
+	
+	# Connecting ReshapeOut to AvgPool
+	for i in range(1):
+		clstr.avgpool.spm = clstr.reshapeout.spm_ports
 	
 	# avgpool Config
 	clstr.avgpool.pio = clstr.local_bus.master
@@ -589,7 +648,7 @@ def buildclassifier(options, system, clstr):
 	# Noncoherent DMA
 	clstr.dma = NoncoherentDma(pio_addr=0x100d6498, pio_size = 21, gic=gic, int_num=95)
 	clstr.dma.cluster_dma = clstr.local_bus.slave
-	clstr.dma.max_req_size = 1
+	clstr.dma.max_req_size = 64
 	clstr.dma.buffer_size = 128
 	clstr.dma.dma = clstr.coherency_bus.slave
 	clstr.local_bus.master = clstr.dma.pio
@@ -636,6 +695,8 @@ def buildclassifier(options, system, clstr):
 	clstr.linearfeats.conf_table_reported = False
 	clstr.linearfeats.ready_mode = False
 	clstr.linearfeats.port = clstr.local_bus.master
+	
+	# Connecting LinearFeats to Linear
 	for i in range(1):
 		clstr.linear.spm = clstr.linearfeats.spm_ports
 	
@@ -646,6 +707,8 @@ def buildclassifier(options, system, clstr):
 	clstr.linearweights.conf_table_reported = False
 	clstr.linearweights.ready_mode = False
 	clstr.linearweights.port = clstr.local_bus.master
+	
+	# Connecting LinearWeights to Linear
 	for i in range(1):
 		clstr.linear.spm = clstr.linearweights.spm_ports
 	
@@ -656,6 +719,8 @@ def buildclassifier(options, system, clstr):
 	clstr.linearqparams.conf_table_reported = False
 	clstr.linearqparams.ready_mode = False
 	clstr.linearqparams.port = clstr.local_bus.master
+	
+	# Connecting LinearQParams to Linear
 	for i in range(1):
 		clstr.linear.spm = clstr.linearqparams.spm_ports
 	
@@ -666,6 +731,8 @@ def buildclassifier(options, system, clstr):
 	clstr.linearsum.conf_table_reported = False
 	clstr.linearsum.ready_mode = False
 	clstr.linearsum.port = clstr.local_bus.master
+	
+	# Connecting LinearSum to Linear
 	for i in range(1):
 		clstr.linear.spm = clstr.linearsum.spm_ports
 	

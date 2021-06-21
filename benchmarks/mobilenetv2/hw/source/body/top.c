@@ -73,6 +73,7 @@ switch(stage) {
 			*PW1BiasZP   = PW1_0_BIAS_ZP;
 			*PW1InputZP  = PW1_0_IN_ZP;
 			*PW1OutputZP = PW1_0_OUT_ZP;
+			
 			break;
 		case 1:
 			InputSize    = PW0_1_I_SIZE * PW0_1_I_SIZE * PW0_1_IC_SIZE;
