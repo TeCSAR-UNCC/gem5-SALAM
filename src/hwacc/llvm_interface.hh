@@ -73,8 +73,11 @@ class LLVMInterface : public ComputeUnit {
     bool compOpScheduled;
     bool lockstep;
     bool dbg;
-    std::chrono::duration<double> setupTime;
-    std::chrono::duration<double> simTime;
+    std::chrono::duration<float> setupTime;
+    std::chrono::duration<float> simTime;
+    std::chrono::duration<float> schedulingTime;
+    std::chrono::duration<float> queueProcessTime;
+    std::chrono::duration<float> computeTime;
     std::chrono::high_resolution_clock::time_point simStop;
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
@@ -140,11 +143,14 @@ class LLVMInterface : public ComputeUnit {
     void endFunction(ActiveFunction * afunc);
     void launchRead(MemoryRequest * memReq, ActiveFunction * func);
     void launchWrite(MemoryRequest * memReq, ActiveFunction * func);
-    std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst, 
+    std::shared_ptr<SALAM::Instruction> createInstruction(llvm::Instruction *inst,
                                                           uint64_t id);
     void dumpQueues();
     uint32_t getSchedulingThreshold() { return scheduling_threshold; }
     llvm::DataLayout * getDataLayout() { return layout; }
+    void addSchedulingTime(std::chrono::duration<float> timeDelta) { schedulingTime = schedulingTime + timeDelta; }
+    void addQueueTime(std::chrono::duration<float> timeDelta) { queueProcessTime = queueProcessTime + timeDelta; }
+    void addComputeTime(std::chrono::duration<float> timeDelta) { computeTime = computeTime + timeDelta; }
 };
 
 #endif //__HWACC_LLVM_INTERFACE_HH__

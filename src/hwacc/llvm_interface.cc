@@ -41,6 +41,7 @@ std::shared_ptr<SALAM::Value> createClone(const std::shared_ptr<SALAM::Value>& b
 void
 LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
 {
+    auto schedulingStart = std::chrono::high_resolution_clock::now();
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else DPRINTFR(Runtime,"|---[Schedule BB - UID:%i ]\n", bb->getUID());
     auto instruction_list = *(bb->Instructions());
@@ -73,11 +74,14 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
         }
     }
     previousBB = bb;
+    auto schedulingStop = std::chrono::high_resolution_clock::now();
+    owner->addSchedulingTime(schedulingStop - schedulingStart);
 }
 
 void
 LLVMInterface::ActiveFunction::processQueues()
 {
+    auto queueStart = std::chrono::high_resolution_clock::now();
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
 
@@ -141,10 +145,13 @@ LLVMInterface::ActiveFunction::processQueues()
                         }
                         computeQueue.push_back(*queue_iter);
                     } else {
+                        auto computeStart = std::chrono::high_resolution_clock::now();
                         if (!(*queue_iter)->launch()) {
                             DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             computeQueue.push_back(*queue_iter);
                         }
+                        auto computeStop = std::chrono::high_resolution_clock::now();
+                        owner->addComputeTime(computeStop-computeStart);
                     }
                     DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                     queue_iter = reservation.erase(queue_iter);
@@ -156,6 +163,8 @@ LLVMInterface::ActiveFunction::processQueues()
             }
         }
     }
+    auto queueStop = std::chrono::high_resolution_clock::now();
+    owner->addQueueTime(queueStop-queueStart);
 }
 
 
@@ -178,7 +187,7 @@ LLVMInterface::ActiveFunction::processQueues()
 void
 LLVMInterface::tick()
 {
-        if (DTRACE(Step)) {
+    if (DTRACE(Step)) {
         char response;
         do
         {
@@ -187,7 +196,7 @@ LLVMInterface::tick()
             if (response == 'q') panic("Exit Program");
         } while (response != '\n');
     }
-
+    auto tickStart = std::chrono::high_resolution_clock::now();
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (debug()) DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
         "********************************************************************************",
@@ -213,6 +222,8 @@ LLVMInterface::tick()
     if (running && !tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + clock_period);// * process_delay);
     }
+    auto tickStop = std::chrono::high_resolution_clock::now();
+    simTime = simTime + (tickStop - tickStart);
 }
 
 
@@ -238,7 +249,6 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
 
     // Fetch the UIDs of static operands
     for (auto static_dep : inst->getStaticDependencies()) {
-        dep_uids.push_back(static_dep->getUID());
         // Inintialize the operands here
         // +++ call constructor for Operand
         //      copy constructor for value
@@ -246,8 +256,12 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
         // SALAM::Operand newOp(static_dep->getUID());
         SALAM::Operand *newOp = new SALAM::Operand(*(static_dep.get()));
         inst->linkOperands(*newOp);
-        // Ordered the same as static dependencies
-        // Also matches order of IR
+        auto dep_uid = static_dep->getUID();
+        if (static_dep->isConstant() || static_dep->isArgument()) {
+            inst->setOperandValue(dep_uid);
+        } else {
+            dep_uids.push_back(dep_uid);
+        }
     }
 
     // Find dependencies currently in queues
@@ -267,59 +281,71 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
                 dep_it++;
             }
         }
+        if (dep_uids.empty()) break;
     }
 
-    // The other queues do not need to be reverse-searched since only 1 instance of any instruction can exist in them
-    // Check the compute queue
-    for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end(); ++queue_iter) {
-        auto queued_inst = *queue_iter;
-        // Look at each instruction in runtime queue once
-        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
-            // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == *dep_it) {
-                // If dependency found, create two way link
-                inst->addRuntimeDependency(queued_inst);
-                queued_inst->addRuntimeUser(inst);
-                dep_it = dep_uids.erase(dep_it);
-            } else {
-                dep_it++;
+    if (!dep_uids.empty()) {
+        // The other queues do not need to be reverse-searched since only 1 instance of any instruction can exist in them
+        // Check the compute queue
+        for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end(); ++queue_iter) {
+            auto queued_inst = *queue_iter;
+            // Look at each instruction in runtime queue once
+            for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == *dep_it) {
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
+                    queued_inst->addRuntimeUser(inst);
+                    dep_it = dep_uids.erase(dep_it);
+                } else {
+                    dep_it++;
+                }
             }
+            if (dep_uids.empty()) break;
         }
     }
-    // Check the memory read queue
-    // for (auto queued_read : readQueue) {
-    for (auto rq_it = readQueue.begin(); rq_it != readQueue.end(); rq_it++) {
-        auto queued_read = *rq_it;
-        auto queued_inst = queued_read.second;
-        // Look at each instruction in runtime queue once
-        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
-            // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == *dep_it) {
-                // If dependency found, create two way link
-                inst->addRuntimeDependency(queued_inst);
-                queued_inst->addRuntimeUser(inst);
-                dep_it = dep_uids.erase(dep_it);
-            } else {
-                dep_it++;
+
+    if (!dep_uids.empty()) {
+        // Check the memory read queue
+        // for (auto queued_read : readQueue) {
+        for (auto rq_it = readQueue.begin(); rq_it != readQueue.end(); rq_it++) {
+            auto queued_read = *rq_it;
+            auto queued_inst = queued_read.second;
+            // Look at each instruction in runtime queue once
+            for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == *dep_it) {
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
+                    queued_inst->addRuntimeUser(inst);
+                    dep_it = dep_uids.erase(dep_it);
+                } else {
+                    dep_it++;
+                }
             }
+            if (dep_uids.empty()) break;
         }
     }
-    // Check the memory write queue
-    // for (auto queued_write : writeQueue) {
-    for (auto wq_it = writeQueue.begin(); wq_it != writeQueue.end(); wq_it++) {
-        auto queued_write = *wq_it;
-        auto queued_inst = queued_write.second;
-        // Look at each instruction in runtime queue once
-        for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
-            // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-            if (queued_inst->getUID() == *dep_it) {
-                // If dependency found, create two way link
-                inst->addRuntimeDependency(queued_inst);
-                queued_inst->addRuntimeUser(inst);
-                dep_it = dep_uids.erase(dep_it);
-            } else {
-                dep_it++;
+
+    if (!dep_uids.empty()) {
+        // Check the memory write queue
+        // for (auto queued_write : writeQueue) {
+        for (auto wq_it = writeQueue.begin(); wq_it != writeQueue.end(); wq_it++) {
+            auto queued_write = *wq_it;
+            auto queued_inst = queued_write.second;
+            // Look at each instruction in runtime queue once
+            for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+                if (queued_inst->getUID() == *dep_it) {
+                    // If dependency found, create two way link
+                    inst->addRuntimeDependency(queued_inst);
+                    queued_inst->addRuntimeUser(inst);
+                    dep_it = dep_uids.erase(dep_it);
+                } else {
+                    dep_it++;
+                }
             }
+            if (dep_uids.empty()) break;
         }
     }
 
@@ -352,6 +378,7 @@ LLVMInterface::constructStaticGraph() {
 
  Parses LLVM file and creates the CDFG passed to our runtime simulation engine.
 *********************************************************************************************/
+    auto parseStart = std::chrono::high_resolution_clock::now();
     bool dbg = debug();
 
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
@@ -452,6 +479,8 @@ LLVMInterface::constructStaticGraph() {
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values, topName);
     }
+    auto parseStop = std::chrono::high_resolution_clock::now();
+    setupTime = parseStop - parseStart;
 }
 
 void
@@ -634,14 +663,58 @@ void
 LLVMInterface::printPerformanceResults() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     Tick cycle_time = clock_period/1000;
+
+    auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
+    auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupMS);
+    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
+    auto setupMins = std::chrono::duration_cast<std::chrono::minutes>(setupMS);
+    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
+    auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupMS);
+    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
+
+    auto simMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTime);
+    auto simHours = std::chrono::duration_cast<std::chrono::hours>(simMS);
+    simMS -= std::chrono::duration_cast<std::chrono::seconds>(simHours);
+    auto simMins = std::chrono::duration_cast<std::chrono::minutes>(simMS);
+    simMS -= std::chrono::duration_cast<std::chrono::seconds>(simMins);
+    auto simSecs = std::chrono::duration_cast<std::chrono::seconds>(simMS);
+    simMS -= std::chrono::duration_cast<std::chrono::seconds>(simSecs);
+
+    auto queueMS = std::chrono::duration_cast<std::chrono::milliseconds>(queueProcessTime);
+    auto queueHours = std::chrono::duration_cast<std::chrono::hours>(queueMS);
+    queueMS -= std::chrono::duration_cast<std::chrono::seconds>(queueHours);
+    auto queueMins = std::chrono::duration_cast<std::chrono::minutes>(queueMS);
+    queueMS -= std::chrono::duration_cast<std::chrono::seconds>(queueMins);
+    auto queueSecs = std::chrono::duration_cast<std::chrono::seconds>(queueMS);
+    queueMS -= std::chrono::duration_cast<std::chrono::seconds>(queueSecs);
+
+    auto schedMS = std::chrono::duration_cast<std::chrono::milliseconds>(schedulingTime);
+    auto schedHours = std::chrono::duration_cast<std::chrono::hours>(schedMS);
+    schedMS -= std::chrono::duration_cast<std::chrono::seconds>(schedHours);
+    auto schedMins = std::chrono::duration_cast<std::chrono::minutes>(schedMS);
+    schedMS -= std::chrono::duration_cast<std::chrono::seconds>(schedMins);
+    auto schedSecs = std::chrono::duration_cast<std::chrono::seconds>(schedMS);
+    schedMS -= std::chrono::duration_cast<std::chrono::seconds>(schedSecs);
+
+    auto computeMS = std::chrono::duration_cast<std::chrono::milliseconds>(computeTime);
+    auto computeHours = std::chrono::duration_cast<std::chrono::hours>(computeMS);
+    computeMS -= std::chrono::duration_cast<std::chrono::seconds>(computeHours);
+    auto computeMins = std::chrono::duration_cast<std::chrono::minutes>(computeMS);
+    computeMS -= std::chrono::duration_cast<std::chrono::seconds>(computeMins);
+    auto computeSecs = std::chrono::duration_cast<std::chrono::seconds>(computeMS);
+    computeMS -= std::chrono::duration_cast<std::chrono::seconds>(computeSecs);
+
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/
     std::cout << "********************************************************************************" << std::endl;
     std::cout << name() << std::endl;
     std::cout << "   ========= Performance Analysis =============" << std::endl;
-    std::cout << "   Setup Time:                      " << (double)(setupTime.count()) << "seconds" << std::endl;
-    std::cout << "   Simulation Time:                 " << (double)(simTime.count()) << "seconds" << std::endl;
+    std::cout << "   Setup Time:                      " << setupHours.count() << "h " << setupMins.count() << "m " << setupSecs.count() << "s " << setupMS.count() << "ms" << std::endl;
+    std::cout << "   Simulation Time:                 " << simHours.count() << "h " << simMins.count() << "m " << simSecs.count() << "s " << simMS.count() << "ms" << std::endl;
+    std::cout << "        Queue Processing Time:      " << queueHours.count() << "h " << queueMins.count() << "m " << queueSecs.count() << "s " << queueMS.count() << "ms" << std::endl;
+    std::cout << "             Scheduling Time:       " << schedHours.count() << "h " << schedMins.count() << "m " << schedSecs.count() << "s " << schedMS.count() << "ms" << std::endl;
+    std::cout << "             Computation Time:      " << computeHours.count() << "h " << computeMins.count() << "m " << computeSecs.count() << "s " << computeMS.count() << "ms" << std::endl;
     std::cout << "   System Clock:                    " << 1.0/(cycle_time) << "GHz" << std::endl;
     std::cout << "   Transistor Latency:              " << fu_latency << "ns" << std::endl;
     std::cout << "   Runtime:                         " << cycle << " cycles" << std::endl;
