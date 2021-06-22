@@ -238,7 +238,6 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         case llvm::Type::FloatTyID:
         {
             DPRINTF(Runtime, "Float\n");
-            float tmpData;
             returnReg->writeFloatData((uint64_t *)data, (size_t)4);
             break;
         }
