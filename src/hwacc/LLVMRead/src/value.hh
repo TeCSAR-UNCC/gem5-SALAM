@@ -60,6 +60,7 @@ class Value
 
         Value_Debugger* value_dbg;
         Value(const SALAM::Value &copy_val);
+        Value(std::shared_ptr<SALAM::Value> copy_val);
 
     public:
         /** Class Constructor.
@@ -67,6 +68,7 @@ class Value
          */
         Value(uint64_t id);
         Value& operator = (Value &copy_val);
+        bool operator == (const Value &v) { return uid == v.uid; }
         ~Value();
         virtual void initialize(llvm::Value *irval,
                                 SALAM::irvmap *irmap);

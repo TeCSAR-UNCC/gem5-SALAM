@@ -42,6 +42,7 @@ class Operand: public Value
         //Operand(uint64_t id);
         Operand(const SALAM::Value &copy_val);
         Operand(const Operand &copy_val);
+        Operand(std::shared_ptr<SALAM::Value> copy_val);
         Operand& operator = (Operand &copy_val);
         ~Operand() = default;
         //Value *clone() { return new Operand(*this); }

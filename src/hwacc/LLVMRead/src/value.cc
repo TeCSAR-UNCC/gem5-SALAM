@@ -12,7 +12,7 @@ SALAM::Value::Value(uint64_t id) {
     }
 }
 
-SALAM::Value::~Value() 
+SALAM::Value::~Value()
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s | UID:%d \n", __PRETTY_FUNCTION__, this->uid);
     //if (DTRACE(SALAM_Debug)) delete value_dbg;
@@ -26,10 +26,21 @@ SALAM::Value::Value(const Value &copy_val)
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
 	size = copy_val.size;
+	ir_string = copy_val.ir_string;
+}
+
+SALAM::Value::Value(std::shared_ptr<SALAM::Value> copy_val)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+  	uid = copy_val->getUID();
+  	returnReg = copy_val->getReg();
+	irtype = copy_val->getType();
+	size = copy_val->getSize();
+	ir_string = copy_val->getIRString();
 }
 
 // operator equals
-SALAM::Value& 
+SALAM::Value&
 SALAM::Value::operator = (Value &copy_val)
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);
@@ -37,6 +48,7 @@ SALAM::Value::operator = (Value &copy_val)
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
 	size = copy_val.size;
+	ir_string = copy_val.ir_string;
   	return *this;
 }
 
@@ -50,7 +62,7 @@ SALAM::Value::Value_Debugger::dumper(SALAM::Value *value)
 {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n", 
+        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n",
             "|-(Value Base) ",
             " | LLVM IR: ", value->getIRString(),
             " | UID: ", value->getUID(),
@@ -238,7 +250,6 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         case llvm::Type::FloatTyID:
         {
             DPRINTF(Runtime, "Float\n");
-            float tmpData;
             returnReg->writeFloatData((uint64_t *)data, (size_t)4);
             break;
         }

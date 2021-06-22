@@ -17,7 +17,7 @@ SALAM::Constant::Constant(const Constant&)
 void
 SALAM::Constant::initialize(llvm::Value * irval,
 							SALAM::irvmap * irmap,
-							SALAM::valueListTy * values) 
+							SALAM::valueListTy * values)
 {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	//Initialize SALAM::Value
@@ -68,7 +68,9 @@ SALAM::Constant::initialize(llvm::Value * irval,
 
 		// After LLVM 9.0 rounding mode was moved to "llvm/ADT/FloatingPointMode.h"
 		// We are using LLVM 9.0 so it is instead found in "llvm/ADT/APFloat.h"
+	#ifdef USE_AP_VALUES
 		auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+	#endif
 
 		switch(ce->getOpcode()) {
 			case llvm::Instruction::Trunc:
@@ -106,7 +108,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
 			}
 	        case llvm::Instruction::FPToUI:
         	{
-        	#ifdef USE_AP_VALUES	
+        	#ifdef USE_AP_VALUES
         		llvm::APSInt tmp(size, true);
         		bool exact;
         		auto opdata = operands.front()->getFloatRegValue();
@@ -358,12 +360,12 @@ SALAM::Operand::Operand_Debugger::dumper(Operand * op)
  {
     if (DTRACE(SALAM_Debug)) {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n", 
+        DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n",
             "************** Instruction Dump **************",
             "    UID: ", op->getUID()
         );
         // op->value_dump();
-        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n", 
+        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n",
             "|-(Value Base) ",
             " | LLVM IR: ", op->getIRString(),
             " | UID: ", op->getUID(),
@@ -398,8 +400,19 @@ SALAM::Operand::Operand(const SALAM::Value &copy_val):
     initOperandReg();
 }
 
+SALAM::Operand::Operand(std::shared_ptr<SALAM::Value> copy_val):
+			SALAM::Value(copy_val)
+{
+	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbg = true;
+        this->op_dbg = new Operand_Debugger();
+    }
+    initOperandReg();
+}
+
 // operator equals
-SALAM::Operand& 
+SALAM::Operand&
 SALAM::Operand::operator = (SALAM::Operand &copy_val)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);

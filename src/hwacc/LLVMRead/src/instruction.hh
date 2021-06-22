@@ -71,6 +71,7 @@ class Instruction : public Value
         std::deque<std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
         std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }
         std::shared_ptr<SALAM::Value> getDynamicDependencies(int i) const { return dynamicDependencies.at(i); }
+        virtual std::deque<uint64_t> runtimeInitialize();
         void removeDynamicDependency(int i) { dynamicDependencies.erase(dynamicDependencies.begin()+i); }
         void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) { dynamicDependencies.push_back(dep); }
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
@@ -1329,17 +1330,17 @@ createFCmpInst(uint64_t id,
 
 // SALAM-Phi // -------------------------------------------------------------//
 
-typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock> > phiArgTy;
+typedef std::pair<std::shared_ptr<SALAM::BasicBlock>, std::shared_ptr<SALAM::Value>> phiArgTy;
 
 //typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::Value> > phiNode;
-typedef std::vector< phiArgTy> phiArgsTy;
+typedef std::map<std::shared_ptr<SALAM::BasicBlock>, std::shared_ptr<SALAM::Value>> phiArgsTy;
 
 class Phi : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
         std::shared_ptr<SALAM::BasicBlock> previousBB;
-        phiArgsTy phiArgs; // [Value, Previous BB]
+        phiArgsTy phiArgs; // [BasicBlock, Value]
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
 
@@ -1353,8 +1354,9 @@ class Phi : public Instruction {
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList);
+        virtual std::deque<uint64_t> runtimeInitialize() override;
         bool isPhi() override { return true; }
-        void setPrevBB(std::shared_ptr<SALAM::BasicBlock> prevBB) { previousBB = prevBB; }
+        void setPrevBB(std::shared_ptr<SALAM::BasicBlock> prevBB);
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
         virtual valueListTy getStaticDependencies() const override;

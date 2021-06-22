@@ -245,6 +245,25 @@ Instruction::linkOperands(const SALAM::Operand &newOp)
     operands.push_back(op_copy);
 }
 
+std::deque<uint64_t>
+Instruction::runtimeInitialize() {
+    assert(getDependencyCount() == 0);
+    std::deque<uint64_t> dep_uids;
+
+    for (auto it = staticDependencies.begin(); it != staticDependencies.end(); ++it) {
+        std::shared_ptr<SALAM::Value> static_dependency = *it;
+        auto dep_uid = static_dependency->getUID();
+        operands.push_back(SALAM::Operand(static_dependency));
+        if ((static_dependency->isConstant()) || (static_dependency->isArgument())) {
+            operands.back().updateOperandRegister();
+        } else {
+            dep_uids.push_back(dep_uid);
+        }
+    }
+
+    return dep_uids;
+}
+
 // SALAM-Ret // -------------------------------------------------------------//
 void // Debugging Interface
 Ret::dumper() {
@@ -2133,6 +2152,7 @@ GetElementPtr::initialize(llvm::Value * irval,
     llvm::GetElementPtrInst * GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(irval);
     assert(GEP);
     resultElementType = GEP->getResultElementType();
+    indexTypes.push_back(resultElementType);
     if (resultElementType->getTypeID() == llvm::Type::PointerTyID) {
         resultElementSize = 64; //We assume a 64-bit memory address space
     } else {
@@ -2169,7 +2189,7 @@ GetElementPtr::compute() {
         auto idx = operands.at(i);
         auto idxty = indexTypes.at(i);
         if (llvm::StructType *STy = llvm::dyn_cast<llvm::StructType>(idxty)) {
-            assert(idx.getType()->isIntegerTy(32) && "Illegal struct idx");
+            assert((idx.getSize() == 32) && "Illegal struct idx");
         #ifdef USE_AP_VALUES
             unsigned FieldNo = idx.getIntRegValue()->getZExtValue();
         #else
@@ -3376,10 +3396,32 @@ Phi::initialize(llvm::Value * irval,
     assert(phi);
     phiArgTy args;
     for (int i = 0; i < Instruction::getStaticDependencies().size();) {
-        args.first = Instruction::getStaticDependencies(i); ++i;
-        args.second = std::dynamic_pointer_cast<SALAM::BasicBlock>(Instruction::getStaticDependencies(i)); ++i;
-        this->phiArgs.push_back(args);
+        args.second = Instruction::getStaticDependencies(i); ++i;
+        args.first = std::dynamic_pointer_cast<SALAM::BasicBlock>(Instruction::getStaticDependencies(i)); ++i;
+        this->phiArgs.insert(args);
     }
+}
+
+std::deque<uint64_t>
+Phi::runtimeInitialize() {
+    assert(getDependencyCount() == 0);
+    std::deque<uint64_t> dep_uids;
+
+    std::shared_ptr<SALAM::Value> static_dependency;
+
+    auto it = phiArgs.find(previousBB);
+    if (it != phiArgs.end()) static_dependency = it->second;
+    else assert(0 && "Previous BasicBlock not found in PHI args");
+
+    auto dep_uid = static_dependency->getUID();
+    operands.push_back(SALAM::Operand(static_dependency));
+    if ((static_dependency->isConstant()) || (static_dependency->isArgument())) {
+        operands.back().updateOperandRegister();
+    } else {
+        dep_uids.push_back(dep_uid);
+    }
+
+    return dep_uids;
 }
 
 void
@@ -3402,13 +3444,21 @@ Phi::compute() {
     //setRegisterValue(operands.at(0).getReg());
 }
 
+void
+Phi::setPrevBB(std::shared_ptr<SALAM::BasicBlock> prevBB)
+{
+    auto it = phiArgs.find(prevBB);
+    if (it != phiArgs.end()) previousBB = prevBB;
+    else assert(0 && "Previous BasicBlock not found in PHI args");
+}
+
 valueListTy
 Phi::getStaticDependencies() const {
     valueListTy deps;
 
-    for (auto phiArg : phiArgs) {
-        if (phiArg.second == previousBB) deps.push_back(phiArg.first);
-    }
+    auto it = phiArgs.find(previousBB);
+    if (it != phiArgs.end()) deps.push_back(it->second);
+    else assert(0 && "Previous BasicBlock not found in PHI args");
 
     return deps;
 }

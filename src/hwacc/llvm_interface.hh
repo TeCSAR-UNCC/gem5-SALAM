@@ -33,6 +33,7 @@
 #include <chrono>
 #include <ratio>
 #include <memory>
+#include <algorithm>
 //------------------------------------------//
 
 class LLVMInterface : public ComputeUnit {
@@ -90,10 +91,23 @@ class LLVMInterface : public ComputeUnit {
         std::list<std::shared_ptr<SALAM::Instruction>> reservation;
         std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> readQueue;
         std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> writeQueue;
-        std::list<std::shared_ptr<SALAM::Instruction>> computeQueue;
+        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> computeQueue;
+        std::list<uint64_t> activeUIDs;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
         uint32_t scheduling_threshold;
         bool returned = false;
+
+        inline void trackUID(uint64_t id) {
+          activeUIDs.push_back(id);
+        }
+        inline void untrackUID(uint64_t id) {
+          auto it = std::find(activeUIDs.begin(), activeUIDs.end(), id);
+          if (it != activeUIDs.end()) activeUIDs.erase(it);
+        }
+        inline bool uidActive(uint64_t id) {
+          auto it = std::find(activeUIDs.begin(), activeUIDs.end(), id);
+          return (it != activeUIDs.end());
+        }
     public:
         ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,
                        std::shared_ptr<SALAM::Instruction> _caller):

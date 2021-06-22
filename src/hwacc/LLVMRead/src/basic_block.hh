@@ -13,6 +13,7 @@
 #include <sstream>
 #include <iostream>
 #include <iterator>
+#include <algorithm>
 //------------------------------------------//
 
 namespace SALAM {
@@ -20,7 +21,7 @@ namespace SALAM {
 
   class BasicBlock : public Value {
     private:
-      std::vector<SALAM::BasicBlock*> predecessors;
+      std::vector<std::shared_ptr<SALAM::BasicBlock>> predecessors;
       std::vector<std::shared_ptr<SALAM::Instruction>> instructions;
       bool dbg = false;
     protected:
@@ -40,6 +41,11 @@ namespace SALAM {
       void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList);
       std::vector<std::shared_ptr<SALAM::Instruction> > * Instructions() { return &instructions; }
       void dump() { if (dbg) bb_dbg->dumper(this); }
+      bool validPredecessor(std::shared_ptr<SALAM::BasicBlock> bb) {
+        auto it = std::find(predecessors.begin(), predecessors.end(), bb);
+        if (it == predecessors.end()) return false;
+        return true;
+      }
   };
 }
 
