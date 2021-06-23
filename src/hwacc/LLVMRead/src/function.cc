@@ -12,6 +12,13 @@ SALAM::Function::initialize(llvm::Value * irval,
 						   SALAM::valueListTy *valueList,
 						   std::string topName) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    DPRINTF(LLVMInterface, "Initialize Values - Function::initialize\n");
+    Value::initialize(irval, vmap);
+    std::string tmpstr;
+    llvm::raw_string_ostream ss(tmpstr);
+    irval->printAsOperand(ss);
+    ir_string = ss.str();
+
 	//Parse irval for function params
 	llvm::Function * func = llvm::dyn_cast<llvm::Function>(irval);
 	assert(func); //panic("Invalid llvm::Value type used to initialize function. Failed cast to llvm::Function.");
@@ -39,7 +46,4 @@ SALAM::Function::initialize(llvm::Value * irval,
         bbList.push_back(bblock);
         bblock->initialize(&bb, vmap, valueList);
     }
-
-    DPRINTF(LLVMInterface, "Initialize Values - Function::initialize\n");
-	Value::initialize(irval, vmap);
 }
