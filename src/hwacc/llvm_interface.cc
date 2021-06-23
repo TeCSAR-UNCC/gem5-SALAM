@@ -101,7 +101,6 @@ LLVMInterface::ActiveFunction::processQueues()
 
         if((queue_iter->second)->commit()) {
             (queue_iter->second)->reset();
-            untrackUID(queue_iter->first);
             queue_iter = computeQueue.erase(queue_iter);
         } else ++queue_iter;
     }
@@ -135,17 +134,19 @@ LLVMInterface::ActiveFunction::processQueues()
                 } else if (((inst)->ready()) && !uidActive((inst)->getUID())) {
                     if ((inst)->isLoad()) {
                         // RAW protection to ensure a writeback finishes before reading that location
-                        if (!writeActive((Addr)(inst->getPtrOperandValue(0)))) {
+                        Addr loadAddr = inst->getPtrOperandValue(0);
+                        if (!writeActive(loadAddr)) {
                             launchRead(inst);
-                            trackUID(inst->getUID());
                             DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
                         } else {
+                            auto activeWrite = getActiveWrite(loadAddr);
+                            inst->addRuntimeDependency(activeWrite);
+                            activeWrite->addRuntimeUser(inst);
                             ++queue_iter;
                         }
                     } else if ((inst)->isStore()) {
                         launchWrite(inst);
-                        trackUID(inst->getUID());
                         DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         queue_iter = reservation.erase(queue_iter);
                     } else if ((inst)->isTerminator()) {
@@ -167,7 +168,6 @@ LLVMInterface::ActiveFunction::processQueues()
                         if (callee->canLaunch()) {
                             owner->launchFunction(callee, callInst);
                             computeQueue.insert({(inst)->getUID(), inst});
-                            trackUID(inst->getUID());
                             DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
                         } else {
@@ -178,7 +178,6 @@ LLVMInterface::ActiveFunction::processQueues()
                         if (!(inst)->launch()) {
                             DPRINTFR(Runtime, "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((inst)->getOpode()), (inst)->getUID());
                             computeQueue.insert({(inst)->getUID(), inst});
-                            trackUID(inst->getUID());
                         }
                         auto computeStop = std::chrono::high_resolution_clock::now();
                         owner->addComputeTime(computeStop-computeStart);
@@ -311,50 +310,74 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
             dep_it++;
         }
     }
-
-    if (!dep_uids.empty()) {
-        // Check the memory read queue
-        // for (auto queued_read : readQueue) {
-        for (auto rq_it = readQueue.begin(); rq_it != readQueue.end(); rq_it++) {
-            auto queued_read = *rq_it;
-            auto queued_inst = queued_read.second;
-            // Look at each instruction in runtime queue once
-            for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
-                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-                if (queued_inst->getUID() == *dep_it) {
-                    // If dependency found, create two way link
-                    inst->addRuntimeDependency(queued_inst);
-                    queued_inst->addRuntimeUser(inst);
-                    dep_it = dep_uids.erase(dep_it);
-                } else {
-                    dep_it++;
-                }
-            }
-            if (dep_uids.empty()) break;
+    // Check the memory read queue
+    for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+        auto queue_iter = readQueue.find(*dep_it);
+        if (queue_iter != readQueue.end()) {
+            auto queued_inst = queue_iter->second;
+            inst->addRuntimeDependency(queued_inst);
+            queued_inst->addRuntimeUser(inst);
+            dep_it = dep_uids.erase(dep_it);
+        } else {
+            dep_it++;
         }
     }
 
-    if (!dep_uids.empty()) {
-        // Check the memory write queue
-        // for (auto queued_write : writeQueue) {
-        for (auto wq_it = writeQueue.begin(); wq_it != writeQueue.end(); wq_it++) {
-            auto queued_write = *wq_it;
-            auto queued_inst = queued_write.second;
-            // Look at each instruction in runtime queue once
-            for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
-                // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
-                if (queued_inst->getUID() == *dep_it) {
-                    // If dependency found, create two way link
-                    inst->addRuntimeDependency(queued_inst);
-                    queued_inst->addRuntimeUser(inst);
-                    dep_it = dep_uids.erase(dep_it);
-                } else {
-                    dep_it++;
-                }
-            }
-            if (dep_uids.empty()) break;
+    // if (!dep_uids.empty()) {
+    //     // Check the memory read queue
+    //     // for (auto queued_read : readQueue) {
+    //     for (auto rq_it = readQueue.begin(); rq_it != readQueue.end(); rq_it++) {
+    //         auto queued_read = *rq_it;
+    //         auto queued_inst = queued_read.second;
+    //         // Look at each instruction in runtime queue once
+    //         for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+    //             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+    //             if (queued_inst->getUID() == *dep_it) {
+    //                 // If dependency found, create two way link
+    //                 inst->addRuntimeDependency(queued_inst);
+    //                 queued_inst->addRuntimeUser(inst);
+    //                 dep_it = dep_uids.erase(dep_it);
+    //             } else {
+    //                 dep_it++;
+    //             }
+    //         }
+    //         if (dep_uids.empty()) break;
+    //     }
+    // }
+    // Check the memory write queue
+    for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+        auto queue_iter = writeQueue.find(*dep_it);
+        if (queue_iter != writeQueue.end()) {
+            auto queued_inst = queue_iter->second;
+            inst->addRuntimeDependency(queued_inst);
+            queued_inst->addRuntimeUser(inst);
+            dep_it = dep_uids.erase(dep_it);
+        } else {
+            dep_it++;
         }
     }
+
+    // if (!dep_uids.empty()) {
+    //     // Check the memory write queue
+    //     // for (auto queued_write : writeQueue) {
+    //     for (auto wq_it = writeQueue.begin(); wq_it != writeQueue.end(); wq_it++) {
+    //         auto queued_write = *wq_it;
+    //         auto queued_inst = queued_write.second;
+    //         // Look at each instruction in runtime queue once
+    //         for (auto dep_it = dep_uids.begin(); dep_it != dep_uids.end();) {
+    //             // Check if any of the instruction to be scheduled dependencies match the current instruction from queue
+    //             if (queued_inst->getUID() == *dep_it) {
+    //                 // If dependency found, create two way link
+    //                 inst->addRuntimeDependency(queued_inst);
+    //                 queued_inst->addRuntimeUser(inst);
+    //                 dep_it = dep_uids.erase(dep_it);
+    //             } else {
+    //                 dep_it++;
+    //             }
+    //         }
+    //         if (dep_uids.empty()) break;
+    //     }
+    // }
 
     // Fetch values for resolved dependencies, static elements, and immediate values
     if (!dep_uids.empty()) {
@@ -503,7 +526,9 @@ LLVMInterface::ActiveFunction::launchRead(std::shared_ptr<SALAM::Instruction> re
         rdInst->loadInternal();
     } else {
         auto memReq = (readInst)->createMemoryRequest();
-        readQueue.insert({memReq, (readInst)});
+        auto rd_uid = readInst->getUID();
+        readQueue.insert({rd_uid, (readInst)});
+        readQueueMap.insert({memReq, rd_uid});
         owner->launchRead(memReq, this);
     }
 }
@@ -517,8 +542,10 @@ LLVMInterface::launchWrite(MemoryRequest * memReq, ActiveFunction * func) {
 void
 LLVMInterface::ActiveFunction::launchWrite(std::shared_ptr<SALAM::Instruction> writeInst) {
     auto memReq = (writeInst)->createMemoryRequest();
-    trackWrite(memReq->getAddress());
-    writeQueue.insert({memReq, (writeInst)});
+    trackWrite(memReq->getAddress(), writeInst);
+    auto wr_uid = writeInst->getUID();
+    writeQueue.insert({wr_uid, (writeInst)});
+    writeQueueMap.insert({memReq, wr_uid});
     owner->launchWrite(memReq, this);
 }
 
@@ -545,15 +572,20 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
  Commit Memory Read Request
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    auto queue_iter = readQueue.find(req);
-    if (queue_iter != readQueue.end()) {
-        auto load_inst = queue_iter->second;
-        uint8_t * readBuff = req->getBuffer();
-        load_inst->setRegisterValue(readBuff);
-        DPRINTFR(Runtime, "Local Read Commit\n");
-        load_inst->commit();
-        untrackUID(load_inst->getUID());
-        readQueue.erase(queue_iter);
+    auto map_iter = readQueueMap.find(req);
+    if (map_iter != readQueueMap.end()) {
+        auto queue_iter = readQueue.find(map_iter->second);
+        if (queue_iter != readQueue.end()) {
+            auto load_inst = queue_iter->second;
+            uint8_t * readBuff = req->getBuffer();
+            load_inst->setRegisterValue(readBuff);
+            DPRINTFR(Runtime, "Local Read Commit\n");
+            load_inst->commit();
+            readQueue.erase(queue_iter);
+            readQueueMap.erase(map_iter);
+        } else {
+            panic("Could not find memory request in read queue for function %u!", func->getUID());
+        }
     } else {
         panic("Could not find memory request in read queue for function %u!", func->getUID());
     }
@@ -581,13 +613,18 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
  Commit Memory Write Request
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    auto queue_iter = writeQueue.find(req);
-    if (queue_iter != writeQueue.end()) {
-        queue_iter->second->commit();
-        Addr addressWritten = queue_iter->first->getAddress();
-        untrackWrite(addressWritten);
-        untrackUID(queue_iter->second->getUID());
-        queue_iter = writeQueue.erase(queue_iter);
+    auto map_iter = writeQueueMap.find(req);
+    if (map_iter != writeQueueMap.end()) {
+        auto queue_iter = writeQueue.find(map_iter->second);
+        if (queue_iter != writeQueue.end()) {
+            queue_iter->second->commit();
+            Addr addressWritten = map_iter->first->getAddress();
+            untrackWrite(addressWritten);
+            writeQueue.erase(queue_iter);
+            writeQueueMap.erase(map_iter);
+        } else {
+            panic("Could not find memory request in write queue for function %u!", func->getUID());
+        }
     } else {
         panic("Could not find memory request in write queue for function %u!", func->getUID());
     }
