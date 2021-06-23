@@ -120,28 +120,34 @@ LLVMInterface::ActiveFunction::processQueues()
     } else {
         // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
+            auto inst = *queue_iter;
             DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
                 " |-[Reserve Queue]--------------",
-                " | Instruction: ", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()),
-                " | UID[", (*queue_iter)->getUID(), "]"
+                " | Instruction: ", llvm::Instruction::getOpcodeName((inst)->getOpode()),
+                " | UID[", (inst)->getUID(), "]"
                 );
-            if ((*queue_iter)->isReturn() == false) {
-                if ((*queue_iter)->isTerminator() && reservation.size() >= scheduling_threshold) {
+            if ((inst)->isReturn() == false) {
+                if ((inst)->isTerminator() && reservation.size() >= scheduling_threshold) {
                     ++queue_iter;
-                } else if (((*queue_iter)->ready()) && !uidActive((*queue_iter)->getUID())) {
-                    auto inst = *queue_iter;
+                } else if (((inst)->ready()) && !uidActive((inst)->getUID())) {
                     if ((inst)->isLoad()) {
                         launchRead(inst);
                         trackUID(inst->getUID());
+                        DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        queue_iter = reservation.erase(queue_iter);
                     } else if ((inst)->isStore()) {
                         launchWrite(inst);
                         trackUID(inst->getUID());
+                        DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        queue_iter = reservation.erase(queue_iter);
                     } else if ((inst)->isTerminator()) {
                         (inst)->launch();
                         auto nextBB = inst->getTarget();
                         scheduleBB(nextBB);
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((inst)->getOpode()), (inst)->getUID());
                         (inst)->commit();
+                        DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        queue_iter = reservation.erase(queue_iter);
                     } else if ((*queue_iter)->isCall()) {
                         auto callInst = std::dynamic_pointer_cast<SALAM::Call>(inst);
                         assert(callInst);
@@ -152,6 +158,8 @@ LLVMInterface::ActiveFunction::processQueues()
                             owner->launchFunction(callee, callInst);
                             computeQueue.insert({(inst)->getUID(), inst});
                             trackUID(inst->getUID());
+                            DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                            queue_iter = reservation.erase(queue_iter);
                         } else {
                             ++queue_iter;
                         }
@@ -164,9 +172,9 @@ LLVMInterface::ActiveFunction::processQueues()
                         }
                         auto computeStop = std::chrono::high_resolution_clock::now();
                         owner->addComputeTime(computeStop-computeStart);
+                        DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                        queue_iter = reservation.erase(queue_iter);
                     }
-                    DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
-                    queue_iter = reservation.erase(queue_iter);
                 } else {
                     ++queue_iter;
                 }
