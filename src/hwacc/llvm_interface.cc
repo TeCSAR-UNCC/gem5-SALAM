@@ -56,6 +56,7 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
             if (branch && !(branch->isConditional())) {
                 DPRINTFR(Runtime, "\t\t Unconditional Branch, Scheduling Next BB\n");
                 nextBB = branch->getTarget();
+                DPRINTFR(RuntimeCompute, "\t\t Branching to %s from %s\n", nextBB->getIRStub(), bb->getIRStub());
                 needToScheduleBranch = true;
             } else {
                 findDynamicDeps(clone_inst);
@@ -87,6 +88,8 @@ LLVMInterface::ActiveFunction::processQueues()
     auto queueStart = std::chrono::high_resolution_clock::now();
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
+    DPRINTFR(RuntimeQueues, "\t\t[Runtime Queue Status] Reservation:%d, Compute:%d, Read:%d, Write:%d\n",
+             reservation.size(), computeQueue.size(), readQueue.size(), writeQueue.size());
 
     // First pass, computeQueue is empty
     for (auto queue_iter = computeQueue.begin(); queue_iter != computeQueue.end();) {
@@ -131,10 +134,15 @@ LLVMInterface::ActiveFunction::processQueues()
                     ++queue_iter;
                 } else if (((inst)->ready()) && !uidActive((inst)->getUID())) {
                     if ((inst)->isLoad()) {
-                        launchRead(inst);
-                        trackUID(inst->getUID());
-                        DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
-                        queue_iter = reservation.erase(queue_iter);
+                        // RAW protection to ensure a writeback finishes before reading that location
+                        if (!writeActive((Addr)(inst->getPtrOperandValue(0)))) {
+                            launchRead(inst);
+                            trackUID(inst->getUID());
+                            DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                            queue_iter = reservation.erase(queue_iter);
+                        } else {
+                            ++queue_iter;
+                        }
                     } else if ((inst)->isStore()) {
                         launchWrite(inst);
                         trackUID(inst->getUID());
@@ -143,6 +151,8 @@ LLVMInterface::ActiveFunction::processQueues()
                     } else if ((inst)->isTerminator()) {
                         (inst)->launch();
                         auto nextBB = inst->getTarget();
+                        DPRINTFR(RuntimeCompute, "\t\t Branching to %s from %s\n",
+                            nextBB->getIRStub(), previousBB->getIRStub());
                         scheduleBB(nextBB);
                         DPRINTFR(Runtime, "\t\t  | Branch Scheduled: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((inst)->getOpode()), (inst)->getUID());
                         (inst)->commit();
@@ -266,23 +276,6 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
     // // An instruction is a runtime dependency for itself since multiple
     // // instances of the same instruction shouldn't execute simultaneously
     // // dep_uids.push_back(inst->getUID());
-
-    // // Fetch the UIDs of static operands
-    // for (auto static_dep : inst->getStaticDependencies()) {
-    //     // Inintialize the operands here
-    //     // +++ call constructor for Operand
-    //     //      copy constructor for value
-    //     //      with an extra register, and functions for that register
-    //     // SALAM::Operand newOp(static_dep->getUID());
-    //     SALAM::Operand *newOp = new SALAM::Operand(*(static_dep.get()));
-    //     inst->linkOperands(*newOp);
-    //     auto dep_uid = static_dep->getUID();
-    //     if (static_dep->isConstant() || static_dep->isArgument()) {
-    //         inst->setOperandValue(dep_uid);
-    //     } else {
-    //         dep_uids.push_back(dep_uid);
-    //     }
-    // }
 
     // Find dependencies currently in queues
 
@@ -524,6 +517,7 @@ LLVMInterface::launchWrite(MemoryRequest * memReq, ActiveFunction * func) {
 void
 LLVMInterface::ActiveFunction::launchWrite(std::shared_ptr<SALAM::Instruction> writeInst) {
     auto memReq = (writeInst)->createMemoryRequest();
+    trackWrite(memReq->getAddress());
     writeQueue.insert({memReq, (writeInst)});
     owner->launchWrite(memReq, this);
 }
@@ -590,6 +584,8 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
     auto queue_iter = writeQueue.find(req);
     if (queue_iter != writeQueue.end()) {
         queue_iter->second->commit();
+        Addr addressWritten = queue_iter->first->getAddress();
+        untrackWrite(addressWritten);
         untrackUID(queue_iter->second->getUID());
         queue_iter = writeQueue.erase(queue_iter);
     } else {
@@ -812,7 +808,7 @@ LLVMInterface::launchTopFunction() {
 
 void LLVMInterface::ActiveFunction::launch() {
     if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTFR(LLVMInterface, "Launching Function\n");
+    DPRINTFR(LLVMInterface, "Launching Function: %s\n", func->getIRStub());
     // func->value_dump();
     // Fetch the arguments
     std::vector<std::shared_ptr<SALAM::Value>> funcArgs = *(func->getArguments());

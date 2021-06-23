@@ -92,11 +92,11 @@ class LLVMInterface : public ComputeUnit {
         std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> readQueue;
         std::map<MemoryRequest *, std::shared_ptr<SALAM::Instruction>> writeQueue;
         std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> computeQueue;
-        std::list<uint64_t> activeUIDs;
         std::shared_ptr<SALAM::BasicBlock> previousBB;
         uint32_t scheduling_threshold;
         bool returned = false;
 
+        std::list<uint64_t> activeUIDs;
         inline void trackUID(uint64_t id) {
           activeUIDs.push_back(id);
         }
@@ -107,6 +107,19 @@ class LLVMInterface : public ComputeUnit {
         inline bool uidActive(uint64_t id) {
           auto it = std::find(activeUIDs.begin(), activeUIDs.end(), id);
           return (it != activeUIDs.end());
+        }
+
+        std::list<Addr> activeWrites;
+        inline void trackWrite(Addr writeAddr) {
+          activeWrites.push_back(writeAddr);
+        }
+        inline void untrackWrite(uint64_t writeAddr) {
+          auto it = std::find(activeWrites.begin(), activeWrites.end(), writeAddr);
+          if (it != activeWrites.end()) activeWrites.erase(it);
+        }
+        inline bool writeActive(uint64_t writeAddr) {
+          auto it = std::find(activeWrites.begin(), activeWrites.end(), writeAddr);
+          return (it != activeWrites.end());
         }
     public:
         ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,

@@ -360,15 +360,31 @@ std::shared_ptr<SALAM::BasicBlock>
 Br::getTarget() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
+    DPRINTF(RuntimeCompute, "|| Launching Branch: %s\n", ir_string);
     if(conditional) {
     #ifdef USE_AP_VALUES
-        if(condition->getIntRegValue()->isOneValue()) return trueDestination;
-        else return falseDestination;
+        if (condition->getIntRegValue()->isOneValue()) {
+            DPRINTF(RuntimeCompute, "|| Condition: TRUE, Fetching target %s\n",
+                defaultDestination->getIRStub());
+            return trueDestination;
+        } else {
+            DPRINTF(RuntimeCompute, "|| Condition: FALSE, Fetching target %s\n",
+                defaultDestination->getIRStub());
+            return falseDestination;
+        }
     #else
-        if(condition->getUIntRegValue() == 1) return trueDestination;
-        else return falseDestination;
+        if(condition->getUIntRegValue() == 1) {
+            DPRINTF(RuntimeCompute, "|| Condition: TRUE, Fetching target %s\n",
+                defaultDestination->getIRStub());
+            return trueDestination;
+        } else {
+            DPRINTF(RuntimeCompute, "|| Condition: FALSE, Fetching target %s\n",
+                defaultDestination->getIRStub());
+            return falseDestination;
+        }
     #endif
     }
+    DPRINTF(RuntimeCompute, "|| Fetching target %s\n", defaultDestination->getIRStub());
     return defaultDestination;
 }
 
@@ -379,6 +395,7 @@ Br::initialize(llvm::Value * irval,
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // SALAM::Instruction::initialize(irval, irmap, valueList); // We don't use the normal init fxn
+    SALAM::Value::initialize(irval, irmap);
     llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
     assert(br);
     isConditional(br->isConditional());
@@ -462,6 +479,7 @@ Switch::Switch(uint64_t id,
 
 std::shared_ptr<SALAM::BasicBlock>
 Switch::getTarget() {
+    DPRINTF(RuntimeCompute, "|| Launching Switch: %s\n", ir_string);
 #ifdef USE_AP_VALUES
     auto opdata = *(operands.front().getIntRegValue());
 
@@ -490,6 +508,7 @@ Switch::initialize(llvm::Value * irval,
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // SALAM::Instruction::initialize(irval, irmap, valueList);
+    SALAM::Value::initialize(irval, irmap);
 
     llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
     llvm::Instruction * inst = llvm::dyn_cast<llvm::Instruction>(irval);
@@ -602,18 +621,23 @@ void
 Add::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 + op2;
-    DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s + (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 + op2;
-    DPRINTF(Runtime, "|| (op1) %d + (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d + (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -670,6 +694,7 @@ FAdd::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
@@ -680,8 +705,10 @@ FAdd::compute() {
     op1.toString(op1str);
     op2.toString(op2str);
     result.toString(resstr);
-    DPRINTF(Runtime, "|| (op1) %s + (op2) %s \n", op1str.c_str(), op2str.c_str());
-    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    DPRINTF(RuntimeCompute, "|| (%s) %s + (%s) %s \n",
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     uint64_t bitcastResult;
@@ -691,8 +718,10 @@ FAdd::compute() {
             float op1 = operands.at(0).getFloatFromReg();
             float op2 = operands.at(1).getFloatFromReg();
             float result = op1 + op2;
-            DPRINTF(Runtime, "|| (op1) %f + (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f + (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -701,8 +730,10 @@ FAdd::compute() {
             double op1 = operands.at(0).getDoubleFromReg();
             double op2 = operands.at(1).getDoubleFromReg();
             double result = op1 + op2;
-            DPRINTF(Runtime, "|| (op1) %f + (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f + (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -769,18 +800,23 @@ Sub::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 - op2;
-    DPRINTF(Runtime, "|| (op1) %s - (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s - (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 - op2;
-    DPRINTF(Runtime, "|| (op1) %d - (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d - (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -838,6 +874,7 @@ FSub::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
@@ -848,8 +885,10 @@ FSub::compute() {
     op1.toString(op1str);
     op2.toString(op2str);
     result.toString(resstr);
-    DPRINTF(Runtime, "|| (op1) %s - (op2) %s \n", op1str.c_str(), op2str.c_str());
-    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    DPRINTF(RuntimeCompute, "|| (%s) %s - (%s) %s \n",
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     uint64_t bitcastResult;
@@ -859,8 +898,10 @@ FSub::compute() {
             float op1 = operands.at(0).getFloatFromReg();
             float op2 = operands.at(1).getFloatFromReg();
             float result = op1 - op2;
-            DPRINTF(Runtime, "|| (op1) %f - (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f - (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -869,8 +910,10 @@ FSub::compute() {
             double op1 = operands.at(0).getDoubleFromReg();
             double op2 = operands.at(1).getDoubleFromReg();
             double result = op1 - op2;
-            DPRINTF(Runtime, "|| (op1) %f - (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f - (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -934,18 +977,23 @@ void
 Mul::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 * op2;
-    DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s * (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 * op2;
-    DPRINTF(Runtime, "|| (op1) %d * (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d * (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1003,6 +1051,7 @@ FMul::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
@@ -1013,8 +1062,10 @@ FMul::compute() {
     op1.toString(op1str);
     op2.toString(op2str);
     result.toString(resstr);
-    DPRINTF(Runtime, "|| (op1) %s * (op2) %s \n", op1str.c_str(), op2str.c_str());
-    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    DPRINTF(RuntimeCompute, "|| (%s) %s * (%s) %s \n",
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     uint64_t bitcastResult;
@@ -1024,8 +1075,10 @@ FMul::compute() {
             float op1 = operands.at(0).getFloatFromReg();
             float op2 = operands.at(1).getFloatFromReg();
             float result = op1 * op2;
-            DPRINTF(Runtime, "|| (op1) %f * (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f * (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -1034,8 +1087,10 @@ FMul::compute() {
             double op1 = operands.at(0).getDoubleFromReg();
             double op2 = operands.at(1).getDoubleFromReg();
             double result = op1 * op2;
-            DPRINTF(Runtime, "|| (op1) %f * (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f * (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -1102,18 +1157,23 @@ UDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.udiv(op2);
-    DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 / op2;
-    DPRINTF(Runtime, "|| (op1) %d / (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d / (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1171,19 +1231,24 @@ SDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.sdiv(op2);
-    DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
     setRegisterValue(result);
 #else
     int64_t op1 = operands.at(0).getSIntRegValue();
     int64_t op2 = operands.at(1).getSIntRegValue();
     int64_t result = op1 / op2;
-    DPRINTF(Runtime, "|| (op1) %d / (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d / (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
     setRegisterValue((uint64_t)result);
 #endif
 }
@@ -1241,6 +1306,7 @@ FDiv::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
@@ -1251,8 +1317,10 @@ FDiv::compute() {
     op1.toString(op1str);
     op2.toString(op2str);
     result.toString(resstr);
-    DPRINTF(Runtime, "|| (op1) %s / (op2) %s \n", op1str.c_str(), op2str.c_str());
-    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     uint64_t bitcastResult;
@@ -1262,8 +1330,10 @@ FDiv::compute() {
             float op1 = operands.at(0).getFloatFromReg();
             float op2 = operands.at(1).getFloatFromReg();
             float result = op1 / op2;
-            DPRINTF(Runtime, "|| (op1) %f / (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f / (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -1272,8 +1342,10 @@ FDiv::compute() {
             double op1 = operands.at(0).getDoubleFromReg();
             double op2 = operands.at(1).getDoubleFromReg();
             double result = op1 / op2;
-            DPRINTF(Runtime, "|| (op1) %f / (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f / (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -1340,18 +1412,23 @@ URem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.urem(op2);
-    DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 % op2;
-    DPRINTF(Runtime, "|| (op1) %d % (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d % (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1409,19 +1486,24 @@ SRem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.srem(op2);
-    DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
     setRegisterValue(result);
 #else
     int64_t op1 = operands.at(0).getSIntRegValue();
     int64_t op2 = operands.at(1).getSIntRegValue();
     int64_t result = op1 % op2;
-    DPRINTF(Runtime, "|| (op1) %d % (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d % (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
     setRegisterValue((uint64_t)result);
 #endif
 }
@@ -1479,6 +1561,7 @@ FRem::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
     llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
@@ -1491,8 +1574,10 @@ FRem::compute() {
     op1.toString(op1str);
     op2.toString(op2str);
     result.toString(resstr);
-    DPRINTF(Runtime, "|| (op1) %s % (op2) %s \n", op1str.c_str(), op2str.c_str());
-    DPRINTF(Runtime, "|| Result: %s\n", resstr.c_str());
+    DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     uint64_t bitcastResult;
@@ -1502,8 +1587,10 @@ FRem::compute() {
             float op1 = operands.at(0).getFloatFromReg();
             float op2 = operands.at(1).getFloatFromReg();
             float result = std::remainderf(op1, op2);
-            DPRINTF(Runtime, "|| (op1) %f % (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f % (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -1512,8 +1599,10 @@ FRem::compute() {
             double op1 = operands.at(0).getDoubleFromReg();
             double op2 = operands.at(1).getDoubleFromReg();
             double result = std::remainder(op1, op2);
-            DPRINTF(Runtime, "|| (op1) %f % (op2) %f\n", op1, op2);
-            DPRINTF(Runtime, "|| Result: %f\n", result);
+            DPRINTF(RuntimeCompute, "|| (%s) %f % (%s) %f\n",
+                operands.at(0).getIRStub(), op1,
+                operands.at(1).getIRStub(), op2);
+            DPRINTF(RuntimeCompute, "|| %s = %f\n", ir_stub, result);
             bitcastResult = *(uint64_t *)&result;
             break;
         }
@@ -1580,18 +1669,23 @@ Shl::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 << op2;
-    DPRINTF(Runtime, "|| (op1) %s << (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s << (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 << op2;
-    DPRINTF(Runtime, "|| (op1) %d << (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d << (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1649,18 +1743,23 @@ LShr::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.lshr(op2);
-    DPRINTF(Runtime, "|| (op1) %s >> (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s >> (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 >> op2;
-    DPRINTF(Runtime, "|| (op1) %d >> (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d >> (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1718,19 +1817,24 @@ AShr::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1.ashr(op2);
-    DPRINTF(Runtime, "|| (op1) %s >> (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s >> (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
     setRegisterValue(result);
 #else
     int64_t op1 = operands.at(0).getSIntRegValue();
     int64_t op2 = operands.at(1).getSIntRegValue();
     int64_t result = op1 >> op2;
-    DPRINTF(Runtime, "|| (op1) %d >> (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d >> (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
     setRegisterValue((uint64_t)result);
 #endif
 }
@@ -1788,18 +1892,23 @@ And::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 & op2;
-    DPRINTF(Runtime, "|| (op1) %s & (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s & (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 & op2;
-    DPRINTF(Runtime, "|| (op1) %d & (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d & (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1857,18 +1966,23 @@ Or::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 | op2;
-    DPRINTF(Runtime, "|| (op1) %s | (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s | (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 | op2;
-    DPRINTF(Runtime, "|| (op1) %d | (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d | (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -1926,18 +2040,23 @@ Xor::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt op1 = *(operands.at(0).getIntRegValue());
     llvm::APInt op2 = *(operands.at(1).getIntRegValue());
     llvm::APInt result = op1 ^ op2;
-    DPRINTF(Runtime, "|| (op1) %s ^ (op2) %s \n", op1.toString(10, true), op2.toString(10, true));
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| (%s) %s ^ (%s) %s \n",
+        operands.at(0).getIRStub(), op1.toString(10, true),
+        operands.at(1).getIRStub(), op2.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
     uint64_t result = op1 ^ op2;
-    DPRINTF(Runtime, "|| (op1) %d ^ (op2) %d\n", op1, op2);
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| (%s) %d ^ (%s) %d\n",
+        operands.at(0).getIRStub(), op1,
+        operands.at(1).getIRStub(), op2);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -2000,6 +2119,9 @@ Load::compute() {
 
 void
 Load::loadInternal() {
+    DPRINTF(RuntimeCompute, "|| Launching %s\n", ir_string);
+    DPRINTF(RuntimeCompute, "|| Loading internal value from %s\n",
+        operands.front().getIRString());
     setRegisterValue(operands.front().getOpRegister());
     commit();
 }
@@ -2010,7 +2132,8 @@ Load::createMemoryRequest() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++createMemoryRequest()\n");
     Addr memAddr = *(operands.front().getPtrRegValue());
     size_t reqLen = getSizeInBytes();
-    DPRINTF(Runtime, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
+    DPRINTF(RuntimeCompute, "|| Launching %s\n", ir_string);
+    DPRINTF(RuntimeCompute, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
     return new MemoryRequest(memAddr, reqLen);
 }
 
@@ -2098,6 +2221,8 @@ Store::createMemoryRequest() {
         }
         req = new MemoryRequest(memAddr, (uint8_t *)regData, reqLen);
     #endif
+        DPRINTF(RuntimeCompute, "|| Launching %s\n", ir_string);
+        DPRINTF(RuntimeCompute, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
     }
 
     return req;
@@ -2180,6 +2305,7 @@ void
 GetElementPtr::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     uint64_t ptr = *(operands.front().getPtrRegValue());
     operands.pop_front();
 
@@ -2211,8 +2337,8 @@ GetElementPtr::compute() {
     }
 
     uint64_t result = ptr + offset;
-    DPRINTF(Runtime, "|| Ptr[%x]  Offset[%x] (Flat Idx[%d])\n", ptr, offset, offset/resultElementSizeInBytes);
-    DPRINTF(Runtime, "|| Result: Addr[%x]\n", result);
+    DPRINTF(RuntimeCompute, "|| Ptr[%x]  Offset[%x] (Flat Idx[%d])\n", ptr, offset, offset/resultElementSizeInBytes);
+    DPRINTF(RuntimeCompute, "|| Result: Addr[%x]\n", result);
     setRegisterValue(result);
 }
 
@@ -2269,13 +2395,14 @@ Trunc::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue()->trunc(size);
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     // The trunc is handled automatically when we set the return register
     uint64_t result = operands.at(0).getUIntRegValue();
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -2333,13 +2460,14 @@ ZExt::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue()->zext(size);
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     // Unsigned data doesn't need any modification when ZExtending
     uint64_t result = operands.at(0).getUIntRegValue();
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
 #endif
     setRegisterValue(result);
 }
@@ -2397,13 +2525,14 @@ SExt::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #ifdef USE_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue()->sext(size);
-    DPRINTF(Runtime, "|| Result: %s\n", result.toString(10, true));
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
     setRegisterValue(result);
 #else
     int64_t result = operands.at(0).getSIntRegValue();
-    DPRINTF(Runtime, "|| Result: %d\n", result);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, result);
     setRegisterValue((uint64_t)result);
 #endif
 }
@@ -2467,18 +2596,21 @@ FPToUI::compute() {
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     switch (operands.front().getSize()) {
         case 32:
         {
             float opdata = operands.front().getFloatFromReg();
             setRegisterValue((uint64_t)opdata);
+            DPRINTF(RuntimeCompute, "|| Result: %u\n", (uint64_t)opdata);
             break;
         }
         case 64:
         {
             double opdata = operands.front().getDoubleFromReg();
             setRegisterValue((uint64_t)opdata);
+            DPRINTF(RuntimeCompute, "|| Result: %u\n", (uint64_t)opdata);
             break;
         }
         default:
@@ -2549,12 +2681,14 @@ FPToSI::compute() {
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     switch (operands.front().getSize()) {
         case 32:
         {
             float opdata = operands.front().getFloatFromReg();
             int64_t tmp = (int64_t)opdata; // Truncate to integer
+            DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, tmp);
             setRegisterValue((uint64_t)tmp);
             break;
         }
@@ -2562,6 +2696,7 @@ FPToSI::compute() {
         {
             double opdata = operands.front().getDoubleFromReg();
             int64_t tmp = (int64_t)opdata; // Truncate to integer
+            DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, tmp);
             setRegisterValue((uint64_t)tmp);
             break;
         }
@@ -3053,19 +3188,21 @@ void
 ICmp::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
+    bool result = false;
 #ifdef USE_AP_VALUES
     switch(predicate)
     {
-        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_NE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ne(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ugt(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->uge(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ult(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->ule(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->sgt(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->sge(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->slt(*(operands.at(1).getIntRegValue())))); break; }
-        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(llvm::APInt(1,operands.at(0).getIntRegValue()->sle(*(operands.at(1).getIntRegValue())))); break; }
+        case SALAM::Predicate::ICMP_EQ: { result = operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_NE: { result = operands.at(0).getIntRegValue()->ne(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_UGT: { result = operands.at(0).getIntRegValue()->ugt(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_UGE: { result = operands.at(0).getIntRegValue()->uge(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_ULT: { result = operands.at(0).getIntRegValue()->ult(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_ULE: { result = operands.at(0).getIntRegValue()->ule(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SGT: { result = operands.at(0).getIntRegValue()->sgt(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SGE: { result = operands.at(0).getIntRegValue()->sge(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SLT: { result = operands.at(0).getIntRegValue()->slt(*(operands.at(1).getIntRegValue())); break; }
+        case SALAM::Predicate::ICMP_SLE: { result = operands.at(0).getIntRegValue()->sle(*(operands.at(1).getIntRegValue())); break; }
         default: break;
 
     }
@@ -3076,19 +3213,21 @@ ICmp::compute() {
     int64_t  sOp2 = operands.at(1).getSIntRegValue();
 
     switch (predicate) {
-        case SALAM::Predicate::ICMP_EQ: { setRegisterValue(uOp1 == uOp2); break; }
-        case SALAM::Predicate::ICMP_NE: { setRegisterValue(uOp1 != uOp2); break; }
-        case SALAM::Predicate::ICMP_UGT: { setRegisterValue(uOp1 > uOp2); break; }
-        case SALAM::Predicate::ICMP_UGE: { setRegisterValue(uOp1 >= uOp2); break; }
-        case SALAM::Predicate::ICMP_ULT: { setRegisterValue(uOp1 < uOp2); break; }
-        case SALAM::Predicate::ICMP_ULE: { setRegisterValue(uOp1 <= uOp2); break; }
-        case SALAM::Predicate::ICMP_SGT: { setRegisterValue(sOp1 > sOp2); break; }
-        case SALAM::Predicate::ICMP_SGE: { setRegisterValue(sOp1 >= sOp2); break; }
-        case SALAM::Predicate::ICMP_SLT: { setRegisterValue(sOp1 < sOp2); break; }
-        case SALAM::Predicate::ICMP_SLE: { setRegisterValue(sOp1 <= sOp2); break; }
+        case SALAM::Predicate::ICMP_EQ: { result = (uOp1 == uOp2); break; }
+        case SALAM::Predicate::ICMP_NE: { result = (uOp1 != uOp2); break; }
+        case SALAM::Predicate::ICMP_UGT: { result = (uOp1 > uOp2); break; }
+        case SALAM::Predicate::ICMP_UGE: { result = (uOp1 >= uOp2); break; }
+        case SALAM::Predicate::ICMP_ULT: { result = (uOp1 < uOp2); break; }
+        case SALAM::Predicate::ICMP_ULE: { result = (uOp1 <= uOp2); break; }
+        case SALAM::Predicate::ICMP_SGT: { result = (sOp1 > sOp2); break; }
+        case SALAM::Predicate::ICMP_SGE: { result = (sOp1 >= sOp2); break; }
+        case SALAM::Predicate::ICMP_SLT: { result = (sOp1 < sOp2); break; }
+        case SALAM::Predicate::ICMP_SLE: { result = (sOp1 <= sOp2); break; }
         default: break;
     }
 #endif
+    setRegisterValue(result);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result ? "TRUE" : "FALSE");
 }
 
 // SALAM-FCmp // ------------------------------------------------------------//
@@ -3148,6 +3287,8 @@ FCmp::compute() {
     // Store results in temp location
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
+    bool result = false;
 #ifdef USE_AP_VALUES
     auto op1 = *operands.at(0).getFloatRegValue();
     auto op2 = *operands.at(1).getFloatRegValue();
@@ -3155,92 +3296,77 @@ FCmp::compute() {
     switch(predicate)
     {
         case SALAM::Predicate::FCMP_FALSE: {
-            setRegisterValue(false);
+            result = false;
             break;
         }
         case SALAM::Predicate::FCMP_OEQ:   {
-            
-            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
-            setRegisterValue(result);
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
             break;
         }
         case SALAM::Predicate::FCMP_OGT:   {
-            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
-            setRegisterValue(result);
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
             break;
         }
         case SALAM::Predicate::FCMP_OGE:   {
-            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
                           (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_OLT:   {
-            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
-            setRegisterValue(result);
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
             break;
         }
         case SALAM::Predicate::FCMP_OLE:   {
-            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpEqual) || 
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ONE:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) && 
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) && 
                           (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ORD:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered);
-            setRegisterValue(result);
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered);
             break;
         }
         case SALAM::Predicate::FCMP_UNO:   {
-            bool result = (cmp == llvm::APFloatBase::cmpResult::cmpUnordered);
-            setRegisterValue(result);
+            result = (cmp == llvm::APFloatBase::cmpResult::cmpUnordered);
             break;
         }
         case SALAM::Predicate::FCMP_UEQ:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpEqual);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UGT:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UGE:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpGreaterThan);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ULT:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_ULE:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpUnordered) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpEqual) ||
                           (cmp == llvm::APFloatBase::cmpResult::cmpLessThan);
-            setRegisterValue(result);
             break;
         }
         case SALAM::Predicate::FCMP_UNE:   {
-            bool result = (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
-            setRegisterValue(result);
+            result = (cmp != llvm::APFloatBase::cmpResult::cmpEqual);
             break;
         }
         case SALAM::Predicate::FCMP_TRUE:  {
-            setRegisterValue(true);
+            result = true;
             break;
         }
     }
@@ -3268,85 +3394,73 @@ FCmp::compute() {
     bool unordered = (std::isnan(op1) || std::isnan(op2));
     switch (predicate) {
         case SALAM::Predicate::FCMP_FALSE: {
-            setRegisterValue(false);
+            result = false;
             break;
         }
         case SALAM::Predicate::FCMP_OEQ:   {
-            bool result = (!unordered && (op1 == op2));
-            setRegisterValue(result);
+            result = (!unordered && (op1 == op2));
             break;
         }
         case SALAM::Predicate::FCMP_OGT:   {
-            bool result = (!unordered && (op1 > op2));
-            setRegisterValue(result);
+            result = (!unordered && (op1 > op2));
             break;
         }
         case SALAM::Predicate::FCMP_OGE:   {
-            bool result = (!unordered && (op1 >= op2));
-            setRegisterValue(result);
+            result = (!unordered && (op1 >= op2));
             break;
         }
         case SALAM::Predicate::FCMP_OLT:   {
-            bool result = (!unordered && (op1 < op2));
-            setRegisterValue(result);
+            result = (!unordered && (op1 < op2));
             break;
         }
         case SALAM::Predicate::FCMP_OLE:   {
-            bool result = (!unordered && (op1 <= op2));
-            setRegisterValue(result);
+            result = (!unordered && (op1 <= op2));
             break;
         }
         case SALAM::Predicate::FCMP_ONE:   {
-            bool result = (!unordered && (op1 != op2));
-            setRegisterValue(result);
+            result = (!unordered && (op1 != op2));
             break;
         }
         case SALAM::Predicate::FCMP_ORD:   {
-            bool result = (!unordered);
-            setRegisterValue(result);
+            result = (!unordered);
             break;
         }
         case SALAM::Predicate::FCMP_UNO:   {
-            bool result = (unordered);
-            setRegisterValue(result);
+            result = (unordered);
             break;
         }
         case SALAM::Predicate::FCMP_UEQ:   {
-            bool result = (unordered || (op1 == op2));
-            setRegisterValue(result);
+            result = (unordered || (op1 == op2));
             break;
         }
         case SALAM::Predicate::FCMP_UGT:   {
-            bool result = (unordered || (op1 > op2));
-            setRegisterValue(result);
+            result = (unordered || (op1 > op2));
             break;
         }
         case SALAM::Predicate::FCMP_UGE:   {
-            bool result = (unordered || (op1 >= op2));
-            setRegisterValue(result);
+            result = (unordered || (op1 >= op2));
             break;
         }
         case SALAM::Predicate::FCMP_ULT:   {
-            bool result = (unordered || (op1 < op2));
-            setRegisterValue(result);
+            result = (unordered || (op1 < op2));
             break;
         }
         case SALAM::Predicate::FCMP_ULE:   {
-            bool result = (unordered || (op1 <= op2));
-            setRegisterValue(result);
+            result = (unordered || (op1 <= op2));
             break;
         }
         case SALAM::Predicate::FCMP_UNE:   {
-            bool result = (unordered || (op1 != op2));
-            setRegisterValue(result);
+            result = (unordered || (op1 != op2));
             break;
         }
         case SALAM::Predicate::FCMP_TRUE:  {
-            setRegisterValue(true);
+            result = true;
             break;
         }
     }
 #endif
+    setRegisterValue(result);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result ? "TRUE" : "FALSE");
 }
 
 // SALAM-Phi // -------------------------------------------------------------//
@@ -3428,20 +3542,11 @@ void
 Phi::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
+    DPRINTF(RuntimeCompute, "|| PHI entered from %s, using value: %s\n",
+        previousBB->getIRStub(), operands.front().getIRString());
 
-    // Perform computations
-    // Store results in temp location
-    // std::shared_ptr<SALAM::Value> node;
-    // for (auto const it : arguments) {
-    //     if(previousBB == it.second) node = it.first;
-    // }
-    // node is pointer where value help
-    uint64_t count = 0;
-    for (auto ops : operands) {
-        DPRINTF(Runtime, "|| Phi Arg[%d]\n", count++);
-        setRegisterValue(ops.getReg());
-    }
-    //setRegisterValue(operands.at(0).getReg());
+    setRegisterValue(operands.front().getReg());
 }
 
 void
@@ -3583,6 +3688,7 @@ void
 Select::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 
     auto cond = operands.at(0);
     auto trueVal = operands.at(1);

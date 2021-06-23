@@ -11,6 +11,7 @@
 #include "debug/LLVMInterface.hh"
 #include "debug/NoncoherentDma.hh"
 #include "debug/Runtime.hh"
+#include "debug/RuntimeCompute.hh"
 #include "debug/RuntimeQueues.hh"
 #include "debug/SALAM_Debug.hh"
 #include "debug/StreamDma.hh"

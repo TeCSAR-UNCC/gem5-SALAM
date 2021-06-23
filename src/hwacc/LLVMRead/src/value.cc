@@ -27,6 +27,7 @@ SALAM::Value::Value(const Value &copy_val)
 	irtype = copy_val.irtype;
 	size = copy_val.size;
 	ir_string = copy_val.ir_string;
+	ir_stub = copy_val.ir_stub;
 }
 
 SALAM::Value::Value(std::shared_ptr<SALAM::Value> copy_val)
@@ -37,6 +38,7 @@ SALAM::Value::Value(std::shared_ptr<SALAM::Value> copy_val)
 	irtype = copy_val->getType();
 	size = copy_val->getSize();
 	ir_string = copy_val->getIRString();
+	ir_stub = copy_val->getIRStub();
 }
 
 // operator equals
@@ -49,6 +51,7 @@ SALAM::Value::operator = (Value &copy_val)
 	irtype = copy_val.irtype;
 	size = copy_val.size;
 	ir_string = copy_val.ir_string;
+	ir_stub = copy_val.ir_stub;
   	return *this;
 }
 
@@ -88,10 +91,15 @@ SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
 	// Link Return Register
 	if (size>0) addRegister(true);
 
-	std::string tmpstr;
-	llvm::raw_string_ostream ss(ir_string);
+	std::string tmpStr1;
+	llvm::raw_string_ostream ss(tmpStr1);
 	ss << *irval;
 	ir_string = ss.str();
+
+	std::string tmpStr2;
+    llvm::raw_string_ostream ss2(tmpStr2);
+    irval->printAsOperand(ss2);
+    ir_stub = ss2.str();
 }
 
 void

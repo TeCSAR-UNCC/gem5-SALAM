@@ -102,7 +102,9 @@ class Instruction : public Value
             TODO: link up the findDynamicDeps function from llvm_interface
         */
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
-        //void operandValueFetch(uint64_t uid);
+
+        // Functions for getting data from operands
+        uint64_t getPtrOperandValue(uint64_t op_num) { return *(operands.at(op_num).getPtrRegValue()); }
 };
 
 //---------------------------------------------------------------------------//

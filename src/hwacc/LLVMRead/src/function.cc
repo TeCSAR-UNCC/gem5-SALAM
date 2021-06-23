@@ -14,10 +14,6 @@ SALAM::Function::initialize(llvm::Value * irval,
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "Initialize Values - Function::initialize\n");
     Value::initialize(irval, vmap);
-    std::string tmpstr;
-    llvm::raw_string_ostream ss(tmpstr);
-    irval->printAsOperand(ss);
-    ir_string = ss.str();
 
 	//Parse irval for function params
 	llvm::Function * func = llvm::dyn_cast<llvm::Function>(irval);

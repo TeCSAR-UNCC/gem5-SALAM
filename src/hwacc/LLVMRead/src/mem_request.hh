@@ -39,6 +39,7 @@ class MemoryRequest {
     void setCarrierPort(MasterPort * _port) { port = _port; }
     MasterPort * getCarrierPort() { return port; }
     uint8_t * getBuffer() { return buffer; }
+    Addr getAddress() { return address; }
 };
 
 #endif //__MEM_REQUEST_HH__
