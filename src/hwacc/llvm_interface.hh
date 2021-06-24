@@ -97,6 +97,7 @@ class LLVMInterface : public ComputeUnit {
         std::shared_ptr<SALAM::BasicBlock> previousBB;
         uint32_t scheduling_threshold;
         bool returned = false;
+        bool lockstep;
 
         inline bool uidActive(uint64_t id) {
           return computeUIDActive(id) || readUIDActive(id) || writeUIDActive(id);
@@ -130,8 +131,10 @@ class LLVMInterface : public ComputeUnit {
     public:
         ActiveFunction(LLVMInterface * _owner, std::shared_ptr<SALAM::Function> _func,
                        std::shared_ptr<SALAM::Instruction> _caller):
-                       owner(_owner), func(_func), caller(_caller), previousBB(nullptr) {
+                       owner(_owner), func(_func), caller(_caller),
+                       previousBB(nullptr) {
                           scheduling_threshold = owner->getSchedulingThreshold();
+                          lockstep = (owner->getLockstepStatus());
                        }
         void readCommit(MemoryRequest *req);
         void writeCommit(MemoryRequest *req);
@@ -139,8 +142,11 @@ class LLVMInterface : public ComputeUnit {
         void scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb);
         void processQueues();
         void launch();
-        bool canReturn() {
-            return (readQueue.empty() && writeQueue.empty() && computeQueue.empty() && reservation.front()->isReturn());
+        inline bool lockstepReady() {
+          return !lockstep || (readQueue.empty() && writeQueue.empty() && computeQueue.empty());
+        }
+        inline bool canReturn() {
+            return readQueue.empty() && writeQueue.empty() && computeQueue.empty() && reservation.front()->isReturn();
         }
         void launchRead(std::shared_ptr<SALAM::Instruction> readInst);
         void launchWrite(std::shared_ptr<SALAM::Instruction> writeInst);
@@ -166,6 +172,7 @@ class LLVMInterface : public ComputeUnit {
     void initialize();
     void finalize();
     void debug(uint64_t flags);
+    bool getLockstepStatus() { return lockstep; }
     void readCommit(MemoryRequest *req);
     void writeCommit(MemoryRequest *req);
     void dumpModule(llvm::Module *m);

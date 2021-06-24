@@ -119,7 +119,7 @@ LLVMInterface::ActiveFunction::processQueues()
         }
         returned = true;
         return;
-    } else {
+    } else if (lockstepReady()) {
         // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
             auto inst = *queue_iter;
@@ -134,13 +134,16 @@ LLVMInterface::ActiveFunction::processQueues()
                 } else if (((inst)->ready()) && !uidActive((inst)->getUID())) {
                     if ((inst)->isLoad()) {
                         // RAW protection to ensure a writeback finishes before reading that location
-                        Addr loadAddr = inst->getPtrOperandValue(0);
-                        if (!writeActive(loadAddr)) {
+                        if (inst->isLoadingInternal()) {
+                            launchRead(inst);
+                            DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
+                            queue_iter = reservation.erase(queue_iter);
+                        } else if (!writeActive(inst->getPtrOperandValue(0))) {
                             launchRead(inst);
                             DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
                         } else {
-                            auto activeWrite = getActiveWrite(loadAddr);
+                            auto activeWrite = getActiveWrite(inst->getPtrOperandValue(0));
                             inst->addRuntimeDependency(activeWrite);
                             activeWrite->addRuntimeUser(inst);
                             ++queue_iter;

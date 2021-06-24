@@ -96,6 +96,7 @@ class Instruction : public Value
         virtual void setOperandValue(uint64_t uid);
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         virtual bool isInstruction() { return true; }
+        virtual bool isLoadingInternal() { return false; }
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
         /*
