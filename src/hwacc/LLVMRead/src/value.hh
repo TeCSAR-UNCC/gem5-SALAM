@@ -37,7 +37,7 @@ class Value
         bool dbg = false;
 
         void addRegister(bool isTracked=true);
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         void addAPIntRegister(const llvm::APInt & val);
         void addAPIntRegister(const llvm::APSInt & val);
         void addAPFloatRegister(const llvm::APFloat & val);
@@ -90,7 +90,7 @@ class Value
         // Using these functions will increment the write counters on tracked registers
         // If you'd like to avoid incrementing write counters, directly pull the register and
         // use its appropriate write function
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         void setRegisterValue(const llvm::APInt &data);
         void setRegisterValue(const llvm::APFloat &data);
     #endif
@@ -104,7 +104,7 @@ class Value
         // If you'd like to avoid incrementing read counters, directly pull the register and
         // use its appropriate read function
         virtual uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         virtual llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
         virtual llvm::APSInt * getIntRegValue() { return returnReg->getIntData(); }
     #else

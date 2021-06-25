@@ -48,7 +48,7 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
                                         Register(tracked)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
     switch (T->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
@@ -105,7 +105,7 @@ SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
                                         Register(false)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         data = new llvm::APFloat(RHS);
     #else
         auto bitcast = RHS.bitcastToAPInt();
@@ -118,7 +118,7 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
                                     Register(tracked)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
         assert(it);
         data = new llvm::APSInt(it->getBitWidth(), true);
@@ -131,7 +131,7 @@ SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
                                     Register(false)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         data = new llvm::APSInt(RHS);
     #else
         data = new uint64_t(RHS.getLimitedValue());
@@ -157,7 +157,7 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
-#ifdef USE_AP_VALUES
+#if USE_LLVM_AP_VALUES
     llvm::APFloat *
     SALAM::APFloatRegister::getFloatData(bool incReads)
     {
@@ -199,7 +199,7 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     }
 #endif
 
-#ifdef USE_AP_VALUES
+#if USE_LLVM_AP_VALUES
     llvm::APSInt *
     SALAM::APIntRegister::getIntData(bool incReads)
     {

@@ -117,7 +117,7 @@ SALAM::Value::addRegister(bool istracked) {
 	}
 }
 
-#ifdef USE_AP_VALUES
+#if USE_LLVM_AP_VALUES
 	void
 	SALAM::Value::addAPIntRegister(const llvm::APInt & val) {
 		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
@@ -170,7 +170,7 @@ SALAM::Value::addPointerRegister(uint64_t val, bool istracked, bool isnull) {
 	returnReg = std::make_shared<PointerRegister>(val, istracked, isnull);
 }
 
-#ifdef USE_AP_VALUES
+#if USE_LLVM_AP_VALUES
 	void
 	SALAM::Value::setRegisterValue(const llvm::APInt &data) {
 		if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
@@ -203,7 +203,7 @@ SALAM::Value::setRegisterValue(const uint64_t data) {
 		uint64_t tmp = data;
 		returnReg->writePtrData(&tmp);
 	} else {
-	#ifdef USE_AP_VALUES
+	#if USE_LLVM_AP_VALUES
 		DPRINTF(Runtime, "Unsupported type for register operation. Tried to place Ptr data in non-Ptr register.\n");
 	#else
 		if (returnReg->isInt()) {
@@ -223,7 +223,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	DPRINTF(Runtime, "| Set Register Data - ");
     switch (irtype->getTypeID()) {
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         case llvm::Type::FloatTyID:
         {
             DPRINTF(Runtime, "Float\n");
@@ -293,7 +293,7 @@ SALAM::Value::setRegisterValue(bool data) {
 	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(Runtime, "| Int Register\n");
 	if (returnReg->isInt()) {
-	#ifdef USE_AP_VALUES
+	#if USE_LLVM_AP_VALUES
 		if (data == true) {
 			setRegisterValue(llvm::APInt::getAllOnesValue(1));
 		} else {

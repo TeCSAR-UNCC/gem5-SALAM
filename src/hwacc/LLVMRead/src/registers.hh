@@ -9,7 +9,7 @@
 #include "llvm/ADT/APFloat.h"
 #include <llvm-c/Core.h>
 
-// #define USE_AP_VALUES
+#define USE_LLVM_AP_VALUES 1
 
 namespace SALAM
 {
@@ -22,7 +22,6 @@ namespace SALAM
 class Register
 {
     protected:
-        uint64_t* raw;
         bool tracked;
         bool isNULL = false;
         bool dbg = false;
@@ -35,7 +34,7 @@ class Register
                 Register_Debugger();
                 ~Register_Debugger() = default;
                 virtual void dumper(SALAM::Register *reg);
-        }; 
+        };
 
         Register_Debugger* reg_dbg;
 
@@ -43,7 +42,7 @@ class Register
         Register(bool trk=true,
                  bool nul=false);
         ~Register();
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         virtual llvm::APFloat *getFloatData(bool incReads=true) {
             assert(0 && "Attempted to read float data from non-float register");
             return NULL;
@@ -82,7 +81,7 @@ class Register
             assert(0 && "Attempted to read pointer data from non-pointer register");
             return NULL;
         }
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) {
             assert(0 && "Attempted to write float data on non-float register");
         }
@@ -113,7 +112,7 @@ class Register
 class APFloatRegister : public Register
 {
     private:
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         llvm::APFloat *data;
     #else
         // We use uint64_t to store the bitcast of the FP value.
@@ -125,14 +124,13 @@ class APFloatRegister : public Register
                         bool isTracked=true);
         // This constructor is only used for constants.
         APFloatRegister(const llvm::APFloat &RHS);
-    #ifndef USE_AP_VALUES
-        // This constructor is only used for constants.
-        APFloatRegister(const uint64_t RHS) : Register(false) { data = new uint64_t(RHS); }
-    #endif
-    #ifdef USE_AP_VALUES
+        ~APFloatRegister() { if (data) delete data; }
+    #if USE_LLVM_AP_VALUES
         virtual llvm::APFloat * getFloatData(bool incReads=true) override;
         virtual void writeFloatData(llvm::APFloat * apf, bool incWrites=true) override;
     #else
+        // This constructor is only used for constants.
+        APFloatRegister(const uint64_t RHS) : Register(false) { data = new uint64_t(RHS); }
         virtual uint64_t * getFloatData(bool incReads=true) override;
         virtual float getFloat(bool incReads=true) override;
         virtual double getDouble(bool incReads=true) override;
@@ -144,7 +142,7 @@ class APFloatRegister : public Register
 class APIntRegister : public Register
 {
     private:
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         llvm::APSInt *data;
     #else
         uint64_t * data;
@@ -154,14 +152,13 @@ class APIntRegister : public Register
                       bool isTracked=true);
         // This constructor is only used for constants.
         APIntRegister(const llvm::APInt &RHS);
-    #ifndef USE_AP_VALUES
-        // This constructor is only used for constants.
-        APIntRegister(const uint64_t RHS) : Register(false) { data = new uint64_t(RHS); }
-    #endif
-    #ifdef USE_AP_VALUES
+        ~APIntRegister() { if (data) delete data; }
+    #if USE_LLVM_AP_VALUES
         virtual llvm::APSInt * getIntData(bool incReads=true) override;
         virtual void writeIntData(llvm::APInt * api, bool incWrites=true) override;
     #else
+        // This constructor is only used for constants.
+        APIntRegister(const uint64_t RHS) : Register(false) { data = new uint64_t(RHS); }
         virtual uint64_t * getIntData(bool incReads=true) override;
         virtual uint64_t getUnsignedInt(bool incReads=true) override;
         virtual int64_t getSignedInt(size_t sizeInBits, bool incReads=true) override;
@@ -180,6 +177,7 @@ class PointerRegister : public Register
         PointerRegister(uint64_t val,
                         bool isTracked=true,
                         bool isNull=false);
+        ~PointerRegister() { if (pointer) delete pointer; }
         virtual bool isPtr() override { return true; }
         virtual uint64_t * getPtrData(bool incReads=true) override;
         virtual void writePtrData(uint64_t * ptr, size_t len=8, bool incWrites=true) override;

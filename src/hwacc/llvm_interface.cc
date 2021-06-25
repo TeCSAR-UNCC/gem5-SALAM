@@ -249,6 +249,7 @@ LLVMInterface::tick()
         // We are finished executing all functions. Signal completion to the CommInterface
         running = false;
         finalize();
+        return;
     }
     //////////////// Schedule Next Cycle ////////////////////////
     if (running && !tickEvent.scheduled()) {
@@ -708,6 +709,8 @@ LLVMInterface::finalize() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Simulation Times
     printPerformanceResults();
+    functions.clear();
+    values.clear();
     comm->finish();
 }
 

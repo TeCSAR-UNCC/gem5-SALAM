@@ -50,7 +50,7 @@ class Operand: public Value
         void updateOperandRegister();
 
         virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
-    #ifdef USE_AP_VALUES
+    #if USE_LLVM_AP_VALUES
         virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
         virtual llvm::APSInt * getIntRegValue() { return lockedValue->getIntData(); }
     #else
