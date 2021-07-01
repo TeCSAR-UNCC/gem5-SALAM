@@ -8,7 +8,7 @@
 #include "hwacc/LLVMRead/src/function.hh"
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "hwacc/LLVMRead/src/cycle_count.hh"
+#include "hwacc/LLVMRead/src/cycle_counts.hh"
 //------------------------------------------//
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>

@@ -1,5 +1,5 @@
-#ifndef CYCLE_COUNT_HH
-#define CYCLE_COUNT_HH
+#ifndef CYCLE_COUNTS_HH
+#define CYCLE_COUNTS_HH
 //------------------------------------------//
 #include "debug_flags.hh"
 #include "params/CycleCounts.hh"
@@ -31,6 +31,7 @@ class CycleCounts : public SimObject {
     uint32_t fptoui_inst;
     uint32_t fptosi_inst;
     uint32_t uitofp_inst;
+    uint32_t sitofp_inst;
     uint32_t ptrtoint_inst;
     uint32_t inttoptr_inst;
     uint32_t bitcast_inst;
@@ -71,4 +72,4 @@ class CycleCounts : public SimObject {
     CycleCounts(CycleCountsParams *p);
 };
 
-#endif //__CYCLE_COUNT_HH__
+#endif //__CYCLE_COUNTS_HH__

@@ -6,7 +6,7 @@
 #include "hwacc/comm_interface.hh"
 #include "hwacc/LLVMRead/src/mem_request.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "hwacc/LLVMRead/src/cycle_count.hh"
+#include "hwacc/LLVMRead/src/cycle_counts.hh"
 //------------------------------------------//
 
 class ComputeUnit : public SimObject {
@@ -14,7 +14,7 @@ class ComputeUnit : public SimObject {
 
   protected:
     CommInterface *comm;
-    CycleCounts *cycles;
+    CycleCounts *cycle_counts;
 
     class TickEvent : public Event
     {

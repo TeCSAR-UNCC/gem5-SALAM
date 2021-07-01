@@ -8,7 +8,7 @@
 #include <llvm/IR/Instructions.h>
 #include "basic_block.hh"
 #include "operand.hh"
-#include "cycle_count.hh"
+#include "cycle_counts.hh"
 #include "debug_flags.hh"
 #include "value.hh"
 #include "mem_request.hh"
