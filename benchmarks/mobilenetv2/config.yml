@@ -214,7 +214,7 @@ acc_cluster:
     - Var:
       - Name: DWConvWeights
         Type: SPM
-        Size: 1200
+        Size: 3360
         Ports: 9
     - Var:
       - Name: DWConvQParams
@@ -377,19 +377,19 @@ acc_cluster:
       - Name: LinearFeats
         Type: SPM
         Size: 1280
-        Ports: 1
+        Ports: 320
     - Var:
       - Name: LinearWeights
         Type: SPM
         Size: 1280000
-        Ports: 1
+        Ports: 320
     - Var:
       - Name: LinearQParams
         Type: SPM
         Size: 6000
-        Ports: 1
+        Ports: 320
     - Var:
       - Name: LinearSum
         Type: SPM
         Size: 1000
-        Ports: 1
+        Ports: 320

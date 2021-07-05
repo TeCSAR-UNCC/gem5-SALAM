@@ -41,23 +41,30 @@
 
 int __attribute__ ((optimize("0"))) main(void) {
 	m5_reset_stats();
-    int exitCond = 0;
-    unsigned phase, rs_offset, rd_offset, wr_offset;
-    while (!exitCond) {
-        // Run Phase 0 of Body
-        printf("Current Stage: %d\n", stage);
-        phase = 0;
-        rs_offset = (phase + 0) * 0x00100000;
-        rd_offset = (phase + 1) * 0x00100000;
-        wr_offset = (phase + 2) * 0x00100000;
-        runBody(phase,
-                feats+rd_offset,
-                feats+rs_offset,
-                feats+wr_offset,
-                weights, qparams,
-                weights, qparams,
-                weights, qparams);
-        while(stage == 0);
+        unsigned phase, rs_offset, rd_offset, wr_offset;
+        // // Run Head
+        // runHead(phase,
+        //         feats+rd_offset,
+        //         feats+rs_offset,
+        //         feats+wr_offset,
+        //         weights, qparams,
+        //         weights, qparams);
+        // while(stage == 0);
+        stage = 1;
+        // // Run Phase 0 of Body
+        // printf("Current Stage: %d\n", stage);
+        // phase = 0;
+        // rs_offset = (phase + 0) * 0x00100000;
+        // rd_offset = (phase + 1) * 0x00100000;
+        // wr_offset = (phase + 2) * 0x00100000;
+        // runBody(phase,
+        //         feats+rd_offset,
+        //         feats+rs_offset,
+        //         feats+wr_offset,
+        //         weights, qparams,
+        //         weights, qparams,
+        //         weights, qparams);
+        // while(stage == 0);
         // Run Phase 1 of Body
         printf("Current Stage: %d\n", stage);
         phase = 1;
@@ -114,7 +121,6 @@ int __attribute__ ((optimize("0"))) main(void) {
                 weights, qparams,
                 weights, qparams);
         while(stage == 4);
-        exitCond = 1;
         // Run Phase 5 of Body
         printf("Current Stage: %d\n", stage);
         phase = 5;
@@ -269,10 +275,20 @@ int __attribute__ ((optimize("0"))) main(void) {
                 weights, qparams,
                 weights, qparams);
         while(stage == 15);
-    }
-	m5_dump_stats();
+        
+        runTail(feats+0x01100000,
+                feats+0x01200000,
+                weights, qparams);
+        while(stage == 16);
+        
+        runClassifier(feats+0x01100000,
+                feats+0x01200000,
+                weights, qparams);
+        while(stage == 17);
+
+        m5_dump_stats();
 	m5_exit();
-    return 0;
+        return 0;
 }
 
 void runHead(uint64_t img_rd_addr, uint64_t feat_wr_addr,
@@ -304,6 +320,7 @@ void runBody(uint8_t phase, uint64_t feat_rd_addr,
     volatile uint64_t * ARGS = (uint64_t *)(body_top+1);
     volatile uint64_t count;
 
+    printf("Setting args for BODY\n");
     ARGS[0] = feat_rd_addr;
     ARGS[1] = res_rd_addr;
     ARGS[2] = feat_wr_addr;
@@ -319,6 +336,35 @@ void runBody(uint8_t phase, uint64_t feat_rd_addr,
     MMR[0]  = 0x01;
 }
 
+void runTail(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
+             uint64_t pw_weights, uint64_t pw_quant) {
+    uint8_t  * MMR  = (uint8_t  *)(tail_top);
+    uint64_t * ARGS = (uint64_t *)(tail_top+1);
+    
+    printf("Setting args for TAIL\n");
+    ARGS[0] = feat_rd_addr;
+    ARGS[1] = feat_wr_addr;
+    ARGS[2] = pw_weights;
+    ARGS[3] = pw_quant;
+
+    printf("Running TAIL\n");
+    MMR[0]  = 0x01;
+}
+
+void runClassifier(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
+                   uint64_t weight, uint64_t quant) {
+    uint8_t  * MMR  = (uint8_t  *)(class_top);
+    uint64_t * ARGS = (uint64_t *)(class_top+1);
+
+    printf("Setting args for CLASSIFIER\n");
+    ARGS[0] = feat_rd_addr;
+    ARGS[1] = feat_wr_addr;
+    ARGS[2] = weight;
+    ARGS[3] = quant;
+    
+    printf("Running CLASSIFIER\n");
+    MMR[0]  = 0x01;
+}
 
 // void runBody(uint8_t phase, uint64_t feat_rd_addr,
 //              uint64_t res_rd_addr, uint64_t feat_wr_addr,

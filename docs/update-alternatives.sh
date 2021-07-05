@@ -1,6 +1,6 @@
 #!/bin/sh
 
-sudo update-alternatives --install "/usr/bin/clang" "clang" "${HOME}/LLVM-3.8/bin/clang" 10 \
+sudo update-alternatives --install "/usr/bin/clang" "clang" "${HOME}/LLVM-3.8/bin/clang" 101 \
 	--slave "/usr/bin/bugpoint"                        "bugpoint"                         "${HOME}/LLVM-3.8/bin/bugpoint" \
 	--slave "/usr/bin/clang++"                         "clang++"                          "${HOME}/LLVM-3.8/bin/clang++" \
 	--slave "/usr/bin/llc"                             "llc"                              "${HOME}/LLVM-3.8/bin/llc" \

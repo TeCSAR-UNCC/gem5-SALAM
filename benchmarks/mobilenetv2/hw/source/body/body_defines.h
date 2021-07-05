@@ -1,5 +1,14 @@
 #include "../common/support.h"
 #include "../../../body_hw_defines.h"
+
+#define __EXPND_PW_CONV_RES_MAX_INPUT_CHAN__        56
+#define __EXPND_PW_CONV_RES_MAX_OUTPUT_CHANNEL__    336
+#define __IRB_DW_CONV_STD_2_MAX_INPUT_SIZE__        48
+#define __IRB_DW_CONV_STD_1_MAX_INPUT_CHAN__        336
+#define __IRB_DW_CONV_STD_1_MAX_OUTPUT_CHANNEL__    336
+#define __PRJC_PW_CONV_STR1_MAX_INPUT_CHAN__        336
+#define __PRJC_PW_CONV_STR1_MAX_OUTPUT_CHANNEL__    112
+
 /***********************************************************
  * Base Computation Defines
  ***********************************************************/
@@ -7,24 +16,24 @@
 #define HALF_SIZE		(((KERNEL_SIZE)-1) / 2)
 
 // PW Conv 0
-#define PW0_IN_CH_MAX	120
-#define PW0_OUT_CH_MAX	720
+#define PW0_IN_CH_MAX	__EXPND_PW_CONV_RES_MAX_INPUT_CHAN__
+#define PW0_OUT_CH_MAX	__EXPND_PW_CONV_RES_MAX_OUTPUT_CHANNEL__
 #define PW0_CORE_SIZE	120
 #define PW0WeightSize	PW0_OUT_CH_MAX*PW0_IN_CH_MAX
 #define PW0QParamSize	PW0_OUT_CH_MAX*6
 
 // DW Conv
-#define DW0_IN_SIZE_MAX	80
-#define DW0_IN_CH_MAX	720
-#define DW0_OUT_CH_MAX	720
+#define DW0_IN_SIZE_MAX	__IRB_DW_CONV_STD_2_MAX_INPUT_SIZE__
+#define DW0_IN_CH_MAX	__IRB_DW_CONV_STD_1_MAX_INPUT_CHAN__
+#define DW0_OUT_CH_MAX	__IRB_DW_CONV_STD_1_MAX_OUTPUT_CHANNEL__
 #define DW0BuffSize		DW0_IN_SIZE_MAX*(KERNEL_SIZE-1)*DW0_IN_CH_MAX
 #define DW0WindowSize	KERNEL_SIZE*KERNEL_SIZE*DW0_IN_CH_MAX
 #define DW0WeightSize	DW0_OUT_CH_MAX*((KERNEL_SIZE*KERNEL_SIZE)+1)
 #define DW0QParamSize	DW0_OUT_CH_MAX*6
 
 // PW Conv 1
-#define PW1_IN_CH_MAX	720
-#define PW1_OUT_CH_MAX	240
+#define PW1_IN_CH_MAX	__PRJC_PW_CONV_STR1_MAX_INPUT_CHAN__
+#define PW1_OUT_CH_MAX	__PRJC_PW_CONV_STR1_MAX_OUTPUT_CHANNEL__
 #define PW1_CORE_SIZE	120
 #define PW1WeightSize	PW1_OUT_CH_MAX*PW1_IN_CH_MAX
 #define PW1QParamSize	PW1_OUT_CH_MAX*6

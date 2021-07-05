@@ -42,13 +42,13 @@
 #define DWCONV 0x100375b9
 #define DWConvWindow 0x100375fa
 #define DWConvWeights 0x1003921a
-#define DWConvQParams 0x100396ca
-#define DWConvBuffer 0x1003a7aa
-#define DWConvOutBuffer 0x100569aa
-#define DWConvOut 0x10056c7a
+#define DWConvQParams 0x10039f3a
+#define DWConvBuffer 0x1003b01a
+#define DWConvOutBuffer 0x1005721a
+#define DWConvOut 0x100574ea
 //Accelerator: PWCONV1
-#define PWCONV1 0x10056c7b
-#define PWConv1LocalFeatSize 0x10056cb4
-#define PWConv1Weights 0x10056f84
-#define PWConv1QParams 0x10081284
+#define PWCONV1 0x100574eb
+#define PWConv1LocalFeatSize 0x10057524
+#define PWConv1Weights 0x100577f4
+#define PWConv1QParams 0x10081af4
 //END GENERATED CODE
