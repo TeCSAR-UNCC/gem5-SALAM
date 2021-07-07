@@ -209,12 +209,12 @@ acc_cluster:
     - Var:
       - Name: DWConvWindow
         Type: SPM
-        Size: 7200
+        Size: 6480
         Ports: 9
     - Var:
       - Name: DWConvWeights
         Type: SPM
-        Size: 3360
+        Size: 7200
         Ports: 9
     - Var:
       - Name: DWConvQParams
@@ -224,7 +224,7 @@ acc_cluster:
     - Var:
       - Name: DWConvBuffer
         Type: SPM
-        Size: 115200
+        Size: 69120
         Ports: 2
     - Var:
       - Name: DWConvOutBuffer
