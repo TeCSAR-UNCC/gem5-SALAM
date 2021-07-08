@@ -8,16 +8,13 @@
 #include <llvm/IR/Instructions.h>
 #include "basic_block.hh"
 #include "operand.hh"
-#include "cycle_count.hh"
 #include "debug_flags.hh"
 #include "value.hh"
 #include "mem_request.hh"
 
 namespace SALAM {
 
-class BasicBlock; // Do Not Remove
-//class Operator;
-
+class BasicBlock; // Required Declaration
 
 //---------------------------------------------------------------------------//
 //--------- Instruction Base Class ------------------------------------------//
@@ -99,9 +96,6 @@ class Instruction : public Value
         virtual bool isLoadingInternal() { return false; }
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
-        /*
-            TODO: link up the findDynamicDeps function from llvm_interface
-        */
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
 
         // Functions for getting data from operands

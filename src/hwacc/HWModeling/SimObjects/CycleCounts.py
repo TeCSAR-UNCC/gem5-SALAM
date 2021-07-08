@@ -2,11 +2,15 @@ from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
 
-#Cycle Counts
+#Instruction runtime cycles
 class CycleCounts(SimObject):
+    # SimObject type
     type = "CycleCounts"
-    cxx_header = "hwacc/LLVMRead/src/cycle_count.hh"
+
+    # gem5-SALAM attached header
+    cxx_header = "hwacc/HWModeling/src/cycle_counts.hh"
     
+    # Instruction cycle count defaults
     counter = Param.UInt32(1, "Counter intructions runtime cycles.")
     gep = Param.UInt32(1, "GetElementPtr intructions runtime cycles.")
     phi = Param.UInt32(1, "Phi intructions runtime cycles.")
@@ -28,6 +32,7 @@ class CycleCounts(SimObject):
     fptoui = Param.UInt32(1, "Floating point to unsigned integer intructions runtime cycles.")
     fptosi = Param.UInt32(1, "Floating point to signed integer intructions runtime cycles.")
     uitofp = Param.UInt32(1, "Unsigned integer to floating point intructions runtime cycles.")
+    sitofp = Param.UInt32(1, "Signed integer to floating point intructions runtime cycles.")
     ptrtoint = Param.UInt32(1, "Pointer to integer intructions runtime cycles.")
     inttoptr = Param.UInt32(1, "Integer to pointer intructions runtime cycles.")
     bitcast = Param.UInt32(1, "Bitcast intructions runtime cycles.")
@@ -37,8 +42,8 @@ class CycleCounts(SimObject):
     landingpad = Param.UInt32(1, "Landing pad intructions runtime cycles.")
     catchpad = Param.UInt32(1, "Catch pad intructions runtime cycles.")
     alloca = Param.UInt32(1, "Allocate intructions runtime cycles.")
-    load = Param.UInt32(0, "Must be 0, handled by memory controller");
-    store = Param.UInt32(0, "Must be 0, handled by memory controller");
+    load = Param.UInt32(0, "Must be 0, handled by memory controller")
+    store = Param.UInt32(0, "Must be 0, handled by memory controller")
     fence = Param.UInt32(1, "Fence intructions runtime cycles.")
     cmpxchg = Param.UInt32(1, "Compare and exchange intructions runtime cycles.")
     atomicrmw = Param.UInt32(1, "Atomic remove intructions runtime cycles.")
@@ -65,7 +70,3 @@ class CycleCounts(SimObject):
     fmul = Param.UInt32(4, "Floating point multiplication intructions runtime cycles.")
     fdiv = Param.UInt32(16, "Floating point division intructions runtime cycles.")
     frem = Param.UInt32(5, "Floating point remainder intructions runtime cycles.")
-
-    
-    
-    

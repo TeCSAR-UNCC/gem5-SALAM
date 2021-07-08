@@ -1,43 +1,50 @@
 Import('*')
 
 if env['TARGET_ISA'] == 'arm':
-    # SimObject('IOAcc.py')
+
+    #
+    #SimObject('IOAcc.py')
     SimObject('CommInterface.py')
     SimObject('ComputeUnit.py')
     SimObject('LLVMInterface.py')
     SimObject('ScratchpadMemory.py')
     SimObject('NoncoherentDma.py')
     SimObject('StreamDma.py')
-    SimObject('CycleCounts.py')
     SimObject('AccCluster.py')
     SimObject('StreamBuffer.py')
 
+    #
+    SimObject('HWModeling/SimObjects/CycleCounts.py')
+    SimObject('HWModeling/SimObjects/HWInterface.py')
+
+    # 
     Source('comm_interface.cc')
     Source('compute_unit.cc')
     Source('llvm_interface.cc')
+    Source('dma_write_fifo.cc')
+    Source('noncoherent_dma.cc')
+    Source('stream_dma.cc')
+    Source('acc_cluster.cc')
+    Source('stream_buffer.cc')
+    Source('stream_port.cc')
+    Source('scratchpad_memory.cc')
+    
+    #
     Source('LLVMRead/src/value.cc')
     Source('LLVMRead/src/function.cc')
     Source('LLVMRead/src/basic_block.cc')
     Source('LLVMRead/src/debug_flags.cc')
     Source('LLVMRead/src/llvm_types.cc')
     Source('LLVMRead/src/mem_request.cc')
-    #Source('LLVMRead/src/utilization.cc')
-    #Source('LLVMRead/src/power_model.cc')
-    #Source('LLVMRead/src/functional_units.cc')
     Source('LLVMRead/src/instruction.cc')
-    Source('dma_write_fifo.cc')
-    Source('noncoherent_dma.cc')
-    Source('stream_dma.cc')
-    #Source('LLVMRead/src/instructions.cc')
     Source('LLVMRead/src/registers.cc')
-    #Source('LLVMRead/src/base_instruction.cc')
-    Source('LLVMRead/src/cycle_count.cc')
     Source('LLVMRead/src/operand.cc')
-    Source('acc_cluster.cc')
-    Source('stream_buffer.cc')
-    Source('stream_port.cc')
-    Source('scratchpad_memory.cc')
 
+    #
+    Source('HWModeling/src/cycle_counts.cc')
+    Source('HWModeling/src/hw_interface.cc')
+
+    #
     DebugFlag('CommInterface')
     DebugFlag('CommInterfaceQueues')
     DebugFlag('DeviceMMR')
@@ -52,5 +59,6 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('Trace')
     DebugFlag('Step')
 
+    #
     CompoundFlag('JDEV', ['LLVMInterface', 'Runtime', 'SALAM_Debug'])
     CompoundFlag('HWACC', ['CommInterface', 'LLVMInterface'])

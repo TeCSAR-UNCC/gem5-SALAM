@@ -212,7 +212,6 @@ class CommInterface : public BasicPioDevice
     bool reset_spm;
 
     ComputeUnit *cu;
-    CycleCounts *cycleCount;
 
   public:
     typedef CommInterfaceParams Params;
@@ -253,7 +252,6 @@ class CommInterface : public BasicPioDevice
     virtual int getWriteBusWidth()  { return 0; }  
     virtual int getPmemRange() { return 0; }
     void registerCompUnit(ComputeUnit *compunit) { cu = compunit; }
-    void registerCycleCounts(CycleCounts *cylcount) { cycleCount = cylcount; }
     virtual void finish();
 
     MemoryRequest * findMemRequest(PacketPtr pkt, bool isRead);

@@ -1,8 +1,8 @@
 //------------------------------------------//
-#include "cycle_count.hh"
+#include "cycle_counts.hh"
 //------------------------------------------//
 
-CycleCounts::CycleCounts(CycleCountsParams *p) :
+CycleCounts::CycleCounts(CycleCountsParams *p):
     SimObject(p),
     counter_inst(p->counter),
     gep_inst(p->gep),
@@ -25,6 +25,7 @@ CycleCounts::CycleCounts(CycleCountsParams *p) :
     fptoui_inst(p->fptoui),
     fptosi_inst(p->fptosi),
     uitofp_inst(p->uitofp),
+    sitofp_inst(p->sitofp),
     ptrtoint_inst(p->ptrtoint),
     inttoptr_inst(p->inttoptr),
     bitcast_inst(p->bitcast),
