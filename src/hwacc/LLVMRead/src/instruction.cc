@@ -221,7 +221,7 @@ Instruction::setOperandValue(uint64_t uid)
         if (op.getUID() == uid) {
             DPRINTF(Runtime, "|| Storing Value in Op[%i]\n", count++);
             op.updateOperandRegister();
-            break;
+            //break;
         } else count++;
     }
 }

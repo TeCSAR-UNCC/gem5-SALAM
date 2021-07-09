@@ -352,7 +352,7 @@ SALAM::Operand::Operand(const Value &copy_val)
 
 SALAM::Operand::Operand_Debugger::Operand_Debugger()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void

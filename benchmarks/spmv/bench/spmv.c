@@ -13,15 +13,9 @@ void spmv(TYPE val[NNZ], int32_t cols[NNZ], int32_t rowDelimiters[N+1], TYPE vec
         int tmp_begin = rowDelimiters[i];
         int tmp_end = rowDelimiters[i+1];
         spmv_2 : for (j = tmp_begin; j < tmp_end; j++){
-        	if (val[j] > 0) {
-        	Si = val[j] / vec[cols[j]];
-        	Si = Si + (j << 3);
-        	Si = Si + val[j-1];
-        	} else { Si = val[j] * vec[cols[j]]; }
+            Si = val[j] * vec[cols[j]];
             sum = sum + Si;
         }
         out[i] = sum;
     }
 }
-
-

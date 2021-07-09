@@ -3,8 +3,8 @@
 
 #include "stdint.h"
 
-#define SPM
-//#define CHECK
+//#define SPM
+#define CHECK
 //#define TEST
 
 #ifdef TEST

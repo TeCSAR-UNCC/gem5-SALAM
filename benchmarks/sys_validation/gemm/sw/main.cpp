@@ -11,7 +11,7 @@ volatile uint32_t * val_a = (uint32_t *)0x2f000001;
 volatile uint32_t * val_b = (uint32_t *)0x2f000009;
 volatile uint32_t * val_c = (uint32_t *)0x2f000011;
 
-int main(void) {
+int __attribute__ ((optimize("0"))) main(void) {
 	m5_reset_stats();
     uint32_t base = 0x80c00000;
 	TYPE *m1 = (TYPE *)base;
