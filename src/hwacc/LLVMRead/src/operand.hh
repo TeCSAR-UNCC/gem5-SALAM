@@ -53,6 +53,8 @@ class Operand: public Value
     #if USE_LLVM_AP_VALUES
         virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
         virtual llvm::APSInt * getIntRegValue() { return lockedValue->getIntData(); }
+        virtual bool hasIntVal() { return lockedValue->isInt(); }
+        virtual bool hasPtrVal() { return lockedValue->isPtr(); }
     #else
         virtual uint64_t * getFloatRegValue() { return lockedValue->getFloatData(); }
         virtual float getFloatFromReg() { return lockedValue->getFloat(); }
@@ -60,6 +62,8 @@ class Operand: public Value
         virtual uint64_t * getIntRegValue() { return lockedValue->getIntData(); }
         virtual uint64_t getUIntRegValue() { return lockedValue->getUnsignedInt(); }
         virtual int64_t getSIntRegValue() { return lockedValue->getSignedInt(size); }
+        virtual bool hasIntVal() { return lockedValue->isInt(); }
+        virtual bool hasPtrVal() { return lockedValue->isPtr(); }
     #endif
         std::shared_ptr<SALAM::Register> getOpRegister() { return lockedValue; }
 };

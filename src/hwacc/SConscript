@@ -60,5 +60,5 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('Step')
 
     #
-    CompoundFlag('JDEV', ['LLVMInterface', 'Runtime', 'SALAM_Debug'])
+    CompoundFlag('JDEV', ['LLVMInterface','CommInterface', 'Runtime', 'RuntimeCompute', 'RuntimeQueues', 'SALAM_Debug'])
     CompoundFlag('HWACC', ['CommInterface', 'LLVMInterface'])

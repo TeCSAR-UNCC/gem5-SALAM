@@ -109,6 +109,6 @@ int main(void) {
 		}
 	}
 #endif
-	*(char *)0x7fffffff = 1;
-	//m5_exit();
+	// *(char *)0x7fffffff = 1;
+	m5_exit();
 }

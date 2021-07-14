@@ -3191,39 +3191,67 @@ ICmp::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     bool result = false;
 #if USE_LLVM_AP_VALUES
-    switch(predicate)
-    {
-        case SALAM::Predicate::ICMP_EQ: { result = operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_NE: { result = operands.at(0).getIntRegValue()->ne(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_UGT: { result = operands.at(0).getIntRegValue()->ugt(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_UGE: { result = operands.at(0).getIntRegValue()->uge(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_ULT: { result = operands.at(0).getIntRegValue()->ult(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_ULE: { result = operands.at(0).getIntRegValue()->ule(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SGT: { result = operands.at(0).getIntRegValue()->sgt(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SGE: { result = operands.at(0).getIntRegValue()->sge(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SLT: { result = operands.at(0).getIntRegValue()->slt(*(operands.at(1).getIntRegValue())); break; }
-        case SALAM::Predicate::ICMP_SLE: { result = operands.at(0).getIntRegValue()->sle(*(operands.at(1).getIntRegValue())); break; }
-        default: break;
-
+    if (operands.at(0).hasIntVal() && operands.at(1).hasIntVal()){
+        switch (predicate) {
+            case SALAM::Predicate::ICMP_EQ: { result = operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_NE: { result = operands.at(0).getIntRegValue()->ne(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_UGT: { result = operands.at(0).getIntRegValue()->ugt(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_UGE: { result = operands.at(0).getIntRegValue()->uge(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_ULT: { result = operands.at(0).getIntRegValue()->ult(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_ULE: { result = operands.at(0).getIntRegValue()->ule(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SGT: { result = operands.at(0).getIntRegValue()->sgt(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SGE: { result = operands.at(0).getIntRegValue()->sge(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SLT: { result = operands.at(0).getIntRegValue()->slt(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SLE: { result = operands.at(0).getIntRegValue()->sle(*(operands.at(1).getIntRegValue())); break; }
+            default: break;
+        }
+    } else if (operands.at(0).hasPtrVal() && operands.at(1).hasPtrVal()) {
+        switch (predicate) {
+            case SALAM::Predicate::ICMP_EQ: { result = operands.at(0).getPtrRegValue() == operands.at(1).getPtrRegValue(); break; }
+            case SALAM::Predicate::ICMP_NE: { result = operands.at(0).getPtrRegValue() != operands.at(1).getPtrRegValue(); break; }
+            case SALAM::Predicate::ICMP_UGT: { result = operands.at(0).getPtrRegValue() > operands.at(1).getPtrRegValue(); break; }
+            case SALAM::Predicate::ICMP_UGE: { result = operands.at(0).getPtrRegValue() >= operands.at(1).getPtrRegValue(); break; }
+            case SALAM::Predicate::ICMP_ULT: { result = operands.at(0).getPtrRegValue() < operands.at(1).getPtrRegValue(); break; }
+            case SALAM::Predicate::ICMP_ULE: { result = operands.at(0).getPtrRegValue() <= operands.at(1).getPtrRegValue(); break; }
+            default: break;
+         }
+    } else {
+        panic("Got either wrong or differing datatypes for ICMP");
     }
 #else
-    uint64_t uOp1 = operands.at(0).getUIntRegValue();
-    uint64_t uOp2 = operands.at(1).getUIntRegValue();
-    int64_t  sOp1 = operands.at(0).getSIntRegValue();
-    int64_t  sOp2 = operands.at(1).getSIntRegValue();
+    if (operands.at(0).hasIntVal() && operands.at(1).hasIntVal()){
+        uint64_t uOp1 = operands.at(0).getUIntRegValue();
+        uint64_t uOp2 = operands.at(1).getUIntRegValue();
+        int64_t  sOp1 = operands.at(0).getSIntRegValue();
+        int64_t  sOp2 = operands.at(1).getSIntRegValue();
 
-    switch (predicate) {
-        case SALAM::Predicate::ICMP_EQ: { result = (uOp1 == uOp2); break; }
-        case SALAM::Predicate::ICMP_NE: { result = (uOp1 != uOp2); break; }
-        case SALAM::Predicate::ICMP_UGT: { result = (uOp1 > uOp2); break; }
-        case SALAM::Predicate::ICMP_UGE: { result = (uOp1 >= uOp2); break; }
-        case SALAM::Predicate::ICMP_ULT: { result = (uOp1 < uOp2); break; }
-        case SALAM::Predicate::ICMP_ULE: { result = (uOp1 <= uOp2); break; }
-        case SALAM::Predicate::ICMP_SGT: { result = (sOp1 > sOp2); break; }
-        case SALAM::Predicate::ICMP_SGE: { result = (sOp1 >= sOp2); break; }
-        case SALAM::Predicate::ICMP_SLT: { result = (sOp1 < sOp2); break; }
-        case SALAM::Predicate::ICMP_SLE: { result = (sOp1 <= sOp2); break; }
-        default: break;
+        switch (predicate) {
+            case SALAM::Predicate::ICMP_EQ: { result = (uOp1 == uOp2); break; }
+            case SALAM::Predicate::ICMP_NE: { result = (uOp1 != uOp2); break; }
+            case SALAM::Predicate::ICMP_UGT: { result = (uOp1 > uOp2); break; }
+            case SALAM::Predicate::ICMP_UGE: { result = (uOp1 >= uOp2); break; }
+            case SALAM::Predicate::ICMP_ULT: { result = (uOp1 < uOp2); break; }
+            case SALAM::Predicate::ICMP_ULE: { result = (uOp1 <= uOp2); break; }
+            case SALAM::Predicate::ICMP_SGT: { result = (sOp1 > sOp2); break; }
+            case SALAM::Predicate::ICMP_SGE: { result = (sOp1 >= sOp2); break; }
+            case SALAM::Predicate::ICMP_SLT: { result = (sOp1 < sOp2); break; }
+            case SALAM::Predicate::ICMP_SLE: { result = (sOp1 <= sOp2); break; }
+            default: break;
+        }
+    } else if (operands.at(0).hasPtrVal() && operands.at(1).hasPtrVal()) {
+        uint64_t * uOp1 = operands.at(0).getPtrRegValue();
+        uint64_t * uOp2 = operands.at(1).getPtrRegValue();
+        switch (predicate) {
+            case SALAM::Predicate::ICMP_EQ: { result = (uOp1 == uOp2); break; }
+            case SALAM::Predicate::ICMP_NE: { result = (uOp1 != uOp2); break; }
+            case SALAM::Predicate::ICMP_UGT: { result = (uOp1 > uOp2); break; }
+            case SALAM::Predicate::ICMP_UGE: { result = (uOp1 >= uOp2); break; }
+            case SALAM::Predicate::ICMP_ULT: { result = (uOp1 < uOp2); break; }
+            case SALAM::Predicate::ICMP_ULE: { result = (uOp1 <= uOp2); break; }
+            default: break;
+        }
+    } else {
+        panic("Got either wrong or differing datatypes for ICMP");
     }
 #endif
     setRegisterValue(result);
