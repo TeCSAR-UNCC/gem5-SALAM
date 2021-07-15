@@ -1762,57 +1762,83 @@ BasicBlock::addNode(std::shared_ptr<InstructionBase> Node) {
 
 std::string
 BasicBlock::convertImmediate(std::string dataType, std::string immediateValue) {
-	int arr1 = 0;
-	int arr2 = 0;
-	int integer = 0;
-	double doub;
-	float flt;
-	std::string temp;
-	char *array = &immediateValue[0];
-	char *end;
-	if (_debug) DPRINTF(LLVMParse, "Type: %s, Value: %s\n",dataType, immediateValue);
-	if(dataType.compare("double") == 0) {
-		if(immediateValue[1] == 'x') {
-			doub = strtol(array, &end, 16);
-			uint64_t convert = (uint64_t) doub;
-			doub = *((double*)&convert);
-			temp = std::to_string(doub);
-		} else temp = sciToDecimal(immediateValue);
-	} else if(dataType.compare("float") == 0) {
-		if(immediateValue[1] == 'x') {
-			flt = strtol(array, &end, 16);
-			uint64_t convert = (uint64_t) flt;
-			doub = *((float*)&convert);
-			temp = std::to_string(flt);
-		} else temp = sciToDecimal(immediateValue);
-	} else { // Integer Value
-		if(immediateValue[1] == 'x') {
-			integer = strtol(array, &end, 0);
-			temp = std::to_string(integer);
-		} else temp = sciToDecimal(immediateValue);
-	}
-	if (_debug) DPRINTF(LLVMParse, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
-	return temp;
+    int arr1 = 0;
+    int arr2 = 0;
+    int integer = 0;
+    double doub;
+    float flt;
+    std::string temp;
+    char *array = &immediateValue[0];
+    char *end;
+    if (_debug) DPRINTF(LLVMParse, "Type: %s, Value: %s\n",dataType, immediateValue);
+    if (dataType.compare("double") == 0) {
+        if (immediateValue[1] == 'x') {
+            uint64_t doub_hex = strtoll(array, &end, 16);
+            memcpy(&doub, &doub_hex, 8);
+                        temp = std::to_string(doub);
+        } else temp = sciToDecimal(immediateValue);
+    } else if (dataType.compare("float") == 0) {
+        if (immediateValue[1] == 'x') {
+            // LLVM stores immediate arguments as double-precision values,
+            // even for single-precision arithmetic.
+            uint64_t doub_hex = strtoll(array, &end, 16);
+            memcpy(&doub, &doub_hex, 8);
+            flt = (float) doub;
+                        temp = std::to_string(flt);
+        } else temp = sciToDecimal(immediateValue);
+    } else { // Integer Value
+        if (immediateValue[1] == 'x') {
+            integer = strtol(array, &end, 0);
+            temp = std::to_string(integer);
+        } else temp = sciToDecimal(immediateValue);
+    }
+    if (_debug) DPRINTF(LLVMParse, "Value: %s, %d, %d, %d\n", temp, doub, arr1, arr2);
+    return temp;
 }
 
 std::string
 BasicBlock::sciToDecimal(std::string immediateValue) {
-	int decimalLocation = 0;
-	int magnitudeLoc = 0;
-	int magnitude = 0;
+    int decimalLocation = 0;
+    int magnitudeLoc = 0;
+    int sign;
+    int magnitude = 0;
 
-	for(int i = 0; i < immediateValue.length()-1; i++) {
-		if(immediateValue[i] == '.') decimalLocation = i;
-		if(immediateValue[i] == 'e') magnitudeLoc = i;
-	}
-	magnitude = atol(immediateValue.substr(magnitudeLoc+2).c_str());
-	for(int i = decimalLocation; i < decimalLocation+magnitude; i++) {
-		immediateValue[i] = immediateValue[i+1];
-	}
-	immediateValue[decimalLocation+magnitude] = '.';
-	immediateValue = immediateValue.substr(0,magnitudeLoc);
+    for (int i = 0; i < immediateValue.length()-1; i++) {
+        if (immediateValue[i] == '.') decimalLocation = i;
+        if (immediateValue[i] == 'e') {
+            magnitudeLoc = i;
+            if (immediateValue[i+1] == '-') sign = 1;
+        }
+    }
 
-	return immediateValue;
+    magnitude = atol(immediateValue.substr(magnitudeLoc+2).c_str());
+
+    if (sign == 1) {
+        if (magnitude >= decimalLocation) {
+            immediateValue = immediateValue.substr(0, decimalLocation) +
+                immediateValue.substr(decimalLocation+1,
+                        magnitudeLoc-decimalLocation-1);
+
+            immediateValue = "0." +
+                std::string(magnitude-decimalLocation, '0') + immediateValue;
+        } else {
+            for (int i = decimalLocation; i > (decimalLocation-magnitude);
+                    i--) {
+                char temp = immediateValue[i];
+                immediateValue[i] = immediateValue[i-1];
+                immediateValue[i-1] = temp;
+            }
+            immediateValue = immediateValue.substr(0,magnitudeLoc);
+        }
+    } else {
+        for (int i = decimalLocation; i < decimalLocation+magnitude; i++) {
+            immediateValue[i] = immediateValue[i+1];
+        }
+        immediateValue[decimalLocation+magnitude] = '.';
+        immediateValue = immediateValue.substr(0,magnitudeLoc);
+    }
+
+    return immediateValue;
 }
 
 void
