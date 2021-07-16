@@ -1,8 +1,6 @@
-BENCHMARKS=\
-	bfs \
+BENCHMARKS= \
 	fft \
 	gemm \
-	md-grid \
 	md-knn \
 	nw \
 	stencil2d \
