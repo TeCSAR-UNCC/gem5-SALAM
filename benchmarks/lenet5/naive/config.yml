@@ -4,7 +4,7 @@ acc_cluster:
   - DMA:
     - Name: dma
       BufferSize: 128
-      MaxReq: 4
+      MaxReqSize: 4
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
