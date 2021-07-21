@@ -9,6 +9,8 @@
 #include "hwacc/LLVMRead/src/llvm_types.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 //------------------------------------------//
+#include "hwacc/HWModeling/src/hw_interface.hh"
+//------------------------------------------//
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/BasicBlock.h>
@@ -82,9 +84,11 @@ class LLVMInterface : public ComputeUnit {
     std::chrono::high_resolution_clock::time_point setupStop;
     std::chrono::high_resolution_clock::time_point timeStart;
 
+
     class ActiveFunction {
     private:
         LLVMInterface * owner;
+        HWInterface* hw;
         std::shared_ptr<SALAM::Function> func;
         std::shared_ptr<SALAM::Instruction> caller;
         std::list<std::shared_ptr<SALAM::Instruction>> reservation;

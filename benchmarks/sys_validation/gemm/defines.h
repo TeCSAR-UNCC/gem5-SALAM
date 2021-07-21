@@ -4,7 +4,7 @@
 #define CHECK
 
 #define TYPE double
-#define ROW 16
-#define COL 16
+#define ROW 64
+#define COL 64
 
 #endif

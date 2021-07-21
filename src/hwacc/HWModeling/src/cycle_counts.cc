@@ -62,8 +62,8 @@ CycleCounts::CycleCounts(CycleCountsParams *p):
     fsub_inst(p->fsub),
     fmul_inst(p->fmul),
     fdiv_inst(p->fdiv),
-    frem_inst(p->frem) { 
-    }
+    frem_inst(p->frem)
+    { }
 
 
 CycleCounts*

@@ -12,10 +12,8 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('StreamDma.py')
     SimObject('AccCluster.py')
     SimObject('StreamBuffer.py')
-
-    #
-    SimObject('HWModeling/SimObjects/CycleCounts.py')
-    SimObject('HWModeling/SimObjects/HWInterface.py')
+    SimObject('CycleCounts.py')
+    SimObject('HWInterface.py')
 
     # 
     Source('comm_interface.cc')

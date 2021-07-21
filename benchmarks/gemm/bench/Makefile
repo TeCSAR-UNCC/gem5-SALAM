@@ -1,12 +1,6 @@
-KERN=gemm
-TARGET=$(KERN).ll
-%.o : %.c
-	clang -emit-llvm -c -o $@ $<
-%.bc : %.o
-	opt -O1 -mem2reg -simplifycfg -loops -loop-unroll -o $@ $<
-%.ll : %.bc
-	llvm-dis -o $@ $<
-build : $(TARGET)
+KERN=gemm.c
+build: $(FILES)
+	clang -O1 -S -fno-slp-vectorize -fno-vectorize -fno-unroll-loops -fno-inline -fno-builtin -emit-llvm $(KERN)
 
 clean:
 	rm -f *.ll

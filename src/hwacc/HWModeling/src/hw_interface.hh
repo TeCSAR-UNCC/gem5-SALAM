@@ -5,13 +5,14 @@
 #include "sim/sim_object.hh"
 
 #include "cycle_counts.hh"
+#include <iostream>
 
 
-class HWInterface : public SimObject
+class HWInterface : public CycleCounts
 {
     private:
     uint32_t testParam;
-    CycleCounts *cycleCounts;
+    //CycleCounts *cycleCounts;
 
     protected:
 

@@ -9,7 +9,7 @@
 #include "llvm/ADT/APFloat.h"
 #include <llvm-c/Core.h>
 
-#define USE_LLVM_AP_VALUES 1
+#define USE_LLVM_AP_VALUES 0
 
 namespace SALAM
 {
