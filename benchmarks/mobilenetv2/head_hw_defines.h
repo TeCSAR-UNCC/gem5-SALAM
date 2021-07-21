@@ -17,25 +17,25 @@
 #define STREAM_DMA0_WrFrameBufSize 0x10020034
 #define STREAM_DMA0_Stream 0x10020035
 //Accelerator: TOP
-#define TOP 0x1002003d
+#define TOP 0x10020035
 //Accelerator: NORMALCONV
-#define NORMALCONV 0x1002007e
-#define NormalConvWindow 0x1002007f
-#define NormalConvWeights 0x1002009a
-#define NormalConvQParams 0x10020322
-#define NormalConvQBuffer 0x100203b2
-#define NormalConvOut 0x100205f2
+#define NORMALCONV 0x10020076
+#define NormalConvWindow 0x10020077
+#define NormalConvWeights 0x10020092
+#define NormalConvQParams 0x1002031a
+#define NormalConvQBuffer 0x100203aa
+#define NormalConvOut 0x100205ea
 //Accelerator: DWCONV
-#define DWCONV 0x100205f3
-#define DWConvWindow 0x100205f4
-#define DWConvWeights 0x100206cc
-#define DWConvQParams 0x100207bc
-#define DWConvQBuffer 0x1002084c
-#define DWConvOutBuffer 0x10020fcc
-#define DWConvOut 0x10020fe4
+#define DWCONV 0x100205f2
+#define DWConvWindow 0x100205f3
+#define DWConvWeights 0x100206cb
+#define DWConvQParams 0x100207bb
+#define DWConvQBuffer 0x1002084b
+#define DWConvOutBuffer 0x10020fcb
+#define DWConvOut 0x10020fe3
 //Accelerator: PWCONV
-#define PWCONV 0x10020fe5
-#define PWConvLocalFeatSize 0x10020fe6
-#define PWConvWeights 0x10020ffe
-#define PWConvQParams 0x1002117e
+#define PWCONV 0x10020feb
+#define PWConvLocalFeatSize 0x10020fec
+#define PWConvWeights 0x10021004
+#define PWConvQParams 0x10021184
 //END GENERATED CODE

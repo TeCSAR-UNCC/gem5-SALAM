@@ -30,8 +30,8 @@ class AccCluster:
 					if 'PIOMaster' in i:
 						pioMasters.extend((i['PIOMaster'].split(',')))
 					dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
-						i['ReadInt'], i['WriteInt'], i['Size']))
-					topAddress = topAddress + int(i['BufferSize'] + pioSize)
+						i['ReadInt'], i['WriteInt'], i['BufferSize']))
+					topAddress = topAddress + pioSize
 		# Parse Accelerators
 		for acc in self.accs:
 			# To handle Accs out of order, create a flag that Accs referenced already exist.

@@ -11,7 +11,8 @@ acc_cluster:
   - DMA:
     - Name: stream_dma0
       PIOMaster: LocalBus
-      Size: 8
+      StreamSize: 8
+      BufferSize: 64
       Type: Stream
       ReadInt: 210
       WriteInt: 211
@@ -56,8 +57,8 @@ acc_cluster:
     - Var:
       - Name: NormalConvOut
         Type: Stream
-        StreamSize: 1
-        BufferSize: 8
+        StreamSize: 8
+        BufferSize: 64
         InCon: NormalConv
         OutCon: DWConv
   - Accelerator:
@@ -95,8 +96,8 @@ acc_cluster:
     - Var:
       - Name: DWConvOut
         Type: Stream
-        StreamSize: 1
-        BufferSize: 8
+        StreamSize: 8
+        BufferSize: 64
         InCon: DWConv
         OutCon: PWConv
   - Accelerator:
@@ -135,14 +136,16 @@ acc_cluster:
   - DMA:
     - Name: stream_dma0
       PIOMaster: LocalBus
-      Size: 8
+      StreamSize: 8
+      BufferSize: 64
       Type: Stream
       ReadInt: 212
       WriteInt: 213
   - DMA:
     - Name: stream_dma1
       PIOMaster: LocalBus
-      Size: 8
+      StreamSize: 8
+      BufferSize: 64
       Type: Stream
       ReadInt: 214
       WriteInt: 215
@@ -166,8 +169,8 @@ acc_cluster:
     - Var:
       - Name: ResidualOut
         Type: Stream
-        StreamSize: 1
-        BufferSize: 8
+        StreamSize: 8
+        BufferSize: 64
         InCon: residual
         OutCon: PWConv0
   - Accelerator:
@@ -195,8 +198,8 @@ acc_cluster:
     - Var:
       - Name: PWConv0Out
         Type: Stream
-        StreamSize: 1
-        BufferSize: 8
+        StreamSize: 8
+        BufferSize: 64
         InCon: PWConv0
         OutCon: DWConv
   - Accelerator:
@@ -234,8 +237,8 @@ acc_cluster:
     - Var:
       - Name: DWConvOut
         Type: Stream
-        StreamSize: 1
-        BufferSize: 8
+        StreamSize: 8
+        BufferSize: 64
         InCon: DWConv
         OutCon: PWConv1
   - Accelerator:
@@ -274,7 +277,8 @@ acc_cluster:
   - DMA:
     - Name: stream_dma0
       PIOMaster: LocalBus
-      Size: 8
+      StreamSize: 8
+      BufferSize: 64
       Type: Stream
       ReadInt: 210
       WriteInt: 211
@@ -313,8 +317,8 @@ acc_cluster:
     - Var:
       - Name: PWConvOut
         Type: Stream
-        StreamSize: 1
-        BufferSize: 8
+        StreamSize: 8
+        BufferSize: 64
         InCon: PWConv
         OutCon: Reshape
   - Accelerator:
@@ -351,7 +355,8 @@ acc_cluster:
   - DMA:
     - Name: stream_dma0
       PIOMaster: LocalBus
-      Size: 8
+      StreamSize: 8
+      BufferSize: 64
       Type: Stream
       ReadInt: 210
       WriteInt: 211
