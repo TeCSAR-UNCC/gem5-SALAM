@@ -28,6 +28,9 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p):
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     typeList = NULL;
     clock_period = clock_period * 1000;
+    simTime = std::chrono::duration<float>::zero();
+    schedulingTime = std::chrono::duration<float>::zero();
+    computeTime = std::chrono::duration<float>::zero();
 }
 
 std::shared_ptr<SALAM::Value> createClone(const std::shared_ptr<SALAM::Value>& b)
