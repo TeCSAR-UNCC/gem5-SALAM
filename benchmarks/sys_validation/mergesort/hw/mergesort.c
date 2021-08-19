@@ -5,29 +5,30 @@ void merge(int start, int m, int stop){
     uint8_t * tempAddr = (uint8_t *)TEMP;
     TYPE    * a     = (TYPE    *)baseAddr;
     TYPE    * temp     = (TYPE    *)tempAddr;
-    int j;
-    for(int i = 0; i < 5; i++){
+    int i, j, k;
+
+    merge_label1 : for(i=start; i<=m; i++){
         temp[i] = a[i];
     }
 
-    // merge_label2 : for(j=m+1; j<=stop; j++){
-    //     temp[m+1+stop-j] = a[j];
-    // }
+    merge_label2 : for(j=m+1; j<=stop; j++){
+        temp[m+1+stop-j] = a[j];
+    }
 
-    // i = start;
-    // j = stop;
+    i = start;
+    j = stop;
 
-    // merge_label3 : for(k=start; k<=stop; k++){
-    //     TYPE tmp_j = temp[j];
-    //     TYPE tmp_i = temp[i];
-    //     if(tmp_j < tmp_i) {
-    //         a[k] = tmp_j;
-    //         j--;
-    //     } else {
-    //         a[k] = tmp_i;
-    //         i++;
-    //     }
-    // }
+    merge_label3 : for(k=start; k<=stop; k++){
+        TYPE tmp_j = temp[j];
+        TYPE tmp_i = temp[i];
+        if(tmp_j < tmp_i) {
+            a[k] = tmp_j;
+            j--;
+        } else {
+            a[k] = tmp_i;
+            i++;
+        }
+    }
 }
 
 void mergesort() {
