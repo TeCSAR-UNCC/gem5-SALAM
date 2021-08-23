@@ -834,101 +834,204 @@ SExt::compute() {
 
 void
 FPToUI::compute() {
-	if (_OriginalType == "i64") _Result = (uint64_t) _Ops.at(0);
-	else if (_OriginalType == "i32") _Result = (uint32_t) _Ops.at(0);
-	else if (_OriginalType == "i16") _Result = (uint16_t) _Ops.at(0);
-	else if (_OriginalType == "i8") _Result = (uint8_t) _Ops.at(0);
-	else if (_OriginalType == "i1") {
-		if(_Ops.at(0)) _Result = 1;
-		else _Result = 0;
-	}
-	setResult(&_Result);
+    double OriginalVal;
+
+    if (_ReturnType == "float") {
+        float OriginalValFloat;
+        memcpy(&OriginalValFloat, &_Ops.at(0), 4);
+        OriginalVal = OriginalValFloat;
+    } else {
+        memcpy(&OriginalVal, &_Ops.at(0), 8);
+    }
+
+    if (_OriginalType == "i64") _Result = (uint64_t) OriginalVal;
+    else if (_OriginalType == "i32") _Result = (uint32_t) OriginalVal;
+    else if (_OriginalType == "i16") _Result = (uint16_t) OriginalVal;
+    else if (_OriginalType == "i8") _Result = (uint8_t) OriginalVal;
+    else if (_OriginalType == "i1") {
+        if (_Ops.at(0)) _Result = 1;
+        else _Result = 0;
+    }
+    setResult(&_Result);
+
+    if (_debug) DPRINTF(LLVMOp, "FPToUI:(%s) %llu from %lf\n", _OriginalType,
+            _Result, OriginalVal);
 }
 void
 FPToSI::compute() {
-	if (_OriginalType == "i64") _Result = (int64_t) _Ops.at(0);
-	else if (_OriginalType == "i32") _Result = (int32_t) _Ops.at(0);
-	else if (_OriginalType == "i16") _Result = (int16_t) _Ops.at(0);
-	else if (_OriginalType == "i8") _Result = (int8_t) _Ops.at(0);
-	else if (_OriginalType == "i1") {
-		if(_Ops.at(0)) _Result = 1;
-		else _Result = 0;
-	}
-	setResult(&_Result);
+    double OriginalVal;
+
+    if (_ReturnType == "float") {
+        float OriginalValFloat;
+        memcpy(&OriginalValFloat, &_Ops.at(0), 4);
+        OriginalVal = OriginalValFloat;
+    } else {
+        memcpy(&OriginalVal, &_Ops.at(0), 8);
+    }
+
+    if (_OriginalType == "i64") {
+        int64_t ResultVal = (int64_t) OriginalVal;
+        memcpy(&_Result, &ResultVal, 8);
+        if (_debug) DPRINTF(LLVMOp, "FPToSI:(%s) %lld from %lf\n",
+                _OriginalType, ResultVal, OriginalVal);
+    }
+    else if (_OriginalType == "i32") {
+        int32_t ResultVal = (int32_t) OriginalVal;
+        memcpy(&_Result, &ResultVal, 4);
+        if (_debug) DPRINTF(LLVMOp, "FPToSI:(%s) %ld from %lf\n",
+                _OriginalType, ResultVal, OriginalVal);
+    }
+    else if (_OriginalType == "i16") {
+        int16_t ResultVal = (int16_t) OriginalVal;
+        memcpy(&_Result, &ResultVal, 2);
+        if (_debug) DPRINTF(LLVMOp, "FPToSI:(%s) %d from %lf\n", _OriginalType,
+                ResultVal, OriginalVal);
+    }
+    else if (_OriginalType == "i8") {
+        int8_t ResultVal = (int8_t) OriginalVal;
+        memcpy(&_Result, &ResultVal, 1);
+        if (_debug) DPRINTF(LLVMOp, "FPToSI:(%s) %d from %lf\n", _OriginalType,
+                ResultVal, OriginalVal);
+    }
+    else if (_OriginalType == "i1") {
+        if (_Ops.at(0)) _Result = 1;
+        else _Result = 0;
+        if (_debug) DPRINTF(LLVMOp, "FPToSI:(%s) %d from %lf\n", _OriginalType,
+                _Result, OriginalVal);
+        }
+
+    setResult(&_Result);
 }
 void
 UIToFP::compute() {
-	if (_OriginalType == "double") _Result = (double) _Ops.at(0);
-	else if (_OriginalType == "float") _Result = (float) _Ops.at(0);
-	setResult(&_Result);
+    if (_OriginalType == "double") {
+        double ResultVal = (double) _Ops.at(0);
+        memcpy(&_Result, &ResultVal, 8);
+        if (_debug) DPRINTF(LLVMOp, "UIToFP:(%s) %lf from %llu\n",
+                _OriginalType, ResultVal, _Ops.at(0));
+    }
+    else if (_OriginalType == "float") {
+        float ResultVal = (float) _Ops.at(0);
+        memcpy(&_Result, &ResultVal, 4);
+        if (_debug) DPRINTF(LLVMOp, "UIToFP:(%s) %f from %llu\n",
+                _OriginalType, ResultVal, _Ops.at(0));
+    }
+
+    setResult(&_Result);
 }
 void
 SIToFP::compute() {
-	if (_OriginalType == "double") _Result = (double) _Ops.at(0);
-	else if (_OriginalType == "float") _Result = (float) _Ops.at(0);
-	setResult(&_Result);
+    int64_t OriginalVal;
+    memcpy(&OriginalVal, &_Ops.at(0), 8);
+
+    if (_OriginalType == "double") {
+        double ResultVal = (double) OriginalVal;
+        memcpy(&_Result, &ResultVal, 8);
+        if (_debug) DPRINTF(LLVMOp, "SIToFP:(%s) %lf from %lld\n",
+                _OriginalType, ResultVal, OriginalVal);
+    }
+    else if (_OriginalType == "float") {
+        float ResultVal = (float) _Ops.at(0);
+        memcpy(&_Result, &ResultVal, 4);
+        if (_debug) DPRINTF(LLVMOp, "SIToFP:(%s) %f from %lld\n",
+                _OriginalType, ResultVal, OriginalVal);
+    }
+
+    setResult(&_Result);
 }
 void
 FPTrunc::compute() {
-	if (_OriginalType == "float") _Result = (float) _Ops.at(0);
-	setResult(&_Result);
+    if (_OriginalType == "float") {
+        double OriginalVal;
+        memcpy(&OriginalVal, &_Ops.at(0), 8);
+        float ResultVal = (float) OriginalVal;
+        memcpy(&_Result, &ResultVal, 4);
+        if (_debug) DPRINTF(LLVMOp, "FPTrunc:(%s) %f from %lf\n",
+                _OriginalType, ResultVal, OriginalVal);
+    } else {
+        if (_debug) DPRINTF(LLVMOp, "FPTrunc:(%s) Nothing to do\n",
+                _OriginalType);
+    }
+    setResult(&_Result);
 }
 void
 FPExt::compute() {
-	if (_OriginalType == "double") _Result = (double) _Ops.at(0);
-	setResult(&_Result);
+    if (_OriginalType == "double") {
+        float OriginalVal;
+        memcpy(&OriginalVal, &_Ops.at(0), 4);
+        double ResultVal = (double) OriginalVal;
+        memcpy(&_Result, &ResultVal, 8);
+        if (_debug) DPRINTF(LLVMOp, "FPExt:(%s) %lf from %f\n",
+                _OriginalType, ResultVal, OriginalVal);
+    } else {
+        if (_debug) DPRINTF(LLVMOp, "FPExt:(%s) Nothing to do\n",
+                _OriginalType);
+    }
+    setResult(&_Result);
 }
 void
 PtrToInt::compute() { }
 void
 IntToPtr::compute() { }
 void
-BitCast::compute() { }
+BitCast::compute() {
+    _Result = _Ops.at(0);
+    setResult(&_Result);
+    if (_debug) DPRINTF(LLVMOp, "BitCast:(%s) value = %x\n",
+            _OriginalType, _Result);
+}
 void
 AddrSpaceCast::compute() { }
 
 void
 FCmp::compute() {
-	if (_debug) DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
-	// Determine if comparison is being made between registers or immediate values
-	if (_Ops.size() == 1) {
-		if(_Flags & CONDFALSE) _Result = 0;
-		else if(_Flags & OEQ) _Result = (_Ops.at(0) == _OperandDP);
-		else if(_Flags & OGT) _Result = (_Ops.at(0) > _OperandDP);
-		else if(_Flags & OGE) _Result = (_Ops.at(0) >= _OperandDP);
-		else if(_Flags & OLT) _Result = (_Ops.at(0) < _OperandDP);
-		else if(_Flags & OLE) _Result = (_Ops.at(0) <= _OperandDP);
-		else if(_Flags & ONE) _Result = (_Ops.at(0) != _OperandDP);
-		else if(_Flags & ORD) _Result = (_Ops.at(0) && _OperandDP);
-		else if(_Flags & UEQ) _Result = (_Ops.at(0) == _OperandDP);
-		else if(_Flags & UGT) _Result = (_Ops.at(0) > _OperandDP);
-		else if(_Flags & UGE) _Result = (_Ops.at(0) >= _OperandDP);
-		else if(_Flags & ULT) _Result = (_Ops.at(0) < _OperandDP);
-		else if(_Flags & ULE) _Result = (_Ops.at(0) <= _OperandDP);
-		else if(_Flags & UNE) _Result = (_Ops.at(0) != _OperandDP);
-		else if(_Flags & UNO) _Result = (_Ops.at(0) && _OperandDP);
-		else if(_Flags & CONDTRUE) _Result = 1;
-	} else {
-		if(_Flags & CONDFALSE) _Result = 0;
-		else if(_Flags & OEQ) _Result = (_Ops.at(0) == _Ops.at(1));
-		else if(_Flags & OGT) _Result = (_Ops.at(0) > _Ops.at(1));
-		else if(_Flags & OGE) _Result = (_Ops.at(0) >= _Ops.at(1));
-		else if(_Flags & OLT) _Result = (_Ops.at(0) < _Ops.at(1));
-		else if(_Flags & OLE) _Result = (_Ops.at(0) <= _Ops.at(1));
-		else if(_Flags & ONE) _Result = (_Ops.at(0) != _Ops.at(1));
-		else if(_Flags & ORD) _Result = (_Ops.at(0) && _Ops.at(1));
-		else if(_Flags & UEQ) _Result = (_Ops.at(0) == _Ops.at(1));
-		else if(_Flags & UGT) _Result = (_Ops.at(0) > _Ops.at(1));
-		else if(_Flags & UGE) _Result = (_Ops.at(0) >= _Ops.at(1));
-		else if(_Flags & ULT) _Result = (_Ops.at(0) < _Ops.at(1));
-		else if(_Flags & ULE) _Result = (_Ops.at(0) <= _Ops.at(1));
-		else if(_Flags & UNE) _Result = (_Ops.at(0) != _Ops.at(1));
-		else if(_Flags & UNO) _Result = (_Ops.at(0) && _Ops.at(1));
-		else if(_Flags & CONDTRUE) _Result = 1;
-	}
-	// Store result in return register
-	setResult(&_Result);
-	//if (_debug) DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
+    if (_debug) DPRINTF(LLVMOp, "Performing %s Operation\n", _OpCode);
+    // Determine if comparison is being made between registers or immediate values
+    if (_Ops.size() == 1) {
+        float Op0;
+        memcpy(&Op0, &_Ops.at(0), 4);
+
+        if (_Flags & CONDFALSE) _Result = 0;
+        else if (_Flags & OEQ) _Result = (Op0 == _OperandDP);
+        else if (_Flags & OGT) _Result = (Op0 > _OperandDP);
+        else if (_Flags & OGE) _Result = (Op0 >= _OperandDP);
+        else if (_Flags & OLT) _Result = (Op0 < _OperandDP);
+        else if (_Flags & OLE) _Result = (Op0 <= _OperandDP);
+        else if (_Flags & ONE) _Result = (Op0 != _OperandDP);
+        else if (_Flags & ORD) _Result = (Op0 && _OperandDP);
+        else if (_Flags & UEQ) _Result = (Op0 == _OperandDP);
+        else if (_Flags & UGT) _Result = (Op0 > _OperandDP);
+        else if (_Flags & UGE) _Result = (Op0 >= _OperandDP);
+        else if (_Flags & ULT) _Result = (Op0 < _OperandDP);
+        else if (_Flags & ULE) _Result = (Op0 <= _OperandDP);
+        else if (_Flags & UNE) _Result = (Op0 != _OperandDP);
+        else if (_Flags & UNO) _Result = (Op0 && _OperandDP);
+        else if (_Flags & CONDTRUE) _Result = 1;
+    } else {
+        float Op0, Op1;
+        memcpy(&Op0, &_Ops.at(0), 4);
+        memcpy(&Op1, &_Ops.at(1), 4);
+
+        if (_Flags & CONDFALSE) _Result = 0;
+        else if (_Flags & OEQ) _Result = (Op0 == Op1);
+        else if (_Flags & OGT) _Result = (Op0 > Op1);
+        else if (_Flags & OGE) _Result = (Op0 >= Op1);
+        else if (_Flags & OLT) _Result = (Op0 < Op1);
+        else if (_Flags & OLE) _Result = (Op0 <= Op1);
+        else if (_Flags & ONE) _Result = (Op0 != Op1);
+        else if (_Flags & ORD) _Result = (Op0 && Op1);
+        else if (_Flags & UEQ) _Result = (Op0 == Op1);
+        else if (_Flags & UGT) _Result = (Op0 > Op1);
+        else if (_Flags & UGE) _Result = (Op0 >= Op1);
+        else if (_Flags & ULT) _Result = (Op0 < Op1);
+        else if (_Flags & ULE) _Result = (Op0 <= Op1);
+        else if (_Flags & UNE) _Result = (Op0 != Op1);
+        else if (_Flags & UNO) _Result = (Op0 && Op1);
+        else if (_Flags & CONDTRUE) _Result = 1;
+    }
+    // Store result in return register
+    setResult(&_Result);
+    //if (_debug) DPRINTF(LLVMOp, "Comparing %d and %d, result is %u.\n", op1, op2, result);
 }
 void
 ICmp::compute() {
@@ -1007,22 +1110,18 @@ Phi::runtimeDependencies(std::string PrevBB) {
 
 void
 Select::compute() {
-	// Currently only supports integer types but the framework for doubles and floats
-	// exists within compute_node.cc and instruction.hh already
 	if (_debug) DPRINTF(LLVMOp, "Performing %s Operation (%s)\n", _OpCode, _ReturnRegister->getName());
 
-	if(_ReturnType[0] == 'i') {
-		if(_Ops.at(0)) {
-			if (_debug) DPRINTF(LLVMOp, "True Condition!\n");
-			if(_Imm.at(0))  _Result = _ImmValues.at(0);
-			else _Result = _Ops.at(1);
-		} else {
-			if (_debug) DPRINTF(LLVMOp, "False Condition!\n");
-			if(_Imm.at(1)) _Result = _ImmValues.at(1);
-			else if(_Imm.at(0)) _Result = _Ops.at(1);
-			else _Result = _Ops.at(2);
-		}
-	}
+    if(_Ops.at(0)) {
+        if (_debug) DPRINTF(LLVMOp, "True Condition!\n");
+        if(_Imm.at(0))  _Result = _ImmValues.at(0);
+        else _Result = _Ops.at(1);
+    } else {
+        if (_debug) DPRINTF(LLVMOp, "False Condition!\n");
+        if(_Imm.at(1)) _Result = _ImmValues.at(1);
+        else if(_Imm.at(0)) _Result = _Ops.at(1);
+        else _Result = _Ops.at(2);
+    }
 	if (_debug) DPRINTF(LLVMOp, "Selected Value: %i\n", _Result);
 	setResult(&_Result);
 }
