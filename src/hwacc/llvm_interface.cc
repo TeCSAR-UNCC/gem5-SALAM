@@ -857,6 +857,8 @@ void LLVMInterface::ActiveFunction::launch() {
     if (func->isTop()) {
         // We need to fetch argument values from the memory mapped registers
         CommInterface * comm = owner->getCommInterface();
+        HWInterface * hw_interface = owner->getHWInterface();
+        std::cout << "\n\n\n Test Variable = " << hw_interface->getTestParam() << " \n\n\n";
         unsigned argOffset = 0;
         for (auto arg : funcArgs) {
             uint64_t argSizeInBytes = arg->getSizeInBytes();
