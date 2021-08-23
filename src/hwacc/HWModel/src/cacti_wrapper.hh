@@ -1,0 +1,1 @@
+uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports, int cache_type);

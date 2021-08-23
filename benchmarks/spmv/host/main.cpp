@@ -110,5 +110,6 @@ int main(void) {
 	}
 #endif
 	//*(char *)0x7fffffff = 0; //Kill the simulation
+	m5_dump_stats();
   	m5_exit();
 }

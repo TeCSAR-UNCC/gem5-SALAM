@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS="HWACC"
+FLAGS="JDEV"
 BENCH=""
 DEBUG="false"
 PRINT_TO_FILE="false"
@@ -63,20 +63,5 @@ if [ "${PRINT_TO_FILE}" == "true" ]; then
 else
 	$RUN_SCRIPT
 fi
-
-# Debug Flags List
-#
-# IOAcc
-# ClassDetail
-# CommInterface
-# ComputeUnit
-# LLVMInterface
-# ComputeNode
-# LLVMRegister
-# LLVMOp
-# LLVMParse
-# LLVMGEP
-# LLVMRuntime == ComputeNode + LLVMRegister + LLVMOp + LLVMParse
-# NoncoherentDma - bfs, fft, gemm, md-knn, nw, spmv
 
 

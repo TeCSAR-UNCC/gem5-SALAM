@@ -21,7 +21,7 @@ volatile uint32_t * loc_img       = (uint32_t *)0x2f000009;
 volatile uint32_t * loc_real_twid = (uint32_t *)0x2f000011;
 volatile uint32_t * loc_img_twid  = (uint32_t *)0x2f000019;
 
-int main(void) {
+int __attribute__ ((optimize("0"))) main(void) {
 	double *real       	= (double *)(BASE+REAL_OFFSET);
 	double *img        	= (double *)(BASE+IMG_OFFSET);
 	double *real_twid  	= (double *)(BASE+RTWID_OFFSET);
@@ -59,7 +59,8 @@ int main(void) {
     for (int i = 0; i < FFT_SIZE; i++) {
         creal = real[i] - real_check[i];
         cimg = img[i] - img_check[i];
-
+		printf("[%i] = Real: %.12f, Img: %.12f \n", i, creal, cimg);
+		
         if((creal > EPSILON) || (creal < -EPSILON)) {
             fail = true;
         }
@@ -67,7 +68,7 @@ int main(void) {
             fail = true;
         }
         if (fail) {
-            printf("Diff[%i] = Real: %f, Img: %f \n", i, real, img);
+            printf("Diff[%i] = Real: %f, Img: %f \n", i, real[i], img[i]);
             break;
         }
     }

@@ -1,4 +1,5 @@
 build
+build-
 parser.out
 parsetab.py
 cscope.files
@@ -9,6 +10,8 @@ cscope.out
 .*.swo
 m5out
 /src/doxygen
+/src/hwacc/llvm
+/src/hwacc/llvm-c
 /ext/dramsim2/DRAMSim2
 /ext/mcpat/regression/*/*.out
 /util/m5/*.o
@@ -28,4 +31,7 @@ m5out
 /system/arm/aarch64_bootloader/boot_emm.arm64
 /system/arm/aarch64_bootloader/boot_emm_v2.arm64
 old-code
+llvm
+llvm-9
+llvm-c
 BM_ARM_OUT

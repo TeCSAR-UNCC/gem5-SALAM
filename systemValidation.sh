@@ -3,28 +3,31 @@ FLAGS="HWACC"
 BENCH=""
 DEBUG="false"
 PRINT_TO_FILE="false"
+VALGRIND="false"
 
-while getopts ":b:f:dp" opt
-	do
-		case $opt in
-			b )
-				BENCH=${OPTARG}
-				;;
-			d )
-				DEBUG="true"
-				;;
-			p )
-				PRINT_TO_FILE="true"
-				;;
-			f )
-				FLAGS+=",${OPTARG}"
-				;;
-			* )
-				echo "Invalid argument: ${OPTARG}"
-				echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
-				exit 1
-				;;
-		esac
+while getopts ":b:f:vdp" opt; do
+	case $opt in
+		b )
+			BENCH=${OPTARG}
+			;;
+		d )
+			DEBUG="true"
+			;;
+		p )
+			PRINT_TO_FILE="true"
+			;;
+		f )
+			FLAGS+=",${OPTARG}"
+			;;
+		v ) 
+			VALGRIND="true"
+			;;
+		* )
+			echo "Invalid argument: ${OPTARG}"
+			echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
+			exit 1
+			;;
+	esac
 done
 
 if [ "${BENCH}" == "" ]; then
@@ -35,11 +38,14 @@ fi
 
 if [ "${DEBUG}" == "true" ]; then
 	BINARY="ddd --gdb --args ${M5_PATH}/build/ARM/gem5.debug"
+elif [ "${VALGRIND}" == "true" ]; then
+	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=all --show-reachable=no ${M5_PATH}/build/ARM/gem5.debug"
 else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
 KERNEL=$M5_PATH/benchmarks/sys_validation/$BENCH/sw/main.elf
+
 SYS_OPTS="--mem-size=4GB \
 		  --mem-type=DDR4_2400_8x8 \
           --kernel=$KERNEL \

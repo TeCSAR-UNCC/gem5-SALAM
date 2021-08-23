@@ -50,18 +50,18 @@ int main(void) {
 	common_val = 0;
 
 //#ifndef SPM
-    mds.force_x     = force_x;
-    mds.force_y     = force_y;
-    mds.force_z     = force_z;
-    mds.position_x  = position_x;
-    mds.position_y  = position_y;
-    mds.position_z  = position_z;
-    mds.NL          = NL;
-    mds.check_x     = check_x;
-    mds.check_y     = check_y;
-    mds.check_z     = check_z;
-/*
-#else
+//    mds.force_x     = force_x;
+//   mds.force_y     = force_y;
+//    mds.force_z     = force_z;
+//    mds.position_x  = position_x;
+//    mds.position_y  = position_y;
+//    mds.position_z  = position_z;
+//   mds.NL          = NL;
+//    mds.check_x     = check_x;
+//   mds.check_y     = check_y;
+//    mds.check_z     = check_z;
+
+//#else
     mds.force_x     = spmfx;
     mds.force_y     = spmfy;
     mds.force_z     = spmfz;
@@ -72,8 +72,8 @@ int main(void) {
     mds.check_x     = check_x;
     mds.check_y     = check_y;
     mds.check_z     = check_z;
-#endif
-*/
+//#endif
+
     printf("Generating data\n");
     genData(&mds);
     printf("Data generated\n");
@@ -96,16 +96,16 @@ int main(void) {
     loc_NL          = (uint64_t)(SPM_BASE+NL_OFFSET);
 
 
-    dmacpy(spmpx, position_x,	sizeof(TYPE)*nAtoms);
+    dmacpy(spmpx, mds.position_x,	sizeof(TYPE)*nAtoms);
     while(!pollDma());
     resetDma();
-    dmacpy(spmpy, position_y,   sizeof(TYPE)*nAtoms);
+    dmacpy(spmpy, mds.position_y,   sizeof(TYPE)*nAtoms);
     while(!pollDma());
     resetDma();
-    dmacpy(spmpz, position_z,   sizeof(TYPE)*nAtoms);
+    dmacpy(spmpz, mds.position_z,   sizeof(TYPE)*nAtoms);
     while(!pollDma());
     resetDma();
-    dmacpy(spmnl, NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
+    dmacpy(spmnl, mds.NL,           sizeof(int32_t)*nAtoms*maxNeighbors);
     while(!pollDma());
     resetDma();
 
@@ -134,7 +134,7 @@ int main(void) {
 #endif
     acc = 0x00;
 #ifdef CHECK
-    
+    printf("Data Check\n");
     if(!checkData(&mds)) {
      /*   int checkvals = 0;
         int errors = 0;
@@ -174,6 +174,7 @@ int main(void) {
     }
     
 #endif
-	*(char *)0x7fffffff = 1; //Kill the simulation
-	//m5_exit();
+	//*(char *)0x7fffffff = 1; //Kill the simulation
+	m5_dump_stats();	
+	m5_exit();
 }

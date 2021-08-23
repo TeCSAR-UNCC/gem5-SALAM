@@ -1,18 +1,17 @@
-# import os
+import os
 
-# Import('main')
+Import('main')
 
-# # The root of the build directory.
-# llvm_base = Dir('.')
-# # The root of the original directory.
-# llvm_install = llvm_base.srcdir.Dir('install')
-# # Include files from the original directory.
-# llvm_include = llvm_install.Dir('include')
-# #
-# llvm_libdir = llvm_install.Dir('lib')
+# LLVM 9 install location set with the ENV variable $LLVM_INSTALL
+llvm_install = Dir(os.environ['LLVM_INSTALL'])
+# Include files for LLVM 9 installation.
+llvm_include = llvm_install.Dir('include')
+# Library path for LLVM 9 installation.
+llvm_libdir = llvm_install.Dir('lib')
 
-# main.Append(CPPPATH=[llvm_include])
-# main.Append(LIBPATH=[llvm_libdir])
+main.Append(CPPPATH=[llvm_include])
+main.Append(LIBPATH=[llvm_libdir])
+main.Append(LIBS=['LLVM-9'])
 # main.Append(LIBS=['LLVMXRay'])
 # main.Append(LIBS=['LLVMWindowsManifest'])
 # main.Append(LIBS=['LLVMTextAPI'])
@@ -74,5 +73,5 @@
 # main.Append(LIBS=['LLVMBinaryFormat'])
 # main.Append(LIBS=['LLVMSupport'])
 # main.Append(LIBS=['LLVMDemangle'])
-# # -ltinfo needed for llvm
-# main.Append(LIBS=['tinfo'])
+# -ltinfo needed for llvm
+main.Append(LIBS=['tinfo'])

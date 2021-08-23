@@ -7,7 +7,6 @@ class LLVMInterface(ComputeUnit):
     type = 'LLVMInterface'
     cxx_header = "hwacc/llvm_interface.hh"
     
-
     in_file = Param.String("LLVM Trace File")
     lockstep_mode = Param.Bool(True, "TRUE: Stall datapath if any operation stalls. FALSE: Only stall datapath regions with stalls")
     sched_threshold = Param.UInt32(10000, "Scheduling window threshold. Prevents scheduling windows size from exploding during regions of high loop parallelism")
@@ -28,3 +27,12 @@ class LLVMInterface(ComputeUnit):
     FU_pipelined = Param.Int32(1, "Sets functional units to operate as pipelined (1) or not pipelined (0)")
     FU_clock_period = Param.Int32(10, "Sets the transitor type used for power calculations")
     clock_period = Param.Int32(10, "System clock speed")
+    top_name = Param.String("top", "Name of the top-level function for the accelerator")
+
+
+
+
+    #in_file = Param.String("LLVM Trace File")
+    #lockstep_mode = Param.Bool(True, "TRUE: Stall datapath if any operation stalls. FALSE: Only stall datapath regions with stalls")
+    #sched_threshold = Param.UInt32(10000, "Scheduling window threshold. Prevents scheduling windows size from exploding during regions of high loop parallelism")
+    #clock_period = Param.Int32(10, "System clock speed")

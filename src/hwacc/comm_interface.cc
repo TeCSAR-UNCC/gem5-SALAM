@@ -139,8 +139,9 @@ CommInterface::recvPacket(PacketPtr pkt) {
 
         if (!readReq->needToRead)
         {
-            if (debug()) DPRINTF(CommInterface, "Done reading\n");
+            if (debug()) DPRINTF(CommInterface, "Done reading \n");
             cu->readCommit(readReq);
+            if (debug()) DPRINTF(CommInterface, "Clearing Request \n");
             clearMemRequest(readReq, true);
             delete readReq;
         } else {
@@ -157,8 +158,8 @@ CommInterface::recvPacket(PacketPtr pkt) {
         if (!(writeReq->needToWrite)) {
             if (debug()) DPRINTF(CommInterface, "Done writing\n");
             cu->writeCommit(writeReq);
-            delete[] writeReq->buffer;
-            delete[] writeReq->readsDone;
+            // delete[] writeReq->buffer;
+            // delete[] writeReq->readsDone;
             clearMemRequest(writeReq, false);
             delete writeReq;
         } else {
@@ -316,9 +317,9 @@ CommInterface::processMemoryRequests() {
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
-                mport = getValidStreamPort(address, (*it)->length, true);
+                mport = getValidStreamPort(address, (*it)->readLeft, true);
             } else if (inSPMRange(address)) {
-                mport = getValidSPMPort(address, (*it)->length, true);
+                mport = getValidSPMPort(address, (*it)->readLeft, true);
             } else if (inLocalRange(address)) {
                 mport = getValidLocalPort(address, true);
             } else if (inGlobalRange(address)) {
@@ -361,9 +362,9 @@ CommInterface::processMemoryRequests() {
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
             MasterPort * mport;
             if (inStreamRange(address)) {
-                mport = getValidStreamPort(address, (*it)->length, false);
+                mport = getValidStreamPort(address, (*it)->writeLeft, false);
             } else if (inSPMRange(address)) {
-                mport = getValidSPMPort(address, (*it)->length, false);
+                mport = getValidSPMPort(address, (*it)->writeLeft, false);
             } else if (inLocalRange(address)) {
                 mport = getValidLocalPort(address, false);
             } else if (inGlobalRange(address)) {

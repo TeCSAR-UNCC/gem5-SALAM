@@ -8,7 +8,7 @@
 
 class MemoryRequest {
   friend class CommInterface;
-  friend class LLVMInterface;
+  // friend class LLVMInterface;
   private:
     Addr address;
     size_t length;
@@ -30,9 +30,16 @@ class MemoryRequest {
     MasterPort * port;
   public:
     MemoryRequest(Addr add, size_t len);
-    MemoryRequest(Addr add, uint8_t *data, size_t len);
+    MemoryRequest(Addr add, const void *data, size_t len);
+    ~MemoryRequest() {
+        delete[] readsDone;
+        delete[] buffer;
+        // if (pkt) delete pkt;
+    }
     void setCarrierPort(MasterPort * _port) { port = _port; }
     MasterPort * getCarrierPort() { return port; }
+    uint8_t * getBuffer() { return buffer; }
+    Addr getAddress() { return address; }
 };
 
 #endif //__MEM_REQUEST_HH__

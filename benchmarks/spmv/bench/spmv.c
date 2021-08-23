@@ -19,5 +19,3 @@ void spmv(TYPE val[NNZ], int32_t cols[NNZ], int32_t rowDelimiters[N+1], TYPE vec
         out[i] = sum;
     }
 }
-
-

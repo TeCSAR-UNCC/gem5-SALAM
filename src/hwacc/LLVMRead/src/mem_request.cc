@@ -5,27 +5,35 @@
 MemoryRequest::MemoryRequest(Addr add, size_t len) {
     address = add;
     length = len;
-    currentReadAddr = address;
+
     needToRead = true;
+    needToWrite = false;
+
+    currentReadAddr = address;
+
     beginAddr = address;
     readLeft = length;
     writeLeft = 0;
     totalLength = length;
     readDone = 0;
+
     buffer = new uint8_t[length];
-    std::memset(buffer, 0, sizeof(length));
     readsDone = new bool[length];
+    std::memset(buffer, 0, length);
+
     for (int i = 0; i < length; i++) {
-        buffer[i] = 0;
         readsDone[i] = false;
     }
-
     pkt = NULL;
 }
-MemoryRequest::MemoryRequest(Addr add, uint8_t *data, size_t len) {
+
+
+MemoryRequest::MemoryRequest(Addr add, const void *data, size_t len) {
     address = add;
     length = len;
+
     needToWrite = true;
+    needToRead = false;
 
     currentWriteAddr = address;
 
@@ -40,10 +48,10 @@ MemoryRequest::MemoryRequest(Addr add, uint8_t *data, size_t len) {
 
     buffer = new uint8_t[length];
     readsDone = new bool[length];
-    for (int i = 0; i < length; i++) {
-        buffer[i] = *(data + i);
-        readsDone[i] = true;
-    }
-
+    std::memcpy(buffer, data, length);
+    // for (int i = 0; i < length; i++) {
+    //     buffer[i] = *(data + i);
+    //     readsDone[i] = true;
+    // }
     pkt = NULL;
 }

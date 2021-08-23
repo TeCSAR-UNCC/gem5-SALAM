@@ -38,6 +38,10 @@ def AccConfig(acc, config_file, bench_file):
     acc.llvm_interface = LLVMInterface()
     acc.llvm_interface.cycles = CycleCounts()
 
+	# Initialize HWInterface Objects
+    acc.hw_interface = HWInterface()
+    acc.hw_interface.cycleCounts = CycleCounts()
+
     # Benchmark path
     acc.llvm_interface.in_file = bench_file
 

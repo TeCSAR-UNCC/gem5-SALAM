@@ -10,6 +10,8 @@
 #define val_M         *(int *)0x2f000021
 #define val_ptr       *(int *)0x2f000029
 
+#define CHECK
+
 typedef struct {
     char * seqA;
     char * seqB;
@@ -32,6 +34,8 @@ int checkData(nw_struct * nws) {
             printf("Check Failed\n");
             return 0;
         }
+        printf("Aligned A Value: %d \t Check A Value: %d\n", nws->alignedA[i], nws->checkA[i]);
+        printf("Aligned B Value: %d \t Check B Value: %d\n", nws->alignedB[i], nws->checkB[i]);
     }
     printf("Check Passed\n");
     return 1;
