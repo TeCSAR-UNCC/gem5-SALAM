@@ -8,8 +8,7 @@ class CycleCounts(SimObject):
     type = "CycleCounts"
 
     # gem5-SALAM attached header
-    cxx_header = "hwacc/HWModeling/src/cycle_counts.hh"
-    #cxx_header = "hwacc/LLVMRead/src/cycle_counts.hh"
+    cxx_header = "hwacc/LLVMRead/src/cycle_counts.hh"
     
     # Instruction cycle count defaults
     counter = Param.UInt32(1, "Counter intructions runtime cycles.")

@@ -1,8 +1,6 @@
 #ifndef MACROS_HH
 #define MACROS_HH
-//------------------------------------------//
-#include <iomanip>
-#include <iostream>
+//____________________________________________________________________________
 
 // Function Macros
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -25,23 +23,6 @@
 #define    OTHER            14
 #define    REGISTER         15
 
-// Hardware Unit Staging
-#define    COUNTER_STAGES          1
-#define    INTADDER_STAGES         1
-#define    INTMULTI_STAGES         1
-#define    INTSHIFTER_STAGES       1
-#define    INTBITWISE_STAGES       1
-#define    FPSPADDER_STAGES        3
-#define    FPDPADDER_STAGES        3
-#define    FPSPMULTI_STAGES        3
-#define    FPSPDIVID_STAGES        3
-#define    FPDPMULTI_STAGES        3
-#define    FPDPDIVID_STAGES        3
-#define    COMPARE_STAGES          1
-#define    GETELEMENTPTR_STAGES    1
-#define    CONVERSION_STAGES       1
-#define    REGISTER_STAGES         1
-#define    OTHER_STAGES            1
 
 // LLVM Instructions Definitions (Re-Define From llvm/IR/Instructions.def)
 #define LLVM_IR_Move 0
@@ -110,8 +91,12 @@
 #define LLVM_IR_Sine 102
 #define LLVM_IR_Cosine 103
 
+/**
+ * @namespace SALAM
+ */
 
 namespace SALAM {
+    // LLVM comparison codes
     enum Predicate : unsigned {
         FCMP_FALSE = 0, FCMP_OEQ = 1, FCMP_OGT = 2, FCMP_OGE = 3,
         FCMP_OLT = 4, FCMP_OLE = 5, FCMP_ONE = 6, FCMP_ORD = 7,
@@ -124,5 +109,17 @@ namespace SALAM {
     };
 }
 
+
+/*
+Useful snippets
+
+// Line break
+//____________________________________________________________________________
+
+
+
+
+
+*/
 
 #endif //__MACROS_HH__

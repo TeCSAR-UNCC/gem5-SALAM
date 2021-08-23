@@ -36,6 +36,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/mem_request.cc')
     Source('LLVMRead/src/instruction.cc')
     Source('LLVMRead/src/registers.cc')
+    #Source('LLVMRead/src/base_instruction.cc')
+    #Source('LLVMRead/src/cycle_counts.cc')
     Source('LLVMRead/src/operand.cc')
 
     #

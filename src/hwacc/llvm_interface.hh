@@ -10,6 +10,7 @@
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 //------------------------------------------//
 #include "hwacc/HWModeling/src/hw_interface.hh"
+//#include "hwacc/LLVMRead/src/cycle_counts.hh" MERGECHECK
 //------------------------------------------//
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
