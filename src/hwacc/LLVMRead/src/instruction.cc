@@ -2279,7 +2279,8 @@ GetElementPtr::initialize(llvm::Value * irval,
     llvm::GetElementPtrInst * GEP = llvm::dyn_cast<llvm::GetElementPtrInst>(irval);
     assert(GEP);
     resultElementType = GEP->getResultElementType();
-    indexTypes.push_back(resultElementType);
+    llvm::DataLayout layout(GEP->getModule());
+
     if (resultElementType->getTypeID() == llvm::Type::PointerTyID) {
         resultElementSize = 64; //We assume a 64-bit memory address space
     } else {
@@ -2299,7 +2300,19 @@ GetElementPtr::initialize(llvm::Value * irval,
         GTI = gep_type_begin(ElemTy, Indices),
         GTE = gep_type_end(ElemTy, Indices);
     for ( ; GTI != GTE; ++GTI) {
-        indexTypes.push_back(GTI.getIndexedType());
+        if (llvm::StructType *STy = GTI.getStructTypeOrNull()) {
+            llvm::Value *idx = GTI.getOperand();
+            assert(idx->getType()->isIntegerTy(32) && "Illegal struct idx");
+
+            unsigned FieldNo = llvm::cast<llvm::ConstantInt>(idx)->getSExtValue();
+            const llvm::StructLayout *Layout = layout.getStructLayout(STy);
+            offsets.push_back(Layout->getElementOffset(FieldNo));
+            offsetOfStruct.push_back(true);
+        } else {
+            llvm::Type * idxty = GTI.getIndexedType();
+            offsets.push_back(1 * layout.getTypeAllocSize(idxty));
+            offsetOfStruct.push_back(false);
+        }
     }
 }
 
@@ -2309,32 +2322,19 @@ GetElementPtr::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     uint64_t ptr = *(operands.front().getPtrRegValue());
-    //operands.pop_front();
-    //operands.erase(operands.begin());
     int64_t offset = 0;
 
     for (int i = 1; i < operands.size(); i++) {
         auto idx = operands.at(i);
-        auto idxty = indexTypes.at(i);
-        if (llvm::StructType *STy = llvm::dyn_cast<llvm::StructType>(idxty)) {
-            assert((idx.getSize() == 32) && "Illegal struct idx");
-        #if USE_LLVM_AP_VALUES
-            unsigned FieldNo = idx.getIntRegValue()->getZExtValue();
-        #else
-            unsigned FieldNo = idx.getUIntRegValue();
-        #endif
-
-            // Get structure layout information...
-            const llvm::StructLayout *Layout = layout->getStructLayout(STy);
-
-            offset += Layout->getElementOffset(FieldNo);
+        if (offsetOfStruct.at(i-1)) {
+            offset += offsets.at(i-1);
         } else {
         #if USE_LLVM_AP_VALUES
             int64_t arrayIdx = idx.getIntRegValue()->getSExtValue();
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
-            offset += arrayIdx * layout->getTypeAllocSize(idxty);
+            offset += arrayIdx * offsets.at(i-1);
         }
     }
 

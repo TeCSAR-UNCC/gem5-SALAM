@@ -67,10 +67,6 @@ LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
                 auto phi = std::dynamic_pointer_cast<SALAM::Phi>(clone_inst);
                 if (phi) phi->setPrevBB(previousBB);
             }
-            if (clone_inst->isGEP()) {
-                auto gep = std::dynamic_pointer_cast<SALAM::GetElementPtr>(clone_inst);
-                if (gep) gep->setDataLayout(owner->getDataLayout());
-            }
             findDynamicDeps(clone_inst);
             reservation.push_back(clone_inst);
         }
@@ -442,7 +438,6 @@ LLVMInterface::constructStaticGraph() {
 
     std::unique_ptr<llvm::Module> m(llvm::parseIRFile(file, error, context));
     if(!m) panic("Error reading Module");
-    layout = new llvm::DataLayout(m.get());
 
     // Construct the LLVM::Value to SALAM::Value map
     uint64_t valueID = 0;

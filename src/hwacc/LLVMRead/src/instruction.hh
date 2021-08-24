@@ -887,14 +887,12 @@ The GEP indecies will by APSInts, so cast to int64_t for calculating offset insi
 class GetElementPtr : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        std::vector<llvm::Type *> indexTypes;
-        // conditions.at[0] == base params
+        std::vector<int64_t> offsets;
+        std::vector<bool> offsetOfStruct;
         SALAM::Debugger *dbgr;
-        //uint64_t currentCycle;
         llvm::Type * resultElementType;
         uint64_t resultElementSize;
         uint64_t resultElementSizeInBytes;
-        llvm::DataLayout * layout;
 
     protected:
 
@@ -909,7 +907,6 @@ class GetElementPtr : public Instruction {
         GetElementPtr &setA() { std::cout << "a\n"; return *this; }
         GetElementPtr &setB() { std::cout << "b\n"; return *this; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
-        void setDataLayout(llvm::DataLayout * dl) { layout = dl; }
         virtual bool isGEP() override { return true; }
         void compute();
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}

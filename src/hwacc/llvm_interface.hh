@@ -44,7 +44,6 @@ class LLVMInterface : public ComputeUnit {
     std::string topName;
     llvm::LLVMContext context;
     llvm::SMDiagnostic error;
-    llvm::DataLayout * layout;
     uint32_t scheduling_threshold;
     int32_t counter_units;
     int32_t int_adder_units;
@@ -191,7 +190,6 @@ class LLVMInterface : public ComputeUnit {
                                                           uint64_t id);
     void dumpQueues();
     uint32_t getSchedulingThreshold() { return scheduling_threshold; }
-    llvm::DataLayout * getDataLayout() { return layout; }
     void addSchedulingTime(std::chrono::duration<float> timeDelta) { schedulingTime = schedulingTime + timeDelta; }
     void addQueueTime(std::chrono::duration<float> timeDelta) { queueProcessTime = queueProcessTime + timeDelta; }
     void addComputeTime(std::chrono::duration<float> timeDelta) { computeTime = computeTime + timeDelta; }
