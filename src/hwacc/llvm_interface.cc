@@ -641,6 +641,11 @@ LLVMInterface::initialize() {
 *********************************************************************************************/
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
+    setupTime = std::chrono::seconds(0);
+    simTime = std::chrono::seconds(0);
+    schedulingTime = std::chrono::seconds(0);
+    queueProcessTime = std::chrono::seconds(0);
+    computeTime = std::chrono::seconds(0);
     constructStaticGraph();
     DPRINTF(LLVMInterface, "================================================================\n");
     //debug(1);
