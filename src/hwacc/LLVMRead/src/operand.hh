@@ -49,17 +49,17 @@ class Operand: public Value
         virtual void initialize(llvm::Value * irval, irvmap * irmap) override;
         void updateOperandRegister();
 
-        virtual uint64_t * getPtrRegValue() { return lockedValue->getPtrData(); }
+        virtual uint64_t getPtrRegValue() { return lockedValue->getPtrData(); }
     #if USE_LLVM_AP_VALUES
-        virtual llvm::APFloat * getFloatRegValue() { return lockedValue->getFloatData(); }
-        virtual llvm::APSInt * getIntRegValue() { return lockedValue->getIntData(); }
+        virtual llvm::APFloat getFloatRegValue() { return lockedValue->getFloatData(); }
+        virtual llvm::APSInt getIntRegValue() { return lockedValue->getIntData(); }
         virtual bool hasIntVal() { return lockedValue->isInt(); }
         virtual bool hasPtrVal() { return lockedValue->isPtr(); }
     #else
-        virtual uint64_t * getFloatRegValue() { return lockedValue->getFloatData(); }
+        virtual uint64_t getFloatRegValue() { return lockedValue->getFloatData(); }
         virtual float getFloatFromReg() { return lockedValue->getFloat(); }
         virtual double getDoubleFromReg() { return lockedValue->getDouble(); }
-        virtual uint64_t * getIntRegValue() { return lockedValue->getIntData(); }
+        virtual uint64_t getIntRegValue() { return lockedValue->getIntData(); }
         virtual uint64_t getUIntRegValue() { return lockedValue->getUnsignedInt(); }
         virtual int64_t getSIntRegValue() { return lockedValue->getSignedInt(size); }
         virtual bool hasIntVal() { return lockedValue->isInt(); }

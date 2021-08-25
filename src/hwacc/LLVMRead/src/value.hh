@@ -103,15 +103,15 @@ class Value
         // Using these functions will increment the read counters on tracked registers
         // If you'd like to avoid incrementing read counters, directly pull the register and
         // use its appropriate read function
-        virtual uint64_t * getPtrRegValue() { return returnReg->getPtrData(); }
+        virtual uint64_t getPtrRegValue() { return returnReg->getPtrData(); }
     #if USE_LLVM_AP_VALUES
-        virtual llvm::APFloat * getFloatRegValue() { return returnReg->getFloatData(); }
-        virtual llvm::APSInt * getIntRegValue() { return returnReg->getIntData(); }
+        virtual llvm::APFloat getFloatRegValue() { return returnReg->getFloatData(); }
+        virtual llvm::APSInt getIntRegValue() { return returnReg->getIntData(); }
     #else
-        virtual uint64_t * getFloatRegValue() { return returnReg->getFloatData(); }
+        virtual uint64_t getFloatRegValue() { return returnReg->getFloatData(); }
         virtual float getFloatFromReg() { return returnReg->getFloat(); }
         virtual double getDoubleFromReg() { return returnReg->getDouble(); }
-        virtual uint64_t * getIntRegValue() { return returnReg->getIntData(); }
+        virtual uint64_t getIntRegValue() { return returnReg->getIntData(); }
         virtual uint64_t getUIntRegValue() { return returnReg->getUnsignedInt(); }
         virtual int64_t getSIntRegValue() { return returnReg->getSignedInt(size); }
     #endif

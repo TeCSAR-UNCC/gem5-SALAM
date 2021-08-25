@@ -25,8 +25,6 @@ class BasicBlock; // Required Declaration
 class Instruction : public Value
 {
     private:
-        //std::deque<std::shared_ptr<SALAM::Instruction>> dynamicDependencies;
-        //std::deque<std::shared_ptr<SALAM::Instruction>> dynamicUsers;
         std::vector<std::shared_ptr<SALAM::Instruction>> dynamicDependencies;
         std::vector<std::shared_ptr<SALAM::Instruction>> dynamicUsers;
         uint64_t llvmOpCode;
@@ -37,7 +35,6 @@ class Instruction : public Value
     protected:
         valueListTy staticDependencies;
         // Operands
-        //std::deque<SALAM::Operand> operands;
         std::vector<SALAM::Operand> operands;
 
         bool running = false;
@@ -61,19 +58,14 @@ class Instruction : public Value
         bool operator != (const std::shared_ptr<SALAM::Instruction> inst) const { return !operator==(inst); }
         virtual void initialize(llvm::Value * irval, irvmap * irmap, SALAM::valueListTy * valueList); //
         virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  { return nullptr; }
-        // void instantiate(llvm::Value * irval,
-        //                 irvmap * irmap,
-        //                 SALAM::valueListTy * valueList); //
         uint64_t getDependencyCount() { return dynamicDependencies.size(); }
         virtual uint64_t getCycleCount() { return cycleCount; }
         uint64_t getOpode() { return llvmOpCode; }
         uint64_t getCurrentCycle() { return currentCycle; }
         virtual valueListTy getStaticDependencies() const { return staticDependencies; }
-        //std::deque<std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
         std::vector<std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
         std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }
         std::shared_ptr<SALAM::Value> getDynamicDependencies(int i) const { return dynamicDependencies.at(i); }
-        //virtual std::deque<uint64_t> runtimeInitialize();
         virtual std::vector<uint64_t> runtimeInitialize();
         void removeDynamicDependency(int i) { dynamicDependencies.erase(dynamicDependencies.begin()+i); }
         void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) { dynamicDependencies.push_back(dep); }
@@ -82,7 +74,6 @@ class Instruction : public Value
         bool isCommitted() { return committed; }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
-        //std::deque<SALAM::Operand> * getOperands() { return &operands; }
         std::vector<SALAM::Operand> * getOperands() { return &operands; }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
@@ -106,7 +97,7 @@ class Instruction : public Value
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
 
         // Functions for getting data from operands
-        uint64_t getPtrOperandValue(uint64_t op_num) { return *(operands.at(op_num).getPtrRegValue()); }
+        uint64_t getPtrOperandValue(uint64_t op_num) { return (operands.at(op_num).getPtrRegValue()); }
 };
 
 //---------------------------------------------------------------------------//

@@ -10,14 +10,14 @@ SALAM::Register::Register(bool trk,
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
         this->dbg = true;
-        this->reg_dbg = new Register_Debugger();
+        // this->reg_dbg = new Register_Debugger();
     }
 }
 
-SALAM::Register::~Register() 
+SALAM::Register::~Register()
 {
         if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
-        //if (DTRACE(SALAM_Debug)) delete reg_dbg;
+        // if (DTRACE(SALAM_Debug)) delete reg_dbg;
 }
 
 SALAM::Register::Register_Debugger::Register_Debugger()
@@ -52,32 +52,32 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
     switch (T->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
-            data = new llvm::APFloat(llvm::APFloat::IEEEsingle());
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEsingle());
             break;
         }
         case llvm::Type::DoubleTyID:
         {
-            data = new llvm::APFloat(llvm::APFloat::IEEEdouble());
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEdouble());
             break;
         }
         case llvm::Type::HalfTyID:
         {
-            data = new llvm::APFloat(llvm::APFloat::IEEEhalf());
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEhalf());
             break;
         }
         case llvm::Type::X86_FP80TyID:
         {
-            data = new llvm::APFloat(llvm::APFloat::x87DoubleExtended());
+            data = llvm::APFloat::getZero(llvm::APFloat::x87DoubleExtended());
             break;
         }
         case llvm::Type::FP128TyID:
         {
-            data = new llvm::APFloat(llvm::APFloat::IEEEquad());
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEquad());
             break;
         }
         case llvm::Type::PPC_FP128TyID:
         {
-            data = new llvm::APFloat(llvm::APFloat::PPCDoubleDouble());
+            data = llvm::APFloat::getZero(llvm::APFloat::PPCDoubleDouble());
             break;
         }
         default:
@@ -87,12 +87,12 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
     switch (T->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
-            data = new uint64_t(0);
+            data = 0;
             break;
         }
         case llvm::Type::DoubleTyID:
         {
-            data = new uint64_t(0);
+            data = 0;
             break;
         }
         default:
@@ -106,10 +106,10 @@ SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     #if USE_LLVM_AP_VALUES
-        data = new llvm::APFloat(RHS);
+        data = (RHS);
     #else
         auto bitcast = RHS.bitcastToAPInt();
-        data = new uint64_t(bitcast.getLimitedValue());
+        data = (uint64_t)(bitcast.getLimitedValue());
     #endif
 }
 
@@ -121,9 +121,9 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
     #if USE_LLVM_AP_VALUES
         llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
         assert(it);
-        data = new llvm::APSInt(it->getBitWidth(), true);
+        data = llvm::APSInt::getMinValue(it->getBitWidth(), true);
     #else
-        data = new uint64_t(0);
+        data = 0;
     #endif
 }
 
@@ -132,9 +132,9 @@ SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     #if USE_LLVM_AP_VALUES
-        data = new llvm::APSInt(RHS);
+        data = RHS;
     #else
-        data = new uint64_t(RHS.getLimitedValue());
+        data = (uint64_t)(RHS.getLimitedValue());
     #endif
 }
 
@@ -142,7 +142,7 @@ SALAM::PointerRegister::PointerRegister(bool tracked,
                                         bool isNull) :
                                         Register(tracked,
                                         isNull),
-                                        pointer(new uint64_t(0))
+                                        pointer(0)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
@@ -152,13 +152,13 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
                                         bool isNull) :
                                         Register(tracked,
                                         isNull),
-                                        pointer(new uint64_t(val))
+                                        pointer(val)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 #if USE_LLVM_AP_VALUES
-    llvm::APFloat *
+    llvm::APFloat
     SALAM::APFloatRegister::getFloatData(bool incReads)
     {
         if (incReads && tracked) reads++;
@@ -166,13 +166,13 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     }
 
     void
-    SALAM::APFloatRegister::writeFloatData(llvm::APFloat * apf, bool incWrites)
+    SALAM::APFloatRegister::writeFloatData(llvm::APFloat apf, bool incWrites)
     {
         if (incWrites && tracked) writes++;
-        *data = *apf;
+        data = apf;
     }
 #else
-    uint64_t *
+    uint64_t
     SALAM::APFloatRegister::getFloatData(bool incReads)
     {
         if (incReads && tracked) reads++;
@@ -182,25 +182,25 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     float
     SALAM::APFloatRegister::getFloat(bool incReads) {
         if (incReads && tracked) reads++;
-        return *(float *)data;
+        return *(float *)&data;
     }
 
     double
     SALAM::APFloatRegister::getDouble(bool incReads) {
         if (incReads && tracked) reads++;
-        return *(double *)data;
+        return *(double *)&data;
     }
 
     void
-    SALAM::APFloatRegister::writeFloatData(void * apf, size_t len, bool incWrites)
+    SALAM::APFloatRegister::writeFloatData(uint64_t apf, size_t len, bool incWrites)
     {
         if (incWrites && tracked) writes++;
-        std::memcpy(data, apf, len);
+        std::memcpy(&data, &apf, len);
     }
 #endif
 
 #if USE_LLVM_AP_VALUES
-    llvm::APSInt *
+    llvm::APSInt
     SALAM::APIntRegister::getIntData(bool incReads)
     {
         if (incReads && tracked) reads++;
@@ -208,13 +208,13 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     }
 
     void
-    SALAM::APIntRegister::writeIntData(llvm::APInt * api, bool incWrites)
+    SALAM::APIntRegister::writeIntData(llvm::APInt api, bool incWrites)
     {
         if (incWrites && tracked) writes++;
-        *data = *api;
+        data = api;
     }
 #else
-    uint64_t *
+    uint64_t
     SALAM::APIntRegister::getIntData(bool incReads)
     {
         if (incReads && tracked) reads++;
@@ -224,7 +224,7 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     uint64_t
     SALAM::APIntRegister::getUnsignedInt(bool incReads) {
         if (incReads && tracked) reads++;
-        return *data;
+        return data;
     }
 
     int64_t
@@ -234,22 +234,22 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
         switch (sizeInBits) {
             case 8:
             {
-                tmp = (int64_t)((int8_t)(*data));
+                tmp = (int64_t)((int8_t)(data));
                 break;
             }
             case 16:
             {
-                tmp = (int64_t)((int16_t)(*data));
+                tmp = (int64_t)((int16_t)(data));
                 break;
             }
             case 32:
             {
-                tmp = (int64_t)((int32_t)(*data));
+                tmp = (int64_t)((int32_t)(data));
                 break;
             }
             case 64:
             {
-                tmp = (int64_t)(*data);
+                tmp = (int64_t)(data);
                 break;
             }
             default:
@@ -262,13 +262,13 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     }
 
     void
-    SALAM::APIntRegister::writeIntData(uint64_t * api, size_t len, bool incWrites)
+    SALAM::APIntRegister::writeIntData(uint64_t api, size_t len, bool incWrites)
     {
         if (incWrites && tracked) writes++;
-        std::memcpy(data, api, len);
+        std::memcpy(&data, &api, len);
     }
 #endif
-uint64_t *
+uint64_t
 SALAM::PointerRegister::getPtrData(bool incReads)
 {
     if (incReads && tracked) reads++;
@@ -276,8 +276,8 @@ SALAM::PointerRegister::getPtrData(bool incReads)
 }
 
 void
-SALAM::PointerRegister::writePtrData(uint64_t * ptr, size_t len, bool incWrites)
+SALAM::PointerRegister::writePtrData(uint64_t ptr, size_t len, bool incWrites)
 {
     if (incWrites && tracked) writes++;
-    std::memcpy(pointer, ptr, len);
+    std::memcpy(&pointer, &ptr, len);
 }

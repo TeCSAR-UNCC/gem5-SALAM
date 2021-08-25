@@ -365,7 +365,7 @@ Br::getTarget() {
     DPRINTF(RuntimeCompute, "|| Launching Branch: %s\n", ir_string);
     if(conditional) {
     #if USE_LLVM_AP_VALUES
-        if (condition->getIntRegValue()->isOneValue()) {
+        if (condition->getIntRegValue().isOneValue()) {
             DPRINTF(RuntimeCompute, "|| Condition: TRUE, Fetching target %s\n",
                 defaultDestination->getIRStub());
             return trueDestination;
@@ -483,10 +483,10 @@ std::shared_ptr<SALAM::BasicBlock>
 Switch::getTarget() {
     DPRINTF(RuntimeCompute, "|| Launching Switch: %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    auto opdata = *(operands.front().getIntRegValue());
+    auto opdata = (operands.front().getIntRegValue());
 
     for (auto it = cases.begin(); it != cases.end(); ++it) {
-        if (it->first->getIntRegValue()->eq(opdata)){
+        if (it->first->getIntRegValue().eq(opdata)){
             return it->second;
         }
     }
@@ -625,8 +625,8 @@ Add::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 + op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s + (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -698,8 +698,8 @@ FAdd::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
-    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = (operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 + op2;
     llvm::SmallString<8> op1str;
     llvm::SmallString<8> op2str;
@@ -804,8 +804,8 @@ Sub::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 - op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s - (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -878,8 +878,8 @@ FSub::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
-    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = (operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 - op2;
     llvm::SmallString<8> op1str;
     llvm::SmallString<8> op2str;
@@ -981,8 +981,8 @@ Mul::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 * op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s * (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1055,8 +1055,8 @@ FMul::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
-    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = (operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 * op2;
     llvm::SmallString<8> op1str;
     llvm::SmallString<8> op2str;
@@ -1161,8 +1161,8 @@ UDiv::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.udiv(op2);
     DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1235,8 +1235,8 @@ SDiv::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.sdiv(op2);
     DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1310,8 +1310,8 @@ FDiv::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
-    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = (operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1 / op2;
     llvm::SmallString<8> op1str;
     llvm::SmallString<8> op2str;
@@ -1416,8 +1416,8 @@ URem::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.urem(op2);
     DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1490,8 +1490,8 @@ SRem::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.srem(op2);
     DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1565,8 +1565,8 @@ FRem::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APFloat op1 = *(operands.at(0).getFloatRegValue());
-    llvm::APFloat op2 = *(operands.at(1).getFloatRegValue());
+    llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
+    llvm::APFloat op2 = (operands.at(1).getFloatRegValue());
     llvm::APFloat result = op1;
     auto err = result.remainder(op2);
     assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -1673,8 +1673,8 @@ Shl::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 << op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s << (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1747,8 +1747,8 @@ LShr::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.lshr(op2);
     DPRINTF(RuntimeCompute, "|| (%s) %s >> (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1821,8 +1821,8 @@ AShr::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.ashr(op2);
     DPRINTF(RuntimeCompute, "|| (%s) %s >> (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1896,8 +1896,8 @@ And::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 & op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s & (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -1970,8 +1970,8 @@ Or::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 | op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s | (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -2044,8 +2044,8 @@ Xor::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt op1 = *(operands.at(0).getIntRegValue());
-    llvm::APInt op2 = *(operands.at(1).getIntRegValue());
+    llvm::APInt op1 = (operands.at(0).getIntRegValue());
+    llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 ^ op2;
     DPRINTF(RuntimeCompute, "|| (%s) %s ^ (%s) %s \n",
         operands.at(0).getIRStub(), op1.toString(10, true),
@@ -2132,7 +2132,7 @@ MemoryRequest *
 Load::createMemoryRequest() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++createMemoryRequest()\n");
-    Addr memAddr = *(operands.front().getPtrRegValue());
+    Addr memAddr = (operands.front().getPtrRegValue());
     size_t reqLen = getSizeInBytes();
     DPRINTF(RuntimeCompute, "|| Launching %s\n", ir_string);
     DPRINTF(RuntimeCompute, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
@@ -2196,7 +2196,7 @@ Store::compute() {
 
 MemoryRequest *
 Store::createMemoryRequest() {
-    Addr memAddr = *(operands.at(1).getPtrRegValue());
+    Addr memAddr = (operands.at(1).getPtrRegValue());
     size_t reqLen = operands.at(0).getSizeInBytes();
 
     MemoryRequest * req;
@@ -2204,24 +2204,25 @@ Store::createMemoryRequest() {
     auto dataRegister = operands.at(0).getReg();
     // Copy data from the register
     if (dataRegister->isPtr()) {
-        req = new MemoryRequest(memAddr, dataRegister->getPtrData(), reqLen);
+        uint64_t regData = dataRegister->getPtrData();
+        req = new MemoryRequest(memAddr, (uint8_t *)&regData, reqLen);
     } else {
     #if USE_LLVM_AP_VALUES
         llvm::APInt regAPData;
         if (dataRegister->isInt()) {
-            regAPData = *(dataRegister->getIntData());
+            regAPData = (dataRegister->getIntData());
         } else {
-            regAPData = dataRegister->getFloatData()->bitcastToAPInt();
+            regAPData = dataRegister->getFloatData().bitcastToAPInt();
         }
         req = new MemoryRequest(memAddr, regAPData.getRawData(), reqLen);
     #else
-        uint64_t * regData;
+        uint64_t regData;
         if (dataRegister->isInt()) {
             regData = dataRegister->getIntData();
         } else {
             regData = dataRegister->getFloatData();
         }
-        req = new MemoryRequest(memAddr, (uint8_t *)regData, reqLen);
+        req = new MemoryRequest(memAddr, (uint8_t *)&regData, reqLen);
     #endif
         DPRINTF(RuntimeCompute, "|| Launching %s\n", ir_string);
         DPRINTF(RuntimeCompute, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
@@ -2321,7 +2322,7 @@ GetElementPtr::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
-    uint64_t ptr = *(operands.front().getPtrRegValue());
+    uint64_t ptr = (operands.front().getPtrRegValue());
     int64_t offset = 0;
 
     for (int i = 1; i < operands.size(); i++) {
@@ -2330,7 +2331,7 @@ GetElementPtr::compute() {
             offset += offsets.at(i-1);
         } else {
         #if USE_LLVM_AP_VALUES
-            int64_t arrayIdx = idx.getIntRegValue()->getSExtValue();
+            int64_t arrayIdx = idx.getIntRegValue().getSExtValue();
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
@@ -2399,7 +2400,7 @@ Trunc::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt result = operands.at(0).getIntRegValue()->trunc(size);
+    llvm::APInt result = operands.at(0).getIntRegValue().trunc(size);
     DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     // The trunc is handled automatically when we set the return register
@@ -2464,7 +2465,7 @@ ZExt::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt result = operands.at(0).getIntRegValue()->zext(size);
+    llvm::APInt result = operands.at(0).getIntRegValue().zext(size);
     DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
 #else
     // Unsigned data doesn't need any modification when ZExtending
@@ -2529,7 +2530,7 @@ SExt::compute() {
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
-    llvm::APInt result = operands.at(0).getIntRegValue()->sext(size);
+    llvm::APInt result = operands.at(0).getIntRegValue().sext(size);
     DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
     setRegisterValue(result);
 #else
@@ -2593,7 +2594,7 @@ FPToUI::compute() {
     llvm::APSInt tmp(size, true);
     bool exact;
     auto opdata = operands.front().getFloatRegValue();
-    auto err = opdata->convertToInteger(tmp,
+    auto err = opdata.convertToInteger(tmp,
                                       rounding,
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -2678,7 +2679,7 @@ FPToSI::compute() {
     llvm::APSInt tmp(size, false);
     bool exact;
     auto opdata = operands.front().getFloatRegValue();
-    auto err = opdata->convertToInteger(tmp,
+    auto err = opdata.convertToInteger(tmp,
                                       rounding,
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -2764,7 +2765,7 @@ UIToFP::compute() {
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getIntRegValue();
     llvm::APFloat tmp(irtype->getFltSemantics());
-    auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+    auto err = tmp.convertFromAPInt(opdata, false, rounding);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
 #else
@@ -2844,7 +2845,7 @@ SIToFP::compute() {
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getIntRegValue();
     llvm::APFloat tmp(irtype->getFltSemantics());
-    auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+    auto err = tmp.convertFromAPInt(opdata, false, rounding);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
 #else
@@ -2923,7 +2924,7 @@ FPTrunc::compute() {
 #if USE_LLVM_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getFloatRegValue();
-    llvm::APFloat tmp(*opdata);
+    llvm::APFloat tmp(opdata);
     bool losesInfo;
     auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
     assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -2997,7 +2998,7 @@ FPExt::compute() {
 #if USE_LLVM_AP_VALUES
     auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
     auto opdata = operands.front().getFloatRegValue();
-    llvm::APFloat tmp(*opdata);
+    llvm::APFloat tmp(opdata);
     bool losesInfo;
     auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
     assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -3070,9 +3071,9 @@ void
 PtrToInt::compute() {
     auto opdata = operands.front().getPtrRegValue();
 #if USE_LLVM_AP_VALUES
-    setRegisterValue(llvm::APInt(64, *opdata));
+    setRegisterValue(llvm::APInt(64, opdata));
 #else
-    setRegisterValue(*opdata);
+    setRegisterValue(opdata);
 #endif
 }
 
@@ -3127,8 +3128,8 @@ void
 IntToPtr::compute() {
 #if USE_LLVM_AP_VALUES
     auto opdata = operands.front().getIntRegValue();
-    assert(opdata->isUnsigned());
-    int64_t tmp = opdata->getExtValue();
+    assert(opdata.isUnsigned());
+    int64_t tmp = opdata.getExtValue();
     setRegisterValue(*(uint64_t *)&tmp);
 #else
     auto opdata = operands.front().getUIntRegValue();
@@ -3195,16 +3196,16 @@ ICmp::compute() {
 #if USE_LLVM_AP_VALUES
     if (operands.at(0).hasIntVal() && operands.at(1).hasIntVal()){
         switch (predicate) {
-            case SALAM::Predicate::ICMP_EQ: { result = operands.at(0).getIntRegValue()->eq(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_NE: { result = operands.at(0).getIntRegValue()->ne(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_UGT: { result = operands.at(0).getIntRegValue()->ugt(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_UGE: { result = operands.at(0).getIntRegValue()->uge(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_ULT: { result = operands.at(0).getIntRegValue()->ult(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_ULE: { result = operands.at(0).getIntRegValue()->ule(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_SGT: { result = operands.at(0).getIntRegValue()->sgt(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_SGE: { result = operands.at(0).getIntRegValue()->sge(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_SLT: { result = operands.at(0).getIntRegValue()->slt(*(operands.at(1).getIntRegValue())); break; }
-            case SALAM::Predicate::ICMP_SLE: { result = operands.at(0).getIntRegValue()->sle(*(operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_EQ: { result = operands.at(0).getIntRegValue().eq((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_NE: { result = operands.at(0).getIntRegValue().ne((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_UGT: { result = operands.at(0).getIntRegValue().ugt((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_UGE: { result = operands.at(0).getIntRegValue().uge((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_ULT: { result = operands.at(0).getIntRegValue().ult((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_ULE: { result = operands.at(0).getIntRegValue().ule((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SGT: { result = operands.at(0).getIntRegValue().sgt((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SGE: { result = operands.at(0).getIntRegValue().sge((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SLT: { result = operands.at(0).getIntRegValue().slt((operands.at(1).getIntRegValue())); break; }
+            case SALAM::Predicate::ICMP_SLE: { result = operands.at(0).getIntRegValue().sle((operands.at(1).getIntRegValue())); break; }
             default: break;
         }
     } else if (operands.at(0).hasPtrVal() && operands.at(1).hasPtrVal()) {
@@ -3241,8 +3242,8 @@ ICmp::compute() {
             default: break;
         }
     } else if (operands.at(0).hasPtrVal() && operands.at(1).hasPtrVal()) {
-        uint64_t * uOp1 = operands.at(0).getPtrRegValue();
-        uint64_t * uOp2 = operands.at(1).getPtrRegValue();
+        uint64_t uOp1 = operands.at(0).getPtrRegValue();
+        uint64_t uOp2 = operands.at(1).getPtrRegValue();
         switch (predicate) {
             case SALAM::Predicate::ICMP_EQ: { result = (uOp1 == uOp2); break; }
             case SALAM::Predicate::ICMP_NE: { result = (uOp1 != uOp2); break; }
@@ -3320,8 +3321,8 @@ FCmp::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     bool result = false;
 #if USE_LLVM_AP_VALUES
-    auto op1 = *operands.at(0).getFloatRegValue();
-    auto op2 = *operands.at(1).getFloatRegValue();
+    auto op1 = operands.at(0).getFloatRegValue();
+    auto op2 = operands.at(1).getFloatRegValue();
     auto cmp = op1.compare(op2);
     switch(predicate)
     {
@@ -3707,7 +3708,7 @@ Select::initialize(llvm::Value * irval,
 // std::shared_ptr<SALAM::Value>
 // Select::evaluate() {
 // #if USE_LLVM_AP_VALUES
-//     if(condition->getIntRegValue()->isOneValue()) return trueValue;
+//     if(condition->getIntRegValue().isOneValue()) return trueValue;
 //     return falseValue;
 // #else
 //     if(condition->getUIntRegValue() == 1) return trueValue;
@@ -3726,7 +3727,7 @@ Select::compute() {
     auto falseVal = operands.at(2);
 
 #if USE_LLVM_AP_VALUES
-    auto resultReg = (cond.getIntRegValue()->isOneValue()) ? trueVal.getOpRegister() : falseVal.getOpRegister();
+    auto resultReg = (cond.getIntRegValue().isOneValue()) ? trueVal.getOpRegister() : falseVal.getOpRegister();
 #else
     auto resultReg = (cond.getUIntRegValue() == 1) ? trueVal.getOpRegister() : falseVal.getOpRegister();
 #endif

@@ -77,9 +77,9 @@ SALAM::Constant::initialize(llvm::Value * irval,
 			{
 				auto opdata = operands.front()->getIntRegValue();
 			#if USE_LLVM_AP_VALUES
-				addAPIntRegister(opdata->trunc(size));
+				addAPIntRegister(opdata.trunc(size));
 			#else
-				addAPIntRegister(*opdata);
+				addAPIntRegister(opdata);
 			#endif
 				break;
 			}
@@ -87,10 +87,10 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	{
 				auto opdata = operands.front()->getIntRegValue();
 			#if USE_LLVM_AP_VALUES
-				opdata->setIsSigned(false);
-				addAPIntRegister(opdata->extend(size));
+				opdata.setIsSigned(false);
+				addAPIntRegister(opdata.extend(size));
 			#else
-				addAPIntRegister(*opdata);
+				addAPIntRegister(opdata);
 			#endif
 				break;
 			}
@@ -98,8 +98,8 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	{
 			#if USE_LLVM_AP_VALUES
         		auto opdata = operands.front()->getIntRegValue();
-				opdata->setIsSigned(true);
-				addAPIntRegister(opdata->extend(size));
+				opdata.setIsSigned(true);
+				addAPIntRegister(opdata.extend(size));
 			#else
 				int64_t tmp = operands.front()->getSIntRegValue();
 				addAPIntRegister((uint64_t)tmp);
@@ -112,7 +112,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
         		llvm::APSInt tmp(size, true);
         		bool exact;
         		auto opdata = operands.front()->getFloatRegValue();
-        		auto err = opdata->convertToInteger(tmp,
+        		auto err = opdata.convertToInteger(tmp,
         										  rounding,
         										  &exact);
         		assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -134,7 +134,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
         		llvm::APSInt tmp(size, false);
         		bool exact;
         		auto opdata = operands.front()->getFloatRegValue();
-        		auto err = opdata->convertToInteger(tmp,
+        		auto err = opdata.convertToInteger(tmp,
         										  rounding,
         										  &exact);
         		assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -155,7 +155,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	#if USE_LLVM_AP_VALUES
         		auto opdata = operands.front()->getIntRegValue();
         		llvm::APFloat tmp(irtype->getFltSemantics());
-        		auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+        		auto err = tmp.convertFromAPInt(opdata, false, rounding);
         		assert(err == llvm::APFloatBase::opStatus::opOK);
         		addAPFloatRegister(tmp);
         	#else
@@ -187,7 +187,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	#if USE_LLVM_AP_VALUES
         		auto opdata = operands.front()->getIntRegValue();
         		llvm::APFloat tmp(irtype->getFltSemantics());
-        		auto err = tmp.convertFromAPInt(*opdata, false, rounding);
+        		auto err = tmp.convertFromAPInt(opdata, false, rounding);
         		assert(err == llvm::APFloatBase::opStatus::opOK);
         		addAPFloatRegister(tmp);
         	#else
@@ -218,7 +218,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	{
         	#if USE_LLVM_AP_VALUES
         		auto opdata = operands.front()->getFloatRegValue();
-        		llvm::APFloat tmp(*opdata);
+        		llvm::APFloat tmp(opdata);
         		bool losesInfo;
         		auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
         		assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -244,7 +244,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	{
         	#if USE_LLVM_AP_VALUES
         		auto opdata = operands.front()->getFloatRegValue();
-        		llvm::APFloat tmp(*opdata);
+        		llvm::APFloat tmp(opdata);
         		bool losesInfo;
         		auto err = tmp.convert(irtype->getFltSemantics(), rounding, &losesInfo);
         		assert(err == llvm::APFloatBase::opStatus::opOK);
@@ -270,9 +270,9 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	{
         		auto opdata = operands.front()->getReg()->getPtrData();
         	#if USE_LLVM_AP_VALUES
-        		addAPIntRegister(llvm::APInt(64, *opdata));
+        		addAPIntRegister(llvm::APInt(64, opdata));
         	#else
-        		addAPIntRegister(*opdata);
+        		addAPIntRegister(opdata);
         	#endif
         		break;
         	}
@@ -280,11 +280,11 @@ SALAM::Constant::initialize(llvm::Value * irval,
         	{
         		auto opdata = operands.front()->getIntRegValue();
         	#if USE_LLVM_AP_VALUES
-        		assert(opdata->isUnsigned());
-        		int64_t tmp = opdata->getExtValue();
+        		assert(opdata.isUnsigned());
+        		int64_t tmp = opdata.getExtValue();
         		addPointerRegister(*(uint64_t *)&tmp, false, false);
         	#else
-        		addPointerRegister(*opdata, false, false);
+        		addPointerRegister(opdata, false, false);
     		#endif
         		break;
         	}
