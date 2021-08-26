@@ -3,15 +3,12 @@ import subprocess
 
 Import('main')
 
-# LLVM 9 install location set with the ENV variable $LLVM_INSTALL
-llvm_install = Dir(os.environ['LLVM_INSTALL'])
-# Include files for LLVM 9 installation.
-llvm_include = llvm_install.Dir('include')
-# Library path for LLVM 9 installation.
-llvm_libdir = llvm_install.Dir('lib')
-
-llvm_config_path = os.environ['LLVM_INSTALL'] + '/bin/llvm-config'
-llvm_libs = subprocess.check_output([llvm_config_path, '--libs'])
+# Use llvm-config to find includes and libraries needed for the build
+llvm_include = subprocess.check_output(['llvm-config', '--includedir'])
+llvm_include = Dir(llvm_include.replace("\n", ""))
+llvm_libdir = subprocess.check_output(['llvm-config', '--libdir'])
+llvm_libdir = Dir(llvm_libdir.replace("\n", ""))
+llvm_libs = subprocess.check_output(['llvm-config', '--libs'])
 llvm_libs = llvm_libs.replace("-l", "")
 llvm_libs = llvm_libs.replace("\n", "")
 llvm_libs = llvm_libs.split(' ')
