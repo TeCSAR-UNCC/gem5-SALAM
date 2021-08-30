@@ -1,12 +1,13 @@
 #include "../common/support.h"
-
+#include "../../../classifier_hw_defines.h"
+#include "../../../network_params.h"
 /***********************************************************
  * Computation Defines
  ***********************************************************/
 
 // Linear (Fully Connected)
-#define INPUT_SIZE		1280
-#define OUTPUT_SIZE		1000
+#define INPUT_SIZE		__LINEAR_DEPTH_SIZE__
+#define OUTPUT_SIZE		__LINEAR_ROW_SIZE__
 #define WeightSize		INPUT_SIZE*OUTPUT_SIZE
 #define BIAS_ZP			0
 #define INPUT_ZP		0
@@ -16,25 +17,25 @@
 /***********************************************************
  * Cluster Base Address
  ***********************************************************/
-#define BASE			0x2F0B8000
+// #define BASE			0x2F0B8000
 /***********************************************************
  * MMR Addresses
  ***********************************************************/
-#define TOP_MMR			BASE + 0x000000
-#define STREAM_DMA_MMR	BASE + 0x000021
-#define CLUSTER_DMA_MMR	BASE + 0x000049
-#define LINEAR_MMR		BASE + 0x00005E
+#define TOP_MMR			TOP
+#define STREAM_DMA_MMR	STREAM_DMA0_Flags
+#define CLUSTER_DMA_MMR	DMA_Flags
+#define LINEAR_MMR		LINEAR
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define FeatSPM			BASE + 0x00005F
-#define WeightSPM		BASE + 0x00055F
-#define Bias			BASE + 0x138D5F
-#define iMultBias		BASE + 0x139147
-#define nShiftBias		BASE + 0x13952F
-#define iMultOut		BASE + 0x139917
-#define nShiftOut		BASE + 0x139CFF
-#define WeightZP		BASE + 0x13A0E7
-#define SumSPM			BASE + 0x13A4CF
-#define OutputBuff		BASE + 0x000041
+#define FeatSPM			LinearFeats
+#define WeightSPM		LinearWeights
+#define Bias			LinearQParams
+#define iMultBias		LinearQParams
+#define nShiftBias		LinearQParams
+#define iMultOut		LinearQParams
+#define nShiftOut		LinearQParams
+#define WeightZP		LinearQParams
+#define SumSPM			LinearSum
+#define OutputBuff		STREAM_DMA0_Stream

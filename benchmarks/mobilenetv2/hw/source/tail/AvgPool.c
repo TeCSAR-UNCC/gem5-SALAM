@@ -11,10 +11,12 @@ void Avg_Pooling() {
 	volatile dType_8u * outFifo    = (dType_8u *)PoolOut;
 
 	AVG_LOOP_OVER_I_CHAN:
+    #pragma clang loop unroll(disable)
     for (dType_32u jdx = 0, hdx = 0; jdx < t_I_O_CHAN; jdx++)
     {
         t_ACCUMULATE_TYPE acc = 0;
     AVG_LOOP_OVER_K_SIZE:
+        #pragma clang loop unroll(disable)
         for (dType_32u idx = 0; idx < t_KERNEL_SIZE * t_KERNEL_SIZE; idx++, hdx++)
         {
             acc += inBuffer[hdx];

@@ -15,8 +15,11 @@
 
 #define STR_DMA_INIT_RD	0x01
 #define STR_DMA_INIT_WR 0x02
-#define STR_DMA_RD_INTR	0x05
-#define STR_DMA_WR_INTR	0x06
+#define STR_DMA_RD_INTR	0x10
+#define STR_DMA_WR_INTR	0x20
+#define STR_DMA_RD_RUNNING 0x04
+#define STR_DMA_WR_RUNNING 0x08
+
 
 #define MEM_DMA_INIT	0x01
 #define MEM_DMA_INTR	0x04

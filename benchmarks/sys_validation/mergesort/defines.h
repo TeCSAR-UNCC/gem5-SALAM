@@ -3,7 +3,7 @@
 
 #define CHECK
 
-#define TYPE uint32_t
-#define SIZE 16
+#define TYPE uint64_t
+#define SIZE 4
 
 #endif

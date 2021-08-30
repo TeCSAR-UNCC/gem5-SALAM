@@ -7,12 +7,6 @@ void top(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
 	volatile uint8_t * PWConv 		= (uint8_t *)PW_MMR;
 	volatile uint8_t * Reshape		= (uint8_t *)RS_MMR;
 	volatile uint8_t * AvgPool 		= (uint8_t *)POOL_MMR;
-	//Start PW Conv
-	*PWConv = 0x01;
-	//Start Reshape
-	*Reshape = 0x01;
-	//Start AVG Pool
-	*AvgPool = 0x01;
 
 	//Initialize DMAs
 	//StreamDma
@@ -51,13 +45,23 @@ void top(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
 	//Start PW Conv QParams Xfer
 	*MemDmaRdAddr  = pw_quant;
 	*MemDmaWrAddr  = PWBias;
 	*MemDmaCopyLen = PWQParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	//Start PW Conv
+	*PWConv = 0x01;
+	//Start Reshape
+	*Reshape = 0x01;
+	//Start AVG Pool
+	*AvgPool = 0x01;
 
 	//Wait for all accelerators to finish before sending interrupt to CPU
-	while ((*StrDmaFlags & STR_DMA_WR_INTR) != STR_DMA_WR_INTR);
+	while ((*StrDmaFlags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
 	return;
 }

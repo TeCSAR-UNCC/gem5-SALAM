@@ -5,8 +5,6 @@ void top(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
 
 	// //Initialize Accelerators
 	volatile uint8_t * Linear 		= (uint8_t *)LINEAR_MMR;
-	//Start Linear
-	*Linear = 0x01;
 
 	//Initialize DMAs
 	//StreamDma
@@ -54,7 +52,10 @@ void top(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
 	*MemDmaCopyLen = QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 
+	//Start Linear
+	*Linear = 0x01;
+
 	//Wait for all accelerators to finish before sending interrupt to CPU
-	while ((*StrDmaFlags & STR_DMA_WR_INTR) != STR_DMA_WR_INTR);
+	while ((*StrDmaFlags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
 	return;
 }

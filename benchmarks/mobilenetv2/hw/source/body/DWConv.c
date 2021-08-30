@@ -6,9 +6,9 @@
 #define t_ACCUMULATE_TYPE       dType_Reg
 #define t_KSIZE                 KERNEL_SIZE
 
-void DWConv(dType_Reg o_size, dType_Reg i_size,
-            dType_Reg o_c_size, dType_Reg i_c_size, dType_32u t_STRIDE,
-            dType_8u bias_zp, dType_8u input_zp, dType_8u output_zp) {
+void DWConv(uint64_t o_size, uint64_t i_size,
+            uint64_t o_c_size, uint64_t i_c_size, uint64_t t_STRIDE,
+            uint64_t bias_zp, uint64_t input_zp, uint64_t output_zp) {
 	volatile dType_8u * STR_IN  	= (dType_8u *)(DW0In);
 	volatile dType_8u * BUFFER 		= (dType_8u *)(DW0Buffer); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE-1][t_MAX_INPUT_SIZE]
 	volatile dType_8u * WINDOW 		= (dType_8u *)(DW0Window); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE][t_KSIZE]
@@ -32,31 +32,39 @@ void DWConv(dType_Reg o_size, dType_Reg i_size,
 
 // Warmup
 buf_x1_n:
+	#pragma clang loop unroll(disable)
     for (dType_Reg x = i_size - HALF_SIZE - 1; x < i_size; x++) {
     itr_channel_x1:
+		#pragma clang loop unroll(disable)
         for (dType_Reg ch = 0; ch < i_c_size; ch++) {
-            // BUFFER[ch][HALF_SIZE - 1][x] = *STR_IN;
+            // BUFFER[ch][HALF_SIZE - 1][x] = 1;
             BUFFER[ch*(t_KSIZE-1)*i_size + (HALF_SIZE-1)*i_size + x] = *STR_IN;
         }
     }
 
 buf_y_n:
+	#pragma clang loop unroll(disable)
     for (dType_8u y = HALF_SIZE; y < t_KSIZE - 1; y++) {
     buf_x2_n:
+		#pragma clang loop unroll(disable)
         for (dType_Reg x = 0; x < i_size; x++) {
         itr_channel_x2:
+			#pragma clang loop unroll(disable)
             for (dType_Reg ch = 0; ch < i_c_size; ch++) {
-                // BUFFER[ch][y][x] = *STR_IN;
+                // BUFFER[ch][y][x] = 1;
                 BUFFER[ch*(t_KSIZE-1)*i_size + y*i_size + x] = *STR_IN;
             }
         }
     }
 
 win_y_n:
+	#pragma clang loop unroll(disable)
     for (dType_8u y = HALF_SIZE; y < t_KSIZE; y++) {
     win_x_n:
+		#pragma clang loop unroll(disable)
         for (dType_8u x = HALF_SIZE; x < t_KSIZE; x++) {
         win_itr_channel:
+			#pragma clang loop unroll(disable)
             for (dType_Reg ch = 0; ch < i_c_size; ch++) {
                 // WINDOW[ch][y][x] = BUFFER[ch][y - 1][x + i_size - t_KSIZE];
                 WINDOW[ch*t_KSIZE*t_KSIZE + y*t_KSIZE + x] = BUFFER[ch*(t_KSIZE-1)*i_size + (y-1)*i_size + (x+i_size-t_KSIZE)];
@@ -73,12 +81,15 @@ win_y_n:
     }
 
 for_y_n:
+	#pragma clang loop unroll(disable)
     for (dType_Reg y = 0; y < y_looper; y++) {
     	y_com = y;
     for_x_n:
+		#pragma clang loop unroll(disable)
         for (dType_Reg x = 0; x < x_looper; x++) {
         	x_com = x;
     	compute_loop_channel_n:
+			#pragma clang loop unroll(disable)
         	for (dType_Reg oc = 0; oc < o_c_size; oc++) {
         		bias = BIAS[oc];
         		weight_zp = WEIGHTZP[oc];
@@ -88,8 +99,10 @@ for_y_n:
 			    int count = 0;
 
 			win_i_n:
+				#pragma clang loop unroll(full)
 			    for (int i = -HALF_SIZE; i <= HALF_SIZE; i++) {
 			    win_j_n:
+					#pragma clang loop unroll(full)
 			        for (int j = -HALF_SIZE; j <= HALF_SIZE; j++) {
 		                if (0 <= (y+i) && (y+i) < i_size && 0 <= (x+j) && (x+j) < i_size) {
 		                    // dType_8t actInp = window[oc][i + HALF_SIZE][j + HALF_SIZE] - input_zp;
@@ -124,10 +137,13 @@ for_y_n:
         		}
         	}
 		Data_movement_loop:
+			#pragma clang loop unroll(disable)
 		    for (dType_Reg ch = 0; ch < i_c_size; ch++) {
 		    shift_win_y:
+				#pragma clang loop unroll(full)
 		        for (dType_8u y = 0; y < t_KSIZE; y++) {
 		        shift_win_x:
+					#pragma clang loop unroll(full)
 		            for (dType_8u x = 0; x < t_KSIZE - 1; x++) {
 		                // WINDOW[ch][y][x] = WINDOW[ch][y][x + 1];
 		                WINDOW[ch*t_KSIZE*t_KSIZE + y*t_KSIZE + x] = WINDOW[ch*t_KSIZE*t_KSIZE + y*t_KSIZE + (x+1)];
@@ -136,6 +152,7 @@ for_y_n:
 		        // WINDOW[ch][0][t_KSIZE - 1] = BUFFER[ch][0][x];
 		        WINDOW[ch*t_KSIZE*t_KSIZE + 0*t_KSIZE + (t_KSIZE-1)] = BUFFER[ch*(t_KSIZE-1)*i_size + 0*i_size + x];
 		    update_idx1:
+				#pragma clang loop unroll(full)
 		        for (int y = 1; y < t_KSIZE - 1; y++) {
 		            // WINDOW[ch][y][t_KSIZE - 1] = BUFFER[ch][y - 1][x] = BUFFER[ch][y][x];
 		            int winidx = ch*t_KSIZE*t_KSIZE + y*t_KSIZE + (t_KSIZE-1);

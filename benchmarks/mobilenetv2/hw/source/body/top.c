@@ -1,46 +1,51 @@
 #include "body_defines.h"
 
-void top(uint8_t stage, uint64_t feat_rd_addr,
+void top(uint64_t feat_rd_addr,
 		 uint64_t res_rd_addr, uint64_t feat_wr_addr,
 		 uint64_t pw0_weights, uint64_t pw0_quant,
 		 uint64_t dw0_weights, uint64_t dw0_quant,
-		 uint64_t pw1_weights, uint64_t pw1_quant) {
+		 uint64_t pw1_weights, uint64_t pw1_quant,
+		 uint64_t stage) {
 
 	uint32_t InputSize;
 	uint32_t OutputSize;
 	uint8_t  resEnable;
 
 	//Initialize Accelerators
+	// Residual Parameters
 	volatile uint8_t	* ResFlags		= (uint8_t	*)(RES_MMR);
-	volatile uint8_t	* ResEnable		= (uint8_t	*)(RES_MMR+1);
-	volatile uint32_t	* ResLength		= (uint32_t *)(RES_MMR+2);
+	volatile uint64_t	* ResEnable		= (uint64_t	*)(RES_MMR+1);
+	volatile uint64_t	* ResLength		= (uint64_t *)(RES_MMR+9);
+	// Pointwise 0 Parameters
 	volatile uint8_t	* PW0Flags 		= (uint8_t	*)(PW0_MMR);
-	volatile uint32_t	* PW0OSize 		= (uint32_t *)(PW0_MMR+1);
-	volatile uint32_t	* PW0ISize 		= (uint32_t	*)(PW0_MMR+5);
-	volatile uint32_t	* PW0ICSize 	= (uint32_t	*)(PW0_MMR+9);
-	volatile uint32_t	* PW0OCSize 	= (uint32_t	*)(PW0_MMR+13);
-	volatile uint8_t	* PW0BiasZP 	= (uint8_t	*)(PW0_MMR+17);
-	volatile uint8_t	* PW0InputZP 	= (uint8_t	*)(PW0_MMR+18);
-	volatile uint8_t	* PW0OutputZP 	= (uint8_t	*)(PW0_MMR+19);
+	volatile uint64_t	* PW0OSize 		= (uint64_t *)(PW0_MMR+1);
+	volatile uint64_t	* PW0ISize 		= (uint64_t	*)(PW0_MMR+9);
+	volatile uint64_t	* PW0OCSize 	= (uint64_t	*)(PW0_MMR+17);
+	volatile uint64_t	* PW0ICSize 	= (uint64_t	*)(PW0_MMR+25);
+	volatile uint64_t	* PW0BiasZP 	= (uint64_t	*)(PW0_MMR+33);
+	volatile uint64_t	* PW0InputZP 	= (uint64_t	*)(PW0_MMR+41);
+	volatile uint64_t	* PW0OutputZP 	= (uint64_t	*)(PW0_MMR+49);
+	// Depthwise Parameters
 	volatile uint8_t	* DW0Flags 		= (uint8_t	*)(DW0_MMR);
-	volatile uint32_t	* DW0OSize 		= (uint32_t	*)(DW0_MMR+1);
-	volatile uint32_t	* DW0ISize 		= (uint32_t	*)(DW0_MMR+5);
-	volatile uint32_t	* DW0ICSize 	= (uint32_t	*)(DW0_MMR+9);
-	volatile uint32_t	* DW0OCSize 	= (uint32_t	*)(DW0_MMR+13);
-	volatile uint32_t	* DW0Stride 	= (uint32_t	*)(DW0_MMR+17);
-	volatile uint8_t	* DW0BiasZP 	= (uint8_t	*)(DW0_MMR+21);
-	volatile uint8_t	* DW0InputZP 	= (uint8_t	*)(DW0_MMR+22);
-	volatile uint8_t	* DW0OutputZP 	= (uint8_t	*)(DW0_MMR+23);
+	volatile uint64_t	* DW0OSize 		= (uint64_t	*)(DW0_MMR+1);
+	volatile uint64_t	* DW0ISize 		= (uint64_t	*)(DW0_MMR+9);
+	volatile uint64_t	* DW0OCSize 	= (uint64_t	*)(DW0_MMR+17);
+	volatile uint64_t	* DW0ICSize 	= (uint64_t	*)(DW0_MMR+25);
+	volatile uint64_t	* DW0Stride 	= (uint64_t	*)(DW0_MMR+33);
+	volatile uint64_t	* DW0BiasZP 	= (uint64_t	*)(DW0_MMR+41);
+	volatile uint64_t	* DW0InputZP 	= (uint64_t	*)(DW0_MMR+49);
+	volatile uint64_t	* DW0OutputZP 	= (uint64_t	*)(DW0_MMR+57);
+	// Pointwise 1 Parameters
 	volatile uint8_t	* PW1Flags 		= (uint8_t	*)(PW1_MMR);
-	volatile uint32_t	* PW1OSize 		= (uint32_t	*)(PW1_MMR+1);
-	volatile uint32_t	* PW1ISize 		= (uint32_t	*)(PW1_MMR+5);
-	volatile uint32_t	* PW1ICSize 	= (uint32_t	*)(PW1_MMR+9);
-	volatile uint32_t	* PW1OCSize 	= (uint32_t	*)(PW1_MMR+13);
-	volatile uint8_t	* PW1BiasZP 	= (uint8_t	*)(PW1_MMR+17);
-	volatile uint8_t	* PW1InputZP 	= (uint8_t	*)(PW1_MMR+18);
-	volatile uint8_t	* PW1OutputZP 	= (uint8_t	*)(PW1_MMR+19);
+	volatile uint64_t	* PW1OSize 		= (uint64_t	*)(PW1_MMR+1);
+	volatile uint64_t	* PW1ISize 		= (uint64_t	*)(PW1_MMR+9);
+	volatile uint64_t	* PW1OCSize 	= (uint64_t	*)(PW1_MMR+17);
+	volatile uint64_t	* PW1ICSize 	= (uint64_t	*)(PW1_MMR+25);	
+	volatile uint64_t	* PW1BiasZP 	= (uint64_t	*)(PW1_MMR+33);
+	volatile uint64_t	* PW1InputZP 	= (uint64_t	*)(PW1_MMR+41);
+	volatile uint64_t	* PW1OutputZP 	= (uint64_t	*)(PW1_MMR+49);
 
-	switch(stage) {
+switch(stage) {
 		case 0:
 			InputSize    = PW0_0_I_SIZE * PW0_0_I_SIZE * PW0_0_IC_SIZE;
 			OutputSize   = PW1_0_O_SIZE * PW1_0_O_SIZE * PW1_0_OC_SIZE;
@@ -68,6 +73,7 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 			*PW1BiasZP   = PW1_0_BIAS_ZP;
 			*PW1InputZP  = PW1_0_IN_ZP;
 			*PW1OutputZP = PW1_0_OUT_ZP;
+			
 			break;
 		case 1:
 			InputSize    = PW0_1_I_SIZE * PW0_1_I_SIZE * PW0_1_IC_SIZE;
@@ -516,16 +522,8 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 			*PW1BiasZP   = 0;
 			*PW1InputZP  = 0;
 			*PW1OutputZP = 0;
+			return;
 	}
-	//Start Res
-	*ResEnable = resEnable;
-	*ResFlags = 0x01;
-	//Start PW Conv 0
-	*PW0Flags = 0x01;
-	//Start DW Conv
-	*DW0Flags = 0x01;
-	//Start PW Conv 1
-	*PW1Flags = 0x01;
 
 	//Initialize DMAs
 	//StreamDma0
@@ -568,6 +566,7 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 	*StrDma1RdFrameSize = InputSize;
 	*StrDma1NumRdFrames = 1;
 	*StrDma1RdFrameBuffSize = 1;
+
 	//Start Stream DMAs
 	*StrDma0Flags = STR_DMA_INIT_RD | STR_DMA_INIT_WR;
 	if (resEnable == 1) *StrDma1Flags = STR_DMA_INIT_RD;
@@ -608,13 +607,27 @@ void top(uint8_t stage, uint64_t feat_rd_addr,
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start PW1 Conv QParams Xfer
+	// Start PW1 Conv QParams Xfer
+
 	*MemDmaRdAddr  = pw1_quant;
 	*MemDmaWrAddr  = PW1Bias;
 	*MemDmaCopyLen = PW1QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 
-	//Wait for all accelerators to finish before sending interrupt to CPU
-	while ((*StrDma0Flags & STR_DMA_WR_INTR) != STR_DMA_WR_INTR);
+	//Start Res
+	*ResEnable = resEnable;
+	*ResFlags = 0x01;
+	//Start PW Conv 0
+	*PW0Flags = 0x01;
+	// Start DW Conv
+	*DW0Flags = 0x01;
+	//Start PW Conv 1
+	*PW1Flags = 0x01;
+	
+	// Wait for all accelerators to finish before sending interrupt to CPU
+	while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
+	//Clear DMA Flags
+	*StrDma0Flags = 0x00;
+	*StrDma1Flags = 0x00;
 	return;
 }

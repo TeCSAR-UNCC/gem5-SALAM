@@ -1,15 +1,17 @@
 #include "../common/support.h"
+#include "../../../tail_hw_defines.h"
+#include "../../../network_params.h"
 
 /***********************************************************
  * Computation Defines
  ***********************************************************/
 
 // PW Conv
-#define PW_IN_SIZE		5
-#define PW_OUT_SIZE		5
-#define PW_IN_CH		240
-#define PW_OUT_CH		1280
-#define PW_CORE_SIZE	80
+#define PW_IN_SIZE		__TAIL_PW_CONV_MAX_INPUT_SIZE__
+#define PW_OUT_SIZE		3
+#define PW_IN_CH		__TAIL_PW_CONV_MAX_INPUT_CHAN__
+#define PW_OUT_CH		__TAIL_PW_CONV_MAX_OUTPUT_CHANNEL__
+#define PW_CORE_SIZE	120
 #define PW_BIAS_ZP		0
 #define PW_INPUT_ZP		0
 #define PW_OUTPUT_ZP	0
@@ -18,14 +20,14 @@
 #define PWOutputSize	PW_OUT_SIZE*PW_OUT_SIZE*PW_OUT_CH
 
 // Reshape (Matrix Transpose)
-#define RS_OUT_SIZE		5
-#define RS_OUT_CH		1280
+#define RS_OUT_SIZE		3
+#define RS_OUT_CH		__TAIL_PW_CONV_MAX_OUTPUT_CHANNEL__
 
 // Avg Pooling
-#define POOL_CH			1280
-#define POOL_SIZE		5
-#define POOL_IMULT		163
-#define POOL_NSHIFT		12
+#define POOL_CH			__TAIL_PW_CONV_MAX_OUTPUT_CHANNEL__
+#define POOL_SIZE		3
+#define POOL_IMULT		__AVG_POOLING_iMult_KERNEL__
+#define POOL_NSHIFT		__AVG_POOLING__nShift_KERNEL__
 
 // StreamDMA
 #define INPUT_SIZE		PW_IN_SIZE*PW_IN_SIZE*PW_IN_CH
@@ -34,36 +36,36 @@
 /***********************************************************
  * Cluster Base Address
  ***********************************************************/
-#define BASE			0x2F063000
+// #define BASE			0x2F063000
 /***********************************************************
  * MMR Addresses
  ***********************************************************/
-#define TOP_MMR			BASE + 0x000000
-#define STREAM_DMA_MMR	BASE + 0x000021
-#define CLUSTER_DMA_MMR	BASE + 0x000049
-#define PW_MMR			BASE + 0x00005E
-#define RS_MMR			BASE + 0x00005F
-#define POOL_MMR		BASE + 0x000060
+#define TOP_MMR			TOP
+#define STREAM_DMA_MMR	STREAM_DMA0_Flags
+#define CLUSTER_DMA_MMR	DMA_Flags
+#define PW_MMR			PWCONV
+#define RS_MMR			RESHAPE
+#define POOL_MMR		AVGPOOL
 
 /***********************************************************
  * Memory Buffer and SPM Addresses
  ***********************************************************/
-#define StreamIn		BASE + 0x000041
-#define StreamOut		BASE + 0x000041
+#define StreamIn		STREAM_DMA0_Stream
+#define StreamOut		STREAM_DMA0_Stream
 
 #define PWIn 			StreamIn
-#define PWLocalFeat		BASE + 0x000061
-#define PWWeights		BASE + 0x000151
-#define PWBias			BASE + 0x04B151
-#define PWIMultBias		BASE + 0x04B651
-#define PWNShiftBias  	BASE + 0x04BB51
-#define PWIMultOut		BASE + 0x04C051
-#define PWNShiftOut		BASE + 0x04C551
-#define PWWeightZP		BASE + 0x04CA51
-#define PWOut			BASE + 0x04CF51
+#define PWLocalFeat		PWConvLocalFeatSize
+#define PWWeights		PWConvWeights
+#define PWBias			PWConvQParams
+#define PWIMultBias		PWConvQParams
+#define PWNShiftBias  	PWConvQParams
+#define PWIMultOut		PWConvQParams
+#define PWNShiftOut		PWConvQParams
+#define PWWeightZP		PWConvQParams
+#define PWOut			PWConvOut
 
 #define RSIn			PWOut
-#define RSOut 			BASE + 0x04CF52 //Ends at 0x054C52
+#define RSOut 			ReshapeOut
 
 #define PoolIn			RSOut
 #define PoolOut			StreamOut
