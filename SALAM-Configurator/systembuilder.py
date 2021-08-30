@@ -30,7 +30,7 @@ fileName = args.sysName
 # This requires M5_PATH to point to your gem5-SALAM directory
 M5_Path = os.getenv('M5_PATH')
 # Setup some things we'll need
-workingDirectory = M5_Path + "/"  + args.benchDir
+workingDirectory = M5_Path + "/"  + args.benchDir + "/"
 stream = open(workingDirectory + 'config.yml', "r")
 clusters = []
 variables = []
