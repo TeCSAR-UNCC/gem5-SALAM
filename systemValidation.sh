@@ -19,7 +19,7 @@ while getopts ":b:f:vdp" opt; do
 		f )
 			FLAGS+=",${OPTARG}"
 			;;
-		v ) 
+		v )
 			VALGRIND="true"
 			;;
 		* )
@@ -61,6 +61,8 @@ RUN_SCRIPT="$BINARY --debug-flags=$FLAGS --outdir=$OUTDIR \
 			configs/SALAM/generated/fs_$BENCH.py $SYS_OPTS \
 			--accpath=$M5_PATH/benchmarks/sys_validation \
 			--accbench=$BENCH $CACHE_OPTS"
+
+${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName $BENCH --benchDir "benchmarks/sys_validation/${BENCH}"
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR
