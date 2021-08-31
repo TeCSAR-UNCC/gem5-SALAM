@@ -58,7 +58,7 @@ CACHE_OPTS="--caches --l2cache"
 OUTDIR=BM_ARM_OUT/sys_validation/$BENCH
 
 RUN_SCRIPT="$BINARY --debug-flags=$FLAGS --outdir=$OUTDIR \
-			configs/SALAM/fs_$BENCH.py $SYS_OPTS \
+			configs/SALAM/generated/fs_$BENCH.py $SYS_OPTS \
 			--accpath=$M5_PATH/benchmarks/sys_validation \
 			--accbench=$BENCH $CACHE_OPTS"
 

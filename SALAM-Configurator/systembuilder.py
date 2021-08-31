@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Import needed packages
 import yaml
 import os
@@ -5,6 +7,10 @@ import textwrap
 import shutil
 import argparse
 from parser import *
+
+# This requires M5_PATH to point to your gem5-SALAM directory
+M5_Path = os.getenv('M5_PATH')
+
 # Define the imports of the gem5 script
 imports = """import m5\nfrom m5.objects import *\nfrom m5.util import *\nimport ConfigParser\nfrom HWAccConfig import *\n\n"""
 l1Cache = """class L1Cache(Cache):
@@ -27,8 +33,7 @@ parser.add_argument('--benchDir', help="Path to Benchmark Directory" +
 args=parser.parse_args()
 # Set file information
 fileName = args.sysName
-# This requires M5_PATH to point to your gem5-SALAM directory
-M5_Path = os.getenv('M5_PATH')
+CONFIG_Path = M5_Path + "/configs/SALAM/generated/"
 # Setup some things we'll need
 workingDirectory = M5_Path + "/"  + args.benchDir + "/"
 stream = open(workingDirectory + 'config.yml', "r")
@@ -55,7 +60,7 @@ for section in config:
 	clusters.append(AccCluster(clusterName, dmas, accs, baseAddress, M5_Path))
 	baseAddress = clusters[-1].clusterTopAddress + 1
 # Write out config file
-with open(M5_Path + "/configs/SALAM/" + fileName + ".py", 'w') as f:
+with open(CONFIG_Path + fileName + ".py", 'w') as f:
 	f.write(imports)
 	f.write(l1Cache)
 	for i in clusters:
@@ -132,13 +137,13 @@ for currentHeader in headerlist:
 			currentHeader.append("//END GENERATED CODE")
 			f.writelines(currentHeader)
 			currentHeader = []
-shutil.copyfile("fs_template.py", M5_Path + "/configs/SALAM/fs_" + fileName + ".py")
+shutil.copyfile(M5_Path + "/SALAM-Configurator/fs_template.py", CONFIG_Path + "fs_" + fileName + ".py")
 # Generate full system
-f = open(M5_Path + "/configs/SALAM/fs_" + fileName + ".py", "r")
+f = open(CONFIG_Path + "fs_" + fileName + ".py", "r")
 fullSystem = f.readlines()
-fullSystem[69] = "import " + fileName
-fullSystem[239] = "		" + fileName + ".makeHWAcc(options, test_sys)"
-f = open(M5_Path + "/configs/SALAM/fs_" + fileName + ".py", "w")
+fullSystem[70] = "import " + fileName
+fullSystem[240] = "		" + fileName + ".makeHWAcc(options, test_sys)"
+f = open(CONFIG_Path + "fs_" + fileName + ".py", "w")
 f.writelines(fullSystem)
 # Warn if the size is greater than allowed
 if(clusters[-1].clusterTopAddress>maxAddress):

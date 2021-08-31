@@ -54,6 +54,7 @@ from m5.util import addToPath, fatal, warn
 from m5.util.fdthelper import *
 
 addToPath('../')
+addToPath('../../')
 
 from ruby import Ruby
 
