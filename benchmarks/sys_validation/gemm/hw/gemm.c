@@ -1,9 +1,9 @@
-#include "hw_defines.h"
+#include "../gemm_hw_defines.h"
 
 void gemm(){
-    uint8_t * m1base = (uint8_t *)M1ADDR;
-    uint8_t * m2base = (uint8_t *)M2ADDR;
-    uint8_t * m3base = (uint8_t *)M3ADDR;
+    uint8_t * m1base = (uint8_t *)MATRIX1;
+    uint8_t * m2base = (uint8_t *)MATRIX2;
+    uint8_t * m3base = (uint8_t *)MATRIX3;
     TYPE    * m1     = (TYPE    *)m1base;
     TYPE    * m2     = (TYPE    *)m2base;
     TYPE    * m3     = (TYPE    *)m3base;

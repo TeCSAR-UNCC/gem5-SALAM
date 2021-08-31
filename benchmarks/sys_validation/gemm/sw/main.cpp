@@ -6,10 +6,10 @@
 
 gemm_struct ges;
 
-volatile uint8_t  * top   = (uint8_t  *)0x2f000000;
-volatile uint32_t * val_a = (uint32_t *)0x2f000001;
-volatile uint32_t * val_b = (uint32_t *)0x2f000009;
-volatile uint32_t * val_c = (uint32_t *)0x2f000011;
+volatile uint8_t  * top   = (uint8_t  *)0x10020015;
+volatile uint32_t * val_a = (uint32_t *)0x10020016;
+volatile uint32_t * val_b = (uint32_t *)0x1002001E;
+volatile uint32_t * val_c = (uint32_t *)0x10020026;
 
 int __attribute__ ((optimize("0"))) main(void) {
 	m5_reset_stats();

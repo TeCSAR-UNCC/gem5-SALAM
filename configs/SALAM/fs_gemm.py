@@ -67,7 +67,7 @@ from common import MemConfig
 from common import ObjectList
 from common.Caches import *
 from common import Options
-import mobilenetv2
+import gemm
 def cmd_line_template():
     if options.command_line and options.command_line_file:
         print("Error: --command-line and --command-line-file are "
@@ -236,7 +236,7 @@ def build_test_system(np):
         MemConfig.config_mem(options, test_sys)
 
     if buildEnv['TARGET_ISA'] == "arm":
-		mobilenetv2.makeHWAcc(options, test_sys)
+		gemm.makeHWAcc(options, test_sys)
     return test_sys
 
 def build_drive_system(np):
