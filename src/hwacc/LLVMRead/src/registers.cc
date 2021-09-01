@@ -281,3 +281,39 @@ SALAM::PointerRegister::writePtrData(uint64_t ptr, size_t len, bool incWrites)
     if (incWrites && tracked) writes++;
     std::memcpy(&pointer, &ptr, len);
 }
+
+#include <sstream>
+#include <ios>
+
+std::string
+SALAM::APFloatRegister::dataString() {
+    std::stringstream ss;
+#if USE_LLVM_AP_VALUES
+
+#else
+    ss << "0x" << std::hex << data;
+#endif
+    return ss.str();
+}
+
+std::string
+SALAM::APIntRegister::dataString() {
+    std::stringstream ss;
+#if USE_LLVM_AP_VALUES
+
+#else
+    ss << "0x" << std::hex << data;
+#endif
+    return ss.str();
+}
+
+std::string
+SALAM::PointerRegister::dataString() {
+    std::stringstream ss;
+#if USE_LLVM_AP_VALUES
+
+#else
+    ss << "0x" << std::hex << pointer;
+#endif
+    return ss.str();
+}

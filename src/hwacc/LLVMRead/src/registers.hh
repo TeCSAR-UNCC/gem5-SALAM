@@ -107,6 +107,7 @@ class Register
         void setNull(bool flag) { isNULL = flag; }
         void setTracked(bool flag) { tracked = flag; }
         void dump() { if (dbg) reg_dbg.dumper(this); }
+        virtual std::string dataString() = 0;
 };
 
 class APFloatRegister : public Register
@@ -137,6 +138,7 @@ class APFloatRegister : public Register
         virtual void writeFloatData(uint64_t apf, size_t len=8, bool incWrites=true) override;
     #endif
         virtual bool isFP() override { return true; }
+        virtual std::string dataString() override;
 };
 
 class APIntRegister : public Register
@@ -165,6 +167,7 @@ class APIntRegister : public Register
         virtual void writeIntData(uint64_t api, size_t len=8, bool incWrites=true) override;
     #endif
         virtual bool isInt() override { return true; }
+        virtual std::string dataString() override;
 };
 
 class PointerRegister : public Register
@@ -181,6 +184,7 @@ class PointerRegister : public Register
         virtual bool isPtr() override { return true; }
         virtual uint64_t getPtrData(bool incReads=true) override;
         virtual void writePtrData(uint64_t ptr, size_t len=8, bool incWrites=true) override;
+        virtual std::string dataString() override;
 };
 } // End SALAM Namespace
 #endif
