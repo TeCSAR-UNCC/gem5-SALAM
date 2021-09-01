@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS="HWACC"
+FLAGS=""
 BENCH=""
 DEBUG="false"
 PRINT_TO_FILE="false"
@@ -17,7 +17,12 @@ while getopts ":b:f:vdp" opt; do
 			PRINT_TO_FILE="true"
 			;;
 		f )
-			FLAGS+=",${OPTARG}"
+			if [ -z "${FLAGS}" ]
+			then
+				FLAGS+="${OPTARG}"
+			else
+				FLAGS+=",${OPTARG}"
+			fi
 			;;
 		v )
 			VALGRIND="true"
@@ -57,7 +62,14 @@ CACHE_OPTS="--caches --l2cache"
 
 OUTDIR=BM_ARM_OUT/sys_validation/$BENCH
 
-RUN_SCRIPT="$BINARY --debug-flags=$FLAGS --outdir=$OUTDIR \
+DEBUG_FLAGS=""
+
+if [ ${FLAGS}  != "" ]; then
+	DEBUG_FLAGS+="--debug-flags="
+	DEBUG_FLAGS+=$FLAGS
+fi
+
+RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			configs/SALAM/generated/fs_$BENCH.py $SYS_OPTS \
 			--accpath=$M5_PATH/benchmarks/sys_validation \
 			--accbench=$BENCH $CACHE_OPTS"
