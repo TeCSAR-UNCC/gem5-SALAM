@@ -23,7 +23,8 @@ class AccCluster:
 						pioMasters.extend((i['PIOMaster'].split(',')))
 					dmaClass.append(Dma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
 						i['InterruptNum'], i['BufferSize'], i['MaxReqSize']))
-					topAddress = topAddress + int(pioSize)
+					aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
+					topAddress = topAddress + aligned_inc
 				elif 'Stream' in i['Type']:
 					pioSize = 32
 					pioMasters = []
@@ -31,7 +32,8 @@ class AccCluster:
 						pioMasters.extend((i['PIOMaster'].split(',')))
 					dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
 						i['ReadInt'], i['WriteInt'], i['BufferSize']))
-					topAddress = topAddress + pioSize
+					aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
+					topAddress = topAddress + aligned_inc
 		# Parse Accelerators
 		for acc in self.accs:
 			# To handle Accs out of order, create a flag that Accs referenced already exist.
@@ -59,7 +61,8 @@ class AccCluster:
 				if 'PIOSize' in i:
 					pioAddress = topAddress
 					pioSize = i['PIOSize']
-					topAddress = topAddress + i['PIOSize']
+					aligned_inc = i['PIOSize'] + (64 - (i['PIOSize'] % 64))
+					topAddress = topAddress + aligned_inc
 				if 'IrPath' in i:
 					IrPath = i['IrPath']
 				if 'ConfigPath' in i:
@@ -86,9 +89,11 @@ class AccCluster:
 						variables.append(Variable(**varParams))
 						# Increment the current address based on size
 						if "SPM" in j['Type']:
-							topAddress = topAddress + int(j['Size'])
+							aligned_inc = int(j['Size']) + (64 - (int(j['Size']) % 64))
+							topAddress = topAddress + aligned_inc
 						elif "Stream" in j['Type']:
-							topAddress = topAddress + int(j['StreamSize'])
+							aligned_inc = int(j['StreamSize']) + (64 - (int(j['StreamSize']) % 64))
+							topAddress = topAddress + aligned_inc
 						elif "Cache" in j['Type']:
 							# Don't need to change anything for cache
 							topAddress = topAddress
