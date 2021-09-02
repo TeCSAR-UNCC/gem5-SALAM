@@ -8,14 +8,14 @@ Hong, Oguntebi, Olukotun. "Efficient Parallel Graph Exploration on Multi-Core CP
 
 void bfs(node_index_t starting_node) {
 
-  volatile uint8_t      * nodes_base        = (uint8_t      *)NODESADDR;
-  volatile uint8_t      * edges_base        = (uint8_t      *)EDGESADDR;
-  volatile uint8_t      * level_base        = (uint8_t      *)LEVELADDR;
-  volatile uint8_t      * level_counts_base = (uint8_t      *)LEVELCOUNTSADDR;
-  volatile node_t       * nodes             = (node_t       *)nodes_base;
-  volatile edge_t       * edges             = (edge_t       *)edges_base;
-  volatile level_t      * level             = (level_t      *)level_base;
-  volatile edge_index_t * level_counts      = (edge_index_t *)level_counts_base;
+  // volatile uint8_t      * nodes_base        = (uint8_t      *)NODESADDR;
+  // volatile uint8_t      * edges_base        = (uint8_t      *)EDGESADDR;
+  // volatile uint8_t      * level_base        = (uint8_t      *)LEVELADDR;
+  // volatile uint8_t      * level_counts_base = (uint8_t      *)LEVELCOUNTSADDR;
+  volatile node_t       * nodes             = (node_t       *)NODES;
+  volatile edge_t       * edges             = (edge_t       *)EDGES;
+  volatile level_t      * level             = (level_t      *)LEVELS;
+  volatile edge_index_t * level_counts      = (edge_index_t *)LEVELCOUNTS;
 
   node_index_t n;
   edge_index_t e;

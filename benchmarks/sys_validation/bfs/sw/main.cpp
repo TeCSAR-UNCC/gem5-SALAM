@@ -3,6 +3,7 @@
 #include <cstring>
 #include "bench.h"
 #include "../../../common/m5ops.h"
+#include "../bfs_clstr_hw_defines.h"
 
 bfs_struct bfs;
 
@@ -14,12 +15,12 @@ bfs_struct bfs;
 #define COUNT_OFFSET LEVEL_OFFSET + sizeof(level_t)      * N_NODES
 #define CHECK_OFFSET COUNT_OFFSET + sizeof(edge_index_t) * N_LEVELS
 
-volatile uint8_t      * top        = (uint8_t      *)0x2f000000;
-volatile uint32_t     * NODES_ADDR = (uint32_t     *)0x2f000001;
-volatile uint32_t     * EDGES_ADDR = (uint32_t     *)0x2f000009;
-volatile uint32_t     * LEVEL_ADDR = (uint32_t     *)0x2f000011;
-volatile uint32_t     * COUNT_ADDR = (uint32_t     *)0x2f000019;
-volatile node_index_t * START_ADDR = (node_index_t *)0x2f000021;
+volatile uint8_t      * top        = (uint8_t      *)(TOP);
+volatile uint32_t     * NODES_ADDR = (uint32_t     *)(TOP+1);
+volatile uint32_t     * EDGES_ADDR = (uint32_t     *)(TOP+9);
+volatile uint32_t     * LEVEL_ADDR = (uint32_t     *)(TOP+17);
+volatile uint32_t     * COUNT_ADDR = (uint32_t     *)(TOP+25);
+volatile node_index_t * START_ADDR = (node_index_t *)(TOP+33);
 
 int main(void) {
     node_index_t * nodes 			= (node_index_t *)(BASE + NODES_OFFSET);
