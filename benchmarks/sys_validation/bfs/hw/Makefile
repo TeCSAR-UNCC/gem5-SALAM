@@ -1,8 +1,7 @@
 TARGET=bfs.ll top.ll
 
 %.ll : %.c
-	clang -O1 -S -fno-slp-vectorize -fno-vectorize \
-	-fno-unroll-loops -fno-inline -fno-builtin -emit-llvm -o $@ $<
+	clang -O1 -S -target armv7-pc-none-eabi -emit-llvm -o $@ $<
 build : $(TARGET)
 
 clean:

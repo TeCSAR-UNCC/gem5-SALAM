@@ -3,6 +3,7 @@
 #include <cstring>
 #include "bench.h"
 #include "../../../common/m5ops.h"
+#include "../fft_clstr_hw_defines.h"
 
 fft_struct ffts;
 
@@ -15,11 +16,11 @@ fft_struct ffts;
 #define RCHK_OFFSET     24*FFT_SIZE
 #define ICHK_OFFSET     32*FFT_SIZE
 
-volatile uint8_t  * top           = (uint8_t  *)0x2f000000;
-volatile uint32_t * loc_real      = (uint32_t *)0x2f000001;
-volatile uint32_t * loc_img       = (uint32_t *)0x2f000009;
-volatile uint32_t * loc_real_twid = (uint32_t *)0x2f000011;
-volatile uint32_t * loc_img_twid  = (uint32_t *)0x2f000019;
+volatile uint8_t  * top           = (uint8_t  *)(TOP);
+volatile uint32_t * loc_real      = (uint32_t *)(TOP+1);
+volatile uint32_t * loc_img       = (uint32_t *)(TOP+9);
+volatile uint32_t * loc_real_twid = (uint32_t *)(TOP+17);
+volatile uint32_t * loc_img_twid  = (uint32_t *)(TOP+25);
 
 int __attribute__ ((optimize("0"))) main(void) {
 	double *real       	= (double *)(BASE+REAL_OFFSET);
