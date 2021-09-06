@@ -2,14 +2,14 @@
 
 void fft() {
 
-    volatile uint8_t * realbase     = (uint8_t *)REALADDR;
-    volatile uint8_t * imgbase      = (uint8_t *)IMGADDR;
-    volatile uint8_t * realtwidbase = (uint8_t *)REALTWIDADDR;
-    volatile uint8_t * imgtwidbase  = (uint8_t *)IMGTWIDADDR;
-    volatile double  * real         = (double  *)realbase;
-    volatile double  * img          = (double  *)imgbase;
-    volatile double  * real_twid    = (double  *)realtwidbase;
-    volatile double  * img_twid     = (double  *)imgtwidbase;
+    // volatile uint8_t * realbase     = (uint8_t *)REALADDR;
+    // volatile uint8_t * imgbase      = (uint8_t *)IMGADDR;
+    // volatile uint8_t * realtwidbase = (uint8_t *)REALTWIDADDR;
+    // volatile uint8_t * imgtwidbase  = (uint8_t *)IMGTWIDADDR;
+    volatile double  * real         = (double  *)REAL;
+    volatile double  * img          = (double  *)IMG;
+    volatile double  * real_twid    = (double  *)REALTWID;
+    volatile double  * img_twid     = (double  *)IMGTWID;
 
     int even, odd, span, log, rootindex;
     double temp;

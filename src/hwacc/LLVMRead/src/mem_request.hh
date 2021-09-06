@@ -40,6 +40,7 @@ class MemoryRequest {
     MasterPort * getCarrierPort() { return port; }
     uint8_t * getBuffer() { return buffer; }
     Addr getAddress() { return address; }
+    std::string printBuffer();
 };
 
 #endif //__MEM_REQUEST_HH__

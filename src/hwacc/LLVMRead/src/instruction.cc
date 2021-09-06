@@ -2105,7 +2105,10 @@ void
 Load::compute() {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
-    // Load does not use compute. Special handling is used in the scheduler.
+    // Load does not use compute normally. Special handling is used in the scheduler.
+    // We instead use compute just for debug printout
+    DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
+    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, registerDataString());
 }
 
 void

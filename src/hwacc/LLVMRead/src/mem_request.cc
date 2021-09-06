@@ -1,5 +1,7 @@
 //------------------------------------------//
 #include "mem_request.hh"
+#include <sstream>
+#include <iomanip>
 //------------------------------------------//
 
 MemoryRequest::MemoryRequest(Addr add, size_t len) {
@@ -54,4 +56,15 @@ MemoryRequest::MemoryRequest(Addr add, const void *data, size_t len) {
     //     readsDone[i] = true;
     // }
     pkt = NULL;
+}
+
+std::string
+MemoryRequest::printBuffer() {
+    std::stringstream ss;
+    ss << "0x";
+    for (int i = totalLength-1; i >= 0; i--) {
+        unsigned tmp = buffer[i];
+        ss << std::setfill('0') << std::setw(2) << std::hex << tmp;
+    }
+    return ss.str();
 }

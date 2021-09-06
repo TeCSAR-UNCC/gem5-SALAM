@@ -124,7 +124,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
         if (SPMPort * port = dynamic_cast<SPMPort *>(carrier)) port->readReq = nullptr;
         if (debug()) DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
         pkt->writeData(readReq->buffer + (pkt->req->getPaddr() - readReq->beginAddr));
-        if (debug()) DPRINTF(CommInterface, "Read:0x%016lx\n", *(uint64_t *)readReq->buffer);
+        if (debug()) DPRINTF(CommInterface, "Read:%s\n", readReq->printBuffer());
         for (int i = pkt->req->getPaddr() - readReq->beginAddr;
              i < pkt->req->getPaddr() - readReq->beginAddr + pkt->getSize(); i++)
         {

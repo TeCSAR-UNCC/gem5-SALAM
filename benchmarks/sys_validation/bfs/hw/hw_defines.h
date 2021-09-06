@@ -5,6 +5,7 @@ Hong, Oguntebi, Olukotun. "Efficient Parallel Graph Exploration on Multi-Core CP
 */
 
 #include "../defines.h"
+#include "../bfs_clstr_hw_defines.h"
 
 typedef struct edge_t_struct {
   // These fields are common in practice, but we elect not to use them.
@@ -23,20 +24,7 @@ typedef struct node_t_struct {
 #define DEV_INIT		0x01
 #define DEV_INTR		0x04
 
-// Device MMR addresses
-#define TOP				0x2f000000
-#define BFS				0x2f000029
-#define DMA				0x2ff00000
-
 #define NODESSIZE		N_NODES  * sizeof(node_t)
 #define EDGESSIZE		N_EDGES  * sizeof(edge_t)
 #define LEVELSIZE		N_NODES  * sizeof(level_t)
 #define LVLCNTSIZE		N_LEVELS * sizeof(edge_index_t)
-
-// Specify the scratchpad addresses for variables
-#define SPM				0x2f100000
-#define NODESADDR		SPM
-#define EDGESADDR		SPM + NODESSIZE
-#define LEVELADDR		SPM + NODESSIZE + EDGESSIZE
-#define LEVELCOUNTSADDR	SPM + NODESSIZE + EDGESSIZE + LEVELSIZE
-#define END 			SPM + NODESSIZE + EDGESSIZE + LEVELSIZE + LVLCNTSIZE

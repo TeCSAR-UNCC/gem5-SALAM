@@ -580,6 +580,7 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
             auto load_inst = queue_iter->second;
             uint8_t * readBuff = req->getBuffer();
             load_inst->setRegisterValue(readBuff);
+            load_inst->compute();
             DPRINTFR(Runtime, "Local Read Commit\n");
             load_inst->commit();
             readQueue.erase(queue_iter);

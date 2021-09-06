@@ -124,6 +124,7 @@ class Value
         virtual bool isInstruction() { return false; }
 
         void value_dump() { if (dbg) value_dbg->dumper(this); }
+        std::string registerDataString() { return returnReg->dataString(); }
         std::shared_ptr<SALAM::Value> clone() const { return createClone(); }
         virtual std::shared_ptr<SALAM::Value> createClone() const { return std::shared_ptr<SALAM::Value>(new SALAM::Value(*this)); }
 
