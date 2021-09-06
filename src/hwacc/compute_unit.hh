@@ -7,7 +7,6 @@
 #include "hwacc/LLVMRead/src/mem_request.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 #include "hwacc/HWModeling/src/hw_interface.hh" 
-//#include "hwacc/LLVMRead/src/cycle_counts.hh" MERGECHECK
 //------------------------------------------//
 
 class ComputeUnit : public SimObject {
@@ -16,7 +15,6 @@ class ComputeUnit : public SimObject {
   protected:
     CommInterface *comm;
     HWInterface* hw;
-    //CycleCounts *cycle_counts; MERGECHECK
 
     class TickEvent : public Event
     {
@@ -28,6 +26,7 @@ class ComputeUnit : public SimObject {
         void process() { comp_unit->tick(); }
         virtual const char *description() const { return "ComputeUnit tick"; }
     };
+
 
     TickEvent tickEvent;
     int clock_period;
