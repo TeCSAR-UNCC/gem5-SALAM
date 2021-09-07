@@ -1,4 +1,5 @@
 #include "../defines.h"
+#include "../stencil3d_clstr_hw_defines.h"
 
 volatile int stage;
 

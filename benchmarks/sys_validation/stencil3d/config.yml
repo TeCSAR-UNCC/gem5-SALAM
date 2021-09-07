@@ -1,0 +1,42 @@
+---
+acc_cluster:
+  - Name: stencil3d_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/sys_validation/stencil3d/hw/top.ll
+      ConfigPath: benchmarks/sys_validation/stencil3d/hw/top.ini
+      PIOSize: 25
+      InterruptNum: 68
+      PIOMaster: LocalBus
+      # Local to PIO
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: stencil3d
+      IrPath: benchmarks/sys_validation/stencil3d/hw/stencil3d.ll
+      ConfigPath: benchmarks/sys_validation/stencil3d/hw/stencil3d.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: C_VAR
+        Type: SPM
+        Size: 8
+        Ports: 2
+    - Var:
+      - Name: ORIG
+        Type: SPM
+        Size: 65536
+        Ports: 2
+    - Var:
+      - Name: SOL
+        Type: SPM
+        Size: 65536
+        Ports: 2
