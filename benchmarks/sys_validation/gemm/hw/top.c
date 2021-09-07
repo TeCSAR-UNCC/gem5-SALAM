@@ -1,4 +1,4 @@
-#include "../gemm_hw_defines.h"
+#include "hw_defines.h"
 
 void top(uint64_t m1_addr,
 		 uint64_t m2_addr,
