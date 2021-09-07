@@ -1,3 +1,4 @@
+#include "cacti_wrapper.hh"
 
 uca_org_t cactiWrapper(unsigned num_of_bytes, unsigned wordsize, unsigned num_ports, int cache_type) {
   int cache_size = num_of_bytes;

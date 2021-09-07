@@ -1,5 +1,5 @@
-#ifndef CYCLE_COUNT_HH
-#define CYCLE_COUNT_HH
+#ifndef __HWMODEL_CYCLE_COUNTS_HH__
+#define __HWMODEL_CYCLE_COUNTS_HH__
 //------------------------------------------//
 //#include "debug_flags.hh"
 #include "params/CycleCounts.hh"
@@ -8,7 +8,8 @@
 #include <cstdint>
 //------------------------------------------//
 
-class CycleCounts : public SimObject {
+class CycleCounts : public SimObject
+{
     public:
     uint32_t counter_inst;
     uint32_t gep_inst;
@@ -72,4 +73,4 @@ class CycleCounts : public SimObject {
     CycleCounts(CycleCountsParams *p);
 };
 
-#endif //__CYCLE_COUNT_HH__
+#endif //__HWMODEL_CYCLE_COUNTS_HH__

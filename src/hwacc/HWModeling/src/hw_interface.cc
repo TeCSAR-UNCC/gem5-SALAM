@@ -1,9 +1,7 @@
 #include "hw_interface.hh"
 
-HWInterface::HWInterface(HWInterfaceParams *params):
-    CycleCounts(params),
-    //cycleCounts(params->cycleCounts),
-    testParam(params->testParam) { }
+HWInterface::HWInterface(HWInterfaceParams *params) :
+    SimObject(params) { }
 
 HWInterface*
 HWInterfaceParams::create() {

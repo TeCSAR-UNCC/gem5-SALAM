@@ -1,11 +1,13 @@
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
-from LLVMInstruction import LLVMInstruction
 
 class FunctionalUnits(SimObject):
+    # SimObject type
     type = 'FunctionalUnits'
-    cxx_header = "hwacc/HWModel/src/functional_unit.hh"
+
+    # gem5-SALAM attached header
+    cxx_header = "hwacc/HWModeling/src/functional_units.hh"
 
     FU_counter = Param.Int32(-1, "Available counter functional units. -1 indicates unlimited resources")
     FU_int_adder = Param.Int32(-1, "Available integer addition/subtraction functional units. -1 indicates unlimited resources")

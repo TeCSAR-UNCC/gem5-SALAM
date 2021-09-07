@@ -8,7 +8,6 @@
 #include <llvm/IR/Instructions.h>
 #include "basic_block.hh"
 #include "operand.hh"
-//#include "cycle_counts.hh" MERGECHECK
 #include "debug_flags.hh"
 #include "value.hh"
 #include "mem_request.hh"
@@ -92,6 +91,7 @@ class Instruction : public Value
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         virtual bool isInstruction() { return true; }
         virtual bool isLoadingInternal() { return false; }
+        // virtual void linkFunctionalUnit(HWInterface * hw_interface);
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }

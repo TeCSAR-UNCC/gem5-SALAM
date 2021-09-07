@@ -2,18 +2,29 @@ Import('*')
 
 if env['TARGET_ISA'] == 'arm':
 
-    #
+    #Example
     #SimObject('IOAcc.py')
+
+    #CommInterface
     SimObject('CommInterface.py')
-    SimObject('ComputeUnit.py')
-    SimObject('LLVMInterface.py')
     SimObject('ScratchpadMemory.py')
     SimObject('NoncoherentDma.py')
     SimObject('StreamDma.py')
     SimObject('AccCluster.py')
     SimObject('StreamBuffer.py')
+
+    #LLVMInterface
+    SimObject('ComputeUnit.py')
+    SimObject('LLVMInterface.py')
+    
+    #HWInterface
     SimObject('CycleCounts.py')
+    SimObject('FunctionalUnits.py')
     SimObject('HWInterface.py')
+    SimObject('HWStatistics.py')
+    SimObject('InstConfig.py')
+    SimObject('SALAMPowerModel.py')
+    SimObject('SimulatorConfig.py')
 
     # 
     Source('comm_interface.cc')
@@ -42,8 +53,14 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/operand.cc')
 
     #
+    #Source('HWModeling/src/cacti_wrapper.cc')
     Source('HWModeling/src/cycle_counts.cc')
+    Source('HWModeling/src/functional_units.cc')
     Source('HWModeling/src/hw_interface.cc')
+    Source('HWModeling/src/hw_statistics.cc')
+    Source('HWModeling/src/instruction_config.cc')
+    Source('HWModeling/src/salam_power_model.cc')
+    Source('HWModeling/src/simulator_config.cc')
 
     #
     DebugFlag('CommInterface')
