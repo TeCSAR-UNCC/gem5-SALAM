@@ -1,4 +1,5 @@
 #include "../defines.h"
+#include "../nw_clstr_hw_defines.h"
 
 #include "data.h"
 

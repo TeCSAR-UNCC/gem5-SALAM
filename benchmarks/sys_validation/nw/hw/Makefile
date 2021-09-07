@@ -1,11 +1,6 @@
-TARGET=nw.ll top.ll
-%.o : %.c
-	clang -emit-llvm -c -o $@ $<
-%.bc : %.o
-	opt -O1 -mem2reg -simplifycfg -loops -loop-unroll -o $@ $<
-%.ll : %.bc
-	llvm-dis -o $@ $<
-build : $(TARGET)
+KERN=nw.c top.c
 
+build : $(FILES)
+	clang -O1 -S -target armv7-pc-none-eabi -emit-llvm $(KERN)
 clean:
 	rm -f *.ll
