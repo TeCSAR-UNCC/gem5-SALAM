@@ -1,0 +1,57 @@
+---
+acc_cluster:
+  - Name: nw_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/sys_validation/nw/hw/top.ll
+      ConfigPath: benchmarks/sys_validation/nw/hw/top.ini
+      PIOSize: 33
+      InterruptNum: 68
+      PIOMaster: LocalBus
+      # Local to PIO
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: nw
+      IrPath: benchmarks/sys_validation/nw/hw/nw.ll
+      ConfigPath: benchmarks/sys_validation/nw/hw/nw.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: SEQA
+        Type: SPM
+        Size: 128
+        Ports: 2
+    - Var:
+      - Name: SEQB
+        Type: SPM
+        Size: 128
+        Ports: 2
+    - Var:
+      - Name: ALIGNEDA
+        Type: SPM
+        Size: 256
+        Ports: 2
+    - Var:
+      - Name: ALIGNEDB
+        Type: SPM
+        Size: 256
+        Ports: 2
+    - Var:
+      - Name: M
+        Type: SPM
+        Size: 66564
+        Ports: 2
+    - Var:
+      - Name: PTR
+        Type: SPM
+        Size: 16641
+        Ports: 2

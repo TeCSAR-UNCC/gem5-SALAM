@@ -8,19 +8,16 @@ SC 2008
 #include "hw_defines.h"
 
 void stencil3d() {
-    uint8_t * cbase    = (uint8_t *)CADDR;
-    uint8_t * origbase = (uint8_t *)ORIGADDR;
-    uint8_t * solbase  = (uint8_t *)SOLADDR;
-    TYPE    * C        = (TYPE    *)cbase;
-    TYPE    * orig     = (TYPE    *)origbase;
-    TYPE    * sol      = (TYPE    *)solbase;
+    TYPE    * C        = (TYPE    *)C_VAR;
+    TYPE    * orig     = (TYPE    *)ORIG;
+    TYPE    * sol      = (TYPE    *)SOL;
 
     int i, j, k;
     TYPE sum0, sum1, mul0, mul1;
 
     // Handle boundary conditions by filling with original values
     height_bound_col :
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for(j=0; j<col_size; j++) {
         height_bound_row :
         // #pragma clang loop unroll(disable)
@@ -31,7 +28,7 @@ void stencil3d() {
         }
     }
     col_bound_height :
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for(i=1; i<height_size-1; i++) {
         col_bound_row :
         // #pragma clang loop unroll(disable)
@@ -42,7 +39,7 @@ void stencil3d() {
         }
     }
     row_bound_height :
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for(i=1; i<height_size-1; i++) {
         row_bound_col :
         // #pragma clang loop unroll(disable)
@@ -55,13 +52,13 @@ void stencil3d() {
 
     // Stencil computation
     loop_height :
-    #pragma clang loop unroll_count(2)
+    #pragma unroll 2
     for(i = 1; i < height_size - 1; i++){
         loop_col :
-        #pragma clang loop unroll_count(2)
+        #pragma unroll 2
         for(j = 1; j < col_size - 1; j++){
             loop_row :
-            #pragma clang loop unroll_count(2)
+            #pragma unroll 2
             for(k = 1; k < row_size - 1; k++){
                 sum0 = orig[INDX(row_size, col_size, k, j, i)];
                 sum1 = orig[INDX(row_size, col_size, k, j, i + 1)] +

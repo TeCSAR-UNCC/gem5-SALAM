@@ -36,3 +36,4 @@ llvm-9
 llvm-c
 BM_ARM_OUT
 .gdb_history
+.vscode

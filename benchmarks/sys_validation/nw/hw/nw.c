@@ -12,13 +12,12 @@
 
 void needwun(){
 
-    volatile uint8_t * SEQA     = (uint8_t *)SEQAADDR;
-    volatile uint8_t * SEQB     = (uint8_t *)SEQBADDR;
-    volatile uint8_t * alignedA = (uint8_t *)ALIGNEDAADDR;
-    volatile uint8_t * alignedB = (uint8_t *)ALIGNEDBADDR;
-    volatile uint8_t * mbase    = (uint8_t *)MADDR;
-    volatile uint8_t * ptr      = (uint8_t *)PTRADDR;
-    volatile int32_t * M        = (int32_t *)mbase;
+    volatile uint8_t * seqA     = (uint8_t *)SEQA;
+    volatile uint8_t * seqB     = (uint8_t *)SEQB;
+    volatile uint8_t * alignedA = (uint8_t *)ALIGNEDA;
+    volatile uint8_t * alignedB = (uint8_t *)ALIGNEDB;
+    volatile int32_t * m        = (int32_t *)M;
+    volatile uint8_t * ptr      = (uint8_t *)PTR;
 
     int score, up_left, up, left, max;
     int row, row_up, r;
@@ -27,11 +26,11 @@ void needwun(){
 
     init_row:
     for(a_idx=0; a_idx<(ALEN+1); a_idx++){
-        M[a_idx] = a_idx * GAP_SCORE;
+        m[a_idx] = a_idx * GAP_SCORE;
     }
     init_col:
     for(b_idx=0; b_idx<(BLEN+1); b_idx++){
-        M[b_idx*(ALEN+1)] = b_idx * GAP_SCORE;
+        m[b_idx*(ALEN+1)] = b_idx * GAP_SCORE;
     }
 
     // Matrix filling loop
@@ -39,7 +38,7 @@ void needwun(){
     for(b_idx=1; b_idx<(BLEN+1); b_idx++){
         fill_in:
         for(a_idx=1; a_idx<(ALEN+1); a_idx++){
-            if(SEQA[a_idx-1] == SEQB[b_idx-1]){
+            if(seqA[a_idx-1] == seqB[b_idx-1]){
                 score = MATCH_SCORE;
             } else {
                 score = MISMATCH_SCORE;
@@ -48,13 +47,13 @@ void needwun(){
             row_up = (b_idx-1)*(ALEN+1);
             row = (b_idx)*(ALEN+1);
 
-            up_left = M[row_up + (a_idx-1)] + score;
-            up      = M[row_up + (a_idx  )] + GAP_SCORE;
-            left    = M[row    + (a_idx-1)] + GAP_SCORE;
+            up_left = m[row_up + (a_idx-1)] + score;
+            up      = m[row_up + (a_idx  )] + GAP_SCORE;
+            left    = m[row    + (a_idx-1)] + GAP_SCORE;
 
             max = MAX(up_left, MAX(up, left));
 
-            M[row + a_idx] = max;
+            m[row + a_idx] = max;
             if(max == left){
                 ptr[row + a_idx] = SKIPB;
             } else if(max == up){
@@ -75,19 +74,19 @@ void needwun(){
     while(a_idx>0 || b_idx>0) {
         r = b_idx*(ALEN+1);
         if (ptr[r + a_idx] == ALIGN){
-            alignedA[a_str_idx++] = SEQA[a_idx-1];
-            alignedB[b_str_idx++] = SEQB[b_idx-1];
+            alignedA[a_str_idx++] = seqA[a_idx-1];
+            alignedB[b_str_idx++] = seqB[b_idx-1];
             a_idx--;
             b_idx--;
         }
         else if (ptr[r + a_idx] == SKIPB){
-            alignedA[a_str_idx++] = SEQA[a_idx-1];
+            alignedA[a_str_idx++] = seqA[a_idx-1];
             alignedB[b_str_idx++] = '-';
             a_idx--;
         }
         else{ // SKIPA
             alignedA[a_str_idx++] = '-';
-            alignedB[b_str_idx++] = SEQB[b_idx-1];
+            alignedB[b_str_idx++] = seqB[b_idx-1];
             b_idx--;
         }
     }

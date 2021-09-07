@@ -1,4 +1,5 @@
 #include "../defines.h"
+#include "../stencil2d_clstr_hw_defines.h"
 
 #define F_SIZE       3
 

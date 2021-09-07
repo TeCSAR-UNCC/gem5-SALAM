@@ -14,11 +14,11 @@ nw_struct nws;
 #define CHECKA_OFF  ALIB_OFF   + (ALEN+BLEN)
 #define CHECKB_OFF  CHECKA_OFF + (ALEN+BLEN)
 
-volatile uint8_t * top        = (uint8_t *)0x2f000000;
-volatile int32_t * val_seqa   = (int32_t *)0x2f000001;
-volatile int32_t * val_seqb   = (int32_t *)0x2f000009;
-volatile int32_t * val_aligna = (int32_t *)0x2f000011;
-volatile int32_t * val_alignb = (int32_t *)0x2f000019;
+volatile uint8_t * top        = (uint8_t *)(TOP + 0x00);
+volatile int32_t * val_seqa   = (int32_t *)(TOP + 0x01);
+volatile int32_t * val_seqb   = (int32_t *)(TOP + 0x09);
+volatile int32_t * val_aligna = (int32_t *)(TOP + 0x11);
+volatile int32_t * val_alignb = (int32_t *)(TOP + 0x19);
 
 int main(void) {
 	char * seqA     = (char *)(BASE+SEQA_OFF);

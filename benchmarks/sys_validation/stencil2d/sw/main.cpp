@@ -11,10 +11,10 @@
 
 stencil_struct sts;
 
-volatile uint8_t  * top        = (uint8_t  *)0x2f000000;
-volatile uint32_t * loc_inp    = (uint32_t *)0x2f000001;
-volatile uint32_t * loc_sol    = (uint32_t *)0x2f000009;
-volatile uint32_t * loc_filter = (uint32_t *)0x2f000011;
+volatile uint8_t  * top        = (uint8_t  *)TOP;
+volatile uint32_t * loc_inp    = (uint32_t *)(TOP + 0x1);
+volatile uint32_t * loc_sol    = (uint32_t *)(TOP + 0x9);
+volatile uint32_t * loc_filter = (uint32_t *)(TOP + 0x11);
 
 int main(void) {
     m5_reset_stats();
