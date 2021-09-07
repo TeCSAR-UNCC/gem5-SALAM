@@ -30,6 +30,16 @@ parser.add_argument('--sysName', help="Desired gem5 script name", required=True)
 # parser.add_argument('--headerName', help="Header Name", required=True)
 parser.add_argument('--benchDir', help="Path to Benchmark Directory" +
 "Relative to M5_PATH", required=True)
+parser.add_argument('--path', help="Path to M5 Directory", required=False)
+args=parser.parse_args()
+
+if M5_Path is None:
+	print("Looking for Path Argument from Command Line")
+	M5_Path = args.path
+	if M5_Path is None:
+		print("Environmental Variable Not Found")
+		exit(1)
+
 args=parser.parse_args()
 # Set file information
 fileName = args.sysName
