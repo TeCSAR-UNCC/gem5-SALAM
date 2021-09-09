@@ -3,13 +3,14 @@
 #include <cstring>
 #include "bench.h"
 #include "../../../common/m5ops.h"
+#include "../gemm_clstr_hw_defines.h"
 
 gemm_struct ges;
 
-volatile uint8_t  * top   = (uint8_t  *)0x10020015;
-volatile uint32_t * val_a = (uint32_t *)0x10020016;
-volatile uint32_t * val_b = (uint32_t *)0x1002001E;
-volatile uint32_t * val_c = (uint32_t *)0x10020026;
+volatile uint8_t  * top   = (uint8_t  *)(TOP + 0x00);
+volatile uint32_t * val_a = (uint32_t *)(TOP + 0x01);
+volatile uint32_t * val_b = (uint32_t *)(TOP + 0x09);
+volatile uint32_t * val_c = (uint32_t *)(TOP + 0x11);
 
 int __attribute__ ((optimize("0"))) main(void) {
 	m5_reset_stats();

@@ -1,6 +1,6 @@
 ---
 acc_cluster:
-  - Name: gemm
+  - Name: gemm_clstr
   - DMA:
     - Name: dma
       MaxReqSize: 64

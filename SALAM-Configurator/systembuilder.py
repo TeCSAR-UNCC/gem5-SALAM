@@ -37,9 +37,10 @@ if M5_Path is None:
 	print("Looking for Path Argument from Command Line")
 	M5_Path = args.path
 	if M5_Path is None:
-		print("Environmental Variable Not Found")
+		print("M5_PATH Not Found")
 		exit(1)
-print(M5_Path)
+
+args=parser.parse_args()
 
 # Set file information
 fileName = args.sysName
