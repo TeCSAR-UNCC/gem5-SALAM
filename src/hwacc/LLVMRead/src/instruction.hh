@@ -8,7 +8,6 @@
 #include <llvm/IR/Instructions.h>
 #include "basic_block.hh"
 #include "operand.hh"
-//#include "cycle_counts.hh" MERGECHECK
 #include "debug_flags.hh"
 #include "value.hh"
 #include "mem_request.hh"
@@ -92,6 +91,7 @@ class Instruction : public Value
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         virtual bool isInstruction() { return true; }
         virtual bool isLoadingInternal() { return false; }
+        // virtual void linkFunctionalUnit(HWInterface * hw_interface);
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
         virtual MemoryRequest * createMemoryRequest() { return nullptr; }
@@ -101,7 +101,7 @@ class Instruction : public Value
 };
 
 //---------------------------------------------------------------------------//
-//--------- Terminator Instructions -----------------------------------------//
+//--------- Bad Instruction -------------------------------------------------//
 //---------------------------------------------------------------------------//
 
 // SALAM-BadInstruction // --------------------------------------------------//
@@ -110,13 +110,17 @@ class BadInstruction : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
         // conditions.at[0] == base params
+        SALAM::Debugger *dbgr;
 
     protected:
     public:
         BadInstruction(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~BadInstruction() = default;
+        void initialize (llvm::Value * irval,
+                irvmap * irmap,
+                SALAM::valueListTy * valueList);
         std::shared_ptr<SALAM::BadInstruction> clone() const { return std::static_pointer_cast<SALAM::BadInstruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::BadInstruction>(new SALAM::BadInstruction(*this)); }
 };
@@ -126,6 +130,11 @@ std::shared_ptr<SALAM::Instruction>
 createBadInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles);
+
+
+//---------------------------------------------------------------------------//
+//--------- Terminator Instructions -----------------------------------------//
+//---------------------------------------------------------------------------//
 
 // SALAM-Ret // -------------------------------------------------------------//
 
@@ -140,7 +149,7 @@ class Ret : public Instruction {
     public:
         Ret(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Ret() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -178,7 +187,7 @@ class Br : public Instruction {
         // Branch Constructor
         Br(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Br() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -219,7 +228,7 @@ class Switch : public Instruction {
     public:
         Switch(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Switch() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -258,7 +267,7 @@ class Add : public Instruction
     public:
         Add(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Add() = default;
         void initialize(llvm::Value *irval,
                         SALAM::irvmap *irmap,
@@ -289,7 +298,7 @@ class FAdd : public Instruction {
     public:
         FAdd(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FAdd() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -319,7 +328,7 @@ class Sub : public Instruction {
     public:
         Sub(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Sub() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -349,7 +358,7 @@ class FSub : public Instruction {
     public:
         FSub(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FSub() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -380,7 +389,7 @@ class Mul : public Instruction {
     public:
         Mul(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Mul() = default;
         void initialize (llvm::Value * irval,
                         SALAM::irvmap * irmap,
@@ -410,7 +419,7 @@ class FMul : public Instruction {
     public:
         FMul(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FMul() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -440,7 +449,7 @@ class UDiv : public Instruction {
     public:
         UDiv(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~UDiv() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -470,7 +479,7 @@ class SDiv : public Instruction {
     public:
         SDiv(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~SDiv() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -500,7 +509,7 @@ class FDiv : public Instruction {
     public:
         FDiv(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FDiv() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -530,7 +539,7 @@ class URem : public Instruction {
     public:
         URem(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~URem() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -560,7 +569,7 @@ class SRem : public Instruction {
     public:
         SRem(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~SRem() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -590,7 +599,7 @@ class FRem : public Instruction {
     public:
         FRem(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FRem() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -624,7 +633,7 @@ class Shl : public Instruction {
     public:
         Shl(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Shl() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -654,7 +663,7 @@ class LShr : public Instruction {
     public:
         LShr(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~LShr() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -684,7 +693,7 @@ class AShr : public Instruction {
     public:
         AShr(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~AShr() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -714,7 +723,7 @@ class And : public Instruction {
     public:
         And(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~And() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -744,7 +753,7 @@ class Or : public Instruction {
     public:
         Or(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Or() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -774,7 +783,7 @@ class Xor : public Instruction {
     public:
         Xor(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Xor() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -810,7 +819,7 @@ class Load : public Instruction {
     public:
         Load(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Load() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -846,7 +855,7 @@ class Store : public Instruction {
     public:
         Store (uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Store() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -890,7 +899,7 @@ class GetElementPtr : public Instruction {
     public:
         GetElementPtr(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~GetElementPtr() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -927,7 +936,7 @@ class Trunc : public Instruction {
     public:
         Trunc(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Trunc() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -957,7 +966,7 @@ class ZExt : public Instruction {
     public:
         ZExt(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~ZExt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -987,7 +996,7 @@ class SExt : public Instruction {
     public:
         SExt(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~SExt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1019,7 +1028,7 @@ class FPToUI : public Instruction {
     public:
         FPToUI(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FPToUI() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1050,7 +1059,7 @@ class FPToSI : public Instruction {
     public:
         FPToSI(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FPToSI() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1080,7 +1089,7 @@ class UIToFP : public Instruction {
     public:
         UIToFP(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~UIToFP() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1110,7 +1119,7 @@ class SIToFP : public Instruction {
     public:
         SIToFP(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~SIToFP() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1140,7 +1149,7 @@ class FPTrunc : public Instruction {
     public:
         FPTrunc(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FPTrunc() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1170,7 +1179,7 @@ class FPExt : public Instruction {
     public:
         FPExt(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FPExt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1201,7 +1210,7 @@ class PtrToInt : public Instruction {
     public:
         PtrToInt (uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~PtrToInt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1231,7 +1240,7 @@ class IntToPtr : public Instruction {
     public:
         IntToPtr(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~IntToPtr() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1267,7 +1276,7 @@ class ICmp : public Instruction {
     public:
         ICmp(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~ICmp() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1299,7 +1308,7 @@ class FCmp : public Instruction {
     public:
         FCmp(uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~FCmp() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1341,7 +1350,7 @@ class Phi : public Instruction {
     public:
         Phi (uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Phi() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -1376,7 +1385,7 @@ class Call : public Instruction {
     public:
         Call (uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Call() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1412,7 +1421,7 @@ class Select : public Instruction {
         // ---- Constructor
         Select (uint64_t id,
             uint64_t OpCode,
-            uint64_t cycles);
+              uint64_t cycles);
         ~Select() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,

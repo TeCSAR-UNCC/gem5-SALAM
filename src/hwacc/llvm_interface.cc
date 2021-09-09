@@ -7,22 +7,6 @@ LLVMInterface::LLVMInterface(LLVMInterfaceParams *p):
     filename(p->in_file),
     topName(p->top_name),
     scheduling_threshold(p->sched_threshold),
-    counter_units(p->FU_counter),
-    int_adder_units(p->FU_int_adder),
-    int_multiply_units(p->FU_int_multiplier),
-    int_shifter_units(p->FU_int_shifter),
-    int_bit_units(p->FU_int_bit),
-    fp_sp_adder(p->FU_fp_sp_adder),
-    fp_dp_adder(p->FU_fp_dp_adder),
-    fp_sp_multiply(p->FU_fp_sp_multiplier),
-    fp_sp_division(p->FU_fp_sp_divider),
-    fp_dp_multiply(p->FU_fp_dp_multiplier),
-    fp_dp_division(p->FU_fp_dp_divider),
-    compare(p->FU_compare),
-    gep(p->FU_GEP),
-    conversion(p->FU_conversion),
-    pipelined(p->FU_pipelined),
-    fu_latency(p->FU_clock_period),
     clock_period(p->clock_period),
     lockstep(p->lockstep_mode) {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
@@ -423,28 +407,14 @@ LLVMInterface::constructStaticGraph() {
 
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
-    // bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
     typeList = new TypeList(); // Create New User Defined Types List
 
-    // SALAM::ir_parser(filename);
-
     llvm::StringRef file = filename;
-    llvm::LLVMContext context;
-    llvm::SMDiagnostic error;
+    std::unique_ptr<llvm::LLVMContext> context(new llvm::LLVMContext());
+    std::unique_ptr<llvm::SMDiagnostic> error(new llvm::SMDiagnostic());
+    std::unique_ptr<llvm::Module> m;
 
-    // Load LLVM IR file
-    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(file);
-    if (std::error_code ec = fileOrErr.getError()) {
-        panic(" Error opening input file: %s", ec.message());
-    }
-
-    // Load LLVM Module
-    llvm::ErrorOr<std::unique_ptr<llvm::Module>> moduleOrErr = llvm::parseIRFile(file, error, context);
-    if (std::error_code ec = moduleOrErr.getError()) {
-        panic("Error reading Module: %s", ec.message());
-    }
-
-    std::unique_ptr<llvm::Module> m(llvm::parseIRFile(file, error, context));
+    m = llvm::parseIRFile(file, *error, *context);
     if(!m) panic("Error reading Module");
 
     // Construct the LLVM::Value to SALAM::Value map
@@ -782,7 +752,6 @@ LLVMInterface::printPerformanceResults() {
     std::cout << "             Scheduling Time:       " << schedHours.count() << "h " << schedMins.count() << "m " << schedSecs.count() << "s " << schedMS.count() << "ms" << std::endl;
     std::cout << "             Computation Time:      " << computeHours.count() << "h " << computeMins.count() << "m " << computeSecs.count() << "s " << computeMS.count() << "ms" << std::endl;
     std::cout << "   System Clock:                    " << 1.0/(cycle_time) << "GHz" << std::endl;
-    std::cout << "   Transistor Latency:              " << fu_latency << "ns" << std::endl;
     std::cout << "   Runtime:                         " << cycle << " cycles" << std::endl;
     std::cout << "   Runtime:                         " << (cycle*cycle_time*(1e-3)) << " us" << std::endl;
     std::cout << "   Stalls:                          " << stalls << " cycles" << std::endl;
@@ -853,11 +822,10 @@ void LLVMInterface::ActiveFunction::launch() {
     std::vector<std::shared_ptr<SALAM::Value>> funcArgs = *(func->getArguments());
     if (func->isTop()) {
         // We need to fetch argument values from the memory mapped registers
+        DPRINTFR(LLVMInterface, "Connecting CommInterface\n");
         CommInterface * comm = owner->getCommInterface();
-        
-        // HWInterface Toggle 
-        //HWInterface * hw_interface = owner->getHWInterface();
-        //std::cout << "\n\n\n Test Variable = " << hw_interface->getTestParam() << " \n\n\n";
+        DPRINTFR(LLVMInterface, "Connecting HWInterface\n");
+        hw = owner->getHWInterface();
         unsigned argOffset = 0;
         for (auto arg : funcArgs) {
             uint64_t argSizeInBytes = arg->getSizeInBytes();
@@ -886,52 +854,49 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     uint64_t OpCode = inst->Instruction::getOpcode();
     if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
     switch(OpCode) {
-        case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, 1); break;
-        case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, 0); break;
-        case llvm::Instruction::Switch: return SALAM::createSwitchInst(id, OpCode, 1); break;
-        case llvm::Instruction::Add: return SALAM::createAddInst(id, OpCode, 1); break;
-        case llvm::Instruction::FAdd: return SALAM::createFAddInst(id, OpCode, 5); break;
-        case llvm::Instruction::Sub: return SALAM::createSubInst(id, OpCode, 1); break;
-        case llvm::Instruction::FSub: return SALAM::createFSubInst(id, OpCode, 5); break;
-        case llvm::Instruction::Mul: return SALAM::createMulInst(id, OpCode, 1); break;
-        case llvm::Instruction::FMul: return SALAM::createFMulInst(id, OpCode, 4); break;
-        case llvm::Instruction::UDiv: return SALAM::createUDivInst(id, OpCode, 1); break;
-        case llvm::Instruction::SDiv: return SALAM::createSDivInst(id, OpCode, 1); break;
-        case llvm::Instruction::FDiv: return SALAM::createFDivInst(id, OpCode, 16); break;
-        case llvm::Instruction::URem: return SALAM::createURemInst(id, OpCode, 1); break;
-        case llvm::Instruction::SRem: return SALAM::createSRemInst(id, OpCode, 1); break;
-        case llvm::Instruction::FRem: return SALAM::createFRemInst(id, OpCode, 16); break;
-        case llvm::Instruction::Shl: return SALAM::createShlInst(id, OpCode, 1); break;
-        case llvm::Instruction::LShr: return SALAM::createLShrInst(id, OpCode, 1); break;
-        case llvm::Instruction::AShr: return SALAM::createAShrInst(id, OpCode, 1); break;
-        case llvm::Instruction::And: return SALAM::createAndInst(id, OpCode, 1); break;
-        case llvm::Instruction::Or: return SALAM::createOrInst(id, OpCode, 1); break;
-        case llvm::Instruction::Xor: return SALAM::createXorInst(id, OpCode, 1); break;
-        case llvm::Instruction::Load: return SALAM::createLoadInst(id, OpCode, 0); break;
-        case llvm::Instruction::Store: return SALAM::createStoreInst(id, OpCode, 0); break;
-        case llvm::Instruction::GetElementPtr : return SALAM::createGetElementPtrInst(id, OpCode, 0); break;
-        case llvm::Instruction::Trunc: return SALAM::createTruncInst(id, OpCode, 0); break;
-        case llvm::Instruction::ZExt: return SALAM::createZExtInst(id, OpCode, 0); break;
-        case llvm::Instruction::SExt: return SALAM::createSExtInst(id, OpCode, 0); break;
-        case llvm::Instruction::FPToUI: return SALAM::createFPToUIInst(id, OpCode, 1); break;
-        case llvm::Instruction::FPToSI: return SALAM::createFPToSIInst(id, OpCode, 1); break;
-        case llvm::Instruction::UIToFP: return SALAM::createUIToFPInst(id, OpCode, 0); break;
-        case llvm::Instruction::SIToFP: return SALAM::createSIToFPInst(id, OpCode, 0); break; 
-        case llvm::Instruction::FPTrunc: return SALAM::createFPTruncInst(id, OpCode, 1); break;
-        case llvm::Instruction::FPExt: return SALAM::createFPExtInst(id, OpCode, 1); break;
-        case llvm::Instruction::PtrToInt: return SALAM::createPtrToIntInst(id, OpCode, 0); break;
-        case llvm::Instruction::IntToPtr: return SALAM::createIntToPtrInst(id, OpCode, 0); break;
-        case llvm::Instruction::ICmp: return SALAM::createICmpInst(id, OpCode, 0); break;
-        case llvm::Instruction::FCmp: return SALAM::createFCmpInst(id, OpCode, 1); break;
-        case llvm::Instruction::PHI: return SALAM::createPHIInst(id, OpCode, 0); break;
-        case llvm::Instruction::Call: return SALAM::createCallInst(id, OpCode, 1); break;
-        case llvm::Instruction::Select: return SALAM::createSelectInst(id, OpCode, 1); break;
-        default: {// return SALAM::createBadInst(id); break;
-            // Note: Not sure why this happens yet and if its an issue, so just adding this inform statement for now
-            // First case found: This was being called when trying to create alloc instructions, which are unsupported
+        case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst); break;
+        case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, hw->cycle_counts->br_inst); break;
+        case llvm::Instruction::Switch: return SALAM::createSwitchInst(id, OpCode, hw->cycle_counts->switch_inst); break;
+        case llvm::Instruction::Add: return SALAM::createAddInst(id, OpCode, hw->cycle_counts->add_inst); break;
+        case llvm::Instruction::FAdd: return SALAM::createFAddInst(id, OpCode, hw->cycle_counts->fadd_inst); break;
+        case llvm::Instruction::Sub: return SALAM::createSubInst(id, OpCode, hw->cycle_counts->sub_inst); break;
+        case llvm::Instruction::FSub: return SALAM::createFSubInst(id, OpCode, hw->cycle_counts->fsub_inst); break;
+        case llvm::Instruction::Mul: return SALAM::createMulInst(id, OpCode, hw->cycle_counts->mul_inst); break;
+        case llvm::Instruction::FMul: return SALAM::createFMulInst(id, OpCode, hw->cycle_counts->fmul_inst); break;
+        case llvm::Instruction::UDiv: return SALAM::createUDivInst(id, OpCode, hw->cycle_counts->udiv_inst); break;
+        case llvm::Instruction::SDiv: return SALAM::createSDivInst(id, OpCode, hw->cycle_counts->sdiv_inst); break;
+        case llvm::Instruction::FDiv: return SALAM::createFDivInst(id, OpCode, hw->cycle_counts->fdiv_inst); break;
+        case llvm::Instruction::URem: return SALAM::createURemInst(id, OpCode, hw->cycle_counts->urem_inst); break;
+        case llvm::Instruction::SRem: return SALAM::createSRemInst(id, OpCode, hw->cycle_counts->srem_inst); break;
+        case llvm::Instruction::FRem: return SALAM::createFRemInst(id, OpCode, hw->cycle_counts->frem_inst); break;
+        case llvm::Instruction::Shl: return SALAM::createShlInst(id, OpCode, hw->cycle_counts->shl_inst); break;
+        case llvm::Instruction::LShr: return SALAM::createLShrInst(id, OpCode, hw->cycle_counts->lshr_inst); break;
+        case llvm::Instruction::AShr: return SALAM::createAShrInst(id, OpCode, hw->cycle_counts->ashr_inst); break;
+        case llvm::Instruction::And: return SALAM::createAndInst(id, OpCode, hw->cycle_counts->and_inst); break;
+        case llvm::Instruction::Or: return SALAM::createOrInst(id, OpCode, hw->cycle_counts->or_inst); break;
+        case llvm::Instruction::Xor: return SALAM::createXorInst(id, OpCode, hw->cycle_counts->xor_inst); break;
+        case llvm::Instruction::Load: return SALAM::createLoadInst(id, OpCode, hw->cycle_counts->load_inst); break;
+        case llvm::Instruction::Store: return SALAM::createStoreInst(id, OpCode, hw->cycle_counts->store_inst); break;
+        case llvm::Instruction::GetElementPtr : return SALAM::createGetElementPtrInst(id, OpCode, hw->cycle_counts->gep_inst); break;
+        case llvm::Instruction::Trunc: return SALAM::createTruncInst(id, OpCode, hw->cycle_counts->trunc_inst); break;
+        case llvm::Instruction::ZExt: return SALAM::createZExtInst(id, OpCode, hw->cycle_counts->zext_inst); break;
+        case llvm::Instruction::SExt: return SALAM::createSExtInst(id, OpCode, hw->cycle_counts->sext_inst); break;
+        case llvm::Instruction::FPToUI: return SALAM::createFPToUIInst(id, OpCode, hw->cycle_counts->fptoui_inst); break;
+        case llvm::Instruction::FPToSI: return SALAM::createFPToSIInst(id, OpCode, hw->cycle_counts->fptosi_inst); break;
+        case llvm::Instruction::UIToFP: return SALAM::createUIToFPInst(id, OpCode, hw->cycle_counts->uitofp_inst); break;
+        case llvm::Instruction::SIToFP: return SALAM::createSIToFPInst(id, OpCode, hw->cycle_counts->sitofp_inst); break; 
+        case llvm::Instruction::FPTrunc: return SALAM::createFPTruncInst(id, OpCode, hw->cycle_counts->fptrunc_inst); break;
+        case llvm::Instruction::FPExt: return SALAM::createFPExtInst(id, OpCode, hw->cycle_counts->fpext_inst); break;
+        case llvm::Instruction::PtrToInt: return SALAM::createPtrToIntInst(id, OpCode, hw->cycle_counts->ptrtoint_inst); break;
+        case llvm::Instruction::IntToPtr: return SALAM::createIntToPtrInst(id, OpCode, hw->cycle_counts->inttoptr_inst); break;
+        case llvm::Instruction::ICmp: return SALAM::createICmpInst(id, OpCode, hw->cycle_counts->icmp_inst); break;
+        case llvm::Instruction::FCmp: return SALAM::createFCmpInst(id, OpCode, hw->cycle_counts->fcmp_inst); break;
+        case llvm::Instruction::PHI: return SALAM::createPHIInst(id, OpCode, hw->cycle_counts->phi_inst); break;
+        case llvm::Instruction::Call: return SALAM::createCallInst(id, OpCode, hw->cycle_counts->call_inst); break;
+        case llvm::Instruction::Select: return SALAM::createSelectInst(id, OpCode, hw->cycle_counts->select_inst); break;
+        default: {
             warn("Tried to create instance of undefined instruction type!"); 
-            return std::make_shared<SALAM::Instruction>(id);
-            break;
+            return SALAM::createBadInst(id, OpCode, 0); break;
         }
     }
 }

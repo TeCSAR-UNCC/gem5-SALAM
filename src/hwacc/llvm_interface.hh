@@ -10,7 +10,6 @@
 #include "hwacc/LLVMRead/src/debug_flags.hh"
 //------------------------------------------//
 #include "hwacc/HWModeling/src/hw_interface.hh"
-//#include "hwacc/LLVMRead/src/cycle_counts.hh" MERGECHECK
 //------------------------------------------//
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
@@ -42,25 +41,7 @@ class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
     std::string topName;
-    llvm::LLVMContext context;
-    llvm::SMDiagnostic error;
     uint32_t scheduling_threshold;
-    int32_t counter_units;
-    int32_t int_adder_units;
-    int32_t int_multiply_units;
-    int32_t int_shifter_units;
-    int32_t int_bit_units;
-    int32_t fp_sp_adder;
-    int32_t fp_dp_adder;
-    int32_t fp_sp_multiply;
-    int32_t fp_sp_division; // Add config
-    int32_t fp_dp_multiply;
-    int32_t fp_dp_division; // Add config
-    int32_t compare;
-    int32_t gep;
-    int32_t conversion;
-    int32_t pipelined;
-    int32_t fu_latency;
     int32_t clock_period;
     int process_delay;
     int cycle;
@@ -68,7 +49,6 @@ class LLVMInterface : public ComputeUnit {
     int loadInFlight;
     int storeInFlight;
     int compInFlight;
-    bool unlimitedFU;
     bool running;
     bool loadOpScheduled;
     bool storeOpScheduled;
@@ -86,6 +66,7 @@ class LLVMInterface : public ComputeUnit {
 
 
     class ActiveFunction {
+      friend class LLVMInterface;
     private:
         LLVMInterface * owner;
         HWInterface* hw;

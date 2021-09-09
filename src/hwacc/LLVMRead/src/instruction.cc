@@ -266,6 +266,42 @@ Instruction::runtimeInitialize() {
     return dep_uids;
 }
 
+// SALAM-BadInstruction // --------------------------------------------------//
+
+std::shared_ptr<SALAM::Instruction>
+createBadInst(uint64_t id,
+              uint64_t OpCode,
+              uint64_t cycles)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    return std::make_shared<SALAM::BadInstruction>(id, OpCode, cycles);
+}
+
+BadInstruction::BadInstruction(uint64_t id,
+                               uint64_t OpCode,
+              uint64_t cycles) :
+                               Instruction(id, OpCode, cycles)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    if (DTRACE(SALAM_Debug)) {
+        this->dbgr = new Debugger();
+    }
+    std::vector<uint64_t> base_params;
+    base_params.push_back(id);
+    base_params.push_back(OpCode);
+    base_params.push_back(cycles);
+    conditions.push_back(base_params);
+}
+
+void
+BadInstruction::initialize(llvm::Value * irval,
+                           irvmap * irmap,
+                           SALAM::valueListTy * valueList)
+{
+    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
+}
+
 // SALAM-Ret // -------------------------------------------------------------//
 void // Debugging Interface
 Ret::dumper() {
@@ -291,8 +327,8 @@ createRetInst(uint64_t id,
 
 Ret::Ret(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -344,8 +380,8 @@ createBrInst(uint64_t id,
 
 Br::Br(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -465,8 +501,8 @@ createSwitchInst(uint64_t id,
 
 Switch::Switch(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -596,8 +632,8 @@ createAddInst(uint64_t id,
 
 Add::Add(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -668,8 +704,8 @@ createFAddInst(uint64_t id,
 
 FAdd::FAdd(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -773,8 +809,8 @@ createSubInst(uint64_t id,
 
 Sub::Sub(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -847,8 +883,8 @@ createFSubInst(uint64_t id,
 
 FSub::FSub(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -952,8 +988,8 @@ createMulInst(uint64_t id,
 
 Mul::Mul(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1024,8 +1060,8 @@ createFMulInst(uint64_t id,
 
 FMul::FMul(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1130,8 +1166,8 @@ createUDivInst(uint64_t id,
 
 UDiv::UDiv(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1204,8 +1240,8 @@ createSDivInst(uint64_t id,
 
 SDiv::SDiv(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1279,8 +1315,8 @@ createFDivInst(uint64_t id,
 
 FDiv::FDiv(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1385,8 +1421,8 @@ createURemInst(uint64_t id,
 
 URem::URem(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1459,8 +1495,8 @@ createSRemInst(uint64_t id,
 
 SRem::SRem(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1534,8 +1570,8 @@ createFRemInst(uint64_t id,
 
 FRem::FRem(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1642,8 +1678,8 @@ createShlInst(uint64_t id,
 
 Shl::Shl(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1716,8 +1752,8 @@ createLShrInst(uint64_t id,
 
 LShr::LShr(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1790,8 +1826,8 @@ createAShrInst(uint64_t id,
 
 AShr::AShr(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1865,8 +1901,8 @@ createAndInst(uint64_t id,
 
 And::And(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -1939,8 +1975,8 @@ createOrInst(uint64_t id,
 
 Or::Or(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2013,8 +2049,8 @@ createXorInst(uint64_t id,
 
 Xor::Xor(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2086,8 +2122,8 @@ createLoadInst(uint64_t id,
 
 Load::Load(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2165,8 +2201,8 @@ createStoreInst(uint64_t id,
 
 Store::Store(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2257,8 +2293,8 @@ createGetElementPtrInst(uint64_t id,
 
 GetElementPtr::GetElementPtr(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2372,8 +2408,8 @@ createTruncInst(uint64_t id,
 
 Trunc::Trunc(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2437,8 +2473,8 @@ createZExtInst(uint64_t id,
 
 ZExt::ZExt(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2502,8 +2538,8 @@ createSExtInst(uint64_t id,
 
 SExt::SExt(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2567,8 +2603,8 @@ createFPToUIInst(uint64_t id,
 
 FPToUI::FPToUI(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2652,8 +2688,8 @@ createFPToSIInst(uint64_t id,
 
 FPToSI::FPToSI(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2739,8 +2775,8 @@ createUIToFPInst(uint64_t id,
 
 UIToFP::UIToFP(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2819,8 +2855,8 @@ createSIToFPInst(uint64_t id,
 
 SIToFP::SIToFP(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2899,8 +2935,8 @@ createFPTruncInst(uint64_t id,
 
 FPTrunc::FPTrunc(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -2973,8 +3009,8 @@ createFPExtInst(uint64_t id,
 
 FPExt::FPExt(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3047,8 +3083,8 @@ createPtrToIntInst(uint64_t id,
 
 PtrToInt::PtrToInt(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3104,8 +3140,8 @@ createIntToPtrInst(uint64_t id,
 
 IntToPtr::IntToPtr(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3163,8 +3199,8 @@ createICmpInst(uint64_t id,
 
 ICmp::ICmp(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3288,8 +3324,8 @@ createFCmpInst(uint64_t id,
 
 FCmp::FCmp(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3520,8 +3556,8 @@ createPHIInst(uint64_t id,
 
 Phi::Phi(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3628,8 +3664,8 @@ createCallInst(uint64_t id,
 
 Call::Call(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {
@@ -3682,8 +3718,8 @@ createSelectInst(uint64_t id,
 
 Select::Select(uint64_t id,
          uint64_t OpCode,
-         uint64_t cycles) :
-         Instruction(id, OpCode)
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
 {
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (DTRACE(SALAM_Debug)) {

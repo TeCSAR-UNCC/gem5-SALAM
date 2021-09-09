@@ -1,14 +1,14 @@
-#ifndef __HWMODEL_CYCLE_COUNTS_HH__
-#define __HWMODEL_CYCLE_COUNTS_HH__
+#ifndef __HWMODEL_OPCODES_HH__
+#define __HWMODEL_OPCODES_HH__
 //------------------------------------------//
 //#include "debug_flags.hh"
-#include "params/CycleCounts.hh"
+#include "params/OpCodes.hh"
 #include "sim/sim_object.hh"
 //------------------------------------------//
 #include <cstdint>
 //------------------------------------------//
 
-class CycleCounts : public SimObject
+class OpCodes : public SimObject
 {
     public:
     uint32_t counter_inst;
@@ -70,8 +70,8 @@ class CycleCounts : public SimObject
     uint32_t fmul_inst;
     uint32_t fdiv_inst;
     uint32_t frem_inst;
-    CycleCounts();
-    CycleCounts(CycleCountsParams *p);
+    OpCodes();
+    OpCodes(OpCodesParams *p);
 };
 
-#endif //__HWMODEL_CYCLE_COUNTS_HH__
+#endif //__HWMODEL_OPCODES_HH__
