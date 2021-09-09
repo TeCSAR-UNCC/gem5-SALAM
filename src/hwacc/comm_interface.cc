@@ -762,37 +762,41 @@ Port&
 CommInterface::getPort(const std::string& if_name, PortID idx) {
     if (if_name == "local") {
         if (idx >= localPorts.size()) {
-            localPorts.resize((idx+1), nullptr);
+            localPorts.resize((idx+1));
         }
         if (localPorts[idx] == nullptr) {
-            const std::string portName = csprintf("%s.local[%d]", name(), idx);
+            // const std::string portName = csprintf("%s.local[%d]", name(), idx);
+            const std::string portName = name() + ".local[" + std::to_string(idx) + "]";
             localPorts[idx] = new MemSidePort(portName, this, idx);
         }
         return *localPorts[idx];
     } else if (if_name == "acp") {
         if (idx >= globalPorts.size()) {
-            globalPorts.resize((idx+1), nullptr);
+            globalPorts.resize((idx+1));
         }
         if (globalPorts[idx] == nullptr) {
-            const std::string portName = csprintf("%s.acp[%d]", name(), idx);
+            // const std::string portName = csprintf("%s.acp[%d]", name(), idx);
+            const std::string portName = name() + ".acp[" + std::to_string(idx) + "]";
             globalPorts[idx] = new MemSidePort(portName, this, idx);
         }
         return *globalPorts[idx];
     } else if (if_name == "stream") {
         if (idx >= streamPorts.size()) {
-            streamPorts.resize((idx+1), nullptr);
+            streamPorts.resize((idx+1));
         }
         if (streamPorts[idx] == nullptr) {
-            const std::string portName = csprintf("%s.stream[%d]", name(), idx);
+            // const std::string portName = csprintf("%s.stream[%d]", name(), idx);
+            const std::string portName = name() + ".stream[" + std::to_string(idx) + "]";
             streamPorts[idx] = new MemSidePort(portName, this, idx);
         }
         return *streamPorts[idx];
     } else if (if_name == "spm") {
         if (idx >= spmPorts.size()) {
-            spmPorts.resize((idx+1), nullptr);
+            spmPorts.resize((idx+1));
         }
         if (spmPorts[idx] == nullptr) {
-            const std::string portName = csprintf("%s.spm[%d]", name(), idx);
+            // const std::string portName = csprintf("%s.spm[%d]", name(), idx);
+            const std::string portName = name() + ".spm[" + std::to_string(idx) + "]";
             spmPorts[idx] = new SPMPort(portName, this, idx);
         }
         return *spmPorts[idx];

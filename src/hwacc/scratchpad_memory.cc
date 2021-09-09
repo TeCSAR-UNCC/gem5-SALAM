@@ -37,11 +37,10 @@ ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
     }
     // Each port has its own release and dequeue events, as well as signals
     // Adding these events and signals for ".port"
-    const std::string releaseEventName = csprintf("%s_release[0]", name());
+    // const std::string releaseEventName = csprintf("%s_release[0]", name());
+    const std::string releaseEventName = name() + "_release[0]";
     releaseEvent.push_back(EventFunctionWrapper([this]{ release(); }, releaseEventName));
     releaseTick.push_back(0);
-    // const std::string dequeueEventName = csprintf("%s_dequeue[0]", name());
-    // dequeueEvent.push_back(EventFunctionWrapper([this]{ dequeue(); }, dequeueEventName));
     isBusy.push_back(false);
     retryReq.push_back(false);
     retryResp.push_back(false);
@@ -445,17 +444,17 @@ ScratchpadMemory::getPort(const std::string &if_name, PortID idx)
     } else if (if_name == "spm_ports") {
         if (idx >= spm_ports.size()) {
             spm_ports.resize((idx+1), nullptr);
-            const std::string releaseEventName = csprintf("%s_release[%d]", name(), (idx+1));
+            // const std::string releaseEventName = csprintf("%s_release[%d]", name(), (idx+1));
+            const std::string releaseEventName = name() + "_release[" + std::to_string(idx+1) + "]";
             releaseEvent.resize((idx+2), EventFunctionWrapper([this]{ release(); }, releaseEventName));
             releaseTick.resize((idx+2), 0);
-            // const std::string dequeueEventName = csprintf("%s_dequeue[%d]", name(), (idx+1));
-            // dequeueEvent.resize((idx+2), EventFunctionWrapper([this]{ dequeue(); }, dequeueEventName));
             isBusy.resize((idx+2), false);
             retryReq.resize((idx+2), false);
             retryResp.resize((idx+2), false);
         }
         if (spm_ports[idx] == nullptr) {
-            const std::string portName = csprintf("%s.spm_ports[%d]", name(), idx);
+            // const std::string portName = csprintf("%s.spm_ports[%d]", name(), idx);
+            const std::string portName = name() + ".spm_ports[" + std::to_string(idx) + "]";
             spm_ports[idx] = new SPMPort(portName, this, idx);
         }
         return *spm_ports[idx];
