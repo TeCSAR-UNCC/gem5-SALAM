@@ -292,9 +292,12 @@ class Variable:
 			self.name = kwargs.get('Name')
 			self.accName = kwargs.get('AccName')
 			self.size = kwargs.get('Size')
-			self.ports = kwargs.get('Ports')
+			self.ports = kwargs.get('Ports', 1)
 			self.address = kwargs.get('Address')
 			self.readyMode = kwargs.get('ReadyMode', False)
+			self.resetOnRead = kwargs.get('ResetOnRead', True)
+			self.readOnInvalid = kwargs.get('ReadOnInvalid', False)
+			self.writeOnValid = kwargs.get('WriteOnValid', True)
 			# Append the default connection here... probably need to be more elegant
 			self.connections.append(SPMConnection(self.accName, self.ports))
 			# Append other connections to the connections list
@@ -345,6 +348,9 @@ class Variable:
 			# Probably need to add table and read mode to the YAML File
 			lines.append("clstr." + self.name.lower() + "." + "conf_table_reported = False")
 			lines.append("clstr." + self.name.lower() + "." + "ready_mode = " + str(self.readyMode))
+			lines.append("clstr." + self.name.lower() + "." + "reset_on_scratchpad_read = " + str(self.resetOnRead))
+			lines.append("clstr." + self.name.lower() + "." + "read_on_invalid = " + str(self.readOnInvalid))
+			lines.append("clstr." + self.name.lower() + "." + "write_on_valid = " + str(self.writeOnValid))
 			lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.master")
 			for i in self.connections:
 				lines.append("")

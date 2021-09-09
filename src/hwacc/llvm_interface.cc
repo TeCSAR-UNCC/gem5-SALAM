@@ -144,9 +144,17 @@ LLVMInterface::ActiveFunction::processQueues()
                             ++queue_iter;
                         }
                     } else if ((inst)->isStore()) {
+                        // WAR Protection to insure reading finishes before a write
+                        // if (!readActive(inst->getPtrOperandValue(1))) {
                         launchWrite(inst);
                         DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         queue_iter = reservation.erase(queue_iter);
+                        // } else {
+                        //     auto activeRead = getActiveRead(inst->getPtrOperandValue(1));
+                        //     inst->addRuntimeDependency(activeRead);
+                        //     activeRead->addRuntimeUser(inst);
+                        //     ++queue_iter;
+                        // }
                     } else if ((inst)->isTerminator()) {
                         (inst)->launch();
                         auto nextBB = inst->getTarget();

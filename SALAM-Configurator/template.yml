@@ -38,8 +38,11 @@ acc_cluster:
     - Var:
       - Name: # Var name here (Required)
         Type: # Var type, can be SPM, Stream or Cache (Required)
-        Size: # Size in Bytes
+        Size: # Size in Bytes (Required)
         Ports: # Number of ports to connect to parent Acc
+        ResetOnRead: # True/False | Reset ready bit on private scratchpad memory read
+        ReadOnInvalid: # True/False | Enable reads on invalid memory segments when ready mode is used
+        WriteOnValid: # True/False | Enable writes on valid memory sectors when ready mode is used
     # SPM with Multiple Accs Example
     - Var:
       - Name: # Var name here (Required)

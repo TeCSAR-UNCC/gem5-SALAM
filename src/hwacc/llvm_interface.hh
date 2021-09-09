@@ -121,7 +121,20 @@ class LLVMInterface : public ComputeUnit {
         inline std::shared_ptr<SALAM::Instruction> getActiveWrite(uint64_t writeAddr) {
           return activeWrites.find(writeAddr)->second;
         }
-
+        // std::map<Addr, std::shared_ptr<SALAM::Instruction>> activeReads;
+        // inline void trackRead(Addr readAddr, std::shared_ptr<SALAM::Instruction> readInst) {
+        //   activeReads.insert({readAddr, readInst});
+        // }
+        // inline void untrackRead(uint64_t readAddr) {
+        //   auto it = activeReads.find(readAddr);
+        //   if (it != activeReads.end()) activeReads.erase(it);
+        // }
+        // inline bool readActive(uint64_t readAddr) {
+        //   return (activeReads.find(readAddr) != activeReads.end());
+        // }
+        // inline std::shared_ptr<SALAM::Instruction> getActiveRead(uint64_t readAddr) {
+        //   return activeReads.find(readAddr)->second;
+        // }
         inline bool writeUIDActive(uint64_t uid) {
           return (writeQueue.find(uid) != writeQueue.end());
         }

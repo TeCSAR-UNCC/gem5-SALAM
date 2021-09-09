@@ -21,14 +21,16 @@ using namespace std;
 
 ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
     AbstractMemory(p),
-    port(name() + ".port", *this), latency(p->latency),
-    latency_var(p->latency_var), bandwidth(p->bandwidth),
-    dequeueEvent([this]{ dequeue(); }, name()),
     readyMode(p->ready_mode),
     readOnInvalid(p->read_on_invalid),
     writeOnValid(p->write_on_valid),
     resetOnScratchpadRead(p->reset_on_scratchpad_read),
-    initial(true) {
+    initial(true),
+    port(name() + ".port", *this),
+    latency(p->latency),
+    latency_var(p->latency_var),
+    bandwidth(p->bandwidth),
+    dequeueEvent([this]{ dequeue(); }, name()) {
     ready = new bool[range.size()];
     if (readyMode) {
         for (auto i=0;i<range.size();i++) {

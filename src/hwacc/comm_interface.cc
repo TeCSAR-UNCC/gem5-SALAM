@@ -25,12 +25,12 @@ CommInterface::CommInterface(Params *p) :
     gic(p->gic),
     int_num(p->int_num),
     use_premap_data(p->premap_data),
+    endian(p->system->getGuestByteOrder()),
+    debugEnabled(p->enable_debug_msgs),
     masterId(p->system->getMasterId(this,name())),
     tickEvent(this),
     cacheLineSize(p->cache_line_size),
     clock_period(p->clock_period),
-    endian(p->system->getGuestByteOrder()),
-    debugEnabled(p->enable_debug_msgs),
     reset_spm(p->reset_spm) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
@@ -765,6 +765,7 @@ CommInterface::getPort(const std::string& if_name, PortID idx) {
             localPorts.resize((idx+1), nullptr);
         }
         if (localPorts[idx] == nullptr) {
+            char temp[1000];
             const std::string portName = csprintf("%s.local[%d]", name(), idx);
             localPorts[idx] = new MemSidePort(portName, this, idx);
         }

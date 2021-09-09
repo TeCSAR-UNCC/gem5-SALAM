@@ -1,0 +1,39 @@
+---
+acc_cluster:
+  - Name: merge_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/sys_validation/mergesort/hw/top.ll
+      ConfigPath: benchmarks/sys_validation/mergesort/hw/top.ini
+      PIOSize: 25
+      InterruptNum: 68
+      PIOMaster: LocalBus
+      # Local to PIO
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: mergesort
+      IrPath: benchmarks/sys_validation/mergesort/hw/mergesort.ll
+      ConfigPath: benchmarks/sys_validation/mergesort/hw/mergesort.ini
+      Debug: True
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: MAIN
+        Type: SPM
+        Size: 8192
+        Ports: 1
+    - Var:
+      - Name: TEMP
+        Type: SPM
+        Size: 8192
+        Ports: 1
+        ReadyMode: True
+        ResetOnRead: True
