@@ -15,6 +15,7 @@ class HWStatistics : public SimObject
     protected:
 
     public:
+        HWStatistics();
         HWStatistics(HWStatisticsParams *params);
     
 };

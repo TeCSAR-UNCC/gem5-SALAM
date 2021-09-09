@@ -10,3 +10,4 @@ class ComputeUnit(SimObject):
 
     comm_int = Param.CommInterface(Parent.any, "Communication interface to connect to")
     hw_int = Param.HWInterface(Parent.any, "Hardware model interface to connect to")
+    

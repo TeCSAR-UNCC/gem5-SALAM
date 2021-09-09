@@ -30,6 +30,7 @@ class SALAMPowerModel : public SimObject
     protected:
 
     public:
+        SALAMPowerModel();
         SALAMPowerModel(SALAMPowerModelParams *params);
         // create constructor
         // getters/setters

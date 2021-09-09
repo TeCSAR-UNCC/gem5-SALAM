@@ -15,17 +15,24 @@
 #include <cstdlib>
 #include <vector>
 
-class HWInterface : public SimObject
+class HWInterface : public SimObject 
 {
+    friend class LLVMInterface;
     private:
-    uint32_t testParam;
-    //CycleCounts *cycleCounts;
+        CycleCounts *cycle_counts;
+        FunctionalUnits *functional_units;
+        HWStatistics *hw_statistics;
+        InstConfig *inst_config;
+        OpCodes *opcodes;
+        SALAMPowerModel *salam_power_model;
+        SimulatorConfig *simulator_config;
 
     protected:
 
     public:
-    HWInterface(HWInterfaceParams *params);
-    uint32_t getTestParam() { return testParam; }
+        HWInterface();
+        HWInterface(HWInterfaceParams *params);
+        uint32_t getTestParam() { return this->cycle_counts->add_inst; }
 
 };
 

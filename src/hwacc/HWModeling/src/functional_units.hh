@@ -25,6 +25,7 @@ class FunctionalUnits : public SimObject
     protected:
 
     public:
+        FunctionalUnits();
         FunctionalUnits(FunctionalUnitsParams *params);
         // constructor
         // deconstructor

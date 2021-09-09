@@ -23,6 +23,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('HWInterface.py')
     SimObject('HWStatistics.py')
     SimObject('InstConfig.py')
+    SimObject('OpCodes.py')
     SimObject('SALAMPowerModel.py')
     SimObject('SimulatorConfig.py')
 
@@ -59,6 +60,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('HWModeling/src/hw_interface.cc')
     Source('HWModeling/src/hw_statistics.cc')
     Source('HWModeling/src/instruction_config.cc')
+    Source('HWModeling/src/opcodes.cc')
     Source('HWModeling/src/salam_power_model.cc')
     Source('HWModeling/src/simulator_config.cc')
 

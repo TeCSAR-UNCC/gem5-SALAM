@@ -115,7 +115,8 @@ class BadInstruction : public Instruction {
     protected:
     public:
         BadInstruction(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~BadInstruction() = default;
         void initialize (llvm::Value * irval,
                 irvmap * irmap,
@@ -127,7 +128,8 @@ class BadInstruction : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createBadInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 
 
 //---------------------------------------------------------------------------//
@@ -146,7 +148,8 @@ class Ret : public Instruction {
     protected:
     public:
         Ret(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Ret() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -162,7 +165,8 @@ class Ret : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createRetInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 
 // SALAM-Br // --------------------------------------------------------------//
 
@@ -182,7 +186,8 @@ class Br : public Instruction {
     public:
         // Branch Constructor
         Br(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Br() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -202,7 +207,8 @@ class Br : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createBrInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 
 // SALAM-Switch // ----------------------------------------------------------//
 typedef std::pair<std::shared_ptr<SALAM::Value>, std::shared_ptr<SALAM::BasicBlock>> caseArgs;
@@ -221,7 +227,8 @@ class Switch : public Instruction {
     protected:
     public:
         Switch(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Switch() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -240,7 +247,8 @@ class Switch : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSwitchInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- Binary Operator Instructions ------------------------------------//
 //---------------------------------------------------------------------------//
@@ -258,7 +266,8 @@ class Add : public Instruction
     protected:
     public:
         Add(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Add() = default;
         void initialize(llvm::Value *irval,
                         SALAM::irvmap *irmap,
@@ -273,7 +282,8 @@ class Add : public Instruction
 
 std::shared_ptr<SALAM::Instruction>
 createAddInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 
 // SALAM-FAdd // ------------------------------------------------------------//
 
@@ -287,7 +297,8 @@ class FAdd : public Instruction {
     protected:
     public:
         FAdd(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FAdd() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -302,7 +313,8 @@ class FAdd : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFAddInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Sub // -------------------------------------------------------------//
 
 class Sub : public Instruction {
@@ -315,7 +327,8 @@ class Sub : public Instruction {
     protected:
     public:
         Sub(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Sub() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -330,7 +343,8 @@ class Sub : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSubInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FSub // -------------------------------------------------------------//
 
 class FSub : public Instruction {
@@ -343,7 +357,8 @@ class FSub : public Instruction {
     protected:
     public:
         FSub(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FSub() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -358,7 +373,8 @@ class FSub : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFSubInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Mul // -------------------------------------------------------------//
 
 class Mul : public Instruction {
@@ -372,7 +388,8 @@ class Mul : public Instruction {
     protected:
     public:
         Mul(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Mul() = default;
         void initialize (llvm::Value * irval,
                         SALAM::irvmap * irmap,
@@ -387,7 +404,8 @@ class Mul : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createMulInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FMul // ------------------------------------------------------------//
 
 class FMul : public Instruction {
@@ -400,7 +418,8 @@ class FMul : public Instruction {
     protected:
     public:
         FMul(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FMul() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -415,7 +434,8 @@ class FMul : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFMulInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-UDiv // ------------------------------------------------------------//
 
 class UDiv : public Instruction {
@@ -428,7 +448,8 @@ class UDiv : public Instruction {
     protected:
     public:
         UDiv(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~UDiv() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -443,7 +464,8 @@ class UDiv : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createUDivInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-SDiv // ------------------------------------------------------------//
 
 class SDiv : public Instruction {
@@ -456,7 +478,8 @@ class SDiv : public Instruction {
     protected:
     public:
         SDiv(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~SDiv() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -471,7 +494,8 @@ class SDiv : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSDivInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FDiv // ------------------------------------------------------------//
 
 class FDiv : public Instruction {
@@ -484,7 +508,8 @@ class FDiv : public Instruction {
     protected:
     public:
         FDiv(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FDiv() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -499,7 +524,8 @@ class FDiv : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFDivInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-URem // ------------------------------------------------------------//
 
 class URem : public Instruction {
@@ -512,7 +538,8 @@ class URem : public Instruction {
     protected:
     public:
         URem(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~URem() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -527,7 +554,8 @@ class URem : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createURemInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-SRem // ------------------------------------------------------------//
 
 class SRem : public Instruction {
@@ -540,7 +568,8 @@ class SRem : public Instruction {
     protected:
     public:
         SRem(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~SRem() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -555,7 +584,8 @@ class SRem : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSRemInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FRem // ------------------------------------------------------------//
 
 class FRem : public Instruction {
@@ -568,7 +598,8 @@ class FRem : public Instruction {
     protected:
     public:
         FRem(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FRem() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -583,7 +614,8 @@ class FRem : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFRemInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- Bitwise Binary Operator Instructions ----------------------------//
 //---------------------------------------------------------------------------//
@@ -600,7 +632,8 @@ class Shl : public Instruction {
     protected:
     public:
         Shl(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Shl() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -615,7 +648,8 @@ class Shl : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createShlInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-LShr // ------------------------------------------------------------//
 
 class LShr : public Instruction {
@@ -628,7 +662,8 @@ class LShr : public Instruction {
     protected:
     public:
         LShr(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~LShr() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -643,7 +678,8 @@ class LShr : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createLShrInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-AShr // ------------------------------------------------------------//
 
 class AShr : public Instruction {
@@ -656,7 +692,8 @@ class AShr : public Instruction {
     protected:
     public:
         AShr(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~AShr() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -671,7 +708,8 @@ class AShr : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createAShrInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-And // -------------------------------------------------------------//
 
 class And : public Instruction {
@@ -684,7 +722,8 @@ class And : public Instruction {
     protected:
     public:
         And(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~And() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -699,7 +738,8 @@ class And : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createAndInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Or // --------------------------------------------------------------//
 
 class Or : public Instruction {
@@ -712,7 +752,8 @@ class Or : public Instruction {
 
     public:
         Or(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Or() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -727,7 +768,8 @@ class Or : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createOrInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Xor // -------------------------------------------------------------//
 
 class Xor : public Instruction {
@@ -740,7 +782,8 @@ class Xor : public Instruction {
     protected:
     public:
         Xor(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Xor() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -755,7 +798,8 @@ class Xor : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createXorInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- Memory Instructions ---------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -774,7 +818,8 @@ class Load : public Instruction {
     protected:
     public:
         Load(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Load() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -794,7 +839,8 @@ class Load : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createLoadInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Store // -----------------------------------------------------------//
 
 class Store : public Instruction {
@@ -808,7 +854,8 @@ class Store : public Instruction {
     protected:
     public:
         Store (uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Store() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -826,7 +873,8 @@ class Store : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createStoreInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-GEP // -------------------------------------------------------------//
 
 /*
@@ -850,7 +898,8 @@ class GetElementPtr : public Instruction {
 
     public:
         GetElementPtr(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~GetElementPtr() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -868,7 +917,8 @@ class GetElementPtr : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createGetElementPtrInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- Other / Cast Instructions ---------------------------------------//
 //---------------------------------------------------------------------------//
@@ -885,7 +935,8 @@ class Trunc : public Instruction {
     protected:
     public:
         Trunc(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Trunc() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -900,7 +951,8 @@ class Trunc : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createTruncInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-ZExt // ------------------------------------------------------------//
 
 class ZExt : public Instruction {
@@ -913,7 +965,8 @@ class ZExt : public Instruction {
     protected:
     public:
         ZExt(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~ZExt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -928,7 +981,8 @@ class ZExt : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createZExtInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-SExt // ------------------------------------------------------------//
 
 class SExt : public Instruction {
@@ -941,7 +995,8 @@ class SExt : public Instruction {
     protected:
     public:
         SExt(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~SExt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -956,7 +1011,8 @@ class SExt : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSExtInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FPToUI // ----------------------------------------------------------//
 class FPToUI;
 void initializeFPToUIInst(SALAM::FPToUI &salamInstruction);
@@ -971,7 +1027,8 @@ class FPToUI : public Instruction {
     protected:
     public:
         FPToUI(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FPToUI() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -986,7 +1043,8 @@ class FPToUI : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFPToUIInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FPToSI // ----------------------------------------------------------//
 
 class FPToSI : public Instruction {
@@ -1000,7 +1058,8 @@ class FPToSI : public Instruction {
 
     public:
         FPToSI(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FPToSI() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1015,7 +1074,8 @@ class FPToSI : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFPToSIInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-UIToFP // ----------------------------------------------------------//
 
 class UIToFP : public Instruction {
@@ -1028,7 +1088,8 @@ class UIToFP : public Instruction {
     protected:
     public:
         UIToFP(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~UIToFP() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1043,7 +1104,8 @@ class UIToFP : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createUIToFPInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-SIToFP // ----------------------------------------------------------//
 
 class SIToFP : public Instruction {
@@ -1056,7 +1118,8 @@ class SIToFP : public Instruction {
     protected:
     public:
         SIToFP(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~SIToFP() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1071,7 +1134,8 @@ class SIToFP : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSIToFPInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FPTrunc // ---------------------------------------------------------//
 
 class FPTrunc : public Instruction {
@@ -1084,7 +1148,8 @@ class FPTrunc : public Instruction {
     protected:
     public:
         FPTrunc(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FPTrunc() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1099,7 +1164,8 @@ class FPTrunc : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFPTruncInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FPExt // -----------------------------------------------------------//
 
 class FPExt : public Instruction {
@@ -1112,7 +1178,8 @@ class FPExt : public Instruction {
     protected:
     public:
         FPExt(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FPExt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1127,7 +1194,8 @@ class FPExt : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFPExtInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-PtrToInt // --------------------------------------------------------//
 
 class PtrToInt : public Instruction {
@@ -1141,7 +1209,8 @@ class PtrToInt : public Instruction {
 
     public:
         PtrToInt (uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~PtrToInt() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1156,7 +1225,8 @@ class PtrToInt : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createPtrToIntInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-IntToPtr // --------------------------------------------------------//
 
 class IntToPtr : public Instruction {
@@ -1169,7 +1239,8 @@ class IntToPtr : public Instruction {
     protected:
     public:
         IntToPtr(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~IntToPtr() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1184,7 +1255,8 @@ class IntToPtr : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createIntToPtrInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- Other / Comparison Instructions ---------------------------------//
 //---------------------------------------------------------------------------//
@@ -1203,7 +1275,8 @@ class ICmp : public Instruction {
 
     public:
         ICmp(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~ICmp() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1218,7 +1291,8 @@ class ICmp : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createICmpInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-FCmp // ------------------------------------------------------------//
 
 class FCmp : public Instruction {
@@ -1233,7 +1307,8 @@ class FCmp : public Instruction {
 
     public:
         FCmp(uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~FCmp() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1248,7 +1323,8 @@ class FCmp : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createFCmpInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- Other / Edge Instructions ---------------------------------------//
 //---------------------------------------------------------------------------//
@@ -1273,7 +1349,8 @@ class Phi : public Instruction {
 
     public:
         Phi (uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Phi() = default;
         void initialize(llvm::Value * irval,
                         irvmap * irmap,
@@ -1293,7 +1370,8 @@ class Phi : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createPHIInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Call // ------------------------------------------------------------//
 
 class Call : public Instruction {
@@ -1306,7 +1384,8 @@ class Call : public Instruction {
     protected:
     public:
         Call (uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Call() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1323,7 +1402,8 @@ class Call : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createCallInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 // SALAM-Select // ----------------------------------------------------------//
 
 class Select : public Instruction {
@@ -1340,7 +1420,8 @@ class Select : public Instruction {
     public:
         // ---- Constructor
         Select (uint64_t id,
-            uint64_t OpCode);
+            uint64_t OpCode,
+              uint64_t cycles);
         ~Select() = default;
         void initialize (llvm::Value * irval,
                         irvmap * irmap,
@@ -1357,7 +1438,8 @@ class Select : public Instruction {
 
 std::shared_ptr<SALAM::Instruction>
 createSelectInst(uint64_t id,
-              uint64_t OpCode);
+              uint64_t OpCode,
+              uint64_t cycles);
 //---------------------------------------------------------------------------//
 //--------- End Instruction Classes -----------------------------------------//
 //---------------------------------------------------------------------------//

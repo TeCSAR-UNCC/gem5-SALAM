@@ -1,11 +1,17 @@
 #include "hw_interface.hh"
 
 HWInterface::HWInterface(HWInterfaceParams *params) :
-    SimObject(params) { }
+    SimObject(params),
+    cycle_counts(params->cycle_counts),
+    functional_units(params->functional_units),
+    hw_statistics(params->hw_statistics),
+    inst_config(params->inst_config),
+    opcodes(params->opcodes),
+    salam_power_model(params->salam_power_model),
+    simulator_config(params->simulator_config) { }
+
 
 HWInterface*
 HWInterfaceParams::create() {
-    //if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-   // std::cout << "\n\n\n\n Initialized HW Model \n\n\n\n";
     return new HWInterface(this);
 }

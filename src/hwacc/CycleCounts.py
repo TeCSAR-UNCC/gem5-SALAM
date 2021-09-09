@@ -2,24 +2,25 @@ from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
 
-#Instruction runtime cycles
 class CycleCounts(SimObject):
     # SimObject type
     type = "CycleCounts"
-
     # gem5-SALAM attached header
     cxx_header = "hwacc/HWModeling/src/cycle_counts.hh"
-    #cxx_header = "hwacc/LLVMRead/src/cycle_counts.hh"
-    
-    # Instruction cycle count defaults
-    counter = Param.UInt32(1, "Counter intructions runtime cycles.")
-    gep = Param.UInt32(1, "GetElementPtr intructions runtime cycles.")
-    phi = Param.UInt32(1, "Phi intructions runtime cycles.")
-    select = Param.UInt32(1, "Select intructions runtime cycles.")
-    ret = Param.UInt32(1, "Return intructions runtime cycles.")
-    br = Param.UInt32(1, "Branch intructions runtime cycles.")
-    switch_inst = Param.UInt32(1, "Switch intructions runtime cycles.")
-    indirectbr = Param.UInt32(1, "Indirect Branch intructions runtime cycles.")
+    ### --- Do Not Modify Below This Line --- ###
+    ### Templates
+    ### YML Type: instruction
+    ## SALAM_OpCodeName = Param.UInt32(runtime_cycles, SALAM_OpCode " instruction runtime cycles.")
+    ### -- Code Auto-Generated Below This Line -- ###
+
+    counter = Param.UInt32(0, "Counter intructions runtime cycles.")
+    gep = Param.UInt32(0, "GetElementPtr intructions runtime cycles.")
+    phi = Param.UInt32(0, "Phi intructions runtime cycles.")
+    select = Param.UInt32(0, "Select intructions runtime cycles.")
+    ret = Param.UInt32(0, "Return intructions runtime cycles.")
+    br = Param.UInt32(0, "Branch intructions runtime cycles.")
+    switch_inst = Param.UInt32(0, "Switch intructions runtime cycles.")
+    indirectbr = Param.UInt32(0, "Indirect Branch intructions runtime cycles.")
     invoke = Param.UInt32(1, "Invoke intructions runtime cycles.")
     resume = Param.UInt32(1, "Resume intructions runtime cycles.")
     unreachable = Param.UInt32(1, "Unreachable intructions runtime cycles.")
@@ -38,7 +39,7 @@ class CycleCounts(SimObject):
     inttoptr = Param.UInt32(1, "Integer to pointer intructions runtime cycles.")
     bitcast = Param.UInt32(1, "Bitcast intructions runtime cycles.")
     addrspacecast = Param.UInt32(1, "Address space cast intructions runtime cycles.")
-    call = Param.UInt32(1, "Call intructions runtime cycles.")
+    call = Param.UInt32(0, "Call intructions runtime cycles.")
     vaarg = Param.UInt32(1, "Vaarg intructions runtime cycles.")
     landingpad = Param.UInt32(1, "Landing pad intructions runtime cycles.")
     catchpad = Param.UInt32(1, "Catch pad intructions runtime cycles.")

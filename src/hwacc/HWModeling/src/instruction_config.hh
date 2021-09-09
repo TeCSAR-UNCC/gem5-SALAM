@@ -18,6 +18,7 @@ class InstConfig : public SimObject
     protected:
 
     public:
+        InstConfig();
         InstConfig(InstConfigParams *params);
 };
 

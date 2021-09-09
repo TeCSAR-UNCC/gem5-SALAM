@@ -11,8 +11,8 @@ class SimulatorConfig : public SimObject
     protected:
 
     public:
-
-    SimulatorConfig(SimulatorConfigParams *params);
+        SimulatorConfig();
+        SimulatorConfig(SimulatorConfigParams *params);
 };
 
 #endif //__HWMODEL_SIMULATOR_CONFIG_HH__
