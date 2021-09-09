@@ -399,28 +399,14 @@ LLVMInterface::constructStaticGraph() {
 
     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
-    // bbList = new std::list<SALAM::BasicBlock*>(); // Create New Basic Block List
     typeList = new TypeList(); // Create New User Defined Types List
 
-    // SALAM::ir_parser(filename);
-
     llvm::StringRef file = filename;
-    llvm::LLVMContext context;
-    llvm::SMDiagnostic error;
+    std::unique_ptr<llvm::LLVMContext> context(new llvm::LLVMContext());
+    std::unique_ptr<llvm::SMDiagnostic> error(new llvm::SMDiagnostic());
+    std::unique_ptr<llvm::Module> m;
 
-    // Load LLVM IR file
-    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(file);
-    if (std::error_code ec = fileOrErr.getError()) {
-        panic(" Error opening input file: %s", ec.message());
-    }
-
-    // Load LLVM Module
-    llvm::ErrorOr<std::unique_ptr<llvm::Module>> moduleOrErr = llvm::parseIRFile(file, error, context);
-    if (std::error_code ec = moduleOrErr.getError()) {
-        panic("Error reading Module: %s", ec.message());
-    }
-
-    std::unique_ptr<llvm::Module> m(llvm::parseIRFile(file, error, context));
+    m = llvm::parseIRFile(file, *error, *context);
     if(!m) panic("Error reading Module");
 
     // Construct the LLVM::Value to SALAM::Value map

@@ -41,8 +41,6 @@ class LLVMInterface : public ComputeUnit {
   private:
     std::string filename;
     std::string topName;
-    llvm::LLVMContext context;
-    llvm::SMDiagnostic error;
     uint32_t scheduling_threshold;
     int32_t clock_period;
     int process_delay;
