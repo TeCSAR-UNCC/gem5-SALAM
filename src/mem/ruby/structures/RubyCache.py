@@ -23,9 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Brad Beckmann
 
 from m5.params import *
 from m5.proxy import *
@@ -34,8 +31,9 @@ from m5.SimObject import SimObject
 
 class RubyCache(SimObject):
     type = 'RubyCache'
-    cxx_class = 'CacheMemory'
+    cxx_class = 'gem5::ruby::CacheMemory'
     cxx_header = "mem/ruby/structures/CacheMemory.hh"
+
     size = Param.MemorySize("capacity in bytes");
     assoc = Param.Int("");
     replacement_policy = Param.BaseReplacementPolicy(TreePLRURP(), "")

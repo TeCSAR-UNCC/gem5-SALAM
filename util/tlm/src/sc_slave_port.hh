@@ -29,9 +29,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matthias Jung
- *          Christian Menard
  */
 
 #ifndef __SC_SLAVE_PORT_HH__
@@ -55,7 +52,7 @@ class Gem5SlaveTransactor;
  * Test that gem5 is at the same time as SystemC
  */
 #define CAUGHT_UP do { \
-    assert(curTick() == sc_core::sc_time_stamp().value()); \
+    assert(gem5::curTick() == sc_core::sc_time_stamp().value()); \
 } while (0)
 
 /**
@@ -68,7 +65,7 @@ class Gem5SlaveTransactor;
  * original packet as a payload extension, the packet can be restored and send
  * back to the gem5 world upon receiving a response from the SystemC world.
  */
-class SCSlavePort : public ExternalSlave::Port
+class SCSlavePort : public gem5::ExternalSlave::ExternalPort
 {
   public:
     /** One instance of pe and the related callback needed */
@@ -96,12 +93,12 @@ class SCSlavePort : public ExternalSlave::Port
 
   protected:
     /** The gem5 Port slave interface */
-    Tick recvAtomic(PacketPtr packet);
-    void recvFunctional(PacketPtr packet);
-    bool recvTimingReq(PacketPtr packet);
-    bool recvTimingSnoopResp(PacketPtr packet);
+    gem5::Tick recvAtomic(gem5::PacketPtr packet);
+    void recvFunctional(gem5::PacketPtr packet);
+    bool recvTimingReq(gem5::PacketPtr packet);
+    bool recvTimingSnoopResp(gem5::PacketPtr packet);
     void recvRespRetry();
-    void recvFunctionalSnoop(PacketPtr packet);
+    void recvFunctionalSnoop(gem5::PacketPtr packet);
 
     Gem5SlaveTransactor* transactor;
 
@@ -113,14 +110,14 @@ class SCSlavePort : public ExternalSlave::Port
 
     SCSlavePort(const std::string &name_,
                 const std::string &systemc_name,
-                ExternalSlave &owner_);
+                gem5::ExternalSlave &owner_);
 
     void bindToTransactor(Gem5SlaveTransactor* transactor);
 
     friend PayloadEvent<SCSlavePort>;
 };
 
-class SCSlavePortHandler : public ExternalSlave::Handler
+class SCSlavePortHandler : public gem5::ExternalSlave::Handler
 {
   private:
     Gem5SimControl& control;
@@ -128,9 +125,9 @@ class SCSlavePortHandler : public ExternalSlave::Handler
   public:
     SCSlavePortHandler(Gem5SimControl& control) : control(control) {}
 
-    ExternalSlave::Port *getExternalPort(const std::string &name,
-                                         ExternalSlave &owner,
-                                         const std::string &port_data);
+    gem5::ExternalSlave::ExternalPort *
+        getExternalPort(const std::string &name, gem5::ExternalSlave &owner,
+                        const std::string &port_data);
 };
 
 }

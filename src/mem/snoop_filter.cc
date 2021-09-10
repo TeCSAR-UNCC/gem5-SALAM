@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stephan Diestelhorst
  */
 
 /**
@@ -48,6 +46,9 @@
 #include "base/trace.hh"
 #include "debug/SnoopFilter.hh"
 #include "sim/system.hh"
+
+namespace gem5
+{
 
 const int SnoopFilter::SNOOP_MASK_SIZE;
 
@@ -63,19 +64,20 @@ SnoopFilter::eraseIfNullEntry(SnoopFilterCache::iterator& sf_it)
 }
 
 std::pair<SnoopFilter::SnoopList, Cycles>
-SnoopFilter::lookupRequest(const Packet* cpkt, const SlavePort& slave_port)
+SnoopFilter::lookupRequest(const Packet* cpkt, const ResponsePort&
+                           cpu_side_port)
 {
     DPRINTF(SnoopFilter, "%s: src %s packet %s\n", __func__,
-            slave_port.name(), cpkt->print());
+            cpu_side_port.name(), cpkt->print());
 
     // check if the packet came from a cache
-    bool allocate = !cpkt->req->isUncacheable() && slave_port.isSnooping() &&
-        cpkt->fromCache();
+    bool allocate = !cpkt->req->isUncacheable() && cpu_side_port.isSnooping()
+        && cpkt->fromCache();
     Addr line_addr = cpkt->getBlockAddr(linesize);
     if (cpkt->isSecure()) {
         line_addr |= LineSecure;
     }
-    SnoopMask req_port = portToMask(slave_port);
+    SnoopMask req_port = portToMask(cpu_side_port);
     reqLookupResult.it = cachedLocations.find(line_addr);
     bool is_hit = (reqLookupResult.it != cachedLocations.end());
 
@@ -98,12 +100,12 @@ SnoopFilter::lookupRequest(const Packet* cpkt, const SlavePort& slave_port)
     // updateRequest.
     reqLookupResult.retryItem = sf_item;
 
-    totRequests++;
+    stats.totRequests++;
     if (is_hit) {
         if (interested.count() == 1)
-            hitSingleRequests++;
+            stats.hitSingleRequests++;
         else
-            hitMultiRequests++;
+            stats.hitMultiRequests++;
     }
 
     DPRINTF(SnoopFilter, "%s:   SF value %x.%x\n",
@@ -139,7 +141,7 @@ SnoopFilter::lookupRequest(const Packet* cpkt, const SlavePort& slave_port)
     } else { // if (!cpkt->needsResponse())
         assert(cpkt->isEviction());
         // make sure that the sender actually had the line
-        panic_if((sf_item.holder & req_port).none(), "requester %x is not a " \
+        panic_if((sf_item.holder & req_port).none(), "requestor %x is not a " \
                  "holder :( SF value %x.%x\n", req_port,
                  sf_item.requested, sf_item.holder);
         // CleanEvicts and Writebacks -> the sender and all caches above
@@ -208,12 +210,12 @@ SnoopFilter::lookupSnoop(const Packet* cpkt)
 
     SnoopMask interested = (sf_item.holder | sf_item.requested);
 
-    totSnoops++;
+    stats.totSnoops++;
 
     if (interested.count() == 1)
-        hitSingleSnoops++;
+        stats.hitSingleSnoops++;
     else
-        hitMultiSnoops++;
+        stats.hitMultiSnoops++;
 
     // ReadEx and Writes require both invalidation and exlusivity, while reads
     // require neither. Writebacks on the other hand require exclusivity but
@@ -242,8 +244,8 @@ SnoopFilter::lookupSnoop(const Packet* cpkt)
 
 void
 SnoopFilter::updateSnoopResponse(const Packet* cpkt,
-                                 const SlavePort& rsp_port,
-                                 const SlavePort& req_port)
+                                 const ResponsePort& rsp_port,
+                                 const ResponsePort& req_port)
 {
     DPRINTF(SnoopFilter, "%s: rsp %s req %s packet %s\n",
             __func__, rsp_port.name(), req_port.name(), cpkt->print());
@@ -299,7 +301,7 @@ SnoopFilter::updateSnoopResponse(const Packet* cpkt,
 
 void
 SnoopFilter::updateSnoopForward(const Packet* cpkt,
-        const SlavePort& rsp_port, const MasterPort& req_port)
+        const ResponsePort& rsp_port, const RequestPort& req_port)
 {
     DPRINTF(SnoopFilter, "%s: rsp %s req %s packet %s\n",
             __func__, rsp_port.name(), req_port.name(), cpkt->print());
@@ -335,16 +337,17 @@ SnoopFilter::updateSnoopForward(const Packet* cpkt,
 }
 
 void
-SnoopFilter::updateResponse(const Packet* cpkt, const SlavePort& slave_port)
+SnoopFilter::updateResponse(const Packet* cpkt, const ResponsePort&
+                            cpu_side_port)
 {
     DPRINTF(SnoopFilter, "%s: src %s packet %s\n",
-            __func__, slave_port.name(), cpkt->print());
+            __func__, cpu_side_port.name(), cpkt->print());
 
     assert(cpkt->isResponse());
 
     // we only allocate if the packet actually came from a cache, but
     // start by checking if the port is snooping
-    if (cpkt->req->isUncacheable() || !slave_port.isSnooping())
+    if (cpkt->req->isUncacheable() || !cpu_side_port.isSnooping())
         return;
 
     // next check if we actually allocated an entry
@@ -356,73 +359,61 @@ SnoopFilter::updateResponse(const Packet* cpkt, const SlavePort& slave_port)
     if (sf_it == cachedLocations.end())
         return;
 
-    SnoopMask slave_mask = portToMask(slave_port);
+    SnoopMask response_mask = portToMask(cpu_side_port);
     SnoopItem& sf_item = sf_it->second;
 
     DPRINTF(SnoopFilter, "%s:   old SF value %x.%x\n",
             __func__,  sf_item.requested, sf_item.holder);
 
     // Make sure we have seen the actual request, too
-    panic_if((sf_item.requested & slave_mask).none(),
+    panic_if((sf_item.requested & response_mask).none(),
              "SF value %x.%x missing request bit\n",
              sf_item.requested, sf_item.holder);
 
-    sf_item.requested &= ~slave_mask;
+    sf_item.requested &= ~response_mask;
     // Update the residency of the cache line.
 
     if (cpkt->req->isCacheMaintenance()) {
         // A cache clean response does not carry any data so it
         // shouldn't change the holders, unless it is invalidating.
         if (cpkt->isInvalidate()) {
-            sf_item.holder &= ~slave_mask;
+            sf_item.holder &= ~response_mask;
         }
         eraseIfNullEntry(sf_it);
     } else {
         // Any other response implies that a cache above will have the
         // block.
-        sf_item.holder |= slave_mask;
+        sf_item.holder |= response_mask;
         assert((sf_item.holder | sf_item.requested).any());
     }
     DPRINTF(SnoopFilter, "%s:   new SF value %x.%x\n",
             __func__, sf_item.requested, sf_item.holder);
 }
 
+SnoopFilter::SnoopFilterStats::SnoopFilterStats(statistics::Group *parent)
+    : statistics::Group(parent),
+      ADD_STAT(totRequests, statistics::units::Count::get(),
+               "Total number of requests made to the snoop filter."),
+      ADD_STAT(hitSingleRequests, statistics::units::Count::get(),
+               "Number of requests hitting in the snoop filter with a single "
+               "holder of the requested data."),
+      ADD_STAT(hitMultiRequests, statistics::units::Count::get(),
+               "Number of requests hitting in the snoop filter with multiple "
+               "(>1) holders of the requested data."),
+      ADD_STAT(totSnoops, statistics::units::Count::get(),
+               "Total number of snoops made to the snoop filter."),
+      ADD_STAT(hitSingleSnoops, statistics::units::Count::get(),
+               "Number of snoops hitting in the snoop filter with a single "
+               "holder of the requested data."),
+      ADD_STAT(hitMultiSnoops, statistics::units::Count::get(),
+               "Number of snoops hitting in the snoop filter with multiple "
+               "(>1) holders of the requested data.")
+{}
+
 void
 SnoopFilter::regStats()
 {
     SimObject::regStats();
-
-    totRequests
-        .name(name() + ".tot_requests")
-        .desc("Total number of requests made to the snoop filter.");
-
-    hitSingleRequests
-        .name(name() + ".hit_single_requests")
-        .desc("Number of requests hitting in the snoop filter with a single "\
-              "holder of the requested data.");
-
-    hitMultiRequests
-        .name(name() + ".hit_multi_requests")
-        .desc("Number of requests hitting in the snoop filter with multiple "\
-              "(>1) holders of the requested data.");
-
-    totSnoops
-        .name(name() + ".tot_snoops")
-        .desc("Total number of snoops made to the snoop filter.");
-
-    hitSingleSnoops
-        .name(name() + ".hit_single_snoops")
-        .desc("Number of snoops hitting in the snoop filter with a single "\
-              "holder of the requested data.");
-
-    hitMultiSnoops
-        .name(name() + ".hit_multi_snoops")
-        .desc("Number of snoops hitting in the snoop filter with multiple "\
-              "(>1) holders of the requested data.");
 }
 
-SnoopFilter *
-SnoopFilterParams::create()
-{
-    return new SnoopFilter(this);
-}
+} // namespace gem5

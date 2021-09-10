@@ -24,14 +24,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez
  */
 
 #ifndef __BASE_LOADER_DTB_FILE_HH__
 #define __BASE_LOADER_DTB_FILE_HH__
 
+#include "base/compiler.hh"
 #include "base/loader/image_file.hh"
+
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 /** @file
  * This implements an image file format to support loading
@@ -68,5 +74,8 @@ class DtbFile : public ImageFile
 
     MemoryImage buildImage() const override;
 };
+
+} // namespace loader
+} // namespace gem5
 
 #endif //__BASE_LOADER_DTB_FILE_HH__

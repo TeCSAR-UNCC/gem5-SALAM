@@ -32,9 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Rene de Jong
-#
 
 from m5.params import *
 from m5.proxy import *
@@ -50,13 +47,14 @@ class DataDistribution(Enum): vals = ['sequential', 'stripe']
 class FlashDevice(AbstractNVM):
     type = 'FlashDevice'
     cxx_header = "dev/arm/flash_device.hh"
-    # default blocksize is 128 kB.This seems to be the most common size in
+    cxx_class = 'gem5::FlashDevice'
+    # default blocksize is 128 KiB.This seems to be the most common size in
     # mobile devices (not the image blocksize)
-    blk_size = Param.MemorySize("128kB", "Size of one disk block")
-    # disk page size is 2 kB. This is the most commonly used page size in
+    blk_size = Param.MemorySize("128KiB", "Size of one disk block")
+    # disk page size is 2 KiB. This is the most commonly used page size in
     # flash devices
-    page_size = Param.MemorySize("2kB", "Size of one disk page")
-    # There are many GC flavours. It is impossible to cover them all; this
+    page_size = Param.MemorySize("2KiB", "Size of one disk page")
+    # There are many GC flavors. It is impossible to cover them all; this
     # parameter enables the approximation of different GC algorithms
     GC_active = Param.Percent(50, "Percentage of the time (in whole numbers) \
         that the GC is activated if a block is full")

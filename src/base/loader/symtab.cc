@@ -24,117 +24,104 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "base/loader/symtab.hh"
 
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
 
 #include "base/logging.hh"
 #include "base/str.hh"
-#include "base/types.hh"
-#include "sim/serialize.hh"
 
-using namespace std;
+namespace gem5
+{
 
-SymbolTable *debugSymbolTable = NULL;
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
+
+SymbolTable debugSymbolTable;
 
 void
 SymbolTable::clear()
 {
-    addrTable.clear();
-    symbolTable.clear();
+    addrMap.clear();
+    nameMap.clear();
+    symbols.clear();
 }
 
 bool
-SymbolTable::insert(Addr address, string symbol)
+SymbolTable::insert(const Symbol &symbol)
 {
-    if (symbol.empty())
+    if (symbol.name.empty())
         return false;
 
-    if (!symbolTable.insert(make_pair(symbol, address)).second)
+    int idx = symbols.size();
+
+    if (!nameMap.insert({ symbol.name, idx }).second)
         return false;
 
     // There can be multiple symbols for the same address, so always
     // update the addrTable multimap when we see a new symbol name.
-    addrTable.insert(make_pair(address, symbol));
+    addrMap.insert({ symbol.address, idx });
+
+    symbols.emplace_back(symbol);
 
     return true;
 }
-
 
 bool
-SymbolTable::load(const string &filename)
+SymbolTable::insert(const SymbolTable &other)
 {
-    string buffer;
-    ifstream file(filename.c_str());
+    // Check if any symbol in other already exists in our table.
+    NameMap intersection;
+    std::set_intersection(other.nameMap.begin(), other.nameMap.end(),
+                          nameMap.begin(), nameMap.end(),
+                          std::inserter(intersection, intersection.begin()),
+                          nameMap.value_comp());
+    if (!intersection.empty())
+        return false;
 
-    if (!file)
-        fatal("file error: Can't open symbol table file %s\n", filename);
-
-    while (!file.eof()) {
-        getline(file, buffer);
-        if (buffer.empty())
-            continue;
-
-        string::size_type idx = buffer.find(',');
-        if (idx == string::npos)
-            return false;
-
-        string address = buffer.substr(0, idx);
-        eat_white(address);
-        if (address.empty())
-            return false;
-
-        string symbol = buffer.substr(idx + 1);
-        eat_white(symbol);
-        if (symbol.empty())
-            return false;
-
-        Addr addr;
-        if (!to_number(address, addr))
-            return false;
-
-        if (!insert(addr, symbol))
-            return false;
-    }
-
-    file.close();
+    for (const Symbol &symbol: other)
+        insert(symbol);
 
     return true;
 }
 
 void
-SymbolTable::serialize(const string &base, CheckpointOut &cp) const
+SymbolTable::serialize(const std::string &base, CheckpointOut &cp) const
 {
-    paramOut(cp, base + ".size", addrTable.size());
+    paramOut(cp, base + ".size", symbols.size());
 
     int i = 0;
-    ATable::const_iterator p, end = addrTable.end();
-    for (p = addrTable.begin(); p != end; ++p) {
-        paramOut(cp, csprintf("%s.addr_%d", base, i), p->first);
-        paramOut(cp, csprintf("%s.symbol_%d", base, i), p->second);
-        ++i;
+    for (auto &symbol: symbols) {
+        paramOut(cp, csprintf("%s.addr_%d", base, i), symbol.address);
+        paramOut(cp, csprintf("%s.symbol_%d", base, i), symbol.name);
+        paramOut(cp, csprintf("%s.binding_%d", base, i), (int)symbol.binding);
+        i++;
     }
 }
 
 void
-SymbolTable::unserialize(const string &base, CheckpointIn &cp)
+SymbolTable::unserialize(const std::string &base, CheckpointIn &cp,
+                         Symbol::Binding default_binding)
 {
     clear();
     int size;
     paramIn(cp, base + ".size", size);
     for (int i = 0; i < size; ++i) {
-        Addr addr;
-        std::string symbol;
+        Addr address;
+        std::string name;
+        Symbol::Binding binding = default_binding;
 
-        paramIn(cp, csprintf("%s.addr_%d", base, i), addr);
-        paramIn(cp, csprintf("%s.symbol_%d", base, i), symbol);
-        insert(addr, symbol);
+        paramIn(cp, csprintf("%s.addr_%d", base, i), address);
+        paramIn(cp, csprintf("%s.symbol_%d", base, i), name);
+        if (!optParamIn(cp, csprintf("%s.binding_%d", base, i), binding))
+            binding = default_binding;
+        insert({binding, name, address});
     }
 }
+
+} // namespace loader
+} // namespace gem5

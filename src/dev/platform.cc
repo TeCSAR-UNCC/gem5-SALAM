@@ -24,26 +24,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Nathan Binkert
  */
 
 #include "dev/platform.hh"
 
 #include "base/logging.hh"
-#include "sim/sim_exit.hh"
 
-using namespace std;
-
-Platform::Platform(const Params *p)
-    : SimObject(p), intrctrl(p->intrctrl)
+namespace gem5
 {
-}
 
-Platform::~Platform()
-{
-}
+Platform::Platform(const Params &p) : SimObject(p), system(p.system) {}
 
 void
 Platform::postPciInt(int line)
@@ -56,3 +46,5 @@ Platform::clearPciInt(int line)
 {
    panic("No PCI interrupt support in platform.");
 }
+
+} // namespace gem5

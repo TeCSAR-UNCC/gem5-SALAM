@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __ARCH_ARM_PAGETABLE_H__
@@ -45,18 +43,19 @@
 
 #include <cstdint>
 
-#include "arch/arm/isa_traits.hh"
+#include "arch/arm/page_size.hh"
+#include "arch/arm/types.hh"
 #include "arch/arm/utility.hh"
-#include "arch/arm/vtophys.hh"
 #include "sim/serialize.hh"
 
-namespace ArmISA {
-
-struct VAddr
+namespace gem5
 {
-    VAddr(Addr a) { panic("not implemented yet."); }
-};
 
+namespace ArmISA
+{
+
+// Max. physical address range in bits supported by the architecture
+const unsigned MaxPhysAddrRange = 52;
 
 // ITB/DTB page table entry
 struct PTE
@@ -74,7 +73,8 @@ struct PTE
 };
 
 // Lookup level
-enum LookupLevel {
+enum LookupLevel
+{
     L0 = 0,  // AArch64 only
     L1,
     L2,
@@ -86,13 +86,15 @@ enum LookupLevel {
 struct TlbEntry : public Serializable
 {
   public:
-    enum class MemoryType : std::uint8_t {
+    enum class MemoryType : std::uint8_t
+    {
         StronglyOrdered,
         Device,
         Normal
     };
 
-    enum class DomainType : std::uint8_t {
+    enum class DomainType : std::uint8_t
+    {
         NoAccess = 0,
         Client,
         Reserved,
@@ -111,7 +113,7 @@ struct TlbEntry : public Serializable
                                 // use (AArch32 w/ LPAE and AArch64)
 
     uint16_t asid;          // Address Space Identifier
-    uint8_t vmid;           // Virtual machine Identifier
+    vmid_t vmid;            // Virtual machine Identifier
     uint8_t N;              // Number of bits in pagesize
     uint8_t innerAttrs;
     uint8_t outerAttrs;
@@ -190,23 +192,24 @@ struct TlbEntry : public Serializable
     }
 
     bool
-    match(Addr va, uint8_t _vmid, bool hypLookUp, bool secure_lookup,
-          ExceptionLevel target_el) const
+    match(Addr va, vmid_t _vmid, bool hyp_lookup, bool secure_lookup,
+          ExceptionLevel target_el, bool in_host) const
     {
-        return match(va, 0, _vmid, hypLookUp, secure_lookup, true, target_el);
+        return match(va, 0, _vmid, hyp_lookup, secure_lookup, true,
+                     target_el, in_host);
     }
 
     bool
-    match(Addr va, uint16_t asn, uint8_t _vmid, bool hypLookUp,
-          bool secure_lookup, bool ignore_asn, ExceptionLevel target_el) const
+    match(Addr va, uint16_t asn, vmid_t _vmid, bool hyp_lookup,
+          bool secure_lookup, bool ignore_asn, ExceptionLevel target_el,
+          bool in_host) const
     {
         bool match = false;
         Addr v = vpn << N;
-
         if (valid && va >= v && va <= v + size && (secure_lookup == !nstid) &&
-            (hypLookUp == isHyp))
+            (hyp_lookup == isHyp))
         {
-            match = checkELMatch(target_el);
+            match = checkELMatch(target_el, in_host);
 
             if (match && !ignore_asn) {
                 match = global || (asn == asid);
@@ -219,12 +222,20 @@ struct TlbEntry : public Serializable
     }
 
     bool
-    checkELMatch(ExceptionLevel target_el) const
+    checkELMatch(ExceptionLevel target_el, bool in_host) const
     {
-        if (target_el == EL2 || target_el == EL3) {
-            return (el  == target_el);
-        } else {
-            return (el == EL0) || (el == EL1);
+        switch (target_el) {
+            case EL3:
+                return el == EL3;
+            case EL2:
+              {
+                return el == EL2 || (el == EL0 && in_host);
+              }
+            case EL1:
+            case EL0:
+                return (el == EL0) || (el == EL1);
+            default:
+                return false;
         }
     }
 
@@ -355,8 +366,7 @@ struct TlbEntry : public Serializable
 
 };
 
+} // namespace ArmISA
+} // namespace gem5
 
-
-}
 #endif // __ARCH_ARM_PAGETABLE_H__
-

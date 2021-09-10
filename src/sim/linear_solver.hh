@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #ifndef __SIM_LINEAR_SOLVER_HH__
@@ -45,13 +43,17 @@
 #include <string>
 #include <vector>
 
+namespace gem5
+{
+
 /**
  * This class describes a linear equation with constant coefficients.
  * The equation has a certain (variable) number of unkowns and it can hold
  * N+1 coefficients.
  */
 
-class LinearEquation {
+class LinearEquation
+{
   public:
     LinearEquation(unsigned unknowns) {
         eq = std::vector <double> (unknowns + 1, 0);
@@ -106,7 +108,8 @@ class LinearEquation {
     std::vector <double> eq;
 };
 
-class LinearSystem {
+class LinearSystem
+{
   public:
     LinearSystem(unsigned unknowns) {
         for (unsigned i = 0; i < unknowns; i++)
@@ -130,5 +133,7 @@ class LinearSystem {
   private:
     std::vector < LinearEquation > matrix;
 };
+
+} // namespace gem5
 
 #endif

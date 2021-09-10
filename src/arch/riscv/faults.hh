@@ -26,25 +26,28 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Alec Roelke
- *          Robert Scheffel
  */
 
 #ifndef __ARCH_RISCV_FAULTS_HH__
 #define __ARCH_RISCV_FAULTS_HH__
 
+#include <cstdint>
 #include <string>
 
 #include "arch/riscv/isa.hh"
-#include "arch/riscv/registers.hh"
-#include "cpu/thread_context.hh"
+#include "cpu/null_static_inst.hh"
 #include "sim/faults.hh"
+
+namespace gem5
+{
+
+class ThreadContext;
 
 namespace RiscvISA
 {
 
-enum FloatException : uint64_t {
+enum FloatException : uint64_t
+{
     FloatInexact = 0x1,
     FloatUnderflow = 0x2,
     FloatOverflow = 0x4,
@@ -61,7 +64,8 @@ enum FloatException : uint64_t {
  * For more details on exception causes, see Chapter 3.1.20 of the RISC-V
  * privileged specification v 1.10. Codes are enumerated in Table 3.6.
  */
-enum ExceptionCode : uint64_t {
+enum ExceptionCode : uint64_t
+{
     INST_ADDR_MISALIGNED = 0,
     INST_ACCESS = 1,
     INST_ILLEGAL = 2,
@@ -122,7 +126,7 @@ class Reset : public FaultBase
     FaultName name() const override { return _name; }
 
     void invoke(ThreadContext *tc, const StaticInstPtr &inst =
-        StaticInst::nullStaticInstPtr) override;
+        nullStaticInstPtr) override;
 };
 
 class InterruptFault : public RiscvFault
@@ -249,5 +253,6 @@ class SyscallFault : public RiscvFault
 };
 
 } // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_FAULTS_HH__

@@ -24,42 +24,30 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __ARCH_SPARC_STACKTRACE_HH__
 #define __ARCH_SPARC_STACKTRACE_HH__
 
-#include <vector>
+#include "cpu/profile.hh"
 
-#include "base/types.hh"
-#include "cpu/static_inst.hh"
-#include "debug/Stack.hh"
+namespace gem5
+{
 
-class ThreadContext;
 namespace SparcISA
 {
 
-class StackTrace
+class StackTrace : public BaseStackTrace
 {
-  private:
-    std::vector<Addr> stack;
-
-  public:
-    bool
-    trace(ThreadContext *tc, const StaticInstPtr &inst)
+  protected:
+    void
+    trace(ThreadContext *tc, bool is_call) override
     {
-        panic("StackTrace::trace not implemented for SPARC.\n");
-        return false;
+        panic("StackTrace::trace not implemented for SPARC.");
     }
-
-    const std::vector<Addr> &getstack() const { return stack; }
-
-  public:
-    void dprintf() {}
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_STACKTRACE_HH__

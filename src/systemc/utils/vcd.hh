@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_UTILS_VCD_HH__
@@ -32,6 +30,7 @@
 
 #include <map>
 
+#include "base/types.hh"
 #include "systemc/utils/tracefile.hh"
 
 namespace sc_gem5
@@ -53,7 +52,7 @@ class VcdTraceScope
 class VcdTraceFile : public TraceFile
 {
   private:
-    Tick lastPrintedTime;
+    gem5::Tick lastPrintedTime;
     uint64_t deltasAtNow;
 
     static const int NextNameChars = 5;

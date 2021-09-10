@@ -23,13 +23,12 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 '''
 Test file for simple memory test
 TODO: Add stats checking
 '''
+
 from testlib import *
 
 gem5_verify_config(
@@ -50,7 +49,7 @@ simple_mem_params = [
 
 
 for name, params in simple_mem_params:
-    args = ['--' + key + '=' + val for key,val in params.iteritems()]
+    args = ['--' + key + '=' + val for key,val in params.items()]
 
     gem5_verify_config(
         name='simple_mem_' + name,
@@ -67,3 +66,24 @@ gem5_verify_config(
     config_args = [],
     valid_isas=(constants.null_tag,),
 )
+
+null_tests = [
+    ('garnet_synth_traffic', ['--sim-cycles', '5000000']),
+    ('memcheck', ['--maxtick', '2000000000', '--prefetchers']),
+    ('ruby_mem_test', ['--abs-max-tick', '20000000',
+        '--functional', '10']),
+    ('ruby_random_test', ['--maxloads', '5000']),
+    ('ruby_direct_test', ['--requests', '50000']),
+]
+
+for basename_noext, args in null_tests:
+    gem5_verify_config(
+        name=basename_noext,
+        fixtures=(),
+        verifiers=(),
+        config=joinpath(config.base_dir, 'configs',
+            'example', basename_noext + '.py'),
+        config_args=args,
+        valid_isas=(constants.null_tag,),
+        valid_hosts=constants.supported_hosts,
+    )

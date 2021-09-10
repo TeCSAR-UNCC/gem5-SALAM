@@ -25,12 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Korey Sewell
- *          Jaidev Patwardhan
- *          Zhengxing Li
- *          Deyuan Guo
  */
 
 #include "arch/mips/faults.hh"
@@ -42,6 +36,9 @@
 #include "debug/MipsPRA.hh"
 #include "mem/page_table.hh"
 #include "sim/process.hh"
+
+namespace gem5
+{
 
 namespace MipsISA
 {
@@ -173,4 +170,4 @@ NonMaskableInterrupt::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 }
 
 } // namespace MipsISA
-
+} // namespace gem5

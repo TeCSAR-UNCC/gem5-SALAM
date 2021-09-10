@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabor Dozsa
  */
 
 /* @file
@@ -64,38 +62,39 @@
 #include "dev/net/etherpkt.hh"
 #include "dev/net/tcp_iface.hh"
 #include "params/EtherLink.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
 #include "sim/serialize.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
 
-DistEtherLink::DistEtherLink(const Params *p)
-    : SimObject(p), linkDelay(p->delay)
+DistEtherLink::DistEtherLink(const Params &p)
+    : SimObject(p), linkDelay(p.delay)
 {
     DPRINTF(DistEthernet,"DistEtherLink::DistEtherLink() "
-            "link delay:%llu ticksPerByte:%f\n", p->delay, p->speed);
+            "link delay:%llu ticksPerByte:%f\n", p.delay, p.speed);
 
-    txLink = new TxLink(name() + ".link0", this, p->speed, p->delay_var,
-                        p->dump);
-    rxLink = new RxLink(name() + ".link1", this, p->delay, p->dump);
+    txLink = new TxLink(name() + ".link0", this, p.speed, p.delay_var,
+                        p.dump);
+    rxLink = new RxLink(name() + ".link1", this, p.delay, p.dump);
 
     Tick sync_repeat;
-    if (p->sync_repeat != 0) {
-        if (p->sync_repeat != p->delay)
+    if (p.sync_repeat != 0) {
+        if (p.sync_repeat != p.delay)
             warn("DistEtherLink(): sync_repeat is %lu and linkdelay is %lu",
-                 p->sync_repeat, p->delay);
-        sync_repeat = p->sync_repeat;
+                 p.sync_repeat, p.delay);
+        sync_repeat = p.sync_repeat;
     } else {
-        sync_repeat = p->delay;
+        sync_repeat = p.delay;
     }
 
     // create the dist (TCP) interface to talk to the peer gem5 processes.
-    distIface = new TCPIface(p->server_name, p->server_port,
-                             p->dist_rank, p->dist_size,
-                             p->sync_start, sync_repeat, this,
-                             p->dist_sync_on_pseudo_op, p->is_switch,
-                             p->num_nodes);
+    distIface = new TCPIface(p.server_name, p.server_port,
+                             p.dist_rank, p.dist_size,
+                             p.sync_start, sync_repeat, this,
+                             p.dist_sync_on_pseudo_op, p.is_switch,
+                             p.num_nodes);
 
     localIface = new LocalIface(name() + ".int0", txLink, rxLink, distIface);
 }
@@ -230,7 +229,7 @@ DistEtherLink::Link::unserialize(CheckpointIn &cp)
     bool packet_exists;
     UNSERIALIZE_SCALAR(packet_exists);
     if (packet_exists) {
-        packet = make_shared<EthPacketData>();
+        packet = std::make_shared<EthPacketData>();
         packet->unserialize("packet", cp);
     }
 
@@ -255,10 +254,4 @@ DistEtherLink::LocalIface::LocalIface(const std::string &name,
     rx->setDistInt(m);
 }
 
-DistEtherLink *
-DistEtherLinkParams::create()
-{
-    return new DistEtherLink(this);
-}
-
-
+} // namespace gem5

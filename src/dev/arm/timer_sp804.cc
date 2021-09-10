@@ -33,13 +33,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #include "dev/arm/timer_sp804.hh"
 
+#include <cassert>
+
 #include "base/intmath.hh"
+#include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/Checkpoint.hh"
 #include "debug/Timer.hh"
@@ -47,15 +48,20 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-Sp804::Sp804(Params *p)
-    : AmbaPioDevice(p, 0x1000), gic(p->gic),
-      timer0(name() + ".timer0", this, p->int_num0, p->clock0),
-      timer1(name() + ".timer1", this, p->int_num1, p->clock1)
+namespace gem5
+{
+
+Sp804::Sp804(const Params &p)
+    : AmbaPioDevice(p, 0x1000),
+      timer0(name() + ".timer0", this, p.int0->get(), p.clock0),
+      timer1(name() + ".timer1", this, p.int1->get(), p.clock1)
 {
 }
 
-Sp804::Timer::Timer(std::string __name, Sp804 *_parent, int int_num, Tick _clock)
-    : _name(__name), parent(_parent), intNum(int_num), clock(_clock), control(0x20),
+Sp804::Timer::Timer(std::string __name, Sp804 *_parent,
+                    ArmInterruptPin *_interrupt, Tick _clock)
+    : _name(__name), parent(_parent), interrupt(_interrupt),
+      clock(_clock), control(0x20),
       rawInt(false), pendingInt(false), loadValue(0xffffffff),
       zeroEvent([this]{ counterAtZero(); }, name())
 {
@@ -93,7 +99,7 @@ Sp804::Timer::read(PacketPtr pkt, Addr daddr)
                 zeroEvent.when(), clock, control.timerPrescale);
         Tick time;
         time = zeroEvent.when() - curTick();
-        time = time / clock / power(16, control.timerPrescale);
+        time = (time / clock) >> (4 * control.timerPrescale);
         DPRINTF(Timer, "-- returning counter at %d\n", time);
         pkt->setLE<uint32_t>(time);
         break;
@@ -160,7 +166,7 @@ Sp804::Timer::write(PacketPtr pkt, Addr daddr)
         if (pendingInt) {
             pendingInt = false;
             DPRINTF(Timer, "Clearing interrupt\n");
-            parent->gic->clearInt(intNum);
+            interrupt->clear();
         }
         break;
       case BGLoad:
@@ -179,7 +185,7 @@ Sp804::Timer::restartCounter(uint32_t val)
     if (!control.timerEnable)
         return;
 
-    Tick time = clock * power(16, control.timerPrescale);
+    Tick time = clock << (4 * control.timerPrescale);
     if (control.timerSize)
         time *= val;
     else
@@ -207,7 +213,7 @@ Sp804::Timer::counterAtZero()
         pendingInt = true;
     if (pendingInt && !old_pending) {
         DPRINTF(Timer, "-- Causing interrupt\n");
-        parent->gic->sendInt(intNum);
+        interrupt->raise();
     }
 
     if (control.oneShot)
@@ -281,8 +287,4 @@ Sp804::unserialize(CheckpointIn &cp)
     timer1.unserializeSection(cp, "timer1");
 }
 
-Sp804 *
-Sp804Params::create()
-{
-    return new Sp804(this);
-}
+} // namespace gem5

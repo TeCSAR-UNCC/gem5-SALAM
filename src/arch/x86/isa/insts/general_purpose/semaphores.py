@@ -33,8 +33,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop CMPXCHG_R_R {
@@ -134,6 +132,7 @@ cmpxchg8bCode = '''
 def macroop CMPXCHG8B_%(suffix)s {
     .adjust_env clampOsz
     %(rdip)s
+    %(mfence)s
     lea t1, seg, %(sib)s, disp, dataSize=asz
     ldsplit%(l)s (t2, t3), seg, [1, t0, t1], disp=0
 
@@ -152,20 +151,25 @@ doneComparing:
 
     # Write to memory
     stsplit%(ul)s (t2, t3), seg, [1, t0, t1], disp=0
+    %(mfence)s
 };
 '''
 
 microcode += cmpxchg8bCode % {"rdip": "", "sib": "sib",
                               "l": "", "ul": "",
+                              "mfence": "",
                               "suffix": "M"}
 microcode += cmpxchg8bCode % {"rdip": "rdip t7", "sib": "riprel",
                               "l": "", "ul": "",
+                              "mfence": "",
                               "suffix": "P"}
 microcode += cmpxchg8bCode % {"rdip": "", "sib": "sib",
                               "l": "l", "ul": "ul",
+                              "mfence": "mfence",
                               "suffix": "LOCKED_M"}
 microcode += cmpxchg8bCode % {"rdip": "rdip t7", "sib": "riprel",
                               "l": "l", "ul": "ul",
+                              "mfence": "mfence",
                               "suffix": "LOCKED_P"}
 
 #let {{

@@ -33,27 +33,29 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Rune Holm
- *          Marco Elver
  */
 
 #ifndef __MEM_MEM_CHECKER_HH__
 #define __MEM_MEM_CHECKER_HH__
 
+#include <cassert>
+#include <cstdint>
 #include <list>
 #include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "base/logging.hh"
+#include "base/cprintf.hh"
+#include "base/named.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
 #include "debug/MemChecker.hh"
 #include "params/MemChecker.hh"
-#include "sim/core.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 /**
  * MemChecker. Verifies that reads observe the values from permissible writes.
@@ -372,7 +374,7 @@ class MemChecker : public SimObject
 
   public:
 
-    MemChecker(const MemCheckerParams *p)
+    MemChecker(const MemCheckerParams &p)
         : SimObject(p),
           nextSerial(SERIAL_INITIAL)
     {}
@@ -565,5 +567,7 @@ MemChecker::abortWrite(MemChecker::Serial serial, Addr addr, size_t size)
         getByteTracker(addr + i)->abortWrite(serial);
     }
 }
+
+} // namespace gem5
 
 #endif // __MEM_MEM_CHECKER_HH__

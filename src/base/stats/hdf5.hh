@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __BASE_STATS_HDF5_HH__
@@ -47,11 +45,17 @@
 #include <string>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/output.hh"
 #include "base/stats/output.hh"
 #include "base/stats/types.hh"
 
-namespace Stats {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Stats, statistics);
+namespace statistics
+{
 
 class Hdf5 : public Output
 {
@@ -154,6 +158,7 @@ std::unique_ptr<Output> initHDF5(
     const std::string &filename,unsigned chunking = 10,
     bool desc = true, bool formulas = true);
 
-} // namespace Stats
+} // namespace statistics
+} // namespace gem5
 
 #endif // __BASE_STATS_HDF5_HH__

@@ -33,14 +33,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #include "dev/arm/smmu_v3_proc.hh"
 
+#include <cassert>
+#include <functional>
+
 #include "dev/arm/smmu_v3.hh"
 #include "sim/system.hh"
+
+namespace gem5
+{
 
 SMMUProcess::SMMUProcess(const std::string &name, SMMUv3 &_smmu) :
     coroutine(NULL),
@@ -70,17 +74,17 @@ SMMUProcess::reinit()
 void
 SMMUProcess::doRead(Yield &yield, Addr addr, void *ptr, size_t size)
 {
-    doSemaphoreDown(yield, smmu.masterPortSem);
+    doSemaphoreDown(yield, smmu.requestPortSem);
     doDelay(yield, Cycles(1)); // request - assume 1 cycle
-    doSemaphoreUp(smmu.masterPortSem);
+    doSemaphoreUp(smmu.requestPortSem);
 
     SMMUAction a;
     a.type = ACTION_SEND_REQ;
 
     RequestPtr req = std::make_shared<Request>(
-        addr, size, 0, smmu.masterId);
+        addr, size, 0, smmu.requestorId);
 
-    req->taskId(ContextSwitchTaskId::DMA);
+    req->taskId(context_switch_task_id::DMA);
 
     a.pkt = new Packet(req, MemCmd::ReadReq);
     a.pkt->dataStatic(ptr);
@@ -99,20 +103,21 @@ SMMUProcess::doRead(Yield &yield, Addr addr, void *ptr, size_t size)
 void
 SMMUProcess::doWrite(Yield &yield, Addr addr, const void *ptr, size_t size)
 {
-    unsigned nbeats = (size + (smmu.masterPortWidth-1)) / smmu.masterPortWidth;
+    unsigned nbeats = (size + (smmu.requestPortWidth-1))
+                            / smmu.requestPortWidth;
 
-    doSemaphoreDown(yield, smmu.masterPortSem);
+    doSemaphoreDown(yield, smmu.requestPortSem);
     doDelay(yield, Cycles(nbeats));
-    doSemaphoreUp(smmu.masterPortSem);
+    doSemaphoreUp(smmu.requestPortSem);
 
 
     SMMUAction a;
     a.type = ACTION_SEND_REQ;
 
     RequestPtr req = std::make_shared<Request>(
-        addr, size, 0, smmu.masterId);
+        addr, size, 0, smmu.requestorId);
 
-    req->taskId(ContextSwitchTaskId::DMA);
+    req->taskId(context_switch_task_id::DMA);
 
     a.pkt = new Packet(req, MemCmd::WriteReq);
     a.pkt->dataStatic(ptr);
@@ -207,3 +212,5 @@ SMMUProcess::run(PacketPtr pkt)
     assert(*coroutine);
     return (*coroutine)(pkt).get();
 }
+
+} // namespace gem5

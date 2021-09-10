@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 ARM Limited
+ * Copyright (c) 2015, 2021 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #ifndef __SIM_THERMAL_MODEL_HH__
@@ -42,16 +40,20 @@
 
 #include <vector>
 
-#include "params/ThermalCapacitor.hh"
-#include "params/ThermalModel.hh"
-#include "params/ThermalReference.hh"
-#include "params/ThermalResistor.hh"
+#include "base/temperature.hh"
 #include "sim/clocked_object.hh"
 #include "sim/power/thermal_domain.hh"
 #include "sim/power/thermal_entity.hh"
 #include "sim/power/thermal_node.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
+struct ThermalCapacitorParams;
+struct ThermalModelParams;
+struct ThermalReferenceParams;
+struct ThermalResistorParams;
 
 /**
  * A ThermalResistor is used to model a thermal resistance between two
@@ -62,10 +64,7 @@ class ThermalResistor : public SimObject, public ThermalEntity
 {
   public:
     typedef ThermalResistorParams Params;
-    ThermalResistor(const Params *p);
-
-    void serialize(CheckpointOut &cp) const override;
-    void unserialize(CheckpointIn &cp) override;
+    ThermalResistor(const Params &p);
 
     void setNodes(ThermalNode * n1, ThermalNode * n2) {
         node1 = n1;
@@ -77,7 +76,7 @@ class ThermalResistor : public SimObject, public ThermalEntity
 
   private:
     /* Resistance value in K/W */
-    double _resistance;
+    const double _resistance;
     /* Nodes connected to the resistor */
     ThermalNode * node1, * node2;
 };
@@ -91,10 +90,7 @@ class ThermalCapacitor : public SimObject, public ThermalEntity
 {
   public:
     typedef ThermalCapacitorParams Params;
-    ThermalCapacitor(const Params *p);
-
-    void serialize(CheckpointOut &cp) const override;
-    void unserialize(CheckpointIn &cp) override;
+    ThermalCapacitor(const Params &p);
 
     LinearEquation getEquation(ThermalNode * tn, unsigned n,
                                double step) const override;
@@ -106,7 +102,7 @@ class ThermalCapacitor : public SimObject, public ThermalEntity
 
   private:
     /* Capacitance value in J/K */
-    double _capacitance;
+    const double _capacitance;
     /* Nodes connected to the resistor */
     ThermalNode * node1, * node2;
 };
@@ -119,20 +115,19 @@ class ThermalReference : public SimObject, public ThermalEntity
 {
   public:
     typedef ThermalReferenceParams Params;
-    ThermalReference(const Params *p);
+    ThermalReference(const Params &p);
 
-    void setNode(ThermalNode * n) {
+    void
+    setNode(ThermalNode *n)
+    {
         node = n;
     }
 
     LinearEquation getEquation(ThermalNode * tn, unsigned n,
                                double step) const override;
 
-    void serialize(CheckpointOut &cp) const override;
-    void unserialize(CheckpointIn &cp) override;
-
-    /* Fixed temperature value in centigrate degrees */
-    double _temperature;
+    /* Fixed temperature value */
+    const Temperature _temperature;
     /* Nodes connected to the resistor */
     ThermalNode * node;
 };
@@ -150,7 +145,7 @@ class ThermalModel : public ClockedObject
 {
   public:
     typedef ThermalModelParams Params;
-    ThermalModel(const Params *p);
+    ThermalModel(const Params &p);
 
     void addDomain(ThermalDomain * d);
     void addReference(ThermalReference * r);
@@ -159,13 +154,11 @@ class ThermalModel : public ClockedObject
 
     void addNode(ThermalNode * n) { nodes.push_back(n); }
 
-    double getTemp() const;
+    Temperature getTemperature() const;
 
     void startup() override;
     void doStep();
 
-    void serialize(CheckpointOut &cp) const override;
-    void unserialize(CheckpointIn &cp) override;
   private:
 
     /* Keep track of all components used for the thermal model */
@@ -184,8 +177,9 @@ class ThermalModel : public ClockedObject
     EventFunctionWrapper stepEvent;
 
     /** Step in seconds for thermal updates */
-    double _step;
-
+    const double _step;
 };
+
+} // namespace gem5
 
 #endif

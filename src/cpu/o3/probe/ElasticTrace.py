@@ -32,15 +32,12 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Radhika Jagtap
-#          Andreas Hansson
-#          Thomas Grass
 
 from m5.objects.Probe import *
 
 class ElasticTrace(ProbeListenerObject):
     type = 'ElasticTrace'
+    cxx_class = 'gem5::o3::ElasticTrace'
     cxx_header = 'cpu/o3/probe/elastic_trace.hh'
 
     # Trace files for the following params are created in the output directory.

@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2019 ARM Limited
+# Copyright (c) 2017-2020 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -37,17 +37,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Nathan Binkert
-#          Andreas Hansson
-#          Andreas Sandberg
-
-from __future__ import print_function
-from __future__ import absolute_import
-import six
-if six.PY3:
-    long = int
 
 import sys
 from types import FunctionType, MethodType, ModuleType
@@ -146,6 +135,9 @@ def createCxxConfigDirectoryEntryFile(code, name, simobj, is_header):
         end_of_decl = ';'
         code('#include "sim/cxx_config.hh"')
         code()
+        code('namespace gem5')
+        code('{')
+        code()
         code('class ${param_class} : public CxxConfigParams,'
             ' public ${name}Params')
         code('{')
@@ -172,6 +164,8 @@ def createCxxConfigDirectoryEntryFile(code, name, simobj, is_header):
         code('#include "base/str.hh"')
         code('#include "cxx_config/${name}.hh"')
 
+        code('namespace gem5')
+        code('{')
         code()
         code('${member_prefix}DirectoryEntry::DirectoryEntry()');
         code('{')
@@ -190,11 +184,11 @@ def createCxxConfigDirectoryEntryFile(code, name, simobj, is_header):
 
         for port in simobj._ports.values():
             is_vector = isinstance(port, m5.params.VectorPort)
-            is_master = port.role == 'MASTER'
+            is_requestor = port.role == 'GEM5 REQUESTOR'
 
             code('ports["%s"] = new PortDesc("%s", %s, %s);' %
                 (port.name, port.name, cxx_bool(is_vector),
-                cxx_bool(is_master)))
+                cxx_bool(is_requestor)))
 
         code.dedent()
         code('}')
@@ -395,6 +389,8 @@ def createCxxConfigDirectoryEntryFile(code, name, simobj, is_header):
         code.dedent()
         code('};')
 
+    code('} // namespace gem5')
+
 # The metaclass for SimObject.  This class controls how new classes
 # that derive from SimObject are instantiated, and provides inherited
 # class behavior (just like a class controls how instances of that
@@ -471,6 +467,12 @@ class MetaSimObject(type):
         cls._params = multidict() # param descriptions
         cls._ports = multidict()  # port descriptions
 
+        # Parameter names that are deprecated. Dict[str, DeprecatedParam]
+        # The key is the "old_name" so that when the old_name is used in
+        # python config files, we will use the DeprecatedParam object to
+        # translate to the new type.
+        cls._deprecated_params = multidict()
+
         # class or instance attributes
         cls._values = multidict()   # param values
         cls._hr_values = multidict() # human readable param values
@@ -499,6 +501,7 @@ class MetaSimObject(type):
             cls._base = base
             cls._params.parent = base._params
             cls._ports.parent = base._ports
+            cls._deprecated_params.parent = base._deprecated_params
             cls._values.parent = base._values
             cls._hr_values.parent = base._hr_values
             cls._children.parent = base._children
@@ -535,6 +538,15 @@ class MetaSimObject(type):
             # port objects
             elif isinstance(val, Port):
                 cls._new_port(key, val)
+
+            # Deprecated variable names
+            elif isinstance(val, DeprecatedParam):
+                new_name, new_val = cls._get_param_by_value(val.newParam)
+                # Note: We don't know the (string) name of this variable until
+                # here, so now we can finish setting up the dep_param.
+                val.oldName = key
+                val.newName = new_name
+                cls._deprecated_params[key] = val
 
             # init-time-only keywords
             elif key in cls.init_keywords:
@@ -607,6 +619,18 @@ class MetaSimObject(type):
             ref = cls._ports[attr].makeRef(cls)
             cls._port_refs[attr] = ref
         return ref
+
+    def _get_param_by_value(cls, value):
+        """Given an object, value, return the name and the value from the
+        internal list of parameter values. If this value can't be found, raise
+        a runtime error. This will search both the current object and its
+        parents.
+        """
+        for k,v in cls._value_dict.items():
+            if v == value:
+                return k,v
+        raise RuntimeError("Cannot find parameter {} in parameter list"
+                           .format(value))
 
     # Set attribute (called on foo.attr = value when foo is an
     # instance of class cls).
@@ -683,19 +707,26 @@ class MetaSimObject(type):
     def pybind_predecls(cls, code):
         code('#include "${{cls.cxx_header}}"')
 
-    def pybind_decl(cls, code):
+    def params_create_decl(cls, code, python_enabled):
         py_class_name = cls.pybind_class
 
         # The 'local' attribute restricts us to the params declared in
         # the object itself, not including inherited params (which
         # will also be inherited from the base class's param struct
         # here). Sort the params based on their key
-        params = map(lambda k_v: k_v[1], sorted(cls._params.local.items()))
+        params = list(map(lambda k_v: k_v[1],
+                          sorted(cls._params.local.items())))
         ports = cls._ports.local
 
-        code('''#include "pybind11/pybind11.h"
+        # only include pybind if python is enabled in the build
+        if python_enabled:
+
+            code('''#include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
+#include <type_traits>
+
+#include "base/compiler.hh"
 #include "params/$cls.hh"
 #include "python/pybind11/core.hh"
 #include "sim/init.hh"
@@ -704,79 +735,169 @@ class MetaSimObject(type):
 #include "${{cls.cxx_header}}"
 
 ''')
+        else:
+            code('''
+#include <type_traits>
 
-        for param in params:
-            param.pybind_predecls(code)
+#include "base/compiler.hh"
+#include "params/$cls.hh"
 
-        code('''namespace py = pybind11;
+#include "${{cls.cxx_header}}"
+
+''')
+        # only include the python params code if python is enabled.
+        if python_enabled:
+            for param in params:
+                param.pybind_predecls(code)
+
+            code('''namespace py = pybind11;
+
+namespace gem5
+{
 
 static void
-module_init(py::module &m_internal)
+module_init(py::module_ &m_internal)
 {
-    py::module m = m_internal.def_submodule("param_${cls}");
+    py::module_ m = m_internal.def_submodule("param_${cls}");
 ''')
-        code.indent()
-        if cls._base:
-            code('py::class_<${cls}Params, ${{cls._base.type}}Params, ' \
-                 'std::unique_ptr<${{cls}}Params, py::nodelete>>(' \
-                 'm, "${cls}Params")')
-        else:
-            code('py::class_<${cls}Params, ' \
-                 'std::unique_ptr<${cls}Params, py::nodelete>>(' \
-                 'm, "${cls}Params")')
+            code.indent()
+            if cls._base:
+                code('py::class_<${cls}Params, ${{cls._base.type}}Params, ' \
+                    'std::unique_ptr<${{cls}}Params, py::nodelete>>(' \
+                    'm, "${cls}Params")')
+            else:
+                code('py::class_<${cls}Params, ' \
+                    'std::unique_ptr<${cls}Params, py::nodelete>>(' \
+                    'm, "${cls}Params")')
 
-        code.indent()
+            code.indent()
+            if not hasattr(cls, 'abstract') or not cls.abstract:
+                code('.def(py::init<>())')
+                code('.def("create", &${cls}Params::create)')
+
+            param_exports = cls.cxx_param_exports + [
+                PyBindProperty(k)
+                for k, v in sorted(cls._params.local.items())
+            ] + [
+                PyBindProperty("port_%s_connection_count" % port.name)
+                for port in ports.values()
+            ]
+            for exp in param_exports:
+                exp.export(code, "%sParams" % cls)
+
+            code(';')
+            code()
+            code.dedent()
+
+            bases = []
+            if 'cxx_base' in cls._value_dict:
+                # If the c++ base class implied by python inheritance was
+                # overridden, use that value.
+                if cls.cxx_base:
+                    bases.append(cls.cxx_base)
+            elif cls._base:
+                # If not and if there was a SimObject base, use its c++ class
+                # as this class' base.
+                bases.append(cls._base.cxx_class)
+            # Add in any extra bases that were requested.
+            bases.extend(cls.cxx_extra_bases)
+
+            if bases:
+                base_str = ", ".join(bases)
+                code('py::class_<${{cls.cxx_class}}, ${base_str}, ' \
+                    'std::unique_ptr<${{cls.cxx_class}}, py::nodelete>>(' \
+                    'm, "${py_class_name}")')
+            else:
+                code('py::class_<${{cls.cxx_class}}, ' \
+                    'std::unique_ptr<${{cls.cxx_class}}, py::nodelete>>(' \
+                    'm, "${py_class_name}")')
+            code.indent()
+            for exp in cls.cxx_exports:
+                exp.export(code, cls.cxx_class)
+            code(';')
+            code.dedent()
+            code()
+            code.dedent()
+            code('}')
+            code()
+            code('static EmbeddedPyBind '
+                 'embed_obj("${0}", module_init, "${1}");',
+                cls, cls._base.type if cls._base else "")
+            code()
+            code('} // namespace gem5')
+
+        # include the create() methods whether or not python is enabled.
         if not hasattr(cls, 'abstract') or not cls.abstract:
-            code('.def(py::init<>())')
-            code('.def("create", &${cls}Params::create)')
-
-        param_exports = cls.cxx_param_exports + [
-            PyBindProperty(k)
-            for k, v in sorted(cls._params.local.items())
-        ] + [
-            PyBindProperty("port_%s_connection_count" % port.name)
-            for port in ports.values()
-        ]
-        for exp in param_exports:
-            exp.export(code, "%sParams" % cls)
-
-        code(';')
-        code()
-        code.dedent()
-
-        bases = []
-        if 'cxx_base' in cls._value_dict:
-            # If the c++ base class implied by python inheritance was
-            # overridden, use that value.
-            if cls.cxx_base:
-                bases.append(cls.cxx_base)
-        elif cls._base:
-            # If not and if there was a SimObject base, use its c++ class
-            # as this class' base.
-            bases.append(cls._base.cxx_class)
-        # Add in any extra bases that were requested.
-        bases.extend(cls.cxx_extra_bases)
-
-        if bases:
-            base_str = ", ".join(bases)
-            code('py::class_<${{cls.cxx_class}}, ${base_str}, ' \
-                 'std::unique_ptr<${{cls.cxx_class}}, py::nodelete>>(' \
-                 'm, "${py_class_name}")')
-        else:
-            code('py::class_<${{cls.cxx_class}}, ' \
-                 'std::unique_ptr<${{cls.cxx_class}}, py::nodelete>>(' \
-                 'm, "${py_class_name}")')
-        code.indent()
-        for exp in cls.cxx_exports:
-            exp.export(code, cls.cxx_class)
-        code(';')
-        code.dedent()
-        code()
-        code.dedent()
-        code('}')
-        code()
-        code('static EmbeddedPyBind embed_obj("${0}", module_init, "${1}");',
-             cls, cls._base.type if cls._base else "")
+            if 'type' in cls.__dict__:
+                code()
+                code('namespace gem5')
+                code('{')
+                code()
+                code('namespace')
+                code('{')
+                code()
+                # If we can't define a default create() method for this params
+                # struct because the SimObject doesn't have the right
+                # constructor, use template magic to make it so we're actually
+                # defining a create method for this class instead.
+                code('class Dummy${cls}ParamsClass')
+                code('{')
+                code('  public:')
+                code('    ${{cls.cxx_class}} *create() const;')
+                code('};')
+                code()
+                code('template <class CxxClass, class Enable=void>')
+                code('class Dummy${cls}Shunt;')
+                code()
+                # This version directs to the real Params struct and the
+                # default behavior of create if there's an appropriate
+                # constructor.
+                code('template <class CxxClass>')
+                code('class Dummy${cls}Shunt<CxxClass, std::enable_if_t<')
+                code('    std::is_constructible<CxxClass,')
+                code('        const ${cls}Params &>::value>>')
+                code('{')
+                code('  public:')
+                code('    using Params = ${cls}Params;')
+                code('    static ${{cls.cxx_class}} *')
+                code('    create(const Params &p)')
+                code('    {')
+                code('        return new CxxClass(p);')
+                code('    }')
+                code('};')
+                code()
+                # This version diverts to the DummyParamsClass and a dummy
+                # implementation of create if the appropriate constructor does
+                # not exist.
+                code('template <class CxxClass>')
+                code('class Dummy${cls}Shunt<CxxClass, std::enable_if_t<')
+                code('    !std::is_constructible<CxxClass,')
+                code('        const ${cls}Params &>::value>>')
+                code('{')
+                code('  public:')
+                code('    using Params = Dummy${cls}ParamsClass;')
+                code('    static ${{cls.cxx_class}} *')
+                code('    create(const Params &p)')
+                code('    {')
+                code('        return nullptr;')
+                code('    }')
+                code('};')
+                code()
+                code('} // anonymous namespace')
+                code()
+                # An implementation of either the real Params struct's create
+                # method, or the Dummy one. Either an implementation is
+                # mandantory since this was shunted off to the dummy class, or
+                # one is optional which will override this weak version.
+                code('GEM5_VAR_USED ${{cls.cxx_class}} *')
+                code('Dummy${cls}Shunt<${{cls.cxx_class}}>::Params::create() '
+                     'const')
+                code('{')
+                code('    return Dummy${cls}Shunt<${{cls.cxx_class}}>::')
+                code('        create(*this);')
+                code('}')
+                code()
+                code('} // namespace gem5')
 
     _warned_about_nested_templates = False
 
@@ -787,7 +908,7 @@ module_init(py::module &m_internal)
         # the object itself, not including inherited params (which
         # will also be inherited from the base class's param struct
         # here). Sort the params based on their key
-        params = map(lambda k_v: k_v[1], sorted(cls._params.local.items()))
+        params = list(map(lambda k_v: k_v[1], sorted(cls._params.local.items())))
         ports = cls._ports.local
         try:
             ptypes = [p.ptype for p in params]
@@ -905,6 +1026,10 @@ module_init(py::module &m_internal)
                 code('#include "enums/${{ptype.__name__}}.hh"')
                 code()
 
+        code('namespace gem5')
+        code('{')
+        code('')
+
         # now generate the actual param struct
         code("struct ${cls}Params")
         if cls._base:
@@ -912,7 +1037,7 @@ module_init(py::module &m_internal)
         code("{")
         if not hasattr(cls, 'abstract') or not cls.abstract:
             if 'type' in cls.__dict__:
-                code("    ${{cls.cxx_type}} create();")
+                code("    ${{cls.cxx_type}} create() const;")
 
         code.indent()
         if cls == SimObject:
@@ -930,6 +1055,8 @@ module_init(py::module &m_internal)
 
         code.dedent()
         code('};')
+        code()
+        code('} // namespace gem5')
 
         code()
         code('#endif // __PARAMS__${cls}__')
@@ -1075,18 +1202,21 @@ class SimObjectCliWrapper(object):
                 out.extend(sim_object[i] for i in _range)
         return SimObjectCliWrapper(out)
 
+    def __iter__(self):
+        return iter(self._sim_objects)
+
 # The SimObject class is the root of the special hierarchy.  Most of
 # the code in this class deals with the configuration hierarchy itself
 # (parent/child node relationships).
-class SimObject(object):
+class SimObject(object, metaclass=MetaSimObject):
     # Specify metaclass.  Any class inheriting from SimObject will
     # get this metaclass.
-    __metaclass__ = MetaSimObject
     type = 'SimObject'
     abstract = True
 
     cxx_header = "sim/sim_object.hh"
-    cxx_extra_bases = [ "Drainable", "Serializable", "Stats::Group" ]
+    cxx_class = 'gem5::SimObject'
+    cxx_extra_bases = [ "Drainable", "Serializable", "statistics::Group" ]
     eventq_index = Param.UInt32(Parent.eventq_index, "Event Queue Index")
 
     cxx_exports = [
@@ -1256,6 +1386,11 @@ class SimObject(object):
         return ref
 
     def __getattr__(self, attr):
+        if attr in self._deprecated_params:
+            dep_param = self._deprecated_params[attr]
+            dep_param.printWarning(self._name, self.__class__.__name__)
+            return getattr(self, self._deprecated_params[attr].newName)
+
         if attr in self._ports:
             return self._get_port_ref(attr)
 
@@ -1287,6 +1422,11 @@ class SimObject(object):
         if attr.startswith('_'):
             object.__setattr__(self, attr, value)
             return
+
+        if attr in self._deprecated_params:
+            dep_param = self._deprecated_params[attr]
+            dep_param.printWarning(self._name, self.__class__.__name__)
+            return setattr(self, self._deprecated_params[attr].newName, value)
 
         if attr in self._ports:
             # set up port connection
@@ -1374,16 +1514,18 @@ class SimObject(object):
     def add_child(self, name, child):
         child = coerceSimObjectOrVector(child)
         if child.has_parent():
-            warn("add_child('%s'): child '%s' already has parent", name,
-                child.get_name())
+            warn(f"{self}.{name} already has parent (Previously declared as "
+                 f"{child._parent}.{name}), not resetting parent.\n"
+                 f"\tNote: {name} is not a parameter of {type(self).__name__}")
+            return
         if name in self._children:
             # This code path had an undiscovered bug that would make it fail
             # at runtime. It had been here for a long time and was only
             # exposed by a buggy script. Changes here will probably not be
             # exercised without specialized testing.
             self.clear_child(name)
-        child.set_parent(self, name)
         if not isNullPointer(child):
+            child.set_parent(self, name)
             self._children[name] = child
 
     # Take SimObject-valued parameters that haven't been explicitly
@@ -1698,6 +1840,18 @@ class SimObject(object):
         d = self._apply_config_get_dict()
         for param in params:
             exec(param, d)
+
+    def get_simobj(self, simobj_path):
+        """
+        Get all sim objects that match a given string.
+
+        The format is the same as that supported by SimObjectCliWrapper.
+
+        :param simobj_path: Current state to be in.
+        :type simobj_path: str
+        """
+        d = self._apply_config_get_dict()
+        return eval(simobj_path, d)
 
 # Function to provide to C++ so it can look up instances based on paths
 def resolveSimObject(name):

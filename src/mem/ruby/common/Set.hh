@@ -39,6 +39,12 @@
 #include "base/logging.hh"
 #include "mem/ruby/common/TypeDefines.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class Set
 {
   private:
@@ -225,5 +231,8 @@ operator<<(std::ostream& out, const Set& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_COMMON_SET_HH__

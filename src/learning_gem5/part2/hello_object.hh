@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jason Lowe-Power
  */
 
 #ifndef __LEARNING_GEM5_HELLO_OBJECT_HH__
@@ -36,6 +34,9 @@
 #include "learning_gem5/part2/goodbye_object.hh"
 #include "params/HelloObject.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class HelloObject : public SimObject
 {
@@ -61,7 +62,7 @@ class HelloObject : public SimObject
     int timesLeft;
 
   public:
-    HelloObject(HelloObjectParams *p);
+    HelloObject(const HelloObjectParams &p);
 
     /**
      * Part of a SimObject's initilaization. Startup is called after all
@@ -70,5 +71,7 @@ class HelloObject : public SimObject
      */
     void startup();
 };
+
+} // namespace gem5
 
 #endif // __LEARNING_GEM5_HELLO_OBJECT_HH__

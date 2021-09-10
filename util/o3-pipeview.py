@@ -1,4 +1,4 @@
-#! /usr/bin/env python2.7
+#! /usr/bin/env python3
 
 # Copyright (c) 2011 ARM Limited
 # All rights reserved
@@ -34,12 +34,10 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Giacomo Gabrielli
 
 # Pipeline activity viewer for the O3 CPU model.
 
-import optparse
+import argparse
 import os
 import sys
 import copy
@@ -131,7 +129,8 @@ def process_trace(trace, outfile, cycle_time, width, color, timestamps,
             if fields[1] == 'fetch':
                 if ((stop_tick > 0 and int(fields[2]) > stop_tick+insts['tick_drift']) or
                     (stop_sn > 0 and int(fields[5]) > (stop_sn+insts['max_threshold']))):
-                    print_insts(outfile, cycle_time, width, color, timestamps, 0)
+                    print_insts(outfile, cycle_time, width, color, timestamps,
+                                store_completions, 0)
                     return
                 (curr_inst['pc'], curr_inst['upc']) = fields[3:5]
                 curr_inst['sn'] = int(fields[5])
@@ -150,10 +149,6 @@ def process_trace(trace, outfile, cycle_time, width, color, timestamps,
         fields = line.split(':')
 
 
-#Sorts out instructions according to sequence number
-def compare_by_sn(a, b):
-    return cmp(a['sn'], b['sn'])
-
 # Puts new instruction into the print queue.
 # Sorts out and prints instructions when their number reaches threshold value
 def queue_inst(outfile, inst, cycle_time, width, color, timestamps, store_completions):
@@ -166,7 +161,8 @@ def queue_inst(outfile, inst, cycle_time, width, color, timestamps, store_comple
 # Sorts out and prints instructions in print queue
 def print_insts(outfile, cycle_time, width, color, timestamps, store_completions, lower_threshold):
     global insts
-    insts['queue'].sort(compare_by_sn)
+    # sort the list of insts by sequence numbers
+    insts['queue'].sort(key=lambda inst: inst['sn'])
     while len(insts['queue']) > lower_threshold:
         print_item=insts['queue'].pop(0)
         # As the instructions are processed out of order the main loop starts
@@ -225,7 +221,7 @@ def print_inst(outfile, inst, cycle_time, width, color, timestamps, store_comple
     # Print
 
     time_width = width * cycle_time
-    base_tick = (inst['fetch'] / time_width) * time_width
+    base_tick = (inst['fetch'] // time_width) * time_width
 
     # Find out the time of the last event - it may not
     # be 'retire' if the instruction is not comlpeted.
@@ -239,7 +235,7 @@ def print_inst(outfile, inst, cycle_time, width, color, timestamps, store_comple
     if ((last_event_time - inst['fetch']) < time_width):
         num_lines = 1 # compact form
     else:
-        num_lines = ((last_event_time - base_tick) / time_width) + 1
+        num_lines = ((last_event_time - base_tick) // time_width) + 1
 
     curr_color = termcap.Normal
 
@@ -269,7 +265,7 @@ def print_inst(outfile, inst, cycle_time, width, color, timestamps, store_comple
             if (stages[event[2]]['name'] == 'dispatch' and
                 inst['dispatch'] == inst['issue']):
                 continue
-            outfile.write(curr_color + dot * ((event[0] / cycle_time) - pos))
+            outfile.write(curr_color + dot * ((event[0] // cycle_time) - pos))
             outfile.write(stages[event[2]]['color'] +
                           stages[event[2]]['shorthand'])
 
@@ -278,7 +274,7 @@ def print_inst(outfile, inst, cycle_time, width, color, timestamps, store_comple
             else:
                 curr_color = termcap.Normal
 
-            pos = (event[0] / cycle_time) + 1
+            pos = (event[0] // cycle_time) + 1
         outfile.write(curr_color + dot * (width - pos) + termcap.Normal +
                       ']-(' + str(base_tick + i * time_width).rjust(15) + ') ')
         if i == 0:
@@ -304,70 +300,72 @@ def validate_range(my_range):
 
 
 def main():
-    # Parse options
-    usage = ('%prog [OPTION]... TRACE_FILE')
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option(
+    # Parse args
+    usage = ('%(prog)s [OPTION]... TRACE_FILE')
+    parser = argparse.ArgumentParser(
+        usage=usage,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
         '-o',
         dest='outfile',
         default=os.path.join(os.getcwd(), 'o3-pipeview.out'),
-        help="output file (default: '%default')")
-    parser.add_option(
+        help="output file")
+    parser.add_argument(
         '-t',
         dest='tick_range',
         default='0:-1',
-        help="tick range (default: '%default'; -1 == inf.)")
-    parser.add_option(
+        help="tick range (-1 == inf.)")
+    parser.add_argument(
         '-i',
         dest='inst_range',
         default='0:-1',
-        help="instruction range (default: '%default'; -1 == inf.)")
-    parser.add_option(
+        help="instruction range (-1 == inf.)")
+    parser.add_argument(
         '-w',
         dest='width',
-        type='int', default=80,
-        help="timeline width (default: '%default')")
-    parser.add_option(
+        type=int, default=80,
+        help="timeline width")
+    parser.add_argument(
         '--color',
         action='store_true', default=False,
-        help="enable colored output (default: '%default')")
-    parser.add_option(
+        help="enable colored output")
+    parser.add_argument(
         '-c', '--cycle-time',
-        type='int', default=1000,
-        help="CPU cycle time in ticks (default: '%default')")
-    parser.add_option(
+        type=int, default=1000,
+        help="CPU cycle time in ticks")
+    parser.add_argument(
         '--timestamps',
         action='store_true', default=False,
-        help="print fetch and retire timestamps (default: '%default')")
-    parser.add_option(
+        help="print fetch and retire timestamps")
+    parser.add_argument(
         '--only_committed',
         action='store_true', default=False,
-        help="display only committed (completed) instructions (default: '%default')")
-    parser.add_option(
+        help="display only committed (completed) instructions")
+    parser.add_argument(
         '--store_completions',
         action='store_true', default=False,
-        help="additionally display store completion ticks (default: '%default')")
-    (options, args) = parser.parse_args()
-    if len(args) != 1:
-        parser.error('incorrect number of arguments')
-        sys.exit(1)
-    tick_range = validate_range(options.tick_range)
+        help="additionally display store completion ticks")
+    parser.add_argument(
+        'tracefile')
+
+    args = parser.parse_args()
+    tick_range = validate_range(args.tick_range)
     if not tick_range:
         parser.error('invalid range')
         sys.exit(1)
-    inst_range = validate_range(options.inst_range)
+    inst_range = validate_range(args.inst_range)
     if not inst_range:
         parser.error('invalid range')
         sys.exit(1)
     # Process trace
-    print 'Processing trace... ',
-    with open(args[0], 'r') as trace:
-        with open(options.outfile, 'w') as out:
-            process_trace(trace, out, options.cycle_time, options.width,
-                          options.color, options.timestamps,
-                          options.only_committed, options.store_completions,
+    print('Processing trace... ', end=' ')
+    with open(args.tracefile, 'r') as trace:
+        with open(args.outfile, 'w') as out:
+            process_trace(trace, out, args.cycle_time, args.width,
+                          args.color, args.timestamps,
+                          args.only_committed, args.store_completions,
                           *(tick_range + inst_range))
-    print 'done!'
+    print('done!')
 
 
 if __name__ == '__main__':

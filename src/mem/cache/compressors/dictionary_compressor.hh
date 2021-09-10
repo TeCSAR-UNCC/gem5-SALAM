@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -53,12 +51,21 @@
 #include <type_traits>
 #include <vector>
 
+#include "base/bitfield.hh"
+#include "base/statistics.hh"
 #include "base/types.hh"
 #include "mem/cache/compressors/base.hh"
 
+namespace gem5
+{
+
 struct BaseDictionaryCompressorParams;
 
-class BaseDictionaryCompressor : public BaseCacheCompressor
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
+
+class BaseDictionaryCompressor : public Base
 {
   protected:
     /** Dictionary size. */
@@ -67,17 +74,18 @@ class BaseDictionaryCompressor : public BaseCacheCompressor
     /** Number of valid entries in the dictionary. */
     std::size_t numEntries;
 
-    /**
-     * @defgroup CompressionStats Compression specific statistics.
-     * @{
-     */
+    struct DictionaryStats : public statistics::Group
+    {
+        const BaseDictionaryCompressor& compressor;
 
-    /** Number of data entries that were compressed to each pattern. */
-    Stats::Vector patternStats;
+        DictionaryStats(BaseStats &base_group,
+            BaseDictionaryCompressor& _compressor);
 
-    /**
-     * @}
-     */
+        void regStats() override;
+
+        /** Number of data entries that were compressed to each pattern. */
+        statistics::Vector patterns;
+    } dictionaryStats;
 
     /**
      * Trick function to get the number of patterns.
@@ -96,10 +104,8 @@ class BaseDictionaryCompressor : public BaseCacheCompressor
 
   public:
     typedef BaseDictionaryCompressorParams Params;
-    BaseDictionaryCompressor(const Params *p);
+    BaseDictionaryCompressor(const Params &p);
     ~BaseDictionaryCompressor() = default;
-
-    void regStats() override;
 };
 
 /**
@@ -134,6 +140,8 @@ class DictionaryCompressor : public BaseDictionaryCompressor
     class RepeatedValuePattern;
     template <std::size_t DeltaSizeBits>
     class DeltaPattern;
+    template <unsigned N>
+    class SignExtendedPattern;
 
     /**
      * Create a factory to determine if input matches a pattern. The if else
@@ -222,22 +230,28 @@ class DictionaryCompressor : public BaseDictionaryCompressor
     virtual void addToDictionary(const DictionaryEntry data) = 0;
 
     /**
+     * Instantiate a compression data of the sub-class compressor.
+     *
+     * @return The new compression data entry.
+     */
+    virtual std::unique_ptr<DictionaryCompressor::CompData>
+    instantiateDictionaryCompData() const;
+
+    /**
      * Apply compression.
      *
-     * @param data The cache line to be compressed.
+     * @param chunks The cache line to be compressed.
      * @return Cache line after compression.
      */
-    std::unique_ptr<BaseCacheCompressor::CompressionData> compress(
-        const uint64_t* data);
+    std::unique_ptr<Base::CompressionData> compress(
+        const std::vector<Chunk>& chunks);
+
+    std::unique_ptr<Base::CompressionData> compress(
+        const std::vector<Chunk>& chunks,
+        Cycles& comp_lat, Cycles& decomp_lat) override;
 
     using BaseDictionaryCompressor::compress;
 
-    /**
-     * Decompress data.
-     *
-     * @param comp_data Compressed cache line.
-     * @param data The cache line to be decompressed.
-     */
     void decompress(const CompressionData* comp_data, uint64_t* data) override;
 
     /**
@@ -258,7 +272,7 @@ class DictionaryCompressor : public BaseDictionaryCompressor
 
   public:
     typedef BaseDictionaryCompressorParams Params;
-    DictionaryCompressor(const Params *p);
+    DictionaryCompressor(const Params &p);
     ~DictionaryCompressor() = default;
 };
 
@@ -339,7 +353,7 @@ class DictionaryCompressor<T>::Pattern
      *
      * @return The size.
      */
-    std::size_t
+    virtual std::size_t
     getSizeBits() const
     {
         return numUnmatchedBits + length;
@@ -465,7 +479,7 @@ class DictionaryCompressor<T>::MaskedPattern
         const DictionaryEntry bytes,
         const bool allocate = true)
       : DictionaryCompressor<T>::Pattern(number, code, metadata_length,
-            popCount(~mask), match_location, allocate),
+            popCount(static_cast<T>(~mask)), match_location, allocate),
         bits(DictionaryCompressor<T>::fromDictionaryEntry(bytes) & ~mask)
     {
     }
@@ -564,9 +578,10 @@ class DictionaryCompressor<T>::LocatedMaskedPattern
         const uint64_t code,
         const uint64_t metadata_length,
         const int match_location,
-        const DictionaryEntry bytes)
+        const DictionaryEntry bytes,
+        const bool allocate = true)
       : MaskedPattern<mask>(number, code, metadata_length, match_location,
-            bytes)
+            bytes, allocate)
     {
     }
 
@@ -726,5 +741,57 @@ class DictionaryCompressor<T>::DeltaPattern
         return bytes;
     }
 };
+
+/**
+ * A pattern that checks whether the value is an N bits sign-extended value,
+ * that is, all the MSB starting from the Nth are equal to the (N-1)th bit.
+ *
+ * Therefore, if N = 8, and T has 16 bits, the values within the ranges
+ * [0x0000, 0x007F] and [0xFF80, 0xFFFF] would match this pattern.
+ *
+ * @tparam N The number of bits in the non-extended original value. It must
+ *           fit in a dictionary entry.
+ */
+template <class T>
+template <unsigned N>
+class DictionaryCompressor<T>::SignExtendedPattern
+    : public DictionaryCompressor<T>::Pattern
+{
+  private:
+    static_assert((N > 0) & (N <= (sizeof(T) * 8)),
+        "The original data's type size must be smaller than the dictionary's");
+
+    /** The non-extended original value. */
+    const T bits : N;
+
+  public:
+    SignExtendedPattern(const int number,
+        const uint64_t code,
+        const uint64_t metadata_length,
+        const DictionaryEntry bytes,
+        const bool allocate = false)
+      : DictionaryCompressor<T>::Pattern(number, code, metadata_length, N,
+            -1, allocate),
+        bits(fromDictionaryEntry(bytes) & mask(N))
+    {
+    }
+
+    static bool
+    isPattern(const DictionaryEntry& bytes,
+        const DictionaryEntry& dict_bytes, const int match_location)
+    {
+        const T data = DictionaryCompressor<T>::fromDictionaryEntry(bytes);
+        return data == (T)szext<N>(data);
+    }
+
+    DictionaryEntry
+    decompress(const DictionaryEntry dict_bytes) const override
+    {
+        return toDictionaryEntry(sext<N>(bits));
+    }
+};
+
+} // namespace compression
+} // namespace gem5
 
 #endif //__MEM_CACHE_COMPRESSORS_DICTIONARY_COMPRESSOR_HH__

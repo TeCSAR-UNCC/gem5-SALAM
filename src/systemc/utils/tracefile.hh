@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_UTILS_TRACEFILE_HH__
@@ -34,6 +32,7 @@
 #include <string>
 #include <vector>
 
+#include "base/output.hh"
 #include "systemc/core/event.hh"
 #include "systemc/ext/channel/sc_signal_in_if.hh"
 #include "systemc/ext/core/sc_event.hh"
@@ -192,7 +191,7 @@ class TraceVal<::sc_dt::sc_fxnum_fast, Base> :
 class TraceFile : public sc_core::sc_trace_file
 {
   protected:
-    OutputStream *_os;
+    gem5::OutputStream *_os;
     uint64_t timeUnitTicks;
     double timeUnitValue;
     ::sc_core::sc_time_unit timeUnitUnit;

@@ -34,44 +34,36 @@
 
 #include <sstream>
 
-#include "arch/utility.hh"
 #include "base/trace.hh"
 #include "cpu/thread_context.hh"
 #include "debug/DebugPrintf.hh"
 #include "kern/system_events.hh"
-#include "sim/arguments.hh"
-#include "sim/pseudo_inst.hh"
+#include "sim/core.hh"
 #include "sim/system.hh"
 
-namespace FreeBSD {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FreeBSD, free_bsd);
+namespace free_bsd
+{
 
 void
-UDelayEvent::process(ThreadContext *tc)
+onUDelay(ThreadContext *tc, uint64_t div, uint64_t mul, uint64_t time)
 {
-    int arg_num;
-
-    arg_num = 0;
-
-    // Get the time in native size
-    uint64_t time = TheISA::getArgument(tc, arg_num,  (uint16_t)-1, false);
-
-    //DPRINTFN("DELAY(%d)\n", time);
-
     // convert parameter to ns
-    if (argDivToNs)
-        time /= argDivToNs;
+    if (div)
+        time /= div;
 
-    time *= argMultToNs;
-
-    SkipFuncEvent::process(tc);
+    time *= mul;
 
     // Currently, only ARM full-system simulation uses UDelayEvents to skip
     // __delay and __loop_delay functions. One form involves setting quiesce
     // time to 0 with the assumption that quiesce will not happen. To avoid
     // the quiesce handling in this case, only execute the quiesce if time > 0.
-    if (time > 0) {
-        PseudoInst::quiesceNs(tc, time);
-    }
+    if (time > 0)
+        tc->quiesceTick(curTick() + sim_clock::as_int::ns * time);
 }
 
-} // namespace FreeBSD
+} // namespace free_bsd
+} // namespace gem5

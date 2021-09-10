@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Geoffrey Blake
  */
 
 #include "sim/sub_system.hh"
@@ -43,12 +41,15 @@
 #include "sim/power/power_model.hh"
 #include "sim/power/thermal_domain.hh"
 
-SubSystem::SubSystem(const Params *p)
+namespace gem5
+{
+
+SubSystem::SubSystem(const Params &p)
  : SimObject(p)
 {
     // Link thermalDomain <-> SubSystem
-    if (p->thermal_domain)
-        p->thermal_domain->setSubSystem(this);
+    if (p.thermal_domain)
+        p.thermal_domain->setSubSystem(this);
 }
 
 double
@@ -69,8 +70,4 @@ SubSystem::getStaticPower() const
     return ret;
 }
 
-SubSystem *
-SubSystemParams::create()
-{
-    return new SubSystem(this);
-}
+} // namespace gem5

@@ -24,17 +24,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /* @file
  * Register and structure descriptions for Intel's 8254x line of gigabit ethernet controllers.
  */
 #include "base/bitfield.hh"
+#include "base/compiler.hh"
 
-namespace iGbReg {
+namespace gem5
+{
 
+GEM5_DEPRECATED_NAMESPACE(iGbReg, igbreg);
+namespace igbreg
+{
 
 // Registers used by the Intel GbE NIC
 const uint32_t REG_CTRL     = 0x00000;
@@ -188,9 +191,12 @@ enum IntTypes
 };
 
 // Receive Descriptor struct
-struct RxDesc {
-    union {
-        struct {
+struct RxDesc
+{
+    union
+    {
+        struct
+        {
             Addr buf;
             uint16_t len;
             uint16_t csum;
@@ -198,18 +204,22 @@ struct RxDesc {
             uint8_t errors;
             uint16_t vlan;
         } legacy;
-        struct {
+        struct
+        {
             Addr pkt;
             Addr hdr;
         } adv_read;
-        struct {
+        struct
+        {
             uint16_t rss_type:4;
             uint16_t pkt_type:12;
             uint16_t __reserved1:5;
             uint16_t header_len:10;
             uint16_t sph:1;
-            union {
-                struct {
+            union
+            {
+                struct
+                {
                     uint16_t id;
                     uint16_t csum;
                 };
@@ -223,12 +233,16 @@ struct RxDesc {
     };
 };
 
-struct TxDesc {
+struct TxDesc
+{
     uint64_t d1;
     uint64_t d2;
 };
 
-namespace TxdOp {
+GEM5_DEPRECATED_NAMESPACE(TxdOp, txd_op);
+namespace txd_op
+{
+
 const uint8_t TXD_CNXT = 0x0;
 const uint8_t TXD_DATA = 0x1;
 const uint8_t TXD_ADVCNXT = 0x2;
@@ -244,7 +258,7 @@ inline bool isData(TxDesc *d) { return !isLegacy(d) && isTypes(d, TXD_DATA, TXD_
 
 inline Addr getBuf(TxDesc *d) { assert(isLegacy(d) || isData(d)); return d->d1; }
 inline Addr getLen(TxDesc *d) { if (isLegacy(d)) return bits(d->d2,15,0); else return bits(d->d2, 19,0); }
-inline void setDd(TxDesc *d) { replaceBits(d->d2, 35, 32, ULL(1)); }
+inline void setDd(TxDesc *d) { replaceBits(d->d2, 35, 32, 1ULL); }
 
 inline bool ide(TxDesc *d)  { return bits(d->d2, 31,31) && (getType(d) == TXD_DATA || isLegacy(d)); }
 inline bool vle(TxDesc *d)  { assert(isLegacy(d) || isData(d)); return bits(d->d2, 30,30); }
@@ -285,7 +299,7 @@ inline int hdrlen(TxDesc *d) {
 
 inline int getTsoLen(TxDesc *d) { assert(isType(d, TXD_ADVDATA)); return bits(d->d2, 63,46); }
 inline int utcmd(TxDesc *d) { assert(isContext(d)); return bits(d->d2,24,31); }
-} // namespace TxdOp
+} // namespace txd_op
 
 
 #define ADD_FIELD32(NAME, OFFSET, BITS) \
@@ -296,9 +310,11 @@ inline int utcmd(TxDesc *d) { assert(isContext(d)); return bits(d->d2,24,31); }
     inline uint64_t NAME() { return bits(_data, OFFSET+BITS-1, OFFSET); } \
     inline void NAME(uint64_t d) { replaceBits(_data, OFFSET+BITS-1, OFFSET,d); }
 
-struct Regs : public Serializable {
+struct Regs : public Serializable
+{
     template<class T>
-    struct Reg {
+    struct Reg
+    {
         T _data;
         T operator()() { return _data; }
         const Reg<T> &operator=(T d) { _data = d; return *this;}
@@ -315,7 +331,9 @@ struct Regs : public Serializable {
         }
     };
 
-    struct CTRL : public Reg<uint32_t> { // 0x0000 CTRL Register
+    struct CTRL : public Reg<uint32_t>
+    {
+         // 0x0000 CTRL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(fd,0,1);       // full duplex
         ADD_FIELD32(bem,1,1);      // big endian mode
@@ -351,7 +369,9 @@ struct Regs : public Serializable {
     };
     CTRL ctrl;
 
-    struct STATUS : public Reg<uint32_t> { // 0x0008 STATUS Register
+    struct STATUS : public Reg<uint32_t>
+    {
+        // 0x0008 STATUS Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(fd,0,1);       // full duplex
         ADD_FIELD32(lu,1,1);       // link up
@@ -368,7 +388,9 @@ struct Regs : public Serializable {
     };
     STATUS sts;
 
-    struct EECD : public Reg<uint32_t> { // 0x0010 EECD Register
+    struct EECD : public Reg<uint32_t>
+    {
+        // 0x0010 EECD Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(sk,0,1);       // clack input to the eeprom
         ADD_FIELD32(cs,1,1);       // chip select to eeprom
@@ -385,7 +407,9 @@ struct Regs : public Serializable {
     } ;
     EECD eecd;
 
-    struct EERD : public Reg<uint32_t> { // 0x0014 EERD Register
+    struct EERD : public Reg<uint32_t>
+    {
+        // 0x0014 EERD Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(start,0,1);  // start read
         ADD_FIELD32(done,1,1);   // done read
@@ -394,7 +418,9 @@ struct Regs : public Serializable {
     };
     EERD eerd;
 
-    struct CTRL_EXT : public Reg<uint32_t> { // 0x0018 CTRL_EXT Register
+    struct CTRL_EXT : public Reg<uint32_t>
+    {
+        // 0x0018 CTRL_EXT Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(gpi_en,0,4);      // enable interrupts from gpio
         ADD_FIELD32(phyint,5,1);      // reads the phy internal int status
@@ -414,7 +440,9 @@ struct Regs : public Serializable {
     };
     CTRL_EXT ctrl_ext;
 
-    struct MDIC : public Reg<uint32_t> { // 0x0020 MDIC Register
+    struct MDIC : public Reg<uint32_t>
+    {
+        // 0x0020 MDIC Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(data,0,16);   // data
         ADD_FIELD32(regadd,16,5); // register address
@@ -426,7 +454,9 @@ struct Regs : public Serializable {
     };
     MDIC mdic;
 
-    struct ICR : public Reg<uint32_t> { // 0x00C0 ICR Register
+    struct ICR : public Reg<uint32_t>
+    {
+        // 0x00C0 ICR Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(txdw,0,1)   // tx descr witten back
         ADD_FIELD32(txqe,1,1)   // tx queue empty
@@ -450,7 +480,9 @@ struct Regs : public Serializable {
 
     uint32_t imr; // register that contains the current interrupt mask
 
-    struct ITR : public Reg<uint32_t> { // 0x00C4 ITR Register
+    struct ITR : public Reg<uint32_t>
+    {
+        // 0x00C4 ITR Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(interval, 0,16); // minimum inter-interrutp inteval
                                      // specified in 256ns interrupts
@@ -462,7 +494,9 @@ struct Regs : public Serializable {
     // automatically clearing all interrupts that have a bit in the IAM set
     uint32_t iam;
 
-    struct RCTL : public Reg<uint32_t> { // 0x0100 RCTL Register
+    struct RCTL : public Reg<uint32_t>
+    {
+        // 0x0100 RCTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rst,0,1);   // Reset
         ADD_FIELD32(en,1,1);    // Enable
@@ -497,13 +531,17 @@ struct Regs : public Serializable {
     };
     RCTL rctl;
 
-    struct FCTTV : public Reg<uint32_t> { // 0x0170 FCTTV
+    struct FCTTV : public Reg<uint32_t>
+    {
+        // 0x0170 FCTTV
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(ttv,0,16);    // Transmit Timer Value
     };
     FCTTV fcttv;
 
-    struct TCTL : public Reg<uint32_t> { // 0x0400 TCTL Register
+    struct TCTL : public Reg<uint32_t>
+    {
+        // 0x0400 TCTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rst,0,1);    // Reset
         ADD_FIELD32(en,1,1);     // Enable
@@ -519,14 +557,18 @@ struct Regs : public Serializable {
     };
     TCTL tctl;
 
-    struct PBA : public Reg<uint32_t> { // 0x1000 PBA Register
+    struct PBA : public Reg<uint32_t>
+    {
+        // 0x1000 PBA Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rxa,0,16);
         ADD_FIELD32(txa,16,16);
     };
     PBA pba;
 
-    struct FCRTL : public Reg<uint32_t> { // 0x2160 FCRTL Register
+    struct FCRTL : public Reg<uint32_t>
+    {
+        // 0x2160 FCRTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rtl,3,28); // make this bigger than the spec so we can have
                                // a larger buffer
@@ -534,7 +576,9 @@ struct Regs : public Serializable {
     };
     FCRTL fcrtl;
 
-    struct FCRTH : public Reg<uint32_t> { // 0x2168 FCRTL Register
+    struct FCRTH : public Reg<uint32_t>
+    {
+        // 0x2168 FCRTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rth,3,13); // make this bigger than the spec so we can have
                                //a larger buffer
@@ -542,20 +586,26 @@ struct Regs : public Serializable {
     };
     FCRTH fcrth;
 
-    struct RDBA : public Reg<uint64_t> { // 0x2800 RDBA Register
+    struct RDBA : public Reg<uint64_t>
+    {
+        // 0x2800 RDBA Register
         using Reg<uint64_t>::operator=;
         ADD_FIELD64(rdbal,0,32); // base address of rx descriptor ring
         ADD_FIELD64(rdbah,32,32); // base address of rx descriptor ring
     };
     RDBA rdba;
 
-    struct RDLEN : public Reg<uint32_t> { // 0x2808 RDLEN Register
+    struct RDLEN : public Reg<uint32_t>
+    {
+        // 0x2808 RDLEN Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(len,7,13); // number of bytes in the descriptor buffer
     };
     RDLEN rdlen;
 
-    struct SRRCTL : public Reg<uint32_t> { // 0x280C SRRCTL Register
+    struct SRRCTL : public Reg<uint32_t>
+    {
+        // 0x280C SRRCTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(pktlen, 0, 8);
         ADD_FIELD32(hdrlen, 8, 8); // guess based on header, not documented
@@ -566,26 +616,34 @@ struct Regs : public Serializable {
     };
     SRRCTL srrctl;
 
-    struct RDH : public Reg<uint32_t> { // 0x2810 RDH Register
+    struct RDH : public Reg<uint32_t>
+    {
+        // 0x2810 RDH Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rdh,0,16); // head of the descriptor ring
     };
     RDH rdh;
 
-    struct RDT : public Reg<uint32_t> { // 0x2818 RDT Register
+    struct RDT : public Reg<uint32_t>
+    {
+        // 0x2818 RDT Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(rdt,0,16); // tail of the descriptor ring
     };
     RDT rdt;
 
-    struct RDTR : public Reg<uint32_t> { // 0x2820 RDTR Register
+    struct RDTR : public Reg<uint32_t>
+    {
+        // 0x2820 RDTR Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(delay,0,16); // receive delay timer
         ADD_FIELD32(fpd, 31,1);   // flush partial descriptor block ??
     };
     RDTR rdtr;
 
-    struct RXDCTL : public Reg<uint32_t> { // 0x2828 RXDCTL Register
+    struct RXDCTL : public Reg<uint32_t>
+    {
+        // 0x2828 RXDCTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(pthresh,0,6);   // prefetch threshold, less that this
                                     // consider prefetch
@@ -596,38 +654,50 @@ struct Regs : public Serializable {
     };
     RXDCTL rxdctl;
 
-    struct RADV : public Reg<uint32_t> { // 0x282C RADV Register
+    struct RADV : public Reg<uint32_t>
+    {
+        // 0x282C RADV Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(idv,0,16); // absolute interrupt delay
     };
     RADV radv;
 
-    struct RSRPD : public Reg<uint32_t> { // 0x2C00 RSRPD Register
+    struct RSRPD : public Reg<uint32_t>
+    {
+        // 0x2C00 RSRPD Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(idv,0,12); // size to interrutp on small packets
     };
     RSRPD rsrpd;
 
-    struct TDBA : public Reg<uint64_t> { // 0x3800 TDBAL Register
+    struct TDBA : public Reg<uint64_t>
+    {
+        // 0x3800 TDBAL Register
         using Reg<uint64_t>::operator=;
         ADD_FIELD64(tdbal,0,32); // base address of transmit descriptor ring
         ADD_FIELD64(tdbah,32,32); // base address of transmit descriptor ring
     };
     TDBA tdba;
 
-    struct TDLEN : public Reg<uint32_t> { // 0x3808 TDLEN Register
+    struct TDLEN : public Reg<uint32_t>
+    {
+        // 0x3808 TDLEN Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(len,7,13); // number of bytes in the descriptor buffer
     };
     TDLEN tdlen;
 
-    struct TDH : public Reg<uint32_t> { // 0x3810 TDH Register
+    struct TDH : public Reg<uint32_t>
+    {
+        // 0x3810 TDH Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(tdh,0,16); // head of the descriptor ring
     };
     TDH tdh;
 
-    struct TXDCA_CTL : public Reg<uint32_t> { // 0x3814 TXDCA_CTL Register
+    struct TXDCA_CTL : public Reg<uint32_t>
+    {
+        // 0x3814 TXDCA_CTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(cpu_mask, 0, 5);
         ADD_FIELD32(enabled, 5,1);
@@ -635,19 +705,25 @@ struct Regs : public Serializable {
     };
     TXDCA_CTL txdca_ctl;
 
-    struct TDT : public Reg<uint32_t> { // 0x3818 TDT Register
+    struct TDT : public Reg<uint32_t>
+    {
+        // 0x3818 TDT Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(tdt,0,16); // tail of the descriptor ring
     };
     TDT tdt;
 
-    struct TIDV : public Reg<uint32_t> { // 0x3820 TIDV Register
+    struct TIDV : public Reg<uint32_t>
+    {
+        // 0x3820 TIDV Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(idv,0,16); // interrupt delay
     };
     TIDV tidv;
 
-    struct TXDCTL : public Reg<uint32_t> { // 0x3828 TXDCTL Register
+    struct TXDCTL : public Reg<uint32_t>
+    {
+        // 0x3828 TXDCTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(pthresh, 0,6);  // if number of descriptors control has is
                                     // below this number, a prefetch is considered
@@ -662,13 +738,17 @@ struct Regs : public Serializable {
     };
     TXDCTL txdctl;
 
-    struct TADV : public Reg<uint32_t> { // 0x382C TADV Register
+    struct TADV : public Reg<uint32_t>
+    {
+        // 0x382C TADV Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(idv,0,16); // absolute interrupt delay
     };
     TADV tadv;
 /*
-    struct TDWBA : public Reg<uint64_t> { // 0x3838 TDWBA Register
+    struct TDWBA : public Reg<uint64_t>
+    {
+        // 0x3838 TDWBA Register
         using Reg<uint64_t>::operator=;
         ADD_FIELD64(en,0,1); // enable  transmit description ring address writeback
         ADD_FIELD64(tdwbal,2,32); // base address of transmit descriptor ring address writeback
@@ -677,7 +757,9 @@ struct Regs : public Serializable {
     TDWBA tdwba;*/
     uint64_t tdwba;
 
-    struct RXCSUM : public Reg<uint32_t> { // 0x5000 RXCSUM Register
+    struct RXCSUM : public Reg<uint32_t>
+    {
+        // 0x5000 RXCSUM Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(pcss,0,8);
         ADD_FIELD32(ipofld,8,1);
@@ -688,7 +770,9 @@ struct Regs : public Serializable {
 
     uint32_t rlpml; // 0x5004 RLPML probably maximum accepted packet size
 
-    struct RFCTL : public Reg<uint32_t> { // 0x5008 RFCTL Register
+    struct RFCTL : public Reg<uint32_t>
+    {
+        // 0x5008 RFCTL Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(iscsi_dis,0,1);
         ADD_FIELD32(iscsi_dwc,1,5);
@@ -703,7 +787,9 @@ struct Regs : public Serializable {
     };
     RFCTL rfctl;
 
-    struct MANC : public Reg<uint32_t> { // 0x5820 MANC Register
+    struct MANC : public Reg<uint32_t>
+    {
+        // 0x5820 MANC Register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(smbus,0,1);    // SMBus enabled #####
         ADD_FIELD32(asf,1,1);      // ASF enabled #####
@@ -735,7 +821,9 @@ struct Regs : public Serializable {
     };
     MANC manc;
 
-    struct SWSM : public Reg<uint32_t> { // 0x5B50 SWSM register
+    struct SWSM : public Reg<uint32_t>
+    {
+        // 0x5B50 SWSM register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(smbi,0,1); // Semaphone bit
         ADD_FIELD32(swesmbi, 1,1); // Software eeporm semaphore
@@ -744,7 +832,9 @@ struct Regs : public Serializable {
     };
     SWSM swsm;
 
-    struct FWSM : public Reg<uint32_t> { // 0x5B54 FWSM register
+    struct FWSM : public Reg<uint32_t>
+    {
+        // 0x5B54 FWSM register
         using Reg<uint32_t>::operator=;
         ADD_FIELD32(eep_fw_semaphore,0,1);
         ADD_FIELD32(fw_mode, 1,3);
@@ -853,4 +943,6 @@ struct Regs : public Serializable {
         UNSERIALIZE_SCALAR(sw_fw_sync);
     }
 };
-} // namespace iGbReg
+
+} // namespace igbreg
+} // namespace gem5

@@ -32,10 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Thomas Grass
-#          Andreas Hansson
-#          Sascha Bischoff
 
 from m5.params import *
 from m5.proxy import *
@@ -46,9 +42,9 @@ from m5.objects.ClockedObject import ClockedObject
 # and are meant to initialize the stream and substream IDs for
 # every memory request, regardless of how the packet has been
 # generated (Random, Linear, Trace etc)
-class StreamGenType(Enum): vals = [ 'none', 'fixed', 'random' ]
+class StreamGenType(ScopedEnum): vals = [ 'none', 'fixed', 'random' ]
 
-# The traffic generator is a master module that generates stimuli for
+# The traffic generator is a requestor module that generates stimuli for
 # the memory system, based on a collection of simple behaviours that
 # are either probabilistic or based on traces. It can be used stand
 # alone for creating test cases for interconnect and memory
@@ -59,9 +55,10 @@ class BaseTrafficGen(ClockedObject):
     type = 'BaseTrafficGen'
     abstract = True
     cxx_header = "cpu/testers/traffic_gen/traffic_gen.hh"
+    cxx_class = 'gem5::BaseTrafficGen'
 
     # Port used for sending requests and receiving responses
-    port = MasterPort("Master port")
+    port = RequestPort("This port sends requests and receives responses")
 
     # System used to determine the mode of the memory system
     system = Param.System(Parent.any, "System this generator is part of")
@@ -114,9 +111,9 @@ class BaseTrafficGen(ClockedObject):
     def connectCachedPorts(self, bus):
         if hasattr(self, '_cached_ports') and (len(self._cached_ports) > 0):
             for p in self._cached_ports:
-                exec('self.%s = bus.slave' % p)
+                exec('self.%s = bus.cpu_side_ports' % p)
         else:
-            self.port = bus.slave
+            self.port = bus.cpu_side_ports
 
     def connectAllPorts(self, cached_bus, uncached_bus = None):
         self.connectCachedPorts(cached_bus)

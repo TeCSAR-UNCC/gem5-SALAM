@@ -33,10 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
- *          Matthias Jung
- *          Abdul Mutaal Ahmad
  */
 
 /**
@@ -44,7 +40,7 @@
  *
  *  C++-only configuration stats handling example
  *
- *  Register with: Stats::registerHandlers(statsReset, statsDump)
+ *  Register with: statistics::registerHandlers(statsReset, statsDump)
  */
 
 #ifndef __UTIL_CXX_CONFIG_STATS_H__

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __DEV_X86_SOUTH_BRIDGE_HH__
@@ -34,37 +32,35 @@
 #include "params/SouthBridge.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 namespace X86ISA
 {
-    class I8254;
-    class I8259;
-    class Cmos;
-    class Speaker;
-    class I82094AA;
-}
+
+class I8254;
+class I8259;
+class Cmos;
+class Speaker;
+class I82094AA;
+
+} // namespace X86ISA
 
 class SouthBridge : public SimObject
 {
-  protected:
-    Platform * platform;
+  public:
+    X86ISA::I8254 *pit;
+    X86ISA::I8259 *pic1;
+    X86ISA::I8259 *pic2;
+    X86ISA::Cmos *cmos;
+    X86ISA::Speaker *speaker;
+    X86ISA::I82094AA *ioApic;
 
   public:
-    X86ISA::I8254 * pit;
-    X86ISA::I8259 * pic1;
-    X86ISA::I8259 * pic2;
-    X86ISA::Cmos * cmos;
-    X86ISA::Speaker * speaker;
-    X86ISA::I82094AA * ioApic;
-
-  public:
-    typedef SouthBridgeParams Params;
-    SouthBridge(const Params *p);
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    using Params = SouthBridgeParams;
+    SouthBridge(const Params &p);
 };
+
+} // namespace gem5
 
 #endif //__DEV_X86_SOUTH_BRIDGE_HH__

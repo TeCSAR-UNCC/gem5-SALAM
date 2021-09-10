@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 ARM Limited
+// Copyright (c) 2011-2020 ARM Limited
 // All rights reserved
 //
 // The license below extends only to copyright in the software and shall
@@ -32,11 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
-//          Thomas Grocutt
-//          Mbou Eyole
-//          Giacomo Gabrielli
 
 output header {{
 namespace Aarch64
@@ -113,7 +108,7 @@ namespace Aarch64
               case 0x3:
                 return new SubXImmCc(machInst, rdzr, rnsp, imm);
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           }
           case 0x4:
@@ -157,7 +152,7 @@ namespace Aarch64
               case 0x3:
                 return new AndXImmCc(machInst, rdzr, rn, imm);
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           }
           case 0x5:
@@ -176,7 +171,7 @@ namespace Aarch64
               case 0x3:
                 return new Movk(machInst, rdzr, imm16, hw * 16);
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           }
           case 0x6:
@@ -192,7 +187,7 @@ namespace Aarch64
               case 0x3:
                 return new Unknown64(machInst);
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           case 0x7:
           {
@@ -273,6 +268,8 @@ namespace Aarch64
                     return new Brk64(machInst, imm16);
                   case 0x08:
                     return new Hlt64(machInst, imm16);
+                  case 0x0c:
+                    return new Tcancel64(machInst, imm16);
                   case 0x15:
                     return new FailUnimplemented("dcps1", machInst);
                   case 0x16:
@@ -293,7 +290,21 @@ namespace Aarch64
                 IntRegIndex rt = (IntRegIndex)(uint8_t)bits(machInst, 4, 0);
                 switch (op0) {
                   case 0x0:
-                    if (rt != 0x1f || l)
+                    // early out for TME
+                    if (crn == 0x3 && op1 == 0x3 && op2 == 0x3) {
+                        switch (crm) {
+                            case 0x0:
+                              if (rt == 0b11111)
+                                return new Tcommit64(machInst);
+                              else
+                                return new Tstart64(machInst, rt);
+                            case 0x1:
+                              return new Ttest64(machInst, rt);
+                            default:
+                              return new Unknown64(machInst);
+                        }
+                    }
+                    else if (rt != 0x1f || l)
                         return new Unknown64(machInst);
                     if (crn == 0x2 && op1 == 0x3) {
                         switch (crm) {
@@ -311,22 +322,24 @@ namespace Aarch64
                                 return new SevInst(machInst);
                               case 0x5:
                                 return new SevlInst(machInst);
+                              case 0x7:
+                                return new Xpaclri(machInst, INTREG_X30);
                             }
                             break;
                           case 0x1:
                             switch (op2) {
                               case 0x0:
-                                return new WarnUnimplemented(
-                                        "pacia", machInst);
+                                return new Pacia1716(machInst, INTREG_X17,
+                                                               INTREG_X16);
                               case 0x2:
-                                return new WarnUnimplemented(
-                                        "pacib", machInst);
+                                return new Pacib1716(machInst, INTREG_X17,
+                                                               INTREG_X16);
                               case 0x4:
-                                return new WarnUnimplemented(
-                                        "autia", machInst);
+                                return new Autia1716(machInst, INTREG_X17,
+                                                               INTREG_X16);
                               case 0x6:
-                                return new WarnUnimplemented(
-                                        "autib", machInst);
+                                return new Autib1716(machInst, INTREG_X17,
+                                                               INTREG_X16);
                             }
                             break;
                           case 0x2:
@@ -348,21 +361,29 @@ namespace Aarch64
                           case 0x3:
                             switch (op2) {
                               case 0x0:
+                                return new Paciaz(machInst,
+                                         INTREG_X30, makeZero(INTREG_X31));
                               case 0x1:
-                                return new WarnUnimplemented(
-                                        "pacia", machInst);
+                                return new Paciasp(machInst,
+                                         INTREG_X30, makeSP(INTREG_SPX));
                               case 0x2:
+                                return new Pacibz(machInst,
+                                         INTREG_X30, makeZero(INTREG_X31));
                               case 0x3:
-                                return new WarnUnimplemented(
-                                        "pacib", machInst);
+                                return new Pacibsp(machInst,
+                                         INTREG_X30, makeSP(INTREG_SPX));
                               case 0x4:
+                                return new Autiaz(machInst,
+                                         INTREG_X30, makeZero(INTREG_X31));
                               case 0x5:
-                                return new WarnUnimplemented(
-                                        "autia", machInst);
+                                return new Autiasp(machInst,
+                                         INTREG_X30, makeSP(INTREG_SPX));
                               case 0x6:
+                                return new Autibz(machInst,
+                                         INTREG_X30, makeZero(INTREG_X31));
                               case 0x7:
-                                return new WarnUnimplemented(
-                                        "autib", machInst);
+                                return new Autibsp(machInst,
+                                         INTREG_X30, makeSP(INTREG_SPX));
                             }
                             break;
                           case 0x4:
@@ -499,36 +520,82 @@ namespace Aarch64
                   }
                   break;
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
             } else if (bits(machInst, 25) == 0x1) {
                 uint8_t opc = bits(machInst, 24, 21);
                 uint8_t op2 = bits(machInst, 20, 16);
-                uint8_t op3 = bits(machInst, 15, 10);
+                uint8_t op3 = bits(machInst, 15, 12);
                 IntRegIndex rn = (IntRegIndex)(uint8_t)bits(machInst, 9, 5);
+                IntRegIndex rm = (IntRegIndex)(uint8_t)bits(machInst, 4, 0);
                 uint8_t op4 = bits(machInst, 4, 0);
-                if (op2 != 0x1f || op3 != 0x0 || op4 != 0x0)
+                if (op2 != 0x1f || op3 != 0x0)
                     return new Unknown64(machInst);
                 switch (opc) {
                   case 0x0:
-                    return new Br64(machInst, rn);
+                    if (bits(machInst, 11) == 0)
+                        return new Br64(machInst, rn);
+                    else if (op4 != 0x1f)
+                        return new Unknown64(machInst);
+                    // 24(Z):0, 11(A):1
+                    if (bits(machInst, 10) == 0)
+                        return new Braaz(machInst, rn);
+                    else
+                        return new Brabz(machInst, rn);
                   case 0x1:
-                    return new Blr64(machInst, rn);
+                    if (bits(machInst, 11) == 0)
+                        return new Blr64(machInst, rn);
+                    else if (op4 != 0x1f)
+                        return new Unknown64(machInst);
+                    // 24(Z):0, 11(A):1
+                    if (bits(machInst, 10) == 0)
+                        return new Blraaz(machInst, rn);
+                    else
+                        return new Blrabz(machInst, rn);
                   case 0x2:
-                    return new Ret64(machInst, rn);
+                    if (op4 == 0x1f) {
+                        bool m = bits(machInst, 10);
+                        if (m)
+                            return new Retab(machInst);
+                        else
+                            return new Retaa(machInst);
+                    } else
+                        return new Ret64(machInst, rn);
                   case 0x4:
                     if (rn != 0x1f)
                         return new Unknown64(machInst);
-                    return new Eret64(machInst);
+                    if (bits(machInst, 11) == 0)
+                        return new Eret64(machInst);
+                    else if (op4 != 0x1f)
+                        return new Unknown64(machInst);
+                    // 24(Z):0, 11(A):1
+                    if (bits(machInst, 10) == 0)
+                        return new Eretaa(machInst);
+                    else
+                        return new Eretab(machInst);
                   case 0x5:
                     if (rn != 0x1f)
                         return new Unknown64(machInst);
                     return new FailUnimplemented("dret", machInst);
+                  case 0x8:
+                    if (bits(machInst, 11) == 0)
+                        return new Unknown64(machInst);
+                    if (bits(machInst, 10) == 0)
+                        return new Braa(machInst, rn, makeSP(rm));
+                    else
+                        return new Brab(machInst, rn, makeSP(rm));
+                  case 0x9:
+                    if (bits(machInst, 11) == 0)
+                        return new Unknown64(machInst);
+                    if (bits(machInst, 10) == 0)
+                        return new Blraa(machInst, rn, makeSP(rm));
+                    else
+                        return new Blrab(machInst, rn, makeSP(rm));
                   default:
                     return new Unknown64(machInst);
                 }
             }
-          M5_FALLTHROUGH;
+          GEM5_FALLTHROUGH;
           default:
             return new Unknown64(machInst);
         }
@@ -653,7 +720,7 @@ namespace Aarch64
                         else
                             return new LDADDLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x1:
                 switch(size_ar){
@@ -714,7 +781,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDCLRLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x2:
                 switch(size_ar){
@@ -775,7 +842,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDEORLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x3:
                 switch(size_ar){
@@ -836,7 +903,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDSETLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x4:
                 switch(size_ar){
@@ -897,7 +964,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDSMAXLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x5:
                 switch(size_ar){
@@ -958,7 +1025,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDSMINLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x6:
                 switch(size_ar){
@@ -1019,7 +1086,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDUMAXLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             case 0x7:
                 switch(size_ar){
@@ -1080,7 +1147,7 @@ namespace Aarch64
                     case 0xf:
                         return new LDUMINLA64(machInst, rt, rnsp, rs);
                     default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                 }
             default:
                 return new Unknown64(machInst);
@@ -1123,7 +1190,7 @@ namespace Aarch64
                       case 0x3:
                         return new STXRX64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0x1:
                     switch (size) {
@@ -1136,7 +1203,7 @@ namespace Aarch64
                       case 0x3:
                         return new STLXRX64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0x2:
                     switch (size) {
@@ -1149,7 +1216,7 @@ namespace Aarch64
                       case 0x3:
                         return new STXPX64(machInst, rs, rt, rt2, rnsp);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
 
                   case 0x3:
@@ -1163,7 +1230,7 @@ namespace Aarch64
                       case 0x3:
                         return new STLXPX64(machInst, rs, rt, rt2, rnsp);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
 
                   case 0x4:
@@ -1177,7 +1244,7 @@ namespace Aarch64
                       case 0x3:
                         return new LDXRX64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0x5:
                     switch (size) {
@@ -1190,7 +1257,7 @@ namespace Aarch64
                       case 0x3:
                         return new LDAXRX64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0x6:
                     switch (size) {
@@ -1203,7 +1270,7 @@ namespace Aarch64
                       case 0x3:
                         return new LDXPX64(machInst, rt, rt2, rnsp);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0x7:
                     switch (size) {
@@ -1216,7 +1283,7 @@ namespace Aarch64
                       case 0x3:
                         return new LDAXPX64(machInst, rt, rt2, rnsp);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0x9:
                     switch (size) {
@@ -1229,7 +1296,7 @@ namespace Aarch64
                       case 0x3:
                         return new STLRX64(machInst, rt, rnsp);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0xa:
                     switch (size) {
@@ -1242,7 +1309,7 @@ namespace Aarch64
                       case 0x3:
                         return new CAS64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0xb:
                     switch (size) {
@@ -1255,7 +1322,7 @@ namespace Aarch64
                       case 0x3:
                         return new CASL64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0xd:
                     switch (size) {
@@ -1268,7 +1335,7 @@ namespace Aarch64
                       case 0x3:
                         return new LDARX64(machInst, rt, rnsp);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0xe:
                     switch (size) {
@@ -1281,7 +1348,7 @@ namespace Aarch64
                       case 0x3:
                         return new CASA64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   case 0xf:
                     switch (size) {
@@ -1294,7 +1361,7 @@ namespace Aarch64
                       case 0x3:
                         return new CASAL64(machInst, rt, rnsp, rs);
                       default:
-                        M5_UNREACHABLE;
+                        GEM5_UNREACHABLE;
                     }
                   default:
                     return new Unknown64(machInst);
@@ -1476,10 +1543,39 @@ namespace Aarch64
                               case 0x3:
                                 return new LDAPRX64(machInst, rt, rnsp);
                               default:
-                                M5_UNREACHABLE;
+                                GEM5_UNREACHABLE;
                             }
                         } else {
                             return decodeAtomicArithOp(machInst);
+                        }
+                    }
+                  case 0x1:
+                  case 0x3:
+                    {
+                        IntRegIndex rt = (IntRegIndex)(uint32_t)
+                                           bits(machInst, 4, 0);
+                        IntRegIndex rn = (IntRegIndex)(uint32_t)
+                                           bits(machInst, 9, 5);
+                        uint8_t  s = bits(machInst, 22);
+                        uint64_t imm9 = bits(machInst, 20, 12);
+                        uint64_t imm10 = sext<10>(s<<9 | imm9)<<3;
+                        uint8_t val = bits(machInst, 23)<<1
+                                      | bits(machInst, 11);
+                        switch (val) {
+                          case 0x0:
+                            return new LDRAA_REG(machInst, rt,
+                                                 makeSP(rn), imm10);
+                          case 0x1:
+                            return new LDRAA_PRE(machInst, rt,
+                                                 makeSP(rn), imm10);
+                          case 0x2:
+                            return new LDRAB_REG(machInst, rt,
+                                                 makeSP(rn), imm10);
+                          case 0x3:
+                            return new LDRAB_PRE(machInst, rt,
+                                                 makeSP(rn), imm10);
+                          default:
+                            GEM5_UNREACHABLE;
                         }
                     }
                   case 0x2:
@@ -1806,12 +1902,12 @@ namespace Aarch64
                     }
                   }
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
             }
           }
           default:
-            M5_UNREACHABLE;
+            GEM5_UNREACHABLE;
         }
         return new FailUnimplemented("Unhandled Case1", machInst);
     }
@@ -1859,7 +1955,7 @@ namespace Aarch64
               case 0x7:
                 return new BicXSRegCc(machInst, rdzr, rn, rm, imm6, type);
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           }
           case 0x1:
@@ -1887,7 +1983,7 @@ namespace Aarch64
                   case 0x3:
                     return new SubXSRegCc(machInst, rdzr, rn, rm, imm6, type);
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
             } else {
                 if (bits(machInst, 23, 22) != 0 || bits(machInst, 12, 10) > 0x4)
@@ -1912,7 +2008,7 @@ namespace Aarch64
                   case 0x3:
                     return new SubXERegCc(machInst, rdzr, rnsp, rm, type, imm3);
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
             }
           }
@@ -1940,7 +2036,7 @@ namespace Aarch64
                   case 0x3:
                     return new SbcXSRegCc(machInst, rdzr, rn, rm, 0, LSL);
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
               }
               case 0x1:
@@ -1995,7 +2091,7 @@ namespace Aarch64
                   case 0x3:
                     return new Csneg64(machInst, rdzr, rn, rm, cond);
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
               }
               case 0x3:
@@ -2016,6 +2112,8 @@ namespace Aarch64
                         return new Asrv64(machInst, rdzr, rn, rm);
                       case 0xb:
                         return new Rorv64(machInst, rdzr, rn, rm);
+                     case 0xc:
+                        return new Pacga(machInst, rd, rn, makeSP(rm));
                       case 0x10:
                         return new Crc32b64(machInst, rdzr, rn, rm);
                       case 0x11:
@@ -2036,8 +2134,93 @@ namespace Aarch64
                         return new Unknown64(machInst);
                     }
                 } else {
-                    if (bits(machInst, 20, 16) != 0 ||
-                            bits(machInst, 29) != 0) {
+                    uint8_t dm = bits(machInst, 20, 14);
+                    switch(dm){
+                        case 0x4:
+                        {
+                          uint8_t zflags = bits(machInst, 13, 10);
+                          switch (zflags) {
+                            case 0x0:
+                                return new Pacia(machInst, rd, makeSP(rn));
+                            case 0x1:
+                                return new Pacib(machInst, rd, makeSP(rn));
+                            case 0x2:
+                                return new Pacda(machInst, rd, makeSP(rn));
+                            case 0x3:
+                                return new Pacdb(machInst, rd, makeSP(rn));
+                            case 0x4:
+                                return new Autia(machInst, rd, makeSP(rn));
+                            case 0x5:
+                                return new Autib(machInst, rd, makeSP(rn));
+                            case 0x6:
+                                return new Autda(machInst, rd, makeSP(rn));
+                            case 0x7:
+                                return new Autdb(machInst, rd, makeSP(rn));
+                            case 0x8:
+                                if (rn == 0x1f)
+                                    return new Paciza(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0x9:
+                                if (rn == 0x1f)
+                                    return new Pacizb(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0xa:
+                                if (rn == 0x1f)
+                                    return new Pacdza(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0xb:
+                                if (rn == 0x1f)
+                                    return new Pacdzb(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0xc:
+                                if (rn == 0x1f)
+                                    return new Autiza(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0xd:
+                                if (rn == 0x1f)
+                                    return new Autizb(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0xe:
+                                if (rn == 0x1f)
+                                    return new Autdza(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            case 0xf:
+                                if (rn == 0x1f)
+                                    return new Autdzb(machInst, rd,
+                                                      makeZero(INTREG_X31));
+                                else
+                                    return new Unknown64(machInst);
+                            default:
+                                return new Unknown64(machInst);
+                          }
+                        }
+                        case 0x5:
+                          {
+                            if (rn != 0x1f)
+                                return new Unknown64(machInst);
+                            bool d = bits(machInst,10);
+                            if (d)
+                                return new Xpacd(machInst, rd);
+                            else
+                                return new Xpaci(machInst, rd);
+                          }
+                    }
+                    if (dm != 0 || bits(machInst, 29) != 0) {
+                        // dm !=0 and dm != 0x1
                         return new Unknown64(machInst);
                     }
                     uint8_t switchVal = bits(machInst, 15, 10);
@@ -2064,7 +2247,7 @@ namespace Aarch64
                     }
                 }
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           }
           case 0x3:
@@ -2106,7 +2289,7 @@ namespace Aarch64
             }
           }
           default:
-            M5_UNREACHABLE;
+            GEM5_UNREACHABLE;
         }
         return new FailUnimplemented("Unhandled Case2", machInst);
     }
@@ -2146,10 +2329,8 @@ namespace Aarch64
             } else {
                 return new Unknown64(machInst);
             }
-        } else if (bits(machInst, 24) ||
-                   bits(machInst, 21) ||
-                   bits(machInst, 15)) {
-            return new Unknown64(machInst);
+        } else if (bits(machInst, 15) == 1) {
+            return decodeNeon3SameExtra<DecoderFeatures>(machInst);
         } else if (bits(machInst, 10) == 1) {
             if (bits(machInst, 23, 22))
                 return new Unknown64(machInst);
@@ -2618,6 +2799,8 @@ namespace Aarch64
                             if (rmode != 0)
                                 return new Unknown64(machInst);
                             return new FmovRegCoreW(machInst, rd, rn);
+                          case 2:
+                            return new FJcvtFpSFixedDW(machInst, rd, rn);
                           case 3: // FMOV Xd = Dn
                             if (rmode != 0)
                                 return new Unknown64(machInst);
@@ -2652,7 +2835,7 @@ namespace Aarch64
                         return new Unknown64(machInst);
                     }
                 }
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
               case 0x1:
               {
                 if (bits(machInst, 31) ||
@@ -2758,10 +2941,10 @@ namespace Aarch64
                     return new Unknown64(machInst);
               }
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
         }
-        M5_UNREACHABLE;
+        GEM5_UNREACHABLE;
     }
 }
 }};
@@ -2792,6 +2975,8 @@ namespace Aarch64
             } else {
                 return new Unknown64(machInst);
             }
+        } else if (bits(machInst, 15) && bits(machInst, 10) == 1) {
+            return decodeNeonSc3SameExtra(machInst);
         } else if (bits(machInst, 23, 22) == 0 &&
                    bits(machInst, 15) == 0) {
             if (bits(machInst, 10) == 1) {
@@ -2836,52 +3021,12 @@ let {{
     decoder_output ='''
 namespace Aarch64
 {'''
-    for decoderFlavour, type_dict in decoders.iteritems():
+    for decoderFlavor, type_dict in decoders.items():
         decoder_output +='''
 template StaticInstPtr decodeFpAdvSIMD<%(df)sDecoder>(ExtMachInst machInst);
-''' % { "df" : decoderFlavour }
+''' % { "df" : decoderFlavor }
     decoder_output +='''
 }'''
-}};
-
-output decoder {{
-namespace Aarch64
-{
-    StaticInstPtr
-    decodeGem5Ops(ExtMachInst machInst)
-    {
-        const uint32_t m5func = bits(machInst, 23, 16);
-        switch (m5func) {
-          case M5OP_ARM: return new Arm(machInst);
-          case M5OP_QUIESCE: return new Quiesce(machInst);
-          case M5OP_QUIESCE_NS: return new QuiesceNs64(machInst);
-          case M5OP_QUIESCE_CYCLE: return new QuiesceCycles64(machInst);
-          case M5OP_QUIESCE_TIME: return new QuiesceTime64(machInst);
-          case M5OP_RPNS: return new Rpns64(machInst);
-          case M5OP_WAKE_CPU: return new WakeCPU64(machInst);
-          case M5OP_DEPRECATED1: return new Deprecated_ivlb(machInst);
-          case M5OP_DEPRECATED2: return new Deprecated_ivle(machInst);
-          case M5OP_DEPRECATED3: return new Deprecated_exit (machInst);
-          case M5OP_EXIT: return new M5exit64(machInst);
-          case M5OP_FAIL: return new M5fail64(machInst);
-          case M5OP_LOAD_SYMBOL: return new Loadsymbol(machInst);
-          case M5OP_INIT_PARAM: return new Initparam64(machInst);
-          case M5OP_RESET_STATS: return new Resetstats64(machInst);
-          case M5OP_DUMP_STATS: return new Dumpstats64(machInst);
-          case M5OP_DUMP_RESET_STATS: return new Dumpresetstats64(machInst);
-          case M5OP_CHECKPOINT: return new M5checkpoint64(machInst);
-          case M5OP_WRITE_FILE: return new M5writefile64(machInst);
-          case M5OP_READ_FILE: return new M5readfile64(machInst);
-          case M5OP_DEBUG_BREAK: return new M5break(machInst);
-          case M5OP_SWITCH_CPU: return new M5switchcpu(machInst);
-          case M5OP_ADD_SYMBOL: return new M5addsymbol64(machInst);
-          case M5OP_PANIC: return new M5panic(machInst);
-          case M5OP_WORK_BEGIN: return new M5workbegin64(machInst);
-          case M5OP_WORK_END: return new M5workend64(machInst);
-          default: return new Unknown64(machInst);
-        }
-    }
-}
 }};
 
 def format Aarch64() {{
@@ -2919,10 +3064,10 @@ def format Aarch64() {{
             return decodeDataProcReg(machInst);
         } else if (bits(machInst, 24) == 1 &&
                    bits(machInst, 31, 28) == 0xF) {
-            return decodeGem5Ops(machInst);
+            return new Gem5Op64(machInst);
         } else {
             // bit 27:25=111
-            switch(decoderFlavour){
+            switch(decoderFlavor){
             default:
                 return decodeFpAdvSIMD<GenericDecoder>(machInst);
             }

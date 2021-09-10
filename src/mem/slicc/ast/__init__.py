@@ -1,3 +1,15 @@
+# Copyright (c) 2021 ARM Limited
+# All rights reserved.
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 2009 The Hewlett-Packard Development Company
 # All rights reserved.
 #
@@ -33,6 +45,7 @@ from slicc.ast.CheckAllocateStatementAST import *
 from slicc.ast.CheckNextCycleAST import *
 from slicc.ast.DeclAST import *
 from slicc.ast.DeclListAST import *
+from slicc.ast.DeferEnqueueingStatementAST import *
 from slicc.ast.EnqueueStatementAST import *
 from slicc.ast.EnumDeclAST import *
 from slicc.ast.EnumExprAST import *
@@ -59,6 +72,7 @@ from slicc.ast.PairListAST import *
 from slicc.ast.PeekStatementAST import *
 from slicc.ast.ReturnStatementAST import *
 from slicc.ast.StallAndWaitStatementAST import *
+from slicc.ast.WakeupPortStatementAST import *
 from slicc.ast.StateDeclAST import *
 from slicc.ast.StatementAST import *
 from slicc.ast.StatementListAST import *

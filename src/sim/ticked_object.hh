@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -50,7 +48,10 @@
 
 #include "sim/clocked_object.hh"
 
-class TickedObjectParams;
+namespace gem5
+{
+
+struct TickedObjectParams;
 
 /** Ticked attaches gem5's event queue/scheduler to evaluate
  *  calls and provides a start/stop interface to ticking.
@@ -77,21 +78,21 @@ class Ticked : public Serializable
 
   private:
     /** Locally allocated stats */
-    Stats::Scalar *numCyclesLocal;
+    statistics::Scalar *numCyclesLocal;
 
   protected:
     /** Total number of cycles either ticked or spend stopped */
-    Stats::Scalar &numCycles;
+    statistics::Scalar &numCycles;
 
     /** Number of cycles ticked */
-    Stats::Scalar tickCycles;
+    statistics::Scalar tickCycles;
 
     /** Number of cycles stopped */
-    Stats::Formula idleCycles;
+    statistics::Formula idleCycles;
 
   public:
     Ticked(ClockedObject &object_,
-        Stats::Scalar *imported_num_cycles = NULL,
+        statistics::Scalar *imported_num_cycles = NULL,
         Event::Priority priority = Event::CPU_Tick_Pri);
 
     virtual ~Ticked() { }
@@ -165,7 +166,7 @@ class Ticked : public Serializable
 class TickedObject : public ClockedObject, public Ticked
 {
   public:
-    TickedObject(const TickedObjectParams *params,
+    TickedObject(const TickedObjectParams &params,
         Event::Priority priority = Event::CPU_Tick_Pri);
 
     /** Disambiguate to make these functions overload correctly */
@@ -178,5 +179,7 @@ class TickedObject : public ClockedObject, public Ticked
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 };
+
+} // namespace gem5
 
 #endif /* __SIM_TICKED_OBJECT_HH__ */

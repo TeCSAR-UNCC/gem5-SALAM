@@ -29,9 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez,
- *          Sooraj Puthoor
  */
 
 #ifndef __FETCH_STAGE_HH__
@@ -40,7 +37,12 @@
 #include <string>
 #include <vector>
 
+#include "base/statistics.hh"
+#include "base/stats/group.hh"
 #include "gpu-compute/fetch_unit.hh"
+
+namespace gem5
+{
 
 // Instruction fetch stage.
 // All dispatched wavefronts for all SIMDS are analyzed for the
@@ -54,26 +56,35 @@ class Wavefront;
 class FetchStage
 {
   public:
-    FetchStage(const ComputeUnitParams* params);
+    FetchStage(const ComputeUnitParams &p, ComputeUnit &cu);
     ~FetchStage();
-    void init(ComputeUnit *cu);
+    void init();
     void exec();
     void processFetchReturn(PacketPtr pkt);
     void fetch(PacketPtr pkt, Wavefront *wave);
 
     // Stats related variables and methods
-    std::string name() { return _name; }
-    void regStats();
-    Stats::Distribution instFetchInstReturned;
+    const std::string& name() const { return _name; }
+    FetchUnit &fetchUnit(int simdId) { return _fetchUnit.at(simdId); }
 
   private:
-    uint32_t numSIMDs;
-    ComputeUnit *computeUnit;
+    int numVectorALUs;
+    ComputeUnit &computeUnit;
 
     // List of fetch units. A fetch unit is
-    // instantiated per SIMD
-    std::vector<FetchUnit> fetchUnit;
-    std::string _name;
+    // instantiated per VALU/SIMD
+    std::vector<FetchUnit> _fetchUnit;
+    const std::string _name;
+
+  protected:
+    struct FetchStageStats : public statistics::Group
+    {
+        FetchStageStats(statistics::Group *parent);
+
+        statistics::Distribution instFetchInstReturned;
+    } stats;
 };
+
+} // namespace gem5
 
 #endif // __FETCH_STAGE_HH__

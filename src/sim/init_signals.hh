@@ -24,17 +24,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __SIM_INIT_SIGNALS_HH__
 #define __SIM_INIT_SIGNALS_HH__
+
+namespace gem5
+{
 
 void dumpStatsHandler(int sigtype);
 void dumprstStatsHandler(int sigtype);
 void exitNowHandler(int sigtype);
 void abortHandler(int sigtype);
 void initSignals();
+
+} // namespace gem5
 
 #endif // __SIM_INIT_SIGNALS_HH__

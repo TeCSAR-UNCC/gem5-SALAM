@@ -33,12 +33,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
-#          Daniel Carvalho
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 import m5.objects
 import inspect
@@ -78,7 +72,7 @@ class ObjectList(object):
         print("Available {} classes:".format(self.base_cls))
         doc_wrapper = TextWrapper(initial_indent="\t\t",
             subsequent_indent="\t\t")
-        for name, cls in self._sub_classes.items():
+        for name, cls in list(self._sub_classes.items()):
             print("\t{}".format(name))
 
             # Try to extract the class documentation from the class help
@@ -90,7 +84,7 @@ class ObjectList(object):
 
         if self._aliases:
             print("\Aliases:")
-            for alias, target in self._aliases.items():
+            for alias, target in list(self._aliases.items()):
                 print("\t{} => {}".format(alias, target))
 
     def get_names(self):
@@ -153,11 +147,26 @@ class CPUList(ObjectList):
                     self._is_obj_class):
                     self._sub_classes[name] = cls
 
+class EnumList(ObjectList):
+    """ Creates a list of possible values for a given enum class. """
+
+    def _add_objects(self):
+        """ Add all enum values to the ObjectList """
+        self._sub_classes = {}
+        for (key, value) in list(self.base_cls.__members__.items()):
+            # All Enums have a value Num_NAME at the end which we
+            # do not want to include
+            if not key.startswith("Num_"):
+                self._sub_classes[key] = value
+
+rp_list = ObjectList(getattr(m5.objects, 'BaseReplacementPolicy', None))
 bp_list = ObjectList(getattr(m5.objects, 'BranchPredictor', None))
 cpu_list = CPUList(getattr(m5.objects, 'BaseCPU', None))
 hwp_list = ObjectList(getattr(m5.objects, 'BasePrefetcher', None))
 indirect_bp_list = ObjectList(getattr(m5.objects, 'IndirectPredictor', None))
 mem_list = ObjectList(getattr(m5.objects, 'AbstractMemory', None))
+dram_addr_map_list = EnumList(getattr(m5.internal.params, 'enum_AddrMap',
+                                      None))
 
 # Platform aliases. The platforms listed here might not be compiled,
 # we make sure they exist before we add them to the platform list.

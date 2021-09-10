@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Inria
+ * Copyright (c) 2019-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -39,8 +37,15 @@
 #include "mem/cache/compressors/base_delta.hh"
 #include "mem/cache/compressors/dictionary_compressor_impl.hh"
 
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
+
 template <class BaseType, std::size_t DeltaSizeBits>
-BaseDelta<BaseType, DeltaSizeBits>::BaseDelta(const Params *p)
+BaseDelta<BaseType, DeltaSizeBits>::BaseDelta(const Params &p)
     : DictionaryCompressor<BaseType>(p)
 {
 }
@@ -66,12 +71,13 @@ BaseDelta<BaseType, DeltaSizeBits>::addToDictionary(DictionaryEntry data)
 }
 
 template <class BaseType, std::size_t DeltaSizeBits>
-std::unique_ptr<BaseCacheCompressor::CompressionData>
-BaseDelta<BaseType, DeltaSizeBits>::compress(const uint64_t* data,
-    Cycles& comp_lat, Cycles& decomp_lat)
+std::unique_ptr<Base::CompressionData>
+BaseDelta<BaseType, DeltaSizeBits>::compress(
+    const std::vector<Base::Chunk>& chunks, Cycles& comp_lat,
+    Cycles& decomp_lat)
 {
-    std::unique_ptr<BaseCacheCompressor::CompressionData> comp_data =
-        DictionaryCompressor<BaseType>::compress(data);
+    std::unique_ptr<Base::CompressionData> comp_data =
+        DictionaryCompressor<BaseType>::compress(chunks, comp_lat, decomp_lat);
 
     // If there are more bases than the maximum, the compressor failed.
     // Otherwise, we have to take into account all bases that have not
@@ -88,16 +94,11 @@ BaseDelta<BaseType, DeltaSizeBits>::compress(const uint64_t* data,
             8 * sizeof(BaseType) * diff);
     }
 
-    // Set compression latency (Assumes 1 cycle per entry and 1 cycle for
-    // packing)
-    comp_lat = Cycles(1 + (DictionaryCompressor<BaseType>::blkSize /
-        sizeof(BaseType)));
-
-    // Set decompression latency
-    decomp_lat = Cycles(1);
-
     // Return compressed line
     return comp_data;
 }
+
+} // namespace compression
+} // namespace gem5
 
 #endif //__MEM_CACHE_COMPRESSORS_BASE_DELTA_IMPL_HH__

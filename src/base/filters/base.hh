@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #ifndef __BASE_FILTERS_BASE_HH__
@@ -34,13 +32,19 @@
 
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/intmath.hh"
 #include "base/sat_counter.hh"
 #include "base/types.hh"
 #include "params/BloomFilterBase.hh"
 #include "sim/sim_object.hh"
 
-namespace BloomFilter {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
 
 class Base : public SimObject
 {
@@ -49,7 +53,7 @@ class Base : public SimObject
     const unsigned offsetBits;
 
     /** The filter itself. */
-    std::vector<SatCounter> filter;
+    std::vector<SatCounter8> filter;
 
     /** Number of bits needed to represent the size of the filter. */
     const int sizeBits;
@@ -61,10 +65,10 @@ class Base : public SimObject
     /**
      * Create and clear the filter.
      */
-    Base(const BloomFilterBaseParams* p)
-        : SimObject(p), offsetBits(p->offset_bits),
-          filter(p->size, SatCounter(p->num_bits)),
-          sizeBits(floorLog2(p->size)), setThreshold(p->threshold)
+    Base(const BloomFilterBaseParams &p)
+        : SimObject(p), offsetBits(p.offset_bits),
+          filter(p.size, SatCounter8(p.num_bits)),
+          sizeBits(floorLog2(p.size)), setThreshold(p.threshold)
     {
         clear();
     }
@@ -148,6 +152,7 @@ class Base : public SimObject
     }
 };
 
-} // namespace BloomFilter
+} // namespace bloom_filter
+} // namespace gem5
 
 #endif // __BASE_FILTERS_BASE_HH__

@@ -35,8 +35,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -55,15 +53,15 @@ output header {{
 #include <sstream>
 
 #include "arch/generic/debugfaults.hh"
+#include "arch/x86/emulenv.hh"
 #include "arch/x86/insts/macroop.hh"
+#include "arch/x86/insts/microdebug.hh"
 #include "arch/x86/insts/microfpop.hh"
 #include "arch/x86/insts/microldstop.hh"
 #include "arch/x86/insts/micromediaop.hh"
 #include "arch/x86/insts/microregop.hh"
+#include "arch/x86/insts/microspecop.hh"
 #include "arch/x86/insts/static_inst.hh"
-#include "arch/x86/emulenv.hh"
-#include "arch/x86/isa_traits.hh"
-#include "arch/x86/registers.hh"
 #include "arch/x86/types.hh"
 #include "arch/x86/utility.hh"
 #include "base/logging.hh"
@@ -71,52 +69,53 @@ output header {{
 #include "mem/packet.hh"
 #include "sim/faults.hh"
 
-using X86ISA::InstRegIndex;
+using namespace gem5;
+using X86ISA::GpRegIndex;
+using X86ISA::FpRegIndex;
+using X86ISA::CtrlRegIndex;
+using X86ISA::CrRegIndex;
+using X86ISA::DbgRegIndex;
+using X86ISA::SegRegIndex;
+
 }};
 
 output decoder {{
+#include <algorithm>
+
 #include "arch/x86/decoder.hh"
-#include "arch/x86/regs/float.hh"
-#include "arch/x86/regs/misc.hh"
-#include "arch/x86/regs/segment.hh"
 #include "arch/x86/faults.hh"
 #include "arch/x86/microcode_rom.hh"
+#include "arch/x86/regs/float.hh"
+#include "arch/x86/regs/int.hh"
+#include "arch/x86/regs/misc.hh"
+#include "arch/x86/regs/segment.hh"
 #include "arch/x86/tlb.hh"
-#include "base/loader/symtab.hh"
 #include "base/cprintf.hh"
+#include "base/loader/symtab.hh"
 #include "base/logging.hh"
 #include "cpu/thread_context.hh"  // for Jump::branchTarget()
 #include "mem/packet.hh"
 #include "sim/full_system.hh"
 
-#if defined(linux) || defined(__APPLE__)
-#include <fenv.h>
-#endif
-#include <algorithm>
-
+using namespace gem5;
 using namespace X86ISA;
 }};
 
 output exec {{
-#if defined(linux) || defined(__APPLE__)
-#include <fenv.h>
-#endif
-
-#if defined(__sun) || defined (__OpenBSD__)
-#include <ieeefp.h>
-#endif
-
 #include <cmath>
 #include <limits>
+#include <tuple>
 
 #include "arch/generic/debugfaults.hh"
-#include "arch/x86/regs/misc.hh"
 #include "arch/x86/cpuid.hh"
 #include "arch/x86/faults.hh"
 #include "arch/x86/memhelpers.hh"
+#include "arch/x86/pseudo_inst_abi.hh"
+#include "arch/x86/regs/misc.hh"
 #include "arch/x86/tlb.hh"
 #include "base/compiler.hh"
 #include "base/condcodes.hh"
+#include "base/logging.hh"
 #include "cpu/base.hh"
 #include "cpu/exetrace.hh"
 #include "debug/X86.hh"
@@ -126,7 +125,7 @@ output exec {{
 #include "sim/pseudo_inst.hh"
 #include "sim/sim_exit.hh"
 
+using namespace gem5;
 using namespace X86ISA;
-using namespace std;
 }};
 

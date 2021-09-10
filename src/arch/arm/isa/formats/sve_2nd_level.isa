@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Giacomo Gabrielli
 
 /// @file
 /// SVE 2nd-level decoder.
@@ -2801,12 +2799,12 @@ namespace Aarch64
             case 2:
                 zm = (IntRegIndex) (uint8_t) bits(machInst, 18, 16);
                 imm = bits(machInst, 20, 19);
-                return new SveFcmlai<uint32_t>(machInst,
+                return new SveFcmlai<uint16_t>(machInst,
                         zda, zn, zm, rot, imm);
             case 3:
                 zm = (IntRegIndex) (uint8_t) bits(machInst, 19, 16);
                 imm = bits(machInst, 20);
-                return new SveFcmlai<uint64_t>(machInst,
+                return new SveFcmlai<uint32_t>(machInst,
                         zda, zn, zm, rot, imm);
         }
         return new Unknown64(machInst);
@@ -3131,10 +3129,6 @@ namespace Aarch64
         IntRegIndex rn = makeSP((IntRegIndex) (uint8_t) bits(machInst, 9, 5));
         IntRegIndex rm = (IntRegIndex) (uint8_t) bits(machInst, 20, 16);
         IntRegIndex pg = (IntRegIndex) (uint8_t) bits(machInst, 12, 10);
-
-        if (rm == 0x1f) {
-            return new Unknown64(machInst);
-        }
 
         return decodeSveContigLoadSSInsts<SveContigFFLoadSS>(
             bits(machInst, 24, 21), machInst, zt, pg, rn, rm, true);

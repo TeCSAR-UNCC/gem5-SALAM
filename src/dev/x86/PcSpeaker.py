@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.params import *
 from m5.proxy import *
@@ -32,6 +30,6 @@ from m5.objects.Device import BasicPioDevice
 
 class PcSpeaker(BasicPioDevice):
     type = 'PcSpeaker'
-    cxx_class = 'X86ISA::Speaker'
+    cxx_class = 'gem5::X86ISA::Speaker'
     cxx_header = "dev/x86/speaker.hh"
     i8254 = Param.I8254('Timer that drives the speaker')

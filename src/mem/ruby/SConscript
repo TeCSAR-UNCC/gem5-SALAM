@@ -25,10 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-
-from __future__ import print_function
 
 import os
 import sys
@@ -101,10 +97,9 @@ def do_embed_text(target, source, env):
 generated_dir = Dir('protocol')
 
 def MakeIncludeAction(target, source, env):
-    f = file(str(target[0]), 'w')
-    for s in source:
-        print('#include "%s"' % str(s.abspath), file=f)
-    f.close()
+    with open(str(target[0]), 'w') as f:
+        for s in source:
+            print('#include "%s"' % str(s.abspath), file=f)
 
 def MakeInclude(source):
     target = generated_dir.File(basename(source))
@@ -119,9 +114,11 @@ MakeInclude('slicc_interface/RubyRequest.hh')
 MakeInclude('common/Address.hh')
 MakeInclude('common/BoolVec.hh')
 MakeInclude('common/DataBlock.hh')
+MakeInclude('common/ExpectedMap.hh')
 MakeInclude('common/IntVec.hh')
 MakeInclude('common/MachineID.hh')
 MakeInclude('common/NetDest.hh')
+MakeInclude('common/TriggerQueue.hh')
 MakeInclude('common/Set.hh')
 MakeInclude('common/WriteMask.hh')
 MakeInclude('network/MessageBuffer.hh')
@@ -129,7 +126,8 @@ MakeInclude('structures/CacheMemory.hh')
 MakeInclude('structures/DirectoryMemory.hh')
 MakeInclude('structures/PerfectCacheMemory.hh')
 MakeInclude('structures/PersistentTable.hh')
-MakeInclude('structures/Prefetcher.hh')
+MakeInclude('structures/RubyPrefetcher.hh')
+MakeInclude('structures/TBEStorage.hh')
 MakeInclude('structures/TBETable.hh')
 MakeInclude('structures/TimerTable.hh')
 MakeInclude('structures/WireBuffer.hh')
@@ -141,4 +139,5 @@ MakeInclude('system/Sequencer.hh')
 # <# include "mem/ruby/protocol/header.hh"> in any file
 # generated_dir = Dir('protocol')
 MakeInclude('system/GPUCoalescer.hh')
+MakeInclude('system/HTMSequencer.hh')
 MakeInclude('system/VIPERCoalescer.hh')

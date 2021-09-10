@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 ARM Limited
+ * Copyright (c) 2010-2014, 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stephen Hines
  */
 
 #include "arch/arm/insts/macromem.hh"
@@ -46,8 +44,11 @@
 
 #include "arch/arm/generated/decoder.hh"
 #include "arch/arm/insts/neon64_mem.hh"
+#include "base/compiler.hh"
 
-using namespace std;
+namespace gem5
+{
+
 using namespace ArmISAInst;
 
 namespace ArmISA
@@ -474,7 +475,7 @@ VldMultOp::VldMultOp(const char *mnem, ExtMachInst machInst, OpClass __opClass,
 
     RegIndex rMid = deinterleave ? VecSpecialElem : vd * 2;
 
-    uint32_t noAlign = TLB::MustBeOne;
+    uint32_t noAlign = 0;
 
     unsigned uopIdx = 0;
     switch (regs) {
@@ -563,7 +564,7 @@ VldSingleOp::VldSingleOp(const char *mnem, ExtMachInst machInst,
 
     unsigned eBytes = (1 << size);
     unsigned loadSize = eBytes * elems;
-    unsigned loadRegs M5_VAR_USED =
+    GEM5_VAR_USED unsigned loadRegs =
         (loadSize + sizeof(uint32_t) - 1) / sizeof(uint32_t);
 
     assert(loadRegs > 0 && loadRegs <= 4);
@@ -835,7 +836,7 @@ VstMultOp::VstMultOp(const char *mnem, ExtMachInst machInst, OpClass __opClass,
     if (interleave) numMicroops += (regs / elems);
     microOps = new StaticInstPtr[numMicroops];
 
-    uint32_t noAlign = TLB::MustBeOne;
+    uint32_t noAlign = 0;
 
     RegIndex rMid = interleave ? VecSpecialElem : vd * 2;
 
@@ -927,7 +928,7 @@ VstSingleOp::VstSingleOp(const char *mnem, ExtMachInst machInst,
 
     unsigned eBytes = (1 << size);
     unsigned storeSize = eBytes * elems;
-    unsigned storeRegs M5_VAR_USED =
+    GEM5_VAR_USED unsigned storeRegs =
         (storeSize + sizeof(uint32_t) - 1) / sizeof(uint32_t);
 
     assert(storeRegs > 0 && storeRegs <= 4);
@@ -1145,8 +1146,7 @@ VldMultOp64::VldMultOp64(const char *mnem, ExtMachInst machInst,
 
     microOps = new StaticInstPtr[numMicroops];
     unsigned uopIdx = 0;
-    uint32_t memaccessFlags = TLB::MustBeOne | (TLB::ArmFlags) eSize |
-        TLB::AllowUnaligned;
+    uint32_t memaccessFlags = (TLB::ArmFlags)eSize | TLB::AllowUnaligned;
 
     int i = 0;
     for (; i < numMemMicroops - 1; ++i) {
@@ -1199,6 +1199,7 @@ VldMultOp64::VldMultOp64(const char *mnem, ExtMachInst machInst,
     for (int i = 0; i < numMicroops - 1; ++i) {
         microOps[i]->setDelayedCommit();
     }
+    microOps[0]->setFirstMicroop();
     microOps[numMicroops - 1]->setLastMicroop();
 }
 
@@ -1253,8 +1254,7 @@ VstMultOp64::VstMultOp64(const char *mnem, ExtMachInst machInst,
         }
     }
 
-    uint32_t memaccessFlags = TLB::MustBeOne | (TLB::ArmFlags) eSize |
-        TLB::AllowUnaligned;
+    uint32_t memaccessFlags = (TLB::ArmFlags)eSize | TLB::AllowUnaligned;
 
     int i = 0;
     for (; i < numMemMicroops - 1; ++i) {
@@ -1284,6 +1284,7 @@ VstMultOp64::VstMultOp64(const char *mnem, ExtMachInst machInst,
     for (int i = 0; i < numMicroops - 1; i++) {
         microOps[i]->setDelayedCommit();
     }
+    microOps[0]->setFirstMicroop();
     microOps[numMicroops - 1]->setLastMicroop();
 }
 
@@ -1321,8 +1322,7 @@ VldSingleOp64::VldSingleOp64(const char *mnem, ExtMachInst machInst,
     microOps = new StaticInstPtr[numMicroops];
     unsigned uopIdx = 0;
 
-    uint32_t memaccessFlags = TLB::MustBeOne | (TLB::ArmFlags) eSize |
-        TLB::AllowUnaligned;
+    uint32_t memaccessFlags = (TLB::ArmFlags)eSize | TLB::AllowUnaligned;
 
     int i = 0;
     for (; i < numMemMicroops - 1; ++i) {
@@ -1358,6 +1358,7 @@ VldSingleOp64::VldSingleOp64(const char *mnem, ExtMachInst machInst,
     for (int i = 0; i < numMicroops - 1; i++) {
         microOps[i]->setDelayedCommit();
     }
+    microOps[0]->setFirstMicroop();
     microOps[numMicroops - 1]->setLastMicroop();
 }
 
@@ -1400,8 +1401,7 @@ VstSingleOp64::VstSingleOp64(const char *mnem, ExtMachInst machInst,
             numStructElems, index, i /* step */, replicate);
     }
 
-    uint32_t memaccessFlags = TLB::MustBeOne | (TLB::ArmFlags) eSize |
-        TLB::AllowUnaligned;
+    uint32_t memaccessFlags = (TLB::ArmFlags)eSize | TLB::AllowUnaligned;
 
     int i = 0;
     for (; i < numMemMicroops - 1; ++i) {
@@ -1431,6 +1431,7 @@ VstSingleOp64::VstSingleOp64(const char *mnem, ExtMachInst machInst,
     for (int i = 0; i < numMicroops - 1; i++) {
         microOps[i]->setDelayedCommit();
     }
+    microOps[0]->setFirstMicroop();
     microOps[numMicroops - 1]->setLastMicroop();
 }
 
@@ -1501,6 +1502,7 @@ MacroVFPMemOp::MacroVFPMemOp(const char *mnem, ExtMachInst machInst,
     }
 
     assert(numMicroops == i);
+    microOps[0]->setFirstMicroop();
     microOps[numMicroops - 1]->setLastMicroop();
 
     for (StaticInstPtr *curUop = microOps;
@@ -1512,7 +1514,8 @@ MacroVFPMemOp::MacroVFPMemOp(const char *mnem, ExtMachInst machInst,
 }
 
 std::string
-MicroIntImmOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroIntImmOp::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1525,7 +1528,8 @@ MicroIntImmOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroIntImmXOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroIntImmXOp::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1538,7 +1542,8 @@ MicroIntImmXOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroSetPCCPSR::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroSetPCCPSR::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1547,7 +1552,8 @@ MicroSetPCCPSR::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroIntRegXOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroIntRegXOp::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1559,7 +1565,8 @@ MicroIntRegXOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroIntMov::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroIntMov::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1570,7 +1577,8 @@ MicroIntMov::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroIntOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroIntOp::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1583,7 +1591,8 @@ MicroIntOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroMemOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroMemOp::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1600,7 +1609,8 @@ MicroMemOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MicroMemPairOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MicroMemPairOp::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -1615,4 +1625,5 @@ MicroMemPairOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     return ss.str();
 }
 
-}
+} // namespace ArmISA
+} // namespace gem5

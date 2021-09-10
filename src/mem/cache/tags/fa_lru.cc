@@ -37,10 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Nikos Nikoleris
- *          Daniel Carvalho
  */
 
 /**
@@ -53,10 +49,14 @@
 #include <cassert>
 #include <sstream>
 
+#include "base/compiler.hh"
 #include "base/intmath.hh"
 #include "base/logging.hh"
 #include "mem/cache/base.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
+
+namespace gem5
+{
 
 std::string
 FALRUBlk::print() const
@@ -64,10 +64,10 @@ FALRUBlk::print() const
     return csprintf("%s inCachesMask: %#x", CacheBlk::print(), inCachesMask);
 }
 
-FALRU::FALRU(const Params *p)
+FALRU::FALRU(const Params &p)
     : BaseTags(p),
 
-      cacheTracking(p->min_tracked_cache_size, size, blkSize)
+      cacheTracking(p.min_tracked_cache_size, size, blkSize, this)
 {
     if (!isPowerOf2(blkSize))
         fatal("cache block size (in bytes) `%d' must be a power of two",
@@ -111,18 +111,11 @@ FALRU::tagsInit()
 }
 
 void
-FALRU::regStats()
-{
-    BaseTags::regStats();
-    cacheTracking.regStats(name());
-}
-
-void
 FALRU::invalidate(CacheBlk *blk)
 {
     // Erase block entry reference in the hash table
-    auto num_erased M5_VAR_USED =
-        tagHash.erase(std::make_pair(blk->tag, blk->isSecure()));
+    GEM5_VAR_USED auto num_erased =
+        tagHash.erase(std::make_pair(blk->getTag(), blk->isSecure()));
 
     // Sanity check; only one block reference should be erased
     assert(num_erased == 1);
@@ -138,17 +131,18 @@ FALRU::invalidate(CacheBlk *blk)
 }
 
 CacheBlk*
-FALRU::accessBlock(Addr addr, bool is_secure, Cycles &lat)
+FALRU::accessBlock(const PacketPtr pkt, Cycles &lat)
 {
-    return accessBlock(addr, is_secure, lat, 0);
+    return accessBlock(pkt, lat, 0);
 }
 
 CacheBlk*
-FALRU::accessBlock(Addr addr, bool is_secure, Cycles &lat,
+FALRU::accessBlock(const PacketPtr pkt, Cycles &lat,
                    CachesMask *in_caches_mask)
 {
     CachesMask mask = 0;
-    FALRUBlk* blk = static_cast<FALRUBlk*>(findBlock(addr, is_secure));
+    FALRUBlk* blk =
+        static_cast<FALRUBlk*>(findBlock(pkt->getAddr(), pkt->isSecure()));
 
     // If a cache hit
     if (blk && blk->isValid()) {
@@ -181,7 +175,7 @@ FALRU::findBlock(Addr addr, bool is_secure) const
     }
 
     if (blk && blk->isValid()) {
-        assert(blk->tag == tag);
+        assert(blk->getTag() == tag);
         assert(blk->isSecure() == is_secure);
     }
 
@@ -197,7 +191,7 @@ FALRU::findBlockBySetAndWay(int set, int way) const
 
 CacheBlk*
 FALRU::findVictim(Addr addr, const bool is_secure, const std::size_t size,
-                  std::vector<CacheBlk*>& evict_blks) const
+                  std::vector<CacheBlk*>& evict_blks)
 {
     // The victim is always stored on the tail for the FALRU
     FALRUBlk* victim = tail;
@@ -226,7 +220,13 @@ FALRU::insertBlock(const PacketPtr pkt, CacheBlk *blk)
     moveToHead(falruBlk);
 
     // Insert new block in the hash table
-    tagHash[std::make_pair(blk->tag, blk->isSecure())] = falruBlk;
+    tagHash[std::make_pair(blk->getTag(), blk->isSecure())] = falruBlk;
+}
+
+void
+FALRU::moveBlock(CacheBlk *src_blk, CacheBlk *dest_blk)
+{
+    panic("Moving blocks in FALRU has not been implemented");
 }
 
 void
@@ -283,10 +283,52 @@ FALRU::moveToTail(FALRUBlk *blk)
     }
 }
 
-FALRU *
-FALRUParams::create()
+void
+printSize(std::ostream &stream, size_t size)
 {
-    return new FALRU(this);
+    static const char *SIZES[] = { "B", "kB", "MB", "GB", "TB", "ZB" };
+    int div = 0;
+    while (size >= 1024 && div < (sizeof SIZES / sizeof *SIZES)) {
+        div++;
+        size >>= 10;
+    }
+    stream << size << SIZES[div];
+}
+
+FALRU::CacheTracking::CacheTracking(unsigned min_size, unsigned max_size,
+    unsigned block_size, statistics::Group *parent)
+    : statistics::Group(parent),
+      blkSize(block_size),
+      minTrackedSize(min_size),
+      numTrackedCaches(max_size > min_size ?
+                       floorLog2(max_size) - floorLog2(min_size) : 0),
+      inAllCachesMask(mask(numTrackedCaches)),
+      boundaries(numTrackedCaches),
+      ADD_STAT(hits, statistics::units::Count::get(),
+               "The number of hits in each cache size."),
+      ADD_STAT(misses, statistics::units::Count::get(),
+               "The number of misses in each cache size."),
+      ADD_STAT(accesses, statistics::units::Count::get(),
+               "The number of accesses to the FA LRU cache.")
+{
+    fatal_if(numTrackedCaches > sizeof(CachesMask) * 8,
+             "Not enough bits (%s) in type CachesMask type to keep "
+             "track of %d caches\n", sizeof(CachesMask),
+             numTrackedCaches);
+
+    hits
+        .init(numTrackedCaches + 1);
+    misses
+        .init(numTrackedCaches + 1);
+
+    for (unsigned i = 0; i < numTrackedCaches + 1; ++i) {
+      std::stringstream size_str;
+      printSize(size_str, minTrackedSize << i);
+      hits.subname(i, size_str.str());
+      hits.subdesc(i, "Hits in a " + size_str.str() + " cache");
+      misses.subname(i, size_str.str());
+      misses.subdesc(i, "Misses in a " + size_str.str() + " cache");
+    }
 }
 
 void
@@ -416,42 +458,4 @@ FALRU::CacheTracking::recordAccess(FALRUBlk *blk)
     accesses++;
 }
 
-void
-printSize(std::ostream &stream, size_t size)
-{
-    static const char *SIZES[] = { "B", "kB", "MB", "GB", "TB", "ZB" };
-    int div = 0;
-    while (size >= 1024 && div < (sizeof SIZES / sizeof *SIZES)) {
-        div++;
-        size >>= 10;
-    }
-    stream << size << SIZES[div];
-}
-
-void
-FALRU::CacheTracking::regStats(std::string name)
-{
-    hits
-        .init(numTrackedCaches + 1)
-        .name(name + ".falru_hits")
-        .desc("The number of hits in each cache size.")
-        ;
-    misses
-        .init(numTrackedCaches + 1)
-        .name(name + ".falru_misses")
-        .desc("The number of misses in each cache size.")
-        ;
-    accesses
-        .name(name + ".falru_accesses")
-        .desc("The number of accesses to the FA LRU cache.")
-        ;
-
-    for (unsigned i = 0; i < numTrackedCaches + 1; ++i) {
-        std::stringstream size_str;
-        printSize(size_str, minTrackedSize << i);
-        hits.subname(i, size_str.str());
-        hits.subdesc(i, "Hits in a " + size_str.str() + " cache");
-        misses.subname(i, size_str.str());
-        misses.subdesc(i, "Misses in a " + size_str.str() + " cache");
-    }
-}
+} // namespace gem5

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 LabWare
+ * Copyright 2015-2020 LabWare
  * Copyright 2014 Google, Inc.
  * Copyright (c) 2010 ARM Limited
  * All rights reserved
@@ -38,11 +38,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          William Wang
- *          Deyuan Guo
- *          Boris Shingarov
  */
 
 /*
@@ -141,18 +136,23 @@
 #include <string>
 
 #include "arch/mips/decoder.hh"
-#include "arch/mips/vtophys.hh"
+#include "arch/mips/regs/float.hh"
+#include "arch/mips/regs/int.hh"
+#include "arch/mips/regs/misc.hh"
+#include "blobs/gdb_xml_mips.hh"
 #include "cpu/thread_state.hh"
 #include "debug/GDBAcc.hh"
 #include "debug/GDBMisc.hh"
 #include "mem/page_table.hh"
 #include "sim/full_system.hh"
 
-using namespace std;
+namespace gem5
+{
+
 using namespace MipsISA;
 
-RemoteGDB::RemoteGDB(System *_system, ThreadContext *tc, int _port)
-    : BaseRemoteGDB(_system, tc, _port), regCache(this)
+RemoteGDB::RemoteGDB(System *_system, int _port)
+    : BaseRemoteGDB(_system, _port), regCache(this)
 {
 }
 
@@ -207,3 +207,22 @@ RemoteGDB::gdbRegs()
 {
     return &regCache;
 }
+
+bool
+RemoteGDB::getXferFeaturesRead(const std::string &annex, std::string &output)
+{
+#define GDB_XML(x, s) \
+        { x, std::string(reinterpret_cast<const char *>(Blobs::s), \
+        Blobs::s ## _len) }
+    static const std::map<std::string, std::string> annexMap {
+        GDB_XML("target.xml", gdb_xml_mips),
+    };
+#undef GDB_XML
+    auto it = annexMap.find(annex);
+    if (it == annexMap.end())
+        return false;
+    output = it->second;
+    return true;
+}
+
+} // namespace gem5

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_MICROCODE_ROM_HH__
@@ -35,43 +33,51 @@
 #include "arch/x86/emulenv.hh"
 #include "cpu/static_inst.hh"
 
+namespace gem5
+{
+
 namespace X86ISAInst
 {
-    class MicrocodeRom
+
+class MicrocodeRom
+{
+  protected:
+
+    typedef StaticInstPtr (*GenFunc)(StaticInstPtr);
+
+    static const MicroPC numMicroops;
+
+    GenFunc *genFuncs;
+
+  public:
+    //Constructor.
+    MicrocodeRom();
+
+    //Destructor.
+    ~MicrocodeRom()
     {
-      protected:
+        delete [] genFuncs;
+    }
 
-        typedef StaticInstPtr (*GenFunc)(StaticInstPtr);
+    StaticInstPtr
+    fetchMicroop(MicroPC microPC, StaticInstPtr curMacroop)
+    {
+        microPC = normalMicroPC(microPC);
+        if (microPC >= numMicroops)
+            return X86ISA::badMicroop;
+        else
+            return genFuncs[microPC](curMacroop);
+    }
+};
 
-        static const MicroPC numMicroops;
-
-        GenFunc * genFuncs;
-
-      public:
-        //Constructor.
-        MicrocodeRom();
-
-        //Destructor.
-        ~MicrocodeRom()
-        {
-            delete [] genFuncs;
-        }
-
-        StaticInstPtr
-        fetchMicroop(MicroPC microPC, StaticInstPtr curMacroop)
-        {
-            microPC = normalMicroPC(microPC);
-            if (microPC >= numMicroops)
-                return X86ISA::badMicroop;
-            else
-                return genFuncs[microPC](curMacroop);
-        }
-    };
-}
+} // namespace X86ISAInst
 
 namespace X86ISA
 {
-    using X86ISAInst::MicrocodeRom;
-}
+
+using X86ISAInst::MicrocodeRom;
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_MICROCODE_ROM_HH__

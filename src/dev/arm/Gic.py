@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2013, 2017-2019 ARM Limited
+# Copyright (c) 2012-2013, 2017-2020 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.params import *
 from m5.proxy import *
@@ -42,11 +40,13 @@ from m5.SimObject import SimObject
 
 from m5.objects.Device import PioDevice, BasicPioDevice
 from m5.objects.Platform import Platform
+from m5.objects.IntPin import IntSourcePin
 
 class BaseGic(PioDevice):
     type = 'BaseGic'
     abstract = True
     cxx_header = "dev/arm/base_gic.hh"
+    cxx_class = 'gem5::BaseGic'
 
     # Used for DTB autogeneration
     _state = FdtState(addr_cells=0, interrupt_cells=3)
@@ -62,7 +62,7 @@ class BaseGic(PioDevice):
     gicv_iidr = Param.UInt32(0,
         "VM CPU Interface Identification Register")
 
-    def interruptCells(self, int_type, int_num, int_flag):
+    def interruptCells(self, int_type, int_num, int_trigger, partition=None):
         """
         Interupt cells generation helper:
         Following specifications described in
@@ -70,30 +70,86 @@ class BaseGic(PioDevice):
         Documentation/devicetree/bindings/interrupt-controller/arm,gic.txt
         """
         assert self._state.interrupt_cells == 3
-        return [ int_type, int_num, int_flag ]
+
+        # Check for affinity in case of PPI. If there is no PPI
+        # partitioning, set the affinity to target all CPUs
+        # (affinity = 0xf00)
+        if partition is None and int_type == ArmPPI._LINUX_ID:
+            affinity = 0xf00
+        else:
+            affinity = 0
+
+        return [ int_type, int_num, affinity | int_trigger ]
+
+class ArmInterruptType(ScopedEnum):
+    """
+    The values of the scoped enum are matching Linux macroes
+    defined in include/linux/irq.h. They are mainly meant
+    to be used for DTB autogen
+    """
+    map = {
+        'IRQ_TYPE_EDGE_RISING' : 0x1,
+        'IRQ_TYPE_EDGE_FALLING' : 0x2,
+        'IRQ_TYPE_LEVEL_HIGH' : 0x4,
+        'IRQ_TYPE_LEVEL_LOW' : 0x8
+    }
 
 class ArmInterruptPin(SimObject):
     type = 'ArmInterruptPin'
     cxx_header = "dev/arm/base_gic.hh"
-    cxx_class = "ArmInterruptPinGen"
+    cxx_class = "gem5::ArmInterruptPinGen"
     abstract = True
 
     platform = Param.Platform(Parent.any, "Platform with interrupt controller")
     num = Param.UInt32("Interrupt number in GIC")
+    int_type = Param.ArmInterruptType('IRQ_TYPE_LEVEL_HIGH',
+        "Interrupt type (level/edge triggered)")
 
 class ArmSPI(ArmInterruptPin):
     type = 'ArmSPI'
     cxx_header = "dev/arm/base_gic.hh"
-    cxx_class = "ArmSPIGen"
+    cxx_class = "gem5::ArmSPIGen"
+
+    _LINUX_ID = 0
+
+    def generateFdtProperty(self, gic):
+        """
+        Return a list used as an entry for an interrupt FdtProperty
+
+        Subtracting 32 because Linux assumes that SPIs start at 0, while
+        gem5 uses the internal GIC numbering (SPIs start at 32)
+        """
+        return gic.interruptCells(
+            self._LINUX_ID, self.num - 32, int(self.int_type.getValue()))
 
 class ArmPPI(ArmInterruptPin):
     type = 'ArmPPI'
     cxx_header = "dev/arm/base_gic.hh"
-    cxx_class = "ArmPPIGen"
+    cxx_class = "gem5::ArmPPIGen"
+
+    _LINUX_ID = 1
+
+    def generateFdtProperty(self, gic):
+        """
+        Return a list used as an entry for an interrupt FdtProperty
+
+        Subtracting 16 because Linux assumes that PPIs start at 0, while
+        gem5 uses the internal GIC numbering (PPIs start at 16)
+        """
+        return gic.interruptCells(
+            self._LINUX_ID, self.num - 16, int(self.int_type.getValue()))
+
+class ArmSigInterruptPin(ArmInterruptPin):
+    type = 'ArmSigInterruptPin'
+    cxx_header = "dev/arm/base_gic.hh"
+    cxx_class = "gem5::ArmSigInterruptPinGen"
+
+    irq = IntSourcePin('Interrupt pin')
 
 class GicV2(BaseGic):
     type = 'GicV2'
     cxx_header = "dev/arm/gic_v2.hh"
+    cxx_class = 'gem5::GicV2'
 
     dist_addr = Param.Addr("Address for distributor")
     cpu_addr = Param.Addr("Address for cpu")
@@ -120,6 +176,7 @@ class Gic400(GicV2):
 class Gicv2mFrame(SimObject):
     type = 'Gicv2mFrame'
     cxx_header = "dev/arm/gic_v2m.hh"
+    cxx_class = 'gem5::Gicv2mFrame'
     spi_base = Param.UInt32(0x0, "Frame SPI base number");
     spi_len = Param.UInt32(0x0, "Frame SPI total number");
     addr = Param.Addr("Address for frame PIO")
@@ -127,6 +184,7 @@ class Gicv2mFrame(SimObject):
 class Gicv2m(PioDevice):
     type = 'Gicv2m'
     cxx_header = "dev/arm/gic_v2m.hh"
+    cxx_class = 'gem5::Gicv2m'
 
     pio_delay = Param.Latency('10ns', "Delay for PIO r/w")
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
@@ -135,6 +193,7 @@ class Gicv2m(PioDevice):
 class VGic(PioDevice):
     type = 'VGic'
     cxx_header = "dev/arm/vgic.hh"
+    cxx_class = 'gem5::VGic'
     gic = Param.BaseGic(Parent.any, "Gic to use for interrupting")
     platform = Param.Platform(Parent.any, "Platform this device is part of.")
     vcpu_addr = Param.Addr(0, "Address for vcpu interfaces")
@@ -178,8 +237,9 @@ class VGic(PioDevice):
 class Gicv3Its(BasicPioDevice):
     type = 'Gicv3Its'
     cxx_header = "dev/arm/gic_v3_its.hh"
+    cxx_class = 'gem5::Gicv3Its'
 
-    dma = MasterPort("DMA port")
+    dma = RequestPort("DMA port")
     pio_size = Param.Unsigned(0x20000, "Gicv3Its pio size")
 
     # CIL [36] = 0: ITS supports 16-bit CollectionID
@@ -199,6 +259,7 @@ class Gicv3Its(BasicPioDevice):
 class Gicv3(BaseGic):
     type = 'Gicv3'
     cxx_header = "dev/arm/gic_v3.hh"
+    cxx_class = 'gem5::Gicv3'
 
     # Used for DTB autogeneration
     _state = FdtState(addr_cells=2, size_cells=2, interrupt_cells=3)
@@ -224,7 +285,7 @@ class Gicv3(BaseGic):
 
     gicv4 = Param.Bool(True, "GICv4 extension available")
 
-    def interruptCells(self, int_type, int_num, int_flag):
+    def interruptCells(self, int_type, int_num, int_trigger, partition=None):
         """
         Interupt cells generation helper:
         Following specifications described in
@@ -235,7 +296,7 @@ class Gicv3(BaseGic):
         assert len(prop) >= 3
         prop[0] = int_type
         prop[1] = int_num
-        prop[2] = int_flag
+        prop[2] = int_trigger
         return prop
 
     def generateDeviceTree(self, state):
@@ -259,7 +320,7 @@ class Gicv3(BaseGic):
 
         node.append(FdtPropertyWords("reg", regs))
         node.append(FdtPropertyWords("interrupts",
-            self.interruptCells(1, int(self.maint_int.num)-16, 0xf04)))
+            self.interruptCells(1, int(self.maint_int.num)-16, 0x4)))
 
         node.appendPhandle(self)
 

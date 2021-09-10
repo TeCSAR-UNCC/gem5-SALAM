@@ -37,41 +37,41 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Lisa Hsu
- *          Nathan Binkert
- *          Rick Strong
  */
 
 #ifndef __SYSTEM_HH__
 #define __SYSTEM_HH__
 
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "arch/isa_traits.hh"
+#include "arch/page_size.hh"
 #include "base/loader/memory_image.hh"
 #include "base/loader/symtab.hh"
 #include "base/statistics.hh"
 #include "config/the_isa.hh"
 #include "cpu/pc_event.hh"
 #include "enums/MemoryMode.hh"
-#include "mem/mem_master.hh"
+#include "mem/mem_requestor.hh"
 #include "mem/physical.hh"
 #include "mem/port.hh"
 #include "mem/port_proxy.hh"
 #include "params/System.hh"
 #include "sim/futex_map.hh"
+#include "sim/mem_pool.hh"
 #include "sim/redirect_path.hh"
 #include "sim/se_signal.hh"
 #include "sim/sim_object.hh"
+#include "sim/workload.hh"
+
+namespace gem5
+{
 
 class BaseRemoteGDB;
 class KvmVM;
-class ObjectFile;
 class ThreadContext;
 
 class System : public SimObject, public PCEventScope
@@ -80,10 +80,10 @@ class System : public SimObject, public PCEventScope
 
     /**
      * Private class for the system port which is only used as a
-     * master for debug access and for non-structural entities that do
+     * requestor for debug access and for non-structural entities that do
      * not have a port of their own.
      */
-    class SystemPort : public MasterPort
+    class SystemPort : public RequestPort
     {
       public:
 
@@ -91,24 +91,148 @@ class System : public SimObject, public PCEventScope
          * Create a system port with a name and an owner.
          */
         SystemPort(const std::string &_name, SimObject *_owner)
-            : MasterPort(_name, _owner)
+            : RequestPort(_name, _owner)
         { }
-        bool recvTimingResp(PacketPtr pkt) override
-        { panic("SystemPort does not receive timing!\n"); return false; }
-        void recvReqRetry() override
-        { panic("SystemPort does not expect retry!\n"); }
+
+        bool
+        recvTimingResp(PacketPtr pkt) override
+        {
+            panic("SystemPort does not receive timing!");
+        }
+
+        void
+        recvReqRetry() override
+        {
+            panic("SystemPort does not expect retry!");
+        }
     };
 
     std::list<PCEvent *> liveEvents;
     SystemPort _systemPort;
 
+    // Map of memory address ranges for devices with their own backing stores
+    std::unordered_map<RequestorID, std::vector<memory::AbstractMemory *>>
+        deviceMemMap;
+
   public:
 
-    /**
-     * After all objects have been created and all ports are
-     * connected, check that the system port is connected.
-     */
-    void init() override;
+    class Threads
+    {
+      private:
+        struct Thread
+        {
+            ThreadContext *context = nullptr;
+            bool active = false;
+            Event *resumeEvent = nullptr;
+
+            void resume();
+            std::string name() const;
+            void quiesce() const;
+        };
+
+        std::vector<Thread> threads;
+
+        Thread &
+        thread(ContextID id)
+        {
+            assert(id < size());
+            return threads[id];
+        }
+
+        const Thread &
+        thread(ContextID id) const
+        {
+            assert(id < size());
+            return threads[id];
+        }
+
+        void insert(ThreadContext *tc, ContextID id=InvalidContextID);
+        void replace(ThreadContext *tc, ContextID id);
+
+        friend class System;
+
+      public:
+        class const_iterator
+        {
+          private:
+            const Threads &threads;
+            int pos;
+
+            friend class Threads;
+
+            const_iterator(const Threads &_threads, int _pos) :
+                threads(_threads), pos(_pos)
+            {}
+
+          public:
+            const_iterator(const const_iterator &) = default;
+            const_iterator &operator = (const const_iterator &) = default;
+
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = ThreadContext *;
+            using difference_type = int;
+            using pointer = const value_type *;
+            using reference = const value_type &;
+
+            const_iterator &
+            operator ++ ()
+            {
+                pos++;
+                return *this;
+            }
+
+            const_iterator
+            operator ++ (int)
+            {
+                return const_iterator(threads, pos++);
+            }
+
+            reference operator * () { return threads.thread(pos).context; }
+            pointer operator -> () { return &threads.thread(pos).context; }
+
+            bool
+            operator == (const const_iterator &other) const
+            {
+                return &threads == &other.threads && pos == other.pos;
+            }
+
+            bool
+            operator != (const const_iterator &other) const
+            {
+                return !(*this == other);
+            }
+        };
+
+        ThreadContext *findFree();
+
+        ThreadContext *
+        operator [](ContextID id) const
+        {
+            return thread(id).context;
+        }
+
+        void markActive(ContextID id) { thread(id).active = true; }
+
+        int size() const { return threads.size(); }
+        bool empty() const { return threads.empty(); }
+        int numRunning() const;
+        int
+        numActive() const
+        {
+            int count = 0;
+            for (auto &thread: threads) {
+                if (thread.active)
+                    count++;
+            }
+            return count;
+        }
+
+        void quiesce(ContextID id);
+        void quiesceTick(ContextID id, Tick when);
+
+        const_iterator begin() const { return const_iterator(*this, 0); }
+        const_iterator end() const { return const_iterator(*this, size()); }
+    };
 
     /**
      * Get a reference to the system port that can be used by
@@ -118,7 +242,7 @@ class System : public SimObject, public PCEventScope
      *
      * @return a reference to the system port we own
      */
-    MasterPort& getSystemPort() { return _systemPort; }
+    RequestPort& getSystemPort() { return _systemPort; }
 
     /**
      * Additional function to return the Port of a memory object.
@@ -136,9 +260,11 @@ class System : public SimObject, public PCEventScope
      * CPUs. SimObjects are expected to use Port::sendAtomic() and
      * Port::recvAtomic() when accessing memory in this mode.
      */
-    bool isAtomicMode() const {
-        return memoryMode == Enums::atomic ||
-            memoryMode == Enums::atomic_noncaching;
+    bool
+    isAtomicMode() const
+    {
+        return memoryMode == enums::atomic ||
+            memoryMode == enums::atomic_noncaching;
     }
 
     /**
@@ -147,9 +273,7 @@ class System : public SimObject, public PCEventScope
      * SimObjects are expected to use Port::sendTiming() and
      * Port::recvTiming() when accessing memory in this mode.
      */
-    bool isTimingMode() const {
-        return memoryMode == Enums::timing;
-    }
+    bool isTimingMode() const { return memoryMode == enums::timing; }
 
     /**
      * Should caches be bypassed?
@@ -157,8 +281,10 @@ class System : public SimObject, public PCEventScope
      * Some CPUs need to bypass caches to allow direct memory
      * accesses, which is required for hardware virtualization.
      */
-    bool bypassCaches() const {
-        return memoryMode == Enums::atomic_noncaching;
+    bool
+    bypassCaches() const
+    {
+        return memoryMode == enums::atomic_noncaching;
     }
     /** @} */
 
@@ -170,7 +296,7 @@ class System : public SimObject, public PCEventScope
      * world should use one of the query functions above
      * (isAtomicMode(), isTimingMode(), bypassCaches()).
      */
-    Enums::MemoryMode getMemoryMode() const { return memoryMode; }
+    enums::MemoryMode getMemoryMode() const { return memoryMode; }
 
     /**
      * Change the memory mode of the system.
@@ -179,7 +305,7 @@ class System : public SimObject, public PCEventScope
      *
      * @param mode Mode to change to (atomic/timing/...)
      */
-    void setMemoryMode(Enums::MemoryMode mode);
+    void setMemoryMode(enums::MemoryMode mode);
     /** @} */
 
     /**
@@ -187,7 +313,8 @@ class System : public SimObject, public PCEventScope
      */
     unsigned int cacheLineSize() const { return _cacheLineSize; }
 
-    std::vector<ThreadContext *> threadContexts;
+    Threads threads;
+
     const bool multiThread;
 
     using SimObject::schedule;
@@ -195,18 +322,8 @@ class System : public SimObject, public PCEventScope
     bool schedule(PCEvent *event) override;
     bool remove(PCEvent *event) override;
 
-    ThreadContext *getThreadContext(ContextID tid) const
-    {
-        return threadContexts[tid];
-    }
-
-    unsigned numContexts() const { return threadContexts.size(); }
-
-    /** Return number of running (non-halted) thread contexts in
-     * system.  These threads could be Active or Suspended. */
-    int numRunningContexts();
-
-    Addr pagePtr;
+    /** Memory allocation objects for all physical memories in the system. */
+    std::vector<MemPool> memPools;
 
     uint64_t init_param;
 
@@ -214,60 +331,27 @@ class System : public SimObject, public PCEventScope
      * boot.*/
     PortProxy physProxy;
 
-    /** kernel symbol table */
-    SymbolTable *kernelSymtab;
-
-    /** Object pointer for the kernel code */
-    ObjectFile *kernel;
-    MemoryImage kernelImage;
-
-    /** Additional object files */
-    std::vector<ObjectFile *> kernelExtras;
-
-    /** Beginning of kernel code */
-    Addr kernelStart;
-
-    /** End of kernel code */
-    Addr kernelEnd;
-
-    /** Entry point in the kernel to start at */
-    Addr kernelEntry;
-
-    /** Mask that should be anded for binary/symbol loading.
-     * This allows one two different OS requirements for the same ISA to be
-     * handled.  Some OSes are compiled for a virtual address and need to be
-     * loaded into physical memory that starts at address 0, while other
-     * bare metal tools generate images that start at address 0.
-     */
-    Addr loadAddrMask;
-
-    /** Offset that should be used for binary/symbol loading.
-     * This further allows more flexibility than the loadAddrMask allows alone
-     * in loading kernels and similar. The loadAddrOffset is applied after the
-     * loadAddrMask.
-     */
-    Addr loadAddrOffset;
+    /** OS kernel */
+    Workload *workload = nullptr;
 
   public:
     /**
      * Get a pointer to the Kernel Virtual Machine (KVM) SimObject,
      * if present.
      */
-    KvmVM* getKvmVM() {
-        return kvmVM;
-    }
+    KvmVM *getKvmVM() { return kvmVM; }
 
     /** Verify gem5 configuration will support KVM emulation */
     bool validKvmEnvironment() const;
 
     /** Get a pointer to access the physical memory of the system */
-    PhysicalMemory& getPhysMem() { return physmem; }
+    memory::PhysicalMemory& getPhysMem() { return physmem; }
 
     /** Amount of physical memory that is still free */
-    Addr freeMemSize() const;
+    Addr freeMemSize(int poolID = 0) const;
 
     /** Amount of physical memory that exists */
-    Addr memSize() const;
+    Addr memSize(int poolID = 0) const;
 
     /**
      * Check if a physical address is within a range of a memory that
@@ -277,6 +361,33 @@ class System : public SimObject, public PCEventScope
      * @return Whether the address corresponds to a memory
      */
     bool isMemAddr(Addr addr) const;
+
+    /**
+     * Add a physical memory range for a device. The ranges added here will
+     * be considered a non-PIO memory address if the requestorId of the packet
+     * and range match something in the device memory map.
+     */
+    void addDeviceMemory(RequestorID requestorId,
+        memory::AbstractMemory *deviceMemory);
+
+    /**
+     * Similar to isMemAddr but for devices. Checks if a physical address
+     * of the packet match an address range of a device corresponding to the
+     * RequestorId of the request.
+     */
+    bool isDeviceMemAddr(const PacketPtr& pkt) const;
+
+    /**
+     * Return a pointer to the device memory.
+     */
+    memory::AbstractMemory *getDeviceMemory(const PacketPtr& pkt) const;
+
+    /*
+     * Return the list of address ranges backed by a shadowed ROM.
+     *
+     * @return List of address ranges backed by a shadowed ROM
+     */
+    AddrRangeList getShadowRomRanges() const { return ShadowRomRanges; }
 
     /**
      * Get the architecture.
@@ -289,11 +400,7 @@ class System : public SimObject, public PCEventScope
     ByteOrder
     getGuestByteOrder() const
     {
-#if THE_ISA != NULL_ISA
-        return TheISA::GuestByteOrder;
-#else
-        panic("The NULL ISA has no endianness.");
-#endif
+        return params().byte_order;
     }
 
      /**
@@ -313,112 +420,114 @@ class System : public SimObject, public PCEventScope
 
   protected:
 
-    KvmVM *const kvmVM;
+    KvmVM *const kvmVM = nullptr;
 
-    PhysicalMemory physmem;
+    memory::PhysicalMemory physmem;
 
-    Enums::MemoryMode memoryMode;
+    AddrRangeList ShadowRomRanges;
+
+    enums::MemoryMode memoryMode;
 
     const unsigned int _cacheLineSize;
 
-    uint64_t workItemsBegin;
-    uint64_t workItemsEnd;
+    uint64_t workItemsBegin = 0;
+    uint64_t workItemsEnd = 0;
     uint32_t numWorkIds;
-    std::vector<bool> activeCpus;
 
     /** This array is a per-system list of all devices capable of issuing a
-     * memory system request and an associated string for each master id.
-     * It's used to uniquely id any master in the system by name for things
+     * memory system request and an associated string for each requestor id.
+     * It's used to uniquely id any requestor in the system by name for things
      * like cache statistics.
      */
-    std::vector<MasterInfo> masters;
+    std::vector<RequestorInfo> requestors;
 
     ThermalModel * thermalModel;
 
   protected:
     /**
-     * Strips off the system name from a master name
+     * Strips off the system name from a requestor name
      */
-    std::string stripSystemName(const std::string& master_name) const;
+    std::string stripSystemName(const std::string& requestor_name) const;
 
   public:
 
     /**
      * Request an id used to create a request object in the system. All objects
      * that intend to issues requests into the memory system must request an id
-     * in the init() phase of startup. All master ids must be fixed by the
+     * in the init() phase of startup. All requestor ids must be fixed by the
      * regStats() phase that immediately precedes it. This allows objects in
-     * the memory system to understand how many masters may exist and
-     * appropriately name the bins of their per-master stats before the stats
-     * are finalized.
+     * the memory system to understand how many requestors may exist and
+     * appropriately name the bins of their per-requestor stats before the
+     * stats are finalized.
      *
-     * Registers a MasterID:
+     * Registers a RequestorID:
      * This method takes two parameters, one of which is optional.
-     * The first one is the master object, and it is compulsory; in case
-     * a object has multiple (sub)masters, a second parameter must be
-     * provided and it contains the name of the submaster. The method will
-     * create a master's name by concatenating the SimObject name with the
-     * eventual submaster string, separated by a dot.
+     * The first one is the requestor object, and it is compulsory; in case
+     * a object has multiple (sub)requestors, a second parameter must be
+     * provided and it contains the name of the subrequestor. The method will
+     * create a requestor's name by concatenating the SimObject name with the
+     * eventual subrequestor string, separated by a dot.
      *
      * As an example:
-     * For a cpu having two masters: a data master and an instruction master,
+     * For a cpu having two requestors: a data requestor and an
+     * instruction requestor,
      * the method must be called twice:
      *
-     * instMasterId = getMasterId(cpu, "inst");
-     * dataMasterId = getMasterId(cpu, "data");
+     * instRequestorId = getRequestorId(cpu, "inst");
+     * dataRequestorId = getRequestorId(cpu, "data");
      *
-     * and the masters' names will be:
+     * and the requestors' names will be:
      * - "cpu.inst"
      * - "cpu.data"
      *
-     * @param master SimObject related to the master
-     * @param submaster String containing the submaster's name
-     * @return the master's ID.
+     * @param requestor SimObject related to the requestor
+     * @param subrequestor String containing the subrequestor's name
+     * @return the requestor's ID.
      */
-    MasterID getMasterId(const SimObject* master,
-                         std::string submaster = std::string());
+    RequestorID getRequestorId(const SimObject* requestor,
+                         std::string subrequestor={});
 
     /**
-     * Registers a GLOBAL MasterID, which is a MasterID not related
+     * Registers a GLOBAL RequestorID, which is a RequestorID not related
      * to any particular SimObject; since no SimObject is passed,
-     * the master gets registered by providing the full master name.
+     * the requestor gets registered by providing the full requestor name.
      *
-     * @param masterName full name of the master
-     * @return the master's ID.
+     * @param requestorName full name of the requestor
+     * @return the requestor's ID.
      */
-    MasterID getGlobalMasterId(const std::string& master_name);
+    RequestorID getGlobalRequestorId(const std::string& requestor_name);
 
     /**
      * Get the name of an object for a given request id.
      */
-    std::string getMasterName(MasterID master_id);
+    std::string getRequestorName(RequestorID requestor_id);
 
     /**
-     * Looks up the MasterID for a given SimObject
-     * returns an invalid MasterID (invldMasterId) if not found.
+     * Looks up the RequestorID for a given SimObject
+     * returns an invalid RequestorID (invldRequestorId) if not found.
      */
-    MasterID lookupMasterId(const SimObject* obj) const;
+    RequestorID lookupRequestorId(const SimObject* obj) const;
 
     /**
-     * Looks up the MasterID for a given object name string
-     * returns an invalid MasterID (invldMasterId) if not found.
+     * Looks up the RequestorID for a given object name string
+     * returns an invalid RequestorID (invldRequestorId) if not found.
      */
-    MasterID lookupMasterId(const std::string& name) const;
+    RequestorID lookupRequestorId(const std::string& name) const;
 
-    /** Get the number of masters registered in the system */
-    MasterID maxMasters() { return masters.size(); }
+    /** Get the number of requestors registered in the system */
+    RequestorID maxRequestors() { return requestors.size(); }
 
   protected:
-    /** helper function for getMasterId */
-    MasterID _getMasterId(const SimObject* master,
-                          const std::string& master_name);
+    /** helper function for getRequestorId */
+    RequestorID _getRequestorId(const SimObject* requestor,
+                          const std::string& requestor_name);
 
     /**
-     * Helper function for constructing the full (sub)master name
-     * by providing the root master and the relative submaster name.
+     * Helper function for constructing the full (sub)requestor name
+     * by providing the root requestor and the relative subrequestor name.
      */
-    std::string leafMasterName(const SimObject* master,
-                               const std::string& submaster);
+    std::string leafRequestorName(const SimObject* requestor,
+                               const std::string& subrequestor);
 
   public:
 
@@ -451,167 +560,57 @@ class System : public SimObject, public PCEventScope
     int
     markWorkItem(int index)
     {
-        int count = 0;
-        assert(index < activeCpus.size());
-        activeCpus[index] = true;
-        for (std::vector<bool>::iterator i = activeCpus.begin();
-             i < activeCpus.end(); i++) {
-            if (*i) count++;
-        }
-        return count;
+        threads.markActive(index);
+        return threads.numActive();
     }
 
-    inline void workItemBegin(uint32_t tid, uint32_t workid)
+    void
+    workItemBegin(uint32_t tid, uint32_t workid)
     {
-        std::pair<uint32_t,uint32_t> p(tid, workid);
+        std::pair<uint32_t, uint32_t> p(tid, workid);
         lastWorkItemStarted[p] = curTick();
     }
 
     void workItemEnd(uint32_t tid, uint32_t workid);
 
-    /**
-     * Fix up an address used to match PCs for hooking simulator
-     * events on to target function executions.  See comment in
-     * system.cc for details.
-     */
-    virtual Addr fixFuncEventAddr(Addr addr)
-    {
-        panic("Base fixFuncEventAddr not implemented.\n");
-    }
-
-    /** @{ */
-    /**
-     * Add a function-based event to the given function, to be looked
-     * up in the specified symbol table.
-     *
-     * The ...OrPanic flavor of the method causes the simulator to
-     * panic if the symbol can't be found.
-     *
-     * @param symtab Symbol table to use for look up.
-     * @param lbl Function to hook the event to.
-     * @param desc Description to be passed to the event.
-     * @param args Arguments to be forwarded to the event constructor.
-     */
-    template <class T, typename... Args>
-    T *addFuncEvent(const SymbolTable *symtab, const char *lbl,
-                    const std::string &desc, Args... args)
-    {
-        Addr addr M5_VAR_USED = 0; // initialize only to avoid compiler warning
-
-        if (symtab->findAddress(lbl, addr)) {
-            T *ev = new T(this, desc, fixFuncEventAddr(addr),
-                          std::forward<Args>(args)...);
-            return ev;
-        }
-
-        return NULL;
-    }
-
-    template <class T>
-    T *addFuncEvent(const SymbolTable *symtab, const char *lbl)
-    {
-        return addFuncEvent<T>(symtab, lbl, lbl);
-    }
-
-    template <class T, typename... Args>
-    T *addFuncEventOrPanic(const SymbolTable *symtab, const char *lbl,
-                           Args... args)
-    {
-        T *e(addFuncEvent<T>(symtab, lbl, std::forward<Args>(args)...));
-        if (!e)
-            panic("Failed to find symbol '%s'", lbl);
-        return e;
-    }
-    /** @} */
-
-    /** @{ */
-    /**
-     * Add a function-based event to a kernel symbol.
-     *
-     * These functions work like their addFuncEvent() and
-     * addFuncEventOrPanic() counterparts. The only difference is that
-     * they automatically use the kernel symbol table. All arguments
-     * are forwarded to the underlying method.
-     *
-     * @see addFuncEvent()
-     * @see addFuncEventOrPanic()
-     *
-     * @param lbl Function to hook the event to.
-     * @param args Arguments to be passed to addFuncEvent
-     */
-    template <class T, typename... Args>
-    T *addKernelFuncEvent(const char *lbl, Args... args)
-    {
-        return addFuncEvent<T>(kernelSymtab, lbl,
-                               std::forward<Args>(args)...);
-    }
-
-    template <class T, typename... Args>
-    T *addKernelFuncEventOrPanic(const char *lbl, Args... args)
-    {
-        T *e(addFuncEvent<T>(kernelSymtab, lbl,
-                             std::forward<Args>(args)...));
-        if (!e)
-            panic("Failed to find kernel symbol '%s'", lbl);
-        return e;
-    }
-    /** @} */
-
-  public:
-    std::vector<BaseRemoteGDB *> remoteGDB;
-    bool breakpoint();
-
-  public:
-    typedef SystemParams Params;
+    /* Returns whether we successfully trapped into GDB. */
+    bool trapToGdb(int signal, ContextID ctx_id) const;
 
   protected:
-    Params *_params;
+    /**
+     * Range for memory-mapped m5 pseudo ops. The range will be
+     * invalid/empty if disabled.
+     */
+    const AddrRange _m5opRange;
 
   public:
-    System(Params *p);
+    PARAMS(System);
+
+    System(const Params &p);
     ~System();
 
-    void initState() override;
-
-    const Params *params() const { return (const Params *)_params; }
+    /**
+     * Range used by memory-mapped m5 pseudo-ops if enabled. Returns
+     * an invalid/empty range if disabled.
+     */
+    const AddrRange &m5opRange() const { return _m5opRange; }
 
   public:
-
-    /**
-     * Returns the address the kernel starts at.
-     * @return address the kernel starts at
-     */
-    Addr getKernelStart() const { return kernelStart; }
-
-    /**
-     * Returns the address the kernel ends at.
-     * @return address the kernel ends at
-     */
-    Addr getKernelEnd() const { return kernelEnd; }
-
-    /**
-     * Returns the address the entry point to the kernel code.
-     * @return entry point of the kernel code
-     */
-    Addr getKernelEntry() const { return kernelEntry; }
 
     /// Allocate npages contiguous unused physical pages
     /// @return Starting address of first page
-    Addr allocPhysPages(int npages);
+    Addr allocPhysPages(int npages, int poolID = 0);
 
-    ContextID registerThreadContext(ThreadContext *tc,
-                                    ContextID assigned = InvalidContextID);
+    void registerThreadContext(
+            ThreadContext *tc, ContextID assigned=InvalidContextID);
     void replaceThreadContext(ThreadContext *tc, ContextID context_id);
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 
-    void drainResume() override;
-
   public:
-    Counter totalNumInsts;
-    std::map<std::pair<uint32_t,uint32_t>, Tick>  lastWorkItemStarted;
-    std::map<uint32_t, Stats::Histogram*> workItemStats;
+    std::map<std::pair<uint32_t, uint32_t>, Tick>  lastWorkItemStarted;
+    std::map<uint32_t, statistics::Histogram*> workItemStats;
 
     ////////////////////////////////////////////
     //
@@ -639,28 +638,10 @@ class System : public SimObject, public PCEventScope
     // to be redirected to the faux-filesystem (a duplicate filesystem
     // intended to replace certain files on the host filesystem).
     std::vector<RedirectPath*> redirectPaths;
-
-  protected:
-
-    /**
-     * If needed, serialize additional symbol table entries for a
-     * specific subclass of this system. Currently this is used by
-     * Alpha and MIPS.
-     *
-     * @param os stream to serialize to
-     */
-    virtual void serializeSymtab(CheckpointOut &os) const {}
-
-    /**
-     * If needed, unserialize additional symbol table entries for a
-     * specific subclass of this system.
-     *
-     * @param cp checkpoint to unserialize from
-     * @param section relevant section in the checkpoint
-     */
-    virtual void unserializeSymtab(CheckpointIn &cp) {}
 };
 
 void printSystems();
+
+} // namespace gem5
 
 #endif // __SYSTEM_HH__

@@ -24,14 +24,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Bobby R. Bruce
  */
 
 #include <gtest/gtest.h>
 
 #include "chunk_generator.hh"
 
+using namespace gem5;
 
 /*
  * A test to ensure the object is in a sane state after initialization.
@@ -59,6 +58,44 @@ TEST(ChunkGeneratorTest, AdvanceToNextChunk)
     EXPECT_EQ(8, chunk_generator.complete());
     EXPECT_FALSE(chunk_generator.done());
     EXPECT_FALSE(chunk_generator.last());
+}
+
+/*
+ * A test to check skipping over bytes.
+ */
+TEST(ChunkGeneratorTest, SkipBytes)
+{
+    ChunkGenerator chunk_generator(0, 1024, 8);
+    EXPECT_EQ(0, chunk_generator.addr());
+    EXPECT_TRUE(chunk_generator.next());
+    EXPECT_EQ(8, chunk_generator.addr());
+
+    chunk_generator.setNext(23);
+    EXPECT_EQ(23 - 8, chunk_generator.size());
+    EXPECT_TRUE(chunk_generator.next());
+    EXPECT_EQ(23, chunk_generator.addr());
+    EXPECT_EQ(1, chunk_generator.size());
+    EXPECT_TRUE(chunk_generator.next());
+    EXPECT_EQ(24, chunk_generator.addr());
+    EXPECT_EQ(8, chunk_generator.size());
+
+    chunk_generator.setNext(32);
+    EXPECT_EQ(32 - 24, chunk_generator.size());
+    EXPECT_TRUE(chunk_generator.next());
+    EXPECT_EQ(32, chunk_generator.addr());
+    EXPECT_EQ(8, chunk_generator.size());
+
+    chunk_generator.setNext(64);
+    EXPECT_EQ(64 - 32, chunk_generator.size());
+    EXPECT_TRUE(chunk_generator.next());
+    EXPECT_EQ(64, chunk_generator.addr());
+    EXPECT_EQ(8, chunk_generator.size());
+
+    chunk_generator.setNext(2048);
+    EXPECT_EQ(1024 - 64, chunk_generator.size());
+    EXPECT_TRUE(chunk_generator.last());
+    EXPECT_FALSE(chunk_generator.next());
+    EXPECT_TRUE(chunk_generator.done());
 }
 
 /*

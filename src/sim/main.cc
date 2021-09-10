@@ -24,14 +24,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include <Python.h>
 
 #include "sim/init.hh"
 #include "sim/init_signals.hh"
+
+using namespace gem5;
 
 // main() is now pretty stripped down and just sets up python and then
 // calls initM5Python which loads the various embedded python modules

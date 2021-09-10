@@ -35,9 +35,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Boris Shingarov
  */
 
 #ifndef __ARCH_X86_REMOTEGDB_HH__
@@ -46,7 +43,11 @@
 #include <algorithm>
 
 #include "arch/x86/types.hh"
+#include "base/compiler.hh"
 #include "base/remote_gdb.hh"
+
+namespace gem5
+{
 
 class System;
 class ThreadContext;
@@ -62,7 +63,8 @@ class RemoteGDB : public BaseRemoteGDB
     {
       using BaseGdbRegCache::BaseGdbRegCache;
       private:
-        struct {
+        struct
+        {
           uint32_t eax;
           uint32_t ecx;
           uint32_t edx;
@@ -96,7 +98,8 @@ class RemoteGDB : public BaseRemoteGDB
     {
       using BaseGdbRegCache::BaseGdbRegCache;
       private:
-        struct M5_ATTR_PACKED {
+        struct GEM5_PACKED
+        {
           uint64_t rax;
           uint64_t rbx;
           uint64_t rcx;
@@ -143,9 +146,11 @@ class RemoteGDB : public BaseRemoteGDB
     AMD64GdbRegCache regCache64;
 
   public:
-    RemoteGDB(System *system, ThreadContext *context, int _port);
+    RemoteGDB(System *system, int _port);
     BaseGdbRegCache *gdbRegs();
 };
+
 } // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_REMOTEGDB_HH__

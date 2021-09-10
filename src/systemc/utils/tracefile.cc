@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "systemc/utils/tracefile.hh"
@@ -32,8 +30,6 @@
 #include <ctime>
 #include <iomanip>
 
-#include "base/output.hh"
-#include "sim/core.hh"
 #include "systemc/core/time.hh"
 #include "systemc/ext/core/sc_main.hh"
 #include "systemc/ext/core/sc_time.hh"
@@ -43,13 +39,13 @@ namespace sc_gem5
 {
 
 TraceFile::TraceFile(const std::string &name) :
-    _os(simout.create(name, true, true)), timeUnitTicks(0),
+    _os(gem5::simout.create(name, true, true)), timeUnitTicks(0),
     timeUnitValue(0.0), timeUnitUnit(::sc_core::SC_PS), _traceDeltas(false)
 {}
 
 TraceFile::~TraceFile()
 {
-    simout.close(_os);
+    gem5::simout.close(_os);
 }
 
 std::ostream &TraceFile::stream() { return *_os->stream(); }

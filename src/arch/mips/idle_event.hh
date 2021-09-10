@@ -24,16 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Lisa Hsu
- *          Ali Saidi
  */
 
-#ifndef __KERN_MIPS_IDLE_EVENT_HH__
-#define __KERN_MIPS_IDLE_EVENT_HH__
+#ifndef __ARCH_MIPS_IDLE_EVENT_HH__
+#define __ARCH_MIPS_IDLE_EVENT_HH__
 
 #include "cpu/pc_event.hh"
+
+namespace gem5
+{
 
 class IdleStartEvent : public PCEvent
 {
@@ -44,4 +43,6 @@ class IdleStartEvent : public PCEvent
     virtual void process(ThreadContext *tc);
 };
 
-#endif // __KERN_ALPHA_IDLE_EVENT_HH__
+} // namespace gem5
+
+#endif // __ARCH_MIPS_IDLE_EVENT_HH__

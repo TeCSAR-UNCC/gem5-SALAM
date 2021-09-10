@@ -37,11 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
- *          Gabe Black
- *          Geoffrey Blake
  */
 
 #ifndef __BASE_INET_HH__
@@ -52,6 +47,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/types.hh"
 #include "dev/net/etherpkt.hh"
 #include "dnet/os.h"
@@ -69,7 +65,12 @@
 #include "dnet/blob.h"
 #include "dnet/rand.h"
 
-namespace Net {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Net, networking);
+namespace networking
+{
 
 /*
  * Ethernet Stuff
@@ -80,18 +81,36 @@ struct EthAddr : protected eth_addr
     void parse(const std::string &addr);
 
   public:
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     EthAddr();
     EthAddr(const uint8_t ea[ETH_ADDR_LEN]);
     EthAddr(const eth_addr &ea);
     EthAddr(const std::string &addr);
     const EthAddr &operator=(const eth_addr &ea);
     const EthAddr &operator=(const std::string &addr);
+    /** @} */ // end of api_inet
 
+    /**
+     * @ingroup api_inet
+     */
     int size() const { return sizeof(eth_addr); }
 
+
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const uint8_t *bytes() const { return &data[0]; }
     uint8_t *bytes() { return &data[0]; }
+    /** @} */ // end of api_inet
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const uint8_t *addr() const { return &data[0]; }
     bool unicast() const { return !(data[0] & 0x01); }
     bool multicast() const { return !unicast() && !broadcast(); }
@@ -104,9 +123,16 @@ struct EthAddr : protected eth_addr
 
         return isBroadcast;
     }
+    /** @} */ // end of api_inet
 
+    /**
+     * @ingroup api_inet
+     */
     std::string string() const;
 
+    /**
+     * @ingroup api_inet
+     */
     operator uint64_t() const
     {
         uint64_t reg = 0;
@@ -121,8 +147,13 @@ struct EthAddr : protected eth_addr
 
 };
 
+/**
+ * @ingroup api_inet
+ * @{
+ */
 std::ostream &operator<<(std::ostream &stream, const EthAddr &ea);
 bool operator==(const EthAddr &left, const EthAddr &right);
+/** @} */ // end of api_inet
 
 struct EthHdr : public eth_hdr
 {
@@ -166,8 +197,13 @@ class EthPtr
     EthPacketPtr p;
 
   public:
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     EthPtr() {}
     EthPtr(const EthPacketPtr &ptr) : p(ptr) { }
+    /** @} */ // end of api_inet
 
     EthHdr *operator->() { return (EthHdr *)p->data; }
     EthHdr &operator*() { return *(EthHdr *)p->data; }
@@ -177,14 +213,22 @@ class EthPtr
     const EthHdr &operator*() const { return *(const EthHdr *)p->data; }
     operator const EthHdr *() const { return (const EthHdr *)p->data; }
 
+    /**
+     * @ingroup api_inet
+     */
     const EthPtr &operator=(const EthPacketPtr &ptr) { p = ptr; return *this; }
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const EthPacketPtr packet() const { return p; }
     EthPacketPtr packet() { return p; }
     bool operator!() const { return !p; }
     operator bool() const { return (p != nullptr); }
     int off() const { return 0; }
     int pstart() const { return off() + ((const EthHdr*)p->data)->size(); }
+    /** @} */ // end of api_inet
 };
 
 /*
@@ -196,18 +240,34 @@ struct IpAddress
     uint32_t _ip;
 
   public:
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     IpAddress() : _ip(0)
     {}
     IpAddress(const uint32_t __ip) : _ip(__ip)
     {}
+    /** @} */ // end of api_net
 
+    /**
+     * @ingroup api_inet
+     */
     uint32_t ip() const { return _ip; }
 
+    /**
+     * @ingroup api_inet
+     */
     std::string string() const;
 };
 
+/**
+ * @ingroup api_inet
+ * @{
+ */
 std::ostream &operator<<(std::ostream &stream, const IpAddress &ia);
 bool operator==(const IpAddress &left, const IpAddress &right);
+/** @} */ // end of api_inet
 
 struct IpNetmask : public IpAddress
 {
@@ -221,13 +281,21 @@ struct IpNetmask : public IpAddress
         IpAddress(__ip), _netmask(__netmask)
     {}
 
+    /**
+     * @ingroup api_inet
+     */
     uint8_t netmask() const { return _netmask; }
 
     std::string string() const;
 };
 
+/**
+ * @ingroup api_inet
+ * @{
+ */
 std::ostream &operator<<(std::ostream &stream, const IpNetmask &in);
 bool operator==(const IpNetmask &left, const IpNetmask &right);
+/** @} */ // end of api_inet
 
 struct IpWithPort : public IpAddress
 {
@@ -241,13 +309,21 @@ struct IpWithPort : public IpAddress
         IpAddress(__ip), _port(__port)
     {}
 
+    /**
+     * @ingroup api_inet
+     */
     uint8_t port() const { return _port; }
 
     std::string string() const;
 };
 
+/**
+ * @ingroup api_inet
+ * @{
+ */
 std::ostream &operator<<(std::ostream &stream, const IpWithPort &iwp);
 bool operator==(const IpWithPort &left, const IpWithPort &right);
+/** @} */ // end of api_inet
 
 struct IpOpt;
 struct IpHdr : public ip_hdr
@@ -301,34 +377,52 @@ class IpPtr
     }
 
   public:
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     IpPtr() : p(0), eth_hdr_vlan(false) {}
     IpPtr(const EthPacketPtr &ptr) : p(0), eth_hdr_vlan(false) { set(ptr); }
     IpPtr(const EthPtr &ptr) : p(0), eth_hdr_vlan(false) { set(ptr.p); }
     IpPtr(const IpPtr &ptr) : p(ptr.p), eth_hdr_vlan(ptr.eth_hdr_vlan) { }
+    /** @} */ // end of api_inet
 
     IpHdr *get() { return (IpHdr *)(p->data + sizeof(eth_hdr) +
                                    ((eth_hdr_vlan) ? 4 : 0)); }
     IpHdr *operator->() { return get(); }
     IpHdr &operator*() { return *get(); }
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const IpHdr *get() const
     { return (const IpHdr *)(p->data + sizeof(eth_hdr) +
                             ((eth_hdr_vlan) ? 4 : 0)); }
     const IpHdr *operator->() const { return get(); }
     const IpHdr &operator*() const { return *get(); }
+    /** @} */ // end of api_inet
 
     const IpPtr &operator=(const EthPacketPtr &ptr) { set(ptr); return *this; }
     const IpPtr &operator=(const EthPtr &ptr) { set(ptr.p); return *this; }
     const IpPtr &operator=(const IpPtr &ptr) { p = ptr.p; return *this; }
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const EthPacketPtr packet() const { return p; }
     EthPacketPtr packet() { return p; }
     bool operator!() const { return !p; }
     operator bool() const { return (p != nullptr); }
     int off() const { return (sizeof(eth_hdr) + ((eth_hdr_vlan) ? 4 : 0)); }
     int pstart() const { return (off() + get()->size()); }
+    /** @} */ // end of api_inet
 };
 
+/**
+ * @ingroup api_inet
+ */
 uint16_t cksum(const IpPtr &ptr);
 
 struct IpOpt : public ip_opt
@@ -352,7 +446,6 @@ struct IpOpt : public ip_opt
     uint16_t mtup() const { return ntohs(opt_data.mtu); }
     uint16_t mtur() const { return ntohs(opt_data.mtu); }
     void tr(ip_opt_data_tr &tr) const;
-    const uint32_t *addext() const { return &opt_data.addext[0]; }
     uint16_t rtralt() const { return ntohs(opt_data.rtralt); }
     void sdb(std::vector<uint32_t> &vec) const;
 };
@@ -414,10 +507,15 @@ class Ip6Ptr
     }
 
   public:
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     Ip6Ptr() : p(0), eth_hdr_vlan(false) {}
     Ip6Ptr(const EthPacketPtr &ptr) : p(0), eth_hdr_vlan(false) { set(ptr); }
     Ip6Ptr(const EthPtr &ptr) : p(0), eth_hdr_vlan(false) { set(ptr.p); }
     Ip6Ptr(const Ip6Ptr &ptr) : p(ptr.p), eth_hdr_vlan(ptr.eth_hdr_vlan) { }
+    /** @} */ // end of api_inet
 
     Ip6Hdr *get() { return (Ip6Hdr *)(p->data + sizeof(eth_hdr)
                                       + ((eth_hdr_vlan) ? 4 : 0)); }
@@ -430,53 +528,66 @@ class Ip6Ptr
     const Ip6Hdr *operator->() const { return get(); }
     const Ip6Hdr &operator*() const { return *get(); }
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const Ip6Ptr &operator=(const EthPacketPtr &ptr)
     { set(ptr); return *this; }
     const Ip6Ptr &operator=(const EthPtr &ptr)
     { set(ptr.p); return *this; }
     const Ip6Ptr &operator=(const Ip6Ptr &ptr)
     { p = ptr.p; return *this; }
+    /** @} */ // end of api_inet
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const EthPacketPtr packet() const { return p; }
     EthPacketPtr packet() { return p; }
     bool operator!() const { return !p; }
     operator bool() const { return (p != nullptr); }
     int off() const { return sizeof(eth_hdr) + ((eth_hdr_vlan) ? 4 : 0); }
     int pstart() const { return off() + get()->size(); }
+    /** @} */ // end of api_inet
 };
 
 // Dnet supplied ipv6 opt header is incomplete and
 // newer NIC card filters expect a more robust
 // ipv6 header option declaration.
-struct ip6_opt_fragment {
+struct ip6_opt_fragment
+{
     uint16_t offlg;
     uint32_t ident;
 };
 
-struct ip6_opt_routing_type2 {
+struct ip6_opt_routing_type2
+{
     uint8_t type;
     uint8_t segleft;
     uint32_t reserved;
     ip6_addr_t addr;
 };
 
-#define HOME_ADDRESS_OPTION 0xC9
-struct ip6_opt_dstopts {
+struct GEM5_PACKED ip6_opt_dstopts
+{
     uint8_t type;
     uint8_t length;
     ip6_addr_t addr;
-} __attribute__((packed));
+};
 
-struct ip6_opt_hdr
+struct GEM5_PACKED ip6_opt_hdr
 {
     uint8_t ext_nxt;
     uint8_t ext_len;
-    union {
+    union
+    {
         struct ip6_opt_fragment fragment;
         struct ip6_opt_routing_type2 rtType2;
         struct ip6_opt_dstopts dstOpts;
     } ext_data;
-} __attribute__((packed));
+};
 
 struct Ip6Opt : public ip6_opt_hdr
 {
@@ -555,10 +666,15 @@ class TcpPtr
     }
 
   public:
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     TcpPtr() : p(0), _off(0) {}
     TcpPtr(const IpPtr &ptr) : p(0), _off(0) { set(ptr); }
     TcpPtr(const Ip6Ptr &ptr) : p(0), _off(0) { set(ptr); }
     TcpPtr(const TcpPtr &ptr) : p(ptr.p), _off(ptr._off) {}
+    /** @} */ // end of api_inet
 
     TcpHdr *get() { return (TcpHdr *)(p->data + _off); }
     TcpHdr *operator->() { return get(); }
@@ -568,19 +684,32 @@ class TcpPtr
     const TcpHdr *operator->() const { return get(); }
     const TcpHdr &operator*() const { return *get(); }
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const TcpPtr &operator=(const IpPtr &i)
     { set(i); return *this; }
     const TcpPtr &operator=(const TcpPtr &t)
     { set(t.p, t._off); return *this; }
+    /** @} */ // end of api_inet
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const EthPacketPtr packet() const { return p; }
     EthPacketPtr packet() { return p; }
     bool operator!() const { return !p; }
     operator bool() const { return (p != nullptr); }
     int off() const { return _off; }
     int pstart() const { return off() + get()->size(); }
+    /** @} */ // end of api_inet
 };
 
+/**
+ * @ingroup api_inet
+ */
 uint16_t cksum(const TcpPtr &ptr);
 
 struct TcpOpt : public tcp_opt
@@ -651,10 +780,14 @@ class UdpPtr
     }
 
   public:
+    /**
+     * @ingroup api_inet
+     */
     UdpPtr() : p(0), _off(0) {}
     UdpPtr(const IpPtr &ptr) : p(0), _off(0) { set(ptr); }
     UdpPtr(const Ip6Ptr &ptr) : p(0), _off(0) { set(ptr); }
     UdpPtr(const UdpPtr &ptr) : p(ptr.p), _off(ptr._off) {}
+    /** @} */ // end of api_inet
 
     UdpHdr *get() { return (UdpHdr *)(p->data + _off); }
     UdpHdr *operator->() { return get(); }
@@ -664,24 +797,43 @@ class UdpPtr
     const UdpHdr *operator->() const { return get(); }
     const UdpHdr &operator*() const { return *get(); }
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const UdpPtr &operator=(const IpPtr &i) { set(i); return *this; }
     const UdpPtr &operator=(const UdpPtr &t)
     { set(t.p, t._off); return *this; }
+    /** @} */ // end of api_inet
 
+    /**
+     * @ingroup api_inet
+     * @{
+     */
     const EthPacketPtr packet() const { return p; }
     EthPacketPtr packet() { return p; }
     bool operator!() const { return !p; }
     operator bool() const { return (p != nullptr); }
     int off() const { return _off; }
     int pstart() const { return off() + get()->size(); }
+    /** @} */ // end of api_inet
 };
 
+/**
+ * @ingroup api_inet
+ * @{
+ */
 uint16_t __tu_cksum6(const Ip6Ptr &ip6);
 uint16_t __tu_cksum(const IpPtr &ip);
 uint16_t cksum(const UdpPtr &ptr);
+/** @} */ // end of api_inet
 
+/**
+ * @ingroup api_inet
+ */
 int hsplit(const EthPacketPtr &ptr);
 
-} // namespace Net
+} // namespace networking
+} // namespace gem5
 
 #endif // __BASE_INET_HH__

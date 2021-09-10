@@ -25,19 +25,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Gabe Black
- *          Steve Reinhardt
  */
 
 #include "arch/sparc/insts/priv.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
 
 std::string
-Priv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+Priv::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream response;
 
@@ -47,7 +46,7 @@ Priv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-RdPriv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+RdPriv::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream response;
 
@@ -60,7 +59,7 @@ RdPriv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-WrPriv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+WrPriv::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream response;
 
@@ -69,7 +68,7 @@ WrPriv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     ccprintf(response, " ");
     // If the first reg is %g0, don't print it.
     // This improves readability
-    if (_srcRegIdx[0].index() != 0) {
+    if (srcRegIdx(0).index() != 0) {
         printSrcReg(response, 0);
         ccprintf(response, ", ");
     }
@@ -80,7 +79,8 @@ WrPriv::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-WrPrivImm::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+WrPrivImm::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream response;
 
@@ -89,7 +89,7 @@ WrPrivImm::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     ccprintf(response, " ");
     // If the first reg is %g0, don't print it.
     // This improves readability
-    if (_srcRegIdx[0].index() != 0) {
+    if (srcRegIdx(0).index() != 0) {
         printSrcReg(response, 0);
         ccprintf(response, ", ");
     }
@@ -98,4 +98,5 @@ WrPrivImm::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     return response.str();
 }
 
-}
+} // namespace SparcISA
+} // namespace gem5

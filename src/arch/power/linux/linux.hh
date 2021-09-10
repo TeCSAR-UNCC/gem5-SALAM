@@ -25,28 +25,36 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Timothy M. Jones
  */
 
 #ifndef __ARCH_POWER_LINUX_LINUX_HH__
 #define __ARCH_POWER_LINUX_LINUX_HH__
 
+#include <map>
+
+#include "arch/power/isa.hh"
+#include "arch/power/regs/int.hh"
+#include "cpu/thread_context.hh"
+#include "kern/linux/flag_tables.hh"
 #include "kern/linux/linux.hh"
+
+namespace gem5
+{
 
 /*
  * This works for a 2.6.15 kernel.
  */
 
-class PowerLinux : public Linux
+class PowerLinux : public Linux, public OpenFlagTable<PowerLinux>
 {
   public:
 
-    static const ByteOrder byteOrder = BigEndianByteOrder;
+    static const ByteOrder byteOrder = ByteOrder::big;
 
     typedef int32_t time_t;
 
-    typedef struct {
+    struct tgt_stat
+    {
         uint64_t st_dev;
         uint32_t __pad1;
         uint32_t st_ino;
@@ -67,9 +75,10 @@ class PowerLinux : public Linux
         uint32_t st_ctime_nsec;
         uint32_t __unused4;
         uint32_t __unused5;
-    } tgt_stat;
+    };
 
-    typedef struct {
+    struct tgt_stat64
+    {
         uint64_t st_dev;
         uint64_t st_ino;
         uint32_t st_mode;
@@ -90,10 +99,11 @@ class PowerLinux : public Linux
         uint32_t st_ctime_nsec;
         uint32_t __unused4;
         uint32_t __unused5;
-    } tgt_stat64;
+    };
 
     /// For times().
-    struct tms {
+    struct tms
+    {
         int32_t tms_utime;      //!< user time
         int32_t tms_stime;      //!< system time
         int32_t tms_cutime;     //!< user time of children
@@ -135,53 +145,44 @@ class PowerLinux : public Linux
     static const int TGT_SIGSYS         = 0x00001f;
     static const int TGT_SIGUNUSED      = 0x00001f;
 
-    /// This table maps the target open() flags to the corresponding
-    /// host open() flags.
-    static SyscallFlagTransTable openFlagTable[];
-
-    /// Number of entries in openFlagTable[].
-    static const int NUM_OPEN_FLAGS;
-
     //@{
     /// open(2) flag values.
-    static const int TGT_O_RDONLY    = 000000000; //!< O_RDONLY
-    static const int TGT_O_WRONLY    = 000000001; //!< O_WRONLY
-    static const int TGT_O_RDWR      = 000000002; //!< O_RDWR
-    static const int TGT_O_CREAT     = 000000100; //!< O_CREAT
-    static const int TGT_O_EXCL      = 000000200; //!< O_EXCL
-    static const int TGT_O_NOCTTY    = 000000400; //!< O_NOCTTY
-    static const int TGT_O_TRUNC     = 000001000; //!< O_TRUNC
-    static const int TGT_O_APPEND    = 000002000; //!< O_APPEND
-    static const int TGT_O_NONBLOCK  = 000004000; //!< O_NONBLOCK
-    static const int TGT_O_DSYNC     = 000010000; //!< O_DSYNC
-    static const int TGT_FASYNC      = 000020000; //!< FASYNC
-    static const int TGT_O_DIRECT    = 000400000; //!< O_DIRECT
-    static const int TGT_O_LARGEFILE = 000200000; //!< O_LARGEFILE
-    static const int TGT_O_DIRECTORY = 000040000; //!< O_DIRECTORY
-    static const int TGT_O_NOFOLLOW  = 000100000; //!< O_NOFOLLOW
-    static const int TGT_O_NOATIME   = 001000000; //!< O_NOATIME
-    static const int TGT_O_CLOEXEC   = 002000000; //!< O_CLOEXEC
-    static const int TGT_O_SYNC      = 004010000; //!< O_SYNC
-    static const int TGT_O_PATH      = 010000000; //!< O_PATH
+    static constexpr int TGT_O_RDONLY    = 000000000; //!< O_RDONLY
+    static constexpr int TGT_O_WRONLY    = 000000001; //!< O_WRONLY
+    static constexpr int TGT_O_RDWR      = 000000002; //!< O_RDWR
+    static constexpr int TGT_O_CREAT     = 000000100; //!< O_CREAT
+    static constexpr int TGT_O_EXCL      = 000000200; //!< O_EXCL
+    static constexpr int TGT_O_NOCTTY    = 000000400; //!< O_NOCTTY
+    static constexpr int TGT_O_TRUNC     = 000001000; //!< O_TRUNC
+    static constexpr int TGT_O_APPEND    = 000002000; //!< O_APPEND
+    static constexpr int TGT_O_NONBLOCK  = 000004000; //!< O_NONBLOCK
+    static constexpr int TGT_O_DSYNC     = 000010000; //!< O_DSYNC
+    static constexpr int TGT_FASYNC      = 000020000; //!< FASYNC
+    static constexpr int TGT_O_DIRECT    = 000400000; //!< O_DIRECT
+    static constexpr int TGT_O_LARGEFILE = 000200000; //!< O_LARGEFILE
+    static constexpr int TGT_O_DIRECTORY = 000040000; //!< O_DIRECTORY
+    static constexpr int TGT_O_NOFOLLOW  = 000100000; //!< O_NOFOLLOW
+    static constexpr int TGT_O_NOATIME   = 001000000; //!< O_NOATIME
+    static constexpr int TGT_O_CLOEXEC   = 002000000; //!< O_CLOEXEC
+    static constexpr int TGT_O_SYNC      = 004010000; //!< O_SYNC
+    static constexpr int TGT_O_PATH      = 010000000; //!< O_PATH
     //@}
 
-    static const unsigned TGT_MAP_SHARED        = 0x00001;
-    static const unsigned TGT_MAP_PRIVATE       = 0x00002;
-    static const unsigned TGT_MAP_ANON          = 0x00020;
-    static const unsigned TGT_MAP_DENYWRITE     = 0x00800;
-    static const unsigned TGT_MAP_EXECUTABLE    = 0x01000;
-    static const unsigned TGT_MAP_FILE          = 0x00000;
-    static const unsigned TGT_MAP_GROWSDOWN     = 0x00100;
-    static const unsigned TGT_MAP_HUGETLB       = 0x40000;
-    static const unsigned TGT_MAP_LOCKED        = 0x00080;
-    static const unsigned TGT_MAP_NONBLOCK      = 0x10000;
-    static const unsigned TGT_MAP_NORESERVE     = 0x00040;
-    static const unsigned TGT_MAP_POPULATE      = 0x08000;
-    static const unsigned TGT_MAP_STACK         = 0x20000;
-    static const unsigned TGT_MAP_ANONYMOUS     = 0x00020;
-    static const unsigned TGT_MAP_FIXED         = 0x00010;
-
-    static const unsigned NUM_MMAP_FLAGS;
+    static constexpr unsigned TGT_MAP_SHARED        = 0x00001;
+    static constexpr unsigned TGT_MAP_PRIVATE       = 0x00002;
+    static constexpr unsigned TGT_MAP_ANON          = 0x00020;
+    static constexpr unsigned TGT_MAP_DENYWRITE     = 0x00800;
+    static constexpr unsigned TGT_MAP_EXECUTABLE    = 0x01000;
+    static constexpr unsigned TGT_MAP_FILE          = 0x00000;
+    static constexpr unsigned TGT_MAP_GROWSDOWN     = 0x00100;
+    static constexpr unsigned TGT_MAP_HUGETLB       = 0x40000;
+    static constexpr unsigned TGT_MAP_LOCKED        = 0x00080;
+    static constexpr unsigned TGT_MAP_NONBLOCK      = 0x10000;
+    static constexpr unsigned TGT_MAP_NORESERVE     = 0x00040;
+    static constexpr unsigned TGT_MAP_POPULATE      = 0x08000;
+    static constexpr unsigned TGT_MAP_STACK         = 0x20000;
+    static constexpr unsigned TGT_MAP_ANONYMOUS     = 0x00020;
+    static constexpr unsigned TGT_MAP_FIXED         = 0x00010;
 
     //@{
     /// ioctl() command codes.
@@ -213,6 +214,23 @@ class PowerLinux : public Linux
             return false;
         }
     }
+
+    static void
+    archClone(uint64_t flags,
+              Process *pp, Process *cp,
+              ThreadContext *ptc, ThreadContext *ctc,
+              uint64_t stack, uint64_t tls)
+    {
+        ctc->getIsaPtr()->copyRegsFrom(ptc);
+
+        if (flags & TGT_CLONE_SETTLS)
+            ctc->setIntReg(PowerISA::ThreadPointerReg, tls);
+
+        if (stack)
+            ctc->setIntReg(PowerISA::StackPointerReg, stack);
+    }
 };
+
+} // namespace gem5
 
 #endif // __ARCH_POWER_LINUX_LINUX_HH__

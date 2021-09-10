@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -57,7 +55,10 @@
 #include <string>
 #include <vector>
 
+namespace gem5
+{
 class CxxConfigManager;
+} // namespace gem5
 
 namespace Gem5SystemC
 {
@@ -65,7 +66,7 @@ namespace Gem5SystemC
 class Gem5TopLevelModule;
 class Gem5Control;
 
-/** Gem5System's wrap CxxConfigManager's instantiating a gem5 System
+/** Gem5System's wrap gem5::CxxConfigManager's instantiating a gem5 System
  *  object (and its children).  New Gem5Systems are created by
  *  Gem5Control::makeSystem.  A new system can have its parameters
  *  tweaked using setParam{,Vector} before being instantiated using
@@ -87,7 +88,7 @@ class Gem5System
   private:
     /** Config management for *just* this system's objects (notably
      *  excluding root */
-    CxxConfigManager *manager;
+    gem5::CxxConfigManager *manager;
 
     /** The config file prototype for the system */
     std::string systemName;
@@ -97,7 +98,7 @@ class Gem5System
 
   public:
     /** A constructor only used by Gem5Control */
-    Gem5System(CxxConfigManager *manager_,
+    Gem5System(gem5::CxxConfigManager *manager_,
         const std::string &system_name, const std::string &instance_name);
 
     virtual ~Gem5System();
@@ -112,7 +113,7 @@ class Gem5System
 
     /** Build the system's gem5 infrastructure, bind its ports (note
      *  that all ports *must* be internal to the system), init and
-     *  SimObject::startup the system */
+     *  gem5::SimObject::startup the system */
     virtual void instantiate();
 };
 

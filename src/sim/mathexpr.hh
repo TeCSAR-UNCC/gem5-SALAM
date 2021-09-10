@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 ARM Limited
+ * Copyright (c) 2016, 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #ifndef __SIM_MATHEXPR_HH__
@@ -44,8 +42,13 @@
 #include <array>
 #include <functional>
 #include <string>
+#include <vector>
 
-class MathExpr {
+namespace gem5
+{
+
+class MathExpr
+{
   public:
 
     MathExpr(std::string expr);
@@ -68,15 +71,33 @@ class MathExpr {
      */
     double eval(EvalCallback fn) const { return eval(root, fn); }
 
+    /**
+     * Return all variables in the this expression.
+     *
+     * This function starts from the root node and traverses all nodes
+     * while adding the variables it finds to a vector. Returns the
+     * found variables in a vector of strings
+     *
+     * @return A Vector with the names of all variables
+    */
+    std::vector<std::string> getVariables() const
+    {
+        std::vector<std::string> vars;
+        getVariables(root, vars);
+        return vars;
+    }
+
   private:
-    enum Operator {
+    enum Operator
+    {
         bAdd, bSub, bMul, bDiv, bPow, uNeg, sValue, sVariable, nInvalid
     };
 
     // Match operators
     const int MAX_PRIO = 4;
     typedef double (*binOp)(double, double);
-    struct OpSearch {
+    struct OpSearch
+    {
         bool binary;
         Operator op;
         int priority;
@@ -87,7 +108,8 @@ class MathExpr {
     /** Operator list */
     std::array<OpSearch, uNeg + 1> ops;
 
-    class Node {
+    class Node
+    {
       public:
         Node() : op(nInvalid), l(0), r(0), value(0) {}
         std::string toStr() const {
@@ -121,8 +143,12 @@ class MathExpr {
 
     /** Eval a node */
     double eval(const Node *n, EvalCallback fn) const;
+
+    /** Return all variable reachable from a node to a vector of
+     * strings */
+    void getVariables(const Node *n, std::vector<std::string> &vars) const;
 };
 
+} // namespace gem5
+
 #endif
-
-

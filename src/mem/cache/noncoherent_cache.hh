@@ -36,13 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Dave Greene
- *          Steve Reinhardt
- *          Ron Dreslinski
- *          Andreas Hansson
- *          Nikos Nikoleris
  */
 
 /**
@@ -56,10 +49,14 @@
 #ifndef __MEM_CACHE_NONCOHERENT_CACHE_HH__
 #define __MEM_CACHE_NONCOHERENT_CACHE_HH__
 
+#include "base/compiler.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
 #include "mem/cache/base.hh"
 #include "mem/packet.hh"
+
+namespace gem5
+{
 
 class CacheBlk;
 class MSHR;
@@ -123,10 +120,12 @@ class NoncoherentCache : public BaseCache
                                bool needs_writable,
                                bool is_whole_line_write) const override;
 
-    M5_NODISCARD PacketPtr evictBlock(CacheBlk *blk) override;
+    GEM5_NO_DISCARD PacketPtr evictBlock(CacheBlk *blk) override;
 
   public:
-    NoncoherentCache(const NoncoherentCacheParams *p);
+    NoncoherentCache(const NoncoherentCacheParams &p);
 };
+
+} // namespace gem5
 
 #endif // __MEM_CACHE_NONCOHERENTCACHE_HH__

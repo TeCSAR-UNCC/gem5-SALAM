@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -40,6 +38,9 @@
 #include "dev/serial/serial.hh"
 #include "params/Uart.hh"
 
+namespace gem5
+{
+
 class Platform;
 
 const int RX_INT = 0x1;
@@ -53,14 +54,8 @@ class Uart : public BasicPioDevice
     SerialDevice *device;
 
   public:
-    typedef UartParams Params;
-    Uart(const Params *p, Addr pio_size);
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    using Params = UartParams;
+    Uart(const Params &p, Addr pio_size);
 
     /**
      * Inform the uart that there is data available.
@@ -72,9 +67,8 @@ class Uart : public BasicPioDevice
      * @return interrupt status
      */
     bool intStatus() { return status ? true : false; }
-
-  protected:
-    MakeCallback<Uart, &Uart::dataAvailable> callbackDataAvail;
 };
+
+} // namespace gem5
 
 #endif // __UART_HH__

@@ -34,8 +34,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -62,10 +60,11 @@ output header {{
             flags[IsNonSpeculative] = true;
         }
 
-        Fault execute(ExecContext *, Trace::InstRecord *) const;
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+        generateDisassembly(Addr pc,
+                            const loader::SymbolTable *symtab) const override;
     };
 
     /**
@@ -81,42 +80,39 @@ output header {{
     {
       private:
         /// Have we warned on this instruction yet?
-        mutable bool warned;
+        mutable bool warned = false;
 
       public:
         /// Constructor
         WarnUnimplemented(const char *_mnemonic, ExtMachInst _machInst)
-            : X86ISA::X86StaticInst(_mnemonic, _machInst, No_OpClass), warned(false)
+            : X86ISA::X86StaticInst(_mnemonic, _machInst, No_OpClass)
         {
             // don't call execute() (which panics) if we're on a
             // speculative path
             flags[IsNonSpeculative] = true;
         }
 
-        Fault execute(ExecContext *, Trace::InstRecord *) const;
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+        generateDisassembly(Addr pc,
+                            const loader::SymbolTable *symtab) const override;
     };
 }};
 
 output decoder {{
     std::string
-    FailUnimplemented::generateDisassembly(Addr pc,
-                                           const SymbolTable *symtab) const
+    FailUnimplemented::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         return csprintf("%-10s (unimplemented)", mnemonic);
     }
 
     std::string
-    WarnUnimplemented::generateDisassembly(Addr pc,
-                                           const SymbolTable *symtab) const
+    WarnUnimplemented::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
-#ifdef SS_COMPATIBLE_DISASSEMBLY
-        return csprintf("%-10s", mnemonic);
-#else
         return csprintf("%-10s (unimplemented)", mnemonic);
-#endif
     }
 }};
 

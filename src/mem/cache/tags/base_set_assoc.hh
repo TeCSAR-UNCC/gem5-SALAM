@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
  */
 
 /**
@@ -64,6 +62,9 @@
 #include "mem/packet.hh"
 #include "params/BaseSetAssoc.hh"
 
+namespace gem5
+{
+
 /**
  * A basic cache tag store.
  * @sa  \ref gem5MemorySystem "gem5 Memory System"
@@ -84,7 +85,7 @@ class BaseSetAssoc : public BaseTags
     const bool sequentialAccess;
 
     /** Replacement policy */
-    BaseReplacementPolicy *replacementPolicy;
+    replacement_policy::Base *replacementPolicy;
 
   public:
     /** Convenience typedef. */
@@ -93,7 +94,7 @@ class BaseSetAssoc : public BaseTags
     /**
      * Construct and initialize this tag store.
      */
-    BaseSetAssoc(const Params *p);
+    BaseSetAssoc(const Params &p);
 
     /**
      * Destructor
@@ -119,14 +120,13 @@ class BaseSetAssoc : public BaseTags
      * should only be used as such. Returns the tag lookup latency as a side
      * effect.
      *
-     * @param addr The address to find.
-     * @param is_secure True if the target memory space is secure.
+     * @param pkt The packet holding the address to find.
      * @param lat The latency of the tag lookup.
      * @return Pointer to the cache block if found.
      */
-    CacheBlk* accessBlock(Addr addr, bool is_secure, Cycles &lat) override
+    CacheBlk* accessBlock(const PacketPtr pkt, Cycles &lat) override
     {
-        CacheBlk *blk = findBlock(addr, is_secure);
+        CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure());
 
         // Access all tags in parallel, hence one in each way.  The data side
         // either accesses all blocks in parallel, or one block sequentially on
@@ -143,10 +143,10 @@ class BaseSetAssoc : public BaseTags
         // If a cache hit
         if (blk != nullptr) {
             // Update number of references to accessed block
-            blk->refCount++;
+            blk->increaseRefCount();
 
             // Update replacement data of accessed block
-            replacementPolicy->touch(blk->replacementData);
+            replacementPolicy->touch(blk->replacementData, pkt);
         }
 
         // The tag lookup latency is the same for a hit or a miss
@@ -167,7 +167,7 @@ class BaseSetAssoc : public BaseTags
      */
     CacheBlk* findVictim(Addr addr, const bool is_secure,
                          const std::size_t size,
-                         std::vector<CacheBlk*>& evict_blks) const override
+                         std::vector<CacheBlk*>& evict_blks) override
     {
         // Get possible entries to be victimized
         const std::vector<ReplaceableEntry*> entries =
@@ -198,8 +198,10 @@ class BaseSetAssoc : public BaseTags
         stats.tagsInUse++;
 
         // Update replacement policy
-        replacementPolicy->reset(blk->replacementData);
+        replacementPolicy->reset(blk->replacementData, pkt);
     }
+
+    void moveBlock(CacheBlk *src_blk, CacheBlk *dest_blk) override;
 
     /**
      * Limit the allocation for the cache ways.
@@ -228,7 +230,7 @@ class BaseSetAssoc : public BaseTags
      */
     Addr regenerateBlkAddr(const CacheBlk* blk) const override
     {
-        return indexingPolicy->regenerateAddr(blk->tag, blk);
+        return indexingPolicy->regenerateAddr(blk->getTag(), blk);
     }
 
     void forEachBlk(std::function<void(CacheBlk &)> visitor) override {
@@ -246,5 +248,7 @@ class BaseSetAssoc : public BaseTags
         return false;
     }
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_TAGS_BASE_SET_ASSOC_HH__

@@ -24,133 +24,35 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __BASE_CALLBACK_HH__
 #define __BASE_CALLBACK_HH__
 
+#include <functional>
 #include <list>
-#include <string>
 
-/**
- * Generic callback class.  This base class provides a virtual process
- * function that gets called when the callback queue is processed.
- */
-class Callback
+namespace gem5
 {
-  protected:
-    friend class CallbackQueue;
-    virtual void autoDestruct() {}
 
-  public:
-    /**
-     * virtualize the destructor to make sure that the correct one
-     * gets called.
-     */
-    virtual ~Callback() {}
-
-    /**
-     * virtual process function that is invoked when the callback
-     * queue is executed.
-     */
-    virtual void process() = 0;
-};
-
-/// Helper template class to turn a simple class member function into
-/// a callback.
-template <class T, void (T::* F)()>
-class MakeCallback : public Callback
+class CallbackQueue : public std::list<std::function<void()>>
 {
-  protected:
-    T *object;
-    const bool autoDestroy;
-
-    void autoDestruct() { if (autoDestroy) delete this; }
-
   public:
-    MakeCallback(T *o, bool auto_destroy = false)
-        : object(o), autoDestroy(auto_destroy)
-    { }
+    using Base = std::list<std::function<void()>>;
 
-    MakeCallback(T &o, bool auto_destroy = false)
-        : object(&o), autoDestroy(auto_destroy)
-    { }
-
-    void process() { (object->*F)(); }
-};
-
-class CallbackQueue
-{
-  protected:
-    /**
-     * Simple typedef for the data structure that stores all of the
-     * callbacks.
-     */
-    typedef std::list<Callback *> queue;
+    using Base::Base;
 
     /**
-     * List of all callbacks.  To be called in fifo order.
-     */
-    queue callbacks;
-
-  public:
-    ~CallbackQueue();
-    std::string name() const { return "CallbackQueue"; }
-
-    /**
-     * Add a callback to the end of the queue
-     * @param callback the callback to be added to the queue
-     */
-    void
-    add(Callback *callback)
-    {
-        callbacks.push_back(callback);
-    }
-
-    template <class T, void (T::* F)()>
-    void
-    add(T *obj)
-    {
-        add(new MakeCallback<T, F>(obj, true));
-    }
-
-    template <class T, void (T::* F)()>
-    void
-    add(T &obj)
-    {
-        add(new MakeCallback<T, F>(&obj, true));
-    }
-
-    /**
-     * Find out if there are any callbacks in the queue
-     */
-    bool empty() const { return callbacks.empty(); }
-
-    /**
-     * process all callbacks
+     * @ingroup api_callback
      */
     void
     process()
     {
-        queue::iterator i = callbacks.begin();
-        queue::iterator end = callbacks.end();
-
-        while (i != end) {
-            (*i)->process();
-            ++i;
-        }
-    }
-
-    /**
-     * clear the callback queue
-     */
-    void
-    clear()
-    {
-        callbacks.clear();
+        for (auto &f: *this)
+            f();
     }
 };
+
+} // namespace gem5
 
 #endif // __BASE_CALLBACK_HH__

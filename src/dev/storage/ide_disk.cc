@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Schultz
- *          Ali Saidi
  */
 
 /** @file
@@ -52,18 +49,22 @@
 #include <deque>
 #include <string>
 
-#include "arch/isa_traits.hh"
 #include "base/chunk_generator.hh"
+#include "base/compiler.hh"
 #include "base/cprintf.hh" // csprintf
 #include "base/trace.hh"
 #include "debug/IdeDisk.hh"
 #include "dev/storage/disk_image.hh"
 #include "dev/storage/ide_ctrl.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
 #include "sim/sim_object.hh"
 
-IdeDisk::IdeDisk(const Params *p)
-    : SimObject(p), ctrl(NULL), image(p->image), diskDelay(p->delay),
+namespace gem5
+{
+
+IdeDisk::IdeDisk(const Params &p)
+    : SimObject(p), ctrl(NULL), image(p.image), diskDelay(p.delay),
+      ideDiskStats(this),
       dmaTransferEvent([this]{ doDmaTransfer(); }, name()),
       dmaReadCG(NULL),
       dmaReadWaitEvent([this]{ doDmaRead(); }, name()),
@@ -74,7 +75,7 @@ IdeDisk::IdeDisk(const Params *p)
       dmaWriteEvent([this]{ dmaWriteDone(); }, name())
 {
     // Reset the device state
-    reset(p->driveID);
+    reset(p.driveID);
 
     // fill out the drive ID structure
     memset(&driveID, 0, sizeof(struct ataparams));
@@ -390,37 +391,22 @@ IdeDisk::doDmaDataRead()
     schedule(dmaReadWaitEvent, curTick() + totalDiskDelay);
 }
 
-void
-IdeDisk::regStats()
+IdeDisk::
+IdeDiskStats::IdeDiskStats(statistics::Group *parent)
+    : statistics::Group(parent, "IdeDisk"),
+      ADD_STAT(dmaReadFullPages, statistics::units::Count::get(),
+               "Number of full page size DMA reads (not PRD)."),
+      ADD_STAT(dmaReadBytes, statistics::units::Byte::get(),
+               "Number of bytes transfered via DMA reads (not PRD)."),
+      ADD_STAT(dmaReadTxs, statistics::units::Count::get(),
+               "Number of DMA read transactions (not PRD)."),
+      ADD_STAT(dmaWriteFullPages, statistics::units::Count::get(),
+               "Number of full page size DMA writes."),
+      ADD_STAT(dmaWriteBytes, statistics::units::Byte::get(),
+               "Number of bytes transfered via DMA writes."),
+      ADD_STAT(dmaWriteTxs, statistics::units::Count::get(),
+               "Number of DMA write transactions.")
 {
-    SimObject::regStats();
-
-    using namespace Stats;
-    dmaReadFullPages
-        .name(name() + ".dma_read_full_pages")
-        .desc("Number of full page size DMA reads (not PRD).")
-        ;
-    dmaReadBytes
-        .name(name() + ".dma_read_bytes")
-        .desc("Number of bytes transfered via DMA reads (not PRD).")
-        ;
-    dmaReadTxs
-        .name(name() + ".dma_read_txs")
-        .desc("Number of DMA read transactions (not PRD).")
-        ;
-
-    dmaWriteFullPages
-        .name(name() + ".dma_write_full_pages")
-        .desc("Number of full page size DMA writes.")
-        ;
-    dmaWriteBytes
-        .name(name() + ".dma_write_bytes")
-        .desc("Number of bytes transfered via DMA writes.")
-        ;
-    dmaWriteTxs
-        .name(name() + ".dma_write_txs")
-        .desc("Number of DMA write transactions.")
-        ;
 }
 
 void
@@ -439,7 +425,7 @@ IdeDisk::doDmaRead()
         // clear out the data buffer
         memset(dataBuffer, 0, MAX_DMA_SIZE);
         dmaReadCG = new ChunkGenerator(curPrd.getBaseAddr(),
-                curPrd.getByteCount(), pageBytes);
+                curPrd.getByteCount(), chunkBytes);
 
     }
     if (ctrl->dmaPending() || ctrl->drainState() != DrainState::Running) {
@@ -449,10 +435,10 @@ IdeDisk::doDmaRead()
         assert(dmaReadCG->complete() < MAX_DMA_SIZE);
         ctrl->dmaRead(pciToDma(dmaReadCG->addr()), dmaReadCG->size(),
                 &dmaReadWaitEvent, dataBuffer + dmaReadCG->complete());
-        dmaReadBytes += dmaReadCG->size();
-        dmaReadTxs++;
-        if (dmaReadCG->size() == pageBytes)
-            dmaReadFullPages++;
+        ideDiskStats.dmaReadBytes += dmaReadCG->size();
+        ideDiskStats.dmaReadTxs++;
+        if (dmaReadCG->size() == chunkBytes)
+            ideDiskStats.dmaReadFullPages++;
         dmaReadCG->next();
     } else {
         assert(dmaReadCG->done());
@@ -522,7 +508,7 @@ IdeDisk::doDmaWrite()
     if (!dmaWriteCG) {
         // clear out the data buffer
         dmaWriteCG = new ChunkGenerator(curPrd.getBaseAddr(),
-                curPrd.getByteCount(), pageBytes);
+                curPrd.getByteCount(), chunkBytes);
     }
     if (ctrl->dmaPending() || ctrl->drainState() != DrainState::Running) {
         schedule(dmaWriteWaitEvent, curTick() + DMA_BACKOFF_PERIOD);
@@ -534,10 +520,10 @@ IdeDisk::doDmaWrite()
                 &dmaWriteWaitEvent, dataBuffer + dmaWriteCG->complete());
         DPRINTF(IdeDisk, "doDmaWrite: not done curPrd byte count %d, eot %#x\n",
                 curPrd.getByteCount(), curPrd.getEOT());
-        dmaWriteBytes += dmaWriteCG->size();
-        dmaWriteTxs++;
-        if (dmaWriteCG->size() == pageBytes)
-            dmaWriteFullPages++;
+        ideDiskStats.dmaWriteBytes += dmaWriteCG->size();
+        ideDiskStats.dmaWriteTxs++;
+        if (dmaWriteCG->size() == chunkBytes)
+            ideDiskStats.dmaWriteFullPages++;
         dmaWriteCG->next();
     } else {
         DPRINTF(IdeDisk, "doDmaWrite: done curPrd byte count %d, eot %#x\n",
@@ -602,7 +588,7 @@ IdeDisk::startDma(const uint32_t &prdTableBase)
         panic("Inconsistent device state for DMA start!\n");
 
     // PRD base address is given by bits 31:2
-    curPrdAddr = pciToDma((Addr)(prdTableBase & ~ULL(0x3)));
+    curPrdAddr = pciToDma((Addr)(prdTableBase & ~0x3ULL));
 
     dmaState = Dma_Transfer;
 
@@ -701,7 +687,7 @@ IdeDisk::startCommand()
         // Supported DMA commands
       case WDCC_WRITEDMA:
         dmaRead = true;  // a write to the disk is a DMA read from memory
-        M5_FALLTHROUGH;
+        GEM5_FALLTHROUGH;
       case WDCC_READDMA:
         if (!(cmdReg.drive & DRIVE_LBA_BIT))
             panic("Attempt to perform CHS access, only supports LBA\n");
@@ -1202,8 +1188,4 @@ IdeDisk::unserialize(CheckpointIn &cp)
     UNSERIALIZE_ARRAY(dataBuffer, MAX_DMA_SIZE);
 }
 
-IdeDisk *
-IdeDiskParams::create()
-{
-    return new IdeDisk(this);
-}
+} // namespace gem5

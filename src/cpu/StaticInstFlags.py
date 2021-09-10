@@ -1,3 +1,4 @@
+# Copyright (c) 2020 ARM Limited
 # Copyright (c) 2003-2005 The Regents of The University of Michigan
 # Copyright (c) 2013 Advanced Micro Devices, Inc.
 # All rights reserved.
@@ -24,8 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
 
 from m5.params import *
 
@@ -37,15 +36,9 @@ from m5.params import *
 # one of these two flags set, it is possible for an instruction to have
 # neither (e.g., direct unconditional branches, memory barriers) or both
 # (e.g., an FP/int conversion).
-# - If IsMemRef is set, then exactly one of IsLoad or IsStore will be set.
 # - If IsControl is set, then exactly one of IsDirectControl or IsIndirect
 # Control will be set, and exactly one of IsCondControl or IsUncondControl
 # will be set.
-# - IsSerializing, IsMemBarrier, and IsWriteBarrier are implemented as flags
-# since in the current model there's no other way for instructions to inject
-# behavior into the pipeline outside of fetch.  Once we go to an exec-in-exec
-# CPU model we should be able to get rid of these flags and implement this
-# behavior via the execute() methods.
 
 class StaticInstFlags(Enum):
     wrapper_name = 'StaticInstFlags'
@@ -57,17 +50,13 @@ class StaticInstFlags(Enum):
 
         'IsInteger',        # References integer regs.
         'IsFloating',       # References FP regs.
-        'IsCC',             # References CC regs.
         'IsVector',         # References Vector regs.
         'IsVectorElem',     # References Vector reg elems.
 
-        'IsMemRef',         # References memory (load, store, or prefetch)
         'IsLoad',           # Reads from memory (load or prefetch).
         'IsStore',          # Writes to memory.
         'IsAtomic',         # Does atomic RMW to memory.
         'IsStoreConditional',   # Store conditional instruction.
-        'IsIndexed',        # Accesses memory with an indexed address
-                            # computation
         'IsInstPrefetch',   # Instruction-cache prefetch.
         'IsDataPrefetch',   # Data-cache prefetch.
 
@@ -79,23 +68,16 @@ class StaticInstFlags(Enum):
         'IsCall',           # Subroutine call.
         'IsReturn',         # Subroutine return.
 
-        'IsCondDelaySlot',  # Conditional Delay-Slot Instruction
-
-        'IsThreadSync',     # Thread synchronization operation.
-
         'IsSerializing',    # Serializes pipeline: won't execute until all
                             # older instructions have committed.
         'IsSerializeBefore',
         'IsSerializeAfter',
-        'IsMemBarrier',     # Is a memory barrier
         'IsWriteBarrier',   # Is a write barrier
         'IsReadBarrier',    # Is a read barrier
-        'IsERET',           # <- Causes the IFU to stall (MIPS ISA)
 
         'IsNonSpeculative', # Should not be executed speculatively
         'IsQuiesce',        # Is a quiesce instruction
 
-        'IsIprAccess',      # Accesses IPRs
         'IsUnverifiable',   # Can't be verified by a checker
 
         'IsSyscall',        # Causes a system call to be emulated in syscall
@@ -107,9 +89,11 @@ class StaticInstFlags(Enum):
         'IsDelayedCommit',  # This microop doesn't commit right away
         'IsLastMicroop',    # This microop ends a microop sequence
         'IsFirstMicroop',   # This microop begins a microop sequence
-        # This flag doesn't do anything yet
-        'IsMicroBranch',    # This microop branches within the microcode for
-                            # a macroop
-        'IsDspOp',
-        'IsSquashAfter'     # Squash all uncommitted state after executed
+
+        'IsSquashAfter',     # Squash all uncommitted state after executed
+
+        # hardware transactional memory
+        'IsHtmStart',       # Starts a HTM transaction
+        'IsHtmStop',        # Stops (commits) a HTM transaction
+        'IsHtmCancel'       # Explicitely aborts a HTM transaction
         ]

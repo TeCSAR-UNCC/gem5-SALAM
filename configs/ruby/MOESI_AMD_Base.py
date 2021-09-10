@@ -28,16 +28,14 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Lisa Hsu
 
 import math
 import m5
 from m5.objects import *
 from m5.defines import buildEnv
 from m5.util import addToPath
-from Ruby import create_topology
-from Ruby import send_evicts
+from .Ruby import create_topology
+from .Ruby import send_evicts
 from common import FileSystemConfig
 
 addToPath('../')
@@ -103,7 +101,6 @@ class CPCntrl(CorePair_Controller, CntrlBase):
 
         self.sequencer = RubySequencer()
         self.sequencer.version = self.seqCount()
-        self.sequencer.icache = self.L1Icache
         self.sequencer.dcache = self.L1D0cache
         self.sequencer.ruby_system = ruby_system
         self.sequencer.coreid = 0
@@ -111,7 +108,6 @@ class CPCntrl(CorePair_Controller, CntrlBase):
 
         self.sequencer1 = RubySequencer()
         self.sequencer1.version = self.seqCount()
-        self.sequencer1.icache = self.L1Icache
         self.sequencer1.dcache = self.L1D1cache
         self.sequencer1.ruby_system = ruby_system
         self.sequencer1.coreid = 1
@@ -201,14 +197,14 @@ class DirCntrl(Directory_Controller, CntrlBase):
         self.respToL3 = resp_to_l3
 
 def define_options(parser):
-    parser.add_option("--num-subcaches", type="int", default=4)
-    parser.add_option("--l3-data-latency", type="int", default=20)
-    parser.add_option("--l3-tag-latency", type="int", default=15)
-    parser.add_option("--cpu-to-dir-latency", type="int", default=15)
-    parser.add_option("--no-resource-stalls", action="store_false",
-                      default=True)
-    parser.add_option("--num-tbes", type="int", default=256)
-    parser.add_option("--l2-latency", type="int", default=50) # load to use
+    parser.add_argument("--num-subcaches", type=int, default=4)
+    parser.add_argument("--l3-data-latency", type=int, default=20)
+    parser.add_argument("--l3-tag-latency", type=int, default=15)
+    parser.add_argument("--cpu-to-dir-latency", type=int, default=15)
+    parser.add_argument("--no-resource-stalls", action="store_false",
+                        default=True)
+    parser.add_argument("--num-tbes", type=int, default=256)
+    parser.add_argument("--l2-latency", type=int, default=50) # load to use
 
 def create_system(options, full_system, system, dma_devices, bootmem,
                   ruby_system):
@@ -279,6 +275,8 @@ def create_system(options, full_system, system, dma_devices, bootmem,
 
         dir_cntrl.triggerQueue = MessageBuffer(ordered = True)
         dir_cntrl.L3triggerQueue = MessageBuffer(ordered = True)
+
+        dir_cntrl.requestToMemory = MessageBuffer()
         dir_cntrl.responseFromMemory = MessageBuffer()
 
         exec("system.dir_cntrl%d = dir_cntrl" % i)
@@ -328,16 +326,16 @@ def create_system(options, full_system, system, dma_devices, bootmem,
 
     # Register CPUs and caches for each CorePair and directory (SE mode only)
     if not full_system:
-        for i in xrange((options.num_cpus + 1) // 2):
+        for i in range((options.num_cpus + 1) // 2):
             FileSystemConfig.register_cpu(physical_package_id = 0,
                                           core_siblings =
-                                            xrange(options.num_cpus),
+                                            range(options.num_cpus),
                                           core_id = i*2,
                                           thread_siblings = [])
 
             FileSystemConfig.register_cpu(physical_package_id = 0,
                                           core_siblings =
-                                            xrange(options.num_cpus),
+                                            range(options.num_cpus),
                                           core_id = i*2+1,
                                           thread_siblings = [])
 
@@ -376,7 +374,7 @@ def create_system(options, full_system, system, dma_devices, bootmem,
                                             line_size = options.cacheline_size,
                                             assoc = options.l3_assoc,
                                             cpus = [n for n in
-                                                xrange(options.num_cpus)])
+                                                range(options.num_cpus)])
 
     # Assuming no DMA devices
     assert(len(dma_devices) == 0)

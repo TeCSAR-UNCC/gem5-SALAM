@@ -33,10 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vasileios Spiliopoulos
- *          Akash Bagdia
- *          Stephan Diestelhorst
  */
 
 /**
@@ -50,13 +46,20 @@
 #ifndef __SIM_DVFS_HANDLER_HH__
 #define __SIM_DVFS_HANDLER_HH__
 
+#include <cassert>
+#include <map>
 #include <vector>
 
+#include "base/logging.hh"
+#include "base/types.hh"
 #include "debug/DVFS.hh"
 #include "params/DVFSHandler.hh"
 #include "sim/clock_domain.hh"
 #include "sim/eventq.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 /**
  * DVFS Handler class, maintains a list of all the domains it can handle.
@@ -72,7 +75,7 @@ class DVFSHandler : public SimObject
 {
   public:
     typedef DVFSHandlerParams Params;
-    DVFSHandler(const Params *p);
+    DVFSHandler(const Params &p);
 
     typedef SrcClockDomain::DomainID DomainID;
     typedef SrcClockDomain::PerfLevel PerfLevel;
@@ -223,7 +226,8 @@ class DVFSHandler : public SimObject
      * Update performance level event, encapsulates all the required information
      * for a future call to change a domain's performance level.
      */
-    struct UpdateEvent : public Event {
+    struct UpdateEvent : public Event
+    {
         UpdateEvent() : Event(DVFS_Update_Pri), domainIDToSet(0),
                         perfLevelToSet(0) {}
 
@@ -260,5 +264,7 @@ class DVFSHandler : public SimObject
      */
     UpdatePerfLevelEvents updatePerfLevelEvents;
 };
+
+} // namespace gem5
 
 #endif // __SIM_DVFS_HANDLER_HH__

@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos
  */
 
 #ifndef __SIMPLE_POOL_MANAGER_HH__
@@ -40,14 +38,18 @@
 #include <cstdint>
 
 #include "gpu-compute/pool_manager.hh"
+#include "params/SimplePoolManager.hh"
+
+namespace gem5
+{
 
 // Simple Pool Manager: allows one region per pool. No region merging is
 // supported.
 class SimplePoolManager : public PoolManager
 {
   public:
-    SimplePoolManager(uint32_t minAlloc, uint32_t poolSize)
-        : PoolManager(minAlloc, poolSize), _regionSize(0), _nxtFreeIdx(0),
+    SimplePoolManager(const PoolManagerParams &p)
+        : PoolManager(p), _regionSize(0), _nxtFreeIdx(0),
           _reservedGroups(0)
     {
     }
@@ -64,9 +66,11 @@ class SimplePoolManager : public PoolManager
     // be reserved)
     uint32_t _regionSize;
     // next index to allocate a region
-    uint8_t _nxtFreeIdx;
+    int _nxtFreeIdx;
     // number of groups that reserve a region
     uint32_t _reservedGroups;
 };
+
+} // namespace gem5
 
 #endif // __SIMPLE_POOL_MANAGER_HH__

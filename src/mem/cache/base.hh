@@ -36,12 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Steve Reinhardt
- *          Ron Dreslinski
- *          Andreas Hansson
- *          Nikos Nikoleris
  */
 
 /**
@@ -57,6 +51,7 @@
 #include <string>
 
 #include "base/addr_range.hh"
+#include "base/compiler.hh"
 #include "base/statistics.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
@@ -81,9 +76,16 @@
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
 
-class BasePrefetcher;
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+    class Base;
+}
 class MSHR;
-class MasterPort;
+class RequestPort;
 class QueueEntry;
 struct BaseCacheParams;
 
@@ -96,7 +98,8 @@ class BaseCache : public ClockedObject
     /**
      * Indexes to enumerate the MSHR queues.
      */
-    enum MSHRQueueIndex {
+    enum MSHRQueueIndex
+    {
         MSHRQueue_MSHRs,
         MSHRQueue_WriteBuffer
     };
@@ -105,17 +108,40 @@ class BaseCache : public ClockedObject
     /**
      * Reasons for caches to be blocked.
      */
-    enum BlockedCause {
+    enum BlockedCause
+    {
         Blocked_NoMSHRs = MSHRQueue_MSHRs,
         Blocked_NoWBBuffers = MSHRQueue_WriteBuffer,
         Blocked_NoTargets,
         NUM_BLOCKED_CAUSES
     };
 
+    /**
+     * A data contents update is composed of the updated block's address,
+     * the old contents, and the new contents.
+     * @sa ppDataUpdate
+     */
+    struct DataUpdate
+    {
+        /** The updated block's address. */
+        Addr addr;
+        /** Whether the block belongs to the secure address space. */
+        bool isSecure;
+        /** The stale data contents. If zero-sized this update is a fill. */
+        std::vector<uint64_t> oldData;
+        /** The new data contents. If zero-sized this is an invalidation. */
+        std::vector<uint64_t> newData;
+
+        DataUpdate(Addr _addr, bool is_secure)
+          : addr(_addr), isSecure(is_secure), oldData(), newData()
+        {
+        }
+    };
+
   protected:
 
     /**
-     * A cache master port is used for the memory-side port of the
+     * A cache request port is used for the memory-side port of the
      * cache, and in addition to the basic timing port that only sends
      * response packets through a transmit list, it also offers the
      * ability to schedule and send request packets (requests &
@@ -123,7 +149,7 @@ class BaseCache : public ClockedObject
      * and the sendDeferredPacket of the timing port is modified to
      * consider both the transmit list and the requests from the MSHR.
      */
-    class CacheMasterPort : public QueuedMasterPort
+    class CacheRequestPort : public QueuedRequestPort
     {
 
       public:
@@ -140,10 +166,10 @@ class BaseCache : public ClockedObject
 
       protected:
 
-        CacheMasterPort(const std::string &_name, BaseCache *_cache,
+        CacheRequestPort(const std::string &_name, BaseCache *_cache,
                         ReqPacketQueue &_reqQueue,
                         SnoopRespPacketQueue &_snoopRespQueue) :
-            QueuedMasterPort(_name, _cache, _reqQueue, _snoopRespQueue)
+            QueuedRequestPort(_name, _cache, _reqQueue, _snoopRespQueue)
         { }
 
         /**
@@ -170,7 +196,7 @@ class BaseCache : public ClockedObject
 
       public:
 
-        CacheReqPacketQueue(BaseCache &cache, MasterPort &port,
+        CacheReqPacketQueue(BaseCache &cache, RequestPort &port,
                             SnoopRespPacketQueue &snoop_resp_queue,
                             const std::string &label) :
             ReqPacketQueue(cache, port, label), cache(cache),
@@ -206,10 +232,10 @@ class BaseCache : public ClockedObject
 
 
     /**
-     * The memory-side port extends the base cache master port with
+     * The memory-side port extends the base cache request port with
      * access functions for functional, atomic and timing snoops.
      */
-    class MemSidePort : public CacheMasterPort
+    class MemSidePort : public CacheRequestPort
     {
       private:
 
@@ -238,14 +264,14 @@ class BaseCache : public ClockedObject
     };
 
     /**
-     * A cache slave port is used for the CPU-side port of the cache,
+     * A cache response port is used for the CPU-side port of the cache,
      * and it is basically a simple timing port that uses a transmit
-     * list for responses to the CPU (or connected master). In
+     * list for responses to the CPU (or connected requestor). In
      * addition, it has the functionality to block the port for
      * incoming requests. If blocked, the port will issue a retry once
      * unblocked.
      */
-    class CacheSlavePort : public QueuedSlavePort
+    class CacheResponsePort : public QueuedResponsePort
     {
 
       public:
@@ -260,7 +286,7 @@ class BaseCache : public ClockedObject
 
       protected:
 
-        CacheSlavePort(const std::string &_name, BaseCache *_cache,
+        CacheResponsePort(const std::string &_name, BaseCache *_cache,
                        const std::string &_label);
 
         /** A normal packet queue used to store responses. */
@@ -279,10 +305,10 @@ class BaseCache : public ClockedObject
     };
 
     /**
-     * The CPU-side port extends the base cache slave port with access
+     * The CPU-side port extends the base cache response port with access
      * functions for functional, atomic and timing requests.
      */
-    class CpuSidePort : public CacheSlavePort
+    class CpuSidePort : public CacheResponsePort
     {
       private:
 
@@ -324,10 +350,10 @@ class BaseCache : public ClockedObject
     BaseTags *tags;
 
     /** Compression method being used. */
-    BaseCacheCompressor* compressor;
+    compression::Base* compressor;
 
     /** Prefetcher */
-    BasePrefetcher *prefetcher;
+    prefetch::Base *prefetcher;
 
     /** To probe when a cache hit occurs */
     ProbePointArg<PacketPtr> *ppHit;
@@ -337,6 +363,13 @@ class BaseCache : public ClockedObject
 
     /** To probe when a cache fill occurs */
     ProbePointArg<PacketPtr> *ppFill;
+
+    /**
+     * To probe when the contents of a block are updated. Content updates
+     * include data fills, overwrites, and invalidations, which means that
+     * this probe partially overlaps with other probes.
+     */
+    ProbePointArg<DataUpdate> *ppDataUpdate;
 
     /**
      * The writeAllocator drive optimizations for streaming writes.
@@ -407,7 +440,7 @@ class BaseCache : public ClockedObject
      */
     inline bool allocOnFill(MemCmd cmd) const
     {
-        return clusivity == Enums::mostly_incl ||
+        return clusivity == enums::mostly_incl ||
             cmd == MemCmd::WriteLineReq ||
             cmd == MemCmd::ReadReq ||
             cmd == MemCmd::WriteReq ||
@@ -579,6 +612,18 @@ class BaseCache : public ClockedObject
     virtual void functionalAccess(PacketPtr pkt, bool from_cpu_side);
 
     /**
+     * Update the data contents of a block. When no packet is provided no
+     * data will be written to the block, which means that this was likely
+     * triggered by an invalidation.
+     *
+     * @param blk The block being updated.
+     * @param cpkt The packet containing the new data.
+     * @param has_old_data Whether this block had data previously.
+     */
+    void updateBlockData(CacheBlk *blk, const PacketPtr cpkt,
+        bool has_old_data);
+
+    /**
      * Handle doing the Compare and Swap function for SPARC.
      */
     void cmpAndSwap(CacheBlk *blk, PacketPtr pkt);
@@ -681,7 +726,7 @@ class BaseCache : public ClockedObject
      * @param writebacks List for any writebacks that need to be performed.
      * @return Whether operation is successful or not.
      */
-    bool updateCompressionData(CacheBlk *blk, const uint64_t* data,
+    bool updateCompressionData(CacheBlk *&blk, const uint64_t* data,
                                PacketList &writebacks);
 
     /**
@@ -708,6 +753,18 @@ class BaseCache : public ClockedObject
      * @param blk The block that should potentially be dropped
      */
     void maintainClusivity(bool from_cache, CacheBlk *blk);
+
+    /**
+     * Try to evict the given blocks. If any of them is a transient eviction,
+     * that is, the block is present in the MSHR queue all evictions are
+     * cancelled since handling such cases has not been implemented.
+     *
+     * @param evict_blks Blocks marked for eviction.
+     * @param writebacks List for any writebacks that need to be performed.
+     * @return False if any of the evicted blocks is in transient state.
+     */
+    bool handleEvictions(std::vector<CacheBlk*> &evict_blks,
+        PacketList &writebacks);
 
     /**
      * Handle a fill operation caused by a received packet.
@@ -751,7 +808,7 @@ class BaseCache : public ClockedObject
      * @param blk Block to invalidate
      * @return A packet with the writeback, can be nullptr
      */
-    M5_NODISCARD virtual PacketPtr evictBlock(CacheBlk *blk) = 0;
+    GEM5_NO_DISCARD virtual PacketPtr evictBlock(CacheBlk *blk) = 0;
 
     /**
      * Evict a cache block.
@@ -875,7 +932,7 @@ class BaseCache : public ClockedObject
      * fill into both this cache and the cache above on a miss. Note
      * that we currently do not support strict clusivity policies.
      */
-    const Enums::Clusivity clusivity;
+    const enums::Clusivity clusivity;
 
     /**
      * Is this cache read only, for example the instruction cache, or
@@ -884,6 +941,22 @@ class BaseCache : public ClockedObject
      * never have to do any writebacks).
      */
     const bool isReadOnly;
+
+    /**
+     * when a data expansion of a compressed block happens it will not be
+     * able to co-allocate where it is at anymore. If true, the replacement
+     * policy is called to chose a new location for the block. Otherwise,
+     * all co-allocated blocks are evicted.
+     */
+    const bool replaceExpansions;
+
+    /**
+     * Similar to data expansions, after a block improves its compression,
+     * it may need to be moved elsewhere compatible with the new compression
+     * factor, or, if not required by the compaction method, it may be moved
+     * to co-allocate with an existing block and thus free an entry.
+     */
+    const bool moveContractions;
 
     /**
      * Bit vector of the blocking reasons for the access path.
@@ -912,7 +985,7 @@ class BaseCache : public ClockedObject
     /** System we are currently operating in. */
     System *system;
 
-    struct CacheCmdStats : public Stats::Group
+    struct CacheCmdStats : public statistics::Group
     {
         CacheCmdStats(BaseCache &c, const std::string &name);
 
@@ -928,40 +1001,40 @@ class BaseCache : public ClockedObject
 
         /** Number of hits per thread for each type of command.
             @sa Packet::Command */
-        Stats::Vector hits;
+        statistics::Vector hits;
         /** Number of misses per thread for each type of command.
             @sa Packet::Command */
-        Stats::Vector misses;
+        statistics::Vector misses;
         /**
          * Total number of cycles per thread/command spent waiting for a miss.
          * Used to calculate the average miss latency.
          */
-        Stats::Vector missLatency;
+        statistics::Vector missLatency;
         /** The number of accesses per command and thread. */
-        Stats::Formula accesses;
+        statistics::Formula accesses;
         /** The miss rate per command and thread. */
-        Stats::Formula missRate;
+        statistics::Formula missRate;
         /** The average miss latency per command and thread. */
-        Stats::Formula avgMissLatency;
+        statistics::Formula avgMissLatency;
         /** Number of misses that hit in the MSHRs per command and thread. */
-        Stats::Vector mshr_hits;
+        statistics::Vector mshrHits;
         /** Number of misses that miss in the MSHRs, per command and thread. */
-        Stats::Vector mshr_misses;
+        statistics::Vector mshrMisses;
         /** Number of misses that miss in the MSHRs, per command and thread. */
-        Stats::Vector mshr_uncacheable;
+        statistics::Vector mshrUncacheable;
         /** Total cycle latency of each MSHR miss, per command and thread. */
-        Stats::Vector mshr_miss_latency;
+        statistics::Vector mshrMissLatency;
         /** Total cycle latency of each MSHR miss, per command and thread. */
-        Stats::Vector mshr_uncacheable_lat;
+        statistics::Vector mshrUncacheableLatency;
         /** The miss rate in the MSHRs pre command and thread. */
-        Stats::Formula mshrMissRate;
+        statistics::Formula mshrMissRate;
         /** The average latency of an MSHR miss, per command and thread. */
-        Stats::Formula avgMshrMissLatency;
+        statistics::Formula avgMshrMissLatency;
         /** The average latency of an MSHR miss, per command and thread. */
-        Stats::Formula avgMshrUncacheableLatency;
+        statistics::Formula avgMshrUncacheableLatency;
     };
 
-    struct CacheStats : public Stats::Group
+    struct CacheStats : public statistics::Group
     {
         CacheStats(BaseCache &c);
 
@@ -974,89 +1047,91 @@ class BaseCache : public ClockedObject
         const BaseCache &cache;
 
         /** Number of hits for demand accesses. */
-        Stats::Formula demandHits;
+        statistics::Formula demandHits;
         /** Number of hit for all accesses. */
-        Stats::Formula overallHits;
+        statistics::Formula overallHits;
 
         /** Number of misses for demand accesses. */
-        Stats::Formula demandMisses;
+        statistics::Formula demandMisses;
         /** Number of misses for all accesses. */
-        Stats::Formula overallMisses;
+        statistics::Formula overallMisses;
 
         /** Total number of cycles spent waiting for demand misses. */
-        Stats::Formula demandMissLatency;
+        statistics::Formula demandMissLatency;
         /** Total number of cycles spent waiting for all misses. */
-        Stats::Formula overallMissLatency;
+        statistics::Formula overallMissLatency;
 
         /** The number of demand accesses. */
-        Stats::Formula demandAccesses;
+        statistics::Formula demandAccesses;
         /** The number of overall accesses. */
-        Stats::Formula overallAccesses;
+        statistics::Formula overallAccesses;
 
         /** The miss rate of all demand accesses. */
-        Stats::Formula demandMissRate;
+        statistics::Formula demandMissRate;
         /** The miss rate for all accesses. */
-        Stats::Formula overallMissRate;
+        statistics::Formula overallMissRate;
 
         /** The average miss latency for demand misses. */
-        Stats::Formula demandAvgMissLatency;
+        statistics::Formula demandAvgMissLatency;
         /** The average miss latency for all misses. */
-        Stats::Formula overallAvgMissLatency;
+        statistics::Formula overallAvgMissLatency;
 
         /** The total number of cycles blocked for each blocked cause. */
-        Stats::Vector blocked_cycles;
+        statistics::Vector blockedCycles;
         /** The number of times this cache blocked for each blocked cause. */
-        Stats::Vector blocked_causes;
+        statistics::Vector blockedCauses;
 
         /** The average number of cycles blocked for each blocked cause. */
-        Stats::Formula avg_blocked;
-
-        /** The number of times a HW-prefetched block is evicted w/o
-         * reference. */
-        Stats::Scalar unusedPrefetches;
+        statistics::Formula avgBlocked;
 
         /** Number of blocks written back per thread. */
-        Stats::Vector writebacks;
+        statistics::Vector writebacks;
 
         /** Demand misses that hit in the MSHRs. */
-        Stats::Formula demandMshrHits;
+        statistics::Formula demandMshrHits;
         /** Total number of misses that hit in the MSHRs. */
-        Stats::Formula overallMshrHits;
+        statistics::Formula overallMshrHits;
 
         /** Demand misses that miss in the MSHRs. */
-        Stats::Formula demandMshrMisses;
+        statistics::Formula demandMshrMisses;
         /** Total number of misses that miss in the MSHRs. */
-        Stats::Formula overallMshrMisses;
+        statistics::Formula overallMshrMisses;
 
         /** Total number of misses that miss in the MSHRs. */
-        Stats::Formula overallMshrUncacheable;
+        statistics::Formula overallMshrUncacheable;
 
         /** Total cycle latency of demand MSHR misses. */
-        Stats::Formula demandMshrMissLatency;
+        statistics::Formula demandMshrMissLatency;
         /** Total cycle latency of overall MSHR misses. */
-        Stats::Formula overallMshrMissLatency;
+        statistics::Formula overallMshrMissLatency;
 
         /** Total cycle latency of overall MSHR misses. */
-        Stats::Formula overallMshrUncacheableLatency;
+        statistics::Formula overallMshrUncacheableLatency;
 
         /** The demand miss rate in the MSHRs. */
-        Stats::Formula demandMshrMissRate;
+        statistics::Formula demandMshrMissRate;
         /** The overall miss rate in the MSHRs. */
-        Stats::Formula overallMshrMissRate;
+        statistics::Formula overallMshrMissRate;
 
         /** The average latency of a demand MSHR miss. */
-        Stats::Formula demandAvgMshrMissLatency;
+        statistics::Formula demandAvgMshrMissLatency;
         /** The average overall latency of an MSHR miss. */
-        Stats::Formula overallAvgMshrMissLatency;
+        statistics::Formula overallAvgMshrMissLatency;
 
         /** The average overall latency of an MSHR miss. */
-        Stats::Formula overallAvgMshrUncacheableLatency;
+        statistics::Formula overallAvgMshrUncacheableLatency;
 
         /** Number of replacements of valid blocks. */
-        Stats::Scalar replacements;
+        statistics::Scalar replacements;
 
         /** Number of data expansions. */
-        Stats::Scalar dataExpansions;
+        statistics::Scalar dataExpansions;
+
+        /**
+         * Number of data contractions (blocks that had their compression
+         * factor improved).
+         */
+        statistics::Scalar dataContractions;
 
         /** Per-command statistics */
         std::vector<std::unique_ptr<CacheCmdStats>> cmd;
@@ -1066,7 +1141,7 @@ class BaseCache : public ClockedObject
     void regProbePoints() override;
 
   public:
-    BaseCache(const BaseCacheParams *p, unsigned blk_size);
+    BaseCache(const BaseCacheParams &p, unsigned blk_size);
     ~BaseCache();
 
     void init() override;
@@ -1146,14 +1221,14 @@ class BaseCache : public ClockedObject
 
     /**
      * Marks the access path of the cache as blocked for the given cause. This
-     * also sets the blocked flag in the slave interface.
+     * also sets the blocked flag in the response interface.
      * @param cause The reason for the cache blocking.
      */
     void setBlocked(BlockedCause cause)
     {
         uint8_t flag = 1 << cause;
         if (blocked == 0) {
-            stats.blocked_causes[cause]++;
+            stats.blockedCauses[cause]++;
             blockedCycle = curCycle();
             cpuSidePort.setBlocked();
         }
@@ -1174,7 +1249,7 @@ class BaseCache : public ClockedObject
         blocked &= ~flag;
         DPRINTF(Cache,"Unblocking for cause %d, mask=%d\n", cause, blocked);
         if (blocked == 0) {
-            stats.blocked_cycles[cause] += curCycle() - blockedCycle;
+            stats.blockedCycles[cause] += curCycle() - blockedCycle;
             cpuSidePort.clearBlocked();
         }
     }
@@ -1211,8 +1286,8 @@ class BaseCache : public ClockedObject
 
     void incMissCount(PacketPtr pkt)
     {
-        assert(pkt->req->masterId() < system->maxMasters());
-        stats.cmdStats(pkt).misses[pkt->req->masterId()]++;
+        assert(pkt->req->requestorId() < system->maxRequestors());
+        stats.cmdStats(pkt).misses[pkt->req->requestorId()]++;
         pkt->req->incAccessDepth();
         if (missCount) {
             --missCount;
@@ -1222,8 +1297,8 @@ class BaseCache : public ClockedObject
     }
     void incHitCount(PacketPtr pkt)
     {
-        assert(pkt->req->masterId() < system->maxMasters());
-        stats.cmdStats(pkt).hits[pkt->req->masterId()]++;
+        assert(pkt->req->requestorId() < system->maxRequestors());
+        stats.cmdStats(pkt).hits[pkt->req->requestorId()]++;
     }
 
     /**
@@ -1291,13 +1366,14 @@ class BaseCache : public ClockedObject
  * line) we switch to NO_ALLOCATE when writes should not allocate in
  * the cache but rather send a whole line write to the memory below.
  */
-class WriteAllocator : public SimObject {
+class WriteAllocator : public SimObject
+{
   public:
-    WriteAllocator(const WriteAllocatorParams *p) :
+    WriteAllocator(const WriteAllocatorParams &p) :
         SimObject(p),
-        coalesceLimit(p->coalesce_limit * p->block_size),
-        noAllocateLimit(p->no_allocate_limit * p->block_size),
-        delayThreshold(p->delay_threshold)
+        coalesceLimit(p.coalesce_limit * p.block_size),
+        noAllocateLimit(p.no_allocate_limit * p.block_size),
+        delayThreshold(p.delay_threshold)
     {
         reset();
     }
@@ -1375,7 +1451,8 @@ class WriteAllocator : public SimObject {
      * normal operation (ALLOCATE), write coalescing (COALESCE), or
      * write coalescing without allocation (NO_ALLOCATE).
      */
-    enum class WriteMode : char {
+    enum class WriteMode : char
+    {
         ALLOCATE,
         COALESCE,
         NO_ALLOCATE,
@@ -1407,5 +1484,7 @@ class WriteAllocator : public SimObject {
      */
     std::unordered_map<Addr, Counter> delayCtr;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_BASE_HH__

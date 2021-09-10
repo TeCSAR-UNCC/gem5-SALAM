@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Peter Enns
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -42,10 +40,12 @@ from m5.objects.Device import BasicPioDevice
 class I2CDevice(SimObject):
     type = 'I2CDevice'
     cxx_header = "dev/i2c/device.hh"
+    cxx_class = 'gem5::I2CDevice'
     abstract = True
     i2c_addr = Param.UInt8("Address of device on i2c bus")
 
 class I2CBus(BasicPioDevice):
     type = 'I2CBus'
     cxx_header = "dev/i2c/bus.hh"
+    cxx_class = 'gem5::I2CBus'
     devices = VectorParam.I2CDevice([], "Devices")

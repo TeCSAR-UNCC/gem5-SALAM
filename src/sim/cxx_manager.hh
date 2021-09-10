@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -60,6 +58,9 @@
 
 #include "base/cprintf.hh"
 #include "sim/cxx_config.hh"
+
+namespace gem5
+{
 
 class CheckpointIn;
 
@@ -128,14 +129,14 @@ class CxxConfigManager
     std::list<Renaming> renamings;
 
     /** Bind a single connection between two objects' ports */
-    void bindPort(SimObject *masterObject, const std::string &masterPort,
-        PortID masterPortIndex, SimObject *slaveObject,
-        const std::string &slavePort, PortID slavePortIndex);
+    void bindPort(SimObject *requestorObject, const std::string &requestPort,
+        PortID requestPortIndex, SimObject *responderObject,
+        const std::string &responsePort, PortID responsePortIndex);
 
-    /** Bind a single (possibly vectored) master port to peers from the
+    /** Bind a single (possibly vectored) request port to peers from the
      *  unparsed list peers with elements in the .ini connection format:
      *  path(.path)*.port[index] */
-    void bindMasterPort(SimObject *object,
+    void bindRequestPort(SimObject *object,
         const CxxConfigDirectoryEntry::PortDesc &port,
         const std::vector<std::string> &peers);
 
@@ -153,7 +154,7 @@ class CxxConfigManager
 
     /** Class for resolving SimObject names to SimObjects usable by the
      *  checkpoint restore mechanism */
-    class SimObjectResolver : public ::SimObjectResolver
+    class SimObjectResolver : public gem5::SimObjectResolver
     {
       protected:
         CxxConfigManager &configManager;
@@ -310,5 +311,7 @@ class CxxConfigManager
         const std::string &param_name,
         const std::vector<std::string> &param_values);
 };
+
+} // namespace gem5
 
 #endif // __SIM_CXX_MANAGER_HH__

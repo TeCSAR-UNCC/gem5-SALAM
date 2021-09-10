@@ -2,6 +2,7 @@
 
 // Copyright (c) 2007-2008 The Florida State University
 // Copyright (c) 2009 The University of Edinburgh
+// Copyright (c) 2021 IBM Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,9 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Stephen Hines
-//          Timothy M. Jones
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -58,7 +56,7 @@ output header {{
         Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 
     /**
@@ -89,21 +87,21 @@ output header {{
         Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 }};
 
 output decoder {{
     std::string
-    FailUnimplemented::generateDisassembly(Addr pc,
-                                           const SymbolTable *symtab) const
+    FailUnimplemented::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         return csprintf("%-10s (unimplemented)", mnemonic);
     }
 
     std::string
-    WarnUnimplemented::generateDisassembly(Addr pc,
-                                           const SymbolTable *symtab) const
+    WarnUnimplemented::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         return csprintf("%-10s (unimplemented)", mnemonic);
     }
@@ -115,7 +113,7 @@ output exec {{
                                Trace::InstRecord *traceData) const
     {
         panic("attempt to execute unimplemented instruction '%s' "
-              "(inst 0x%08x, opcode 0x%x, binary:%s)", mnemonic, machInst, OPCODE,
+              "(inst 0x%08x, opcode 0x%x, binary:%s)", mnemonic, machInst, PO,
               inst2string(machInst));
         return std::make_shared<UnimplementedOpcodeFault>();
     }

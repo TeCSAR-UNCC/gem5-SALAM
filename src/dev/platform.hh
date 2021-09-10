@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Schultz
- *          Nathan Binkert
  */
 
 /**
@@ -43,22 +40,21 @@
 #include "params/Platform.hh"
 #include "sim/sim_object.hh"
 
-class IntrControl;
+namespace gem5
+{
+
 class Terminal;
 class Uart;
 class System;
 
-
 class Platform : public SimObject
 {
   public:
-    /** Pointer to the interrupt controller */
-    IntrControl *intrctrl;
+    System *system;
 
-  public:
     typedef PlatformParams Params;
-    Platform(const Params *p);
-    virtual ~Platform();
+    Platform(const Params &p);
+    virtual ~Platform() = default;
 
     /**
      * Cause the cpu to post a serial interrupt to the CPU.
@@ -81,5 +77,7 @@ class Platform : public SimObject
      */
     virtual void clearPciInt(int line);
 };
+
+} // namespace gem5
 
 #endif // __DEV_PLATFORM_HH__

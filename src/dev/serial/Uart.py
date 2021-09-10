@@ -35,11 +35,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 from m5.params import *
 from m5.proxy import *
+from m5.util.fdthelper import *
+from m5.defines import buildEnv
 
 from m5.objects.Device import BasicPioDevice
 from m5.objects.Serial import SerialDevice
@@ -48,13 +48,15 @@ class Uart(BasicPioDevice):
     type = 'Uart'
     abstract = True
     cxx_header = "dev/serial/uart.hh"
+    cxx_class = 'gem5::Uart'
     platform = Param.Platform(Parent.any, "Platform this device is part of.")
     device = Param.SerialDevice(Parent.any, "The terminal")
 
 class SimpleUart(Uart):
     type = 'SimpleUart'
     cxx_header = "dev/serial/simple.hh"
-    big_endian = Param.Bool(False, "Is the device Big Endian?")
+    cxx_class = 'gem5::SimpleUart'
+    byte_order = Param.ByteOrder("little", "Device byte order")
     pio_size = Param.Addr(0x4, "Size of address range")
     end_on_eot = Param.Bool(False, "End the simulation when a EOT is "\
                             "received on the UART")
@@ -62,3 +64,20 @@ class SimpleUart(Uart):
 class Uart8250(Uart):
     type = 'Uart8250'
     cxx_header = "dev/serial/uart8250.hh"
+    cxx_class = 'gem5::Uart8250'
+    pio_size = Param.Addr(0x8, "Size of address range")
+
+    def generateDeviceTree(self, state):
+        if buildEnv['TARGET_ISA'] == "riscv":
+            node = self.generateBasicPioDeviceNode(
+                state, "uart", self.pio_addr, self.pio_size)
+            platform = self.platform.unproxy(self)
+            plic = platform.plic
+            node.append(
+                FdtPropertyWords("interrupts", [platform.uart_int_id]))
+            node.append(
+                FdtPropertyWords("clock-frequency", [0x384000]))
+            node.append(
+                FdtPropertyWords("interrupt-parent", state.phandle(plic)))
+            node.appendCompatible(["ns8250"])
+            yield node

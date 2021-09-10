@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Mitch Hayenga
- *          Andreas Sandberg
  */
 
 #ifndef __MEM_CACHE_PREFETCH_MULTI_HH__
@@ -43,14 +40,21 @@
 
 #include "mem/cache/prefetch/base.hh"
 
+namespace gem5
+{
+
 struct MultiPrefetcherParams;
 
-class MultiPrefetcher : public BasePrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class Multi : public Base
 {
   public: // SimObject
-    MultiPrefetcher(const MultiPrefetcherParams *p);
+    Multi(const MultiPrefetcherParams &p);
 
-  public:  // BasePrefetcher
+  public:
     void setCache(BaseCache *_cache) override;
     PacketPtr getPacket() override;
     Tick nextPrefetchReadyTime() const override;
@@ -66,7 +70,10 @@ class MultiPrefetcher : public BasePrefetcher
 
   protected:
     /** List of sub-prefetchers ordered by priority. */
-    std::list<BasePrefetcher *> prefetchers;
+    std::list<Base*> prefetchers;
 };
+
+} // namespace prefetch
+} // namespace gem5
 
 #endif //__MEM_CACHE_PREFETCH_MULTI_HH__

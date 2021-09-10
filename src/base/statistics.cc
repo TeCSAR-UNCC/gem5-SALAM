@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Arm Limited
+ * Copyright (c) 2019-2020 Arm Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -36,38 +36,32 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "base/statistics.hh"
 
-#include <fstream>
-#include <iomanip>
+#include <cassert>
 #include <list>
 #include <map>
 #include <string>
+#include <utility>
 
 #include "base/callback.hh"
-#include "base/cprintf.hh"
-#include "base/debug.hh"
-#include "base/hostinfo.hh"
 #include "base/logging.hh"
-#include "base/str.hh"
-#include "base/time.hh"
-#include "base/trace.hh"
+#include "sim/root.hh"
 
-using namespace std;
+namespace gem5
+{
 
-namespace Stats {
-
-std::string Info::separatorString = "::";
+GEM5_DEPRECATED_NAMESPACE(Stats, statistics);
+namespace statistics
+{
 
 // We wrap these in a function to make sure they're built in time.
-list<Info *> &
+std::list<Info *> &
 statsList()
 {
-    static list<Info *> the_list;
+    static std::list<Info *> the_list;
     return the_list;
 }
 
@@ -95,9 +89,9 @@ InfoAccess::setInfo(Group *parent, Info *info)
     statsList().push_back(info);
 
 #ifndef NDEBUG
-    pair<MapType::iterator, bool> result =
+    std::pair<MapType::iterator, bool> result =
 #endif
-        statsMap().insert(make_pair(this, info));
+        statsMap().insert(std::make_pair(this, info));
     assert(result.second && "this should never fail");
     assert(statsMap().find(this) != statsMap().end());
 }
@@ -105,7 +99,7 @@ InfoAccess::setInfo(Group *parent, Info *info)
 void
 InfoAccess::setParams(const StorageParams *params)
 {
-    info()->storageParams = params;
+    info()->setStorageParams(params);
 }
 
 void
@@ -142,290 +136,30 @@ InfoAccess::info() const
     }
 }
 
-StorageParams::~StorageParams()
-{
-}
-
-NameMapType &
-nameMap()
-{
-    static NameMapType the_map;
-    return the_map;
-}
-
-int Info::id_count = 0;
-
-int debug_break_id = -1;
-
-Info::Info()
-    : flags(none), precision(-1), prereq(0), storageParams(NULL)
-{
-    id = id_count++;
-    if (debug_break_id >= 0 and debug_break_id == id)
-        Debug::breakpoint();
-}
-
-Info::~Info()
-{
-}
-
-bool
-validateStatName(const string &name)
-{
-    if (name.empty())
-        return false;
-
-    vector<string> vec;
-    tokenize(vec, name, '.');
-    vector<string>::const_iterator item = vec.begin();
-    while (item != vec.end()) {
-        if (item->empty())
-            return false;
-
-        string::const_iterator c = item->begin();
-
-        // The first character is different
-        if (!isalpha(*c) && *c != '_')
-            return false;
-
-        // The rest of the characters have different rules.
-        while (++c != item->end()) {
-            if (!isalnum(*c) && *c != '_')
-                return false;
-        }
-
-        ++item;
-    }
-
-    return true;
-}
-
-void
-Info::setName(const string &name)
-{
-    setName(nullptr, name);
-}
-
-void
-Info::setName(const Group *parent, const string &name)
-{
-    if (!validateStatName(name))
-        panic("invalid stat name '%s'", name);
-
-    // We only register the stat with the nameMap() if we are using
-    // old-style stats without a parent group. New-style stats should
-    // be unique since their names should correspond to a member
-    // variable.
-    if (!parent) {
-        auto p = nameMap().insert(make_pair(name, this));
-
-        if (!p.second)
-            panic("same statistic name used twice! name=%s\n",
-                  name);
-    }
-
-    this->name = name;
-}
-
-bool
-Info::less(Info *stat1, Info *stat2)
-{
-    const string &name1 = stat1->name;
-    const string &name2 = stat2->name;
-
-    vector<string> v1;
-    vector<string> v2;
-
-    tokenize(v1, name1, '.');
-    tokenize(v2, name2, '.');
-
-    size_type last = min(v1.size(), v2.size()) - 1;
-    for (off_type i = 0; i < last; ++i)
-        if (v1[i] != v2[i])
-            return v1[i] < v2[i];
-
-    // Special compare for last element.
-    if (v1[last] == v2[last])
-        return v1.size() < v2.size();
-    else
-        return v1[last] < v2[last];
-
-    return false;
-}
-
-bool
-Info::baseCheck() const
-{
-    if (!(flags & Stats::init)) {
-#ifdef DEBUG
-        cprintf("this is stat number %d\n", id);
-#endif
-        panic("Not all stats have been initialized.\n"
-              "You may need to add <ParentClass>::regStats() to a"
-              " new SimObject's regStats() function. Name: %s",
-              name);
-        return false;
-    }
-
-    if ((flags & display) && name.empty()) {
-        panic("all printable stats must be named");
-        return false;
-    }
-
-    return true;
-}
-
-void
-Info::enable()
-{
-}
-
-void
-VectorInfo::enable()
-{
-    size_type s = size();
-    if (subnames.size() < s)
-        subnames.resize(s);
-    if (subdescs.size() < s)
-        subdescs.resize(s);
-}
-
-void
-VectorDistInfo::enable()
-{
-    size_type s = size();
-    if (subnames.size() < s)
-        subnames.resize(s);
-    if (subdescs.size() < s)
-        subdescs.resize(s);
-}
-
-void
-Vector2dInfo::enable()
-{
-    if (subnames.size() < x)
-        subnames.resize(x);
-    if (subdescs.size() < x)
-        subdescs.resize(x);
-    if (y_subnames.size() < y)
-        y_subnames.resize(y);
-}
-
-void
-HistStor::grow_out()
-{
-    int size = cvec.size();
-    int zero = size / 2; // round down!
-    int top_half = zero + (size - zero + 1) / 2; // round up!
-    int bottom_half = (size - zero) / 2; // round down!
-
-    // grow down
-    int low_pair = zero - 1;
-    for (int i = zero - 1; i >= bottom_half; i--) {
-        cvec[i] = cvec[low_pair];
-        if (low_pair - 1 >= 0)
-            cvec[i] += cvec[low_pair - 1];
-        low_pair -= 2;
-    }
-    assert(low_pair == 0 || low_pair == -1 || low_pair == -2);
-
-    for (int i = bottom_half - 1; i >= 0; i--)
-        cvec[i] = Counter();
-
-    // grow up
-    int high_pair = zero;
-    for (int i = zero; i < top_half; i++) {
-        cvec[i] = cvec[high_pair];
-        if (high_pair + 1 < size)
-            cvec[i] += cvec[high_pair + 1];
-        high_pair += 2;
-    }
-    assert(high_pair == size || high_pair == size + 1);
-
-    for (int i = top_half; i < size; i++)
-        cvec[i] = Counter();
-
-    max_bucket *= 2;
-    min_bucket *= 2;
-    bucket_size *= 2;
-}
-
-void
-HistStor::grow_convert()
-{
-    int size = cvec.size();
-    int half = (size + 1) / 2; // round up!
-    //bool even = (size & 1) == 0;
-
-    int pair = size - 1;
-    for (int i = size - 1; i >= half; --i) {
-        cvec[i] = cvec[pair];
-        if (pair - 1 >= 0)
-            cvec[i] += cvec[pair - 1];
-        pair -= 2;
-    }
-
-    for (int i = half - 1; i >= 0; i--)
-        cvec[i] = Counter();
-
-    min_bucket = -max_bucket;// - (even ? bucket_size : 0);
-    bucket_size *= 2;
-}
-
-void
-HistStor::grow_up()
-{
-    int size = cvec.size();
-    int half = (size + 1) / 2; // round up!
-
-    int pair = 0;
-    for (int i = 0; i < half; i++) {
-        cvec[i] = cvec[pair];
-        if (pair + 1 < size)
-            cvec[i] += cvec[pair + 1];
-        pair += 2;
-    }
-    assert(pair == size || pair == size + 1);
-
-    for (int i = half; i < size; i++)
-        cvec[i] = Counter();
-
-    max_bucket *= 2;
-    bucket_size *= 2;
-}
-
-void
-HistStor::add(HistStor *hs)
-{
-    int b_size = hs->size();
-    assert(size() == b_size);
-    assert(min_bucket == hs->min_bucket);
-
-    sum += hs->sum;
-    logs += hs->logs;
-    squares += hs->squares;
-    samples += hs->samples;
-
-    while (bucket_size > hs->bucket_size)
-        hs->grow_up();
-    while (bucket_size < hs->bucket_size)
-        grow_up();
-
-    for (uint32_t i = 0; i < b_size; i++)
-        cvec[i] += hs->cvec[i];
-}
-
 Formula::Formula(Group *parent, const char *name, const char *desc)
-    : DataWrapVec<Formula, FormulaInfoProxy>(parent, name, desc)
+    : DataWrapVec<Formula, FormulaInfoProxy>(
+            parent, name, units::Unspecified::get(), desc)
 
 {
 }
 
-
+Formula::Formula(Group *parent, const char *name, const units::Base *unit,
+                 const char *desc)
+    : DataWrapVec<Formula, FormulaInfoProxy>(parent, name, unit, desc)
+{
+}
 
 Formula::Formula(Group *parent, const char *name, const char *desc,
                  const Temp &r)
-    : DataWrapVec<Formula, FormulaInfoProxy>(parent, name, desc)
+    : DataWrapVec<Formula, FormulaInfoProxy>(
+            parent, name, units::Unspecified::get(), desc)
+{
+    *this = r;
+}
+
+Formula::Formula(Group *parent, const char *name, const units::Base *unit,
+                 const char *desc, const Temp &r)
+    : DataWrapVec<Formula, FormulaInfoProxy>(parent, name, unit, desc)
 {
     *this = r;
 }
@@ -503,7 +237,7 @@ Formula::zero() const
     return true;
 }
 
-string
+std::string
 Formula::str() const
 {
     return root ? root->str() : "";
@@ -535,9 +269,9 @@ processDumpQueue()
 }
 
 void
-registerResetCallback(Callback *cb)
+registerResetCallback(const std::function<void()> &callback)
 {
-    resetQueue.add(cb);
+    resetQueue.push_back(callback);
 }
 
 bool _enabled = false;
@@ -563,7 +297,7 @@ dump()
     if (dumpHandler)
         dumpHandler();
     else
-        fatal("No registered Stats::dump handler");
+        fatal("No registered statistics::dump handler");
 }
 
 void
@@ -572,19 +306,32 @@ reset()
     if (resetHandler)
         resetHandler();
     else
-        fatal("No registered Stats::reset handler");
+        fatal("No registered statistics::reset handler");
+}
+
+const Info *
+resolve(const std::string &name)
+{
+    const auto &it = nameMap().find(name);
+    if (it != nameMap().cend()) {
+        return it->second;
+    } else {
+        return Root::root()->resolveStat(name);
+    }
 }
 
 void
-registerDumpCallback(Callback *cb)
+registerDumpCallback(const std::function<void()> &callback)
 {
-    dumpQueue.add(cb);
+    dumpQueue.push_back(callback);
 }
 
-} // namespace Stats
+} // namespace statistics
 
 void
 debugDumpStats()
 {
-    Stats::dump();
+    statistics::dump();
 }
+
+} // namespace gem5

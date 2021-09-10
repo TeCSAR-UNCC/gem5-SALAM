@@ -32,9 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Vasileios Spiliopoulos
-#          Akash Bagdia
 
 from m5.params import *
 from m5.SimObject import SimObject
@@ -47,6 +44,7 @@ from m5.proxy import *
 class DVFSHandler(SimObject):
     type = 'DVFSHandler'
     cxx_header = "sim/dvfs_handler.hh"
+    cxx_class = 'gem5::DVFSHandler'
 
     # List of controllable clock domains which in turn reference the appropriate
     # voltage domains

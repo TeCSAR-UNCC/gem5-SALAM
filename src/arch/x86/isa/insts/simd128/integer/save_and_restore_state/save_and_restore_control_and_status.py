@@ -32,29 +32,27 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop STMXCSR_M {
-    rdval t1, "InstRegIndex(MISCREG_MXCSR)"
+    rdval t1, ctrlRegIdx("MISCREG_MXCSR")
     st t1, seg, sib, disp
 };
 
 def macroop STMXCSR_P {
-    rdval t1, "InstRegIndex(MISCREG_MXCSR)"
+    rdval t1, ctrlRegIdx("MISCREG_MXCSR")
     rdip t7
     st t1, seg, riprel, disp
 };
 
 def macroop LDMXCSR_M {
     ld t1, seg, sib, disp
-    wrval "InstRegIndex(MISCREG_MXCSR)", t1
+    wrval ctrlRegIdx("MISCREG_MXCSR"), t1
 };
 
 def macroop LDMXCSR_P {
     rdip t7
     ld t1, seg, riprel, disp
-    wrval "InstRegIndex(MISCREG_MXCSR)", t1
+    wrval ctrlRegIdx("MISCREG_MXCSR"), t1
 };
 '''

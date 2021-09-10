@@ -33,14 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #ifndef __SIM_THERMAL_ENTITY_HH__
 #define __SIM_THERMAL_ENTITY_HH__
 
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class LinearEquation;
 class ThermalNode;
@@ -58,5 +59,6 @@ class ThermalEntity
                                        double step) const = 0;
 };
 
+} // namespace gem5
 
 #endif

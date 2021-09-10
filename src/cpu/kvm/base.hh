@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __CPU_KVM_BASE_HH__
@@ -56,6 +54,16 @@
 
 /** Signal to use to trigger exits from KVM */
 #define KVM_KICK_SIGNAL SIGRTMIN
+
+struct kvm_coalesced_mmio_ring;
+struct kvm_fpu;
+struct kvm_interrupt;
+struct kvm_regs;
+struct kvm_run;
+struct kvm_sregs;
+
+namespace gem5
+{
 
 // forward declarations
 class ThreadContext;
@@ -79,12 +87,11 @@ struct BaseKvmCPUParams;
 class BaseKvmCPU : public BaseCPU
 {
   public:
-    BaseKvmCPU(BaseKvmCPUParams *params);
+    BaseKvmCPU(const BaseKvmCPUParams &params);
     virtual ~BaseKvmCPU();
 
     void init() override;
     void startup() override;
-    void regStats() override;
 
     void serializeThread(CheckpointOut &cp, ThreadID tid) const override;
     void unserializeThread(CheckpointIn &cp, ThreadID tid) override;
@@ -178,7 +185,8 @@ class BaseKvmCPU : public BaseCPU
      *   }
      * @enddot
      */
-    enum Status {
+    enum Status
+    {
         /** Context not scheduled in KVM.
          *
          * The CPU generally enters this state when the guest execute
@@ -572,17 +580,19 @@ class BaseKvmCPU : public BaseCPU
     }
     /** @} */
 
+    /** Execute the KVM_RUN ioctl */
+    virtual void ioctlRun();
 
     /**
-     * KVM memory port.  Uses default MasterPort behavior and provides an
+     * KVM memory port.  Uses default RequestPort behavior and provides an
      * interface for KVM to transparently submit atomic or timing requests.
      */
-    class KVMCpuPort : public MasterPort
+    class KVMCpuPort : public RequestPort
     {
 
       public:
         KVMCpuPort(const std::string &_name, BaseKvmCPU *_cpu)
-            : MasterPort(_name, _cpu), cpu(_cpu), activeMMIOReqs(0)
+            : RequestPort(_name, _cpu), cpu(_cpu), activeMMIOReqs(0)
         { }
         /**
          * Interface to send Atomic or Timing IO request.  Assumes that the pkt
@@ -680,9 +690,6 @@ class BaseKvmCPU : public BaseCPU
 
     /** Try to drain the CPU if a drain is pending */
     bool tryDrain();
-
-    /** Execute the KVM_RUN ioctl */
-    void ioctlRun();
 
     /** KVM vCPU file descriptor */
     int vcpuFD;
@@ -784,20 +791,26 @@ class BaseKvmCPU : public BaseCPU
 
   public:
     /* @{ */
-    Stats::Scalar numInsts;
-    Stats::Scalar numVMExits;
-    Stats::Scalar numVMHalfEntries;
-    Stats::Scalar numExitSignal;
-    Stats::Scalar numMMIO;
-    Stats::Scalar numCoalescedMMIO;
-    Stats::Scalar numIO;
-    Stats::Scalar numHalt;
-    Stats::Scalar numInterrupts;
-    Stats::Scalar numHypercalls;
+    struct StatGroup : public statistics::Group
+    {
+        StatGroup(statistics::Group *parent);
+        statistics::Scalar committedInsts;
+        statistics::Scalar numVMExits;
+        statistics::Scalar numVMHalfEntries;
+        statistics::Scalar numExitSignal;
+        statistics::Scalar numMMIO;
+        statistics::Scalar numCoalescedMMIO;
+        statistics::Scalar numIO;
+        statistics::Scalar numHalt;
+        statistics::Scalar numInterrupts;
+        statistics::Scalar numHypercalls;
+    } stats;
     /* @} */
 
     /** Number of instructions executed by the CPU */
     Counter ctrInsts;
 };
+
+} // namespace gem5
 
 #endif

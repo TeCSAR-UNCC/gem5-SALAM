@@ -23,16 +23,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 from m5.params import *
 from m5.objects import *
 
-from .BaseTopology import SimpleTopology
+from topologies.BaseTopology import SimpleTopology
 
 class Crossbar(SimpleTopology):
     description='Crossbar'

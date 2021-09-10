@@ -43,11 +43,21 @@
 #include "cpu/pred/multiperspective_perceptron.hh"
 #include "params/MultiperspectivePerceptron64KB.hh"
 
-class MultiperspectivePerceptron64KB : public MultiperspectivePerceptron {
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+class MultiperspectivePerceptron64KB : public MultiperspectivePerceptron
+{
     void createSpecs() override;
     public:
     MultiperspectivePerceptron64KB(
-            const MultiperspectivePerceptron64KBParams *p);
+            const MultiperspectivePerceptron64KBParams &p);
 };
+
+} // namespace branch_prediction
+} // namespace gem5
 
 #endif // __CPU_PRED_MULTIPERSPECTIVE_PERCEPTRON_64KB_HH__

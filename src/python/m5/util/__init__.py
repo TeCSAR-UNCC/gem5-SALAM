@@ -1,4 +1,4 @@
-# Copyright (c) 2016 ARM Limited
+# Copyright (c) 2016, 2020 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -36,10 +36,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-
-from __future__ import print_function
 
 import os
 import re
@@ -51,8 +47,6 @@ from . import jobfile
 from .attrdict import attrdict, multiattrdict, optiondict
 from .code_formatter import code_formatter
 from .multidict import multidict
-from .smartdict import SmartDict
-from .sorteddict import SortedDict
 
 # panic() should be called when something happens that should never
 # ever happen regardless of what the user does (i.e., an acutal m5
@@ -116,30 +110,6 @@ def applyOrMap(objOrSeq, meth, *args, **kwargs):
     else:
         return [applyMethod(o, meth, *args, **kwargs) for o in objOrSeq]
 
-def compareVersions(v1, v2):
-    """helper function: compare arrays or strings of version numbers.
-    E.g., compare_version((1,3,25), (1,4,1)')
-    returns -1, 0, 1 if v1 is <, ==, > v2
-    """
-    def make_version_list(v):
-        if isinstance(v, (list,tuple)):
-            return v
-        elif isinstance(v, str):
-            return map(lambda x: int(re.match('\d+', x).group()), v.split('.'))
-        else:
-            raise TypeError()
-
-    v1 = make_version_list(v1)
-    v2 = make_version_list(v2)
-    # Compare corresponding elements of lists
-    for n1,n2 in zip(v1, v2):
-        if n1 < n2: return -1
-        if n1 > n2: return  1
-    # all corresponding values are equal... see if one has extra values
-    if len(v1) < len(v2): return -1
-    if len(v1) > len(v2): return  1
-    return 0
-
 def crossproduct(items):
     if len(items) == 1:
         for i in items[0]:
@@ -175,30 +145,6 @@ def printList(items, indent=4):
         else:
             line += item
             print(line)
-
-def readCommand(cmd, **kwargs):
-    """run the command cmd, read the results and return them
-    this is sorta like `cmd` in shell"""
-    from subprocess import Popen, PIPE, STDOUT
-
-    if isinstance(cmd, str):
-        cmd = cmd.split()
-
-    no_exception = 'exception' in kwargs
-    exception = kwargs.pop('exception', None)
-
-    kwargs.setdefault('shell', False)
-    kwargs.setdefault('stdout', PIPE)
-    kwargs.setdefault('stderr', STDOUT)
-    kwargs.setdefault('close_fds', True)
-    try:
-        subp = Popen(cmd, **kwargs)
-    except Exception as e:
-        if no_exception:
-            return exception
-        raise
-
-    return subp.communicate()[0]
 
 def makeDir(path):
     """Make a directory if it doesn't exist.  If the path does exist,

@@ -38,11 +38,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
- *          Andrew Bardsley
- *          Christian Menard
  */
 
 /**
@@ -61,6 +56,7 @@
 
 #include <systemc>
 
+#include "base/types.hh"
 #include "sim/eventq.hh"
 #include "sim/sim_events.hh"
 
@@ -98,7 +94,7 @@ class Module : public sc_core::sc_channel
     sc_core::sc_event eventLoopEnterEvent;
 
     /** Expected exit time of last eventLoop sleep */
-    Tick wait_exit_time;
+    gem5::Tick wait_exit_time;
 
     /** Are we in Module::simulate?  Used to mask events when not inside
      *  the simulate loop */
@@ -106,18 +102,18 @@ class Module : public sc_core::sc_channel
 
     /** Placeholder base class for a variant event queue if this becomes
      *  useful */
-    class SCEventQueue : public EventQueue
+    class SCEventQueue : public gem5::EventQueue
     {
       protected:
         Module &module;
 
       public:
         SCEventQueue(const std::string &name,
-            Module &module_) : EventQueue(name), module(module_)
+            Module &module_) : gem5::EventQueue(name), module(module_)
         { }
 
         /** Signal module to wakeup */
-        void wakeup(Tick when);
+        void wakeup(gem5::Tick when);
     };
 
     /** Service any async event marked up in the globals event_... */
@@ -130,7 +126,7 @@ class Module : public sc_core::sc_channel
     Module(sc_core::sc_module_name name);
 
     /** Last exitEvent from eventLoop */
-    Event *exitEvent;
+    gem5::Event *exitEvent;
 
     /** Setup global event queues.  Call this before any other event queues
      *  are created */
@@ -153,13 +149,14 @@ class Module : public sc_core::sc_channel
     void eventLoop();
 
     /** Run eventLoop up to num_cycles and return the final event */
-    GlobalSimLoopExitEvent *simulate(Tick num_cycles = MaxTick);
+    gem5::GlobalSimLoopExitEvent *
+    simulate(gem5::Tick num_cycles = gem5::MaxTick);
 };
 
 /** There are assumptions throughout Gem5SystemC file that a tick is 1ps.
  *  Make this the case */
 void setTickFrequency();
 
-}
+} // namespace Gem5SystemC
 
 #endif // __SIM_SC_MODULE_HH__

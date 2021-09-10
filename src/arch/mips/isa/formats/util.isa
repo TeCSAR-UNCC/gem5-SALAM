@@ -26,9 +26,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Steve Reinhardt
-//          Korey Sewell
 
 let {{
 def LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
@@ -53,7 +50,7 @@ def LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
 
     if mem_flags:
         mem_flags = [ 'Request::%s' % flag for flag in mem_flags ]
-        s = '\n\tmemAccessFlags = ' + string.join(mem_flags, '|') + ';'
+        s = '\n\tmemAccessFlags = ' + '|'.join(mem_flags) + ';'
         iop.constructor += s
 
     # select templates
@@ -83,7 +80,7 @@ output decoder {{
 
 std::string inst2string(MachInst machInst)
 {
-    string str = "";
+    std::string str = "";
     uint32_t mask = 0x80000000;
 
     for(int i=0; i < 32; i++) {

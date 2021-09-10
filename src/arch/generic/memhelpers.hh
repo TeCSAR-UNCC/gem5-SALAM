@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 ARM Limited
+ * Copyright (c) 2013, 2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,19 +36,28 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_GENERIC_MEMHELPERS_HH__
 #define __ARCH_GENERIC_MEMHELPERS_HH__
 
-#include "arch/isa_traits.hh"
 #include "base/types.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
 #include "sim/byteswap.hh"
 #include "sim/insttracer.hh"
+
+namespace gem5
+{
+
+template <class XC>
+Fault
+initiateMemRead(XC *xc, Addr addr, std::size_t size,
+                Request::Flags flags,
+                const std::vector<bool> &byte_enable)
+{
+    return xc->initiateMemRead(addr, size, flags, byte_enable);
+}
 
 /// Initiate a read from memory in timing mode.  Note that the 'mem'
 /// parameter is unused; only the type of that parameter is used
@@ -58,7 +67,9 @@ Fault
 initiateMemRead(XC *xc, Trace::InstRecord *traceData, Addr addr,
                 MemT &mem, Request::Flags flags)
 {
-    return xc->initiateMemRead(addr, sizeof(MemT), flags);
+    static const std::vector<bool> byte_enable(sizeof(MemT), true);
+    return initiateMemRead(xc, addr, sizeof(MemT),
+                           flags, byte_enable);
 }
 
 /// Extract the data returned from a timing mode read.
@@ -75,14 +86,24 @@ template <class MemT>
 void
 getMemLE(PacketPtr pkt, MemT &mem, Trace::InstRecord *traceData)
 {
-    getMem<LittleEndianByteOrder>(pkt, mem, traceData);
+    getMem<ByteOrder::little>(pkt, mem, traceData);
 }
 
 template <class MemT>
 void
 getMemBE(PacketPtr pkt, MemT &mem, Trace::InstRecord *traceData)
 {
-    getMem<BigEndianByteOrder>(pkt, mem, traceData);
+    getMem<ByteOrder::big>(pkt, mem, traceData);
+}
+
+/// Read from memory in atomic mode.
+template <class XC>
+Fault
+readMemAtomic(XC *xc, Addr addr, uint8_t *mem,
+              std::size_t size, Request::Flags flags,
+              const std::vector<bool> &byte_enable)
+{
+    return xc->readMem(addr, mem, size, flags, byte_enable);
 }
 
 /// Read from memory in atomic mode.
@@ -92,7 +113,9 @@ readMemAtomic(XC *xc, Trace::InstRecord *traceData, Addr addr, MemT &mem,
               Request::Flags flags)
 {
     memset(&mem, 0, sizeof(mem));
-    Fault fault = xc->readMem(addr, (uint8_t *)&mem, sizeof(MemT), flags);
+    static const std::vector<bool> byte_enable(sizeof(MemT), true);
+    Fault fault = readMemAtomic(xc, addr, (uint8_t*)&mem,
+                                sizeof(MemT), flags, byte_enable);
     if (fault == NoFault) {
         mem = gtoh(mem, Order);
         if (traceData)
@@ -106,7 +129,7 @@ Fault
 readMemAtomicLE(XC *xc, Trace::InstRecord *traceData, Addr addr, MemT &mem,
                 Request::Flags flags)
 {
-    return readMemAtomic<LittleEndianByteOrder>(
+    return readMemAtomic<ByteOrder::little>(
             xc, traceData, addr, mem, flags);
 }
 
@@ -115,10 +138,19 @@ Fault
 readMemAtomicBE(XC *xc, Trace::InstRecord *traceData, Addr addr, MemT &mem,
                 Request::Flags flags)
 {
-    return readMemAtomic<BigEndianByteOrder>(xc, traceData, addr, mem, flags);
+    return readMemAtomic<ByteOrder::big>(xc, traceData, addr, mem, flags);
 }
 
 /// Write to memory in timing mode.
+template <class XC>
+Fault
+writeMemTiming(XC *xc, uint8_t *mem, Addr addr,
+               std::size_t size, Request::Flags flags, uint64_t *res,
+               const std::vector<bool> &byte_enable)
+{
+    return xc->writeMem(mem, size, addr, flags, res, byte_enable);
+}
+
 template <ByteOrder Order, class XC, class MemT>
 Fault
 writeMemTiming(XC *xc, Trace::InstRecord *traceData, MemT mem, Addr addr,
@@ -128,7 +160,9 @@ writeMemTiming(XC *xc, Trace::InstRecord *traceData, MemT mem, Addr addr,
         traceData->setData(mem);
     }
     mem = htog(mem, Order);
-    return xc->writeMem((uint8_t *)&mem, sizeof(MemT), addr, flags, res);
+    static const std::vector<bool> byte_enable(sizeof(MemT), true);
+    return writeMemTiming(xc, (uint8_t*)&mem, addr,
+                          sizeof(MemT), flags, res, byte_enable);
 }
 
 template <class XC, class MemT>
@@ -136,7 +170,7 @@ Fault
 writeMemTimingLE(XC *xc, Trace::InstRecord *traceData, MemT mem, Addr addr,
                Request::Flags flags, uint64_t *res)
 {
-    return writeMemTiming<LittleEndianByteOrder>(
+    return writeMemTiming<ByteOrder::little>(
             xc, traceData, mem, addr, flags, res);
 }
 
@@ -145,11 +179,20 @@ Fault
 writeMemTimingBE(XC *xc, Trace::InstRecord *traceData, MemT mem, Addr addr,
                Request::Flags flags, uint64_t *res)
 {
-    return writeMemTiming<BigEndianByteOrder>(
+    return writeMemTiming<ByteOrder::big>(
             xc, traceData, mem, addr, flags, res);
 }
 
 /// Write to memory in atomic mode.
+template <class XC>
+Fault
+writeMemAtomic(XC *xc, uint8_t *mem, Addr addr,
+               std::size_t size, Request::Flags flags,
+               uint64_t *res, const std::vector<bool> &byte_enable)
+{
+    return xc->writeMem(mem, size, addr, flags, res, byte_enable);
+}
+
 template <ByteOrder Order, class XC, class MemT>
 Fault
 writeMemAtomic(XC *xc, Trace::InstRecord *traceData, const MemT &mem,
@@ -159,8 +202,9 @@ writeMemAtomic(XC *xc, Trace::InstRecord *traceData, const MemT &mem,
         traceData->setData(mem);
     }
     MemT host_mem = htog(mem, Order);
-    Fault fault =
-          xc->writeMem((uint8_t *)&host_mem, sizeof(MemT), addr, flags, res);
+    static const std::vector<bool> byte_enable(sizeof(MemT), true);
+    Fault fault = writeMemAtomic(xc, (uint8_t*)&host_mem,
+                                 addr, sizeof(MemT), flags, res, byte_enable);
     if (fault == NoFault && res != NULL) {
         if (flags & Request::MEM_SWAP || flags & Request::MEM_SWAP_COND)
             *(MemT *)res = gtoh(*(MemT *)res, Order);
@@ -175,7 +219,7 @@ Fault
 writeMemAtomicLE(XC *xc, Trace::InstRecord *traceData, const MemT &mem,
                  Addr addr, Request::Flags flags, uint64_t *res)
 {
-    return writeMemAtomic<LittleEndianByteOrder>(
+    return writeMemAtomic<ByteOrder::little>(
             xc, traceData, mem, addr, flags, res);
 }
 
@@ -184,7 +228,7 @@ Fault
 writeMemAtomicBE(XC *xc, Trace::InstRecord *traceData, const MemT &mem,
                  Addr addr, Request::Flags flags, uint64_t *res)
 {
-    return writeMemAtomic<BigEndianByteOrder>(
+    return writeMemAtomic<ByteOrder::big>(
             xc, traceData, mem, addr, flags, res);
 }
 
@@ -216,7 +260,7 @@ Fault
 amoMemAtomicLE(XC *xc, Trace::InstRecord *traceData, MemT &mem, Addr addr,
                Request::Flags flags, AtomicOpFunctor *_amo_op)
 {
-    return amoMemAtomic<LittleEndianByteOrder>(
+    return amoMemAtomic<ByteOrder::little>(
             xc, traceData, mem, addr, flags, _amo_op);
 }
 
@@ -225,7 +269,7 @@ Fault
 amoMemAtomicBE(XC *xc, Trace::InstRecord *traceData, MemT &mem, Addr addr,
                Request::Flags flags, AtomicOpFunctor *_amo_op)
 {
-    return amoMemAtomic<BigEndianByteOrder>(
+    return amoMemAtomic<ByteOrder::big>(
             xc, traceData, mem, addr, flags, _amo_op);
 }
 
@@ -239,5 +283,7 @@ initiateMemAMO(XC *xc, Trace::InstRecord *traceData, Addr addr, MemT& mem,
     AtomicOpFunctorPtr amo_op = AtomicOpFunctorPtr(_amo_op);
     return xc->initiateMemAMO(addr, sizeof(MemT), flags, std::move(amo_op));
 }
+
+} // namespace gem5
 
 #endif

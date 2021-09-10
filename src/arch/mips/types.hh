@@ -24,15 +24,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Korey Sewell
  */
 
 #ifndef __ARCH_MIPS_TYPES_HH__
 #define __ARCH_MIPS_TYPES_HH__
 
-#include "arch/generic/types.hh"
-#include "base/types.hh"
+#include <cstdint>
+
+#include "arch/mips/pcstate.hh"
+
+namespace gem5
+{
 
 namespace MipsISA
 {
@@ -40,10 +42,9 @@ namespace MipsISA
 typedef uint32_t MachInst;
 typedef uint64_t ExtMachInst;
 
-typedef GenericISA::DelaySlotPCState<MachInst> PCState;
-
 //used in FP convert & round function
-enum ConvertType{
+enum ConvertType
+{
     SINGLE_TO_DOUBLE,
     SINGLE_TO_WORD,
     SINGLE_TO_LONG,
@@ -67,14 +68,16 @@ enum ConvertType{
 };
 
 //used in FP convert & round function
-enum RoundMode{
+enum RoundMode
+{
     RND_ZERO,
     RND_DOWN,
     RND_UP,
     RND_NEAREST
 };
 
-struct CoreSpecific {
+struct CoreSpecific
+{
     CoreSpecific()
         : CP0_IntCtl_IPTI(0), CP0_IntCtl_IPPCI(0), CP0_SrsCtl_HSS(0),
           CP0_PRId_CompanyOptions(0), CP0_PRId_CompanyID(0),
@@ -162,4 +165,6 @@ struct CoreSpecific {
 };
 
 } // namespace MipsISA
+} // namespace gem5
+
 #endif

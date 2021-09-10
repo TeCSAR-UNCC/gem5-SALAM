@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /* @file
@@ -46,14 +44,15 @@
 #include "dev/net/etherint.hh"
 #include "dev/net/etherpkt.hh"
 #include "params/EtherBus.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
 
-using namespace std;
+namespace gem5
+{
 
-EtherBus::EtherBus(const Params *p)
-    : SimObject(p), ticksPerByte(p->speed), loopback(p->loopback),
+EtherBus::EtherBus(const Params &p)
+    : SimObject(p), ticksPerByte(p.speed), loopback(p.loopback),
       event([this]{ txDone(); }, "ethernet bus completion"),
-      sender(0), dump(p->dump)
+      sender(0), dump(p.dump)
 {
 }
 
@@ -108,8 +107,4 @@ EtherBus::send(EtherInt *sndr, EthPacketPtr &pkt)
     return true;
 }
 
-EtherBus *
-EtherBusParams::create()
-{
-    return new EtherBus(this);
-}
+} // namespace gem5

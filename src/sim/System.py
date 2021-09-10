@@ -1,4 +1,4 @@
-# Copyright (c) 2017 ARM Limited
+# Copyright (c) 2017, 2019 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -36,9 +36,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-#          Rick Strong
 
 from m5.SimObject import *
 from m5.defines import buildEnv
@@ -51,10 +48,17 @@ from m5.objects.SimpleMemory import *
 class MemoryMode(Enum): vals = ['invalid', 'atomic', 'timing',
                                 'atomic_noncaching']
 
+if buildEnv['TARGET_ISA'] in ('sparc', 'power'):
+    default_byte_order = 'big'
+else:
+    default_byte_order = 'little'
+
 class System(SimObject):
     type = 'System'
     cxx_header = "sim/system.hh"
-    system_port = MasterPort("System port")
+    cxx_class = 'gem5::System'
+
+    system_port = RequestPort("System port")
 
     cxx_exports = [
         PyBindMethod("getMemoryMode"),
@@ -81,7 +85,18 @@ class System(SimObject):
     # I/O bridge or cache
     mem_ranges = VectorParam.AddrRange([], "Ranges that constitute main memory")
 
+    # The ranges backed by a shadowed ROM
+    shadow_rom_ranges = VectorParam.AddrRange([], "Ranges  backed by a " \
+                                                  "shadowed ROM")
+
+    shared_backstore = Param.String("", "backstore's shmem segment filename, "
+        "use to directly address the backstore from another host-OS process. "
+        "Leave this empty to unset the MAP_SHARED flag.")
+
     cache_line_size = Param.Unsigned(64, "Cache line size in bytes")
+
+    byte_order = Param.ByteOrder(default_byte_order,
+                                 "Default byte order of system components")
 
     redirect_paths = VectorParam.RedirectPath([], "Path redirections")
 
@@ -102,21 +117,10 @@ class System(SimObject):
     work_cpus_ckpt_count = Param.Counter(0,
         "create checkpoint when active cpu count value is reached")
 
+    workload = Param.Workload(NULL, "Workload to run on this system")
     init_param = Param.UInt64(0, "numerical value to pass into simulator")
-    boot_osflags = Param.String("a", "boot flags to pass to the kernel")
-    kernel = Param.String("", "file that contains the kernel code")
-    kernel_addr_check = Param.Bool(True,
-        "whether to address check on kernel (disable for baremetal)")
-    kernel_extras = VectorParam.String([],"Additional object files to load")
-    kernel_extras_addrs = VectorParam.Addr([],
-        "Load addresses for additional object files")
     readfile = Param.String("", "file to read startup script from")
     symbolfile = Param.String("", "file to get the symbols from")
-    load_addr_mask = Param.UInt64(0xffffffffffffffff,
-            "Address to mask loading binaries with, if 0, system "
-            "auto-calculates the mask to be the most restrictive, "
-            "otherwise it obeys a custom mask.")
-    load_offset = Param.UInt64(0, "Address to offset loading binaries with")
 
     multi_thread = Param.Bool(False,
             "Supports multi-threaded CPUs? Impacts Thread/Context IDs")
@@ -124,6 +128,13 @@ class System(SimObject):
     # Dynamic voltage and frequency handler for the system, disabled by default
     # Provide list of domains that need to be controlled by the handler
     dvfs_handler = DVFSHandler()
+
+    # SE mode doesn't use the ISA System subclasses, and so we need to set an
+    # ISA specific value in this class directly.
+    m5ops_base = Param.Addr(
+        0xffff0000 if buildEnv['TARGET_ISA'] == 'x86' else 0,
+        "Base of the 64KiB PA range used for memory-mapped m5ops. Set to 0 "
+        "to disable.")
 
     if buildEnv['USE_KVM']:
         kvm_vm = Param.KvmVM(NULL, 'KVM VM (i.e., shared memory domain)')

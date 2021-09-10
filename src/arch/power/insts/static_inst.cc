@@ -25,24 +25,28 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Timothy M. Jones
  */
 
 #include "arch/power/insts/static_inst.hh"
 
 #include "cpu/reg_class.hh"
 
+namespace gem5
+{
+
 using namespace PowerISA;
 
 void
 PowerStaticInst::printReg(std::ostream &os, RegId reg) const
 {
-    if (reg.isIntReg())
+    switch (reg.classValue()) {
+      case IntRegClass:
         ccprintf(os, "r%d", reg.index());
-    else if (reg.isFloatReg())
+        break;
+      case FloatRegClass:
         ccprintf(os, "f%d", reg.index());
-    else if (reg.isMiscReg())
+        break;
+      case MiscRegClass:
         switch (reg.index()) {
           case 0: ccprintf(os, "cr"); break;
           case 1: ccprintf(os, "xer"); break;
@@ -51,13 +55,15 @@ PowerStaticInst::printReg(std::ostream &os, RegId reg) const
           default: ccprintf(os, "unknown_reg");
             break;
         }
-    else if (reg.isCCReg())
-        panic("printReg: POWER does not implement CCRegClass\n");
+        break;
+      default:
+        panic("printReg: Unrecognized register class.");
+    }
 }
 
 std::string
-PowerStaticInst::generateDisassembly(Addr pc,
-                                       const SymbolTable *symtab) const
+PowerStaticInst::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
 
@@ -65,3 +71,5 @@ PowerStaticInst::generateDisassembly(Addr pc,
 
     return ss.str();
 }
+
+} // namespace gem5

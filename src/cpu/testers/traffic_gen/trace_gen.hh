@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Thomas Grass
- *          Andreas Hansson
- *          Sascha Bischoff
- *          Neha Agarwal
  */
 
 /**
@@ -55,6 +50,9 @@
 #include "mem/packet.hh"
 #include "proto/protoio.hh"
 
+namespace gem5
+{
+
 /**
  * The trace replay generator reads a trace file and plays
  * back the transactions. The trace is offset with respect to
@@ -68,7 +66,8 @@ class TraceGen : public BaseGen
     /**
      * This struct stores a line in the trace file.
      */
-    struct TraceElement {
+    struct TraceElement
+    {
 
         /** Specifies if the request is to be a read or a write */
         MemCmd cmd;
@@ -153,14 +152,14 @@ class TraceGen : public BaseGen
      * Create a trace generator.
      *
      * @param obj SimObject owning this sequence generator
-     * @param master_id MasterID related to the memory requests
+     * @param requestor_id RequestorID related to the memory requests
      * @param _duration duration of this state before transitioning
      * @param trace_file File to read the transactions from
      * @param addr_offset Positive offset to add to trace address
      */
-    TraceGen(SimObject &obj, MasterID master_id, Tick _duration,
+    TraceGen(SimObject &obj, RequestorID requestor_id, Tick _duration,
              const std::string& trace_file, Addr addr_offset)
-        : BaseGen(obj, master_id, _duration),
+        : BaseGen(obj, requestor_id, _duration),
           trace(trace_file),
           tickOffset(0),
           addrOffset(addr_offset),
@@ -209,5 +208,7 @@ class TraceGen : public BaseGen
      */
     bool traceComplete;
 };
+
+} // namespace gem5
 
 #endif

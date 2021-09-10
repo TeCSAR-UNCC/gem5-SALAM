@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2019-2021 ARM Limited
+ * All rights reserved.
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved.
@@ -33,6 +45,7 @@
 #include "base/logging.hh"
 #include "base/str.hh"
 #include "cpu/testers/rubytest/RubyTester.hh"
+#include "debug/LLSC.hh"
 #include "debug/MemoryAccess.hh"
 #include "debug/ProtocolTrace.hh"
 #include "debug/RubySequencer.hh"
@@ -42,39 +55,166 @@
 #include "mem/ruby/protocol/PrefetchBit.hh"
 #include "mem/ruby/protocol/RubyAccessMode.hh"
 #include "mem/ruby/slicc_interface/RubyRequest.hh"
+#include "mem/ruby/slicc_interface/RubySlicc_Util.hh"
 #include "mem/ruby/system/RubySystem.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
-Sequencer *
-RubySequencerParams::create()
+namespace gem5
 {
-    return new Sequencer(this);
-}
 
-Sequencer::Sequencer(const Params *p)
+namespace ruby
+{
+
+Sequencer::Sequencer(const Params &p)
     : RubyPort(p), m_IncompleteTimes(MachineType_NUM),
       deadlockCheckEvent([this]{ wakeup(); }, "Sequencer deadlock check")
 {
     m_outstanding_count = 0;
 
-    m_instCache_ptr = p->icache;
-    m_dataCache_ptr = p->dcache;
-    m_max_outstanding_requests = p->max_outstanding_requests;
-    m_deadlock_threshold = p->deadlock_threshold;
+    m_dataCache_ptr = p.dcache;
+    m_max_outstanding_requests = p.max_outstanding_requests;
+    m_deadlock_threshold = p.deadlock_threshold;
 
-    m_coreId = p->coreid; // for tracking the two CorePair sequencers
+    m_coreId = p.coreid; // for tracking the two CorePair sequencers
     assert(m_max_outstanding_requests > 0);
     assert(m_deadlock_threshold > 0);
-    assert(m_instCache_ptr != NULL);
-    assert(m_dataCache_ptr != NULL);
 
-    m_runningGarnetStandalone = p->garnet_standalone;
+    m_runningGarnetStandalone = p.garnet_standalone;
+
+
+    // These statistical variables are not for display.
+    // The profiler will collate these across different
+    // sequencers and display those collated statistics.
+    m_outstandReqHist.init(10);
+    m_latencyHist.init(10);
+    m_hitLatencyHist.init(10);
+    m_missLatencyHist.init(10);
+
+    for (int i = 0; i < RubyRequestType_NUM; i++) {
+        m_typeLatencyHist.push_back(new statistics::Histogram());
+        m_typeLatencyHist[i]->init(10);
+
+        m_hitTypeLatencyHist.push_back(new statistics::Histogram());
+        m_hitTypeLatencyHist[i]->init(10);
+
+        m_missTypeLatencyHist.push_back(new statistics::Histogram());
+        m_missTypeLatencyHist[i]->init(10);
+    }
+
+    for (int i = 0; i < MachineType_NUM; i++) {
+        m_hitMachLatencyHist.push_back(new statistics::Histogram());
+        m_hitMachLatencyHist[i]->init(10);
+
+        m_missMachLatencyHist.push_back(new statistics::Histogram());
+        m_missMachLatencyHist[i]->init(10);
+
+        m_IssueToInitialDelayHist.push_back(new statistics::Histogram());
+        m_IssueToInitialDelayHist[i]->init(10);
+
+        m_InitialToForwardDelayHist.push_back(new statistics::Histogram());
+        m_InitialToForwardDelayHist[i]->init(10);
+
+        m_ForwardToFirstResponseDelayHist.push_back(
+            new statistics::Histogram());
+        m_ForwardToFirstResponseDelayHist[i]->init(10);
+
+        m_FirstResponseToCompletionDelayHist.push_back(
+            new statistics::Histogram());
+        m_FirstResponseToCompletionDelayHist[i]->init(10);
+    }
+
+    for (int i = 0; i < RubyRequestType_NUM; i++) {
+        m_hitTypeMachLatencyHist.push_back(
+            std::vector<statistics::Histogram *>());
+        m_missTypeMachLatencyHist.push_back(
+            std::vector<statistics::Histogram *>());
+
+        for (int j = 0; j < MachineType_NUM; j++) {
+            m_hitTypeMachLatencyHist[i].push_back(new statistics::Histogram());
+            m_hitTypeMachLatencyHist[i][j]->init(10);
+
+            m_missTypeMachLatencyHist[i].push_back(
+                new statistics::Histogram());
+            m_missTypeMachLatencyHist[i][j]->init(10);
+        }
+    }
+
 }
 
 Sequencer::~Sequencer()
 {
+}
+
+void
+Sequencer::llscLoadLinked(const Addr claddr)
+{
+    fatal_if(m_dataCache_ptr == NULL,
+        "%s must have a dcache object to support LLSC requests.", name());
+    AbstractCacheEntry *line = m_dataCache_ptr->lookup(claddr);
+    if (line) {
+        line->setLocked(m_version);
+        DPRINTF(LLSC, "LLSC Monitor - inserting load linked - "
+                      "addr=0x%lx - cpu=%u\n", claddr, m_version);
+    }
+}
+
+void
+Sequencer::llscClearMonitor(const Addr claddr)
+{
+    // clear monitor is called for all stores and evictions
+    if (m_dataCache_ptr == NULL)
+        return;
+    AbstractCacheEntry *line = m_dataCache_ptr->lookup(claddr);
+    if (line && line->isLocked(m_version)) {
+        line->clearLocked();
+        DPRINTF(LLSC, "LLSC Monitor - clearing due to store - "
+                      "addr=0x%lx - cpu=%u\n", claddr, m_version);
+    }
+}
+
+bool
+Sequencer::llscStoreConditional(const Addr claddr)
+{
+    fatal_if(m_dataCache_ptr == NULL,
+        "%s must have a dcache object to support LLSC requests.", name());
+    AbstractCacheEntry *line = m_dataCache_ptr->lookup(claddr);
+    if (!line)
+        return false;
+
+    DPRINTF(LLSC, "LLSC Monitor - clearing due to "
+                  "store conditional - "
+                  "addr=0x%lx - cpu=%u\n",
+                  claddr, m_version);
+
+    if (line->isLocked(m_version)) {
+        line->clearLocked();
+        return true;
+    } else {
+        line->clearLocked();
+        return false;
+    }
+}
+
+bool
+Sequencer::llscCheckMonitor(const Addr address)
+{
+    assert(m_dataCache_ptr != NULL);
+    const Addr claddr = makeLineAddress(address);
+    AbstractCacheEntry *line = m_dataCache_ptr->lookup(claddr);
+    if (!line)
+        return false;
+
+    if (line->isLocked(m_version)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void
+Sequencer::llscClearLocalMonitor()
+{
+    m_dataCache_ptr->clearLockedAll(m_version);
 }
 
 void
@@ -89,7 +229,7 @@ Sequencer::wakeup()
     int total_outstanding = 0;
 
     for (const auto &table_entry : m_RequestTable) {
-        for (const auto seq_req : table_entry.second) {
+        for (const auto &seq_req : table_entry.second) {
             if (current_time - seq_req.issue_time < m_deadlock_threshold)
                 continue;
 
@@ -110,6 +250,21 @@ Sequencer::wakeup()
         // If there are still outstanding requests, keep checking
         schedule(deadlockCheckEvent, clockEdge(m_deadlock_threshold));
     }
+}
+
+int
+Sequencer::functionalWrite(Packet *func_pkt)
+{
+    int num_written = RubyPort::functionalWrite(func_pkt);
+
+    for (const auto &table_entry : m_RequestTable) {
+        for (const auto& seq_req : table_entry.second) {
+            if (seq_req.functionalWrite(func_pkt))
+                ++num_written;
+        }
+    }
+
+    return num_written;
 }
 
 void Sequencer::resetStats()
@@ -157,7 +312,8 @@ Sequencer::insertRequest(PacketPtr pkt, RubyRequestType primary_type,
     // Check if there is any outstanding request for the same cache line.
     auto &seq_req_list = m_RequestTable[line_addr];
     // Create a default entry
-    seq_req_list.emplace_back(pkt, primary_type, secondary_type, curCycle());
+    seq_req_list.emplace_back(pkt, primary_type,
+        secondary_type, curCycle());
     m_outstanding_count++;
 
     if (seq_req_list.size() > 1) {
@@ -176,62 +332,6 @@ Sequencer::markRemoved()
 }
 
 void
-Sequencer::invalidateSC(Addr address)
-{
-    AbstractCacheEntry *e = m_dataCache_ptr->lookup(address);
-    // The controller has lost the coherence permissions, hence the lock
-    // on the cache line maintained by the cache should be cleared.
-    if (e && e->isLocked(m_version)) {
-        e->clearLocked();
-    }
-}
-
-bool
-Sequencer::handleLlsc(Addr address, SequencerRequest* request)
-{
-    AbstractCacheEntry *e = m_dataCache_ptr->lookup(address);
-    if (!e)
-        return true;
-
-    // The success flag indicates whether the LLSC operation was successful.
-    // LL ops will always succeed, but SC may fail if the cache line is no
-    // longer locked.
-    bool success = true;
-    if (request->m_type == RubyRequestType_Store_Conditional) {
-        if (!e->isLocked(m_version)) {
-            //
-            // For failed SC requests, indicate the failure to the cpu by
-            // setting the extra data to zero.
-            //
-            request->pkt->req->setExtraData(0);
-            success = false;
-        } else {
-            //
-            // For successful SC requests, indicate the success to the cpu by
-            // setting the extra data to one.
-            //
-            request->pkt->req->setExtraData(1);
-        }
-        //
-        // Independent of success, all SC operations must clear the lock
-        //
-        e->clearLocked();
-    } else if (request->m_type == RubyRequestType_Load_Linked) {
-        //
-        // Note: To fully follow Alpha LLSC semantics, should the LL clear any
-        // previously locked cache lines?
-        //
-        e->setLocked(m_version);
-    } else if (e->isLocked(m_version)) {
-        //
-        // Normal writes should clear the locked address
-        //
-        e->clearLocked();
-    }
-    return success;
-}
-
-void
 Sequencer::recordMissLatency(SequencerRequest* srequest, bool llscSuccess,
                              const MachineType respondingMach,
                              bool isExternalHit, Cycles initialRequestTime,
@@ -245,7 +345,7 @@ Sequencer::recordMissLatency(SequencerRequest* srequest, bool llscSuccess,
     assert(curCycle() >= issued_time);
     Cycles total_lat = completion_time - issued_time;
 
-    if (initialRequestTime < issued_time) {
+    if ((initialRequestTime != 0) && (initialRequestTime < issued_time)) {
         // if the request was combined in the protocol with an earlier request
         // for the same address, it is possible that it will return an
         // initialRequestTime corresponding the earlier request.  Since Cycles
@@ -298,11 +398,19 @@ Sequencer::recordMissLatency(SequencerRequest* srequest, bool llscSuccess,
 }
 
 void
+Sequencer::writeCallbackScFail(Addr address, DataBlock& data)
+{
+    llscClearMonitor(address);
+    writeCallback(address, data);
+}
+
+void
 Sequencer::writeCallback(Addr address, DataBlock& data,
                          const bool externalHit, const MachineType mach,
                          const Cycles initialRequestTime,
                          const Cycles forwardRequestTime,
-                         const Cycles firstResponseTime)
+                         const Cycles firstResponseTime,
+                         const bool noCoales)
 {
     //
     // Free the whole list as we assume we have had the exclusive access
@@ -320,23 +428,38 @@ Sequencer::writeCallback(Addr address, DataBlock& data,
     int aliased_loads = 0;
     while (!seq_req_list.empty()) {
         SequencerRequest &seq_req = seq_req_list.front();
+
+        if (noCoales && !ruby_request) {
+            // Do not process follow-up requests
+            // (e.g. if full line no present)
+            // Reissue to the cache hierarchy
+            issueRequest(seq_req.pkt, seq_req.m_second_type);
+            break;
+        }
+
         if (ruby_request) {
             assert(seq_req.m_type != RubyRequestType_LD);
+            assert(seq_req.m_type != RubyRequestType_Load_Linked);
             assert(seq_req.m_type != RubyRequestType_IFETCH);
         }
 
         // handle write request
         if ((seq_req.m_type != RubyRequestType_LD) &&
+            (seq_req.m_type != RubyRequestType_Load_Linked) &&
             (seq_req.m_type != RubyRequestType_IFETCH)) {
-            //
-            // For Alpha, properly handle LL, SC, and write requests with
-            // respect to locked cache blocks.
-            //
-            // Not valid for Garnet_standalone protocl
-            //
+            // LL/SC support (tested with ARMv8)
             bool success = true;
-            if (!m_runningGarnetStandalone)
-                success = handleLlsc(address, &seq_req);
+
+            if (seq_req.m_type != RubyRequestType_Store_Conditional) {
+                // Regular stores to addresses being monitored
+                // will fail (remove) the monitor entry.
+                llscClearMonitor(address);
+            } else {
+                // Store conditionals must first check the monitor
+                // if they will succeed or not
+                success = llscStoreConditional(address);
+                seq_req.pkt->req->setExtraData(success ? 1 : 0);
+            }
 
             // Handle SLICC block_on behavior for Locked_RMW accesses. NOTE: the
             // address variable here is assumed to be a line address, so when
@@ -360,20 +483,21 @@ Sequencer::writeCallback(Addr address, DataBlock& data,
             } else {
                 aliased_stores++;
             }
+            markRemoved();
             hitCallback(&seq_req, data, success, mach, externalHit,
                         initialRequestTime, forwardRequestTime,
-                        firstResponseTime);
+                        firstResponseTime, !ruby_request);
+            ruby_request = false;
         } else {
             // handle read request
             assert(!ruby_request);
+            markRemoved();
             aliased_loads++;
             hitCallback(&seq_req, data, true, mach, externalHit,
                         initialRequestTime, forwardRequestTime,
-                        firstResponseTime);
+                        firstResponseTime, !ruby_request);
         }
         seq_req_list.pop_front();
-        markRemoved();
-        ruby_request = false;
     }
 
     // free all outstanding requests corresponding to this address
@@ -406,11 +530,13 @@ Sequencer::readCallback(Addr address, DataBlock& data,
         SequencerRequest &seq_req = seq_req_list.front();
         if (ruby_request) {
             assert((seq_req.m_type == RubyRequestType_LD) ||
+                   (seq_req.m_type == RubyRequestType_Load_Linked) ||
                    (seq_req.m_type == RubyRequestType_IFETCH));
         } else {
             aliased_loads++;
         }
         if ((seq_req.m_type != RubyRequestType_LD) &&
+            (seq_req.m_type != RubyRequestType_Load_Linked) &&
             (seq_req.m_type != RubyRequestType_IFETCH)) {
             // Write request: reissue request to the cache hierarchy
             issueRequest(seq_req.pkt, seq_req.m_second_type);
@@ -421,12 +547,12 @@ Sequencer::readCallback(Addr address, DataBlock& data,
                               initialRequestTime, forwardRequestTime,
                               firstResponseTime);
         }
+        markRemoved();
         hitCallback(&seq_req, data, true, mach, externalHit,
                     initialRequestTime, forwardRequestTime,
-                    firstResponseTime);
-        seq_req_list.pop_front();
-        markRemoved();
+                    firstResponseTime, !ruby_request);
         ruby_request = false;
+        seq_req_list.pop_front();
     }
 
     // free all outstanding requests corresponding to this address
@@ -441,7 +567,8 @@ Sequencer::hitCallback(SequencerRequest* srequest, DataBlock& data,
                        const MachineType mach, const bool externalHit,
                        const Cycles initialRequestTime,
                        const Cycles forwardRequestTime,
-                       const Cycles firstResponseTime)
+                       const Cycles firstResponseTime,
+                       const bool was_coalesced)
 {
     warn_once("Replacement policy updates recently became the responsibility "
               "of SLICC state machines. Make sure to setMRU() near callbacks "
@@ -451,10 +578,23 @@ Sequencer::hitCallback(SequencerRequest* srequest, DataBlock& data,
     Addr request_address(pkt->getAddr());
     RubyRequestType type = srequest->m_type;
 
+    if (was_coalesced) {
+        // Notify the controller about a coalesced request so it can properly
+        // account for it in its hit/miss stats and/or train prefetchers
+        // (this is protocol-dependent)
+        m_controller->notifyCoalesced(request_address, type, pkt->req,
+                                      data, externalHit);
+    }
+
+    // Load-linked handling
+    if (type == RubyRequestType_Load_Linked) {
+        Addr line_addr = makeLineAddress(request_address);
+        llscLoadLinked(line_addr);
+    }
+
     // update the data unless it is a non-data-carrying flush
     if (RubySystem::getWarmupEnabled()) {
-        data.setData(pkt->getConstPtr<uint8_t>(),
-                     getOffset(request_address), pkt->getSize());
+        data.setData(pkt);
     } else if (!pkt->isFlush()) {
         if ((type == RubyRequestType_LD) ||
             (type == RubyRequestType_IFETCH) ||
@@ -465,6 +605,7 @@ Sequencer::hitCallback(SequencerRequest* srequest, DataBlock& data,
                 data.getData(getOffset(request_address), pkt->getSize()));
             DPRINTF(RubySequencer, "read data %s\n", data);
         } else if (pkt->req->isSwap()) {
+            assert(!pkt->isMaskedWrite());
             std::vector<uint8_t> overwrite_val(pkt->getSize());
             pkt->writeData(&overwrite_val[0]);
             pkt->setData(
@@ -475,8 +616,7 @@ Sequencer::hitCallback(SequencerRequest* srequest, DataBlock& data,
         } else if (type != RubyRequestType_Store_Conditional || llscSuccess) {
             // Types of stores set the actual data here, apart from
             // failed Store Conditional requests
-            data.setData(pkt->getConstPtr<uint8_t>(),
-                         getOffset(request_address), pkt->getSize());
+            data.setData(pkt);
             DPRINTF(RubySequencer, "set data %s\n", data);
         }
     }
@@ -516,7 +656,10 @@ Sequencer::empty() const
 RequestStatus
 Sequencer::makeRequest(PacketPtr pkt)
 {
-    if (m_outstanding_count >= m_max_outstanding_requests) {
+    // HTM abort signals must be allowed to reach the Sequencer
+    // the same cycle they are issued. They cannot be retried.
+    if ((m_outstanding_count >= m_max_outstanding_requests) &&
+        !pkt->req->isHTMAbort()) {
         return RequestStatus_BufferFull;
     }
 
@@ -524,23 +667,30 @@ Sequencer::makeRequest(PacketPtr pkt)
     RubyRequestType secondary_type = RubyRequestType_NULL;
 
     if (pkt->isLLSC()) {
-        //
-        // Alpha LL/SC instructions need to be handled carefully by the cache
+        // LL/SC instructions need to be handled carefully by the cache
         // coherence protocol to ensure they follow the proper semantics. In
         // particular, by identifying the operations as atomic, the protocol
         // should understand that migratory sharing optimizations should not
         // be performed (i.e. a load between the LL and SC should not steal
         // away exclusive permission).
         //
+        // The following logic works correctly with the semantics
+        // of armV8 LDEX/STEX instructions.
+
         if (pkt->isWrite()) {
             DPRINTF(RubySequencer, "Issuing SC\n");
             primary_type = RubyRequestType_Store_Conditional;
+#if defined (PROTOCOL_MESI_Three_Level) || defined (PROTOCOL_MESI_Three_Level_HTM)
+            secondary_type = RubyRequestType_Store_Conditional;
+#else
+            secondary_type = RubyRequestType_ST;
+#endif
         } else {
             DPRINTF(RubySequencer, "Issuing LL\n");
             assert(pkt->isRead());
             primary_type = RubyRequestType_Load_Linked;
+            secondary_type = RubyRequestType_LD;
         }
-        secondary_type = RubyRequestType_ATOMIC;
     } else if (pkt->req->isLockedRMW()) {
         //
         // x86 locked instructions are translated to store cache coherence
@@ -569,7 +719,10 @@ Sequencer::makeRequest(PacketPtr pkt)
             //
             primary_type = secondary_type = RubyRequestType_ST;
         } else if (pkt->isRead()) {
-            if (pkt->req->isInstFetch()) {
+            // hardware transactional memory commands
+            if (pkt->req->isHTMCmd()) {
+                primary_type = secondary_type = htmCmdToRubyRequestType(pkt);
+            } else if (pkt->req->isInstFetch()) {
                 primary_type = secondary_type = RubyRequestType_IFETCH;
             } else {
                 bool storeCheck = false;
@@ -635,8 +788,6 @@ Sequencer::issueRequest(PacketPtr pkt, RubyRequestType secondary_type)
     // requests do not
     std::shared_ptr<RubyRequest> msg =
         std::make_shared<RubyRequest>(clockEdge(), pkt->getAddr(),
-                                      pkt->isFlush() ?
-                                      nullptr : pkt->getPtr<uint8_t>(),
                                       pkt->getSize(), pc, secondary_type,
                                       RubyAccessMode_Supervisor, pkt,
                                       PrefetchBit_No, proc_id, core_id);
@@ -645,6 +796,14 @@ Sequencer::issueRequest(PacketPtr pkt, RubyRequestType secondary_type)
             curTick(), m_version, "Seq", "Begin", "", "",
             printAddress(msg->getPhysicalAddress()),
             RubyRequestType_to_string(secondary_type));
+
+    // hardware transactional memory
+    // If the request originates in a transaction,
+    // then mark the Ruby message as such.
+    if (pkt->isHtmTransactional()) {
+        msg->m_htmFromTransaction = true;
+        msg->m_htmTransactionUid = pkt->getHtmTransactionUid();
+    }
 
     Tick latency = cyclesToTicks(
                         m_controller->mandatoryQueueLatency(secondary_type));
@@ -656,7 +815,7 @@ Sequencer::issueRequest(PacketPtr pkt, RubyRequestType secondary_type)
 
 template <class KEY, class VALUE>
 std::ostream &
-operator<<(ostream &out, const std::unordered_map<KEY, VALUE> &map)
+operator<<(std::ostream &out, const std::unordered_map<KEY, VALUE> &map)
 {
     for (const auto &table_entry : map) {
         out << "[ " << table_entry.first << " =";
@@ -670,20 +829,12 @@ operator<<(ostream &out, const std::unordered_map<KEY, VALUE> &map)
 }
 
 void
-Sequencer::print(ostream& out) const
+Sequencer::print(std::ostream& out) const
 {
     out << "[Sequencer: " << m_version
         << ", outstanding requests: " << m_outstanding_count
         << ", request table: " << m_RequestTable
         << "]";
-}
-
-// this can be called from setState whenever coherence permissions are
-// upgraded when invoked, coherence violations will be checked for the
-// given block
-void
-Sequencer::checkCoherence(Addr addr)
-{
 }
 
 void
@@ -695,63 +846,9 @@ Sequencer::recordRequestType(SequencerRequestType requestType) {
 void
 Sequencer::evictionCallback(Addr address)
 {
+    llscClearMonitor(address);
     ruby_eviction_callback(address);
 }
 
-void
-Sequencer::regStats()
-{
-    RubyPort::regStats();
-
-    // These statistical variables are not for display.
-    // The profiler will collate these across different
-    // sequencers and display those collated statistics.
-    m_outstandReqHist.init(10);
-    m_latencyHist.init(10);
-    m_hitLatencyHist.init(10);
-    m_missLatencyHist.init(10);
-
-    for (int i = 0; i < RubyRequestType_NUM; i++) {
-        m_typeLatencyHist.push_back(new Stats::Histogram());
-        m_typeLatencyHist[i]->init(10);
-
-        m_hitTypeLatencyHist.push_back(new Stats::Histogram());
-        m_hitTypeLatencyHist[i]->init(10);
-
-        m_missTypeLatencyHist.push_back(new Stats::Histogram());
-        m_missTypeLatencyHist[i]->init(10);
-    }
-
-    for (int i = 0; i < MachineType_NUM; i++) {
-        m_hitMachLatencyHist.push_back(new Stats::Histogram());
-        m_hitMachLatencyHist[i]->init(10);
-
-        m_missMachLatencyHist.push_back(new Stats::Histogram());
-        m_missMachLatencyHist[i]->init(10);
-
-        m_IssueToInitialDelayHist.push_back(new Stats::Histogram());
-        m_IssueToInitialDelayHist[i]->init(10);
-
-        m_InitialToForwardDelayHist.push_back(new Stats::Histogram());
-        m_InitialToForwardDelayHist[i]->init(10);
-
-        m_ForwardToFirstResponseDelayHist.push_back(new Stats::Histogram());
-        m_ForwardToFirstResponseDelayHist[i]->init(10);
-
-        m_FirstResponseToCompletionDelayHist.push_back(new Stats::Histogram());
-        m_FirstResponseToCompletionDelayHist[i]->init(10);
-    }
-
-    for (int i = 0; i < RubyRequestType_NUM; i++) {
-        m_hitTypeMachLatencyHist.push_back(std::vector<Stats::Histogram *>());
-        m_missTypeMachLatencyHist.push_back(std::vector<Stats::Histogram *>());
-
-        for (int j = 0; j < MachineType_NUM; j++) {
-            m_hitTypeMachLatencyHist[i].push_back(new Stats::Histogram());
-            m_hitTypeMachLatencyHist[i][j]->init(10);
-
-            m_missTypeMachLatencyHist[i].push_back(new Stats::Histogram());
-            m_missTypeMachLatencyHist[i][j]->init(10);
-        }
-    }
-}
+} // namespace ruby
+} // namespace gem5

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_EVENTS_HH__
@@ -43,15 +41,18 @@
 #include <base/types.hh>
 #include <sim/eventq.hh>
 
-class SMMUv3SlaveInterface;
+namespace gem5
+{
+
+class SMMUv3DeviceInterface;
 
 class SMMUDeviceRetryEvent : public Event
 {
   private:
-    SMMUv3SlaveInterface &smmuIfc;
+    SMMUv3DeviceInterface &smmuIfc;
 
   public:
-    SMMUDeviceRetryEvent(SMMUv3SlaveInterface &ifc)
+    SMMUDeviceRetryEvent(SMMUv3DeviceInterface &ifc)
         : smmuIfc(ifc)
     {}
 
@@ -60,7 +61,9 @@ class SMMUDeviceRetryEvent : public Event
     const std::string name() const;
 
     const char *description() const
-    { return "SlaveRetryEvent"; }
+    { return "DeviceRetryEvent"; }
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_EVENTS_HH__ */

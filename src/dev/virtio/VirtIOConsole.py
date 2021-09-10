@@ -34,8 +34,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.params import *
 from m5.proxy import *
@@ -45,6 +43,7 @@ from m5.objects.Serial import SerialDevice
 class VirtIOConsole(VirtIODeviceBase):
     type = 'VirtIOConsole'
     cxx_header = 'dev/virtio/console.hh'
+    cxx_class = 'gem5::VirtIOConsole'
 
     qRecvSize = Param.Unsigned(16, "Receive queue size (descriptors)")
     qTransSize = Param.Unsigned(16, "Transmit queue size (descriptors)")

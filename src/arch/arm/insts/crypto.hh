@@ -33,13 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Horsnell
- *          Prakash Ramrakhyani
  */
 
 #ifndef __ARCH_ARM_INSTS_CRYPTO_HH__
 #define __ARCH_ARM_INSTS_CRYPTO_HH__
+
+namespace gem5
+{
 
 namespace ArmISA {
 
@@ -145,5 +145,6 @@ class Crypto
 };
 
 } // namespace ArmISA
+} // namespace gem5
 
 #endif //__ARCH_ARM_INSTS_CRYPTO_HH__

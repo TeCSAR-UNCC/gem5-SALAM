@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 ARM Limited
+ * Copyright (c) 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,32 +33,51 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matteo Andreozzi
  */
-
-#include "debug/QOS.hh"
-#include "mem/abstract_mem.hh"
-#include "mem/qos/q_policy.hh"
-#include "mem/qos/policy.hh"
-#include "params/QoSMemCtrl.hh"
-#include "sim/system.hh"
-
-#include <unordered_map>
-#include <vector>
-#include <deque>
 
 #ifndef __MEM_QOS_MEM_CTRL_HH__
 #define __MEM_QOS_MEM_CTRL_HH__
 
-namespace QoS {
+#include <cstdint>
+#include <deque>
+#include <memory>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "base/compiler.hh"
+#include "base/logging.hh"
+#include "base/statistics.hh"
+#include "base/trace.hh"
+#include "base/types.hh"
+#include "debug/QOS.hh"
+#include "mem/packet.hh"
+#include "mem/request.hh"
+#include "params/QoSMemCtrl.hh"
+#include "sim/clocked_object.hh"
+#include "sim/cur_tick.hh"
+#include "sim/system.hh"
+
+namespace gem5
+{
+
+namespace memory
+{
+
+GEM5_DEPRECATED_NAMESPACE(QoS, qos);
+namespace qos
+{
+
+class Policy;
+class QueuePolicy;
+class TurnaroundPolicy;
 
 /**
- * The QoS::MemCtrl is a base class for Memory objects
+ * The qos::MemCtrl is a base class for Memory objects
  * which support QoS - it provides access to a set of QoS
  * scheduling policies
  */
-class MemCtrl: public AbstractMemory
+class MemCtrl : public ClockedObject
 {
   public:
     /** Bus Direction */
@@ -82,18 +101,18 @@ class MemCtrl: public AbstractMemory
 
     /**
      * Enables QoS synchronized scheduling invokes the QoS scheduler
-     * on all masters, at every packet arrival.
+     * on all requestors, at every packet arrival.
      */
     const bool qosSyncroScheduler;
 
-    /** Hash of master ID - master name */
-    std::unordered_map<MasterID, const std::string> masters;
+    /** Hash of requestor ID - requestor name */
+    std::unordered_map<RequestorID, const std::string> requestors;
 
-    /** Hash of masters - number of packets queued per priority */
-    std::unordered_map<MasterID, std::vector<uint64_t> > packetPriorities;
+    /** Hash of requestors - number of packets queued per priority */
+    std::unordered_map<RequestorID, std::vector<uint64_t> > packetPriorities;
 
-    /** Hash of masters - address of request - queue of times of request */
-    std::unordered_map<MasterID,
+    /** Hash of requestors - address of request - queue of times of request */
+    std::unordered_map<RequestorID,
             std::unordered_map<uint64_t, std::deque<uint64_t>> > requestTimes;
 
     /**
@@ -123,7 +142,7 @@ class MemCtrl: public AbstractMemory
     /** bus state for next request event triggered */
     BusState busStateNext;
 
-    struct MemCtrlStats : public Stats::Group
+    struct MemCtrlStats : public statistics::Group
     {
         MemCtrlStats(MemCtrl &mc);
 
@@ -131,47 +150,50 @@ class MemCtrl: public AbstractMemory
 
         const MemCtrl &memCtrl;
 
-        /** per-master average QoS priority */
-        Stats::VectorStandardDeviation avgPriority;
+        /** per-requestor average QoS priority */
+        statistics::VectorStandardDeviation avgPriority;
         /**
-         * per-master average QoS distance between assigned and
+         * per-requestor average QoS distance between assigned and
          * queued values
          */
-        Stats::VectorStandardDeviation avgPriorityDistance;
+        statistics::VectorStandardDeviation avgPriorityDistance;
 
         /** per-priority minimum latency */
-        Stats::Vector priorityMinLatency;
+        statistics::Vector priorityMinLatency;
         /** per-priority maximum latency */
-        Stats::Vector priorityMaxLatency;
+        statistics::Vector priorityMaxLatency;
         /** Count the number of turnarounds READ to WRITE */
-        Stats::Scalar numReadWriteTurnArounds;
+        statistics::Scalar numReadWriteTurnArounds;
         /** Count the number of turnarounds WRITE to READ */
-        Stats::Scalar numWriteReadTurnArounds;
+        statistics::Scalar numWriteReadTurnArounds;
         /** Count the number of times bus staying in READ state */
-        Stats::Scalar numStayReadState;
+        statistics::Scalar numStayReadState;
         /** Count the number of times bus staying in WRITE state */
-        Stats::Scalar numStayWriteState;
+        statistics::Scalar numStayWriteState;
     } stats;
+
+    /** Pointer to the System object */
+    System* _system;
 
     /**
      * Initializes dynamically counters and
-     * statistics for a given Master
+     * statistics for a given Requestor
      *
-     * @param m_id the master ID
+     * @param id the requestor's ID
      */
-    void addMaster(const MasterID m_id);
+    void addRequestor(const RequestorID id);
 
     /**
      * Called upon receiving a request or
      * updates statistics and updates queues status
      *
      * @param dir request direction
-     * @param m_id master id
-     * @param qos packet qos value
+     * @param id requestor id
+     * @param _qos packet QoS value
      * @param addr packet address
      * @param entries number of entries to record
      */
-    void logRequest(BusState dir, MasterID m_id, uint8_t qos,
+    void logRequest(BusState dir, RequestorID id, uint8_t _qos,
                     Addr addr, uint64_t entries);
 
     /**
@@ -179,13 +201,13 @@ class MemCtrl: public AbstractMemory
      * updates statistics and updates queues status
      *
      * @param dir response direction
-     * @param m_id master id
-     * @param qos packet qos value
+     * @param id requestor id
+     * @param _qos packet QoS value
      * @param addr packet address
      * @param entries number of entries to record
      * @param delay response delay
      */
-    void logResponse(BusState dir, MasterID m_id, uint8_t qos,
+    void logResponse(BusState dir, RequestorID id, uint8_t _qos,
                      Addr addr, uint64_t entries, double delay);
 
     /**
@@ -202,7 +224,7 @@ class MemCtrl: public AbstractMemory
                         uint64_t queue_entry_size, const PacketPtr pkt);
 
     using SimObject::schedule;
-    uint8_t schedule(MasterID m_id, uint64_t data);
+    uint8_t schedule(RequestorID id, uint64_t data);
     uint8_t schedule(const PacketPtr pkt);
 
     /**
@@ -225,22 +247,22 @@ class MemCtrl: public AbstractMemory
 
     /**
      * Escalates/demotes priority of all packets
-     * belonging to the passed master to given
+     * belonging to the passed requestor to given
      * priority value
      *
      * @param queues list of pointers to packet queues
      * @param queue_entry_size size of an entry in the queue
-     * @param m_id master whose packets priority will change
+     * @param id requestor whose packets priority will change
      * @param tgt_prio target priority value
      */
     template<typename Queues>
     void escalate(std::initializer_list<Queues*> queues,
                   uint64_t queue_entry_size,
-                  MasterID m_id, uint8_t tgt_prio);
+                  RequestorID id, uint8_t tgt_prio);
 
     /**
      * Escalates/demotes priority of all packets
-     * belonging to the passed master to given
+     * belonging to the passed requestor to given
      * priority value in a specified cluster of queues
      * (e.g. read queues or write queues) which is passed
      * as an argument to the function.
@@ -249,13 +271,13 @@ class MemCtrl: public AbstractMemory
      *
      * @param queues reference to packet queues
      * @param queue_entry_size size of an entry in the queue
-     * @param m_id master whose packets priority will change
+     * @param id requestor whose packets priority will change
      * @param curr_prio source queue priority value
      * @param tgt_prio target queue priority value
      */
     template<typename Queues>
     void escalateQueues(Queues& queues, uint64_t queue_entry_size,
-                        MasterID m_id, uint8_t curr_prio, uint8_t tgt_prio);
+                        RequestorID id, uint8_t curr_prio, uint8_t tgt_prio);
 
   public:
     /**
@@ -263,14 +285,9 @@ class MemCtrl: public AbstractMemory
      *
      * @param p pointer to QoSMemCtrl parameters
      */
-    MemCtrl(const QoSMemCtrlParams*);
+    MemCtrl(const QoSMemCtrlParams &);
 
     virtual ~MemCtrl();
-
-    /**
-     * Initializes this object
-     */
-    void init() override;
 
     /**
      * Gets the current bus state
@@ -287,18 +304,18 @@ class MemCtrl: public AbstractMemory
     BusState getBusStateNext() const { return busStateNext; }
 
     /**
-     * hasMaster returns true if the selected master(ID) has
+     * hasRequestor returns true if the selected requestor(ID) has
      * been registered in the memory controller, which happens if
      * the memory controller has received at least a packet from
-     * that master.
+     * that requestor.
      *
-     * @param m_id master id to lookup
+     * @param id requestor id to lookup
      * @return true if the memory controller has received a packet
-     *         from the master, false otherwise.
+     *         from the requestor, false otherwise.
      */
-    bool hasMaster(MasterID m_id) const
+    bool hasRequestor(RequestorID id) const
     {
-        return masters.find(m_id) != masters.end();
+        return requestors.find(id) != requestors.end();
     }
 
     /**
@@ -348,55 +365,59 @@ class MemCtrl: public AbstractMemory
      * @return total number of priority levels
      */
     uint8_t numPriorities() const { return _numPriorities; }
+
+    /** read the system pointer
+     * @return pointer to the system object */
+    System* system() const { return _system; }
 };
 
 template<typename Queues>
 void
 MemCtrl::escalateQueues(Queues& queues, uint64_t queue_entry_size,
-                        MasterID m_id, uint8_t curr_prio, uint8_t tgt_prio)
+                        RequestorID id, uint8_t curr_prio, uint8_t tgt_prio)
 {
     auto it = queues[curr_prio].begin();
     while (it != queues[curr_prio].end()) {
         // No packets left to move
-        if (packetPriorities[m_id][curr_prio] == 0)
+        if (packetPriorities[id][curr_prio] == 0)
             break;
 
         auto pkt = *it;
 
         DPRINTF(QOS,
-                "QoSMemCtrl::escalate checking priority %d packet "
-                "m_id %d address %d\n", curr_prio,
-                pkt->masterId(), pkt->getAddr());
+                "qos::MemCtrl::escalateQueues checking priority %d packet "
+                "id %d address %d\n", curr_prio,
+                pkt->requestorId(), pkt->getAddr());
 
         // Found a packet to move
-        if (pkt->masterId() == m_id) {
+        if (pkt->requestorId() == id) {
 
             uint64_t moved_entries = divCeil(pkt->getSize(),
                                              queue_entry_size);
 
             DPRINTF(QOS,
-                    "QoSMemCtrl::escalate Master %s [id %d] moving "
+                    "qos::MemCtrl::escalateQueues Requestor %s [id %d] moving "
                     "packet addr %d size %d (p size %d) from priority %d "
                     "to priority %d - "
-                    "this master packets %d (entries to move %d)\n",
-                    masters[m_id], m_id, pkt->getAddr(),
+                    "this requestor packets %d (entries to move %d)\n",
+                    requestors[id], id, pkt->getAddr(),
                     pkt->getSize(),
                     queue_entry_size, curr_prio, tgt_prio,
-                    packetPriorities[m_id][curr_prio], moved_entries);
+                    packetPriorities[id][curr_prio], moved_entries);
 
 
             if (pkt->isRead()) {
                 panic_if(readQueueSizes[curr_prio] < moved_entries,
-                         "QoSMemCtrl::escalate master %s negative READ "
-                         "packets for priority %d",
-                        masters[m_id], tgt_prio);
+                         "qos::MemCtrl::escalateQueues requestor %s negative "
+                         "READ packets for priority %d",
+                        requestors[id], tgt_prio);
                 readQueueSizes[curr_prio] -= moved_entries;
                 readQueueSizes[tgt_prio] += moved_entries;
             } else if (pkt->isWrite()) {
                 panic_if(writeQueueSizes[curr_prio] < moved_entries,
-                         "QoSMemCtrl::escalate master %s negative WRITE "
-                         "packets for priority %d",
-                        masters[m_id], tgt_prio);
+                         "qos::MemCtrl::escalateQueues requestor %s negative "
+                         "WRITE packets for priority %d",
+                        requestors[id], tgt_prio);
                 writeQueueSizes[curr_prio] -= moved_entries;
                 writeQueueSizes[tgt_prio] += moved_entries;
             }
@@ -408,13 +429,13 @@ MemCtrl::escalateQueues(Queues& queues, uint64_t queue_entry_size,
             // Erase element from source packet queue, this will
             // increment the iterator
             it = queues[curr_prio].erase(it);
-            panic_if(packetPriorities[m_id][curr_prio] < moved_entries,
-                     "QoSMemCtrl::escalate master %s negative packets "
-                     "for priority %d",
-                     masters[m_id], tgt_prio);
+            panic_if(packetPriorities[id][curr_prio] < moved_entries,
+                     "qos::MemCtrl::escalateQueues requestor %s negative "
+                     "packets for priority %d",
+                     requestors[id], tgt_prio);
 
-            packetPriorities[m_id][curr_prio] -= moved_entries;
-            packetPriorities[m_id][tgt_prio] += moved_entries;
+            packetPriorities[id][curr_prio] -= moved_entries;
+            packetPriorities[id][tgt_prio] += moved_entries;
         } else {
             // Increment iterator to next location in the queue
             it++;
@@ -426,16 +447,16 @@ template<typename Queues>
 void
 MemCtrl::escalate(std::initializer_list<Queues*> queues,
                   uint64_t queue_entry_size,
-                  MasterID m_id, uint8_t tgt_prio)
+                  RequestorID id, uint8_t tgt_prio)
 {
     // If needed, initialize all counters and statistics
-    // for this master
-    addMaster(m_id);
+    // for this requestor
+    addRequestor(id);
 
     DPRINTF(QOS,
-            "QoSMemCtrl::escalate Master %s [id %d] to priority "
-            "%d (currently %d packets)\n",masters[m_id], m_id, tgt_prio,
-            packetPriorities[m_id][tgt_prio]);
+            "qos::MemCtrl::escalate Requestor %s [id %d] to priority "
+            "%d (currently %d packets)\n",requestors[id], id, tgt_prio,
+            packetPriorities[id][tgt_prio]);
 
     for (uint8_t curr_prio = 0; curr_prio < numPriorities(); ++curr_prio) {
         // Skip target priority
@@ -443,30 +464,30 @@ MemCtrl::escalate(std::initializer_list<Queues*> queues,
             continue;
 
         // Process other priority packet
-        while (packetPriorities[m_id][curr_prio] > 0) {
+        while (packetPriorities[id][curr_prio] > 0) {
             DPRINTF(QOS,
-                    "QoSMemCtrl::escalate MID %d checking priority %d "
+                    "qos::MemCtrl::escalate MID %d checking priority %d "
                     "(packets %d)- current packets in prio %d:  %d\n"
                     "\t(source read %d source write %d target read %d, "
                     "target write %d)\n",
-                    m_id, curr_prio, packetPriorities[m_id][curr_prio],
-                    tgt_prio, packetPriorities[m_id][tgt_prio],
+                    id, curr_prio, packetPriorities[id][curr_prio],
+                    tgt_prio, packetPriorities[id][tgt_prio],
                     readQueueSizes[curr_prio],
                     writeQueueSizes[curr_prio], readQueueSizes[tgt_prio],
                     writeQueueSizes[tgt_prio]);
 
             // Check both read and write queue
             for (auto q : queues) {
-                escalateQueues(*q, queue_entry_size, m_id,
+                escalateQueues(*q, queue_entry_size, id,
                                curr_prio, tgt_prio);
             }
         }
     }
 
     DPRINTF(QOS,
-            "QoSMemCtrl::escalate Completed master %s [id %d] to priority %d "
-            "(now %d packets)\n\t(total read %d, total write %d)\n",
-            masters[m_id], m_id, tgt_prio, packetPriorities[m_id][tgt_prio],
+            "qos::MemCtrl::escalate Completed requestor %s [id %d] to "
+            "priority %d (now %d packets)\n\t(total read %d, total write %d)"
+            "\n", requestors[id], id, tgt_prio, packetPriorities[id][tgt_prio],
             readQueueSizes[tgt_prio], writeQueueSizes[tgt_prio]);
 }
 
@@ -484,32 +505,32 @@ MemCtrl::qosSchedule(std::initializer_list<Queues*> queues,
     pkt->qosValue(pkt_priority);
 
     if (qosSyncroScheduler) {
-        // Call the scheduling function on all other masters.
-        for (const auto& m : masters) {
+        // Call the scheduling function on all other requestors.
+        for (const auto& requestor : requestors) {
 
-            if (m.first == pkt->masterId())
+            if (requestor.first == pkt->requestorId())
                 continue;
 
-            uint8_t prio = schedule(m.first, 0);
+            uint8_t prio = schedule(requestor.first, 0);
 
             if (qosPriorityEscalation) {
                 DPRINTF(QOS,
-                        "QoSMemCtrl::qosSchedule: (syncro) escalating "
-                        "MASTER %s to assigned priority %d\n",
-                        _system->getMasterName(m.first),
+                        "qos::MemCtrl::qosSchedule: (syncro) escalating "
+                        "REQUESTOR %s to assigned priority %d\n",
+                        _system->getRequestorName(requestor.first),
                         prio);
-                escalate(queues, queue_entry_size, m.first, prio);
+                escalate(queues, queue_entry_size, requestor.first, prio);
             }
         }
     }
 
     if (qosPriorityEscalation) {
         DPRINTF(QOS,
-                "QoSMemCtrl::qosSchedule: escalating "
-                "MASTER %s to assigned priority %d\n",
-                _system->getMasterName(pkt->masterId()),
+                "qos::MemCtrl::qosSchedule: escalating "
+                "REQUESTOR %s to assigned priority %d\n",
+                _system->getRequestorName(pkt->requestorId()),
                 pkt_priority);
-        escalate(queues, queue_entry_size, pkt->masterId(), pkt_priority);
+        escalate(queues, queue_entry_size, pkt->requestorId(), pkt_priority);
     }
 
     // Update last service tick for selected priority
@@ -518,6 +539,8 @@ MemCtrl::qosSchedule(std::initializer_list<Queues*> queues,
     return pkt_priority;
 }
 
-} // namespace QoS
+} // namespace qos
+} // namespace memory
+} // namespace gem5
 
 #endif /* __MEM_QOS_MEM_CTRL_HH__ */

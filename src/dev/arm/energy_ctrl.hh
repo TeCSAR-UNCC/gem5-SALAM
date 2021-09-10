@@ -33,10 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vasileios Spiliopoulos
- *          Akash Bagdia
- *          Stephan Diestelhorst
  */
 
 /**
@@ -59,6 +55,9 @@
 
 #include "dev/io_device.hh"
 #include "params/EnergyCtrl.hh"
+
+namespace gem5
+{
 
 class DVFSHandler;
 
@@ -101,7 +100,8 @@ class EnergyCtrl : public BasicPioDevice
      *       while (!read(PERF_LEVEL_ACK));
      */
 
-    enum Registers {
+    enum Registers
+    {
         DVFS_HANDLER_STATUS = 0,
         DVFS_NUM_DOMAINS,
         DVFS_DOMAINID_AT_INDEX,
@@ -117,7 +117,7 @@ class EnergyCtrl : public BasicPioDevice
     };
 
     typedef EnergyCtrlParams Params;
-    EnergyCtrl(const Params *p);
+    EnergyCtrl(const Params &p);
 
     /**
      * Read command sent to the device
@@ -167,7 +167,7 @@ class EnergyCtrl : public BasicPioDevice
     uint32_t perfLevelToRead;
 
     static uint32_t ticksTokHz(Tick period) {
-        return (uint32_t)(SimClock::Int::ms / period);
+        return (uint32_t)(sim_clock::as_int::ms / period);
     }
 
     static uint32_t toMicroVolt(double voltage) {
@@ -184,4 +184,7 @@ class EnergyCtrl : public BasicPioDevice
 
     EventFunctionWrapper updateAckEvent;
 };
+
+} // namespace gem5
+
 #endif //__DEV_ARM_ENERGY_CTRL_HH__

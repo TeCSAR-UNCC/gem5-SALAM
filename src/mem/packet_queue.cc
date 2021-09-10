@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012,2015,2018 ARM Limited
+ * Copyright (c) 2012,2015,2018-2020 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Andreas Hansson
  */
 
 #include "mem/packet_queue.hh"
@@ -46,6 +43,9 @@
 #include "base/trace.hh"
 #include "debug/Drain.hh"
 #include "debug/PacketQueue.hh"
+
+namespace gem5
+{
 
 PacketQueue::PacketQueue(EventManager& _em, const std::string& _label,
                          const std::string& _sendEventName,
@@ -118,8 +118,8 @@ PacketQueue::schedSendTiming(PacketPtr pkt, Tick when)
 
     // add a very basic sanity check on the port to ensure the
     // invisible buffer is not growing beyond reasonable limits
-    if (!_disableSanityCheck && transmitList.size() > 100) {
-        panic("Packet queue %s has grown beyond 100 packets\n",
+    if (!_disableSanityCheck && transmitList.size() > 128) {
+        panic("Packet queue %s has grown beyond 128 packets\n",
               name());
     }
 
@@ -235,44 +235,47 @@ PacketQueue::drain()
     }
 }
 
-ReqPacketQueue::ReqPacketQueue(EventManager& _em, MasterPort& _masterPort,
+ReqPacketQueue::ReqPacketQueue(EventManager& _em, RequestPort& _mem_side_port,
                                const std::string _label)
-    : PacketQueue(_em, _label, name(_masterPort, _label)),
-      masterPort(_masterPort)
+    : PacketQueue(_em, _label, name(_mem_side_port, _label)),
+      memSidePort(_mem_side_port)
 {
 }
 
 bool
 ReqPacketQueue::sendTiming(PacketPtr pkt)
 {
-    return masterPort.sendTimingReq(pkt);
+    return memSidePort.sendTimingReq(pkt);
 }
 
 SnoopRespPacketQueue::SnoopRespPacketQueue(EventManager& _em,
-                                           MasterPort& _masterPort,
+                                           RequestPort& _mem_side_port,
                                            bool force_order,
                                            const std::string _label)
-    : PacketQueue(_em, _label, name(_masterPort, _label), force_order),
-      masterPort(_masterPort)
+    : PacketQueue(_em, _label, name(_mem_side_port, _label), force_order),
+      memSidePort(_mem_side_port)
 {
 }
 
 bool
 SnoopRespPacketQueue::sendTiming(PacketPtr pkt)
 {
-    return masterPort.sendTimingSnoopResp(pkt);
+    return memSidePort.sendTimingSnoopResp(pkt);
 }
 
-RespPacketQueue::RespPacketQueue(EventManager& _em, SlavePort& _slavePort,
+RespPacketQueue::RespPacketQueue(EventManager& _em,
+                                 ResponsePort& _cpu_side_port,
                                  bool force_order,
                                  const std::string _label)
-    : PacketQueue(_em, _label, name(_slavePort, _label), force_order),
-      slavePort(_slavePort)
+    : PacketQueue(_em, _label, name(_cpu_side_port, _label), force_order),
+      cpuSidePort(_cpu_side_port)
 {
 }
 
 bool
 RespPacketQueue::sendTiming(PacketPtr pkt)
 {
-    return slavePort.sendTimingResp(pkt);
+    return cpuSidePort.sendTimingResp(pkt);
 }
+
+} // namespace gem5

@@ -33,15 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
  * @file
  *
  * ExternalSlave is a memory object representing a binding from
- * a gem5 master to a slave port in a system external to gem5.
+ * a gem5 requestor to a response port in a system external to gem5.
  *
  * During initialisation, a `handler' for the port type specified in the
  * port's port_type parameter is found from the registered port handlers
@@ -63,6 +61,9 @@
 #include "mem/port.hh"
 #include "params/ExternalSlave.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class ExternalSlave : public SimObject
 {
@@ -125,7 +126,7 @@ class ExternalSlave : public SimObject
     static std::map<std::string, Handler *> portHandlers;
 
   public:
-    ExternalSlave(ExternalSlaveParams *params);
+    ExternalSlave(const ExternalSlaveParams &params);
 
     /** Port interface.  Responds only to port "port" */
     Port &getPort(const std::string &if_name,
@@ -139,5 +140,6 @@ class ExternalSlave : public SimObject
     void init() override;
 };
 
+} // namespace gem5
 
 #endif //__MEM_EXTERNAL_SLAVE_HH__

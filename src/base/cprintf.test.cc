@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include <gtest/gtest.h>
@@ -35,6 +33,8 @@
 #include <string>
 
 #include "base/cprintf.hh"
+
+using namespace gem5;
 
 #define CPRINTF_TEST(...)                                \
     do {                                                 \

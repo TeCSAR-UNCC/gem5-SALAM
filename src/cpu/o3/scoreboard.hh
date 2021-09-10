@@ -25,23 +25,24 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Korey Sewell
- *          Kevin Lim
- *          Steve Reinhardt
  */
 
 #ifndef __CPU_O3_SCOREBOARD_HH__
 #define __CPU_O3_SCOREBOARD_HH__
 
-#include <iostream>
-#include <utility>
+#include <cassert>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/trace.hh"
-#include "config/the_isa.hh"
-#include "cpu/o3/comm.hh"
+#include "cpu/reg_class.hh"
 #include "debug/Scoreboard.hh"
+
+namespace gem5
+{
+
+namespace o3
+{
 
 /**
  * Implements a simple scoreboard to track which registers are
@@ -56,20 +57,23 @@ class Scoreboard
      *  explicitly because Scoreboard is not a SimObject. */
     const std::string _name;
 
+    /** Index of the zero integer register. */
+    const RegIndex zeroReg;
+
     /** Scoreboard of physical integer registers, saying whether or not they
      *  are ready. */
     std::vector<bool> regScoreBoard;
 
     /** The number of actual physical registers */
-    unsigned M5_CLASS_VAR_USED numPhysRegs;
+    GEM5_CLASS_VAR_USED unsigned numPhysRegs;
 
   public:
     /** Constructs a scoreboard.
      *  @param _numPhysicalRegs Number of physical registers.
      *  @param _numMiscRegs Number of miscellaneous registers.
      */
-    Scoreboard(const std::string &_my_name,
-               unsigned _numPhysicalRegs);
+    Scoreboard(const std::string &_my_name, unsigned _numPhysicalRegs,
+               RegIndex _zero_reg);
 
     /** Destructor. */
     ~Scoreboard() {}
@@ -78,7 +82,8 @@ class Scoreboard
     std::string name() const { return _name; };
 
     /** Checks if the register is ready. */
-    bool getReg(PhysRegIdPtr phys_reg) const
+    bool
+    getReg(PhysRegIdPtr phys_reg) const
     {
         assert(phys_reg->flatIndex() < numPhysRegs);
 
@@ -89,14 +94,15 @@ class Scoreboard
 
         bool ready = regScoreBoard[phys_reg->flatIndex()];
 
-        if (phys_reg->isZeroReg())
+        if (phys_reg->is(IntRegClass) && phys_reg->index() == zeroReg)
             assert(ready);
 
         return ready;
     }
 
     /** Sets the register as ready. */
-    void setReg(PhysRegIdPtr phys_reg)
+    void
+    setReg(PhysRegIdPtr phys_reg)
     {
         assert(phys_reg->flatIndex() < numPhysRegs);
 
@@ -113,7 +119,8 @@ class Scoreboard
     }
 
     /** Sets the register as not ready. */
-    void unsetReg(PhysRegIdPtr phys_reg)
+    void
+    unsetReg(PhysRegIdPtr phys_reg)
     {
         assert(phys_reg->flatIndex() < numPhysRegs);
 
@@ -124,12 +131,15 @@ class Scoreboard
         }
 
         // zero reg should never be marked unready
-        if (phys_reg->isZeroReg())
+        if (phys_reg->is(IntRegClass) && phys_reg->index() == zeroReg)
             return;
 
         regScoreBoard[phys_reg->flatIndex()] = false;
     }
 
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif

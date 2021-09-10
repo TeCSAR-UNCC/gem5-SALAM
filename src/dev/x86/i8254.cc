@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "dev/x86/i8254.hh"
@@ -34,6 +32,9 @@
 #include "dev/x86/intdev.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+
+namespace gem5
+{
 
 void
 X86ISA::I8254::counterInterrupt(unsigned int num)
@@ -98,8 +99,4 @@ X86ISA::I8254::startup()
     pit.startup();
 }
 
-X86ISA::I8254 *
-I8254Params::create()
-{
-    return new X86ISA::I8254(this);
-}
+} // namespace gem5

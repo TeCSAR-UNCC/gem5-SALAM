@@ -36,31 +36,38 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Andreas Sandberg
  */
 
 #include "dev/ps2/keyboard.hh"
 
+#include <cstdint>
+#include <list>
+
 #include "base/logging.hh"
+#include "base/trace.hh"
 #include "debug/PS2.hh"
 #include "dev/ps2/types.hh"
 #include "params/PS2Keyboard.hh"
 
-PS2Keyboard::PS2Keyboard(const PS2KeyboardParams *p)
-    : PS2Device(p),
+namespace gem5
+{
+
+namespace ps2
+{
+
+PS2Keyboard::PS2Keyboard(const PS2KeyboardParams &p)
+    : Device(p),
       shiftDown(false),
       enabled(false)
 {
-    if (p->vnc)
-        p->vnc->setKeyboard(this);
+    if (p.vnc)
+        p.vnc->setKeyboard(this);
 }
 
 void
 PS2Keyboard::serialize(CheckpointOut &cp) const
 {
-    PS2Device::serialize(cp);
+    Device::serialize(cp);
     SERIALIZE_SCALAR(shiftDown);
     SERIALIZE_SCALAR(enabled);
 }
@@ -68,7 +75,7 @@ PS2Keyboard::serialize(CheckpointOut &cp) const
 void
 PS2Keyboard::unserialize(CheckpointIn &cp)
 {
-    PS2Device::unserialize(cp);
+    Device::unserialize(cp);
     UNSERIALIZE_SCALAR(shiftDown);
     UNSERIALIZE_SCALAR(enabled);
 }
@@ -77,36 +84,36 @@ bool
 PS2Keyboard::recv(const std::vector<uint8_t> &data)
 {
     switch (data[0]) {
-      case Ps2::ReadID:
+      case ReadID:
         DPRINTF(PS2, "Got keyboard read ID command.\n");
         sendAck();
-        send(Ps2::Keyboard::ID);
+        send(keyboard::ID);
         return true;
-      case Ps2::Enable:
+      case Enable:
         DPRINTF(PS2, "Enabling the keyboard.\n");
         enabled = true;
         sendAck();
         return true;
-      case Ps2::Disable:
+      case Disable:
         DPRINTF(PS2, "Disabling the keyboard.\n");
         enabled = false;
         sendAck();
         return true;
-      case Ps2::DefaultsAndDisable:
+      case DefaultsAndDisable:
         DPRINTF(PS2, "Disabling and resetting the keyboard.\n");
         enabled = false;
         sendAck();
         return true;
-      case Ps2::Reset:
+      case Reset:
         DPRINTF(PS2, "Resetting keyboard.\n");
         enabled = true;
         sendAck();
-        send(Ps2::SelfTestPass);
+        send(SelfTestPass);
         return true;
-      case Ps2::Resend:
+      case Resend:
         panic("Keyboard resend unimplemented.\n");
 
-      case Ps2::Keyboard::LEDWrite:
+      case keyboard::LEDWrite:
         if (data.size() == 1) {
             DPRINTF(PS2, "Got LED write command.\n");
             sendAck();
@@ -120,11 +127,11 @@ PS2Keyboard::recv(const std::vector<uint8_t> &data)
             sendAck();
             return true;
         }
-      case Ps2::Keyboard::DiagnosticEcho:
+      case keyboard::DiagnosticEcho:
         panic("Keyboard diagnostic echo unimplemented.\n");
-      case Ps2::Keyboard::AlternateScanCodes:
+      case keyboard::AlternateScanCodes:
         panic("Accessing alternate scan codes unimplemented.\n");
-      case Ps2::Keyboard::TypematicInfo:
+      case keyboard::TypematicInfo:
         if (data.size() == 1) {
             DPRINTF(PS2, "Setting typematic info.\n");
             sendAck();
@@ -134,20 +141,20 @@ PS2Keyboard::recv(const std::vector<uint8_t> &data)
             sendAck();
             return true;
         }
-      case Ps2::Keyboard::AllKeysToTypematic:
+      case keyboard::AllKeysToTypematic:
         panic("Setting all keys to typemantic unimplemented.\n");
-      case Ps2::Keyboard::AllKeysToMakeRelease:
+      case keyboard::AllKeysToMakeRelease:
         panic("Setting all keys to make/release unimplemented.\n");
-      case Ps2::Keyboard::AllKeysToMake:
+      case keyboard::AllKeysToMake:
         panic("Setting all keys to make unimplemented.\n");
-      case Ps2::Keyboard::AllKeysToTypematicMakeRelease:
+      case keyboard::AllKeysToTypematicMakeRelease:
         panic("Setting all keys to "
                 "typematic/make/release unimplemented.\n");
-      case Ps2::Keyboard::KeyToTypematic:
+      case keyboard::KeyToTypematic:
         panic("Setting a key to typematic unimplemented.\n");
-      case Ps2::Keyboard::KeyToMakeRelease:
+      case keyboard::KeyToMakeRelease:
         panic("Setting a key to make/release unimplemented.\n");
-      case Ps2::Keyboard::KeyToMakeOnly:
+      case keyboard::KeyToMakeOnly:
         panic("Setting key to make only unimplemented.\n");
       default:
         panic("Unknown keyboard command %#02x.\n", data[0]);
@@ -161,7 +168,7 @@ PS2Keyboard::keyPress(uint32_t key, bool down)
 
     // convert the X11 keysym into ps2 codes and update the shift
     // state (shiftDown)
-    Ps2::keySymToPs2(key, down, shiftDown, keys);
+    keySymToPs2(key, down, shiftDown, keys);
 
     // Drop key presses if the keyboard hasn't been enabled by the
     // host. We do that after translating the key code to ensure that
@@ -174,9 +181,5 @@ PS2Keyboard::keyPress(uint32_t key, bool down)
         send(c);
 }
 
-
-PS2Keyboard *
-PS2KeyboardParams::create()
-{
-    return new PS2Keyboard(this);
-}
+} // namespace ps2
+} // namespace gem5

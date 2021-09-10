@@ -37,8 +37,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Stephen Hines
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -48,6 +46,7 @@
 // Opcode fields
 def bitfield DECODERFAULT  decoderFault;
 def bitfield ILLEGALEXEC   illegalExecution;
+def bitfield DEBUGSTEP     debugStep;
 
 def bitfield ENCODING      encoding;
 def bitfield OPCODE        opcode;

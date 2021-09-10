@@ -33,23 +33,26 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Evans
  */
 
 #include "dev/arm/vgic.hh"
 
+#include "arch/arm/interrupts.hh"
 #include "base/trace.hh"
+#include "cpu/base.hh"
 #include "debug/Checkpoint.hh"
 #include "debug/VGIC.hh"
 #include "dev/arm/base_gic.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-VGic::VGic(const Params *p)
-    : PioDevice(p), gicvIIDR(p->gicv_iidr), platform(p->platform),
-      gic(p->gic), vcpuAddr(p->vcpu_addr), hvAddr(p->hv_addr),
-      pioDelay(p->pio_delay), maintInt(p->maint_int)
+namespace gem5
+{
+
+VGic::VGic(const Params &p)
+    : PioDevice(p), gicvIIDR(p.gicv_iidr), platform(p.platform),
+      gic(p.gic), vcpuAddr(p.vcpu_addr), hvAddr(p.hv_addr),
+      pioDelay(p.pio_delay), maintInt(p.maint_int)
 {
     for (int x = 0; x < VGIC_CPU_MAX; x++) {
         postVIntEvent[x] = new EventFunctionWrapper(
@@ -58,7 +61,7 @@ VGic::VGic(const Params *p)
         maintIntPosted[x] = false;
         vIntPosted[x] = false;
     }
-    assert(sys->numRunningContexts() <= VGIC_CPU_MAX);
+    assert(sys->threads.numRunning() <= VGIC_CPU_MAX);
 }
 
 VGic::~VGic()
@@ -149,7 +152,7 @@ VGic::readCtrl(PacketPtr pkt)
 
     DPRINTF(VGIC, "VGIC HVCtrl read register %#x\n", daddr);
 
-    /* Munge the address: 0-0xfff is the usual space banked by requester CPU.
+    /* Munge the address: 0-0xfff is the usual space banked by requestor CPU.
      * Anything > that is 0x200-sized slices of 'per CPU' regs.
      */
     if (daddr & ~0x1ff) {
@@ -293,7 +296,7 @@ VGic::writeCtrl(PacketPtr pkt)
     DPRINTF(VGIC, "VGIC HVCtrl write register %#x <= %#x\n",
             daddr, pkt->getLE<uint32_t>());
 
-    /* Munge the address: 0-0xfff is the usual space banked by requester CPU.
+    /* Munge the address: 0-0xfff is the usual space banked by requestor CPU.
      * Anything > that is 0x200-sized slices of 'per CPU' regs.
      */
     if (daddr & ~0x1ff) {
@@ -372,13 +375,15 @@ void
 VGic::unPostVInt(uint32_t cpu)
 {
     DPRINTF(VGIC, "Unposting VIRQ to %d\n", cpu);
-    platform->intrctrl->clear(cpu, ArmISA::INT_VIRT_IRQ, 0);
+    auto tc = platform->system->threads[cpu];
+    tc->getCpuPtr()->clearInterrupt(tc->threadId(), ArmISA::INT_VIRT_IRQ, 0);
 }
 
 void
 VGic::processPostVIntEvent(uint32_t cpu)
 {
-     platform->intrctrl->post(cpu, ArmISA::INT_VIRT_IRQ, 0);
+    auto tc = platform->system->threads[cpu];
+    tc->getCpuPtr()->postInterrupt(tc->threadId(), ArmISA::INT_VIRT_IRQ, 0);
 }
 
 
@@ -416,8 +421,8 @@ VGic::updateIntState(ContextID ctx_id)
         }
     }
 
-    assert(sys->numRunningContexts() <= VGIC_CPU_MAX);
-    for (int i = 0; i < sys->numRunningContexts(); i++) {
+    assert(sys->threads.numRunning() <= VGIC_CPU_MAX);
+    for (int i = 0; i < sys->threads.numRunning(); i++) {
         struct vcpuIntData *vid = &vcpuData[i];
         // Are any LRs active that weren't before?
         if (!vIntPosted[i]) {
@@ -554,8 +559,4 @@ VGic::vcpuIntData::unserialize(CheckpointIn &cp)
     }
 }
 
-VGic *
-VGicParams::create()
-{
-    return new VGic(this);
-}
+} // namespace gem5

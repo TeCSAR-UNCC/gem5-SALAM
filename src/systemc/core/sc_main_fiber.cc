@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "systemc/core/sc_main_fiber.hh"
@@ -32,6 +30,7 @@
 #include <cstring>
 #include <string>
 
+#include "base/compiler.hh"
 #include "systemc/core/kernel.hh"
 #include "systemc/core/scheduler.hh"
 #include "systemc/ext/core/messages.hh"
@@ -40,7 +39,7 @@
 #include "systemc/utils/report.hh"
 
 // A weak symbol to detect if sc_main has been defined, and if so where it is.
-[[gnu::weak]] int sc_main(int argc, char *argv[]);
+GEM5_WEAK int sc_main(int argc, char *argv[]);
 
 namespace sc_gem5
 {
@@ -48,6 +47,8 @@ namespace sc_gem5
 void
 ScMainFiber::main()
 {
+    using namespace gem5;
+
     _called = true;
 
     if (::sc_main) {

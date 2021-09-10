@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
- *          Erik Hallnor
  */
 
 /**
@@ -54,6 +51,9 @@
 
 #include "params/BaseIndexingPolicy.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class ReplaceableEntry;
 
@@ -105,7 +105,7 @@ class BaseIndexingPolicy : public SimObject
     /**
      * Construct and initialize this policy.
      */
-    BaseIndexingPolicy(const Params *p);
+    BaseIndexingPolicy(const Params &p);
 
     /**
      * Destructor.
@@ -136,7 +136,7 @@ class BaseIndexingPolicy : public SimObject
      * @param addr The address to get the tag from.
      * @return The tag of the address.
      */
-    Addr extractTag(const Addr addr) const;
+    virtual Addr extractTag(const Addr addr) const;
 
     /**
      * Find all possible entries for insertion and replacement of an address.
@@ -159,5 +159,7 @@ class BaseIndexingPolicy : public SimObject
     virtual Addr regenerateAddr(const Addr tag, const ReplaceableEntry* entry)
                                                                     const = 0;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_INDEXING_POLICIES_BASE_HH__

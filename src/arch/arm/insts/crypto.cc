@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Horsnell
- *          Prakash Ramrakhyani
  */
 
 #include <cstdio>
@@ -43,6 +40,9 @@
 #include <string>
 
 #include "crypto.hh"
+
+namespace gem5
+{
 
 namespace ArmISA {
 
@@ -516,3 +516,4 @@ Crypto::store1Reg(uint8_t *output, uint32_t *X)
 }
 
 } // namespace ArmISA
+} // namespace gem5

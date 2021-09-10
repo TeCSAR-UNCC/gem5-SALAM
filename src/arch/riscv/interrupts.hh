@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_RISCV_INTERRUPT_HH__
@@ -36,12 +34,15 @@
 
 #include "arch/generic/interrupts.hh"
 #include "arch/riscv/faults.hh"
-#include "arch/riscv/registers.hh"
+#include "arch/riscv/regs/misc.hh"
 #include "base/logging.hh"
 #include "cpu/thread_context.hh"
 #include "debug/Interrupt.hh"
 #include "params/RiscvInterrupts.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class BaseCPU;
 class ThreadContext;
@@ -55,55 +56,78 @@ namespace RiscvISA {
 class Interrupts : public BaseInterrupts
 {
   private:
-    BaseCPU * cpu;
     std::bitset<NumInterruptTypes> ip;
     std::bitset<NumInterruptTypes> ie;
 
   public:
-    typedef RiscvInterruptsParams Params;
+    using Params = RiscvInterruptsParams;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    Interrupts(Params * p) : BaseInterrupts(p), cpu(nullptr), ip(0), ie(0) {}
-
-    void setCPU(BaseCPU * _cpu) { cpu = _cpu; }
+    Interrupts(const Params &p) : BaseInterrupts(p), ip(0), ie(0) {}
 
     std::bitset<NumInterruptTypes>
-    globalMask(ThreadContext *tc) const
+    globalMask() const
     {
         INTERRUPT mask = 0;
         STATUS status = tc->readMiscReg(MISCREG_STATUS);
-        if (status.mie)
-            mask.mei = mask.mti = mask.msi = 1;
-        if (status.sie)
-            mask.sei = mask.sti = mask.ssi = 1;
-        if (status.uie)
-            mask.uei = mask.uti = mask.usi = 1;
+        INTERRUPT mideleg = tc->readMiscReg(MISCREG_MIDELEG);
+        INTERRUPT sideleg = tc->readMiscReg(MISCREG_SIDELEG);
+        PrivilegeMode prv = (PrivilegeMode)tc->readMiscReg(MISCREG_PRV);
+        switch (prv) {
+            case PRV_U:
+                mask.mei = (!sideleg.mei) | (sideleg.mei & status.uie);
+                mask.mti = (!sideleg.mti) | (sideleg.mti & status.uie);
+                mask.msi = (!sideleg.msi) | (sideleg.msi & status.uie);
+                mask.sei = (!sideleg.sei) | (sideleg.sei & status.uie);
+                mask.sti = (!sideleg.sti) | (sideleg.sti & status.uie);
+                mask.ssi = (!sideleg.ssi) | (sideleg.ssi & status.uie);
+                if (status.uie)
+                    mask.uei = mask.uti = mask.usi = 1;
+                break;
+            case PRV_S:
+                mask.mei = (!mideleg.mei) | (mideleg.mei & status.sie);
+                mask.mti = (!mideleg.mti) | (mideleg.mti & status.sie);
+                mask.msi = (!mideleg.msi) | (mideleg.msi & status.sie);
+                if (status.sie)
+                    mask.sei = mask.sti = mask.ssi = 1;
+                mask.uei = mask.uti = mask.usi = 0;
+                break;
+            case PRV_M:
+                if (status.mie)
+                     mask.mei = mask.mti = mask.msi = 1;
+                mask.sei = mask.sti = mask.ssi = 0;
+                mask.uei = mask.uti = mask.usi = 0;
+                break;
+            default:
+                panic("Unknown privilege mode %d.", prv);
+                break;
+        }
+
         return std::bitset<NumInterruptTypes>(mask);
     }
 
     bool checkInterrupt(int num) const { return ip[num] && ie[num]; }
-    bool checkInterrupts(ThreadContext *tc) const
+    bool checkInterrupts() const
     {
-        return (ip & ie & globalMask(tc)).any();
+        return (ip & ie & globalMask()).any();
     }
 
     Fault
-    getInterrupt(ThreadContext *tc)
+    getInterrupt()
     {
-        assert(checkInterrupts(tc));
-        std::bitset<NumInterruptTypes> mask = globalMask(tc);
-        for (int c = 0; c < NumInterruptTypes; c++)
-            if (checkInterrupt(c) && mask[c])
-                return std::make_shared<InterruptFault>(c);
+        assert(checkInterrupts());
+        std::bitset<NumInterruptTypes> mask = globalMask();
+        const std::vector<int> interrupt_order {
+            INT_EXT_MACHINE, INT_TIMER_MACHINE, INT_SOFTWARE_MACHINE,
+            INT_EXT_SUPER, INT_TIMER_SUPER, INT_SOFTWARE_SUPER,
+            INT_EXT_USER, INT_TIMER_USER, INT_SOFTWARE_USER
+        };
+        for (const int &id : interrupt_order)
+            if (checkInterrupt(id) && mask[id])
+                return std::make_shared<InterruptFault>(id);
         return NoFault;
     }
 
-    void updateIntrInfo(ThreadContext *tc) {}
+    void updateIntrInfo() {}
 
     void
     post(int int_num, int index)
@@ -153,5 +177,6 @@ class Interrupts : public BaseInterrupts
 };
 
 } // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_INTERRUPT_HH__

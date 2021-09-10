@@ -24,15 +24,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "dev/net/pktfifo.hh"
 
 #include "base/logging.hh"
 
-using namespace std;
+namespace gem5
+{
 
 bool
 PacketFifo::copyout(void *dest, unsigned offset, unsigned len)
@@ -53,7 +52,7 @@ PacketFifo::copyout(void *dest, unsigned offset, unsigned len)
         if (i == end)
             panic("invalid fifo");
 
-        unsigned size = min(pkt->length - offset, len);
+        unsigned size = std::min(pkt->length - offset, len);
         memcpy(data, pkt->data, size);
         offset = 0;
         len -= size;
@@ -66,7 +65,7 @@ PacketFifo::copyout(void *dest, unsigned offset, unsigned len)
 
 
 void
-PacketFifoEntry::serialize(const string &base, CheckpointOut &cp) const
+PacketFifoEntry::serialize(const std::string &base, CheckpointOut &cp) const
 {
     packet->serialize(base + ".packet", cp);
     paramOut(cp, base + ".slack", slack);
@@ -75,9 +74,9 @@ PacketFifoEntry::serialize(const string &base, CheckpointOut &cp) const
 }
 
 void
-PacketFifoEntry::unserialize(const string &base, CheckpointIn &cp)
+PacketFifoEntry::unserialize(const std::string &base, CheckpointIn &cp)
 {
-    packet = make_shared<EthPacketData>();
+    packet = std::make_shared<EthPacketData>();
     packet->unserialize(base + ".packet", cp);
     paramIn(cp, base + ".slack", slack);
     paramIn(cp, base + ".number", number);
@@ -85,7 +84,7 @@ PacketFifoEntry::unserialize(const string &base, CheckpointIn &cp)
 }
 
 void
-PacketFifo::serialize(const string &base, CheckpointOut &cp) const
+PacketFifo::serialize(const std::string &base, CheckpointOut &cp) const
 {
     paramOut(cp, base + ".size", _size);
     paramOut(cp, base + ".maxsize", _maxsize);
@@ -98,7 +97,7 @@ PacketFifo::serialize(const string &base, CheckpointOut &cp) const
 }
 
 void
-PacketFifo::unserialize(const string &base, CheckpointIn &cp)
+PacketFifo::unserialize(const std::string &base, CheckpointIn &cp)
 {
     paramIn(cp, base + ".size", _size);
 //  paramIn(cp, base + ".maxsize", _maxsize);
@@ -114,3 +113,5 @@ PacketFifo::unserialize(const string &base, CheckpointIn &cp)
         fifo.push_back(entry);
     }
 }
+
+} // namespace gem5

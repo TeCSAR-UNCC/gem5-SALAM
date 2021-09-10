@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
  */
 
 #ifndef __ARCH_SPARC_INSTS_UNIMP_HH__
@@ -36,6 +34,9 @@
 #include "arch/generic/debugfaults.hh"
 #include "arch/sparc/insts/static_inst.hh"
 #include "base/cprintf.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -69,7 +70,8 @@ class FailUnimplemented : public SparcStaticInst
     }
 
     std::string
-    generateDisassembly(Addr pc, const SymbolTable *symtab) const override
+    generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override
     {
         return csprintf("%-10s (unimplemented)", mnemonic);
     }
@@ -108,12 +110,14 @@ class WarnUnimplemented : public SparcStaticInst
     }
 
     std::string
-    generateDisassembly(Addr pc, const SymbolTable *symtab) const override
+    generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override
     {
         return csprintf("%-10s (unimplemented)", mnemonic);
     }
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_INSTS_UNIMP_HH__

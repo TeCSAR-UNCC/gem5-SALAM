@@ -25,9 +25,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Korey Sewell
-//          Brett Miller
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -35,7 +32,6 @@
 //
 output header {{
 #include <iostream>
-    using namespace std;
     /**
      * Base class for integer operations.
      */
@@ -176,8 +172,6 @@ def format DspIntOp(code, *opt_flags) {{
 
     code = decl_code + code + write_code
 
-    opt_flags += ('IsDspOp',)
-
     iop = InstObjParams(name, Name, 'DspIntOp', code, opt_flags)
     header_output = BasicDeclare.subst(iop)
     decoder_output = BasicConstructor.subst(iop)
@@ -206,8 +200,6 @@ def format DspHiLoOp(code, *opt_flags) {{
     write_code += 'LO_RD_SEL = dspac<31:0>;\n'
 
     code = decl_code + fetch_code + code + write_code
-
-    opt_flags += ('IsDspOp',)
 
     iop = InstObjParams(name, Name, 'DspHiLoOp', code, opt_flags)
     header_output = BasicDeclare.subst(iop)

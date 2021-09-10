@@ -70,13 +70,12 @@ import re
 import sys
 import traceback
 
-import config
-import log
-import suite as suite_mod
-import test as test_mod
-import fixture as fixture_mod
-import wrappers
-import uid
+import testlib.log as log
+import testlib.suite as suite_mod
+import testlib.test_util as test_mod
+import testlib.fixture as fixture_mod
+import testlib.wrappers as wrappers
+import testlib.uid as uid
 
 class DuplicateTestItemException(Exception):
     '''
@@ -112,7 +111,7 @@ def _assert_files_in_same_dir(files):
         if files:
             directory = os.path.dirname(files[0])
             for f in files:
-                assert os.path.dirname(f) == directory
+                assert(os.path.dirname(f) == directory)
 
 class Loader(object):
     '''
@@ -182,20 +181,12 @@ class Loader(object):
         Load files from the given root directory which match
         `self.filepath_filter`.
         '''
-        if __debug__:
-            self._loaded_a_file = True
-
         for directory in self._discover_files(root):
+            directory = list(directory)
             if directory:
                 _assert_files_in_same_dir(directory)
                 for f in directory:
                     self.load_file(f)
-
-    def load_dir(self, directory):
-        for dir_ in self._discover_files(directory):
-            _assert_files_in_same_dir(dir_)
-            for f in dir_:
-                self.load_file(f)
 
     def load_file(self, path):
         path = os.path.abspath(path)
@@ -221,29 +212,25 @@ class Loader(object):
         sys.path.insert(0, os.path.dirname(path))
         cwd = os.getcwd()
         os.chdir(os.path.dirname(path))
-        config.config.file_under_load = path
 
         new_tests = test_mod.TestCase.collector.create()
         new_suites = suite_mod.TestSuite.collector.create()
         new_fixtures = fixture_mod.Fixture.collector.create()
 
-        def cleanup():
-            config.config.file_under_load = None
-            sys.path[:] = old_path
-            os.chdir(cwd)
-            test_mod.TestCase.collector.remove(new_tests)
-            suite_mod.TestSuite.collector.remove(new_suites)
-            fixture_mod.Fixture.collector.remove(new_fixtures)
-
         try:
-            execfile(path, newdict, newdict)
+            exec(open(path).read(), newdict, newdict)
         except Exception as e:
             log.test_log.debug(traceback.format_exc())
             log.test_log.warn(
                               'Exception thrown while loading "%s"\n'
                               'Ignoring all tests in this file.'
                                % (path))
-            cleanup()
+            # Clean up
+            sys.path[:] = old_path
+            os.chdir(cwd)
+            test_mod.TestCase.collector.remove(new_tests)
+            suite_mod.TestSuite.collector.remove(new_suites)
+            fixture_mod.Fixture.collector.remove(new_fixtures)
             return
 
         # Create a module test suite for those not contained in a suite.
@@ -281,7 +268,12 @@ class Loader(object):
             self.suites.extend(loaded_suites)
             self.suite_uids.update({suite.uid: suite
                     for suite in loaded_suites})
-        cleanup()
+        # Clean up
+        sys.path[:] = old_path
+        os.chdir(cwd)
+        test_mod.TestCase.collector.remove(new_tests)
+        suite_mod.TestSuite.collector.remove(new_suites)
+        fixture_mod.Fixture.collector.remove(new_fixtures)
 
     def _discover_files(self, root):
         '''

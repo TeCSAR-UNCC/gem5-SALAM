@@ -23,21 +23,22 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "pybind11/pybind11.h"
 #include "sim/init.hh"
 #include "sim/port.hh"
 
+namespace gem5
+{
+
 namespace
 {
 
 void
-sim_pybind(pybind11::module &m_internal)
+sim_pybind(pybind11::module_ &m_internal)
 {
-    pybind11::module m = m_internal.def_submodule("sim");
+    pybind11::module_ m = m_internal.def_submodule("sim");
     pybind11::class_<
         Port, std::unique_ptr<Port, pybind11::nodelete>>(m, "Port")
         .def("bind", &Port::bind)
@@ -46,3 +47,4 @@ sim_pybind(pybind11::module &m_internal)
 EmbeddedPyBind embed_("sim", &sim_pybind);
 
 } // anonymous namespace
+} // namespace gem5

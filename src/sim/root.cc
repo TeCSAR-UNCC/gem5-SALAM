@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 2002-2005 The Regents of The University of Michigan
  * Copyright (c) 2011 Advanced Micro Devices, Inc.
  * All rights reserved.
@@ -25,21 +37,81 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
- *          Gabe Black
  */
 
+#include "base/hostinfo.hh"
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "config/the_isa.hh"
 #include "debug/TimeSync.hh"
-#include "sim/eventq_impl.hh"
+#include "sim/core.hh"
+#include "sim/cur_tick.hh"
+#include "sim/eventq.hh"
 #include "sim/full_system.hh"
 #include "sim/root.hh"
 
+namespace gem5
+{
+
 Root *Root::_root = NULL;
+Root::RootStats Root::RootStats::instance;
+Root::RootStats &rootStats = Root::RootStats::instance;
+
+Root::RootStats::RootStats()
+    : statistics::Group(nullptr),
+    ADD_STAT(simSeconds, statistics::units::Second::get(),
+             "Number of seconds simulated"),
+    ADD_STAT(simTicks, statistics::units::Tick::get(),
+             "Number of ticks simulated"),
+    ADD_STAT(finalTick, statistics::units::Tick::get(),
+             "Number of ticks from beginning of simulation "
+             "(restored from checkpoints and never reset)"),
+    ADD_STAT(simFreq, statistics::units::Rate<
+                statistics::units::Tick, statistics::units::Second>::get(),
+             "The number of ticks per simulated second"),
+    ADD_STAT(hostSeconds, statistics::units::Second::get(),
+             "Real time elapsed on the host"),
+    ADD_STAT(hostTickRate, statistics::units::Rate<
+                statistics::units::Tick, statistics::units::Second>::get(),
+             "The number of ticks simulated per host second (ticks/s)"),
+    ADD_STAT(hostMemory, statistics::units::Byte::get(),
+             "Number of bytes of host memory used"),
+
+    statTime(true),
+    startTick(0)
+{
+    simFreq.scalar(sim_clock::Frequency);
+    simTicks.functor([this]() { return curTick() - startTick; });
+    finalTick.functor(curTick);
+
+    hostMemory
+        .functor(memUsage)
+        .prereq(hostMemory)
+        ;
+
+    hostSeconds
+        .functor([this]() {
+                Time now;
+                now.setTimer();
+                return now - statTime;
+            })
+        .precision(2)
+        ;
+
+    hostTickRate.precision(0);
+
+    simSeconds = simTicks / simFreq;
+    hostTickRate = simTicks / hostSeconds;
+}
+
+void
+Root::RootStats::resetStats()
+{
+    statTime.setTimer();
+    startTick = curTick();
+
+    statistics::Group::resetStats();
+}
 
 /*
  * This function is called periodically by an event in M5 and ensures that
@@ -104,24 +176,30 @@ Root::timeSyncSpinThreshold(Time newThreshold)
     timeSyncEnable(en);
 }
 
-Root::Root(RootParams *p)
-    : SimObject(p), _enabled(false), _periodTick(p->time_sync_period),
+Root::Root(const RootParams &p, int)
+    : SimObject(p), _enabled(false), _periodTick(p.time_sync_period),
       syncEvent([this]{ timeSync(); }, name())
 {
-    _period.setTick(p->time_sync_period);
-    _spinThreshold.setTick(p->time_sync_spin_threshold);
+    _period.setTick(p.time_sync_period);
+    _spinThreshold.setTick(p.time_sync_spin_threshold);
 
     assert(_root == NULL);
     _root = this;
     lastTime.setTimer();
 
-    simQuantum = p->sim_quantum;
+    simQuantum = p.sim_quantum;
+
+    // Some of the statistics are global and need to be accessed by
+    // stat formulas. The most convenient way to implement that is by
+    // having a single global stat group for global stats. Merge that
+    // group into the root object here.
+    mergeStatGroup(&Root::RootStats::instance);
 }
 
 void
 Root::startup()
 {
-    timeSyncEnable(params()->time_sync_enable);
+    timeSyncEnable(params().time_sync_enable);
 }
 
 void
@@ -130,14 +208,23 @@ Root::serialize(CheckpointOut &cp) const
     SERIALIZE_SCALAR(FullSystem);
     std::string isa = THE_ISA_STR;
     SERIALIZE_SCALAR(isa);
+
+    globals.serializeSection(cp, "globals");
 }
 
+void
+Root::unserialize(CheckpointIn &cp)
+{
+    globals.unserializeSection(cp, "globals");
+    for (uint32_t i = 0; i < numMainEventQueues; ++i)
+        mainEventQueue[i]->setCurTick(globals.unserializedCurTick);
+}
 
 bool FullSystem;
 unsigned int FullSystemInt;
 
 Root *
-RootParams::create()
+RootParams::create() const
 {
     static bool created = false;
     if (created)
@@ -148,5 +235,7 @@ RootParams::create()
     FullSystem = full_system;
     FullSystemInt = full_system ? 1 : 0;
 
-    return new Root(this);
+    return new Root(*this, 0);
 }
+
+} // namespace gem5

@@ -38,8 +38,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __SIM_SIM_EVENTS_HH__
@@ -47,6 +45,9 @@
 
 #include "sim/global_event.hh"
 #include "sim/serialize.hh"
+
+namespace gem5
+{
 
 //
 // Event to terminate simulation at a particular cycle/instruction
@@ -114,5 +115,6 @@ class CountedExitEvent : public Event
     const char *description() const override;
 };
 
+} // namespace gem5
 
 #endif  // __SIM_SIM_EVENTS_HH__

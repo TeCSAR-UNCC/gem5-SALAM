@@ -34,24 +34,25 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 def template BranchImm64Declare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, int64_t _imm);
-        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, int64_t _imm);
+    Fault execute(ExecContext *, Trace::InstRecord *) const override;
 };
 }};
 
 def template BranchImm64Constructor {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst,
-                                          int64_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm)
+    %(class_name)s::%(class_name)s(ExtMachInst machInst, int64_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -59,21 +60,23 @@ def template BranchImm64Constructor {{
 def template BranchImmCond64Declare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, int64_t _imm,
-                       ConditionCode _condCode);
-        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, int64_t _imm,
+                   ConditionCode _condCode);
+    Fault execute(ExecContext *, Trace::InstRecord *) const override;
 };
 }};
 
 def template BranchImmCond64Constructor {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst,
-                                          int64_t _imm,
-                                          ConditionCode _condCode)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _imm, _condCode)
+    %(class_name)s::%(class_name)s(
+            ExtMachInst machInst, int64_t _imm, ConditionCode _condCode) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm, _condCode)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -81,18 +84,44 @@ def template BranchImmCond64Constructor {{
 def template BranchReg64Declare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, IntRegIndex _op1);
-        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, IntRegIndex _op1);
+    Fault execute(ExecContext *, Trace::InstRecord *) const override;
 };
 }};
 
 def template BranchReg64Constructor {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst,
-                                          IntRegIndex _op1)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _op1)
+    %(class_name)s::%(class_name)s(ExtMachInst machInst, IntRegIndex _op1) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _op1)
     {
+        %(set_reg_idx_arr)s;
+        %(constructor)s;
+    }
+}};
+
+def template BranchRegReg64Declare {{
+class %(class_name)s : public %(base_class)s
+{
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, IntRegIndex _op1, IntRegIndex _op2);
+    Fault execute(ExecContext *, Trace::InstRecord *) const override;
+};
+}};
+
+def template BranchRegReg64Constructor {{
+    %(class_name)s::%(class_name)s(ExtMachInst machInst, IntRegIndex _op1,
+                                   IntRegIndex _op2) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _op1, _op2)
+    {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -100,20 +129,22 @@ def template BranchReg64Constructor {{
 def template BranchImmReg64Declare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst,
-                       int64_t imm, IntRegIndex _op1);
-        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, int64_t imm, IntRegIndex _op1);
+    Fault execute(ExecContext *, Trace::InstRecord *) const override;
 };
 }};
 
 def template BranchImmReg64Constructor {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst,
-                                          int64_t _imm,
-                                          IntRegIndex _op1)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm, _op1)
+    %(class_name)s::%(class_name)s(ExtMachInst machInst, int64_t _imm,
+                                   IntRegIndex _op1) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm, _op1)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -121,21 +152,25 @@ def template BranchImmReg64Constructor {{
 def template BranchImmImmReg64Declare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, int64_t _imm1, int64_t _imm2,
-                       IntRegIndex _op1);
-        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, int64_t _imm1, int64_t _imm2,
+                   IntRegIndex _op1);
+    Fault execute(ExecContext *, Trace::InstRecord *) const override;
 };
 }};
 
 def template BranchImmImmReg64Constructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst,
-                                          int64_t _imm1, int64_t _imm2,
-                                          IntRegIndex _op1)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _imm1, _imm2, _op1)
+                                   int64_t _imm1, int64_t _imm2,
+                                   IntRegIndex _op1) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                       _imm1, _imm2, _op1)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};

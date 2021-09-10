@@ -100,6 +100,7 @@ machine(MachineType:DMA, "DMA Controller")
   }
 
   AccessPermission getAccessPermission(Addr addr) {
+    DPRINTF(RubySlicc, "AccessPermission_NotPresent\n");
     return AccessPermission:NotPresent;
   }
 
@@ -192,7 +193,7 @@ machine(MachineType:DMA, "DMA Controller")
           out_msg.Destination.add(mapAddressToMachine(address, MachineType:Directory));
           out_msg.Requestor := machineID;
           out_msg.RequestorMachine := MachineType:DMA;
-          out_msg.MessageSize := MessageSizeType:Writeback_Control;
+          out_msg.MessageSize := MessageSizeType:Data;
         }
       }
   }
@@ -254,6 +255,7 @@ machine(MachineType:DMA, "DMA Controller")
   }
 
   action(v_allocateTBE, "v", desc="Allocate TBE entry") {
+    check_allocate(TBEs);
     TBEs.allocate(address);
     set_tbe(TBEs[address]);
   }

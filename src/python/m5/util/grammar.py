@@ -25,7 +25,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
-from six import string_types
 
 import ply.lex
 import ply.yacc
@@ -94,27 +93,26 @@ class Grammar(object):
             "'%s' object has no attribute '%s'" % (type(self), attr))
 
     def parse_string(self, data, source='<string>', debug=None, tracking=0):
-        if not isinstance(data, string_types):
+        if not isinstance(data, str):
             raise AttributeError(
                 "argument must be a string, was '%s'" % type(f))
 
-        import new
         lexer = self.lex.clone()
         lexer.input(data)
         self.lexers.append((lexer, source))
-        dict = {
-            'productions' : self.yacc.productions,
-            'action'      : self.yacc.action,
-            'goto'        : self.yacc.goto,
-            'errorfunc'   : self.yacc.errorfunc,
-            }
-        parser = new.instance(ply.yacc.LRParser, dict)
+
+        lrtab = ply.yacc.LRTable()
+        lrtab.lr_productions = self.yacc.productions
+        lrtab.lr_action = self.yacc.action
+        lrtab.lr_goto = self.yacc.goto
+
+        parser = ply.yacc.LRParser(lrtab, self.yacc.errorfunc)
         result = parser.parse(lexer=lexer, debug=debug, tracking=tracking)
         self.lexers.pop()
         return result
 
     def parse_file(self, f, **kwargs):
-        if isinstance(f, string_types):
+        if isinstance(f, str):
             source = f
             f = open(f, 'r')
         elif isinstance(f, file):

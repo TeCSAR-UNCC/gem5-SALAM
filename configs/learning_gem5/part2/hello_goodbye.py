@@ -24,8 +24,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 """
 A simple run file that creates two SimObjects: HelloObject and GoodbyeObject
@@ -35,9 +33,6 @@ IMPORTANT: If you modify this file, it's likely that the Learning gem5 book
            also needs to be updated. For now, email Jason <power.jg@gmail.com>
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 # import the m5 (gem5) library created when gem5 is built
 import m5

@@ -25,8 +25,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Korey Sewell
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -38,11 +36,11 @@ output header {{
 #include <iostream>
 #include <sstream>
 
-#include "arch/mips/isa_traits.hh"
 #include "arch/mips/mt_constants.hh"
 #include "arch/mips/pra_constants.hh"
 #include "cpu/static_inst.hh"
 #include "mem/packet.hh"
+
 }};
 
 output decoder {{
@@ -52,21 +50,21 @@ output decoder {{
 #include "arch/mips/dsp.hh"
 #include "arch/mips/dt_constants.hh"
 #include "arch/mips/faults.hh"
-#include "arch/mips/isa_traits.hh"
 #include "arch/mips/mt_constants.hh"
 #include "arch/mips/pagetable.hh"
 #include "arch/mips/pra_constants.hh"
+#include "arch/mips/regs/float.hh"
+#include "arch/mips/regs/int.hh"
+#include "arch/mips/regs/misc.hh"
 #include "arch/mips/tlb.hh"
 #include "arch/mips/utility.hh"
-#include "base/loader/symtab.hh"
 #include "base/cprintf.hh"
+#include "base/loader/symtab.hh"
 #include "cpu/thread_context.hh"
 #include "mem/packet.hh"
 #include "sim/full_system.hh"
-#if defined(linux)
-#include <fenv.h>
-#endif
 
+using namespace gem5;
 using namespace MipsISA;
 }};
 
@@ -77,17 +75,16 @@ output exec {{
 #include "arch/mips/dsp.hh"
 #include "arch/mips/dt_constants.hh"
 #include "arch/mips/faults.hh"
-#include "arch/mips/isa_traits.hh"
+#include "arch/mips/mmu.hh"
 #include "arch/mips/mt.hh"
 #include "arch/mips/mt_constants.hh"
 #include "arch/mips/pagetable.hh"
 #include "arch/mips/pra_constants.hh"
+#include "arch/mips/regs/float.hh"
+#include "arch/mips/regs/int.hh"
+#include "arch/mips/regs/misc.hh"
 #include "arch/mips/tlb.hh"
 #include "arch/mips/utility.hh"
-#if defined(linux)
-#include <fenv.h>
-#endif
-
 #include "base/condcodes.hh"
 #include "cpu/base.hh"
 #include "cpu/exetrace.hh"
@@ -99,6 +96,7 @@ output exec {{
 #include "sim/sim_events.hh"
 #include "sim/sim_exit.hh"
 
+using namespace gem5;
 using namespace MipsISA;
 }};
 

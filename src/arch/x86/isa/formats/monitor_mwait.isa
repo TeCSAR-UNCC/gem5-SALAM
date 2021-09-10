@@ -1,7 +1,5 @@
 // Copyright (c) AMD
 // All rights reserved.
-//
-// Authors: Marc Orr
 
 // Monitor Instruction
 
@@ -17,19 +15,20 @@ output header {{
         { }
 
         std::string generateDisassembly(Addr pc,
-                const SymbolTable *symtab) const;
+                const loader::SymbolTable *symtab) const override;
     };
 }};
 
 output decoder {{
-    std::string MonitorInst::generateDisassembly(Addr PC,
-            const SymbolTable *symtab) const
+    std::string
+    MonitorInst::generateDisassembly(
+            Addr PC, const loader::SymbolTable *symtab) const
     {
         std::stringstream response;
 
         printMnemonic(response, mnemonic);
         ccprintf(response, " ");
-        printReg(response, _srcRegIdx[0], machInst.opSize);
+        printReg(response, srcRegIdx(0), machInst.opSize);
         return response.str();
     }
 }};
@@ -48,12 +47,16 @@ def format MonitorInst(code, *opt_flags) {{
 def template MwaitDeclare {{
     class %(class_name)s : public %(base_class)s
     {
-        public:
+      private:
+        %(reg_idx_arr_decl)s;
+
+      public:
         // Constructor.
         %(class_name)s(ExtMachInst machInst);
-        Fault execute(ExecContext *, Trace::InstRecord *) const;
-        Fault initiateAcc(ExecContext *, Trace::InstRecord *) const;
-        Fault completeAcc(PacketPtr, ExecContext *, Trace::InstRecord *) const;
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+        Fault initiateAcc(ExecContext *, Trace::InstRecord *) const override;
+        Fault completeAcc(PacketPtr, ExecContext *,
+                          Trace::InstRecord *) const override;
     };
 }};
 
@@ -90,22 +93,22 @@ output header {{
                 OpClass __opClass) :
             X86ISA::X86StaticInst(_mnemonic, _machInst, __opClass)
         {
-            flags[IsMemRef] = 1;
             flags[IsLoad] = 1;
         }
 
         std::string generateDisassembly(Addr pc,
-                const SymbolTable *symtab) const;
+                const loader::SymbolTable *symtab) const override;
     };
 }};
 
 output decoder {{
-    std::string MwaitInst::generateDisassembly(Addr PC,
-            const SymbolTable *symtab) const
+    std::string
+    MwaitInst::generateDisassembly(
+            Addr PC, const loader::SymbolTable *symtab) const
     {
         std::stringstream response;
 
-        // Although mwait could take hints from eax and ecx, the _srcRegIdx
+        // Although mwait could take hints from eax and ecx, the srcRegIdx
         // is not set, and thus should not be printed here
         printMnemonic(response, mnemonic);
         return response.str();

@@ -23,10 +23,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Ali Saidi
-//          Gabe Black
-//          Steve Reinhardt
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -159,7 +155,7 @@ decode OP default Unknown::unknown()
                 Y = Rd<63:32>;
             }});
             0x0B: smul({{
-                Rd_sdw = sext<32>(Rs1_sdw<31:0>) * sext<32>(Rs2_or_imm13<31:0>);
+                Rd_sdw = szext<32>(Rs1_sdw) * szext<32>(Rs2_or_imm13);
                 Y = Rd_sdw<63:32>;
             }});
             0x0C: subc({{Rd_sdw = Rs1_sdw + (~Rs2_or_imm13) + 1 - Ccr<0:0>}});
@@ -189,7 +185,7 @@ decode OP default Unknown::unknown()
                         Rd_udw = 0x7FFFFFFF;
                     } else if ((int64_t)Rd_udw <=
                         std::numeric_limits<int32_t>::min()) {
-                        Rd_udw = ULL(0xFFFFFFFF80000000);
+                        Rd_udw = 0xFFFFFFFF80000000ULL;
                     }
                 }
             }});
@@ -219,7 +215,7 @@ decode OP default Unknown::unknown()
                 Y = resTemp<63:32>;}});
             0x1B: IntOpCcRes::smulcc({{
                 int64_t resTemp;
-                Rd = resTemp = sext<32>(Rs1_sdw<31:0>) * sext<32>(Rs2_or_imm13<31:0>);
+                Rd = resTemp = szext<32>(Rs1_sdw) * szext<32>(Rs2_or_imm13);
                 Y = resTemp<63:32>;}});
             0x1C: subccc({{
                     int64_t res, op1 = Rs1, op2 = Rs2_or_imm13;
@@ -251,13 +247,15 @@ decode OP default Unknown::unknown()
                     if (val2 == 0) {
                         fault = std::make_shared<DivisionByZero>();
                     } else {
-                        Rd = (int64_t)((Y << 32) | Rs1_sdw<31:0>) / val2;
-                        overflow = ((int64_t)Rd >= std::numeric_limits<int32_t>::max());
-                        underflow = ((int64_t)Rd <= std::numeric_limits<int32_t>::min());
+                        Rd_sdw = ((Y_sdw << 32) | Rs1_sdw<31:0>) / val2;
+                        overflow =
+                            (Rd_sdw >= std::numeric_limits<int32_t>::max());
+                        underflow =
+                            (Rd_sdw <= std::numeric_limits<int32_t>::min());
                         if (overflow)
-                            Rd = 0x7FFFFFFF;
+                            Rd_sdw = 0x7FFFFFFF;
                         else if (underflow)
-                            Rd = ULL(0xFFFFFFFF80000000);
+                            Rd_sdw = 0xFFFFFFFF80000000ULL;
                     }
                 }}, iv={{overflow || underflow}});
             0x20: taddcc({{
@@ -339,7 +337,8 @@ decode OP default Unknown::unknown()
                 // 7-14 should cause an illegal instruction exception
                 0x0F: decode I {
                     0x0: Nop::stbar(IsWriteBarrier, MemWriteOp);
-                    0x1: Nop::membar(IsMemBarrier, MemReadOp);
+                    0x1: Nop::membar(IsReadBarrier, IsWriteBarrier,
+                                     MemReadOp);
                 }
                 0x10: Priv::rdpcr({{Rd = Pcr;}});
                 0x11: Priv::rdpic({{Rd = Pic;}}, {{Pcr<0:>}});
@@ -398,10 +397,12 @@ decode OP default Unknown::unknown()
             }
             0x2B: BasicOperate::flushw({{
                 if (NWindows - 2 - Cansave != 0) {
-                    if (Otherwin)
-                        fault = std::make_shared<SpillNOther>(4*Wstate<5:3>);
-                    else
-                        fault = std::make_shared<SpillNNormal>(4*Wstate<2:0>);
+                    if (Otherwin) {
+                        fault = std::make_shared<SpillNOther>(4 * Wstate<5:3>);
+                    } else {
+                        fault = std::make_shared<SpillNNormal>(
+                                4 * Wstate<2:0>);
+                    }
                 }
             }});
             0x2C: decode MOVCC3
@@ -474,7 +475,9 @@ decode OP default Unknown::unknown()
                 // 0x04-0x05 should cause an illegal instruction exception
                 0x06: NoPriv::wrfprs({{Fprs = Rs1 ^ Rs2_or_imm13;}});
                 // 0x07-0x0E should cause an illegal instruction exception
-                0x0F: Trap::softreset({{fault = std::make_shared<SoftwareInitiatedReset>();}});
+                0x0F: Trap::softreset({{
+                    fault = std::make_shared<SoftwareInitiatedReset>();
+                }});
                 0x10: Priv::wrpcr({{Pcr = Rs1 ^ Rs2_or_imm13;}});
                 0x11: Priv::wrpic({{Pic = Rs1 ^ Rs2_or_imm13;}}, {{Pcr<0:>}});
                 // 0x12 should cause an illegal instruction exception
@@ -483,8 +486,12 @@ decode OP default Unknown::unknown()
                         return std::make_shared<FpDisabled>();
                     Gsr = Rs1 ^ Rs2_or_imm13;
                 }});
-                0x14: Priv::wrsoftint_set({{SoftintSet = Rs1 ^ Rs2_or_imm13;}});
-                0x15: Priv::wrsoftint_clr({{SoftintClr = Rs1 ^ Rs2_or_imm13;}});
+                0x14: Priv::wrsoftint_set({{
+                    SoftintSet = Rs1 ^ Rs2_or_imm13;
+                }});
+                0x15: Priv::wrsoftint_clr({{
+                    SoftintClr = Rs1 ^ Rs2_or_imm13;
+                }});
                 0x16: Priv::wrsoftint({{Softint = Rs1 ^ Rs2_or_imm13;}});
                 0x17: Priv::wrtick_cmpr({{TickCmpr = Rs1 ^ Rs2_or_imm13;}});
                 0x18: NoPriv::wrstick({{
@@ -544,7 +551,9 @@ decode OP default Unknown::unknown()
                 0x08: Priv::wrprpil({{Pil = Rs1 ^ Rs2_or_imm13;}});
                 0x09: Priv::wrprcwp({{Cwp = Rs1 ^ Rs2_or_imm13;}});
                 0x0A: Priv::wrprcansave({{Cansave = Rs1 ^ Rs2_or_imm13;}});
-                0x0B: Priv::wrprcanrestore({{Canrestore = Rs1 ^ Rs2_or_imm13;}});
+                0x0B: Priv::wrprcanrestore({{
+                    Canrestore = Rs1 ^ Rs2_or_imm13;
+                }});
                 0x0C: Priv::wrprcleanwin({{Cleanwin = Rs1 ^ Rs2_or_imm13;}});
                 0x0D: Priv::wrprotherwin({{Otherwin = Rs1 ^ Rs2_or_imm13;}});
                 0x0E: Priv::wrprwstate({{Wstate = Rs1 ^ Rs2_or_imm13;}});
@@ -566,7 +575,9 @@ decode OP default Unknown::unknown()
                 // 0x04 should cause an illegal instruction exception
                 0x05: HPriv::wrhprhtba({{Htba = Rs1 ^ Rs2_or_imm13;}});
                 // 0x06-0x01D should cause an illegal instruction exception
-                0x1F: HPriv::wrhprhstick_cmpr({{HstickCmpr = Rs1 ^ Rs2_or_imm13;}});
+                0x1F: HPriv::wrhprhstick_cmpr({{
+                    HstickCmpr = Rs1 ^ Rs2_or_imm13;
+                }});
             }
             0x34: decode OPF{
                 format FpBasic{
@@ -890,10 +901,18 @@ decode OP default Unknown::unknown()
                 0x37: FailUnimpl::fmul8ulx16();
                 0x38: FailUnimpl::fmuld8sux16();
                 0x39: FailUnimpl::fmuld8ulx16();
-                0x3A: Trap::fpack32({{fault = std::make_shared<IllegalInstruction>();}});
-                0x3B: Trap::fpack16({{fault = std::make_shared<IllegalInstruction>();}});
-                0x3D: Trap::fpackfix({{fault = std::make_shared<IllegalInstruction>();}});
-                0x3E: Trap::pdist({{fault = std::make_shared<IllegalInstruction>();}});
+                0x3A: Trap::fpack32({{
+                    fault = std::make_shared<IllegalInstruction>();
+                }});
+                0x3B: Trap::fpack16({{
+                    fault = std::make_shared<IllegalInstruction>();
+                }});
+                0x3D: Trap::fpackfix({{
+                    fault = std::make_shared<IllegalInstruction>();
+                }});
+                0x3E: Trap::pdist({{
+                    fault = std::make_shared<IllegalInstruction>();
+                }});
                 0x48: BasicOperate::faligndata({{
                         uint64_t msbX = Frs1_udw;
                         uint64_t lsbX = Frs2_udw;
@@ -919,7 +938,9 @@ decode OP default Unknown::unknown()
                                       ((lsbX & lsbMask) >> lsbShift);
                         }
                 }});
-                0x4B: Trap::fpmerge({{fault = std::make_shared<IllegalInstruction>();}});
+                0x4B: Trap::fpmerge({{
+                    fault = std::make_shared<IllegalInstruction>();
+                }});
                 0x4C: FailUnimpl::bshuffle();
                 0x4D: FailUnimpl::fexpand();
                 0x50: FailUnimpl::fpadd16();
@@ -968,30 +989,24 @@ decode OP default Unknown::unknown()
                 0x7B: FailUnimpl::fornot1s();
                 0x7C: FailUnimpl::for();
                 0x7D: FailUnimpl::fors();
-                0x7E: FpBasic::fone({{Frd_udw = std::numeric_limits<uint64_t>::max();}});
-                0x7F: FpBasic::fones({{Frds_uw = std::numeric_limits<uint32_t>::max();}});
-                0x80: Trap::shutdown({{fault = std::make_shared<IllegalInstruction>();}});
+                0x7E: FpBasic::fone({{
+                    Frd_udw = std::numeric_limits<uint64_t>::max();
+                }});
+                0x7F: FpBasic::fones({{
+                    Frds_uw = std::numeric_limits<uint32_t>::max();
+                }});
+                0x80: Trap::shutdown({{
+                    fault = std::make_shared<IllegalInstruction>();
+                }});
                 0x81: FailUnimpl::siam();
             }
             // M5 special opcodes use the reserved IMPDEP2A opcode space
-            0x37: decode M5FUNC {
-                format BasicOperate {
-                    // we have 7 bits of space here to play with...
-                    0x21: m5exit({{
-                        PseudoInst::m5exit(xc->tcBase(), O0);
-                    }}, No_OpClass, IsNonSpeculative);
-                    0x50: m5readfile({{
-                        O0 = PseudoInst::readfile(xc->tcBase(), O0, O1, O2);
-                    }}, IsNonSpeculative);
-                    0x51: m5break({{
-                        PseudoInst::debugbreak(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x54: m5panic({{
-                        panic("M5 panic instruction called at pc = %#x.", PC);
-                    }}, No_OpClass, IsNonSpeculative);
+            0x37: BasicOperate::pseudo_inst({{
+                if (!pseudo_inst::pseudoInst<SparcPseudoInstABI>(
+                            xc->tcBase(), M5FUNC)) {
+                    fault = std::make_shared<IllegalInstruction>();
                 }
-                default: Trap::impdep2({{fault = std::make_shared<IllegalInstruction>();}});
-            }
+            }}, No_OpClass, IsNonSpeculative);
             0x38: Branch::jmpl({{
                 Addr target = Rs1 + Rs2_or_imm13;
                 if (target & 0x3) {
@@ -1010,10 +1025,13 @@ decode OP default Unknown::unknown()
                     // Check for fills which are higher priority than alignment
                     // faults.
                     if (Canrestore == 0) {
-                        if (Otherwin)
-                            fault = std::make_shared<FillNOther>(4*Wstate<5:3>);
-                        else
-                            fault = std::make_shared<FillNNormal>(4*Wstate<2:0>);
+                        if (Otherwin) {
+                            fault = std::make_shared<FillNOther>(
+                                    4 * Wstate<5:3>);
+                        } else {
+                            fault = std::make_shared<FillNNormal>(
+                                    4 * Wstate<2:0>);
+                        }
                     } else if (target & 0x3) { // Check for alignment faults
                         fault = std::make_shared<MemAddressNotAligned>();
                     } else {
@@ -1044,10 +1062,12 @@ decode OP default Unknown::unknown()
             0x3B: Nop::flush(IsWriteBarrier, MemWriteOp);
             0x3C: save({{
                 if (Cansave == 0) {
-                    if (Otherwin)
-                        fault = std::make_shared<SpillNOther>(4*Wstate<5:3>);
-                    else
-                        fault = std::make_shared<SpillNNormal>(4*Wstate<2:0>);
+                    if (Otherwin) {
+                        fault = std::make_shared<SpillNOther>(4 * Wstate<5:3>);
+                    } else {
+                        fault = std::make_shared<SpillNNormal>(
+                                4 * Wstate<2:0>);
+                    }
                 } else if (Cleanwin - Canrestore == 0) {
                     fault = std::make_shared<CleanWindow>();
                 } else {
@@ -1060,9 +1080,9 @@ decode OP default Unknown::unknown()
             0x3D: restore({{
                 if (Canrestore == 0) {
                     if (Otherwin)
-                        fault = std::make_shared<FillNOther>(4*Wstate<5:3>);
+                        fault = std::make_shared<FillNOther>(4 * Wstate<5:3>);
                     else
-                        fault = std::make_shared<FillNNormal>(4*Wstate<2:0>);
+                        fault = std::make_shared<FillNNormal>(4 * Wstate<2:0>);
                 } else {
                     Cwp = (Cwp - 1 + NWindows) % NWindows;
                     Rd_prev = Rs1 + Rs2_or_imm13;

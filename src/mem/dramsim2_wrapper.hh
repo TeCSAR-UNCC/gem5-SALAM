@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 /**
@@ -57,6 +55,12 @@ namespace DRAMSim {
 class MultiChannelMemorySystem;
 
 }
+
+namespace gem5
+{
+
+namespace memory
+{
 
 /**
  * Wrapper class to avoid having DRAMSim2 names like ClockDomain etc
@@ -159,5 +163,8 @@ class DRAMSim2Wrapper
      */
     void tick();
 };
+
+} // namespace memory
+} // namespace gem5
 
 #endif //__MEM_DRAMSIM2_WRAPPER_HH__

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2013, 2017-2018 ARM Limited
+ * Copyright (c) 2020 Metempsy Technology Consulting
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,9 +34,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Edmund Grimley Evans
- *          Thomas Grocutt
  */
 
 /**
@@ -51,12 +49,16 @@
 
 #include <stdint.h>
 
-#include "arch/arm/miscregs.hh"
+#include "arch/arm/regs/misc.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
 
-enum FPRounding {
+enum FPRounding
+{
     FPRounding_TIEEVEN = 0,
     FPRounding_POSINF = 1,
     FPRounding_NEGINF = 2,
@@ -174,6 +176,8 @@ T fplibInfinity(int sgn);
 /** Foating-point value for default NaN. */
 template <class T>
 T fplibDefaultNaN();
+/** Floating-point  JS convert to a signed integer, with rounding to zero. */
+uint32_t fplibFPToFixedJS(uint64_t op, FPSCR &fpscr, bool Is64, uint8_t &nz);
 
 /* Function specializations... */
 template <>
@@ -413,6 +417,8 @@ template <>
 uint32_t fplibDefaultNaN();
 template <>
 uint64_t fplibDefaultNaN();
-}
+
+} // namespace ArmISA
+} // namespace gem5
 
 #endif

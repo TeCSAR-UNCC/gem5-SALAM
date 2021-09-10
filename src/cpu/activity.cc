@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #include "cpu/activity.hh"
@@ -35,9 +33,10 @@
 #include "cpu/timebuf.hh"
 #include "debug/Activity.hh"
 
-using namespace std;
+namespace gem5
+{
 
-ActivityRecorder::ActivityRecorder(const string &name, int num_stages,
+ActivityRecorder::ActivityRecorder(const std::string &name, int num_stages,
     int longest_latency, int activity)
     : _name(name), activityBuffer(longest_latency, 0),
       longestLatency(longest_latency), activityCount(activity),
@@ -167,3 +166,5 @@ ActivityRecorder::validate()
 
     assert(count == activityCount);
 }
+
+} // namespace gem5

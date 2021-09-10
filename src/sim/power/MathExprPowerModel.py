@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: David Guillen Fandos
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -43,6 +41,7 @@ from m5.objects.PowerModelState import PowerModelState
 class MathExprPowerModel(PowerModelState):
     type = 'MathExprPowerModel'
     cxx_header = "sim/power/mathexpr_powermodel.hh"
+    cxx_class = 'gem5::MathExprPowerModel'
 
     # Equations for dynamic and static power in Watts
     # Equations may use gem5 stats ie. "1.1*ipc + 2.3*l2_cache.overall_misses"

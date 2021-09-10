@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Brad Beckmann
  */
 
 #ifndef __MEM_RUBY_COMMON_INTVEC_HH__
@@ -39,8 +37,17 @@
 #include <ostream>
 #include <vector>
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 typedef std::vector<int> IntVec;
 
 std::ostream& operator<<(std::ostream& os, const std::vector<int>& myvector);
+
+} // namespace ruby
+} // namespace gem5
 
 #endif //__MEM_RUBY_COMMON_INTVEC_HH__

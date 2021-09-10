@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -41,91 +39,58 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-output header {{
-    class MicroDebug : public X86ISA::X86MicroopBase
+def template MicroDebugFlagsDeclare {{
+    class %(class_name)s : public %(base_class)s
     {
-      protected:
-        std::shared_ptr<GenericISA::M5DebugFault> fault;
+      private:
+        %(reg_idx_arr_decl)s;
 
-      public:
-        MicroDebug(ExtMachInst _machInst, const char *mnem,
-                const char *instMnem, uint64_t setFlags,
-                GenericISA::M5DebugFault *_fault);
-
-        Fault
-        execute(ExecContext *xc, Trace::InstRecord *traceData) const
-        {
-            return fault;
-        }
-
-        std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const
-        {
-            std::stringstream response;
-
-            printMnemonic(response, instMnem, mnemonic);
-            response << "\"" << fault->message() << "\"";
-
-            return response.str();
-        }
-    };
-
-    class MicroDebugFlags : public MicroDebug
-    {
       protected:
         uint8_t cc;
 
       public:
-        MicroDebugFlags(ExtMachInst _machInst, const char *mnem,
-                const char *instMnem, uint64_t setFlags,
+        %(class_name)s(ExtMachInst mach_inst, const char *mnem,
+                const char *inst_mnem, uint64_t set_flags,
                 GenericISA::M5DebugFault *_fault, uint8_t _cc);
 
-        Fault execute(ExecContext *, Trace::InstRecord *) const;
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
     };
 }};
 
-output decoder {{
-    MicroDebug::MicroDebug(ExtMachInst _machInst, const char *mnem,
-            const char *instMnem, uint64_t setFlags,
-            GenericISA::M5DebugFault *_fault) :
-        X86ISA::X86MicroopBase(_machInst, mnem, instMnem,
-                               setFlags, No_OpClass),
-        fault(_fault)
-    {}
-}};
-
 def template MicroDebugFlagsExecute {{
-        Fault
-        %(class_name)s::execute(ExecContext *xc,
-                Trace::InstRecord *traceData) const
-        {
-            %(op_decl)s
-            %(op_rd)s
-            if (%(cond_test)s) {
-                return %(base_class)s::execute(xc, traceData);
-            } else {
-                return NoFault;
-            }
+    Fault
+    %(class_name)s::execute(ExecContext *xc,
+            Trace::InstRecord *trace_data) const
+    {
+        %(op_decl)s
+        %(op_rd)s
+        if (%(cond_test)s) {
+            return %(base_class)s::execute(xc, trace_data);
+        } else {
+            return NoFault;
         }
+    }
 }};
 
 def template MicroDebugFlagsConstructor {{
     %(class_name)s::%(class_name)s(
-            ExtMachInst machInst, const char *mnem,
-            const char *instMnem, uint64_t setFlags,
-            GenericISA::M5DebugFault *_fault, uint8_t _cc) :
-        %(base_class)s(machInst, mnem, instMnem, setFlags, _fault),
-        cc(_cc)
+            ExtMachInst mach_inst, const char *mnem, const char *inst_mnem,
+            uint64_t set_flags, GenericISA::M5DebugFault *_fault,
+            uint8_t _cc) :
+        %(base_class)s(mach_inst, mnem, inst_mnem, set_flags, _fault), cc(_cc)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
 
 let {{
-    iop = InstObjParams("", "MicroDebugFlags", "MicroDebug",
+    iop = InstObjParams("", "MicroDebugFlags", "X86ISA::MicroDebug",
             {"code": "",
              "cond_test": "checkCondition(ccFlagBits | cfofBits | \
                                               dfBit | ecfBit | ezfBit, cc)"})
+
+    header_output = MicroDebugFlagsDeclare.subst(iop)
     exec_output = MicroDebugFlagsExecute.subst(iop)
     decoder_output = MicroDebugFlagsConstructor.subst(iop)
 }};
@@ -139,7 +104,7 @@ let {{
             self.once = once
             self.flags = flags
             if flags and not isinstance(flags, (list, tuple)):
-                raise Exception, "flags must be a list or tuple of flags"
+                raise Exception("flags must be a list or tuple of flags")
 
             self.className = "MicroDebugFlags" if flags else "MicroDebug"
 

@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_ARM_FASTMODEL_AMBA_PORTS_HH__
@@ -37,7 +35,11 @@
 
 #include "systemc/tlm_port_wrapper.hh"
 
-namespace FastModel
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
 {
 
 typedef sc_gem5::TlmInitiatorWrapper<
@@ -45,6 +47,7 @@ typedef sc_gem5::TlmInitiatorWrapper<
 typedef sc_gem5::TlmTargetWrapper<
     64, amba_pv::amba_pv_protocol_types> AmbaTarget;
 
-} // namespace FastModel
+} // namespace fastmodel
+} // namespace gem5
 
 #endif // __ARCH_ARM_FASTMODEL_AMBA_PORTS_HH__

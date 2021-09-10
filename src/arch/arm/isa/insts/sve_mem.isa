@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Giacomo Gabrielli
 
 // @file Definition of SVE memory access instructions.
 
@@ -815,7 +813,7 @@ let {{
             storeWrEnableCode = '''
             auto wrEn = std::vector<bool>(sizeof(MemElemType) * eCount, true);
             '''
-        loadIop = InstObjParams('ldr',
+        loadIop = ArmInstObjParams('ldr',
             'SveLdrPred' if isPred else 'SveLdrVec',
             'SveMemPredFillSpill' if isPred else 'SveMemVecFillSpill',
             {'tpl_header': '',
@@ -825,8 +823,8 @@ let {{
              'rden_code' : loadRdEnableCode,
              'fault_code' : '',
              'fa_code' : ''},
-            ['IsMemRef', 'IsLoad'])
-        storeIop = InstObjParams('str',
+            ['IsLoad'])
+        storeIop = ArmInstObjParams('str',
             'SveStrPred' if isPred else 'SveStrVec',
             'SveMemPredFillSpill' if isPred else 'SveMemVecFillSpill',
             {'tpl_header': '',
@@ -835,7 +833,7 @@ let {{
              'memacc_code': storeMemAccCode,
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fa_code' : ''},
-            ['IsMemRef', 'IsStore'])
+            ['IsStore'])
         header_output += SveMemFillSpillOpDeclare.subst(loadIop)
         header_output += SveMemFillSpillOpDeclare.subst(storeIop)
         exec_output += (
@@ -999,7 +997,7 @@ let {{
         }
         ''' % ('' if firstFaulting else nonFaultingCode)
 
-        loadIop = InstObjParams('ld1',
+        loadIop = ArmInstObjParams('ld1',
             'SveContigLoadSI' if offsetIsImm else 'SveContigLoadSS',
             'SveContigMemSI' if offsetIsImm else 'SveContigMemSS',
             {'tpl_header': tplHeader,
@@ -1009,8 +1007,8 @@ let {{
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fault_code' : '',
              'fa_code' : ''},
-            ['IsMemRef', 'IsLoad'])
-        storeIop = InstObjParams('st1',
+            ['IsLoad'])
+        storeIop = ArmInstObjParams('st1',
             'SveContigStoreSI' if offsetIsImm else 'SveContigStoreSS',
             'SveContigMemSI' if offsetIsImm else 'SveContigMemSS',
             {'tpl_header': tplHeader,
@@ -1019,8 +1017,8 @@ let {{
              'memacc_code': storeMemAccCode,
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fa_code' : ''},
-            ['IsMemRef', 'IsStore'])
-        faultIop = InstObjParams('ldff1' if firstFaulting else 'ldnf1',
+            ['IsStore'])
+        faultIop = ArmInstObjParams('ldff1' if firstFaulting else 'ldnf1',
             'SveContigFFLoadSS' if firstFaulting else 'SveContigNFLoadSI',
             'SveContigMemSS' if firstFaulting else 'SveContigMemSI',
             {'tpl_header': tplHeader,
@@ -1030,7 +1028,7 @@ let {{
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fault_code' : faultCode,
              'fa_code' : ''},
-            ['IsMemRef', 'IsLoad'])
+            ['IsLoad'])
         faultIop.snippets['memacc_code'] = (ffrReadBackCode +
                                            faultIop.snippets['memacc_code'])
         if offsetIsImm:
@@ -1085,7 +1083,7 @@ let {{
             }
         }
         '''
-        iop = InstObjParams('ld1r',
+        iop = ArmInstObjParams('ld1r',
             'SveLoadAndRepl',
             'SveContigMemSI',
             {'tpl_header': tplHeader,
@@ -1093,7 +1091,7 @@ let {{
              'memacc_code': memAccCode,
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fa_code' : ''},
-            ['IsMemRef', 'IsLoad'])
+            ['IsLoad'])
         header_output += SveContigMemSIOpDeclare.subst(iop)
         exec_output += (
             SveLoadAndReplExecute.subst(iop) +
@@ -1147,7 +1145,7 @@ let {{
         predCheckCode = 'GpOp_x[index]'
         faultStatusSetCode = 'PUreg0_x[elemIndex] = 1;'
         faultStatusResetCode = 'PUreg0_x[elemIndex] = 0;'
-        loadIop = InstObjParams('ld1',
+        loadIop = ArmInstObjParams('ld1',
             ('SveGatherLoadVIMicroop'
              if indexed_addr_form == IndexedAddrForm.VEC_PLUS_IMM
              else 'SveGatherLoadSVMicroop'),
@@ -1160,8 +1158,8 @@ let {{
              'fault_status_reset_code' : faultStatusResetCode,
              'pred_check_code' : predCheckCode,
              'fa_code' : ''},
-            ['IsMicroop', 'IsMemRef', 'IsLoad'])
-        storeIop = InstObjParams('st1',
+            ['IsMicroop', 'IsLoad'])
+        storeIop = ArmInstObjParams('st1',
             ('SveScatterStoreVIMicroop'
              if indexed_addr_form == IndexedAddrForm.VEC_PLUS_IMM
              else 'SveScatterStoreSVMicroop'),
@@ -1172,7 +1170,7 @@ let {{
              'ea_code' : sveEnabledCheckCode + eaCode_store,
              'pred_check_code' : predCheckCode,
              'fa_code' : ''},
-            ['IsMicroop', 'IsMemRef', 'IsStore'])
+            ['IsMicroop', 'IsStore'])
         if indexed_addr_form == IndexedAddrForm.VEC_PLUS_IMM:
             header_output += SveIndexedMemVIMicroopDeclare.subst(loadIop)
             header_output += SveIndexedMemVIMicroopDeclare.subst(storeIop)
@@ -1222,7 +1220,7 @@ let {{
             Ffr_ub[index * sizeof(RegElemType) + j] = FfrAux_x[index];
         }
         '''
-        iop = InstObjParams('ldff1',
+        iop = ArmInstObjParams('ldff1',
             'SveFirstFaultWritebackMicroop',
             'MicroOp',
             {'tpl_header': tplHeader,
@@ -1248,7 +1246,7 @@ let {{
         for (unsigned i = 0; i < eCount; i++) {
             AA64FpUreg0_ub[i] = AA64FpOp1_ub[i];
         }'''
-        iop = InstObjParams('ld1',
+        iop = ArmInstObjParams('ld1',
             'SveGatherLoadCpySrcVecMicroop',
             'MicroOp',
             {'code': code},
@@ -1303,17 +1301,17 @@ let {{
                 AA64FpDest_x[i] = AA64FpOp1V3S_x[srcIdx];
         }'''
 
-        iop2 = InstObjParams('intrlv',
+        iop2 = ArmInstObjParams('intrlv',
                 'SveIntrlv2Microop',
                 'MicroOp',
                 {'code': code2},
                 ['IsMicroop'])
-        iop3 = InstObjParams('intrlv',
+        iop3 = ArmInstObjParams('intrlv',
                 'SveIntrlv3Microop',
                 'MicroOp',
                 {'code': code3},
                 ['IsMicroop'])
-        iop4 = InstObjParams('intrlv',
+        iop4 = ArmInstObjParams('intrlv',
                 'SveIntrlv4Microop',
                 'MicroOp',
                 {'code': code4},
@@ -1377,17 +1375,17 @@ let {{
                 AA64FpDest_x[i] = AA64IntrlvReg3_x[srcIdx];
         }'''
 
-        iop2 = InstObjParams('deintrlv',
+        iop2 = ArmInstObjParams('deintrlv',
                 'SveDeIntrlv2Microop',
                 'MicroOp',
                 {'code': code2},
                 ['IsMicroop'])
-        iop3 = InstObjParams('deintrlv',
+        iop3 = ArmInstObjParams('deintrlv',
                 'SveDeIntrlv3Microop',
                 'MicroOp',
                 {'code': code3},
                 ['IsMicroop'])
-        iop4 = InstObjParams('deintrlv',
+        iop4 = ArmInstObjParams('deintrlv',
                 'SveDeIntrlv4Microop',
                 'MicroOp',
                 {'code': code4},
@@ -1440,15 +1438,15 @@ let {{
         storeWrEnableCode = '''
         auto wrEn = std::vector<bool>(sizeof(Element) * eCount, true);
         '''
-        loadIop = InstObjParams('ldxx',
+        loadIop = ArmInstObjParams('ldxx',
             'SveLoadRegImmMicroop' if offsetIsImm else 'SveLoadRegRegMicroop',
             'MicroOp',
             {'targs': 'Element',
              'memacc_code': loadMemAccCode,
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fa_code' : ''},
-            ['IsMemRef', 'IsLoad', 'IsMicroop'])
-        storeIop = InstObjParams('stxx',
+            ['IsLoad', 'IsMicroop'])
+        storeIop = ArmInstObjParams('stxx',
             'SveStoreRegImmMicroop' if offsetIsImm
                                     else 'SveStoreRegRegMicroop',
             'MicroOp',
@@ -1457,7 +1455,7 @@ let {{
              'memacc_code': storeMemAccCode,
              'ea_code' : sveEnabledCheckCode + eaCode,
              'fa_code' : ''},
-            ['IsMemRef', 'IsStore', 'IsMicroop'])
+            ['IsStore', 'IsMicroop'])
         if offsetIsImm:
             header_output += SveStructMemSIMicroopDeclare.subst(loadIop)
             header_output += SveStructMemSIMicroopDeclare.subst(storeIop)
@@ -1520,7 +1518,7 @@ let {{
             AA64FpDest_uq[i] = qword;
         }
         '''
-        iop = InstObjParams('ld1rq',
+        iop = ArmInstObjParams('ld1rq',
                 'SveLd1RqSI' if offsetIsImm else 'SveLd1RqSS',
                 'SveContigMemSI' if offsetIsImm else 'SveContigMemSS',
                 {'tpl_header': tplHeader,
@@ -1530,7 +1528,7 @@ let {{
                  'ea_code': sveEnabledCheckCode + eaCode,
                  'fault_code': '',
                  'fa_code': ''},
-                ['IsMemRef', 'IsLoad'])
+                ['IsLoad'])
         if offsetIsImm:
             header_output += SveContigMemSIOpDeclare.subst(iop)
         else:

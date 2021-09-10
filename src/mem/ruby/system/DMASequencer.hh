@@ -39,6 +39,12 @@
 #include "mem/ruby/system/RubyPort.hh"
 #include "params/DMASequencer.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 struct DMARequest
 {
     DMARequest(uint64_t start_paddr, int len, bool write, int bytes_completed,
@@ -57,7 +63,7 @@ class DMASequencer : public RubyPort
 {
   public:
     typedef DMASequencerParams Params;
-    DMASequencer(const Params *);
+    DMASequencer(const Params &);
     void init() override;
 
     /* external interface */
@@ -70,6 +76,7 @@ class DMASequencer : public RubyPort
     /* SLICC callback */
     void dataCallback(const DataBlock &dblk, const Addr &addr);
     void ackCallback(const Addr &addr);
+    void atomicCallback(const DataBlock &dblk, const Addr &addr);
 
     void recordRequestType(DMASequencerRequestType requestType);
 
@@ -84,5 +91,8 @@ class DMASequencer : public RubyPort
     int m_outstanding_count;
     int m_max_outstanding_requests;
 };
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_SYSTEM_DMASEQUENCER_HH__

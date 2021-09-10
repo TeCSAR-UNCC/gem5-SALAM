@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Daniel Carvalho
 
 from m5.params import *
 from m5.proxy import *
@@ -34,7 +32,7 @@ class BloomFilterBase(SimObject):
     type = 'BloomFilterBase'
     abstract = True
     cxx_header = "base/filters/base.hh"
-    cxx_class = 'BloomFilter::Base'
+    cxx_class = 'gem5::bloom_filter::Base'
 
     size = Param.Int(4096, "Number of entries in the filter")
 
@@ -47,7 +45,7 @@ class BloomFilterBase(SimObject):
 
 class BloomFilterBlock(BloomFilterBase):
     type = 'BloomFilterBlock'
-    cxx_class = 'BloomFilter::Block'
+    cxx_class = 'gem5::bloom_filter::Block'
     cxx_header = "base/filters/block_bloom_filter.hh"
 
     masks_lsbs = VectorParam.Unsigned([Self.offset_bits,
@@ -57,7 +55,7 @@ class BloomFilterBlock(BloomFilterBase):
 
 class BloomFilterMultiBitSel(BloomFilterBase):
     type = 'BloomFilterMultiBitSel'
-    cxx_class = 'BloomFilter::MultiBitSel'
+    cxx_class = 'gem5::bloom_filter::MultiBitSel'
     cxx_header = "base/filters/multi_bit_sel_bloom_filter.hh"
 
     num_hashes = Param.Int(4, "Number of hashes")
@@ -67,17 +65,17 @@ class BloomFilterMultiBitSel(BloomFilterBase):
 
 class BloomFilterBulk(BloomFilterMultiBitSel):
     type = 'BloomFilterBulk'
-    cxx_class = 'BloomFilter::Bulk'
+    cxx_class = 'gem5::bloom_filter::Bulk'
     cxx_header = "base/filters/bulk_bloom_filter.hh"
 
 class BloomFilterH3(BloomFilterMultiBitSel):
     type = 'BloomFilterH3'
-    cxx_class = 'BloomFilter::H3'
+    cxx_class = 'gem5::bloom_filter::H3'
     cxx_header = "base/filters/h3_bloom_filter.hh"
 
 class BloomFilterMulti(BloomFilterBase):
     type = 'BloomFilterMulti'
-    cxx_class = 'BloomFilter::Multi'
+    cxx_class = 'gem5::bloom_filter::Multi'
     cxx_header = "base/filters/multi_bloom_filter.hh"
 
     # The base filter should not be used, since this filter is the combination
@@ -95,8 +93,13 @@ class BloomFilterMulti(BloomFilterBase):
 
 class BloomFilterPerfect(BloomFilterBase):
     type = 'BloomFilterPerfect'
-    cxx_class = 'BloomFilter::Perfect'
+    cxx_class = 'gem5::bloom_filter::Perfect'
     cxx_header = "base/filters/perfect_bloom_filter.hh"
 
     # The base filter is not needed. Use a dummy value.
     size = 1
+
+    # This filter does not use saturating counters - as long as the entry is
+    # set, it is present; thus, it only needs one bit.
+    num_bits = 1
+    threshold = 1

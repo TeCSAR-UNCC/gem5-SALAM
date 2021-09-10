@@ -33,34 +33,50 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "arch/power/isa.hh"
 
+#include "arch/power/regs/float.hh"
+#include "arch/power/regs/int.hh"
+#include "arch/power/regs/misc.hh"
+#include "cpu/thread_context.hh"
 #include "params/PowerISA.hh"
+
+namespace gem5
+{
 
 namespace PowerISA
 {
 
-ISA::ISA(Params *p)
-    : SimObject(p)
+ISA::ISA(const Params &p) : BaseISA(p)
 {
+    _regClasses.emplace_back(NumIntRegs, NumIntRegs - 1);
+    _regClasses.emplace_back(NumFloatRegs);
+    _regClasses.emplace_back(1);
+    _regClasses.emplace_back(2);
+    _regClasses.emplace_back(1);
+    _regClasses.emplace_back(0);
+    _regClasses.emplace_back(NUM_MISCREGS);
     clear();
 }
 
-const PowerISAParams *
-ISA::params() const
+void
+ISA::copyRegsFrom(ThreadContext *src)
 {
-    return dynamic_cast<const Params *>(_params);
+    // First loop through the integer registers.
+    for (int i = 0; i < NumIntRegs; ++i)
+        tc->setIntReg(i, src->readIntReg(i));
+
+    // Then loop through the floating point registers.
+    for (int i = 0; i < NumFloatRegs; ++i)
+        tc->setFloatReg(i, src->readFloatReg(i));
+
+    //TODO Copy misc. registers
+
+    // Lastly copy PC/NPC
+    tc->pcState(src->pcState());
 }
 
-}
-
-PowerISA::ISA *
-PowerISAParams::create()
-{
-    return new PowerISA::ISA(this);
-}
-
+} // namespace PowerISA
+} // namespace gem5

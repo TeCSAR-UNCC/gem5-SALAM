@@ -29,14 +29,17 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos
  */
 
 #include "gpu-compute/pool_manager.hh"
 
-PoolManager::PoolManager(uint32_t minAlloc, uint32_t poolSize)
-    : _minAllocation(minAlloc), _poolSize(poolSize)
+namespace gem5
 {
-    assert(poolSize > 0);
+
+PoolManager::PoolManager(const PoolManagerParams &p)
+    : SimObject(p), _minAllocation(p.min_alloc), _poolSize(p.pool_size)
+{
+    assert(_poolSize > 0);
 }
+
+} // namespace gem5

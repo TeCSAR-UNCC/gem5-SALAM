@@ -1,4 +1,17 @@
+# Copyright (c) 2021 Arm Limited
+# All rights reserved
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 2017 Mark D. Hill and David A. Wood
+# Copyright (c) 2021 Huawei International
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,16 +36,15 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Sean Wilson
 
 '''
 Built in test cases that verify particular details about a gem5 run.
 '''
 import re
+import os
 
-from testlib import test
-from testlib.config import constants
+from testlib import test_util
+from testlib.configuration import constants
 from testlib.helper import joinpath, diff_out_file
 
 class Verifier(object):
@@ -46,18 +58,19 @@ class Verifier(object):
 
     def instantiate_test(self, name_pfx):
         name = '-'.join([name_pfx, self.__class__.__name__])
-        return test.TestFunction(self._test,
+        return test_util.TestFunction(self._test,
                 name=name, fixtures=self.fixtures)
 
-    def failed(self, fixtures):
-        '''
-        Called if this verifier fails to cleanup (or not) as needed.
-        '''
-        try:
-            fixtures[constants.tempdir_fixture_name].skip_cleanup()
-        except KeyError:
-            pass # No need to do anything if the tempdir fixture doesn't exist
+class CheckH5StatsExist(Verifier):
+    def __init__(self, stats_file='stats.h5'):
+        super(CheckH5StatsExist, self).__init__()
+        self.stats_file = stats_file
 
+    def test(self, params):
+        tempdir = params.fixtures[constants.tempdir_fixture_name].path
+        h5_file = joinpath(tempdir, self.stats_file)
+        if not os.path.isfile(h5_file):
+            test_util.fail('Could not find h5 stats file %s', h5_file)
 
 class MatchGoldStandard(Verifier):
     '''
@@ -92,8 +105,7 @@ class MatchGoldStandard(Verifier):
                             ignore_regexes=self.ignore_regex,
                             logger=params.log)
         if diff is not None:
-            self.failed(fixtures)
-            test.fail('Stdout did not match:\n%s\nSee %s for full results'
+            test_util.fail('Stdout did not match:\n%s\nSee %s for full results'
                       % (diff, tempdir))
 
     def _generic_instance_warning(self, kwargs):
@@ -128,7 +140,11 @@ class DerivedGoldStandard(MatchGoldStandard):
 class MatchStdout(DerivedGoldStandard):
     _file = constants.gem5_simulation_stdout
     _default_ignore_regex = [
+            re.compile('^\s+$'), # Remove blank lines.
+            re.compile('^gem5 Simulator System'),
+            re.compile('^gem5 is copyrighted software'),
             re.compile('^Redirecting (stdout|stderr) to'),
+            re.compile('^gem5 version '),
             re.compile('^gem5 compiled '),
             re.compile('^gem5 started '),
             re.compile('^gem5 executing on '),
@@ -170,34 +186,46 @@ class MatchConfigJSON(DerivedGoldStandard):
             re.compile(r'''^\s*"(cwd|input|codefile)":'''),
             )
 
-class MatchRegex(Verifier):
-    def __init__(self, regex, match_stderr=True, match_stdout=True):
-        super(MatchRegex, self).__init__()
+class MatchFileRegex(Verifier):
+    """
+    Looking for a match between a regex pattern and the content of a list
+    of files. Verifier will pass as long as the pattern is found in at least
+    one of the files.
+    """
+    def __init__(self, regex, filenames):
+        super(MatchFileRegex, self).__init__()
         self.regex = _iterable_regex(regex)
-        self.match_stderr = match_stderr
-        self.match_stdout = match_stdout
+        self.filenames = filenames
+
+    def parse_file(self, fname):
+        with open(fname, 'r') as file_:
+            for line in file_:
+                for regex in self.regex:
+                    if re.match(regex, line):
+                        return True
 
     def test(self, params):
         fixtures = params.fixtures
         # Get the file from the tempdir of the test.
         tempdir = fixtures[constants.tempdir_fixture_name].path
 
-        def parse_file(fname):
-            with open(fname, 'r') as file_:
-                for line in file_:
-                    for regex in self.regex:
-                        if re.match(regex, line):
-                            return True
-        if self.match_stdout:
-            if parse_file(joinpath(tempdir,
-                                   constants.gem5_simulation_stdout)):
+        for fname in self.filenames:
+            if self.parse_file(joinpath(tempdir, fname)):
                 return # Success
-        if self.match_stderr:
-            if parse_file(joinpath(tempdir,
-                                   constants.gem5_simulation_stderr)):
-                return # Success
-        self.failed(fixtures)
-        test.fail('Could not match regex.')
+
+        test_util.fail('Could not match regex.')
+
+class MatchRegex(MatchFileRegex):
+    """
+    Looking for a match between a regex pattern and stdout/stderr.
+    """
+    def __init__(self, regex, match_stderr=True, match_stdout=True):
+        filenames = list()
+        if match_stdout:
+            filenames.append(constants.gem5_simulation_stdout)
+        if match_stderr:
+            filenames.append(constants.gem5_simulation_stderr)
+        super(MatchRegex, self).__init__(regex, filenames)
 
 _re_type = type(re.compile(''))
 def _iterable_regex(regex):

@@ -24,31 +24,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_THREAD_STATE_HH__
 #define __CPU_THREAD_STATE_HH__
 
-#include "arch/types.hh"
-#include "config/the_isa.hh"
 #include "cpu/base.hh"
-#include "cpu/profile.hh"
 #include "cpu/thread_context.hh"
 #include "sim/process.hh"
 
-class EndQuiesceEvent;
-class FunctionProfile;
-class ProfileNode;
-namespace Kernel {
-    class Statistics;
-}
+namespace gem5
+{
 
 class Checkpoint;
-
-class FSTranslatingPortProxy;
-class SETranslatingPortProxy;
 
 /**
  *  Struct for holding general thread state that is needed across CPU
@@ -56,7 +44,8 @@ class SETranslatingPortProxy;
  *  memory, quiesce events, and certain stats.  This can be expanded
  *  to hold more thread-specific stats within it.
  */
-struct ThreadState : public Serializable {
+struct ThreadState : public Serializable
+{
     typedef ThreadContext::Status Status;
 
     ThreadState(BaseCPU *cpu, ThreadID _tid, Process *_process);
@@ -91,46 +80,11 @@ struct ThreadState : public Serializable {
      */
     void initMemProxies(ThreadContext *tc);
 
-    void dumpFuncProfile();
-
-    EndQuiesceEvent *getQuiesceEvent() { return quiesceEvent; }
-
-    void profileClear();
-
-    void profileSample();
-
-    Kernel::Statistics *getKernelStats() { return kernelStats; }
-
-    PortProxy &getPhysProxy();
-
     PortProxy &getVirtProxy();
 
     Process *getProcessPtr() { return process; }
 
-    void setProcessPtr(Process *p)
-    {
-        process = p;
-        /**
-         * When the process pointer changes while operating in SE Mode,
-         * the se translating port proxy needs to be reinitialized since it
-         * holds a pointer to the process class.
-         */
-        if (virtProxy) {
-            delete virtProxy;
-            virtProxy = NULL;
-            initMemProxies(NULL);
-        }
-    }
-
-    /** Reads the number of instructions functionally executed and
-     * committed.
-     */
-    Counter readFuncExeInst() const { return funcExeInst; }
-
-    /** Sets the total number of instructions functionally executed
-     * and committed.
-     */
-    void setFuncExeInst(Counter new_val) { funcExeInst = new_val; }
+    void setProcessPtr(Process *p) { process = p; }
 
     /** Returns the status of this thread. */
     Status status() const { return _status; }
@@ -142,14 +96,19 @@ struct ThreadState : public Serializable {
 
     /** Number of instructions committed. */
     Counter numInst;
-    /** Stat for number instructions committed. */
-    Stats::Scalar numInsts;
-    /** Number of ops (including micro ops) committed. */
+     /** Number of ops (including micro ops) committed. */
     Counter numOp;
-    /** Stat for number ops (including micro ops) committed. */
-    Stats::Scalar numOps;
-    /** Stat for number of memory references. */
-    Stats::Scalar numMemRefs;
+    // Defining the stat group
+    struct ThreadStateStats : public statistics::Group
+    {
+        ThreadStateStats(BaseCPU *cpu, const ThreadID& thread);
+        /** Stat for number instructions committed. */
+        statistics::Scalar numInsts;
+        /** Stat for number ops (including micro ops) committed. */
+        statistics::Scalar numOps;
+        /** Stat for number of memory references. */
+        statistics::Scalar numMemRefs;
+    } threadStats;
 
     /** Number of simulated loads, used for tracking events based on
      * the number of loads committed.
@@ -178,36 +137,21 @@ struct ThreadState : public Serializable {
     /** Last time suspend was called on this thread. */
     Tick lastSuspend;
 
-  public:
-    FunctionProfile *profile;
-    ProfileNode *profileNode;
-    Addr profilePC;
-    EndQuiesceEvent *quiesceEvent;
-
-    Kernel::Statistics *kernelStats;
-
   protected:
     Process *process;
-
-    /** A port proxy outgoing only for functional accesses to physical
-     * addresses.*/
-    PortProxy *physProxy;
 
     /** A translating port proxy, outgoing only, for functional
      * accesse to virtual addresses. */
     PortProxy *virtProxy;
 
   public:
-    /*
-     * number of executed instructions, for matching with syscall trace
-     * points in EIO files.
-     */
-    Counter funcExeInst;
 
     //
     // Count failed store conditionals so we can warn of apparent
     // application deadlock situations.
     unsigned storeCondFailures;
 };
+
+} // namespace gem5
 
 #endif // __CPU_THREAD_STATE_HH__

@@ -33,18 +33,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #include "arch/arm/insts/branch.hh"
 
 #include "base/cprintf.hh"
 
+namespace gem5
+{
+
 namespace ArmISA {
 
 std::string
-BranchReg::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+BranchReg::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -53,7 +55,8 @@ BranchReg::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-BranchImm::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+BranchImm::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -62,7 +65,8 @@ BranchImm::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-BranchRegReg::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+BranchRegReg::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -73,3 +77,4 @@ BranchRegReg::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 } // namespace ArmISA
+} // namespace gem5

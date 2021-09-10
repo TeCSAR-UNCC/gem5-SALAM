@@ -54,29 +54,71 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Matthias Jung
- *          Abdul Mutaal Ahmad
- *          Christian Menard
  */
 
 #include "systemc/tlm_bridge/gem5_to_tlm.hh"
 
+#include <utility>
+
 #include "params/Gem5ToTlmBridge32.hh"
 #include "params/Gem5ToTlmBridge64.hh"
+#include "params/Gem5ToTlmBridge128.hh"
+#include "params/Gem5ToTlmBridge256.hh"
+#include "params/Gem5ToTlmBridge512.hh"
+#include "sim/eventq.hh"
 #include "sim/system.hh"
 #include "systemc/tlm_bridge/sc_ext.hh"
 #include "systemc/tlm_bridge/sc_mm.hh"
 
+using namespace gem5;
+
 namespace sc_gem5
 {
+
+/**
+ * Helper function to help set priority of phase change events of tlm
+ * transactions. This is to workaround the uncertainty of gem5 eventq if
+ * multiple events are scheduled at the same timestamp.
+ */
+static EventBase::Priority
+getPriorityOfTlmPhase(const tlm::tlm_phase& phase)
+{
+    // In theory, for all phase change events of a specific TLM base protocol
+    // transaction, only tlm::END_REQ and tlm::BEGIN_RESP would be scheduled at
+    // the same time in the same queue. So we only need to ensure END_REQ has a
+    // higher priority (less in pri value) than BEGIN_RESP.
+    if (phase == tlm::END_REQ) {
+        return EventBase::Default_Pri - 1;
+    }
+    return EventBase::Default_Pri;
+}
 
 /**
  * Instantiate a tlm memory manager that takes care about all the
  * tlm transactions in the system.
  */
 Gem5SystemC::MemoryManager mm;
+
+namespace
+{
+/**
+ * Hold all the callbacks necessary to convert a gem5 packet to tlm payload.
+ */
+std::vector<PacketToPayloadConversionStep> extraPacketToPayloadSteps;
+}  // namespace
+
+/**
+ * Notify the Gem5ToTlm bridge that we need an extra step to properly convert a
+ * gem5 packet to tlm payload. This can be useful when there exists a SystemC
+ * extension that requires information in gem5 packet. For example, if a user
+ * defined a SystemC extension the carries stream_id, the user may add a step
+ * here to read stream_id out and set the extension properly.
+ */
+void
+addPacketToPayloadConversionStep(PacketToPayloadConversionStep step)
+{
+    extraPacketToPayloadSteps.push_back(std::move(step));
+}
 
 /**
  * Convert a gem5 packet to a TLM payload by copying all the relevant
@@ -105,18 +147,28 @@ packet2payload(PacketPtr packet)
         trans->set_command(tlm::TLM_IGNORE_COMMAND);
     } else if (packet->isRead()) {
         trans->set_command(tlm::TLM_READ_COMMAND);
-    } else if (packet->isInvalidate()) {
-        /* Do nothing */
-        trans->set_command(tlm::TLM_IGNORE_COMMAND);
     } else if (packet->isWrite()) {
         trans->set_command(tlm::TLM_WRITE_COMMAND);
     } else {
-        SC_REPORT_FATAL("Gem5ToTlmBridge", "No R/W packet");
+        trans->set_command(tlm::TLM_IGNORE_COMMAND);
     }
 
     // Attach the packet pointer to the TLM transaction to keep track.
     auto *extension = new Gem5SystemC::Gem5Extension(packet);
     trans->set_auto_extension(extension);
+
+    if (packet->isAtomicOp()) {
+        auto *atomic_ex = new Gem5SystemC::AtomicExtension(
+            std::shared_ptr<AtomicOpFunctor>(
+                packet->req->getAtomicOpFunctor()->clone()),
+            packet->req->isAtomicReturn());
+        trans->set_auto_extension(atomic_ex);
+    }
+
+    // Apply all conversion steps necessary in this specific setup.
+    for (auto &step : extraPacketToPayloadSteps) {
+        step(packet, *trans);
+    }
 
     return trans;
 }
@@ -124,7 +176,6 @@ packet2payload(PacketPtr packet)
 template <unsigned int BITWIDTH>
 void
 Gem5ToTlmBridge<BITWIDTH>::pec(
-        Gem5SystemC::PayloadEvent<Gem5ToTlmBridge<BITWIDTH>> *pe,
         tlm::tlm_generic_payload &trans, const tlm::tlm_phase &phase)
 {
     sc_core::sc_time delay;
@@ -137,7 +188,7 @@ Gem5ToTlmBridge<BITWIDTH>::pec(
         // Did another request arrive while blocked, schedule a retry.
         if (needToSendRequestRetry) {
             needToSendRequestRetry = false;
-            bsp.sendRetryReq();
+            bridgeResponsePort.sendRetryReq();
         }
     }
     if (phase == tlm::BEGIN_RESP) {
@@ -148,19 +199,15 @@ Gem5ToTlmBridge<BITWIDTH>::pec(
 
         bool need_retry = false;
 
-        /*
-         * If the packet was piped through and needs a response, we don't need
-         * to touch the packet and can forward it directly as a response.
-         * Otherwise, we need to make a response and send the transformed
-         * packet.
-         */
-        if (extension.isPipeThrough()) {
-            if (packet->isResponse()) {
-                need_retry = !bsp.sendTimingResp(packet);
-            }
-        } else if (packet->needsResponse()) {
+        // If there is another gem5 model under the receiver side, and already
+        // make a response packet back, we can simply send it back. Otherwise,
+        // we make a response packet before sending it back to the initiator
+        // side gem5 module.
+        if (packet->needsResponse()) {
             packet->makeResponse();
-            need_retry = !bsp.sendTimingResp(packet);
+        }
+        if (packet->isResponse()) {
+            need_retry = !bridgeResponsePort.sendTimingResp(packet);
         }
 
         if (need_retry) {
@@ -176,7 +223,6 @@ Gem5ToTlmBridge<BITWIDTH>::pec(
             }
         }
     }
-    delete pe;
 }
 
 template <unsigned int BITWIDTH>
@@ -286,10 +332,6 @@ Gem5ToTlmBridge<BITWIDTH>::recvTimingReq(PacketPtr packet)
     panic_if(packet->cacheResponding(),
              "Should not see packets where cache is responding");
 
-    panic_if(!(packet->isRead() || packet->isWrite()),
-             "Should only see read and writes at TLM memory\n");
-
-
     // We should never get a second request after noting that a retry is
     // required.
     sc_assert(!needToSendRequestRetry);
@@ -354,12 +396,12 @@ Gem5ToTlmBridge<BITWIDTH>::recvTimingReq(PacketPtr packet)
     } else if (status == tlm::TLM_UPDATED) {
         // The Timing annotation must be honored:
         sc_assert(phase == tlm::END_REQ || phase == tlm::BEGIN_RESP);
-
-        auto *pe = new Gem5SystemC::PayloadEvent<Gem5ToTlmBridge>(
-                *this, &Gem5ToTlmBridge::pec, "PEQ");
-        Tick nextEventTick = curTick() + delay.value();
-        system->wakeupEventQueue(nextEventTick);
-        system->schedule(pe, nextEventTick);
+        // Accepted but is now blocking until END_REQ (exclusion rule).
+        blockingRequest = trans;
+        auto cb = [this, trans, phase]() { pec(*trans, phase); };
+        auto event = new EventFunctionWrapper(
+                cb, "pec", true, getPriorityOfTlmPhase(phase));
+        system->schedule(event, curTick() + delay.value());
     } else if (status == tlm::TLM_COMPLETED) {
         // Transaction is over nothing has do be done.
         sc_assert(phase == tlm::END_RESP);
@@ -398,7 +440,7 @@ Gem5ToTlmBridge<BITWIDTH>::recvRespRetry()
     PacketPtr packet =
         Gem5SystemC::Gem5Extension::getExtension(trans).getPacket();
 
-    bool need_retry = !bsp.sendTimingResp(packet);
+    bool need_retry = !bridgeResponsePort.sendTimingResp(packet);
 
     sc_assert(!need_retry);
 
@@ -432,11 +474,10 @@ tlm::tlm_sync_enum
 Gem5ToTlmBridge<BITWIDTH>::nb_transport_bw(tlm::tlm_generic_payload &trans,
     tlm::tlm_phase &phase, sc_core::sc_time &delay)
 {
-    auto *pe = new Gem5SystemC::PayloadEvent<Gem5ToTlmBridge>(
-            *this, &Gem5ToTlmBridge::pec, "PE");
-    Tick nextEventTick = curTick() + delay.value();
-    system->wakeupEventQueue(nextEventTick);
-    system->schedule(pe, nextEventTick);
+    auto cb = [this, &trans, phase]() { pec(trans, phase); };
+    auto event = new EventFunctionWrapper(
+            cb, "pec", true, getPriorityOfTlmPhase(phase));
+    system->schedule(event, curTick() + delay.value());
     return tlm::TLM_ACCEPTED;
 }
 
@@ -460,22 +501,23 @@ Gem5ToTlmBridge<BITWIDTH>::invalidate_direct_mem_ptr(
 
 template <unsigned int BITWIDTH>
 Gem5ToTlmBridge<BITWIDTH>::Gem5ToTlmBridge(
-        Params *params, const sc_core::sc_module_name &mn) :
-    Gem5ToTlmBridgeBase(mn), bsp(std::string(name()) + ".gem5", *this),
+        const Params &params, const sc_core::sc_module_name &mn) :
+    Gem5ToTlmBridgeBase(mn),
+    bridgeResponsePort(std::string(name()) + ".gem5", *this),
     socket("tlm_socket"),
     wrapper(socket, std::string(name()) + ".tlm", InvalidPortID),
-    system(params->system), blockingRequest(nullptr),
+    system(params.system), blockingRequest(nullptr),
     needToSendRequestRetry(false), blockingResponse(nullptr),
-    addrRanges(params->addr_ranges.begin(), params->addr_ranges.end())
+    addrRanges(params.addr_ranges.begin(), params.addr_ranges.end())
 {
 }
 
 template <unsigned int BITWIDTH>
-::Port &
+gem5::Port &
 Gem5ToTlmBridge<BITWIDTH>::gem5_getPort(const std::string &if_name, int idx)
 {
     if (if_name == "gem5")
-        return bsp;
+        return bridgeResponsePort;
     else if (if_name == "tlm")
         return wrapper;
 
@@ -486,7 +528,7 @@ template <unsigned int BITWIDTH>
 void
 Gem5ToTlmBridge<BITWIDTH>::before_end_of_elaboration()
 {
-    bsp.sendRangeChange();
+    bridgeResponsePort.sendRangeChange();
 
     socket.register_nb_transport_bw(this, &Gem5ToTlmBridge::nb_transport_bw);
     socket.register_invalidate_direct_mem_ptr(
@@ -497,15 +539,36 @@ Gem5ToTlmBridge<BITWIDTH>::before_end_of_elaboration()
 } // namespace sc_gem5
 
 sc_gem5::Gem5ToTlmBridge<32> *
-Gem5ToTlmBridge32Params::create()
+gem5::Gem5ToTlmBridge32Params::create() const
 {
     return new sc_gem5::Gem5ToTlmBridge<32>(
-            this, sc_core::sc_module_name(name.c_str()));
+            *this, sc_core::sc_module_name(name.c_str()));
 }
 
 sc_gem5::Gem5ToTlmBridge<64> *
-Gem5ToTlmBridge64Params::create()
+gem5::Gem5ToTlmBridge64Params::create() const
 {
     return new sc_gem5::Gem5ToTlmBridge<64>(
-            this, sc_core::sc_module_name(name.c_str()));
+            *this, sc_core::sc_module_name(name.c_str()));
+}
+
+sc_gem5::Gem5ToTlmBridge<128> *
+gem5::Gem5ToTlmBridge128Params::create() const
+{
+    return new sc_gem5::Gem5ToTlmBridge<128>(
+            *this, sc_core::sc_module_name(name.c_str()));
+}
+
+sc_gem5::Gem5ToTlmBridge<256> *
+gem5::Gem5ToTlmBridge256Params::create() const
+{
+    return new sc_gem5::Gem5ToTlmBridge<256>(
+            *this, sc_core::sc_module_name(name.c_str()));
+}
+
+sc_gem5::Gem5ToTlmBridge<512> *
+gem5::Gem5ToTlmBridge512Params::create() const
+{
+    return new sc_gem5::Gem5ToTlmBridge<512>(
+            *this, sc_core::sc_module_name(name.c_str()));
 }

@@ -32,10 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Radhika Jagtap
-#          Andreas Hansson
-#          Thomas Grass
 
 from m5.params import *
 from m5.objects.BaseCPU import BaseCPU
@@ -46,6 +42,7 @@ class TraceCPU(BaseCPU):
     """
     type = 'TraceCPU'
     cxx_header = "cpu/trace/trace_cpu.hh"
+    cxx_class = 'gem5::TraceCPU'
 
     @classmethod
     def memory_mode(cls):

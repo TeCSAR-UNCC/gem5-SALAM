@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "systemc/core/python.hh"
@@ -36,7 +34,7 @@ namespace
 struct InstallTlmGlobalQuantum : public ::sc_gem5::PythonInitFunc
 {
     void
-    run(pybind11::module &systemc) override
+    run(pybind11::module_ &systemc) override
     {
         pybind11::class_<tlm::tlm_global_quantum>(
                 systemc, "tlm_global_quantum")

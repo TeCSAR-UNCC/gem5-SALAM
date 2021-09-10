@@ -43,6 +43,12 @@
 #include "mem/ruby/common/TypeDefines.hh"
 #include "mem/ruby/protocol/RubyRequestType.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class Sequencer;
 
 /*!
@@ -51,7 +57,8 @@ class Sequencer;
  * length object, so that while writing the data to a file one does not
  * need to copy the meta data and the actual data separately.
  */
-class TraceRecord {
+class TraceRecord
+{
   public:
     int m_cntrl_id;
     Tick m_time;
@@ -125,5 +132,8 @@ operator<<(std::ostream& out, const TraceRecord& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif //__MEM_RUBY_SYSTEM_CACHERECORDER_HH__

@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Alec Roelke
  */
 
 #include "arch/riscv/insts/mem.hh"
@@ -39,27 +37,29 @@
 #include "arch/riscv/utility.hh"
 #include "cpu/static_inst.hh"
 
-using namespace std;
+namespace gem5
+{
 
 namespace RiscvISA
 {
 
-string
-Load::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+std::string
+Load::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
-    stringstream ss;
-    ss << mnemonic << ' ' << registerName(_destRegIdx[0]) << ", " <<
-        offset << '(' << registerName(_srcRegIdx[0]) << ')';
+    std::stringstream ss;
+    ss << mnemonic << ' ' << registerName(destRegIdx(0)) << ", " <<
+        offset << '(' << registerName(srcRegIdx(0)) << ')';
     return ss.str();
 }
 
-string
-Store::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+std::string
+Store::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
-    stringstream ss;
-    ss << mnemonic << ' ' << registerName(_srcRegIdx[1]) << ", " <<
-        offset << '(' << registerName(_srcRegIdx[0]) << ')';
+    std::stringstream ss;
+    ss << mnemonic << ' ' << registerName(srcRegIdx(1)) << ", " <<
+        offset << '(' << registerName(srcRegIdx(0)) << ')';
     return ss.str();
 }
 
-}
+} // namespace RiscvISA
+} // namespace gem5

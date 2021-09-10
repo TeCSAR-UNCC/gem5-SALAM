@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 /**
@@ -62,8 +60,14 @@
 #include <functional>
 #include <limits>
 
-#include "mem/port.hh"
+#include "mem/protocol/functional.hh"
 #include "sim/byteswap.hh"
+
+namespace gem5
+{
+
+class RequestPort;
+class ThreadContext;
 
 /**
  * This object is a proxy for a port or other object which implements the
@@ -99,16 +103,15 @@ class PortProxy : FunctionalRequestProtocol
     }
 
   public:
-    PortProxy(SendFunctionalFunc func, unsigned int cacheLineSize) :
-        sendFunctional(func), _cacheLineSize(cacheLineSize)
+    PortProxy(SendFunctionalFunc func, unsigned int cache_line_size) :
+        sendFunctional(func), _cacheLineSize(cache_line_size)
     {}
-    PortProxy(const MasterPort &port, unsigned int cacheLineSize) :
-        sendFunctional([&port](PacketPtr pkt)->void {
-                port.sendFunctional(pkt);
-            }), _cacheLineSize(cacheLineSize)
-    {}
-    virtual ~PortProxy() { }
 
+    // Helpers which create typical SendFunctionalFunc-s from other objects.
+    PortProxy(ThreadContext *tc, unsigned int cache_line_size);
+    PortProxy(const RequestPort &port, unsigned int cache_line_size);
+
+    virtual ~PortProxy() {}
 
 
     /** Fixed functionality for use in base classes. */
@@ -311,5 +314,7 @@ PortProxy::write(Addr address, T data, ByteOrder byte_order) const
     data = htog(data, byte_order);
     writeBlob(address, &data, sizeof(T));
 }
+
+} // namespace gem5
 
 #endif // __MEM_PORT_PROXY_HH__

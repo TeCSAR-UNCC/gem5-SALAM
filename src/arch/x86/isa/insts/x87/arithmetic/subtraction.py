@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop FSUB1_R
@@ -93,8 +91,12 @@ def macroop FSUBP_P
    fault "std::make_shared<UnimpInstFault>()"
 };
 
+def macroop FSUBRP_R
+{
+    subfp sti, st(0), sti, spm=1
+};
+
 # FISUB
 # FSUBR
-# FSUBRP
 # FISUBR
 '''

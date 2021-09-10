@@ -25,15 +25,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Maxwell Walter
- *          Alec Roelke
  */
 
 #include "arch/riscv/insts/static_inst.hh"
 
 #include "arch/riscv/types.hh"
 #include "cpu/static_inst.hh"
+
+namespace gem5
+{
 
 namespace RiscvISA
 {
@@ -49,3 +49,4 @@ RiscvMicroInst::advancePC(PCState &pcState) const
 }
 
 } // namespace RiscvISA
+} // namespace gem5

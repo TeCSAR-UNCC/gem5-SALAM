@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 /**
@@ -52,6 +50,9 @@ extern "C"
 #include <cstdlib>
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 const char* PngWriter::_imgExtension = "png";
 
@@ -75,7 +76,8 @@ writePng(png_structp pngPtr, png_bytep data, png_size_t length)
     strmPtr->write(reinterpret_cast<const char *>(data), length);
 }
 
-struct PngWriter::PngStructHandle {
+struct PngWriter::PngStructHandle
+{
   private:
     // Make PngStructHandle uncopyable
     PngStructHandle(const PngStructHandle&) = delete;
@@ -173,3 +175,4 @@ PngWriter::write(std::ostream &png) const
     png_write_end(pngPtr, NULL);
 }
 
+} // namespace gem5

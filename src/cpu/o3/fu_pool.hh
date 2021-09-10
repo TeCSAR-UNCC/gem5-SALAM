@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_O3_FU_POOL_HH__
@@ -53,8 +51,14 @@
 #include "params/FUPool.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 class FUDesc;
 class FuncUnit;
+
+namespace o3
+{
 
 /**
  * Pool of FU's, specific to the new CPU model. The old FU pool had lists of
@@ -91,7 +95,8 @@ class FUPool : public SimObject
      * by iterating through it, thus leaving free units at the head of the
      * queue.
      */
-    class FUIdxQueue {
+    class FUIdxQueue
+    {
       public:
         /** Constructs a circular queue of FU indices. */
         FUIdxQueue()
@@ -131,7 +136,7 @@ class FUPool : public SimObject
   public:
     typedef FUPoolParams Params;
     /** Constructs a FU pool. */
-    FUPool(const Params *p);
+    FUPool(const Params &p);
     ~FUPool();
 
     static constexpr auto NoCapableFU = -2;
@@ -176,5 +181,8 @@ class FUPool : public SimObject
     /** Takes over from another CPU's thread. */
     void takeOverFrom() {};
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif // __CPU_O3_FU_POOL_HH__

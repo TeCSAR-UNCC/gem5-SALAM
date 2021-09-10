@@ -24,16 +24,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Timothy M. Jones
  */
 
 #include "arch/power/insts/floating.hh"
 
+namespace gem5
+{
+
 using namespace PowerISA;
 
 std::string
-FloatOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+FloatOp::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
 
@@ -41,7 +42,7 @@ FloatOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the (possibly) two source registers
@@ -49,12 +50,14 @@ FloatOp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
         if (_numSrcRegs > 1) {
           ss << ", ";
-          printReg(ss, _srcRegIdx[1]);
+          printReg(ss, srcRegIdx(1));
         }
     }
 
     return ss.str();
 }
+
+} // namespace gem5

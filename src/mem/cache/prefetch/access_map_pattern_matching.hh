@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
  /**
@@ -45,7 +43,15 @@
 #include "mem/packet.hh"
 #include "sim/clocked_object.hh"
 
+namespace gem5
+{
+
 struct AccessMapPatternMatchingParams;
+struct AMPMPrefetcherParams;
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
 
 class AccessMapPatternMatching : public ClockedObject
 {
@@ -89,12 +95,15 @@ class AccessMapPatternMatching : public ClockedObject
         /** vector containing the state of the cachelines in this zone */
         std::vector<AccessMapState> states;
 
-        AccessMapEntry(size_t num_entries) : states(num_entries, AM_INIT)
-        {}
-
-        /** Reset the entries to their initial values */
-        void reset() override
+        AccessMapEntry(size_t num_entries)
+          : TaggedEntry(), states(num_entries, AM_INIT)
         {
+        }
+
+        void
+        invalidate() override
+        {
+            TaggedEntry::invalidate();
             for (auto &entry : states) {
                 entry = AM_INIT;
             }
@@ -177,24 +186,26 @@ class AccessMapPatternMatching : public ClockedObject
     EventFunctionWrapper epochEvent;
 
   public:
-    AccessMapPatternMatching(const AccessMapPatternMatchingParams* p);
-    ~AccessMapPatternMatching()
-    {}
+    AccessMapPatternMatching(const AccessMapPatternMatchingParams &p);
+    ~AccessMapPatternMatching() = default;
+
     void startup() override;
-    void calculatePrefetch(const BasePrefetcher::PrefetchInfo &pfi,
-        std::vector<QueuedPrefetcher::AddrPriority> &addresses);
+    void calculatePrefetch(const Base::PrefetchInfo &pfi,
+        std::vector<Queued::AddrPriority> &addresses);
 };
 
-struct AMPMPrefetcherParams;
-
-class AMPMPrefetcher : public QueuedPrefetcher
+class AMPM : public Queued
 {
     AccessMapPatternMatching &ampm;
   public:
-    AMPMPrefetcher(const AMPMPrefetcherParams* p);
-    ~AMPMPrefetcher()
-    {}
+    AMPM(const AMPMPrefetcherParams &p);
+    ~AMPM() = default;
+
     void calculatePrefetch(const PrefetchInfo &pfi,
                            std::vector<AddrPriority> &addresses) override;
 };
+
+} // namespace prefetch
+} // namespace gem5
+
 #endif//__MEM_CACHE_PREFETCH_ACCESS_MAP_PATTERN_MATCHING_HH__

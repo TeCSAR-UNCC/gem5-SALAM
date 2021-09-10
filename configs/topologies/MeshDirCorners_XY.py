@@ -23,18 +23,13 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Brad Beckmann
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 from m5.params import *
 from m5.objects import *
 
 from common import FileSystemConfig
 
-from .BaseTopology import SimpleTopology
+from topologies.BaseTopology import SimpleTopology
 
 # Creates a Mesh topology with 4 directories, one at each corner.
 # One L1 (and L2, depending on the protocol) are connected to each router.
@@ -103,7 +98,7 @@ class MeshDirCorners_XY(SimpleTopology):
         # NUMA Node for each quadrant
         # With odd columns or rows, the nodes will be unequal
         numa_nodes = [ [], [], [], []]
-        for i in xrange(num_routers):
+        for i in range(num_routers):
             if i % num_columns < num_columns / 2  and \
                i < num_routers / 2:
                 numa_nodes[0].append(i)
@@ -220,6 +215,6 @@ class MeshDirCorners_XY(SimpleTopology):
         for n in numa_nodes:
             if n:
                 FileSystemConfig.register_node(n,
-                    MemorySize(options.mem_size) / num_numa_nodes, i)
+                    MemorySize(options.mem_size) // num_numa_nodes, i)
             i += 1
 

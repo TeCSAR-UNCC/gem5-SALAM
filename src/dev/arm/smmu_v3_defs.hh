@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_DEFS_HH__
@@ -44,14 +42,19 @@
 
 #include "base/bitunion.hh"
 
-enum {
+namespace gem5
+{
+
+enum
+{
     SMMU_SECURE_SZ = 0x184, // Secure regs are within page0
     SMMU_PAGE_ZERO_SZ = 0x10000,
     SMMU_PAGE_ONE_SZ = 0x10000,
     SMMU_REG_SIZE = SMMU_PAGE_ONE_SZ + SMMU_PAGE_ZERO_SZ
 };
 
-enum {
+enum
+{
     STE_CONFIG_ABORT        = 0x0,
     STE_CONFIG_BYPASS       = 0x4,
     STE_CONFIG_STAGE1_ONLY  = 0x5,
@@ -59,27 +62,31 @@ enum {
     STE_CONFIG_STAGE1_AND_2 = 0x7,
 };
 
-enum {
+enum
+{
     STAGE1_CFG_1L     = 0x0,
     STAGE1_CFG_2L_4K  = 0x1,
     STAGE1_CFG_2L_64K = 0x2,
 };
 
-enum {
+enum
+{
     ST_CFG_SPLIT_SHIFT = 6,
     ST_CD_ADDR_SHIFT   = 6,
     CD_TTB_SHIFT       = 4,
     STE_S2TTB_SHIFT    = 4,
 };
 
-enum {
+enum
+{
     TRANS_GRANULE_4K      = 0x0,
     TRANS_GRANULE_64K     = 0x1,
     TRANS_GRANULE_16K     = 0x2,
     TRANS_GRANULE_INVALID = 0x3,
 };
 
-enum {
+enum
+{
     ST_BASE_ADDR_MASK  = 0x0000ffffffffffe0ULL,
     ST_CFG_SIZE_MASK   = 0x000000000000003fULL,
     ST_CFG_SPLIT_MASK  = 0x00000000000007c0ULL,
@@ -311,7 +318,8 @@ struct ContextDescriptor
     uint64_t _pad[3];
 };
 
-enum {
+enum
+{
     CR0_SMMUEN_MASK = 0x1,
     CR0_PRIQEN_MASK = 0x2,
     CR0_EVENTQEN_MASK = 0x4,
@@ -320,7 +328,8 @@ enum {
     CR0_VMW_MASK = 0x1C0,
 };
 
-enum SMMUCommandType {
+enum SMMUCommandType
+{
     CMD_PRF_CONFIG     = 0x01,
     CMD_PRF_ADDR       = 0x02,
     CMD_CFGI_STE       = 0x03,
@@ -375,11 +384,13 @@ struct SMMUCommand
     }
 };
 
-enum SMMUEventTypes {
+enum SMMUEventTypes
+{
     EVT_FAULT = 0x0001,
 };
 
-enum SMMUEventFlags {
+enum SMMUEventFlags
+{
     EVF_WRITE = 0x0001,
 };
 
@@ -394,8 +405,11 @@ struct SMMUEvent
     uint64_t ipa;
 };
 
-enum {
+enum
+{
     SMMU_MAX_TRANS_ID = 64
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_DEFS_HH__ */

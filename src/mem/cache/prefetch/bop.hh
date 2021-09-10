@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ivan Pizarro
  */
 
 /**
@@ -43,13 +41,21 @@
 #include "mem/cache/prefetch/queued.hh"
 #include "mem/packet.hh"
 
+namespace gem5
+{
+
 struct BOPPrefetcherParams;
 
-class BOPPrefetcher : public QueuedPrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class BOP : public Queued
 {
     private:
 
-        enum RRWay {
+        enum RRWay
+        {
             Left,
             Right
         };
@@ -147,11 +153,14 @@ class BOPPrefetcher : public QueuedPrefetcher
 
     public:
 
-        BOPPrefetcher(const BOPPrefetcherParams *p);
-        ~BOPPrefetcher() {}
+        BOP(const BOPPrefetcherParams &p);
+        ~BOP() = default;
 
         void calculatePrefetch(const PrefetchInfo &pfi,
                                std::vector<AddrPriority> &addresses) override;
 };
+
+} // namespace prefetch
+} // namespace gem5
 
 #endif /* __MEM_CACHE_PREFETCH_BOP_HH__ */

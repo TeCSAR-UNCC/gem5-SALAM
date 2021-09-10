@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Horsnell
  */
 
 /**
@@ -46,28 +44,41 @@
 #ifndef __CPU_O3_PROBE_SIMPLE_TRACE_HH__
 #define __CPU_O3_PROBE_SIMPLE_TRACE_HH__
 
-#include "cpu/o3/dyn_inst.hh"
-#include "cpu/o3/impl.hh"
+#include "cpu/o3/dyn_inst_ptr.hh"
 #include "params/SimpleTrace.hh"
 #include "sim/probe/probe.hh"
 
-class SimpleTrace : public ProbeListenerObject {
+namespace gem5
+{
+
+namespace o3
+{
+
+class SimpleTrace : public ProbeListenerObject
+{
 
   public:
-    SimpleTrace(const SimpleTraceParams *params):
+    SimpleTrace(const SimpleTraceParams &params) :
         ProbeListenerObject(params)
     {
     }
 
     /** Register the probe listeners. */
-    void regProbeListeners();
+    void regProbeListeners() override;
 
-    /** Returns the name of the trace. */
-    const std::string name() const { return ProbeListenerObject::name() + ".trace"; }
+    std::string
+    name() const override
+    {
+        return ProbeListenerObject::name() + ".trace";
+    }
 
   private:
-    void traceFetch(const O3CPUImpl::DynInstConstPtr& dynInst);
-    void traceCommit(const O3CPUImpl::DynInstConstPtr& dynInst);
+    void traceFetch(const DynInstConstPtr& dynInst);
+    void traceCommit(const DynInstConstPtr& dynInst);
 
 };
+
+} // namespace o3
+} // namespace gem5
+
 #endif//__CPU_O3_PROBE_SIMPLE_TRACE_HH__

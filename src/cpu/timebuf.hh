@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Kevin Lim
  */
 
 #ifndef __BASE_TIMEBUF_HH__
@@ -35,6 +32,9 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
+
+namespace gem5
+{
 
 template <class T>
 class TimeBuffer
@@ -247,5 +247,6 @@ class TimeBuffer
     }
 };
 
-#endif // __BASE_TIMEBUF_HH__
+} // namespace gem5
 
+#endif // __BASE_TIMEBUF_HH__

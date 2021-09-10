@@ -29,9 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Sooraj Puthoor,
- *          Anthony Gutierrez
  */
 
 #ifndef __GPU_COMPUTE_OF_SCHEDULING_POLICY_HH__
@@ -41,6 +38,9 @@
 
 #include "gpu-compute/scheduling_policy.hh"
 #include "gpu-compute/wavefront.hh"
+
+namespace gem5
+{
 
 // oldest first where age is marked by the wave id
 class OFSchedulingPolicy final : public __SchedulingPolicy<OFSchedulingPolicy>
@@ -79,5 +79,7 @@ class OFSchedulingPolicy final : public __SchedulingPolicy<OFSchedulingPolicy>
         return selected_wave;
     }
 };
+
+} // namespace gem5
 
 #endif // __GPU_COMPUTE_OF_SCHEDULING_POLICY_HH__

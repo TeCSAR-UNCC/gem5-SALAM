@@ -24,16 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Gabe Black
- *          Steve Reinhardt
  */
 
 #ifndef __ARCH_SPARC_INSTS_MEM_HH__
 #define __ARCH_SPARC_INSTS_MEM_HH__
 
 #include "arch/sparc/insts/static_inst.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -52,7 +51,7 @@ class Mem : public SparcStaticInst
     using SparcStaticInst::SparcStaticInst;
 
     std::string generateDisassembly(
-        Addr pc, const SymbolTable *symtab) const override;
+        Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 /**
@@ -64,15 +63,16 @@ class MemImm : public Mem
 
     // Constructor
     MemImm(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        Mem(mnem, _machInst, __opClass), imm(sext<13>(bits(_machInst, 12, 0)))
+        Mem(mnem, _machInst, __opClass), imm(szext<13>(_machInst))
     {}
 
     std::string generateDisassembly(
-        Addr pc, const SymbolTable *symtab) const override;
+        Addr pc, const loader::SymbolTable *symtab) const override;
 
     const int32_t imm;
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_INSTS_MEM_HH__

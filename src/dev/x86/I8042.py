@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.params import *
 from m5.proxy import *
@@ -34,8 +32,9 @@ from m5.objects.PS2 import *
 
 class I8042(BasicPioDevice):
     type = 'I8042'
-    cxx_class = 'X86ISA::I8042'
+    cxx_class = 'gem5::X86ISA::I8042'
     cxx_header = "dev/x86/i8042.hh"
+
     # This isn't actually used for anything here.
     pio_addr = 0x0
     data_port = Param.Addr('Data port address')

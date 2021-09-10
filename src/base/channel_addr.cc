@@ -33,13 +33,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "base/channel_addr.hh"
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 ChannelAddrRange::ChannelAddrRange(AddrRange ch_range, Addr start, Addr end)
     : ChannelAddrRange(ChannelAddr(ch_range, start),
@@ -61,3 +62,5 @@ operator<<(std::ostream &out, const ChannelAddr &addr)
 {
     return out << (ChannelAddr::Type)addr;
 }
+
+} // namespace gem5

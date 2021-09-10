@@ -33,18 +33,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Gabrielli
  */
 
 #include "arch/arm/insts/sve_mem.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
 
 std::string
-SveMemVecFillSpill::generateDisassembly(Addr pc,
-                                        const SymbolTable *symtab) const
+SveMemVecFillSpill::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -59,8 +60,8 @@ SveMemVecFillSpill::generateDisassembly(Addr pc,
 }
 
 std::string
-SveMemPredFillSpill::generateDisassembly(Addr pc,
-                                         const SymbolTable *symtab) const
+SveMemPredFillSpill::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -75,7 +76,8 @@ SveMemPredFillSpill::generateDisassembly(Addr pc,
 }
 
 std::string
-SveContigMemSS::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+SveContigMemSS::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     // TODO: add suffix to transfer register and scaling factor (LSL #<x>)
     std::stringstream ss;
@@ -94,7 +96,8 @@ SveContigMemSS::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-SveContigMemSI::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+SveContigMemSI::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     // TODO: add suffix to transfer register
     std::stringstream ss;
@@ -113,4 +116,5 @@ SveContigMemSI::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     return ss.str();
 }
 
-}  // namespace ArmISA
+} // namespace ArmISA
+} // namespace gem5

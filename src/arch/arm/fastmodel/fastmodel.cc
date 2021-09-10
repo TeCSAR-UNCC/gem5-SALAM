@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright 2019 Google, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,19 +35,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "python/pybind11/pybind.hh"
 #include "scx/scx.h"
 #include "sim/init.hh"
 
+namespace gem5
+{
+
 namespace
 {
 
 void
-arm_fast_model_pybind(pybind11::module &m_internal)
+arm_fast_model_pybind(pybind11::module_ &m_internal)
 {
     auto arm_fast_model = m_internal.def_submodule("arm_fast_model");
     arm_fast_model
@@ -87,8 +100,6 @@ arm_fast_model_pybind(pybind11::module &m_internal)
              pybind11::arg("debug") = false)
         .def("scx_enable_cadi_log", &scx::scx_enable_cadi_log,
              pybind11::arg("log") = true)
-        .def("scx_prefix_appli_output", &scx::scx_prefix_appli_output,
-             pybind11::arg("prefix") = true)
         .def("scx_print_port_number", &scx::scx_print_port_number,
              pybind11::arg("print") = true)
 
@@ -111,3 +122,4 @@ arm_fast_model_pybind(pybind11::module &m_internal)
 EmbeddedPyBind embed_("arm_fast_model", &arm_fast_model_pybind);
 
 } // anonymous namespace
+} // namespace gem5

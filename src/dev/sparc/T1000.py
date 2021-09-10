@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.params import *
 from m5.proxy import *
@@ -38,18 +36,21 @@ from m5.objects.Uart import Uart8250
 class MmDisk(BasicPioDevice):
     type = 'MmDisk'
     cxx_header = "dev/sparc/mm_disk.hh"
+    cxx_class = 'gem5::MmDisk'
     image = Param.DiskImage("Disk Image")
     pio_addr = 0x1F40000000
 
 class DumbTOD(BasicPioDevice):
     type = 'DumbTOD'
     cxx_header = "dev/sparc/dtod.hh"
+    cxx_class = 'gem5::DumbTOD'
     time = Param.Time('01/01/2009', "System time to use ('Now' for real time)")
     pio_addr = 0xfff0c1fff8
 
 class Iob(PioDevice):
     type = 'Iob'
     cxx_header = "dev/sparc/iob.hh"
+    cxx_class = 'gem5::Iob'
     platform = Param.Platform(Parent.any, "Platform this device is part of.")
     pio_latency = Param.Latency('1ns', "Programed IO latency")
 
@@ -57,7 +58,7 @@ class Iob(PioDevice):
 class T1000(Platform):
     type = 'T1000'
     cxx_header = "dev/sparc/t1000.hh"
-    system = Param.System(Parent.any, "system")
+    cxx_class = 'gem5::T1000'
 
     fake_clk = IsaFake(pio_addr=0x9600000000, pio_size=0x100000000)
             #warn_access="Accessing Clock Unit -- Unimplemented!")
@@ -114,8 +115,8 @@ class T1000(Platform):
     iob = Iob()
     # Attach I/O devices that are on chip
     def attachOnChipIO(self, bus):
-        self.iob.pio = bus.master
-        self.htod.pio = bus.master
+        self.iob.pio = bus.mem_side_ports
+        self.htod.pio = bus.mem_side_ports
 
 
     # Attach I/O devices to specified bus object.  Can't do this
@@ -124,17 +125,17 @@ class T1000(Platform):
     def attachIO(self, bus):
         self.hvuart.device = self.hterm
         self.puart0.device = self.pterm
-        self.fake_clk.pio = bus.master
-        self.fake_membnks.pio = bus.master
-        self.fake_l2_1.pio = bus.master
-        self.fake_l2_2.pio = bus.master
-        self.fake_l2_3.pio = bus.master
-        self.fake_l2_4.pio = bus.master
-        self.fake_l2esr_1.pio = bus.master
-        self.fake_l2esr_2.pio = bus.master
-        self.fake_l2esr_3.pio = bus.master
-        self.fake_l2esr_4.pio = bus.master
-        self.fake_ssi.pio = bus.master
-        self.fake_jbi.pio = bus.master
-        self.puart0.pio = bus.master
-        self.hvuart.pio = bus.master
+        self.fake_clk.pio = bus.mem_side_ports
+        self.fake_membnks.pio = bus.mem_side_ports
+        self.fake_l2_1.pio = bus.mem_side_ports
+        self.fake_l2_2.pio = bus.mem_side_ports
+        self.fake_l2_3.pio = bus.mem_side_ports
+        self.fake_l2_4.pio = bus.mem_side_ports
+        self.fake_l2esr_1.pio = bus.mem_side_ports
+        self.fake_l2esr_2.pio = bus.mem_side_ports
+        self.fake_l2esr_3.pio = bus.mem_side_ports
+        self.fake_l2esr_4.pio = bus.mem_side_ports
+        self.fake_ssi.pio = bus.mem_side_ports
+        self.fake_jbi.pio = bus.mem_side_ports
+        self.puart0.pio = bus.mem_side_ports
+        self.hvuart.pio = bus.mem_side_ports

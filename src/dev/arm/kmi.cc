@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          William Wang
  */
 
 #include "dev/arm/kmi.hh"
@@ -51,12 +48,15 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-Pl050::Pl050(const Pl050Params *p)
+namespace gem5
+{
+
+Pl050::Pl050(const Pl050Params &p)
     : AmbaIntDevice(p, 0x1000), control(0), status(0x43), clkdiv(0),
       rawInterrupts(0),
-      ps2(p->ps2)
+      ps2Device(p.ps2)
 {
-    ps2->hostRegDataAvailable([this]() { this->updateRxInt(); });
+    ps2Device->hostRegDataAvailable([this]() { this->updateRxInt(); });
 }
 
 Tick
@@ -75,13 +75,13 @@ Pl050::read(PacketPtr pkt)
         break;
 
       case kmiStat:
-        status.rxfull = ps2->hostDataAvailable() ? 1 : 0;
+        status.rxfull = ps2Device->hostDataAvailable() ? 1 : 0;
         DPRINTF(Pl050, "Read Status: %#x\n", (uint32_t)status);
         data = status;
         break;
 
       case kmiData:
-        data = ps2->hostDataAvailable() ? ps2->hostRead() : 0;
+        data = ps2Device->hostDataAvailable() ? ps2Device->hostRead() : 0;
         updateRxInt();
         DPRINTF(Pl050, "Read Data: %#x\n", (uint32_t)data);
         break;
@@ -98,7 +98,7 @@ Pl050::read(PacketPtr pkt)
       default:
         if (readId(pkt, ambaId, pioAddr)) {
             // Hack for variable size accesses
-            data = pkt->getLE<uint32_t>();
+            data = pkt->getUintX(ByteOrder::little);
             break;
         }
 
@@ -106,7 +106,7 @@ Pl050::read(PacketPtr pkt)
         break;
     }
 
-    pkt->setUintX(data, LittleEndianByteOrder);
+    pkt->setUintX(data, ByteOrder::little);
     pkt->makeAtomicResponse();
     return pioDelay;
 }
@@ -118,7 +118,7 @@ Pl050::write(PacketPtr pkt)
     assert(pkt->getAddr() >= pioAddr && pkt->getAddr() < pioAddr + pioSize);
 
     Addr daddr = pkt->getAddr() - pioAddr;
-    const uint32_t data = pkt->getUintX(LittleEndianByteOrder);
+    const uint32_t data = pkt->getUintX(ByteOrder::little);
 
     panic_if(pkt->getSize() != 1,
              "PL050: Unexpected write size "
@@ -137,7 +137,7 @@ Pl050::write(PacketPtr pkt)
         DPRINTF(Pl050, "Write Data: %#x\n", data);
         // Clear the TX interrupt before writing new data.
         setTxInt(false);
-        ps2->hostWrite((uint8_t)data);
+        ps2Device->hostWrite((uint8_t)data);
         // Data is written in 0 time, so raise the TX interrupt again.
         setTxInt(true);
         break;
@@ -170,7 +170,7 @@ Pl050::updateRxInt()
 {
     InterruptReg ints = rawInterrupts;
 
-    ints.rx = ps2->hostDataAvailable() ? 1 : 0;
+    ints.rx = ps2Device->hostDataAvailable() ? 1 : 0;
 
     setInterrupts(ints);
 }
@@ -186,11 +186,11 @@ Pl050::updateIntCtrl(InterruptReg ints, ControlReg ctrl)
     if (!old_pending && new_pending) {
         DPRINTF(Pl050, "Generate interrupt: rawInt=%#x ctrl=%#x int=%#x\n",
                 rawInterrupts, control, getInterrupt());
-        gic->sendInt(intNum);
+        interrupt->raise();
     } else if (old_pending && !new_pending) {
         DPRINTF(Pl050, "Clear interrupt: rawInt=%#x ctrl=%#x int=%#x\n",
                 rawInterrupts, control, getInterrupt());
-        gic->clearInt(intNum);
+        interrupt->clear();
     }
 }
 
@@ -223,8 +223,4 @@ Pl050::unserialize(CheckpointIn &cp)
     paramIn(cp, "raw_ints", rawInterrupts);
 }
 
-Pl050 *
-Pl050Params::create()
-{
-    return new Pl050(this);
-}
+} // namespace gem5

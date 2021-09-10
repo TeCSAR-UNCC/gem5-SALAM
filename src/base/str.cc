@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "base/str.hh"
@@ -33,13 +31,14 @@
 #include <string>
 #include <vector>
 
-using namespace std;
+namespace gem5
+{
 
 bool
-split_first(const string &s, string &lhs, string &rhs, char c)
+split_first(const std::string &s, std::string &lhs, std::string &rhs, char c)
 {
-    string::size_type offset = s.find(c);
-    if (offset == string::npos) {
+    std::string::size_type offset = s.find(c);
+    if (offset == std::string::npos) {
         lhs = s;
         rhs = "";
         return false;
@@ -51,10 +50,10 @@ split_first(const string &s, string &lhs, string &rhs, char c)
 }
 
 bool
-split_last(const string &s, string &lhs, string &rhs, char c)
+split_last(const std::string &s, std::string &lhs, std::string &rhs, char c)
 {
-    string::size_type offset = s.rfind(c);
-    if (offset == string::npos) {
+    std::string::size_type offset = s.rfind(c);
+    if (offset == std::string::npos) {
         lhs = s;
         rhs = "";
         return false;
@@ -66,10 +65,11 @@ split_last(const string &s, string &lhs, string &rhs, char c)
 }
 
 void
-tokenize(vector<string>& v, const string &s, char token, bool ignore)
+tokenize(std::vector<std::string>& v, const std::string &s, char token,
+        bool ignore)
 {
-    string::size_type first = 0;
-    string::size_type last = s.find_first_of(token);
+    std::string::size_type first = 0;
+    std::string::size_type last = s.find_first_of(token);
 
     if (s.empty())
         return;
@@ -78,20 +78,20 @@ tokenize(vector<string>& v, const string &s, char token, bool ignore)
         while (last == first)
             last = s.find_first_of(token, ++first);
 
-        if (last == string::npos) {
+        if (last == std::string::npos) {
             if (first != s.size())
                 v.push_back(s.substr(first));
             return;
         }
     }
 
-    while (last != string::npos) {
+    while (last != std::string::npos) {
         v.push_back(s.substr(first, last - first));
 
         if (ignore) {
             first = s.find_first_not_of(token, last + 1);
 
-            if (first == string::npos)
+            if (first == std::string::npos)
                 return;
         } else
             first = last + 1;
@@ -101,3 +101,5 @@ tokenize(vector<string>& v, const string &s, char token, bool ignore)
 
     v.push_back(s.substr(first));
 }
+
+} // namespace gem5

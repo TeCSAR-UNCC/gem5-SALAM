@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include <sys/ioctl.h>
@@ -48,11 +46,11 @@
 #include "base/logging.hh"
 #include "base/types.hh"
 #include "sim/async.hh"
-#include "sim/core.hh"
 #include "sim/eventq.hh"
 #include "sim/serialize.hh"
 
-using namespace std;
+namespace gem5
+{
 
 PollQueue pollQueue;
 
@@ -252,3 +250,5 @@ PollQueue::setupAsyncIO(int fd, bool set)
         getEventQueue(0)->wakeup();
     }
 }
+
+} // namespace gem5

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018-2019 ARM Limited
+ * Copyright (c) 2014, 2018-2019, 2021 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_CACHES_HH__
@@ -53,7 +51,11 @@
 
 #define WALK_CACHE_LEVELS 4
 
-enum {
+namespace gem5
+{
+
+enum
+{
     SMMU_CACHE_REPL_ROUND_ROBIN,
     SMMU_CACHE_REPL_RANDOM,
     SMMU_CACHE_REPL_LRU,
@@ -67,32 +69,38 @@ class SMMUv3BaseCache
     Random random;
     uint32_t useStamp;
 
-    Stats::Formula averageLookups;
-    Stats::Scalar totalLookups;
+    struct SMMUv3BaseCacheStats : public statistics::Group
+    {
+        SMMUv3BaseCacheStats(statistics::Group *parent,
+            const std::string &name);
 
-    Stats::Formula averageMisses;
-    Stats::Scalar totalMisses;
+        statistics::Formula averageLookups;
+        statistics::Scalar totalLookups;
 
-    Stats::Formula averageUpdates;
-    Stats::Scalar totalUpdates;
+        statistics::Formula averageMisses;
+        statistics::Scalar totalMisses;
 
-    Stats::Formula averageHitRate;
+        statistics::Formula averageUpdates;
+        statistics::Scalar totalUpdates;
 
-    Stats::Scalar insertions;
+        statistics::Formula averageHitRate;
+
+        statistics::Scalar insertions;
+    } baseCacheStats;
 
     static int decodePolicyName(const std::string &policy_name);
 
   public:
-    SMMUv3BaseCache(const std::string &policy_name, uint32_t seed);
+    SMMUv3BaseCache(const std::string &policy_name, uint32_t seed,
+                    statistics::Group *parent, const std::string &name);
     virtual ~SMMUv3BaseCache() {}
-
-    virtual void regStats(const std::string &name);
 };
 
 class SMMUTLB : public SMMUv3BaseCache
 {
   public:
-    enum AllocPolicy {
+    enum AllocPolicy
+    {
         ALLOC_ANY_WAY,
         ALLOC_ANY_BUT_LAST_WAY,
         ALLOC_LAST_WAY,
@@ -120,7 +128,8 @@ class SMMUTLB : public SMMUv3BaseCache
     };
 
     SMMUTLB(unsigned numEntries, unsigned _associativity,
-            const std::string &policy);
+            const std::string &policy, statistics::Group *parent,
+            const std::string &name);
     SMMUTLB(const SMMUTLB& tlb) = delete;
     virtual ~SMMUTLB() {}
 
@@ -169,7 +178,7 @@ class ARMArchTLB : public SMMUv3BaseCache
     };
 
     ARMArchTLB(unsigned numEntries, unsigned _associativity,
-               const std::string &policy);
+               const std::string &policy, statistics::Group *parent);
     virtual ~ARMArchTLB() {}
 
     const Entry *lookup(Addr va, uint16_t asid, uint16_t vmid,
@@ -212,7 +221,7 @@ class IPACache : public SMMUv3BaseCache
     };
 
     IPACache(unsigned numEntries, unsigned _associativity,
-             const std::string &policy);
+             const std::string &policy, statistics::Group *parent);
     virtual ~IPACache() {}
 
     const Entry *lookup(Addr ipa, uint16_t vmid, bool updStats=true);
@@ -260,7 +269,7 @@ class ConfigCache : public SMMUv3BaseCache
     };
 
     ConfigCache(unsigned numEntries, unsigned _associativity,
-                const std::string &policy);
+                const std::string &policy, statistics::Group *parent);
     virtual ~ConfigCache() {}
 
     const Entry *lookup(uint32_t sid, uint32_t ssid, bool updStats=true);
@@ -303,7 +312,8 @@ class WalkCache : public SMMUv3BaseCache
     };
 
     WalkCache(const std::array<unsigned, 2*WALK_CACHE_LEVELS> &_sizes,
-              unsigned _associativity, const std::string &policy);
+              unsigned _associativity, const std::string &policy,
+              statistics::Group *parent);
     virtual ~WalkCache() {}
 
     const Entry *lookup(Addr va, Addr vaMask, uint16_t asid, uint16_t vmid,
@@ -317,25 +327,25 @@ class WalkCache : public SMMUv3BaseCache
     void invalidateVMID(uint16_t vmid);
     void invalidateAll();
 
-    void regStats(const std::string &name) override;
-
   protected:
-    unsigned int lookupsByStageLevel[2][WALK_CACHE_LEVELS];
-    Stats::Formula averageLookupsByStageLevel[2][WALK_CACHE_LEVELS];
-    Stats::Scalar totalLookupsByStageLevel[2][WALK_CACHE_LEVELS];
+    struct WalkCacheStats : public statistics::Group
+    {
+        WalkCacheStats(statistics::Group *parent);
+        ~WalkCacheStats();
 
-    unsigned int missesByStageLevel[2][WALK_CACHE_LEVELS];
-    Stats::Formula averageMissesByStageLevel[2][WALK_CACHE_LEVELS];
-    Stats::Scalar totalMissesByStageLevel[2][WALK_CACHE_LEVELS];
+        std::vector<statistics::Formula*> averageLookupsByStageLevel;
+        statistics::Vector2d totalLookupsByStageLevel;
 
-    unsigned int updatesByStageLevel[2][WALK_CACHE_LEVELS];
-    Stats::Formula averageUpdatesByStageLevel[2][WALK_CACHE_LEVELS];
-    Stats::Scalar totalUpdatesByStageLevel[2][WALK_CACHE_LEVELS];
+        std::vector<statistics::Formula*> averageMissesByStageLevel;
+        statistics::Vector2d totalMissesByStageLevel;
 
-    Stats::Formula averageHitRateByStageLevel[2][WALK_CACHE_LEVELS];
+        std::vector<statistics::Formula*> averageUpdatesByStageLevel;
+        statistics::Vector2d totalUpdatesByStageLevel;
 
-    Stats::Scalar insertionsByStageLevel[2][WALK_CACHE_LEVELS];
+        std::vector<statistics::Formula*> averageHitRateByStageLevel;
 
+        statistics::Vector2d insertionsByStageLevel;
+    } walkCacheStats;
   private:
     typedef std::vector<Entry> Set;
     std::vector<Set> sets;
@@ -350,5 +360,7 @@ class WalkCache : public SMMUv3BaseCache
     size_t pickEntryIdxToReplace(const Set &set,
                                  unsigned stage, unsigned level);
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_CACHES_HH__ */

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #include "cpu/pred/2bit_local.hh"
@@ -35,12 +33,18 @@
 #include "base/trace.hh"
 #include "debug/Fetch.hh"
 
-LocalBP::LocalBP(const LocalBPParams *params)
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+LocalBP::LocalBP(const LocalBPParams &params)
     : BPredUnit(params),
-      localPredictorSize(params->localPredictorSize),
-      localCtrBits(params->localCtrBits),
+      localPredictorSize(params.localPredictorSize),
+      localCtrBits(params.localCtrBits),
       localPredictorSets(localPredictorSize / localCtrBits),
-      localCtrs(localPredictorSets, SatCounter(localCtrBits)),
+      localCtrs(localPredictorSets, SatCounter8(localCtrBits)),
       indexMask(localPredictorSets - 1)
 {
     if (!isPowerOf2(localPredictorSize)) {
@@ -136,8 +140,5 @@ LocalBP::uncondBranch(ThreadID tid, Addr pc, void *&bp_history)
 {
 }
 
-LocalBP*
-LocalBPParams::create()
-{
-    return new LocalBP(this);
-}
+} // namespace branch_prediction
+} // namespace gem5

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Korey Sewell
  */
 
 #ifndef __ARCH_MIPS_MT_HH__
@@ -40,14 +38,16 @@
 #include <iostream>
 
 #include "arch/mips/faults.hh"
-#include "arch/mips/isa_traits.hh"
 #include "arch/mips/mt_constants.hh"
 #include "arch/mips/pra_constants.hh"
-#include "arch/mips/registers.hh"
+#include "arch/mips/regs/misc.hh"
 #include "base/bitfield.hh"
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "cpu/exec_context.hh"
+
+namespace gem5
+{
 
 namespace MipsISA
 {
@@ -275,7 +275,7 @@ yieldThread(TC *tc, Fault &fault, int src_reg, uint32_t yield_mask)
                     curTick(), tc->threadId());
         }
     } else if (src_reg > 0) {
-        if (src_reg && !yield_mask != 0) {
+        if ((src_reg & ~yield_mask) != 0) {
             VPEControlReg vpeControl = tc->readMiscReg(MISCREG_VPE_CONTROL);
             vpeControl.excpt = 2;
             tc->setMiscReg(MISCREG_VPE_CONTROL, vpeControl);
@@ -335,6 +335,6 @@ updateTCStatusView(TC *tc)
 }
 
 } // namespace MipsISA
-
+} // namespace gem5
 
 #endif

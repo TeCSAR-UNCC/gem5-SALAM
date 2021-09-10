@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -40,6 +38,9 @@
 #include "dev/storage/disk_image.hh"
 #include "params/MmDisk.hh"
 
+namespace gem5
+{
+
 class MmDisk : public BasicPioDevice
 {
   private:
@@ -49,14 +50,8 @@ class MmDisk : public BasicPioDevice
     uint8_t diskData[SectorSize];
 
   public:
-    typedef MmDiskParams Params;
-    MmDisk(const Params *p);
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    using Params = MmDiskParams;
+    MmDisk(const Params &p);
 
     Tick read(PacketPtr pkt) override;
     Tick write(PacketPtr pkt) override;
@@ -64,5 +59,6 @@ class MmDisk : public BasicPioDevice
     void serialize(CheckpointOut &cp) const override;
 };
 
-#endif //__DEV_SPARC_MM_DISK_HH__
+} // namespace gem5
 
+#endif //__DEV_SPARC_MM_DISK_HH__

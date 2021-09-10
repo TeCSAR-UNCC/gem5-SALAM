@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #ifndef __PC_EVENT_HH__
@@ -36,6 +33,9 @@
 
 #include "base/logging.hh"
 #include "base/types.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 class PCEventQueue;
@@ -74,7 +74,8 @@ class PCEventScope
 class PCEventQueue : public PCEventScope
 {
   protected:
-    class MapCompare {
+    class MapCompare
+    {
       public:
         bool
         operator()(PCEvent * const &l, PCEvent * const &r) const
@@ -161,5 +162,7 @@ class PanicPCEvent : public PCEvent
     PanicPCEvent(PCEventScope *s, const std::string &desc, Addr pc);
     virtual void process(ThreadContext *tc);
 };
+
+} // namespace gem5
 
 #endif // __PC_EVENT_HH__

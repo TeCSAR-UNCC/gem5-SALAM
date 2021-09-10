@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #include "mem/cache/replacement_policies/mru_rp.hh"
@@ -34,15 +32,22 @@
 #include <memory>
 
 #include "params/MRURP.hh"
+#include "sim/cur_tick.hh"
 
-MRURP::MRURP(const Params *p)
-    : BaseReplacementPolicy(p)
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(ReplacementPolicy, replacement_policy);
+namespace replacement_policy
+{
+
+MRU::MRU(const Params &p)
+  : Base(p)
 {
 }
 
 void
-MRURP::invalidate(const std::shared_ptr<ReplacementData>& replacement_data)
-const
+MRU::invalidate(const std::shared_ptr<ReplacementData>& replacement_data)
 {
     // Reset last touch timestamp
     std::static_pointer_cast<MRUReplData>(
@@ -50,7 +55,7 @@ const
 }
 
 void
-MRURP::touch(const std::shared_ptr<ReplacementData>& replacement_data) const
+MRU::touch(const std::shared_ptr<ReplacementData>& replacement_data) const
 {
     // Update last touch timestamp
     std::static_pointer_cast<MRUReplData>(
@@ -58,7 +63,7 @@ MRURP::touch(const std::shared_ptr<ReplacementData>& replacement_data) const
 }
 
 void
-MRURP::reset(const std::shared_ptr<ReplacementData>& replacement_data) const
+MRU::reset(const std::shared_ptr<ReplacementData>& replacement_data) const
 {
     // Set last touch timestamp
     std::static_pointer_cast<MRUReplData>(
@@ -66,7 +71,7 @@ MRURP::reset(const std::shared_ptr<ReplacementData>& replacement_data) const
 }
 
 ReplaceableEntry*
-MRURP::getVictim(const ReplacementCandidates& candidates) const
+MRU::getVictim(const ReplacementCandidates& candidates) const
 {
     // There must be at least one replacement candidate
     assert(candidates.size() > 0);
@@ -92,13 +97,10 @@ MRURP::getVictim(const ReplacementCandidates& candidates) const
 }
 
 std::shared_ptr<ReplacementData>
-MRURP::instantiateEntry()
+MRU::instantiateEntry()
 {
     return std::shared_ptr<ReplacementData>(new MRUReplData());
 }
 
-MRURP*
-MRURPParams::create()
-{
-    return new MRURP(this);
-}
+} // namespace replacement_policy
+} // namespace gem5

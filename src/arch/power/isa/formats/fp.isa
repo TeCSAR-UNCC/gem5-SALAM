@@ -25,8 +25,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Timothy M. Jones
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -39,7 +37,7 @@ let {{
     readFPSCRCode = 'Fpscr fpscr = FPSCR;'
 
     computeCR1Code = '''
-        Cr cr = CR;
+        PowerISA::Cr cr = CR;
         cr.cr1 = (fpscr.fx << 3) | (fpscr.fex << 2) |
                  (fpscr.vx << 1) | fpscr.ox;
         CR = cr;
@@ -73,7 +71,7 @@ def format FloatRCCheckOp(code, inst_flags = []) {{
     # Generate the second class
     (header_output_rc1, decoder_output_rc1, _, exec_output_rc1) = \
         GenAluOp(name, Name + 'RcSet', 'FloatOp', code_rc1, inst_flags,
-                 CheckRcDecode, IntRcConstructor)
+                 CheckRcDecode, BasicConstructor)
 
     # Finally, add to the other outputs
     header_output += header_output_rc1
@@ -98,7 +96,7 @@ def format FloatArithOp(code, inst_flags = []) {{
     # Generate the second class
     (header_output_rc1, decoder_output_rc1, _, exec_output_rc1) = \
         GenAluOp(name, Name + 'RcSet', 'FloatOp', code_rc1, inst_flags,
-                 CheckRcDecode, IntRcConstructor)
+                 CheckRcDecode, BasicConstructor)
 
     # Finally, add to the other outputs
     header_output += header_output_rc1
@@ -123,7 +121,7 @@ def format FloatConvertOp(code, inst_flags = []) {{
     # Generate the second class
     (header_output_rc1, decoder_output_rc1, _, exec_output_rc1) = \
         GenAluOp(name, Name + 'RcSet', 'FloatOp', code_rc1, inst_flags,
-                 CheckRcDecode, IntRcConstructor)
+                 CheckRcDecode, BasicConstructor)
 
     # Finally, add to the other outputs
     header_output += header_output_rc1

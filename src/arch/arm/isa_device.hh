@@ -33,15 +33,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __ARCH_ARM_ISA_DEVICE_HH__
 #define __ARCH_ARM_ISA_DEVICE_HH__
 
-#include "arch/arm/registers.hh"
 #include "base/compiler.hh"
+#include "base/types.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
@@ -69,7 +70,7 @@ class BaseISADevice
     /**
      * Write to a system register belonging to this device.
      *
-     * @param misc_reg Register number (see miscregs.hh)
+     * @param misc_reg Register number (see regs/misc.hh)
      * @param val Value to store
      */
     virtual void setMiscReg(int misc_reg, RegVal val) = 0;
@@ -77,7 +78,7 @@ class BaseISADevice
     /**
      * Read a system register belonging to this device.
      *
-     * @param misc_reg Register number (see miscregs.hh)
+     * @param misc_reg Register number (see regs/misc.hh)
      * @return Register value.
      */
     virtual RegVal readMiscReg(int misc_reg) = 0;
@@ -104,6 +105,7 @@ class DummyISADevice : public BaseISADevice
     RegVal readMiscReg(int misc_reg) override;
 };
 
-}
+} // namespace ArmISA
+} // namespace gem5
 
 #endif // __ARCH_ARM_ISA_DEVICE_HH__

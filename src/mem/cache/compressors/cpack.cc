@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -37,7 +35,14 @@
 #include "mem/cache/compressors/dictionary_compressor_impl.hh"
 #include "params/CPack.hh"
 
-CPack::CPack(const Params *p)
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
+
+CPack::CPack(const Params &p)
     : DictionaryCompressor<uint32_t>(p)
 {
 }
@@ -49,25 +54,5 @@ CPack::addToDictionary(DictionaryEntry data)
     dictionary[numEntries++] = data;
 }
 
-std::unique_ptr<BaseCacheCompressor::CompressionData>
-CPack::compress(const uint64_t* data, Cycles& comp_lat, Cycles& decomp_lat)
-{
-    std::unique_ptr<BaseCacheCompressor::CompressionData> comp_data =
-        DictionaryCompressor<uint32_t>::compress(data);
-
-    // Set compression latency (Accounts for pattern matching, length
-    // generation, packaging and shifting)
-    comp_lat = Cycles(blkSize/8+5);
-
-    // Set decompression latency (1 qword per cycle)
-    decomp_lat = Cycles(blkSize/8);
-
-    // Return compressed line
-    return comp_data;
-}
-
-CPack*
-CPackParams::create()
-{
-    return new CPack(this);
-}
+} // namespace compression
+} // namespace gem5

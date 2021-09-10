@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Rick Strong
  */
 
 /** @file
@@ -40,7 +37,7 @@
 #include <vector>
 
 #include "base/trace.hh"
-#include "cpu/intr_control.hh"
+#include "cpu/base.hh"
 #include "cpu/thread_context.hh"
 #include "debug/Malta.hh"
 #include "dev/mips/malta.hh"
@@ -51,10 +48,11 @@
 #include "params/MaltaCChip.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
 
-MaltaCChip::MaltaCChip(Params *p)
-    : BasicPioDevice(p, 0xfffffff), malta(p->malta)
+MaltaCChip::MaltaCChip(const Params &p)
+    : BasicPioDevice(p, 0xfffffff), malta(p.malta)
 {
     warn("MaltaCCHIP::MaltaCChip() not implemented.");
 
@@ -105,13 +103,14 @@ MaltaCChip::postRTC()
 void
 MaltaCChip::postIntr(uint32_t interrupt)
 {
-    uint64_t size = sys->threadContexts.size();
+    uint64_t size = sys->threads.size();
     assert(size <= Malta::Max_CPUs);
 
     for (int i=0; i < size; i++) {
         //Note: Malta does not use index, but this was added to use the
         //pre-existing implementation
-        malta->intrctrl->post(i, interrupt, 0);
+        auto tc = sys->threads[i];
+        tc->getCpuPtr()->postInterrupt(tc->threadId(), interrupt, 0);
         DPRINTF(Malta, "posting  interrupt to cpu %d, interrupt %d\n",
                 i, interrupt);
    }
@@ -120,13 +119,14 @@ MaltaCChip::postIntr(uint32_t interrupt)
 void
 MaltaCChip::clearIntr(uint32_t interrupt)
 {
-    uint64_t size = sys->threadContexts.size();
+    uint64_t size = sys->threads.size();
     assert(size <= Malta::Max_CPUs);
 
     for (int i=0; i < size; i++) {
         //Note: Malta does not use index, but this was added to use the
         //pre-existing implementation
-        malta->intrctrl->clear(i, interrupt, 0);
+        auto tc = sys->threads[i];
+        tc->getCpuPtr()->clearInterrupt(tc->threadId(), interrupt, 0);
         DPRINTF(Malta, "clearing interrupt to cpu %d, interrupt %d\n",
                 i, interrupt);
    }
@@ -143,9 +143,4 @@ MaltaCChip::unserialize(CheckpointIn &cp)
 {
 }
 
-MaltaCChip *
-MaltaCChipParams::create()
-{
-    return new MaltaCChip(this);
-}
-
+} // namespace gem5

@@ -36,15 +36,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Andreas Hansson
- *          William Wang
  */
 
 #include "mem/protocol/atomic.hh"
 
 #include "base/trace.hh"
+
+namespace gem5
+{
 
 /* The request protocol. */
 
@@ -71,3 +70,5 @@ AtomicResponseProtocol::sendSnoop(AtomicRequestProtocol *peer, PacketPtr pkt)
     assert(pkt->isRequest());
     return peer->recvAtomicSnoop(pkt);
 }
+
+} // namespace gem5

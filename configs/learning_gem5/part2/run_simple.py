@@ -24,8 +24,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 """ Simple config/run script for the HelloObject
 
@@ -34,9 +32,6 @@ It creates a Root object and one *very* simple SimObject and simulates the
 system. Since there are no events, this "simulation" should finish immediately
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 # import the m5 (gem5) library created when gem5 is built
 import m5

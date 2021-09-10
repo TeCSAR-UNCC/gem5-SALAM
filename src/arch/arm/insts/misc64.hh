@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Giacomo Travaglini
  */
 
 #ifndef __ARCH_ARM_INSTS_MISC64_HH__
@@ -43,68 +40,74 @@
 
 #include "arch/arm/insts/static_inst.hh"
 
-class ImmOp64 : public ArmStaticInst
+namespace gem5
+{
+
+class ImmOp64 : public ArmISA::ArmStaticInst
 {
   protected:
     uint64_t imm;
 
-    ImmOp64(const char *mnem, ExtMachInst _machInst,
+    ImmOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
             OpClass __opClass, uint64_t _imm) :
-        ArmStaticInst(mnem, _machInst, __opClass), imm(_imm)
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass), imm(_imm)
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-class RegRegImmImmOp64 : public ArmStaticInst
+class RegRegImmImmOp64 : public ArmISA::ArmStaticInst
 {
   protected:
-    IntRegIndex dest;
-    IntRegIndex op1;
+    ArmISA::IntRegIndex dest;
+    ArmISA::IntRegIndex op1;
     uint64_t imm1;
     uint64_t imm2;
 
-    RegRegImmImmOp64(const char *mnem, ExtMachInst _machInst,
-                     OpClass __opClass, IntRegIndex _dest, IntRegIndex _op1,
-                     uint64_t _imm1, uint64_t _imm2) :
-        ArmStaticInst(mnem, _machInst, __opClass),
+    RegRegImmImmOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+                     OpClass __opClass, ArmISA::IntRegIndex _dest,
+                     ArmISA::IntRegIndex _op1, uint64_t _imm1,
+                     int64_t _imm2) :
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass),
         dest(_dest), op1(_op1), imm1(_imm1), imm2(_imm2)
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-class RegRegRegImmOp64 : public ArmStaticInst
+class RegRegRegImmOp64 : public ArmISA::ArmStaticInst
 {
   protected:
-    IntRegIndex dest;
-    IntRegIndex op1;
-    IntRegIndex op2;
+    ArmISA::IntRegIndex dest;
+    ArmISA::IntRegIndex op1;
+    ArmISA::IntRegIndex op2;
     uint64_t imm;
 
-    RegRegRegImmOp64(const char *mnem, ExtMachInst _machInst,
-                     OpClass __opClass, IntRegIndex _dest, IntRegIndex _op1,
-                     IntRegIndex _op2, uint64_t _imm) :
-        ArmStaticInst(mnem, _machInst, __opClass),
+    RegRegRegImmOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+                     OpClass __opClass, ArmISA::IntRegIndex _dest,
+                     ArmISA::IntRegIndex _op1, ArmISA::IntRegIndex _op2,
+                     uint64_t _imm) :
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass),
         dest(_dest), op1(_op1), op2(_op2), imm(_imm)
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-class UnknownOp64 : public ArmStaticInst
+class UnknownOp64 : public ArmISA::ArmStaticInst
 {
   protected:
 
-    UnknownOp64(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        ArmStaticInst(mnem, _machInst, __opClass)
+    UnknownOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+            OpClass __opClass) :
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass)
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 /**
@@ -118,39 +121,42 @@ class UnknownOp64 : public ArmStaticInst
  * functionalities even if there is no data movement between GPRs and
  * system register.
  */
-class MiscRegOp64 : public ArmStaticInst
+class MiscRegOp64 : public ArmISA::ArmStaticInst
 {
   protected:
     bool miscRead;
 
-    MiscRegOp64(const char *mnem, ExtMachInst _machInst,
+    MiscRegOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
                 OpClass __opClass, bool misc_read) :
-        ArmStaticInst(mnem, _machInst, __opClass),
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass),
         miscRead(misc_read)
     {}
 
-    Fault trap(ThreadContext *tc, MiscRegIndex misc_reg,
-               ExceptionLevel el, uint32_t immediate) const;
+    Fault trap(ThreadContext *tc, ArmISA::MiscRegIndex misc_reg,
+               ArmISA::ExceptionLevel el, uint32_t immediate) const;
   private:
-    bool checkEL1Trap(ThreadContext *tc, const MiscRegIndex misc_reg,
-                      ExceptionLevel el) const;
+    bool checkEL1Trap(ThreadContext *tc, const ArmISA::MiscRegIndex misc_reg,
+                      ArmISA::ExceptionLevel el, ArmISA::ExceptionClass &ec,
+                      uint32_t &immediate) const;
 
-    bool checkEL2Trap(ThreadContext *tc, const MiscRegIndex misc_reg,
-                      ExceptionLevel el, bool *is_vfp_neon) const;
+    bool checkEL2Trap(ThreadContext *tc, const ArmISA::MiscRegIndex misc_reg,
+                      ArmISA::ExceptionLevel el, ArmISA::ExceptionClass &ec,
+                      uint32_t &immediate) const;
 
-    bool checkEL3Trap(ThreadContext *tc, const MiscRegIndex misc_reg,
-                      ExceptionLevel el, bool *is_vfp_neon) const;
+    bool checkEL3Trap(ThreadContext *tc, const ArmISA::MiscRegIndex misc_reg,
+                      ArmISA::ExceptionLevel el, ArmISA::ExceptionClass &ec,
+                      uint32_t &immediate) const;
 
 };
 
 class MiscRegImmOp64 : public MiscRegOp64
 {
   protected:
-    MiscRegIndex dest;
+    ArmISA::MiscRegIndex dest;
     uint32_t imm;
 
-    MiscRegImmOp64(const char *mnem, ExtMachInst _machInst,
-                   OpClass __opClass, MiscRegIndex _dest,
+    MiscRegImmOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+                   OpClass __opClass, ArmISA::MiscRegIndex _dest,
                    uint32_t _imm) :
         MiscRegOp64(mnem, _machInst, __opClass, false),
         dest(_dest), imm(_imm)
@@ -164,63 +170,63 @@ class MiscRegImmOp64 : public MiscRegOp64
     RegVal miscRegImm() const;
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class MiscRegRegImmOp64 : public MiscRegOp64
 {
   protected:
-    MiscRegIndex dest;
-    IntRegIndex op1;
+    ArmISA::MiscRegIndex dest;
+    ArmISA::IntRegIndex op1;
     uint32_t imm;
 
-    MiscRegRegImmOp64(const char *mnem, ExtMachInst _machInst,
-                      OpClass __opClass, MiscRegIndex _dest,
-                      IntRegIndex _op1, uint32_t _imm) :
+    MiscRegRegImmOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+                      OpClass __opClass, ArmISA::MiscRegIndex _dest,
+                      ArmISA::IntRegIndex _op1, uint32_t _imm) :
         MiscRegOp64(mnem, _machInst, __opClass, false),
         dest(_dest), op1(_op1), imm(_imm)
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class RegMiscRegImmOp64 : public MiscRegOp64
 {
   protected:
-    IntRegIndex dest;
-    MiscRegIndex op1;
+    ArmISA::IntRegIndex dest;
+    ArmISA::MiscRegIndex op1;
     uint32_t imm;
 
-    RegMiscRegImmOp64(const char *mnem, ExtMachInst _machInst,
-                      OpClass __opClass, IntRegIndex _dest,
-                      MiscRegIndex _op1, uint32_t _imm) :
+    RegMiscRegImmOp64(const char *mnem, ArmISA::ExtMachInst _machInst,
+                      OpClass __opClass, ArmISA::IntRegIndex _dest,
+                      ArmISA::MiscRegIndex _op1, uint32_t _imm) :
         MiscRegOp64(mnem, _machInst, __opClass, true),
         dest(_dest), op1(_op1), imm(_imm)
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class MiscRegImplDefined64 : public MiscRegOp64
 {
   protected:
     const std::string fullMnemonic;
-    const MiscRegIndex miscReg;
+    const ArmISA::MiscRegIndex miscReg;
     const uint32_t imm;
     const bool warning;
 
   public:
-    MiscRegImplDefined64(const char *mnem, ExtMachInst _machInst,
-                         MiscRegIndex misc_reg, bool misc_read,
+    MiscRegImplDefined64(const char *mnem, ArmISA::ExtMachInst _machInst,
+                         ArmISA::MiscRegIndex misc_reg, bool misc_read,
                          uint32_t _imm, const std::string full_mnem,
                          bool _warning) :
         MiscRegOp64(mnem, _machInst, No_OpClass, misc_read),
         fullMnemonic(full_mnem), miscReg(misc_reg), imm(_imm),
         warning(_warning)
     {
-        assert(miscReg == MISCREG_IMPDEF_UNIMPL);
+        assert(miscReg == ArmISA::MISCREG_IMPDEF_UNIMPL);
     }
 
   protected:
@@ -228,7 +234,24 @@ class MiscRegImplDefined64 : public MiscRegOp64
                   Trace::InstRecord *traceData) const override;
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
+
+class RegNone : public ArmISA::ArmStaticInst
+{
+  protected:
+    ArmISA::IntRegIndex dest;
+
+    RegNone(const char *mnem, ArmISA::ExtMachInst _machInst,
+            OpClass __opClass, ArmISA::IntRegIndex _dest) :
+        ArmISA::ArmStaticInst(mnem, _machInst, __opClass),
+        dest(_dest)
+    {}
+
+    std::string generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const;
+};
+
+} // namespace gem5
 
 #endif

@@ -34,11 +34,14 @@
 #include "params/DirectedGenerator.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 class DirectedGenerator : public SimObject
 {
   public:
     typedef DirectedGeneratorParams Params;
-    DirectedGenerator(const Params *p);
+    DirectedGenerator(const Params &p);
 
     virtual ~DirectedGenerator() {}
 
@@ -49,9 +52,10 @@ class DirectedGenerator : public SimObject
 
   protected:
     int m_num_cpus;
-    MasterID masterId;
+    RequestorID requestorId;
     RubyDirectedTester* m_directed_tester;
 };
 
-#endif //__CPU_DIRECTEDTEST_DIRECTEDGENERATOR_HH__
+} // namespace gem5
 
+#endif //__CPU_DIRECTEDTEST_DIRECTEDGENERATOR_HH__

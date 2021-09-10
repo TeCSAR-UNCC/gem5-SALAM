@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017,2019 ARM Limited
+ * Copyright (c) 2017,2019-2021 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -44,8 +44,10 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 #include "base/addr_range.hh"
+#include "base/addr_range_map.hh"
 #include "base/callback.hh"
 #include "mem/packet.hh"
 #include "mem/qport.hh"
@@ -60,8 +62,15 @@
 #include "params/RubyController.hh"
 #include "sim/clocked_object.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class Network;
 class GPUCoalescer;
+class DMASequencer;
 
 // used to communicate that an in_port peeked the wrong message type
 class RejectException: public std::exception
@@ -73,10 +82,9 @@ class RejectException: public std::exception
 class AbstractController : public ClockedObject, public Consumer
 {
   public:
-    typedef RubyControllerParams Params;
-    AbstractController(const Params *p);
+    PARAMS(RubyController);
+    AbstractController(const Params &p);
     void init();
-    const Params *params() const { return (const Params *)_params; }
 
     NodeID getVersion() const { return m_machineID.getNum(); }
     MachineType getType() const { return m_machineID.getType(); }
@@ -90,7 +98,8 @@ class AbstractController : public ClockedObject, public Consumer
     bool isBlocked(Addr);
 
     virtual MessageBuffer* getMandatoryQueue() const = 0;
-    virtual MessageBuffer* getMemoryQueue() const = 0;
+    virtual MessageBuffer* getMemReqQueue() const = 0;
+    virtual MessageBuffer* getMemRespQueue() const = 0;
     virtual AccessPermission getAccessPermission(const Addr &addr) = 0;
 
     virtual void print(std::ostream & out) const = 0;
@@ -100,6 +109,7 @@ class AbstractController : public ClockedObject, public Consumer
 
     virtual void recordCacheTrace(int cntrl, CacheRecorder* tr) = 0;
     virtual Sequencer* getCPUSequencer() const = 0;
+    virtual DMASequencer* getDMASequencer() const = 0;
     virtual GPUCoalescer* getGPUCoalescer() const = 0;
 
     // This latency is used by the sequencer when enqueueing requests.
@@ -111,7 +121,17 @@ class AbstractController : public ClockedObject, public Consumer
 
     //! These functions are used by ruby system to read/write the data blocks
     //! that exist with in the controller.
-    virtual void functionalRead(const Addr &addr, PacketPtr) = 0;
+    virtual bool functionalReadBuffers(PacketPtr&) = 0;
+    virtual void functionalRead(const Addr &addr, PacketPtr)
+    { panic("functionalRead(Addr,PacketPtr) not implemented"); }
+
+    //! Functional read that reads only blocks not present in the mask.
+    //! Return number of bytes read.
+    virtual bool functionalReadBuffers(PacketPtr&, WriteMask &mask) = 0;
+    virtual void functionalRead(const Addr &addr, PacketPtr pkt,
+                               WriteMask &mask)
+    { panic("functionalRead(Addr,PacketPtr,WriteMask) not implemented"); }
+
     void functionalMemoryRead(PacketPtr);
     //! The return value indicates the number of messages written with the
     //! data from the packet.
@@ -122,6 +142,15 @@ class AbstractController : public ClockedObject, public Consumer
     //! Function for enqueuing a prefetch request
     virtual void enqueuePrefetch(const Addr &, const RubyRequestType&)
     { fatal("Prefetches not implemented!");}
+
+    //! Notifies controller of a request coalesced at the sequencer.
+    //! By default, it does nothing. Behavior is protocol-specific
+    virtual void notifyCoalesced(const Addr& addr,
+                                 const RubyRequestType& type,
+                                 const RequestPtr& req,
+                                 const DataBlock& data_blk,
+                                 const bool& was_miss)
+    { }
 
     //! Function for collating statistics from all the controllers of this
     //! particular type. This function should only be called from the
@@ -136,11 +165,6 @@ class AbstractController : public ClockedObject, public Consumer
     Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID);
 
-    void queueMemoryRead(const MachineID &id, Addr addr, Cycles latency);
-    void queueMemoryWrite(const MachineID &id, Addr addr, Cycles latency,
-                          const DataBlock &block);
-    void queueMemoryWritePartial(const MachineID &id, Addr addr, Cycles latency,
-                                 const DataBlock &block, int size);
     void recvTimingResp(PacketPtr pkt);
     Tick recvAtomic(PacketPtr pkt);
 
@@ -148,10 +172,18 @@ class AbstractController : public ClockedObject, public Consumer
 
   public:
     MachineID getMachineID() const { return m_machineID; }
+    RequestorID getRequestorId() const { return m_id; }
 
-    Stats::Histogram& getDelayHist() { return m_delayHistogram; }
-    Stats::Histogram& getDelayVCHist(uint32_t index)
-    { return *(m_delayVCHistogram[index]); }
+    statistics::Histogram& getDelayHist() { return stats.delayHistogram; }
+    statistics::Histogram& getDelayVCHist(uint32_t index)
+    { return *(stats.delayVCHistogram[index]); }
+
+    bool respondsTo(Addr addr)
+    {
+        for (auto &range: addrRanges)
+            if (range.contains(addr)) return true;
+        return false;
+    }
 
     /**
      * Map an address to the correct MachineID
@@ -168,24 +200,117 @@ class AbstractController : public ClockedObject, public Consumer
      */
     MachineID mapAddressToMachine(Addr addr, MachineType mtype) const;
 
+    /**
+     * Maps an address to the correct dowstream MachineID (i.e. the component
+     * in the next level of the cache hierarchy towards memory)
+     *
+     * This function uses the local list of possible destinations instead of
+     * querying the network.
+     *
+     * @param the destination address
+     * @param the type of the destination (optional)
+     * @return the MachineID of the destination
+     */
+    MachineID mapAddressToDownstreamMachine(Addr addr,
+                                    MachineType mtype = MachineType_NUM) const;
+
+    const NetDest& allDownstreamDest() const { return downstreamDestinations; }
+
   protected:
     //! Profiles original cache requests including PUTs
     void profileRequest(const std::string &request);
     //! Profiles the delay associated with messages.
     void profileMsgDelay(uint32_t virtualNetwork, Cycles delay);
 
+    // Tracks outstanding transactions for latency profiling
+    struct TransMapPair { unsigned transaction; unsigned state; Tick time; };
+    std::unordered_map<Addr, TransMapPair> m_inTrans;
+    std::unordered_map<Addr, TransMapPair> m_outTrans;
+
+    /**
+     * Profiles an event that initiates a protocol transactions for a specific
+     * line (e.g. events triggered by incoming request messages).
+     * A histogram with the latency of the transactions is generated for
+     * all combinations of trigger event, initial state, and final state.
+     *
+     * @param addr address of the line
+     * @param type event that started the transaction
+     * @param initialState state of the line before the transaction
+     */
+    template<typename EventType, typename StateType>
+    void incomingTransactionStart(Addr addr,
+        EventType type, StateType initialState, bool retried)
+    {
+        assert(m_inTrans.find(addr) == m_inTrans.end());
+        m_inTrans[addr] = {type, initialState, curTick()};
+        if (retried)
+          ++(*stats.inTransLatRetries[type]);
+    }
+
+    /**
+     * Profiles an event that ends a transaction.
+     *
+     * @param addr address of the line with a outstanding transaction
+     * @param finalState state of the line after the transaction
+     */
+    template<typename StateType>
+    void incomingTransactionEnd(Addr addr, StateType finalState)
+    {
+        auto iter = m_inTrans.find(addr);
+        assert(iter != m_inTrans.end());
+        stats.inTransLatHist[iter->second.transaction]
+                              [iter->second.state]
+                              [(unsigned)finalState]->sample(
+                                ticksToCycles(curTick() - iter->second.time));
+        ++(*stats.inTransLatTotal[iter->second.transaction]);
+       m_inTrans.erase(iter);
+    }
+
+    /**
+     * Profiles an event that initiates a transaction in a peer controller
+     * (e.g. an event that sends a request message)
+     *
+     * @param addr address of the line
+     * @param type event that started the transaction
+     */
+    template<typename EventType>
+    void outgoingTransactionStart(Addr addr, EventType type)
+    {
+        assert(m_outTrans.find(addr) == m_outTrans.end());
+        m_outTrans[addr] = {type, 0, curTick()};
+    }
+
+    /**
+     * Profiles the end of an outgoing transaction.
+     * (e.g. receiving the response for a requests)
+     *
+     * @param addr address of the line with an outstanding transaction
+     */
+    void outgoingTransactionEnd(Addr addr, bool retried)
+    {
+        auto iter = m_outTrans.find(addr);
+        assert(iter != m_outTrans.end());
+        stats.outTransLatHist[iter->second.transaction]->sample(
+            ticksToCycles(curTick() - iter->second.time));
+        if (retried)
+          ++(*stats.outTransLatHistRetries[iter->second.transaction]);
+        m_outTrans.erase(iter);
+    }
+
     void stallBuffer(MessageBuffer* buf, Addr addr);
+    void wakeUpBuffer(MessageBuffer* buf, Addr addr);
     void wakeUpBuffers(Addr addr);
     void wakeUpAllBuffers(Addr addr);
     void wakeUpAllBuffers();
+    bool serviceMemoryQueue();
 
   protected:
     const NodeID m_version;
     MachineID m_machineID;
     const NodeID m_clusterID;
 
-    // MasterID used by some components of gem5.
-    const MasterID m_masterId;
+    // RequestorID used by some components of gem5.
+    const RequestorID m_id;
 
     Network *m_net_ptr;
     bool m_is_blocking;
@@ -204,53 +329,30 @@ class AbstractController : public ClockedObject, public Consumer
     Cycles m_recycle_latency;
     const Cycles m_mandatory_queue_latency;
 
-    //! Counter for the number of cycles when the transitions carried out
-    //! were equal to the maximum allowed
-    Stats::Scalar m_fully_busy_cycles;
-
-    //! Histogram for profiling delay for the messages this controller
-    //! cares for
-    Stats::Histogram m_delayHistogram;
-    std::vector<Stats::Histogram *> m_delayVCHistogram;
-
-    //! Callback class used for collating statistics from all the
-    //! controller of this type.
-    class StatsCallback : public Callback
-    {
-      private:
-        AbstractController *ctr;
-
-      public:
-        virtual ~StatsCallback() {}
-        StatsCallback(AbstractController *_ctr) : ctr(_ctr) {}
-        void process() {ctr->collateStats();}
-    };
-
     /**
      * Port that forwards requests and receives responses from the
-     * memory controller.  It has a queue of packets not yet sent.
+     * memory controller.
      */
-    class MemoryPort : public QueuedMasterPort
+    class MemoryPort : public RequestPort
     {
       private:
-        // Packet queues used to store outgoing requests and snoop responses.
-        ReqPacketQueue reqQueue;
-        SnoopRespPacketQueue snoopRespQueue;
-
         // Controller that operates this port.
         AbstractController *controller;
 
       public:
         MemoryPort(const std::string &_name, AbstractController *_controller,
-                   const std::string &_label);
+                   PortID id = InvalidPortID);
 
+      protected:
         // Function for receiving a timing response from the peer port.
         // Currently the pkt is handed to the coherence controller
         // associated with this port.
         bool recvTimingResp(PacketPtr pkt);
+
+        void recvReqRetry();
     };
 
-    /* Master port to the memory controller. */
+    /* Request port to the memory controller. */
     MemoryPort memoryPort;
 
     // State that is stored in packets sent to the memory controller.
@@ -266,6 +368,43 @@ class AbstractController : public ClockedObject, public Consumer
   private:
     /** The address range to which the controller responds on the CPU side. */
     const AddrRangeList addrRanges;
+
+    typedef std::unordered_map<MachineType, MachineID> AddrMapEntry;
+
+    AddrRangeMap<AddrMapEntry, 3> downstreamAddrMap;
+
+    NetDest downstreamDestinations;
+
+  public:
+    struct ControllerStats : public statistics::Group
+    {
+        ControllerStats(statistics::Group *parent);
+
+        // Initialized by the SLICC compiler for all combinations of event and
+        // states. Only histograms with samples will appear in the stats
+        std::vector<std::vector<std::vector<statistics::Histogram*>>>
+          inTransLatHist;
+        std::vector<statistics::Scalar*> inTransLatRetries;
+        std::vector<statistics::Scalar*> inTransLatTotal;
+
+        // Initialized by the SLICC compiler for all events.
+        // Only histograms with samples will appear in the stats.
+        std::vector<statistics::Histogram*> outTransLatHist;
+        std::vector<statistics::Scalar*> outTransLatHistRetries;
+
+        //! Counter for the number of cycles when the transitions carried out
+        //! were equal to the maximum allowed
+        statistics::Scalar fullyBusyCycles;
+
+        //! Histogram for profiling delay for the messages this controller
+        //! cares for
+        statistics::Histogram delayHistogram;
+        std::vector<statistics::Histogram *> delayVCHistogram;
+    } stats;
+
 };
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_SLICC_INTERFACE_ABSTRACTCONTROLLER_HH__

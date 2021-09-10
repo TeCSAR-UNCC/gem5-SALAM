@@ -25,12 +25,10 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Stephen Hines
 
 // The most basic instruction format...
 def format BasicOp(code, *flags) {{
-        iop = InstObjParams(name, Name, 'ArmStaticInst', code, flags)
+        iop = ArmInstObjParams(name, Name, 'ArmStaticInst', code, flags)
         header_output = BasicDeclare.subst(iop)
         decoder_output = BasicConstructor.subst(iop)
         decode_block = BasicDecode.subst(iop)

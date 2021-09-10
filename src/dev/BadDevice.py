@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 from m5.params import *
 from m5.objects.Device import BasicPioDevice
@@ -32,4 +30,6 @@ from m5.objects.Device import BasicPioDevice
 class BadDevice(BasicPioDevice):
     type = 'BadDevice'
     cxx_header = "dev/baddev.hh"
+    cxx_class = 'gem5::BadDevice'
+
     devicename = Param.String("Name of device to error on")

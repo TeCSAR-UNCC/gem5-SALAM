@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /**
@@ -40,15 +38,11 @@
 #include "dev/platform.hh"
 #include "params/T1000.hh"
 
-class IdeController;
-class System;
+namespace gem5
+{
 
 class T1000 : public Platform
 {
-  public:
-    /** Pointer to the system */
-    System *system;
-
   public:
     typedef T1000Params Params;
     /**
@@ -57,7 +51,7 @@ class T1000 : public Platform
      * @param s system the object belongs to
      * @param intctrl pointer to the interrupt controller
      */
-    T1000(const Params *p);
+    T1000(const Params &p);
 
     /**
      * Cause the cpu to post a serial interrupt to the CPU.
@@ -78,24 +72,8 @@ class T1000 : public Platform
      * Clear a posted PCI->CPU interrupt
      */
     virtual void clearPciInt(int line);
-
-
-    virtual Addr pciToDma(Addr pciAddr) const;
-
-    /**
-     * Calculate the configuration address given a bus/dev/func.
-     */
-    virtual Addr calcPciConfigAddr(int bus, int dev, int func);
-
-    /**
-     * Calculate the address for an IO location on the PCI bus.
-     */
-    virtual Addr calcPciIOAddr(Addr addr);
-
-    /**
-     * Calculate the address for a memory location on the PCI bus.
-     */
-    virtual Addr calcPciMemAddr(Addr addr);
 };
+
+} // namespace gem5
 
 #endif // __DEV_T1000_HH__

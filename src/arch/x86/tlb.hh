@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_TLB_HH__
@@ -48,6 +46,10 @@
 #include "base/trie.hh"
 #include "mem/request.hh"
 #include "params/X86TLB.hh"
+#include "sim/stats.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
@@ -67,7 +69,7 @@ namespace X86ISA
       public:
 
         typedef X86TLBParams Params;
-        TLB(const Params *p);
+        TLB(const Params &p);
 
         void takeOverFrom(BaseTLB *otlb) override {}
 
@@ -100,16 +102,22 @@ namespace X86ISA
         TlbEntryTrie trie;
         uint64_t lruSeq;
 
-        // Statistics
-        Stats::Scalar rdAccesses;
-        Stats::Scalar wrAccesses;
-        Stats::Scalar rdMisses;
-        Stats::Scalar wrMisses;
+        AddrRange m5opRange;
 
-        Fault translateInt(const RequestPtr &req, ThreadContext *tc);
+        struct TlbStats : public statistics::Group
+        {
+            TlbStats(statistics::Group *parent);
+
+            statistics::Scalar rdAccesses;
+            statistics::Scalar wrAccesses;
+            statistics::Scalar rdMisses;
+            statistics::Scalar wrMisses;
+        } stats;
+
+        Fault translateInt(bool read, RequestPtr req, ThreadContext *tc);
 
         Fault translate(const RequestPtr &req, ThreadContext *tc,
-                Translation *translation, Mode mode,
+                BaseMMU::Translation *translation, BaseMMU::Mode mode,
                 bool &delayedResponse, bool timing);
 
       public:
@@ -123,10 +131,14 @@ namespace X86ISA
         }
 
         Fault translateAtomic(
-            const RequestPtr &req, ThreadContext *tc, Mode mode) override;
+            const RequestPtr &req, ThreadContext *tc,
+            BaseMMU::Mode mode) override;
+        Fault translateFunctional(
+            const RequestPtr &req, ThreadContext *tc,
+            BaseMMU::Mode mode) override;
         void translateTiming(
             const RequestPtr &req, ThreadContext *tc,
-            Translation *translation, Mode mode) override;
+            BaseMMU::Translation *translation, BaseMMU::Mode mode) override;
 
         /**
          * Do post-translation physical address finalization.
@@ -142,14 +154,9 @@ namespace X86ISA
          * @return A fault on failure, NoFault otherwise.
          */
         Fault finalizePhysical(const RequestPtr &req, ThreadContext *tc,
-                               Mode mode) const override;
+                               BaseMMU::Mode mode) const override;
 
         TlbEntry *insert(Addr vpn, const TlbEntry &entry);
-
-        /*
-         * Function to register Stats
-         */
-        void regStats() override;
 
         // Checkpointing
         void serialize(CheckpointOut &cp) const override;
@@ -167,6 +174,8 @@ namespace X86ISA
          */
         Port *getTableWalkerPort() override;
     };
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_TLB_HH__

@@ -3,6 +3,7 @@
  * Copyright (c) 2002-2005 The Regents of The University of Michigan
  * Copyright (c) 2007-2008 The Florida State University
  * Copyright (c) 2009 The University of Edinburgh
+ * Copyright (c) 2021 IBM Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,19 +28,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Stephen Hines
- *          Timothy M. Jones
- *          Boris Shingarov
  */
 
 #ifndef __ARCH_POWER_REMOTE_GDB_HH__
 #define __ARCH_POWER_REMOTE_GDB_HH__
 
-#include "arch/power/registers.hh"
+#include "arch/power/regs/float.hh"
+#include "arch/power/regs/int.hh"
 #include "arch/power/remote_gdb.hh"
 #include "base/remote_gdb.hh"
+
+namespace gem5
+{
 
 namespace PowerISA
 {
@@ -54,7 +54,8 @@ class RemoteGDB : public BaseRemoteGDB
     {
       using BaseGdbRegCache::BaseGdbRegCache;
       private:
-        struct {
+        struct GEM5_PACKED
+        {
             uint32_t gpr[NumIntArchRegs];
             uint64_t fpr[NumFloatArchRegs];
             uint32_t pc;
@@ -63,7 +64,9 @@ class RemoteGDB : public BaseRemoteGDB
             uint32_t lr;
             uint32_t ctr;
             uint32_t xer;
+            uint32_t fpscr;
         } r;
+
       public:
         char *data() const { return (char *)&r; }
         size_t size() const { return sizeof(r); }
@@ -76,13 +79,52 @@ class RemoteGDB : public BaseRemoteGDB
         }
     };
 
-    PowerGdbRegCache regCache;
+    class Power64GdbRegCache : public BaseGdbRegCache
+    {
+      using BaseGdbRegCache::BaseGdbRegCache;
+      private:
+        struct GEM5_PACKED
+        {
+            uint64_t gpr[NumIntArchRegs];
+            uint64_t fpr[NumFloatArchRegs];
+            uint64_t pc;
+            uint64_t msr;
+            uint32_t cr;
+            uint64_t lr;
+            uint64_t ctr;
+            uint32_t xer;
+            uint32_t fpscr;
+        } r;
+
+      public:
+        char *data() const { return (char *)&r; }
+        size_t size() const { return sizeof(r); }
+        void getRegs(ThreadContext*);
+        void setRegs(ThreadContext*) const;
+        const std::string
+        name() const
+        {
+            return gdb->name() + ".Power64GdbRegCache";
+        }
+    };
+
+    PowerGdbRegCache regCache32;
+    Power64GdbRegCache regCache64;
 
   public:
-    RemoteGDB(System *_system, ThreadContext *tc, int _port);
+    RemoteGDB(System *_system, int _port);
     BaseGdbRegCache *gdbRegs();
+
+    std::vector<std::string>
+    availableFeatures() const
+    {
+        return {"qXfer:features:read+"};
+    };
+
+    bool getXferFeaturesRead(const std::string &annex, std::string &output);
 };
 
 } // namespace PowerISA
+} // namespace gem5
 
 #endif /* __ARCH_POWER_REMOTE_GDB_H__ */

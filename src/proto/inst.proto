@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Ali Saidi
 
 syntax = "proto2";
 
@@ -63,7 +61,8 @@ message Inst {
   optional uint32 cpuid = 4;
   optional fixed64 tick = 5;
 
-  enum InstType {
+  enum InstType
+  {
     None = 0;
     IntAlu = 1;
     IntMul = 2;

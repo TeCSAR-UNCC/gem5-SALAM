@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -48,6 +46,9 @@
 
 #include "base/inifile.hh"
 #include "sim/cxx_config.hh"
+
+namespace gem5
+{
 
 /** CxxConfigManager interface for using .ini files */
 class CxxIniFile : public CxxConfigFileBase
@@ -82,5 +83,7 @@ class CxxIniFile : public CxxConfigFileBase
 
     bool load(const std::string &filename);
 };
+
+} // namespace gem5
 
 #endif // __SIM_CXX_CONFIG_INI_HH__

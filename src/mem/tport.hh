@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Andreas Hansson
  */
 
 #ifndef __MEM_TPORT_HH__
@@ -52,14 +49,17 @@
 
 #include "mem/qport.hh"
 
+namespace gem5
+{
+
 class SimObject;
 
 /**
  * The simple timing port uses a queued port to implement
  * recvFunctional and recvTimingReq through recvAtomic. It is always a
- * slave port.
+ * response port.
  */
-class SimpleTimingPort : public QueuedSlavePort
+class SimpleTimingPort : public QueuedResponsePort
 {
 
   private:
@@ -67,7 +67,7 @@ class SimpleTimingPort : public QueuedSlavePort
     /**
      * The packet queue used to store outgoing responses. Note that
      * the queue is made private and that we avoid overloading the
-     * name used in the QueuedSlavePort. Access is provided through
+     * name used in the QueuedResponsePort. Access is provided through
      * the queue reference in the base class.
      */
     RespPacketQueue queueImpl;
@@ -106,5 +106,7 @@ class SimpleTimingPort : public QueuedSlavePort
     virtual ~SimpleTimingPort() { }
 
 };
+
+} // namespace gem5
 
 #endif // __MEM_TPORT_HH__

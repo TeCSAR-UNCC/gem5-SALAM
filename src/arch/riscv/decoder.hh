@@ -25,30 +25,30 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Alec Roelke
  */
 
 #ifndef __ARCH_RISCV_DECODER_HH__
 #define __ARCH_RISCV_DECODER_HH__
 
 #include "arch/generic/decode_cache.hh"
-#include "arch/riscv/isa_traits.hh"
+#include "arch/generic/decoder.hh"
 #include "arch/riscv/types.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
 #include "cpu/static_inst.hh"
 #include "debug/Decode.hh"
 
+namespace gem5
+{
+
 namespace RiscvISA
 {
 
 class ISA;
-class Decoder
+class Decoder : public InstDecoder
 {
   private:
-    DecodeCache::InstMap<ExtMachInst> instMap;
+    decode_cache::InstMap<ExtMachInst> instMap;
     bool aligned;
     bool mid;
     bool more;
@@ -56,23 +56,8 @@ class Decoder
   protected:
     //The extended machine instruction being generated
     ExtMachInst emi;
+    uint32_t machInst;
     bool instDone;
-
-  public:
-    Decoder(ISA* isa=nullptr) { reset(); }
-
-    void process() {}
-    void reset();
-
-    inline bool compressed(ExtMachInst inst) { return (inst & 0x3) < 0x3; }
-
-    //Use this to give data to the decoder. This should be used
-    //when there is control flow.
-    void moreBytes(const PCState &pc, Addr fetchPC, MachInst inst);
-
-    bool needMoreBytes() { return more; }
-    bool instReady() { return instDone; }
-    void takeOverFrom(Decoder *old) {}
 
     StaticInstPtr decodeInst(ExtMachInst mach_inst);
 
@@ -81,9 +66,26 @@ class Decoder
     /// @retval A pointer to the corresponding StaticInst object.
     StaticInstPtr decode(ExtMachInst mach_inst, Addr addr);
 
+  public:
+    Decoder(ISA* isa=nullptr) : InstDecoder(&machInst) { reset(); }
+
+    void process() {}
+    void reset();
+
+    inline bool compressed(ExtMachInst inst) { return (inst & 0x3) < 0x3; }
+
+    //Use this to give data to the decoder. This should be used
+    //when there is control flow.
+    void moreBytes(const PCState &pc, Addr fetchPC);
+
+    bool needMoreBytes() { return more; }
+    bool instReady() { return instDone; }
+    void takeOverFrom(Decoder *old) {}
+
     StaticInstPtr decode(RiscvISA::PCState &nextPC);
 };
 
 } // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_DECODER_HH__

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 ARM Limited
+ * Copyright (c) 2014, 2016, 2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,16 +33,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "dev/virtio/base.hh"
 
+#include "base/trace.hh"
 #include "debug/VIO.hh"
 #include "params/VirtIODeviceBase.hh"
 #include "params/VirtIODummyDevice.hh"
-#include "sim/system.hh"
+#include "sim/serialize.hh"
+
+namespace gem5
+{
 
 VirtDescriptor::VirtDescriptor(PortProxy &_memProxy, ByteOrder bo,
                                VirtQueue &_queue, Index descIndex)
@@ -106,7 +108,7 @@ VirtDescriptor::updateChain()
 void
 VirtDescriptor::dump() const
 {
-    if (!DTRACE(VIO))
+    if (!debug::VIO)
         return;
 
     DPRINTF(VIO, "Descriptor[%i]: "
@@ -123,7 +125,7 @@ VirtDescriptor::dump() const
 void
 VirtDescriptor::dumpChain() const
 {
-    if (!DTRACE(VIO))
+    if (!debug::VIO)
         return;
 
     const VirtDescriptor *desc(this);
@@ -257,6 +259,16 @@ VirtQueue::unserialize(CheckpointIn &cp)
 }
 
 void
+VirtQueue::reset()
+{
+    _address = 0;
+    _last_avail = 0;
+
+    avail.reset();
+    used.reset();
+}
+
+void
 VirtQueue::setAddress(Addr address)
 {
     const Addr addr_avail(address + _size * sizeof(struct vring_desc));
@@ -305,7 +317,7 @@ VirtQueue::produceDescriptor(VirtDescriptor *desc, uint32_t len)
 void
 VirtQueue::dump() const
 {
-    if (!DTRACE(VIO))
+    if (!debug::VIO)
         return;
 
     for (const VirtDescriptor &d : descriptors)
@@ -324,14 +336,13 @@ VirtQueue::onNotify()
 }
 
 
-VirtIODeviceBase::VirtIODeviceBase(Params *params, DeviceId id,
+VirtIODeviceBase::VirtIODeviceBase(const Params &params, DeviceId id,
                                    size_t config_size, FeatureBits features)
     : SimObject(params),
       guestFeatures(0),
-      byteOrder(params->system->getGuestByteOrder()),
+      byteOrder(params.byte_order),
       deviceId(id), configSize(config_size), deviceFeatures(features),
-      _deviceStatus(0), _queueSelect(0),
-      transKick(NULL)
+      _deviceStatus(0), _queueSelect(0)
 {
 }
 
@@ -368,7 +379,7 @@ VirtIODeviceBase::reset()
     _deviceStatus = 0;
 
     for (QueueID i = 0; i < _queues.size(); ++i)
-        _queues[i]->setAddress(0);
+        _queues[i]->reset();
 }
 
 void
@@ -483,13 +494,9 @@ VirtIODeviceBase::registerQueue(VirtQueue &queue)
 }
 
 
-VirtIODummyDevice::VirtIODummyDevice(VirtIODummyDeviceParams *params)
+VirtIODummyDevice::VirtIODummyDevice(const VirtIODummyDeviceParams &params)
     : VirtIODeviceBase(params, ID_INVALID, 0, 0)
 {
 }
 
-VirtIODummyDevice *
-VirtIODummyDeviceParams::create()
-{
-    return new VirtIODummyDevice(this);
-}
+} // namespace gem5

@@ -23,15 +23,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/fastmodel/amba_from_tlm_bridge.hh"
 
 #include "params/AmbaFromTlmBridge64.hh"
 
-namespace FastModel
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
 {
 
 AmbaFromTlmBridge64::AmbaFromTlmBridge64(const char *name) :
@@ -53,10 +55,12 @@ AmbaFromTlmBridge64::gem5_getPort(const std::string &if_name, int idx)
     }
 }
 
-} // namespace FastModel
+} // namespace fastmodel
 
-FastModel::AmbaFromTlmBridge64 *
-AmbaFromTlmBridge64Params::create()
+fastmodel::AmbaFromTlmBridge64 *
+AmbaFromTlmBridge64Params::create() const
 {
-    return new FastModel::AmbaFromTlmBridge64(name.c_str());
+    return new fastmodel::AmbaFromTlmBridge64(name.c_str());
 }
+
+} // namespace gem5

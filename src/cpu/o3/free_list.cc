@@ -25,16 +25,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #include "cpu/o3/free_list.hh"
 
-#include "arch/registers.hh"
 #include "base/trace.hh"
-#include "config/the_isa.hh"
 #include "debug/FreeList.hh"
+
+namespace gem5
+{
+
+namespace o3
+{
 
 UnifiedFreeList::UnifiedFreeList(const std::string &_my_name,
                                  PhysRegFile *_regFile)
@@ -46,3 +48,6 @@ UnifiedFreeList::UnifiedFreeList(const std::string &_my_name,
     // about its internal organization
     regFile->initFreeList(this);
 }
+
+} // namespace o3
+} // namespace gem5

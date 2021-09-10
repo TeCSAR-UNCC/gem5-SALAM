@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Mitch Hayenga
  */
 
 /**
@@ -51,14 +48,20 @@
 #include <cassert>
 
 #include "base/intmath.hh"
-#include "cpu/base.hh"
 #include "mem/cache/base.hh"
 #include "params/BasePrefetcher.hh"
 #include "sim/system.hh"
 
-BasePrefetcher::PrefetchInfo::PrefetchInfo(PacketPtr pkt, Addr addr, bool miss)
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+Base::PrefetchInfo::PrefetchInfo(PacketPtr pkt, Addr addr, bool miss)
   : address(addr), pc(pkt->req->hasPC() ? pkt->req->getPC() : 0),
-    masterId(pkt->req->masterId()), validPC(pkt->req->hasPC()),
+    requestorId(pkt->req->requestorId()), validPC(pkt->req->hasPC()),
     secure(pkt->isSecure()), size(pkt->req->getSize()), write(pkt->isWrite()),
     paddress(pkt->req->getPaddr()), cacheMiss(miss)
 {
@@ -72,15 +75,16 @@ BasePrefetcher::PrefetchInfo::PrefetchInfo(PacketPtr pkt, Addr addr, bool miss)
     }
 }
 
-BasePrefetcher::PrefetchInfo::PrefetchInfo(PrefetchInfo const &pfi, Addr addr)
-  : address(addr), pc(pfi.pc), masterId(pfi.masterId), validPC(pfi.validPC),
-    secure(pfi.secure), size(pfi.size), write(pfi.write),
-    paddress(pfi.paddress), cacheMiss(pfi.cacheMiss), data(nullptr)
+Base::PrefetchInfo::PrefetchInfo(PrefetchInfo const &pfi, Addr addr)
+  : address(addr), pc(pfi.pc), requestorId(pfi.requestorId),
+    validPC(pfi.validPC), secure(pfi.secure), size(pfi.size),
+    write(pfi.write), paddress(pfi.paddress), cacheMiss(pfi.cacheMiss),
+    data(nullptr)
 {
 }
 
 void
-BasePrefetcher::PrefetchListener::notify(const PacketPtr &pkt)
+Base::PrefetchListener::notify(const PacketPtr &pkt)
 {
     if (isFill) {
         parent.notifyFill(pkt);
@@ -89,19 +93,22 @@ BasePrefetcher::PrefetchListener::notify(const PacketPtr &pkt)
     }
 }
 
-BasePrefetcher::BasePrefetcher(const BasePrefetcherParams *p)
-    : ClockedObject(p), listeners(), cache(nullptr), blkSize(p->block_size),
-      lBlkSize(floorLog2(blkSize)), onMiss(p->on_miss), onRead(p->on_read),
-      onWrite(p->on_write), onData(p->on_data), onInst(p->on_inst),
-      masterId(p->sys->getMasterId(this)), pageBytes(p->sys->getPageBytes()),
-      prefetchOnAccess(p->prefetch_on_access),
-      useVirtualAddresses(p->use_virtual_addresses), issuedPrefetches(0),
+Base::Base(const BasePrefetcherParams &p)
+    : ClockedObject(p), listeners(), cache(nullptr), blkSize(p.block_size),
+      lBlkSize(floorLog2(blkSize)), onMiss(p.on_miss), onRead(p.on_read),
+      onWrite(p.on_write), onData(p.on_data), onInst(p.on_inst),
+      requestorId(p.sys->getRequestorId(this)),
+      pageBytes(p.sys->getPageBytes()),
+      prefetchOnAccess(p.prefetch_on_access),
+      prefetchOnPfHit(p.prefetch_on_pf_hit),
+      useVirtualAddresses(p.use_virtual_addresses),
+      prefetchStats(this), issuedPrefetches(0),
       usefulPrefetches(0), tlb(nullptr)
 {
 }
 
 void
-BasePrefetcher::setCache(BaseCache *_cache)
+Base::setCache(BaseCache *_cache)
 {
     assert(!cache);
     cache = _cache;
@@ -111,25 +118,58 @@ BasePrefetcher::setCache(BaseCache *_cache)
     lBlkSize = floorLog2(blkSize);
 }
 
-void
-BasePrefetcher::regStats()
+Base::StatGroup::StatGroup(statistics::Group *parent)
+  : statistics::Group(parent),
+    ADD_STAT(demandMshrMisses, statistics::units::Count::get(),
+        "demands not covered by prefetchs"),
+    ADD_STAT(pfIssued, statistics::units::Count::get(),
+        "number of hwpf issued"),
+    ADD_STAT(pfUnused, statistics::units::Count::get(),
+             "number of HardPF blocks evicted w/o reference"),
+    ADD_STAT(pfUseful, statistics::units::Count::get(),
+        "number of useful prefetch"),
+    ADD_STAT(pfUsefulButMiss, statistics::units::Count::get(),
+        "number of hit on prefetch but cache block is not in an usable "
+        "state"),
+    ADD_STAT(accuracy, statistics::units::Count::get(),
+        "accuracy of the prefetcher"),
+    ADD_STAT(coverage, statistics::units::Count::get(),
+    "coverage brought by this prefetcher"),
+    ADD_STAT(pfHitInCache, statistics::units::Count::get(),
+        "number of prefetches hitting in cache"),
+    ADD_STAT(pfHitInMSHR, statistics::units::Count::get(),
+        "number of prefetches hitting in a MSHR"),
+    ADD_STAT(pfHitInWB, statistics::units::Count::get(),
+        "number of prefetches hit in the Write Buffer"),
+    ADD_STAT(pfLate, statistics::units::Count::get(),
+        "number of late prefetches (hitting in cache, MSHR or WB)")
 {
-    ClockedObject::regStats();
+    using namespace statistics;
 
-    pfIssued
-        .name(name() + ".num_hwpf_issued")
-        .desc("number of hwpf issued")
-        ;
+    pfUnused.flags(nozero);
 
+    accuracy.flags(total);
+    accuracy = pfUseful / pfIssued;
+
+    coverage.flags(total);
+    coverage = pfUseful / (pfUseful + demandMshrMisses);
+
+    pfLate = pfHitInCache + pfHitInMSHR + pfHitInWB;
 }
 
 bool
-BasePrefetcher::observeAccess(const PacketPtr &pkt, bool miss) const
+Base::observeAccess(const PacketPtr &pkt, bool miss) const
 {
     bool fetch = pkt->req->isInstFetch();
     bool read = pkt->isRead();
     bool inv = pkt->isInvalidate();
 
+    if (!miss) {
+        if (prefetchOnPfHit)
+            return hasBeenPrefetched(pkt->getAddr(), pkt->isSecure());
+        if (!prefetchOnAccess)
+            return false;
+    }
     if (pkt->req->isUncacheable()) return false;
     if (fetch && !onInst) return false;
     if (!fetch && !onData) return false;
@@ -146,61 +186,61 @@ BasePrefetcher::observeAccess(const PacketPtr &pkt, bool miss) const
 }
 
 bool
-BasePrefetcher::inCache(Addr addr, bool is_secure) const
+Base::inCache(Addr addr, bool is_secure) const
 {
     return cache->inCache(addr, is_secure);
 }
 
 bool
-BasePrefetcher::inMissQueue(Addr addr, bool is_secure) const
+Base::inMissQueue(Addr addr, bool is_secure) const
 {
     return cache->inMissQueue(addr, is_secure);
 }
 
 bool
-BasePrefetcher::hasBeenPrefetched(Addr addr, bool is_secure) const
+Base::hasBeenPrefetched(Addr addr, bool is_secure) const
 {
     return cache->hasBeenPrefetched(addr, is_secure);
 }
 
 bool
-BasePrefetcher::samePage(Addr a, Addr b) const
+Base::samePage(Addr a, Addr b) const
 {
     return roundDown(a, pageBytes) == roundDown(b, pageBytes);
 }
 
 Addr
-BasePrefetcher::blockAddress(Addr a) const
+Base::blockAddress(Addr a) const
 {
     return a & ~((Addr)blkSize-1);
 }
 
 Addr
-BasePrefetcher::blockIndex(Addr a) const
+Base::blockIndex(Addr a) const
 {
     return a >> lBlkSize;
 }
 
 Addr
-BasePrefetcher::pageAddress(Addr a) const
+Base::pageAddress(Addr a) const
 {
     return roundDown(a, pageBytes);
 }
 
 Addr
-BasePrefetcher::pageOffset(Addr a) const
+Base::pageOffset(Addr a) const
 {
     return a & (pageBytes - 1);
 }
 
 Addr
-BasePrefetcher::pageIthBlockAddress(Addr page, uint32_t blockIndex) const
+Base::pageIthBlockAddress(Addr page, uint32_t blockIndex) const
 {
     return page + (blockIndex << lBlkSize);
 }
 
 void
-BasePrefetcher::probeNotify(const PacketPtr &pkt, bool miss)
+Base::probeNotify(const PacketPtr &pkt, bool miss)
 {
     // Don't notify prefetcher on SWPrefetch, cache maintenance
     // operations or for writes that we are coaslescing.
@@ -213,6 +253,11 @@ BasePrefetcher::probeNotify(const PacketPtr &pkt, bool miss)
 
     if (hasBeenPrefetched(pkt->getAddr(), pkt->isSecure())) {
         usefulPrefetches += 1;
+        prefetchStats.pfUseful++;
+        if (miss)
+            // This case happens when a demand hits on a prefetched line
+            // that's not in the requested coherency state.
+            prefetchStats.pfUsefulButMiss++;
     }
 
     // Verify this access type is observed by prefetcher
@@ -228,7 +273,7 @@ BasePrefetcher::probeNotify(const PacketPtr &pkt, bool miss)
 }
 
 void
-BasePrefetcher::regProbeListeners()
+Base::regProbeListeners()
 {
     /**
      * If no probes were added by the configuration scripts, connect to the
@@ -241,23 +286,24 @@ BasePrefetcher::regProbeListeners()
                                                 true));
         listeners.push_back(new PrefetchListener(*this, pm, "Fill", true,
                                                  false));
-        if (prefetchOnAccess) {
-            listeners.push_back(new PrefetchListener(*this, pm, "Hit", false,
-                                                     false));
-        }
+        listeners.push_back(new PrefetchListener(*this, pm, "Hit", false,
+                                                 false));
     }
 }
 
 void
-BasePrefetcher::addEventProbe(SimObject *obj, const char *name)
+Base::addEventProbe(SimObject *obj, const char *name)
 {
     ProbeManager *pm(obj->getProbeManager());
     listeners.push_back(new PrefetchListener(*this, pm, name));
 }
 
 void
-BasePrefetcher::addTLB(BaseTLB *t)
+Base::addTLB(BaseTLB *t)
 {
     fatal_if(tlb != nullptr, "Only one TLB can be registered");
     tlb = t;
 }
+
+} // namespace prefetch
+} // namespace gem5

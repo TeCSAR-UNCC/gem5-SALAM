@@ -24,18 +24,21 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /* @file
  * Register and structure descriptions for Intel's I/O AT DMA Engine
  */
 #include "base/bitfield.hh"
+#include "base/compiler.hh"
 #include "sim/serialize.hh"
 
-namespace CopyEngineReg {
+namespace gem5
+{
 
+GEM5_DEPRECATED_NAMESPACE(CopyEngineReg, copy_engine_reg);
+namespace copy_engine_reg
+{
 
 // General Channel independant registers, 128 bytes starting at 0x00
 const uint32_t GEN_CHANCOUNT    = 0x00;
@@ -64,7 +67,8 @@ const uint32_t DESC_CTRL_CP_STS     = 0x00000008;
 const uint32_t DESC_CTRL_FRAME      = 0x00000010;
 const uint32_t DESC_CTRL_NULL       = 0x00000020;
 
-struct DmaDesc {
+struct DmaDesc
+{
     uint32_t len;
     uint32_t command;
     Addr src;
@@ -93,7 +97,8 @@ struct DmaDesc {
     inline void NAME(uint64_t d) { replaceBits(_data, OFFSET+BITS-1, OFFSET,d); }
 
 template<class T>
-struct Reg {
+struct Reg
+{
     T _data;
     T operator()() { return _data; }
     const Reg<T> &operator=(T d) { _data = d; return *this;}
@@ -111,11 +116,14 @@ struct Reg {
 };
 
 
-struct Regs : public Serializable {
+struct Regs : public Serializable
+{
     uint8_t chanCount;
     uint8_t xferCap;
 
-    struct INTRCTRL : public Reg<uint8_t> { // 0x03
+    struct INTRCTRL : public Reg<uint8_t>
+    {
+        // 0x03
         using Reg<uint8_t>::operator =;
         ADD_FIELD8(master_int_enable,0,1);
         ADD_FIELD8(interrupt_status,1,1);
@@ -143,8 +151,11 @@ struct Regs : public Serializable {
 
 };
 
-struct ChanRegs : public Serializable {
-    struct CHANCTRL : public Reg<uint16_t> { // channelX + 0x00
+struct ChanRegs : public Serializable
+{
+    struct CHANCTRL : public Reg<uint16_t>
+    {
+        // channelX + 0x00
         using Reg<uint16_t>::operator =;
         ADD_FIELD16(interrupt_disable,0,1);
         ADD_FIELD16(error_completion_enable, 2,1);
@@ -155,7 +166,9 @@ struct ChanRegs : public Serializable {
     };
     CHANCTRL ctrl;
 
-    struct CHANSTS : public Reg<uint64_t> { // channelX + 0x04
+    struct CHANSTS : public Reg<uint64_t>
+    {
+        // channelX + 0x04
         ADD_FIELD64(dma_transfer_status, 0, 3);
         ADD_FIELD64(unaffiliated_error, 3, 1);
         ADD_FIELD64(soft_error, 4, 1);
@@ -165,7 +178,9 @@ struct ChanRegs : public Serializable {
 
     uint64_t descChainAddr;
 
-    struct CHANCMD : public Reg<uint8_t> { // channelX + 0x14
+    struct CHANCMD : public Reg<uint8_t>
+    {
+        // channelX + 0x14
         ADD_FIELD8(start_dma,0,1);
         ADD_FIELD8(append_dma,1,1);
         ADD_FIELD8(suspend_dma,2,1);
@@ -177,7 +192,9 @@ struct ChanRegs : public Serializable {
 
     uint64_t completionAddr;
 
-    struct CHANERR : public Reg<uint32_t> { // channel X + 0x28
+    struct CHANERR : public Reg<uint32_t>
+    {
+        // channel X + 0x28
         ADD_FIELD32(source_addr_error,0,1);
         ADD_FIELD32(dest_addr_error,1,1);
         ADD_FIELD32(ndesc_addr_error,2,1);
@@ -220,6 +237,5 @@ struct ChanRegs : public Serializable {
 
 };
 
-} // namespace CopyEngineReg
-
-
+} // namespace copy_engine_reg
+} // namespace gem5

@@ -1,4 +1,5 @@
 # Copyright (c) 2010-2012, 2015-2019 ARM Limited
+# Copyright (c) 2020 Barkhausen Institut
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -36,21 +37,16 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Kevin Lim
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 import m5
 from m5.objects import *
 from m5.util import *
-from .Benchmarks import *
-from . import ObjectList
+from common.Benchmarks import *
+from common import ObjectList
 
 # Populate to reflect supported os types per target ISA
-os_types = { 'alpha' : [ 'linux' ],
-             'mips'  : [ 'linux' ],
+os_types = { 'mips'  : [ 'linux' ],
+             'riscv' : [ 'linux' ], # TODO that's a lie
              'sparc' : [ 'linux' ],
              'x86'   : [ 'linux' ],
              'arm'   : [ 'linux',
@@ -75,7 +71,7 @@ class MemBus(SystemXBar):
 def attach_9p(parent, bus):
     viopci = PciVirtIO()
     viopci.vio = VirtIO9PDiod()
-    viodir = os.path.join(m5.options.outdir, '9p')
+    viodir = os.path.realpath(os.path.join(m5.options.outdir, '9p'))
     viopci.vio.root = os.path.join(viodir, 'share')
     viopci.vio.socketPath = os.path.join(viodir, 'socket')
     if not os.path.exists(viopci.vio.root):
@@ -86,72 +82,18 @@ def attach_9p(parent, bus):
     parent.attachPciDevice(viopci, bus)
 
 def fillInCmdline(mdesc, template, **kwargs):
-    kwargs.setdefault('disk', mdesc.disk())
     kwargs.setdefault('rootdev', mdesc.rootdev())
     kwargs.setdefault('mem', mdesc.mem())
     kwargs.setdefault('script', mdesc.script())
     return template % kwargs
 
-def makeLinuxAlphaSystem(mem_mode, mdesc=None, ruby=False, cmdline=None):
-
-    class BaseTsunami(Tsunami):
-        ethernet = NSGigE(pci_bus=0, pci_dev=1, pci_func=0)
-        ide = IdeController(disks=[Parent.disk0, Parent.disk2],
-                            pci_func=0, pci_dev=0, pci_bus=0)
-
-    self = LinuxAlphaSystem()
-    if not mdesc:
-        # generic system
-        mdesc = SysConfig()
-    self.readfile = mdesc.script()
-
-    self.tsunami = BaseTsunami()
-
-    # Create the io bus to connect all device ports
-    self.iobus = IOXBar()
-    self.tsunami.attachIO(self.iobus)
-
-    self.tsunami.ide.pio = self.iobus.master
-
-    self.tsunami.ethernet.pio = self.iobus.master
-
-    if ruby:
-        # Store the dma devices for later connection to dma ruby ports.
-        # Append an underscore to dma_ports to avoid the SimObjectVector check.
-        self._dma_ports = [self.tsunami.ide.dma, self.tsunami.ethernet.dma]
-    else:
-        self.membus = MemBus()
-
-        # By default the bridge responds to all addresses above the I/O
-        # base address (including the PCI config space)
-        IO_address_space_base = 0x80000000000
-        self.bridge = Bridge(delay='50ns',
-                         ranges = [AddrRange(IO_address_space_base, Addr.max)])
-        self.bridge.master = self.iobus.slave
-        self.bridge.slave = self.membus.master
-
-        self.tsunami.ide.dma = self.iobus.slave
-        self.tsunami.ethernet.dma = self.iobus.slave
-
-        self.system_port = self.membus.slave
-
-    self.mem_ranges = [AddrRange(mdesc.mem())]
-    self.disk0 = CowIdeDisk(driveID='master')
-    self.disk2 = CowIdeDisk(driveID='master')
-    self.disk0.childImage(mdesc.disk())
-    self.disk2.childImage(disk('linux-bigswap2.img'))
-    self.simple_disk = SimpleDisk(disk=RawDiskImage(image_file = mdesc.disk(),
-                                               read_only = True))
-    self.intrctrl = IntrControl()
-    self.mem_mode = mem_mode
-    self.terminal = Terminal()
-    self.pal = binary('ts_osfpal')
-    self.console = binary('console')
-    if not cmdline:
-        cmdline = 'root=/dev/hda1 console=ttyS0'
-    self.boot_osflags = fillInCmdline(mdesc, cmdline)
-
-    return self
+def makeCowDisks(disk_paths):
+    disks = []
+    for disk_path in disk_paths:
+        disk = CowIdeDisk(driveID='device0')
+        disk.childImage(disk_path);
+        disks.append(disk)
+    return disks
 
 def makeSparcSystem(mem_mode, mdesc=None, cmdline=None):
     # Constants from iob.cc and uart8250.cc
@@ -165,7 +107,7 @@ def makeSparcSystem(mem_mode, mdesc=None, cmdline=None):
         def childImage(self, ci):
             self.image.child.image_file = ci
 
-    self = SparcSystem()
+    self = System()
     if not mdesc:
         # generic system
         mdesc = SysConfig()
@@ -180,13 +122,8 @@ def makeSparcSystem(mem_mode, mdesc=None, cmdline=None):
                        AddrRange(Addr('2GB'), size ='256MB')]
     self.bridge.master = self.iobus.slave
     self.bridge.slave = self.membus.master
-    self.rom.port = self.membus.master
-    self.nvram.port = self.membus.master
-    self.hypervisor_desc.port = self.membus.master
-    self.partition_desc.port = self.membus.master
-    self.intrctrl = IntrControl()
     self.disk0 = CowMmDisk()
-    self.disk0.childImage(mdesc.disk())
+    self.disk0.childImage(mdesc.disks()[0])
     self.disk0.pio = self.iobus.master
 
     # The puart0 and hvuart are placed on the IO bus, so create ranges
@@ -207,29 +144,42 @@ def makeSparcSystem(mem_mode, mdesc=None, cmdline=None):
         AddrRange(self.t1000.hvuart.pio_addr,
                   self.t1000.hvuart.pio_addr + uart_pio_size - 1)
         ]
-    self.reset_bin = binary('reset_new.bin')
-    self.hypervisor_bin = binary('q_new.bin')
-    self.openboot_bin = binary('openboot_new.bin')
-    self.nvram_bin = binary('nvram1')
-    self.hypervisor_desc_bin = binary('1up-hv.bin')
-    self.partition_desc_bin = binary('1up-md.bin')
+
+    workload = SparcFsWorkload()
+
+    # ROM for OBP/Reset/Hypervisor
+    self.rom = SimpleMemory(image_file=binary('t1000_rom.bin'),
+            range=AddrRange(0xfff0000000, size='8MB'))
+    # nvram
+    self.nvram = SimpleMemory(image_file=binary('nvram1'),
+            range=AddrRange(0x1f11000000, size='8kB'))
+    # hypervisor description
+    self.hypervisor_desc = SimpleMemory(image_file=binary('1up-hv.bin'),
+            range=AddrRange(0x1f12080000, size='8kB'))
+    # partition description
+    self.partition_desc = SimpleMemory(image_file=binary('1up-md.bin'),
+            range=AddrRange(0x1f12000000, size='8kB'))
+
+    self.rom.port = self.membus.master
+    self.nvram.port = self.membus.master
+    self.hypervisor_desc.port = self.membus.master
+    self.partition_desc.port = self.membus.master
 
     self.system_port = self.membus.slave
+
+    self.workload = workload
 
     return self
 
 def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
                   dtb_filename=None, bare_metal=False, cmdline=None,
                   external_memory="", ruby=False, security=False,
-                  vio_9p=None):
+                  vio_9p=None, bootloader=None):
     assert machine_type
 
     pci_devices = []
 
-    if bare_metal:
-        self = ArmSystem()
-    else:
-        self = LinuxArmSystem()
+    self = ArmSystem()
 
     if not mdesc:
         # generic system
@@ -253,35 +203,27 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
     self.realview = platform_class()
     self._bootmem = self.realview.bootmem
 
-    if isinstance(self.realview, VExpress_EMM64):
-        if os.path.split(mdesc.disk())[-1] == 'linux-aarch32-ael.img':
-            print("Selected 64-bit ARM architecture, updating default "
-                  "disk image...")
-            mdesc.diskname = 'linaro-minimal-aarch64.img'
-
-
     # Attach any PCI devices this platform supports
     self.realview.attachPciDevices()
 
-    self.cf0 = CowIdeDisk(driveID='master')
-    self.cf0.childImage(mdesc.disk())
+    disks = makeCowDisks(mdesc.disks())
     # Old platforms have a built-in IDE or CF controller. Default to
     # the IDE controller if both exist. New platforms expect the
     # storage controller to be added from the config script.
     if hasattr(self.realview, "ide"):
-        self.realview.ide.disks = [self.cf0]
+        self.realview.ide.disks = disks
     elif hasattr(self.realview, "cf_ctrl"):
-        self.realview.cf_ctrl.disks = [self.cf0]
+        self.realview.cf_ctrl.disks = disks
     else:
-        self.pci_ide = IdeController(disks=[self.cf0])
+        self.pci_ide = IdeController(disks=disks)
         pci_devices.append(self.pci_ide)
 
     self.mem_ranges = []
-    size_remain = long(Addr(mdesc.mem()))
+    size_remain = int(Addr(mdesc.mem()))
     for region in self.realview._mem_regions:
-        if size_remain > long(region.size()):
+        if size_remain > int(region.size()):
             self.mem_ranges.append(region)
-            size_remain = size_remain - long(region.size())
+            size_remain = size_remain - int(region.size())
         else:
             self.mem_ranges.append(AddrRange(region.start, size=size_remain))
             size_remain = 0
@@ -298,21 +240,16 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
 
     if bare_metal:
         # EOT character on UART will end the simulation
-        # self.realview.uart.end_on_eot = True
-        # Editted for gem5-SALAM baremetal simulation
-        ###################################################
-        if machine_type == "VExpress_GEM5_V1":
-            self.realview.uart[0].end_on_eot = True
-        else:
-            self.realview.uart.end_on_eot = True
-        # self.realview.setupBareMetalBoot(self.membus, self)
-        ###################################################
+        self.realview.uart[0].end_on_eot = True
+        self.workload = ArmFsWorkload(dtb_addr=0)
     else:
-        if dtb_filename:
-            self.dtb_filename = binary(dtb_filename)
+        workload = ArmFsLinux()
 
-        self.machine_type = machine_type if machine_type in ArmMachineType.map \
-                            else "DTOnly"
+        if dtb_filename:
+            workload.dtb_filename = binary(dtb_filename)
+
+        workload.machine_type = \
+            machine_type if machine_type in ArmMachineType.map else "DTOnly"
 
         # Ensure that writes to the UART actually go out early in the boot
         if not cmdline:
@@ -320,12 +257,8 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
                       'lpj=19988480 norandmaps rw loglevel=8 ' + \
                       'mem=%(mem)s root=%(rootdev)s'
 
-        self.realview.setupBootLoader(self, binary)
-
         if hasattr(self.realview.gic, 'cpu_addr'):
             self.gic_cpu_addr = self.realview.gic.cpu_addr
-
-        self.flags_addr = self.realview.realview_io.pio_addr + 0x30
 
         # This check is for users who have previously put 'android' in
         # the disk image filename to tell the config scripts to
@@ -333,7 +266,8 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
         # behavior has been replaced with a more explicit option per
         # the error message below. The disk can have any name now and
         # doesn't need to include 'android' substring.
-        if (os.path.split(mdesc.disk())[-1]).lower().count('android'):
+        if (mdesc.disks() and
+                os.path.split(mdesc.disks()[0])[-1].lower().count('android')):
             if 'android' not in mdesc.os_type():
                 fatal("It looks like you are trying to boot an Android " \
                       "platform.  To boot Android, you must specify " \
@@ -357,7 +291,11 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
                            "androidboot.selinux=permissive " + \
                            "video=Virtual-1:1920x1080-16"
 
-        self.boot_osflags = fillInCmdline(mdesc, cmdline)
+        workload.command_line = fillInCmdline(mdesc, cmdline)
+
+        self.workload = workload
+
+        self.realview.setupBootLoader(self, binary, bootloader)
 
     if external_memory:
         # I/O traffic enters iobus
@@ -393,7 +331,6 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
             dev, self.iobus,
             dma_ports=self._dma_ports if ruby else None)
 
-    self.intrctrl = IntrControl()
     self.terminal = Terminal()
     self.vncserver = VncServer()
 
@@ -408,8 +345,6 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
             fatal("The MI_example protocol cannot implement Load/Store "
                   "Exclusive operations. Multicore ARM systems configured "
                   "with the MI_example protocol will not work properly.")
-        warn("You are trying to use Ruby on ARM, which is not working "
-             "properly yet.")
 
     return self
 
@@ -417,10 +352,10 @@ def makeArmSystem(mem_mode, machine_type, num_cpus=1, mdesc=None,
 def makeLinuxMipsSystem(mem_mode, mdesc=None, cmdline=None):
     class BaseMalta(Malta):
         ethernet = NSGigE(pci_bus=0, pci_dev=1, pci_func=0)
-        ide = IdeController(disks=[Parent.disk0, Parent.disk2],
+        ide = IdeController(disks=Parent.disks,
                             pci_func=0, pci_dev=0, pci_bus=0)
 
-    self = LinuxMipsSystem()
+    self = System()
     if not mdesc:
         # generic system
         mdesc = SysConfig()
@@ -431,25 +366,21 @@ def makeLinuxMipsSystem(mem_mode, mdesc=None, cmdline=None):
     self.mem_ranges = [AddrRange('1GB')]
     self.bridge.master = self.iobus.slave
     self.bridge.slave = self.membus.master
-    self.disk0 = CowIdeDisk(driveID='master')
-    self.disk2 = CowIdeDisk(driveID='master')
-    self.disk0.childImage(mdesc.disk())
-    self.disk2.childImage(disk('linux-bigswap2.img'))
+    self.disks = makeCowDisks(mdesc.disks())
     self.malta = BaseMalta()
     self.malta.attachIO(self.iobus)
     self.malta.ide.pio = self.iobus.master
     self.malta.ide.dma = self.iobus.slave
     self.malta.ethernet.pio = self.iobus.master
     self.malta.ethernet.dma = self.iobus.slave
-    self.simple_disk = SimpleDisk(disk=RawDiskImage(image_file = mdesc.disk(),
-                                               read_only = True))
-    self.intrctrl = IntrControl()
+    self.simple_disk = SimpleDisk(disk=RawDiskImage(
+        image_file = mdesc.disks()[0], read_only = True))
     self.mem_mode = mem_mode
     self.terminal = Terminal()
     self.console = binary('mips/console')
     if not cmdline:
         cmdline = 'root=/dev/hda1 console=ttyS0'
-    self.boot_osflags = fillInCmdline(mdesc, cmdline)
+    self.workload = KernelWorkload(command_line=fillInCmdline(mdesc, cmdline))
 
     self.system_port = self.membus.slave
 
@@ -513,9 +444,12 @@ def connectX86RubySystem(x86_sys):
     x86_sys.pc.attachIO(x86_sys.iobus, x86_sys._dma_ports)
 
 
-def makeX86System(mem_mode, numCPUs=1, mdesc=None, self=None, Ruby=False):
-    if self == None:
-        self = X86System()
+def makeX86System(mem_mode, numCPUs=1, mdesc=None, workload=None, Ruby=False):
+    self = System()
+
+    if workload is None:
+        workload = X86FsWorkload()
+    self.workload = workload
 
     if not mdesc:
         # generic system
@@ -549,22 +483,18 @@ def makeX86System(mem_mode, numCPUs=1, mdesc=None, self=None, Ruby=False):
     else:
         connectX86ClassicSystem(self, numCPUs)
 
-    self.intrctrl = IntrControl()
-
     # Disks
-    disk0 = CowIdeDisk(driveID='master')
-    disk2 = CowIdeDisk(driveID='master')
-    disk0.childImage(mdesc.disk())
-    disk2.childImage(disk('linux-bigswap2.img'))
-    self.pc.south_bridge.ide.disks = [disk0, disk2]
+    disks = makeCowDisks(mdesc.disks())
+    self.pc.south_bridge.ide.disks = disks
 
     # Add in a Bios information structure.
     structures = [X86SMBiosBiosInformation()]
-    self.smbios_table.structures = structures
+    workload.smbios_table.structures = structures
 
     # Set up the Intel MP table
     base_entries = []
     ext_entries = []
+    madt_records = []
     for i in range(numCPUs):
         bp = X86IntelMPProcessor(
                 local_apic_id = i,
@@ -572,6 +502,11 @@ def makeX86System(mem_mode, numCPUs=1, mdesc=None, self=None, Ruby=False):
                 enable = True,
                 bootstrap = (i == 0))
         base_entries.append(bp)
+        lapic = X86ACPIMadtLAPIC(
+                acpi_processor_id=i,
+                apic_id=i,
+                flags=1)
+        madt_records.append(lapic)
     io_apic = X86IntelMPIOAPIC(
             id = numCPUs,
             version = 0x11,
@@ -579,9 +514,11 @@ def makeX86System(mem_mode, numCPUs=1, mdesc=None, self=None, Ruby=False):
             address = 0xfec00000)
     self.pc.south_bridge.io_apic.apic_id = io_apic.id
     base_entries.append(io_apic)
+    madt_records.append(X86ACPIMadtIOAPIC(id=io_apic.id,
+        address=io_apic.address, int_base=0))
     # In gem5 Pc::calcPciConfigAddr(), it required "assert(bus==0)",
-    # but linux kernel cannot config PCI device if it was not connected to PCI bus,
-    # so we fix PCI bus id to 0, and ISA bus id to 1.
+    # but linux kernel cannot config PCI device if it was not connected to
+    # PCI bus, so we fix PCI bus id to 0, and ISA bus id to 1.
     pci_bus = X86IntelMPBus(bus_id = 0, bus_type='PCI   ')
     base_entries.append(pci_bus)
     isa_bus = X86IntelMPBus(bus_id = 1, bus_type='ISA   ')
@@ -598,6 +535,13 @@ def makeX86System(mem_mode, numCPUs=1, mdesc=None, self=None, Ruby=False):
             dest_io_apic_id = io_apic.id,
             dest_io_apic_intin = 16)
     base_entries.append(pci_dev4_inta)
+    pci_dev4_inta_madt = X86ACPIMadtIntSourceOverride(
+            bus_source = pci_dev4_inta.source_bus_id,
+            irq_source = pci_dev4_inta.source_bus_irq,
+            sys_int = pci_dev4_inta.dest_io_apic_intin,
+            flags = 0
+        )
+    madt_records.append(pci_dev4_inta_madt)
     def assignISAInt(irq, apicPin):
         assign_8259_to_apic = X86IntelMPIOIntAssignment(
                 interrupt_type = 'ExtInt',
@@ -617,23 +561,38 @@ def makeX86System(mem_mode, numCPUs=1, mdesc=None, self=None, Ruby=False):
                 dest_io_apic_id = io_apic.id,
                 dest_io_apic_intin = apicPin)
         base_entries.append(assign_to_apic)
+        # acpi
+        assign_to_apic_acpi = X86ACPIMadtIntSourceOverride(
+                bus_source = 1,
+                irq_source = irq,
+                sys_int = apicPin,
+                flags = 0
+            )
+        madt_records.append(assign_to_apic_acpi)
     assignISAInt(0, 2)
     assignISAInt(1, 1)
     for i in range(3, 15):
         assignISAInt(i, i)
-    self.intel_mp_table.base_entries = base_entries
-    self.intel_mp_table.ext_entries = ext_entries
+    workload.intel_mp_table.base_entries = base_entries
+    workload.intel_mp_table.ext_entries = ext_entries
+
+    madt = X86ACPIMadt(local_apic_address=0,
+            records=madt_records, oem_id='madt')
+    workload.acpi_description_table_pointer.rsdt.entries.append(madt)
+    workload.acpi_description_table_pointer.xsdt.entries.append(madt)
+    workload.acpi_description_table_pointer.oem_id = 'gem5'
+    workload.acpi_description_table_pointer.rsdt.oem_id='gem5'
+    workload.acpi_description_table_pointer.xsdt.oem_id='gem5'
+    return self
 
 def makeLinuxX86System(mem_mode, numCPUs=1, mdesc=None, Ruby=False,
                        cmdline=None):
-    self = LinuxX86System()
-
     # Build up the x86 system and then specialize it for Linux
-    makeX86System(mem_mode, numCPUs, mdesc, self, Ruby)
+    self = makeX86System(mem_mode, numCPUs, mdesc, X86FsLinux(), Ruby)
 
     # We assume below that there's at least 1MB of memory. We'll require 2
     # just to avoid corner cases.
-    phys_mem_size = sum(map(lambda r: r.size(), self.mem_ranges))
+    phys_mem_size = sum([r.size() for r in self.mem_ranges])
     assert(phys_mem_size >= 0x200000)
     assert(len(self.mem_ranges) <= 2)
 
@@ -667,14 +626,36 @@ def makeLinuxX86System(mem_mode, numCPUs=1, mdesc=None, Ruby=False,
         entries.append(X86E820Entry(addr = 0x100000000,
             size = '%dB' % (self.mem_ranges[1].size()), range_type = 1))
 
-    self.e820_table.entries = entries
+    self.workload.e820_table.entries = entries
 
     # Command line
     if not cmdline:
         cmdline = 'earlyprintk=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1'
-    self.boot_osflags = fillInCmdline(mdesc, cmdline)
+    self.workload.command_line = fillInCmdline(mdesc, cmdline)
     return self
 
+def makeBareMetalRiscvSystem(mem_mode, mdesc=None, cmdline=None):
+    self = System()
+    if not mdesc:
+        # generic system
+        mdesc = SysConfig()
+    self.mem_mode = mem_mode
+    self.mem_ranges = [AddrRange(mdesc.mem())]
+
+    self.workload = RiscvBareMetal()
+
+    self.iobus = IOXBar()
+    self.membus = MemBus()
+
+    self.bridge = Bridge(delay='50ns')
+    self.bridge.master = self.iobus.slave
+    self.bridge.slave = self.membus.master
+    # Sv39 has 56 bit physical addresses; use the upper 8 bit for the IO space
+    IO_address_space_base = 0x00FF000000000000
+    self.bridge.ranges = [AddrRange(IO_address_space_base, Addr.max)]
+
+    self.system_port = self.membus.slave
+    return self
 
 def makeDualRoot(full_system, testSystem, driveSystem, dumpfile):
     self = Root(full_system = full_system)

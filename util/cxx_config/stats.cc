@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -42,8 +40,11 @@
  *
  *  C++-only configuration stats handling example
  *
- *  Register with: Stats::registerHandlers(statsReset, statsDump)
+ *  Register with: gem5::statistics::registerHandlers(statsReset, statsDump)
  */
+
+#include <iostream>
+#include <list>
 
 #include "base/statistics.hh"
 #include "stats.hh"
@@ -53,7 +54,7 @@ namespace CxxConfig
 
 void statsPrepare()
 {
-    std::list<Stats::Info *> stats = Stats::statsList();
+    std::list<gem5::statistics::Info *> stats = gem5::statistics::statsList();
 
     /* gather_stats -> prepare */
     for (auto i = stats.begin(); i != stats.end(); ++i)
@@ -64,24 +65,26 @@ void statsDump()
 {
     std::cerr << "Stats dump\n";
 
-    Stats::processDumpQueue();
+    gem5::statistics::processDumpQueue();
 
-    std::list<Stats::Info *> stats = Stats::statsList();
+    std::list<gem5::statistics::Info *> stats = gem5::statistics::statsList();
 
     statsPrepare();
 
     /* gather_stats -> convert_value */
     for (auto i = stats.begin(); i != stats.end(); ++i) {
-        Stats::Info *stat = *i;
+        gem5::statistics::Info *stat = *i;
 
-        Stats::ScalarInfo *scalar = dynamic_cast<Stats::ScalarInfo *>(stat);
-        Stats::VectorInfo *vector = dynamic_cast<Stats::VectorInfo *>(stat);
+        gem5::statistics::ScalarInfo *scalar =
+            dynamic_cast<gem5::statistics::ScalarInfo *>(stat);
+        gem5::statistics::VectorInfo *vector =
+            dynamic_cast<gem5::statistics::VectorInfo *>(stat);
 
         if (scalar) {
             std::cerr << "SCALAR " << stat->name << ' '
                 << scalar->value() << '\n';
         } else if (vector) {
-            Stats::VResult results = vector->value();
+            gem5::statistics::VResult results = vector->value();
 
             unsigned int index = 0;
             for (auto e = results.begin(); e != results.end(); ++e) {
@@ -101,12 +104,12 @@ void statsReset()
 {
     std::cerr << "Stats reset\n";
 
-    Stats::processResetQueue();
+    gem5::statistics::processResetQueue();
 }
 
 void statsEnable()
 {
-    std::list<Stats::Info *> stats = Stats::statsList();
+    std::list<gem5::statistics::Info *> stats = gem5::statistics::statsList();
 
     for (auto i = stats.begin(); i != stats.end(); ++i)
         (*i)->enable();

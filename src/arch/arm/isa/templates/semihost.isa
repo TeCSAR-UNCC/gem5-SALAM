@@ -33,15 +33,13 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Giacomo Travaglini
 
 //
 // A new class of Semihosting constructor templates has been added.
 // Their main purpose is to check if the Exception Generation
 // Instructions (HLT, SVC) are actually a semihosting command.
-// If that is the case, the IsMemBarrier flag is raised, so that
-// in the O3 model we perform a coherent memory access during
+// If that is the case, the IsReadBarrier and IsWriteBarrier flags are raised,
+// so that in the O3 model we perform a coherent memory access during
 // the semihosting operation.
 // Please note: since we don't have a thread context pointer in the
 // constructor we cannot check if semihosting is enabled in the
@@ -50,13 +48,14 @@
 // when a semihosting immediate is recognized.
 
 def template SemihostConstructor {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst, uint64_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm)
+    %(class_name)s::%(class_name)s(ExtMachInst machInst, uint64_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
 
@@ -66,21 +65,24 @@ def template SemihostConstructor {{
         auto semihost_imm = machInst.thumb? %(thumb_semihost)s :
                                             %(arm_semihost)s;
         if (_imm == semihost_imm) {
-            flags[IsMemBarrier] = true;
+            flags[IsReadBarrier] = true;
+            flags[IsWriteBarrier] = true;
         }
     }
 }};
 
 def template SemihostConstructor64 {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst, uint64_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm)
+    %(class_name)s::%(class_name)s(ExtMachInst machInst, uint64_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
 
         // In AArch64 there is only one instruction for issuing
         // semhosting commands: HLT #0xF000
         if (_imm == 0xF000) {
-            flags[IsMemBarrier] = true;
+            flags[IsReadBarrier] = true;
+            flags[IsWriteBarrier] = true;
         }
     }
 }};

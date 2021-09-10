@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_SIMPLE_OBJECT_PRINTER_HH__
@@ -73,7 +71,7 @@ class Printer : public sc_core::sc_module
         }
     }
 
-    Stats::Scalar numWords;
+    gem5::statistics::Scalar numWords;
 
     // Gem5 statistics should be set up during the "end_of_elabortion"
     // callback.

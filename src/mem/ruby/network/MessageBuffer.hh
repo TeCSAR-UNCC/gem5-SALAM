@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2019-2021 ARM Limited
+ * All rights reserved.
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -39,6 +51,7 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "base/trace.hh"
@@ -52,15 +65,23 @@
 #include "params/MessageBuffer.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class MessageBuffer : public SimObject
 {
   public:
     typedef MessageBufferParams Params;
-    MessageBuffer(const Params *p);
+    MessageBuffer(const Params &p);
 
     void reanalyzeMessages(Addr addr, Tick current_time);
     void reanalyzeAllMessages(Tick current_time);
     void stallMessage(Addr addr, Tick current_time);
+    // return true if the stall map has a message of this address
+    bool hasStalledMsg(Addr addr) const;
 
     // TRUE if head of queue timestamp <= SystemTime
     bool isReady(Tick current_time) const;
@@ -101,6 +122,18 @@ class MessageBuffer : public SimObject
 
     void enqueue(MsgPtr message, Tick curTime, Tick delta);
 
+    // Defer enqueueing a message to a later cycle by putting it aside and not
+    // enqueueing it in this cycle
+    // The corresponding controller will need to explicitly enqueue the
+    // deferred message into the message buffer. Otherwise, the message will
+    // be lost.
+    void deferEnqueueingMessage(Addr addr, MsgPtr message);
+
+    // enqueue all previously deferred messages that are associated with the
+    // input address
+    void enqueueDeferredMessages(Addr addr, Tick curTime, Tick delay);
+    bool isDeferredMsgMapEmpty(Addr addr) const;
+
     //! Updates the delay cycles of the message at the head of the queue,
     //! removes it from the queue and returns its total delay.
     Tick dequeue(Tick current_time, bool decrement_messages = true);
@@ -128,16 +161,33 @@ class MessageBuffer : public SimObject
         return RubyDummyPort::instance();
     }
 
-    void regStats() override;
-
     // Function for figuring out if any of the messages in the buffer need
     // to be updated with the data from the packet.
     // Return value indicates the number of messages that were updated.
-    // This required for debugging the code.
-    uint32_t functionalWrite(Packet *pkt);
+    uint32_t functionalWrite(Packet *pkt)
+    {
+        return functionalAccess(pkt, false, nullptr);
+    }
+
+    // Function for figuring if message in the buffer has valid data for
+    // the packet.
+    // Returns true only if a message was found with valid data and the
+    // read was performed.
+    bool functionalRead(Packet *pkt)
+    {
+        return functionalAccess(pkt, true, nullptr) == 1;
+    }
+
+    // Functional read with mask
+    bool functionalRead(Packet *pkt, WriteMask &mask)
+    {
+        return functionalAccess(pkt, true, &mask) == 1;
+    }
 
   private:
     void reanalyzeList(std::list<MsgPtr> &, Tick);
+
+    uint32_t functionalAccess(Packet *pkt, bool is_read, WriteMask *mask);
 
   private:
     // Data Members (m_ prefix)
@@ -165,6 +215,14 @@ class MessageBuffer : public SimObject
      * older requests with younger ones.
      */
     StallMsgMapType m_stall_msg_map;
+
+    /**
+     * A map from line addresses to corresponding vectors of messages that
+     * are deferred for enqueueing. Messages in this map are waiting to be
+     * enqueued into the message buffer.
+     */
+    typedef std::unordered_map<Addr, std::vector<MsgPtr>> DeferredMsgMapType;
+    DeferredMsgMapType m_deferred_msg_map;
 
     /**
      * Current size of the stall map.
@@ -195,20 +253,21 @@ class MessageBuffer : public SimObject
     unsigned int m_stalled_at_cycle_start;
     unsigned int m_msgs_this_cycle;
 
-    Stats::Scalar m_not_avail_count;  // count the # of times I didn't have N
-                                      // slots available
     uint64_t m_msg_counter;
     int m_priority_rank;
     const bool m_strict_fifo;
-    const bool m_randomization;
+    const MessageRandomization m_randomization;
+    const bool m_allow_zero_latency;
 
     int m_input_link_id;
     int m_vnet_id;
 
-    Stats::Average m_buf_msgs;
-    Stats::Average m_stall_time;
-    Stats::Scalar m_stall_count;
-    Stats::Formula m_occupancy;
+    // Count the # of times I didn't have N slots available
+    statistics::Scalar m_not_avail_count;
+    statistics::Average m_buf_msgs;
+    statistics::Average m_stall_time;
+    statistics::Scalar m_stall_count;
+    statistics::Formula m_occupancy;
 };
 
 Tick random_time();
@@ -220,5 +279,8 @@ operator<<(std::ostream& out, const MessageBuffer& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif //__MEM_RUBY_NETWORK_MESSAGEBUFFER_HH__

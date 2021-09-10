@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Nikos Nikoleris
  */
 
 /**
@@ -56,11 +53,16 @@
 #include <vector>
 
 #include "base/printable.hh"
+#include "base/trace.hh"
 #include "base/types.hh"
+#include "debug/MSHR.hh"
 #include "mem/cache/queue_entry.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
+
+namespace gem5
+{
 
 class BaseCache;
 
@@ -124,10 +126,12 @@ class MSHR : public QueueEntry, public Printable
     /** True if the entry is just a simple forward from an upper level */
     bool isForward;
 
-    class Target : public QueueEntry::Target {
+    class Target : public QueueEntry::Target
+    {
       public:
 
-        enum Source {
+        enum Source
+        {
             FromCPU,
             FromSnoop,
             FromPrefetcher
@@ -162,7 +166,8 @@ class MSHR : public QueueEntry, public Printable
         {}
     };
 
-    class TargetList : public std::list<Target> {
+    class TargetList : public std::list<Target>, public Named
+    {
 
       public:
         bool needsWritable;
@@ -175,7 +180,7 @@ class MSHR : public QueueEntry, public Printable
          */
         bool hasFromCache;
 
-        TargetList();
+        TargetList(const std::string &name = ".unnamedTargetList");
 
         /**
          * Use the provided packet and the source to update the
@@ -227,38 +232,7 @@ class MSHR : public QueueEntry, public Printable
          *
          * @param pkt Packet considered for adding
          */
-        void
-        updateWriteFlags(PacketPtr pkt)
-        {
-            // if we have already seen writes for the full block stop
-            // here, this might be a full line write followed by
-            // other compatible requests (e.g., reads)
-            if (!isWholeLineWrite()) {
-                // Avoid merging requests with special flags (e.g.,
-                // strictly ordered)
-                const Request::FlagsType no_merge_flags =
-                    Request::UNCACHEABLE | Request::STRICT_ORDER |
-                    Request::MMAPPED_IPR | Request::PRIVILEGED |
-                    Request::LLSC | Request::MEM_SWAP |
-                    Request::MEM_SWAP_COND | Request::SECURE;
-                const auto &req_flags = pkt->req->getFlags();
-                bool compat_write = pkt->isWrite() &&
-                    !req_flags.isSet(no_merge_flags);
-                canMergeWrites &= compat_write;
-
-                // if this request is the first target in this list
-                // and additionally a whole-line write, we need to
-                // service it as a whole-line even if we won't allow
-                // any further merging (e.g., SECURE whole line
-                // write).
-                bool first_write = pkt->isWrite() && (size() == 0);
-                if (first_write || compat_write) {
-                    auto offset = pkt->getOffset(blkSize);
-                    auto begin = writesBitmap.begin() + offset;
-                    std::fill(begin, begin + pkt->getSize(), true);
-                }
-            }
-         }
+        void updateWriteFlags(PacketPtr pkt);
 
         /**
          * Tests if the flags of this TargetList have their default
@@ -447,7 +421,7 @@ class MSHR : public QueueEntry, public Printable
     bool handleSnoop(PacketPtr target, Counter order);
 
     /** A simple constructor. */
-    MSHR();
+    MSHR(const std::string &name);
 
     /**
      * Returns the current number of allocated targets.
@@ -491,6 +465,8 @@ class MSHR : public QueueEntry, public Printable
      */
     void popTarget()
     {
+        DPRINTF(MSHR, "Force deallocating MSHR targets: %s\n",
+                targets.front().pkt->print());
         targets.pop_front();
     }
 
@@ -545,5 +521,7 @@ class MSHR : public QueueEntry, public Printable
     bool matchBlockAddr(const PacketPtr pkt) const override;
     bool conflictAddr(const QueueEntry* entry) const override;
 };
+
+} // namespace gem5
 
 #endif // __MEM_CACHE_MSHR_HH__

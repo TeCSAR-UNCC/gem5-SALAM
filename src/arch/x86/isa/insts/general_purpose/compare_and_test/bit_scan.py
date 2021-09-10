@@ -35,8 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop BSR_R_R {
@@ -351,5 +349,20 @@ def macroop BSF_R_P {
 
 end:
     fault "NoFault"
+};
+
+def macroop POPCNT_R_R {
+    popcnt reg, regm, reg, dataSize=8
+};
+
+def macroop POPCNT_R_M {
+    ld t1, seg, sib, disp
+    popcnt reg, t1, reg, dataSize=8
+};
+
+def macroop POPCNT_R_P {
+    rdip t7
+    ld t1, seg, riprel, disp
+    popcnt reg, t1, reg, dataSize=8
 };
 '''

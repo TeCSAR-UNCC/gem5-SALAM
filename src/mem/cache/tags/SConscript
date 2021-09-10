@@ -25,8 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 Import('*')
 
@@ -35,7 +33,10 @@ SimObject('Tags.py')
 Source('base.cc')
 Source('base_set_assoc.cc')
 Source('compressed_tags.cc')
+Source('dueling.cc')
 Source('fa_lru.cc')
 Source('sector_blk.cc')
 Source('sector_tags.cc')
 Source('super_blk.cc')
+
+GTest('dueling.test', 'dueling.test.cc', 'dueling.cc')

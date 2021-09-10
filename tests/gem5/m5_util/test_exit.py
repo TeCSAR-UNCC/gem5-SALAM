@@ -1,3 +1,15 @@
+# Copyright (c) 2020 ARM Limited
+# All rights reserved
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 2017 Mark D. Hill and David A. Wood
 # All rights reserved.
 #
@@ -23,8 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Sean Wilson
 
 '''
 Test file for the util m5 exit assembly instruction.
@@ -37,10 +47,9 @@ m5_exit_regex = re.compile(
 r'Exiting @ tick \d* because m5_exit instruction encountered'
 )
 
-path = joinpath(absdirpath(__file__), '..',
-                'test-progs', 'hello', 'bin', 'x86', 'linux')
+path = joinpath(config.bin_path, 'test-progs', 'hello', 'bin', 'x86', 'linux')
 filename = 'm5_exit'
-url = 'http://gem5.org/dist/current/test-progs/m5-exit/bin/x86/linux/m5_exit'
+url = (config.resource_url + '/test-progs/m5-exit/bin/x86/linux/m5_exit')
 test_program = DownloadedProgram(url, path, filename)
 
 a = verifier.MatchRegex(m5_exit_regex)
@@ -50,5 +59,5 @@ gem5_verify_config(
     fixtures=(test_program,),
     config=os.path.join(config.base_dir, 'configs', 'example','se.py'),
     config_args=['--cmd', joinpath(test_program.path, filename)],
-    valid_isas=('X86',)
+    valid_isas=(constants.gcn3_x86_tag,)
 )

@@ -36,8 +36,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -146,98 +144,16 @@
             // to play with so there can be quite a few pseudo
             // instructions.
             //0x04: loadall_or_reset_or_hang();
-            0x4: decode IMMEDIATE {
-                format BasicOperate {
-                    0x00: m5arm({{
-                        PseudoInst::arm(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x01: m5quiesce({{
-                        PseudoInst::quiesce(xc->tcBase());
-                    }}, IsNonSpeculative, IsQuiesce);
-                    0x02: m5quiesceNs({{
-                        PseudoInst::quiesceNs(xc->tcBase(), Rdi);
-                    }}, IsNonSpeculative, IsQuiesce);
-                    0x03: m5quiesceCycle({{
-                        PseudoInst::quiesceCycles(xc->tcBase(), Rdi);
-                    }}, IsNonSpeculative, IsQuiesce);
-                    0x04: m5quiesceTime({{
-                        Rax = PseudoInst::quiesceTime(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x07: m5rpns({{
-                        Rax = PseudoInst::rpns(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x21: m5exit({{
-                        PseudoInst::m5exit(xc->tcBase(), Rdi);
-                    }}, IsNonSpeculative);
-                    0x22: m5fail({{
-                        PseudoInst::m5fail(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x30: m5initparam({{
-                        Rax = PseudoInst::initParam(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x31: m5loadsymbol({{
-                        PseudoInst::loadsymbol(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x40: m5resetstats({{
-                        PseudoInst::resetstats(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x41: m5dumpstats({{
-                        PseudoInst::dumpstats(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x42: m5dumpresetstats({{
-                        PseudoInst::dumpresetstats(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x43: m5checkpoint({{
-                        PseudoInst::m5checkpoint(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x50: m5readfile({{
-                        Rax = PseudoInst::readfile(
-                            xc->tcBase(), Rdi, Rsi, Rdx);
-                    }}, IsNonSpeculative);
-                    0x51: m5debugbreak({{
-                        PseudoInst::debugbreak(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x52: m5switchcpu({{
-                        PseudoInst::switchcpu(xc->tcBase());
-                    }}, IsNonSpeculative);
-                    0x53: m5addsymbol({{
-                        PseudoInst::addsymbol(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x54: m5panic({{
-                        panic("M5 panic instruction called at pc = %#x.\n",
-                              RIP);
-                    }}, IsNonSpeculative);
-                    0x55: m5reserved1({{
-                        warn("M5 reserved opcode 1 ignored.\n");
-                    }}, IsNonSpeculative);
-                    0x56: m5reserved2({{
-                        warn("M5 reserved opcode 2 ignored.\n");
-                    }}, IsNonSpeculative);
-                    0x57: m5reserved3({{
-                        warn("M5 reserved opcode 3 ignored.\n");
-                    }}, IsNonSpeculative);
-                    0x58: m5reserved4({{
-                        warn("M5 reserved opcode 4 ignored.\n");
-                    }}, IsNonSpeculative);
-                    0x59: m5reserved5({{
-                        warn("M5 reserved opcode 5 ignored.\n");
-                    }}, IsNonSpeculative);
-                    0x5a: m5_work_begin({{
-                        PseudoInst::workbegin(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x5b: m5_work_end({{
-                        PseudoInst::workend(xc->tcBase(), Rdi, Rsi);
-                    }}, IsNonSpeculative);
-                    0x62: m5togglesync({{
-                        PseudoInst::togglesync(xc->tcBase());
-                    }}, IsNonSpeculative, IsQuiesce);
-                    default: Inst::UD2();
-                }
-            }
+            0x4: BasicOperate::gem5Op({{
+                bool recognized = pseudo_inst::pseudoInst<X86PseudoInstABI>(
+                        xc->tcBase(), IMMEDIATE);
+                if (!recognized)
+                    fault = std::make_shared<InvalidOpcode>();
+            }}, IsNonSpeculative);
             0x05: decode FullSystemInt {
-                0: SyscallInst::syscall('xc->syscall(&fault)',
-                                        IsSyscall, IsNonSpeculative,
-                                        IsSerializeAfter);
+                0: SyscallInst::syscall({{
+                    return std::make_shared<SESyscallFault>();
+                }});
                 default: decode MODE_MODE {
                     0x0: decode MODE_SUBMODE {
                         0x0: Inst::SYSCALL_64();
@@ -429,9 +345,9 @@
             0x2: Inst::RDMSR();
             0x3: rdpmc();
             0x4: decode FullSystemInt {
-                0: SyscallInst::sysenter('xc->syscall(&fault)',
-                                         IsSyscall, IsNonSpeculative,
-                                         IsSerializeAfter);
+                0: SyscallInst::sysenter({{
+                    return std::make_shared<SESyscallFault>();
+                }});
                 default: sysenter();
             }
             0x5: sysexit();
@@ -693,7 +609,7 @@
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
                     0x4: HADDPD(Vo,Wo);
-                    0x5: WarnUnimpl::hsubpd_Vo_Wo();
+                    0x5: HSUBPD(Vo, Wo);
                     0x6: MOVD(Edp,Vd);
                     0x7: MOVDQA(Wo,Vo);
                     default: UD2();
@@ -701,7 +617,7 @@
                 // repne (0xF2)
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x4: HADDPS(Vo,Wo);
-                    0x5: WarnUnimpl::hsubps_Vo_Wo();
+                    0x5: HSUBPS(Vo, Wo);
                     default: UD2();
                 }
                 default: UD2();
@@ -784,13 +700,12 @@
             //0x6: group15();
             0x6: decode MODRM_MOD {
                 0x3: decode MODRM_REG {
-                    0x5: BasicOperate::LFENCE(
-                                 {{/*Nothing*/}}, IsReadBarrier,
-                                 IsSerializeAfter);
-                    0x6: BasicOperate::MFENCE(
-                                 {{/*Nothing*/}}, IsMemBarrier);
-                    0x7: BasicOperate::SFENCE(
-                                 {{/*Nothing*/}}, IsWriteBarrier);
+                    0x5: BasicOperate::LFENCE({{/*Nothing*/}},
+                                              IsReadBarrier, IsSerializeAfter);
+                    0x6: BasicOperate::MFENCE({{/*Nothing*/}},
+                                              IsReadBarrier, IsWriteBarrier);
+                    0x7: BasicOperate::SFENCE({{/*Nothing*/}},
+                                              IsWriteBarrier);
                     default: Inst::UD2();
                 }
                 default: decode MODRM_REG {
@@ -839,8 +754,7 @@
             }
             0x17: decode OPCODE_OP_BOTTOM3 {
                 0x0: decode LEGACY_REP {
-                    0x0: WarnUnimpl::jmpe_Jz();
-                    0x1: WarnUnimpl::popcnt_Gv_Ev();
+                    0x1: POPCNT(Gv,Ev);
                 }
                 //0x1: group10_UD2();
                 0x1: UD2();

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 /**
@@ -48,11 +46,14 @@
 
 #include "params/BaseTrafficGen.hh"
 
+namespace gem5
+{
+
 class StreamGen
 {
   protected:
-    StreamGen(const BaseTrafficGenParams *p)
-      : streamIds(p->sids), substreamIds(p->ssids)
+    StreamGen(const BaseTrafficGenParams &p)
+      : streamIds(p.sids), substreamIds(p.ssids)
     {
         // A non empty vector of StreamIDs must be provided.
         // SubstreamIDs are not mandatory hence having an empty
@@ -66,7 +67,7 @@ class StreamGen
     virtual ~StreamGen() {};
 
     virtual uint32_t pickStreamID() = 0;
-    virtual uint32_t pickSubStreamID() = 0;
+    virtual uint32_t pickSubstreamID() = 0;
 
     /**
      * Factory method for constructing a Stream generator.
@@ -77,7 +78,7 @@ class StreamGen
      *           the stream generator type is stored.
      * @return a pointer to the newly alocated StremGen
      */
-    static StreamGen* create(const BaseTrafficGenParams *p);
+    static StreamGen* create(const BaseTrafficGenParams &p);
 
     /**
      * Returns true if the substreamID generation is valid
@@ -94,7 +95,7 @@ class StreamGen
      * Store preset Stream and Substream IDs to use for requests
      * This is the set of available streamIDs the generator can
      * pick. The actual ID being picked for a specific memory
-     * request is selected by the pickStreamID and pickSubStreamID
+     * request is selected by the pickStreamID and pickSubstreamID
      * methods.
      */
     std::vector<uint32_t> streamIds;
@@ -104,7 +105,7 @@ class StreamGen
 class FixedStreamGen : public StreamGen
 {
   public:
-    FixedStreamGen(const BaseTrafficGenParams *p)
+    FixedStreamGen(const BaseTrafficGenParams &p)
       : StreamGen(p)
     {
         // For a fixed stream generator only one sid must be provided. The
@@ -116,26 +117,28 @@ class FixedStreamGen : public StreamGen
     uint32_t pickStreamID() override
     { return streamIds[0]; }
 
-    uint32_t pickSubStreamID() override
+    uint32_t pickSubstreamID() override
     { return substreamIds[0]; }
 };
 
 class RandomStreamGen : public StreamGen
 {
   public:
-    RandomStreamGen(const BaseTrafficGenParams *p)
+    RandomStreamGen(const BaseTrafficGenParams &p)
       : StreamGen(p)
     {}
 
     uint32_t pickStreamID() override
     { return randomPick(streamIds); }
 
-    uint32_t pickSubStreamID() override
+    uint32_t pickSubstreamID() override
     { return randomPick(substreamIds); }
 
   protected:
     /** Function to pick one of the preset Stream or Substream ID */
     uint32_t randomPick(const std::vector<uint32_t> &svec);
 };
+
+} // namespace gem5
 
 #endif // __CPU_TRAFFIC_GEN_STREAM_GEN_HH__

@@ -24,15 +24,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "dev/x86/cmos.hh"
 
+#include "base/trace.hh"
 #include "debug/CMOS.hh"
 #include "dev/x86/intdev.hh"
 #include "mem/packet_access.hh"
+
+namespace gem5
+{
 
 void
 X86ISA::Cmos::X86RTC::handleEvent()
@@ -140,8 +142,4 @@ X86ISA::Cmos::unserialize(CheckpointIn &cp)
     rtc.unserialize("rtc", cp);
 }
 
-X86ISA::Cmos *
-CmosParams::create()
-{
-    return new X86ISA::Cmos(this);
-}
+} // namespace gem5

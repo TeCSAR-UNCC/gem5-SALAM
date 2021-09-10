@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __BASE_PIXEL_HH__
@@ -49,6 +47,10 @@
 #include "base/cprintf.hh"
 #include "base/str.hh"
 #include "base/types.hh"
+#include "sim/byteswap.hh"
+
+namespace gem5
+{
 
 /**
  * Internal gem5 representation of a Pixel.
@@ -92,7 +94,8 @@ class PixelConverter
     /**
      * Color channel conversion and scaling helper class.
      */
-    struct Channel {
+    struct Channel
+    {
         /**
          * @param offset Offset in bits.
          * @param width Width in bits.
@@ -129,7 +132,7 @@ class PixelConverter
     PixelConverter(unsigned length,
                    unsigned ro, unsigned go, unsigned bo,
                    unsigned rw, unsigned gw, unsigned bw,
-                   ByteOrder byte_order = LittleEndianByteOrder);
+                   ByteOrder byte_order = ByteOrder::little);
 
     /** Get the Pixel representation of a color word. */
     Pixel toPixel(uint32_t word) const {
@@ -227,5 +230,7 @@ operator<<(std::ostream &os, const Pixel &pxl)
     os << csprintf("%#.08x", PixelConverter::rgba8888_le.fromPixel(pxl));
     return os;
 }
+
+} // namespace gem5
 
 #endif // __BASE_PIXEL_HH__

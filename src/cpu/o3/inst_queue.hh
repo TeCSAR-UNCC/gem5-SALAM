@@ -37,8 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_O3_INST_QUEUE_HH__
@@ -51,16 +49,34 @@
 
 #include "base/statistics.hh"
 #include "base/types.hh"
-#include "cpu/o3/dep_graph.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/o3/comm.hh"
+#include "cpu/o3/dep_graph.hh"
+#include "cpu/o3/dyn_inst_ptr.hh"
+#include "cpu/o3/limits.hh"
+#include "cpu/o3/mem_dep_unit.hh"
+#include "cpu/o3/store_set.hh"
 #include "cpu/op_class.hh"
 #include "cpu/timebuf.hh"
 #include "enums/SMTQueuePolicy.hh"
 #include "sim/eventq.hh"
 
-struct DerivO3CPUParams;
-class FUPool;
+namespace gem5
+{
+
+struct O3CPUParams;
+
+namespace memory
+{
 class MemInterface;
+} // namespace memory
+
+namespace o3
+{
+
+class FUPool;
+class CPU;
+class IEW;
 
 /**
  * A standard instruction queue class.  It holds ready instructions, in
@@ -79,24 +95,15 @@ class MemInterface;
  * have the execute() function called on it.
  * @todo: Make IQ able to handle multiple FU pools.
  */
-template <class Impl>
 class InstructionQueue
 {
   public:
-    //Typedefs from the Impl.
-    typedef typename Impl::O3CPU O3CPU;
-    typedef typename Impl::DynInstPtr DynInstPtr;
-
-    typedef typename Impl::CPUPol::IEW IEW;
-    typedef typename Impl::CPUPol::MemDepUnit MemDepUnit;
-    typedef typename Impl::CPUPol::IssueStruct IssueStruct;
-    typedef typename Impl::CPUPol::TimeStruct TimeStruct;
-
     // Typedef of iterator through the list of instructions.
     typedef typename std::list<DynInstPtr>::iterator ListIt;
 
     /** FU completion event class. */
-    class FUCompletion : public Event {
+    class FUCompletion : public Event
+    {
       private:
         /** Executing instruction. */
         DynInstPtr inst;
@@ -105,7 +112,7 @@ class InstructionQueue
         int fuIdx;
 
         /** Pointer back to the instruction queue. */
-        InstructionQueue<Impl> *iqPtr;
+        InstructionQueue *iqPtr;
 
         /** Should the FU be added to the list to be freed upon
          * completing this event.
@@ -115,7 +122,7 @@ class InstructionQueue
       public:
         /** Construct a FU completion event. */
         FUCompletion(const DynInstPtr &_inst, int fu_idx,
-                     InstructionQueue<Impl> *iq_ptr);
+                     InstructionQueue *iq_ptr);
 
         virtual void process();
         virtual const char *description() const;
@@ -123,16 +130,13 @@ class InstructionQueue
     };
 
     /** Constructs an IQ. */
-    InstructionQueue(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
+    InstructionQueue(CPU *cpu_ptr, IEW *iew_ptr, const O3CPUParams &params);
 
     /** Destructs the IQ. */
     ~InstructionQueue();
 
     /** Returns the name of the IQ. */
     std::string name() const;
-
-    /** Registers statistics. */
-    void regStats();
 
     /** Resets all instruction queue state. */
     void resetState();
@@ -206,8 +210,11 @@ class InstructionQueue
      * Records the instruction as the producer of a register without
      * adding it to the rest of the IQ.
      */
-    void recordProducer(const DynInstPtr &inst)
-    { addToProducers(inst); }
+    void
+    recordProducer(const DynInstPtr &inst)
+    {
+        addToProducers(inst);
+    }
 
     /** Process FU completion event. */
     void processFUCompletion(const DynInstPtr &inst, int fu_idx);
@@ -241,9 +248,6 @@ class InstructionQueue
 
     /** Replays a memory instruction. It must be rescheduled first. */
     void replayMemInst(const DynInstPtr &replay_inst);
-
-    /** Completes a memory operation. */
-    void completeMemInst(const DynInstPtr &completed_inst);
 
     /**
      * Defers a memory instruction when its DTB translation incurs a hw
@@ -281,10 +285,10 @@ class InstructionQueue
     /////////////////////////
 
     /** Pointer to the CPU. */
-    O3CPU *cpu;
+    CPU *cpu;
 
     /** Cache interface. */
-    MemInterface *dcacheInterface;
+    memory::MemInterface *dcacheInterface;
 
     /** Pointer to IEW stage. */
     IEW *iewStage;
@@ -292,7 +296,7 @@ class InstructionQueue
     /** The memory dependence unit, which tracks/predicts memory dependences
      *  between instructions.
      */
-    MemDepUnit memDepUnit[Impl::MaxThreads];
+    MemDepUnit memDepUnit[MaxThreads];
 
     /** The queue to the execute stage.  Issued instructions will be written
      *  into it.
@@ -313,7 +317,7 @@ class InstructionQueue
     //////////////////////////////////////
 
     /** List of all the instructions in the IQ (some of which may be issued). */
-    std::list<DynInstPtr> instList[Impl::MaxThreads];
+    std::list<DynInstPtr> instList[MaxThreads];
 
     /** List of instructions that are ready to be executed. */
     std::list<DynInstPtr> instsToExecute;
@@ -338,15 +342,13 @@ class InstructionQueue
      * numbers (and hence are older) will be at the top of the
      * priority queue.
      */
-    struct pqCompare {
-        bool operator() (const DynInstPtr &lhs, const DynInstPtr &rhs) const
-        {
-            return lhs->seqNum > rhs->seqNum;
-        }
+    struct PqCompare
+    {
+        bool operator()(const DynInstPtr &lhs, const DynInstPtr &rhs) const;
     };
 
-    typedef std::priority_queue<DynInstPtr, std::vector<DynInstPtr>, pqCompare>
-    ReadyInstQueue;
+    typedef std::priority_queue<
+        DynInstPtr, std::vector<DynInstPtr>, PqCompare> ReadyInstQueue;
 
     /** List of ready instructions, per op class.  They are separated by op
      *  class to allow for easy mapping to FUs.
@@ -362,10 +364,11 @@ class InstructionQueue
      */
     std::map<InstSeqNum, DynInstPtr> nonSpecInsts;
 
-    typedef typename std::map<InstSeqNum, DynInstPtr>::iterator NonSpecMapIt;
+    typedef std::map<InstSeqNum, DynInstPtr>::iterator NonSpecMapIt;
 
     /** Entry for the list age ordering by op class. */
-    struct ListOrderEntry {
+    struct ListOrderEntry
+    {
         OpClass queueType;
         InstSeqNum oldestInst;
     };
@@ -414,10 +417,10 @@ class InstructionQueue
     std::list<ThreadID> *activeThreads;
 
     /** Per Thread IQ count */
-    unsigned count[Impl::MaxThreads];
+    unsigned count[MaxThreads];
 
     /** Max IQ Entries Per Thread */
-    unsigned maxEntries[Impl::MaxThreads];
+    unsigned maxEntries[MaxThreads];
 
     /** Number of free IQ entries left. */
     unsigned freeEntries;
@@ -440,7 +443,7 @@ class InstructionQueue
     Cycles commitToIEWDelay;
 
     /** The sequence number of the squashed instruction. */
-    InstSeqNum squashedSeqNum[Impl::MaxThreads];
+    InstSeqNum squashedSeqNum[MaxThreads];
 
     /** A cache of the recently woken registers.  It is 1 if the register
      *  has been woken up recently, and 0 if the register has been added
@@ -476,75 +479,90 @@ class InstructionQueue
      */
     void dumpInsts();
 
-    /** Stat for number of instructions added. */
-    Stats::Scalar iqInstsAdded;
-    /** Stat for number of non-speculative instructions added. */
-    Stats::Scalar iqNonSpecInstsAdded;
+    struct IQStats : public statistics::Group
+    {
+        IQStats(CPU *cpu, const unsigned &total_width);
+        /** Stat for number of instructions added. */
+        statistics::Scalar instsAdded;
+        /** Stat for number of non-speculative instructions added. */
+        statistics::Scalar nonSpecInstsAdded;
 
-    Stats::Scalar iqInstsIssued;
-    /** Stat for number of integer instructions issued. */
-    Stats::Scalar iqIntInstsIssued;
-    /** Stat for number of floating point instructions issued. */
-    Stats::Scalar iqFloatInstsIssued;
-    /** Stat for number of branch instructions issued. */
-    Stats::Scalar iqBranchInstsIssued;
-    /** Stat for number of memory instructions issued. */
-    Stats::Scalar iqMemInstsIssued;
-    /** Stat for number of miscellaneous instructions issued. */
-    Stats::Scalar iqMiscInstsIssued;
-    /** Stat for number of squashed instructions that were ready to issue. */
-    Stats::Scalar iqSquashedInstsIssued;
-    /** Stat for number of squashed instructions examined when squashing. */
-    Stats::Scalar iqSquashedInstsExamined;
-    /** Stat for number of squashed instruction operands examined when
-     * squashing.
-     */
-    Stats::Scalar iqSquashedOperandsExamined;
-    /** Stat for number of non-speculative instructions removed due to a squash.
-     */
-    Stats::Scalar iqSquashedNonSpecRemoved;
-    // Also include number of instructions rescheduled and replayed.
+        statistics::Scalar instsIssued;
+        /** Stat for number of integer instructions issued. */
+        statistics::Scalar intInstsIssued;
+        /** Stat for number of floating point instructions issued. */
+        statistics::Scalar floatInstsIssued;
+        /** Stat for number of branch instructions issued. */
+        statistics::Scalar branchInstsIssued;
+        /** Stat for number of memory instructions issued. */
+        statistics::Scalar memInstsIssued;
+        /** Stat for number of miscellaneous instructions issued. */
+        statistics::Scalar miscInstsIssued;
+        /** Stat for number of squashed instructions that were ready to
+         *  issue. */
+        statistics::Scalar squashedInstsIssued;
+        /** Stat for number of squashed instructions examined when
+         *  squashing. */
+        statistics::Scalar squashedInstsExamined;
+        /** Stat for number of squashed instruction operands examined when
+         * squashing.
+         */
+        statistics::Scalar squashedOperandsExamined;
+        /** Stat for number of non-speculative instructions removed due to
+         *  a squash.
+         */
+        statistics::Scalar squashedNonSpecRemoved;
+        // Also include number of instructions rescheduled and replayed.
 
-    /** Distribution of number of instructions in the queue.
-     * @todo: Need to create struct to track the entry time for each
-     * instruction. */
-//    Stats::VectorDistribution queueResDist;
-    /** Distribution of the number of instructions issued. */
-    Stats::Distribution numIssuedDist;
-    /** Distribution of the cycles it takes to issue an instruction.
-     * @todo: Need to create struct to track the ready time for each
-     * instruction. */
-//    Stats::VectorDistribution issueDelayDist;
+        /** Distribution of number of instructions in the queue.
+         * @todo: Need to create struct to track the entry time for each
+         * instruction. */
+        // statistics::VectorDistribution queueResDist;
+        /** Distribution of the number of instructions issued. */
+        statistics::Distribution numIssuedDist;
+        /** Distribution of the cycles it takes to issue an instruction.
+         * @todo: Need to create struct to track the ready time for each
+         * instruction. */
+        // statistics::VectorDistribution issueDelayDist;
 
-    /** Number of times an instruction could not be issued because a
-     * FU was busy.
-     */
-    Stats::Vector statFuBusy;
-//    Stats::Vector dist_unissued;
-    /** Stat for total number issued for each instruction type. */
-    Stats::Vector2d statIssuedInstType;
+        /** Number of times an instruction could not be issued because a
+         * FU was busy.
+         */
+        statistics::Vector statFuBusy;
+        // statistics::Vector dist_unissued;
+        /** Stat for total number issued for each instruction type. */
+        statistics::Vector2d statIssuedInstType;
 
-    /** Number of instructions issued per cycle. */
-    Stats::Formula issueRate;
+        /** Number of instructions issued per cycle. */
+        statistics::Formula issueRate;
 
-    /** Number of times the FU was busy. */
-    Stats::Vector fuBusy;
-    /** Number of times the FU was busy per instruction issued. */
-    Stats::Formula fuBusyRate;
+        /** Number of times the FU was busy. */
+        statistics::Vector fuBusy;
+        /** Number of times the FU was busy per instruction issued. */
+        statistics::Formula fuBusyRate;
+    } iqStats;
+
    public:
-    Stats::Scalar intInstQueueReads;
-    Stats::Scalar intInstQueueWrites;
-    Stats::Scalar intInstQueueWakeupAccesses;
-    Stats::Scalar fpInstQueueReads;
-    Stats::Scalar fpInstQueueWrites;
-    Stats::Scalar fpInstQueueWakeupAccesses;
-    Stats::Scalar vecInstQueueReads;
-    Stats::Scalar vecInstQueueWrites;
-    Stats::Scalar vecInstQueueWakeupAccesses;
+    struct IQIOStats : public statistics::Group
+    {
+        IQIOStats(statistics::Group *parent);
+        statistics::Scalar intInstQueueReads;
+        statistics::Scalar intInstQueueWrites;
+        statistics::Scalar intInstQueueWakeupAccesses;
+        statistics::Scalar fpInstQueueReads;
+        statistics::Scalar fpInstQueueWrites;
+        statistics::Scalar fpInstQueueWakeupAccesses;
+        statistics::Scalar vecInstQueueReads;
+        statistics::Scalar vecInstQueueWrites;
+        statistics::Scalar vecInstQueueWakeupAccesses;
 
-    Stats::Scalar intAluAccesses;
-    Stats::Scalar fpAluAccesses;
-    Stats::Scalar vecAluAccesses;
+        statistics::Scalar intAluAccesses;
+        statistics::Scalar fpAluAccesses;
+        statistics::Scalar vecAluAccesses;
+    } iqIOStats;
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif //__CPU_O3_INST_QUEUE_HH__

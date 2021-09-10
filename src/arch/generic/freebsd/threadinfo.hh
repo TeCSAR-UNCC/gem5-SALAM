@@ -35,9 +35,13 @@
 
 #include "cpu/thread_context.hh"
 #include "sim/system.hh"
-#include "sim/vptr.hh"
 
-namespace FreeBSD {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FreeBSD, free_bsd);
+namespace free_bsd
+{
 
 class ThreadInfo
 {
@@ -55,6 +59,7 @@ class ThreadInfo
     {}
 };
 
-} // namespace FreeBSD
+} // namespace free_bsd
+} // namespace gem5
 
 #endif // __ARCH_GENERIC_FREEBSD_THREADINFO_HH__

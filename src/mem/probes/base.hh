@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __MEM_PROBES_BASE_HH__
@@ -45,6 +43,9 @@
 
 #include "sim/probe/mem.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 struct BaseMemProbeParams;
 
@@ -63,7 +64,7 @@ struct BaseMemProbeParams;
 class BaseMemProbe : public SimObject
 {
   public:
-    BaseMemProbe(BaseMemProbeParams *params);
+    BaseMemProbe(const BaseMemProbeParams &params);
 
     void regProbeListeners() override;
 
@@ -71,10 +72,10 @@ class BaseMemProbe : public SimObject
     /**
      * Callback to analyse intercepted Packets.
      */
-    virtual void handleRequest(const ProbePoints::PacketInfo &pkt_info) = 0;
+    virtual void handleRequest(const probing::PacketInfo &pkt_info) = 0;
 
   private:
-    class PacketListener : public ProbeListenerArgBase<ProbePoints::PacketInfo>
+    class PacketListener : public ProbeListenerArgBase<probing::PacketInfo>
     {
       public:
         PacketListener(BaseMemProbe &_parent,
@@ -82,7 +83,7 @@ class BaseMemProbe : public SimObject
             : ProbeListenerArgBase(pm, name),
               parent(_parent) {}
 
-        void notify(const ProbePoints::PacketInfo &pkt_info) override {
+        void notify(const probing::PacketInfo &pkt_info) override {
             parent.handleRequest(pkt_info);
         }
 
@@ -92,5 +93,7 @@ class BaseMemProbe : public SimObject
 
     std::vector<std::unique_ptr<PacketListener>> listeners;
 };
+
+} // namespace gem5
 
 #endif //  __MEM_PROBES_BASE_HH__

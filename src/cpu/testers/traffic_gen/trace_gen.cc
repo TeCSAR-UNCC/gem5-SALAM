@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Thomas Grass
- *          Andreas Hansson
- *          Sascha Bischoff
- *          Neha Agarwal
  */
 
 #include "cpu/testers/traffic_gen/trace_gen.hh"
@@ -48,6 +43,11 @@
 #include "base/trace.hh"
 #include "debug/TrafficGen.hh"
 #include "proto/packet.pb.h"
+#include "sim/core.hh"
+#include "sim/cur_tick.hh"
+
+namespace gem5
+{
 
 TraceGen::InputStream::InputStream(const std::string& filename)
     : trace(filename)
@@ -62,7 +62,7 @@ TraceGen::InputStream::init()
     ProtoMessage::PacketHeader header_msg;
     if (!trace.read(header_msg)) {
         panic("Failed to read packet header from trace\n");
-    } else if (header_msg.tick_freq() != SimClock::Frequency) {
+    } else if (header_msg.tick_freq() != sim_clock::Frequency) {
         panic("Trace was recorded with a different tick frequency %d\n",
               header_msg.tick_freq());
     }
@@ -179,3 +179,5 @@ TraceGen::exit()
     // file
     trace.reset();
 }
+
+} // namespace gem5

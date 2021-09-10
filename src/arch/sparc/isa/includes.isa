@@ -23,10 +23,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Ali Saidi
-//          Gabe Black
-//          Steve Reinhardt
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -50,36 +46,38 @@ output header {{
 #include "arch/sparc/insts/trap.hh"
 #include "arch/sparc/insts/unimp.hh"
 #include "arch/sparc/insts/unknown.hh"
-#include "arch/sparc/isa_traits.hh"
-#include "arch/sparc/registers.hh"
+#include "arch/sparc/regs/int.hh"
+#include "arch/sparc/regs/misc.hh"
 #include "base/condcodes.hh"
 #include "base/logging.hh"
 #include "cpu/static_inst.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"  // some constructors use MemReq flags
+
 }};
 
 output decoder {{
 #include <algorithm>
 
 #include "arch/sparc/decoder.hh"
-#include "base/loader/symtab.hh"
 #include "base/cprintf.hh"
 #include "base/fenv.hh"
+#include "base/loader/symtab.hh"
 #include "cpu/thread_context.hh"  // for Jump::branchTarget()
 #include "mem/packet.hh"
 
+using namespace gem5;
 using namespace SparcISA;
 }};
 
 output exec {{
-#include "base/fenv.hh"
-
 #include <cmath>
 #include <limits>
 
 #include "arch/generic/memhelpers.hh"
 #include "arch/sparc/asi.hh"
+#include "arch/sparc/pseudo_inst_abi.hh"
+#include "base/fenv.hh"
 #include "cpu/base.hh"
 #include "cpu/exetrace.hh"
 #include "debug/Sparc.hh"
@@ -89,7 +87,7 @@ output exec {{
 #include "sim/pseudo_inst.hh"
 #include "sim/sim_exit.hh"
 
+using namespace gem5;
 using namespace SparcISA;
-using namespace std;
 }};
 

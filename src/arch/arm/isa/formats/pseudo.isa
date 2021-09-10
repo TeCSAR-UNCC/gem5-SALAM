@@ -37,9 +37,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Andreas Sandberg
-//          Stephen Hines
 
 
 ////////////////////////////////////////////////////////////////////
@@ -64,6 +61,15 @@ def format IllegalExec() {{
 
 ////////////////////////////////////////////////////////////////////
 //
+// Debug Step handling
+//
+
+def format DebugStep() {{
+    decode_block = 'return new DebugStep(machInst);\n'
+}};
+
+////////////////////////////////////////////////////////////////////
+//
 // Unknown instruction handling
 //
 
@@ -77,11 +83,11 @@ def format Unknown() {{
 //
 
 def format FailUnimpl() {{
-    iop = InstObjParams(name, 'FailUnimplemented')
+    iop = ArmInstObjParams(name, 'FailUnimplemented')
     decode_block = BasicDecodeWithMnemonic.subst(iop)
 }};
 
 def format WarnUnimpl() {{
-    iop = InstObjParams(name, 'WarnUnimplemented')
+    iop = ArmInstObjParams(name, 'WarnUnimplemented')
     decode_block = BasicDecodeWithMnemonic.subst(iop)
 }};

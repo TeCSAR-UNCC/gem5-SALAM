@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_ARM_INSTS_VFP_HH__
@@ -45,12 +43,16 @@
 #include <cmath>
 
 #include "arch/arm/insts/misc.hh"
-#include "arch/arm/miscregs.hh"
+#include "arch/arm/regs/misc.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
 
-enum VfpMicroMode {
+enum VfpMicroMode
+{
     VfpNotAMicroop,
     VfpMicroop,
     VfpFirstMicroop,
@@ -119,7 +121,7 @@ flushToZero(fpType &op)
 {
     fpType junk = 0.0;
     if (std::fpclassify(op) == FP_SUBNORMAL) {
-        uint64_t bitMask = ULL(0x1) << (sizeof(fpType) * 8 - 1);
+        uint64_t bitMask = 0x1ULL << (sizeof(fpType) * 8 - 1);
         op = bitsToFp(fpToBits(op) & bitMask, junk);
         return true;
     }
@@ -206,7 +208,7 @@ isSnan(fpType val)
 {
     const bool single = (sizeof(fpType) == sizeof(float));
     const uint64_t qnan =
-        single ? 0x7fc00000 : ULL(0x7ff8000000000000);
+        single ? 0x7fc00000 : 0x7ff8000000000000ULL;
     return std::isnan(val) && ((fpToBits(val) & qnan) != qnan);
 }
 
@@ -599,7 +601,7 @@ fpMulAdd(T op1, T op2, T addend)
     if (std::isnan(result) && !std::isnan(op1) &&
         !std::isnan(op2) && !std::isnan(addend))
     {
-        uint64_t bitMask = ULL(0x1) << ((sizeof(T) * 8) - 1);
+        uint64_t bitMask = 0x1ULL << ((sizeof(T) * 8) - 1);
         result = bitsToFp(fpToBits(result) & ~bitMask, op1);
     }
     return result;
@@ -622,7 +624,7 @@ static inline T
 fpMaxNum(T a, T b)
 {
     const bool     single = (sizeof(T) == sizeof(float));
-    const uint64_t qnan   = single ? 0x7fc00000 : ULL(0x7ff8000000000000);
+    const uint64_t qnan   = single ? 0x7fc00000 : 0x7ff8000000000000ULL;
 
     if (std::isnan(a))
         return ((fpToBits(a) & qnan) == qnan) ? b : a;
@@ -650,7 +652,7 @@ static inline T
 fpMinNum(T a, T b)
 {
     const bool     single = (sizeof(T) == sizeof(float));
-    const uint64_t qnan   = single ? 0x7fc00000 : ULL(0x7ff8000000000000);
+    const uint64_t qnan   = single ? 0x7fc00000 : 0x7ff8000000000000ULL;
 
     if (std::isnan(a))
         return ((fpToBits(a) & qnan) == qnan) ? b : a;
@@ -851,7 +853,7 @@ class FpOp : public PredOp
             bool flush, uint32_t rMode) const;
 
     void
-    advancePC(PCState &pcState) const
+    advancePC(PCState &pcState) const override
     {
         if (flags[IsLastMicroop]) {
             pcState.uEnd();
@@ -894,7 +896,7 @@ class FpCondCompRegOp : public FpOp
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpCondSelOp : public FpOp
@@ -911,7 +913,7 @@ class FpCondSelOp : public FpOp
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegRegOp : public FpOp
@@ -929,7 +931,7 @@ class FpRegRegOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegImmOp : public FpOp
@@ -947,7 +949,7 @@ class FpRegImmOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegRegImmOp : public FpOp
@@ -966,7 +968,7 @@ class FpRegRegImmOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegRegRegOp : public FpOp
@@ -985,7 +987,7 @@ class FpRegRegRegOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegRegRegCondOp : public FpOp
@@ -1007,7 +1009,7 @@ class FpRegRegRegCondOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegRegRegRegOp : public FpOp
@@ -1028,7 +1030,7 @@ class FpRegRegRegRegOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class FpRegRegRegImmOp : public FpOp
@@ -1050,9 +1052,10 @@ class FpRegRegRegImmOp : public FpOp
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-}
+} // namespace ArmISA
+} // namespace gem5
 
 #endif //__ARCH_ARM_INSTS_VFP_HH__

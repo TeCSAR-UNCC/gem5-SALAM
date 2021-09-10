@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Ali Saidi
  */
 
 /* @file
@@ -57,6 +54,9 @@
 #include "dev/serial/serial.hh"
 #include "params/Terminal.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class OutputStream;
 class TerminalListener;
@@ -96,9 +96,9 @@ class Terminal : public SerialDevice
 
   public:
     typedef TerminalParams Params;
-    Terminal(const Params *p);
+    Terminal(const Params &p);
     ~Terminal();
-    OutputStream * terminalDump(const TerminalParams* p);
+    OutputStream * terminalDump(const TerminalParams &p);
 
   protected:
     ListenSocket listener;
@@ -149,5 +149,7 @@ class Terminal : public SerialDevice
     // Interrupts are cleared when the buffer is empty.
     uint64_t console_in();
 };
+
+} // namespace gem5
 
 #endif // __DEV_TERMINAL_HH__

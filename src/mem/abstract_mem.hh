@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Andreas Hansson
  */
 
 /**
@@ -55,14 +52,20 @@
 #include "sim/clocked_object.hh"
 #include "sim/stats.hh"
 
+namespace gem5
+{
 
 class System;
+
+namespace memory
+{
 
 /**
  * Locked address class that represents a physical address and a
  * context id.
  */
-class LockedAddr {
+class LockedAddr
+{
 
   private:
 
@@ -162,12 +165,13 @@ class AbstractMemory : public ClockedObject
     }
 
     /** Pointer to the System object.
-     * This is used for getting the number of masters in the system which is
+     * This is used for getting the number of requestors in the system which is
      * needed when registering stats
      */
     System *_system;
 
-    struct MemStats : public Stats::Group {
+    struct MemStats : public statistics::Group
+    {
         MemStats(AbstractMemory &mem);
 
         void regStats() override;
@@ -175,25 +179,25 @@ class AbstractMemory : public ClockedObject
         const AbstractMemory &mem;
 
         /** Number of total bytes read from this memory */
-        Stats::Vector bytesRead;
+        statistics::Vector bytesRead;
         /** Number of instruction bytes read from this memory */
-        Stats::Vector bytesInstRead;
+        statistics::Vector bytesInstRead;
         /** Number of bytes written to this memory */
-        Stats::Vector bytesWritten;
+        statistics::Vector bytesWritten;
         /** Number of read requests */
-        Stats::Vector numReads;
+        statistics::Vector numReads;
         /** Number of write requests */
-        Stats::Vector numWrites;
+        statistics::Vector numWrites;
         /** Number of other requests */
-        Stats::Vector numOther;
+        statistics::Vector numOther;
         /** Read bandwidth from this memory */
-        Stats::Formula bwRead;
+        statistics::Formula bwRead;
         /** Read bandwidth from this memory */
-        Stats::Formula bwInstRead;
+        statistics::Formula bwInstRead;
         /** Write bandwidth from this memory */
-        Stats::Formula bwWrite;
+        statistics::Formula bwWrite;
         /** Total bandwidth from this memory */
-        Stats::Formula bwTotal;
+        statistics::Formula bwTotal;
     } stats;
 
 
@@ -207,15 +211,12 @@ class AbstractMemory : public ClockedObject
 
   public:
 
-    typedef AbstractMemoryParams Params;
+    PARAMS(AbstractMemory);
 
-    AbstractMemory(const Params* p);
+    AbstractMemory(const Params &p);
     virtual ~AbstractMemory() {}
 
-    /**
-     * Initialise this memory.
-     */
-    void init() override;
+    void initState() override;
 
     /**
      * See if this is a null memory that should never store data and
@@ -223,7 +224,7 @@ class AbstractMemory : public ClockedObject
      *
      * @return true if null
      */
-    bool isNull() const { return params()->null; }
+    bool isNull() const { return params().null; }
 
     /**
      * Set the host memory backing store to be used by this memory
@@ -233,16 +234,31 @@ class AbstractMemory : public ClockedObject
      */
     void setBackingStore(uint8_t* pmem_addr);
 
+    void
+    getBackdoor(MemBackdoorPtr &bd_ptr)
+    {
+        if (lockedAddrList.empty() && backdoor.ptr())
+            bd_ptr = &backdoor;
+    }
+
     /**
      * Get the list of locked addresses to allow checkpointing.
      */
-    const std::list<LockedAddr>& getLockedAddrList() const
-    { return lockedAddrList; }
+    const std::list<LockedAddr> &
+    getLockedAddrList() const
+    {
+        return lockedAddrList;
+    }
 
     /**
      * Add a locked address to allow for checkpointing.
      */
-    void addLockedAddr(LockedAddr addr) { lockedAddrList.push_back(addr); }
+    void
+    addLockedAddr(LockedAddr addr)
+    {
+        backdoor.invalidate();
+        lockedAddrList.push_back(addr);
+    }
 
     /** read the system pointer
      * Implemented for completeness with the setter
@@ -256,12 +272,6 @@ class AbstractMemory : public ClockedObject
      * @param sys system pointer to set
      */
     void system(System *sys) { _system = sys; }
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
     /**
      * Get the address range
@@ -340,5 +350,8 @@ class AbstractMemory : public ClockedObject
      */
     void functionalAccess(PacketPtr pkt);
 };
+
+} // namespace memory
+} // namespace gem5
 
 #endif //__MEM_ABSTRACT_MEMORY_HH__

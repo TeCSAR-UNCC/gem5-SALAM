@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_PTOPS_HH__
@@ -43,6 +41,9 @@
 #include <stdint.h>
 
 #include "base/types.hh"
+
+namespace gem5
+{
 
 struct PageTableOps
 {
@@ -110,5 +111,7 @@ struct V8PageTableOps64k : public PageTableOps
     unsigned firstLevel(uint8_t tsz) const override;
     unsigned lastLevel() const override;
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_PTOPS_HH__ */

@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_ARM_FASTMODEL_PROTOCOL_EXPORTED_CLOCK_RATE_CONTROL_HH__
@@ -33,6 +31,9 @@
 #include <string>
 #include <systemc>
 #include <tlm>
+
+namespace gem5
+{
 
 // This protocol is an exportable version of the clock rate protocol native to
 // fast models. It's identical to the original, except it has some extra info
@@ -120,5 +121,7 @@ class ClockRateControlTargetSocket :
         return typeid(ClockRateControlDummyProtocolType);
     }
 };
+
+} // namespace gem5
 
 #endif // __ARCH_ARM_FASTMODEL_PROTOCOL_EXPORTED_CLOCK_RATE_CONTROL_HH__

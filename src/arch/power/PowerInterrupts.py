@@ -23,12 +23,10 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.objects.BaseInterrupts import BaseInterrupts
 
 class PowerInterrupts(BaseInterrupts):
     type = 'PowerInterrupts'
-    cxx_class = 'PowerISA::Interrupts'
+    cxx_class = 'gem5::PowerISA::Interrupts'
     cxx_header = 'arch/power/interrupts.hh'

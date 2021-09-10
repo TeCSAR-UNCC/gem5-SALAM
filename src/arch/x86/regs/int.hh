@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_INTREGS_HH__
@@ -43,7 +41,9 @@
 #include "arch/x86/x86_traits.hh"
 #include "base/bitunion.hh"
 #include "base/logging.hh"
-#include "sim/core.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -146,7 +146,26 @@ namespace X86ISA
         INTREG_R15W = INTREG_R15,
         INTREG_R15B = INTREG_R15,
 
-        NUM_INTREGS
+        NUM_ARCH_INTREGS,
+
+        INTREG_MICRO_BEGIN = NUM_ARCH_INTREGS,
+        INTREG_T0 = INTREG_MICRO_BEGIN,
+        INTREG_MICRO_END = INTREG_MICRO_BEGIN + NumMicroIntRegs,
+
+        // The lower part of the result of multiplication.
+        INTREG_PRODLOW,
+        // The upper part of the result of multiplication.
+        INTREG_PRODHI,
+        // The quotient from division.
+        INTREG_QUOTIENT,
+        // The remainder from division.
+        INTREG_REMAINDER,
+        // The divisor for division.
+        INTREG_DIVISOR,
+        // The register to use for shift doubles.
+        INTREG_DOUBLEBITS,
+
+        NUM_INTREGS,
     };
 
     // This needs to be large enough to miss all the other bits of an index.
@@ -155,13 +174,7 @@ namespace X86ISA
     inline static IntRegIndex
     INTREG_MICRO(int index)
     {
-        return (IntRegIndex)(NUM_INTREGS + index);
-    }
-
-    inline static IntRegIndex
-    INTREG_IMPLICIT(int index)
-    {
-        return (IntRegIndex)(NUM_INTREGS + NumMicroIntRegs + index);
+        return (IntRegIndex)(INTREG_MICRO_BEGIN + index);
     }
 
     inline static IntRegIndex
@@ -171,6 +184,10 @@ namespace X86ISA
             index = (index - 4) | foldBit;
         return (IntRegIndex)index;
     }
-}
+
+    const int NumIntRegs = NUM_INTREGS;
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_INTREGS_HH__

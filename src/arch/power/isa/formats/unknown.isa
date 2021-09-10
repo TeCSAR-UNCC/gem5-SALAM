@@ -2,6 +2,7 @@
 
 // Copyright (c) 2007-2008 The Florida State University
 // Copyright (c) 2009 The University of Edinburgh
+// Copyright (c) 2021 IBM Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,9 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Stephen Hines
-//          Timothy M. Jones
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -56,16 +54,17 @@ output header {{
         Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 }};
 
 output decoder {{
     std::string
-    Unknown::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+    Unknown::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         return csprintf("%-10s (inst 0x%x, opcode 0x%x, binary:%s)",
-                        "unknown", machInst, OPCODE, inst2string(machInst));
+                        "unknown", machInst, PO, inst2string(machInst));
     }
 }};
 
@@ -73,9 +72,9 @@ output exec {{
     Fault
     Unknown::execute(ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        panic("attempt to execute unknown instruction at %#x"
-              "(inst 0x%08x, opcode 0x%x, binary: %s)",
-              xc->pcState().pc(), machInst, OPCODE, inst2string(machInst));
+        inform("attempt to execute unknown instruction at %#x"
+               "(inst 0x%08x, opcode 0x%x, binary: %s)",
+               xc->pcState().pc(), machInst, PO, inst2string(machInst));
         return std::make_shared<UnimplementedOpcodeFault>();
     }
 }};

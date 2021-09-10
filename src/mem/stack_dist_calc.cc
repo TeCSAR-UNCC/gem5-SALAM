@@ -33,16 +33,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kanishk Sugand
  */
 
 #include "mem/stack_dist_calc.hh"
 
 #include "base/chunk_generator.hh"
 #include "base/intmath.hh"
+#include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/StackDist.hh"
+
+namespace gem5
+{
 
 StackDistCalc::StackDistCalc(bool verify_stack)
     : index(0),
@@ -596,3 +598,5 @@ StackDistCalc::printStack(int n) const
         }
     }
 }
+
+} // namespace gem5

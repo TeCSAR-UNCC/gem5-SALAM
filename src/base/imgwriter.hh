@@ -33,9 +33,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
+
 #ifndef __BASE_IMGWRITER_HH__
 #define __BASE_IMGWRITER_HH__
 
@@ -45,6 +44,9 @@
 #include "base/framebuffer.hh"
 
 #include "enums/ImageFormat.hh"
+
+namespace gem5
+{
 
 // write frame buffer to an image
 class ImgWriter
@@ -86,6 +88,8 @@ class ImgWriter
  * @return smart pointer to the allocated Image Writer
  */
 std::unique_ptr<ImgWriter>
-createImgWriter(Enums::ImageFormat type, const FrameBuffer *fb);
+createImgWriter(enums::ImageFormat type, const FrameBuffer *fb);
+
+} // namespace gem5
 
 #endif //__BASE_IMGWRITER_HH__

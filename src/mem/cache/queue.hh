@@ -36,10 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Andreas Sandberg
- *          Andreas Hansson
  */
 
 /** @file
@@ -54,20 +50,24 @@
 #include <type_traits>
 
 #include "base/logging.hh"
+#include "base/named.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
 #include "debug/Drain.hh"
 #include "mem/cache/queue_entry.hh"
 #include "mem/packet.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
 #include "sim/drain.hh"
+
+namespace gem5
+{
 
 /**
  * A high-level queue interface, to be used by both the MSHR queue and
  * the write buffer.
  */
 template<class Entry>
-class Queue : public Drainable
+class Queue : public Drainable, public Named
 {
     static_assert(std::is_base_of<QueueEntry, Entry>::value,
         "Entry must be derived from QueueEntry");
@@ -130,10 +130,12 @@ class Queue : public Drainable
      * @param num_entries The number of entries in this queue.
      * @param reserve The extra overflow entries needed.
      */
-    Queue(const std::string &_label, int num_entries, int reserve) :
+    Queue(const std::string &_label, int num_entries, int reserve,
+            const std::string &name) :
+        Named(name),
         label(_label), numEntries(num_entries + reserve),
-        numReserve(reserve), entries(numEntries), _numInService(0),
-        allocated(0)
+        numReserve(reserve), entries(numEntries, name + ".entry"),
+        _numInService(0), allocated(0)
     {
         for (int i = 0; i < numEntries; ++i) {
             freeList.push_back(&entries[i]);
@@ -235,7 +237,8 @@ class Queue : public Drainable
      *
      * @param entry
      */
-    void deallocate(Entry *entry)
+    virtual void
+    deallocate(Entry *entry)
     {
         allocatedList.erase(entry->allocIter);
         freeList.push_front(entry);
@@ -260,5 +263,7 @@ class Queue : public Drainable
         return allocated == 0 ? DrainState::Drained : DrainState::Draining;
     }
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_QUEUE_HH__

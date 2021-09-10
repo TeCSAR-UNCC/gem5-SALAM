@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -34,13 +32,16 @@
 
 #include "dev/serial/uart.hh"
 
-Uart::Uart(const Params *p, Addr pio_size)
-    : BasicPioDevice(p, pio_size),
-      platform(p->platform), device(p->device),
-      callbackDataAvail(this)
+namespace gem5
+{
+
+Uart::Uart(const Params &p, Addr pio_size) :
+    BasicPioDevice(p, pio_size), platform(p.platform), device(p.device)
 {
     status = 0;
 
     // setup serial device callbacks
-    device->regInterfaceCallback(&callbackDataAvail);
+    device->regInterfaceCallback([this]() { dataAvailable(); });
 }
+
+} // namespace gem5

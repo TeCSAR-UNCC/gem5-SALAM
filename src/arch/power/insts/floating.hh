@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Timothy M. Jones
- *          Korey Sewell
  */
 
 #ifndef __ARCH_POWER_INSTS_FLOATING_HH__
@@ -35,6 +32,9 @@
 #include "arch/power/insts/static_inst.hh"
 #include "base/bitfield.hh"
 #include "base/cprintf.hh"
+
+namespace gem5
+{
 
 namespace PowerISA
 {
@@ -46,11 +46,12 @@ class FloatOp : public PowerStaticInst
 {
   protected:
 
-    bool rcSet;
+    bool rc;
 
     /// Constructor
     FloatOp(const char *mnem, MachInst _machInst, OpClass __opClass)
-      : PowerStaticInst(mnem, _machInst, __opClass)
+      : PowerStaticInst(mnem, _machInst, __opClass),
+        rc(machInst.rc)
     {
     }
 
@@ -146,9 +147,10 @@ class FloatOp : public PowerStaticInst
     }
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 } // namespace PowerISA
+} // namespace gem5
 
 #endif //__ARCH_POWER_INSTS_FLOATING_HH__

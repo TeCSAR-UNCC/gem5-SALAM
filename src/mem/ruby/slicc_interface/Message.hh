@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2021 ARM Limited
+ * All rights reserved.
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -35,7 +47,14 @@
 
 #include "mem/packet.hh"
 #include "mem/ruby/common/NetDest.hh"
+#include "mem/ruby/common/WriteMask.hh"
 #include "mem/ruby/protocol/MessageSizeType.hh"
+
+namespace gem5
+{
+
+namespace ruby
+{
 
 class Message;
 typedef std::shared_ptr<Message> MsgPtr;
@@ -49,12 +68,7 @@ class Message
           m_DelayedTicks(0), m_msg_counter(0)
     { }
 
-    Message(const Message &other)
-        : m_time(other.m_time),
-          m_LastEnqueueTime(other.m_LastEnqueueTime),
-          m_DelayedTicks(other.m_DelayedTicks),
-          m_msg_counter(other.m_msg_counter)
-    { }
+    Message(const Message &other) = default;
 
     virtual ~Message() { }
 
@@ -73,8 +87,12 @@ class Message
      * class that can be potentially searched for the address needs to
      * implement these methods.
      */
-    virtual bool functionalRead(Packet *pkt) = 0;
-    virtual bool functionalWrite(Packet *pkt) = 0;
+    virtual bool functionalRead(Packet *pkt)
+    { panic("functionalRead(Packet) not implemented"); }
+    virtual bool functionalRead(Packet *pkt, WriteMask &mask)
+    { panic("functionalRead(Packet,WriteMask) not implemented"); }
+    virtual bool functionalWrite(Packet *pkt)
+    { panic("functionalWrite(Packet) not implemented"); }
 
     //! Update the delay this message has experienced so far.
     void updateDelayedTicks(Tick curTime)
@@ -104,7 +122,7 @@ class Message
     void setVnet(int net) { vnet = net; }
 
   private:
-    const Tick m_time;
+    Tick m_time;
     Tick m_LastEnqueueTime; // my last enqueue time
     Tick m_DelayedTicks; // my delayed cycles
     uint64_t m_msg_counter; // FIXME, should this be a 64-bit value?
@@ -133,5 +151,8 @@ operator<<(std::ostream& out, const Message& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_SLICC_INTERFACE_MESSAGE_HH__

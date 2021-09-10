@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_PRED_RAS_HH__
@@ -33,9 +31,15 @@
 
 #include <vector>
 
-#include "arch/types.hh"
+#include "arch/pcstate.hh"
 #include "base/types.hh"
 #include "config/the_isa.hh"
+
+namespace gem5
+{
+
+namespace branch_prediction
+{
 
 /** Return address stack class, implements a simple RAS. */
 class ReturnAddrStack
@@ -98,5 +102,8 @@ class ReturnAddrStack
     /** The top of stack index. */
     unsigned tos;
 };
+
+} // namespace branch_prediction
+} // namespace gem5
 
 #endif // __CPU_PRED_RAS_HH__

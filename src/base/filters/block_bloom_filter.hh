@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #ifndef __BASE_FILTERS_BLOCK_BLOOM_FILTER_HH__
@@ -36,9 +34,14 @@
 
 #include "base/filters/base.hh"
 
+namespace gem5
+{
+
 struct BloomFilterBlockParams;
 
-namespace BloomFilter {
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
 
 /**
  * Simple deletable (with false negatives) bloom filter that extracts
@@ -47,7 +50,7 @@ namespace BloomFilter {
 class Block : public Base
 {
   public:
-    Block(const BloomFilterBlockParams* p);
+    Block(const BloomFilterBlockParams &p);
     ~Block();
 
     void set(Addr addr) override;
@@ -70,6 +73,7 @@ class Block : public Base
     std::vector<unsigned> masksSizes;
 };
 
-} // namespace BloomFilter
+} // namespace bloom_filter
+} // namespace gem5
 
 #endif // __BASE_FILTERS_BLOCK_BLOOM_FILTER_HH__

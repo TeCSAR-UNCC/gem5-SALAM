@@ -46,6 +46,12 @@
 #include "mem/ruby/network/Network.hh"
 #include "mem/ruby/system/RubySystem.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class MessageBuffer;
 class Switch;
 
@@ -65,10 +71,10 @@ class Throttle : public Consumer
     void wakeup();
 
     // The average utilization (a fraction) since last clearStats()
-    const Stats::Scalar & getUtilization() const
-    { return m_link_utilization; }
-    const Stats::Vector & getMsgCount(unsigned int type) const
-    { return m_msg_counts[type]; }
+    const statistics::Scalar & getUtilization() const
+    { return throttleStats.m_link_utilization; }
+    const statistics::Vector & getMsgCount(unsigned int type) const
+    { return *(throttleStats.m_msg_counts[type]); }
 
     int getLinkBandwidth() const
     { return m_endpoint_bandwidth * m_link_bandwidth_multiplier; }
@@ -77,7 +83,7 @@ class Throttle : public Consumer
 
     void clearStats();
     void collateStats();
-    void regStats(std::string name);
+    void regStats();
     void print(std::ostream& out) const;
 
   private:
@@ -105,12 +111,18 @@ class Throttle : public Consumer
     int m_endpoint_bandwidth;
     RubySystem *m_ruby_system;
 
-    // Statistical variables
-    Stats::Scalar m_link_utilization;
-    Stats::Vector m_msg_counts[MessageSizeType_NUM];
-    Stats::Formula m_msg_bytes[MessageSizeType_NUM];
-
     double m_link_utilization_proxy;
+
+
+    struct ThrottleStats : public statistics::Group
+    {
+        ThrottleStats(statistics::Group *parent, const NodeID &nodeID);
+
+        // Statistical variables
+        statistics::Scalar m_link_utilization;
+        statistics::Vector* m_msg_counts[MessageSizeType_NUM];
+        statistics::Formula* m_msg_bytes[MessageSizeType_NUM];
+    } throttleStats;
 };
 
 inline std::ostream&
@@ -120,5 +132,8 @@ operator<<(std::ostream& out, const Throttle& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_NETWORK_SIMPLE_THROTTLE_HH__

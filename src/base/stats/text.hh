@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Arm Limited
+ * Copyright (c) 2019-2020 Arm Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __BASE_STATS_TEXT_HH__
@@ -47,11 +45,17 @@
 #include <stack>
 #include <string>
 
+#include "base/compiler.hh"
+#include "base/output.hh"
 #include "base/stats/output.hh"
 #include "base/stats/types.hh"
-#include "base/output.hh"
 
-namespace Stats {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Stats, statistics);
+namespace statistics
+{
 
 class Text : public Output
 {
@@ -66,7 +70,9 @@ class Text : public Output
     bool noOutput(const Info &info);
 
   public:
+    bool enableUnits;
     bool descriptions;
+    bool spaces;
 
   public:
     Text();
@@ -99,8 +105,9 @@ class Text : public Output
 
 std::string ValueToString(Result value, int precision);
 
-Output *initText(const std::string &filename, bool desc);
+Output *initText(const std::string &filename, bool desc, bool spaces);
 
-} // namespace Stats
+} // namespace statistics
+} // namespace gem5
 
 #endif // __BASE_STATS_TEXT_HH__

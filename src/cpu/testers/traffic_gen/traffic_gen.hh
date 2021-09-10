@@ -33,10 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Thomas Grass
- *          Andreas Hansson
- *          Sascha Bischoff
  */
 
 #ifndef __CPU_TRAFFIC_GEN_TRAFFIC_GEN_HH__
@@ -46,10 +42,13 @@
 
 #include "cpu/testers/traffic_gen/base.hh"
 
+namespace gem5
+{
+
 struct TrafficGenParams;
 
 /**
- * The traffic generator is a master module that generates stimuli for
+ * The traffic generator is a module that generates stimuli for
  * the memory system, based on a collection of simple behaviours that
  * are either probabilistic or based on traces. It can be used stand
  * alone for creating test cases for interconnect and memory
@@ -57,7 +56,7 @@ struct TrafficGenParams;
  * components that are not yet modelled in detail, e.g. a video engine
  * or baseband subsystem in an SoC.
  *
- * The traffic generator has a single master port that is used to send
+ * The traffic generator has a single request port that is used to send
  * requests, independent of the specific behaviour. The behaviour of
  * the traffic generator is specified in a configuration file, and this
  * file describes a state transition graph where each state is a
@@ -104,7 +103,8 @@ class TrafficGen : public BaseTrafficGen
     size_t nextState();
 
     /** Struct to represent a probabilistic transition during parsing. */
-    struct Transition {
+    struct Transition
+    {
         uint32_t from;
         uint32_t to;
         double p;
@@ -124,7 +124,7 @@ class TrafficGen : public BaseTrafficGen
 
   public:
 
-    TrafficGen(const TrafficGenParams* p);
+    TrafficGen(const TrafficGenParams &p);
 
     ~TrafficGen() {}
 
@@ -135,5 +135,7 @@ class TrafficGen : public BaseTrafficGen
     void unserialize(CheckpointIn &cp) override;
 
 };
+
+} // namespace gem5
 
 #endif //__CPU_TRAFFIC_GEN_TRAFFIC_GEN_HH__

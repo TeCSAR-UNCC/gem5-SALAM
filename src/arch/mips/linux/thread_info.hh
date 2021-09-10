@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Nathan Binkert
  */
 
 #ifndef __ARCH_MIPS_LINUX_THREAD_INFO_H__
@@ -34,11 +31,18 @@
 
 #include "arch/mips/linux/hwrpb.hh"
 
-namespace Linux {
-    struct thread_info {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Linux, linux);
+namespace linux
+{
+    struct thread_info
+    {
         struct pcb_struct       pcb;
         Addr_a                  task;
     };
-}
+} // namespace linux
+} // namespace gem5
 
 #endif // __ARCH_MIPS_LINUX_THREAD_INFO_H__

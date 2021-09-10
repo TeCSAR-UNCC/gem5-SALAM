@@ -32,19 +32,18 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Hansson
 
 from m5.params import *
-from AbstractMemory import *
+from m5.objects.AbstractMemory import *
 
 # A wrapper for DRAMSim2 multi-channel memory controller
 class DRAMSim2(AbstractMemory):
     type = 'DRAMSim2'
     cxx_header = "mem/dramsim2.hh"
+    cxx_class = 'gem5::memory::DRAMSim2'
 
     # A single port for now
-    port = SlavePort("Slave port")
+    port = ResponsePort("This port sends responses and receives requests")
 
     deviceConfigFile = Param.String("ini/DDR3_micron_32M_8B_x8_sg15.ini",
                                     "Device configuration file")

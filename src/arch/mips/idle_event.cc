@@ -24,16 +24,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Lisa Hsu
- *          Ali Saidi
  */
 
 #include "arch/mips/idle_event.hh"
 
-#include "arch/mips/kernel_stats.hh"
 #include "cpu/thread_context.hh"
+
+namespace gem5
+{
 
 using namespace MipsISA;
 
@@ -42,3 +40,5 @@ IdleStartEvent::process(ThreadContext *tc)
 {
     fatal("Idle Start Event Not Defined for MIPS ISA ");
 }
+
+} // namespace gem5

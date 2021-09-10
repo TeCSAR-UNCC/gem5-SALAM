@@ -24,19 +24,29 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #include "base/filters/perfect_bloom_filter.hh"
 
+#include "base/logging.hh"
 #include "params/BloomFilterPerfect.hh"
 
-namespace BloomFilter {
+namespace gem5
+{
 
-Perfect::Perfect(const BloomFilterPerfectParams* p)
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
+
+Perfect::Perfect(const BloomFilterPerfectParams &p)
     : Base(p)
 {
+    fatal_if(p.size != 1, "The perfect Bloom filter cannot be limited to a "
+        "specific size.");
+    fatal_if(p.num_bits != 1, "The perfect Bloom filter tracks entries "
+        "perfectly using an unlimited amount of 1-bit entries.");
+    fatal_if(p.threshold != 1, "The perfect Bloom filter uses 1-bit entries; "
+        "thus, their thresholds must be 1.");
 }
 
 Perfect::~Perfect()
@@ -80,11 +90,5 @@ Perfect::getTotalCount() const
     return entries.size();
 }
 
-} // namespace BloomFilter
-
-BloomFilter::Perfect*
-BloomFilterPerfectParams::create()
-{
-    return new BloomFilter::Perfect(this);
-}
-
+} // namespace bloom_filter
+} // namespace gem5

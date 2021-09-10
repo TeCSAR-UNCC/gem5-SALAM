@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -38,9 +36,11 @@
 #include <string>
 
 #include "dev/io_device.hh"
-// #include "dev/alpha/tsunami.hh"
 #include "mem/packet.hh"
 #include "params/IsaFake.hh"
+
+namespace gem5
+{
 
 /**
  * IsaFake is a device that returns, BadAddr, 1 or 0 on all reads and
@@ -58,17 +58,13 @@ class IsaFake : public BasicPioDevice
     uint64_t retData64;
 
   public:
-    typedef IsaFakeParams Params;
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    PARAMS(IsaFake);
+
     /**
       * The constructor for Isa Fake just registers itself with the MMU.
       * @param p params structure
       */
-    IsaFake(Params *p);
+    IsaFake(const Params &p);
 
     /**
      * This read always returns -1.
@@ -84,5 +80,7 @@ class IsaFake : public BasicPioDevice
      */
     virtual Tick write(PacketPtr pkt);
 };
+
+} // namespace gem5
 
 #endif // __ISA_FAKE_HH__

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 RISC-V Foundation
  * Copyright (c) 2016 The University of Virginia
+ * Copyright (c) 2020 Barkhausen Institut
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,9 +26,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Alec Roelke
  */
+
 #include "arch/riscv/isa.hh"
 
 #include <ctime>
@@ -35,27 +35,180 @@
 #include <sstream>
 
 #include "arch/riscv/interrupts.hh"
-#include "arch/riscv/registers.hh"
+#include "arch/riscv/mmu.hh"
+#include "arch/riscv/pagetable.hh"
+#include "arch/riscv/pmp.hh"
+#include "arch/riscv/regs/float.hh"
+#include "arch/riscv/regs/int.hh"
+#include "arch/riscv/regs/misc.hh"
 #include "base/bitfield.hh"
+#include "base/compiler.hh"
 #include "cpu/base.hh"
+#include "debug/Checkpoint.hh"
 #include "debug/RiscvMisc.hh"
 #include "params/RiscvISA.hh"
-#include "sim/core.hh"
 #include "sim/pseudo_inst.hh"
+
+namespace gem5
+{
 
 namespace RiscvISA
 {
 
-ISA::ISA(Params *p) : SimObject(p)
+GEM5_VAR_USED const std::array<const char *, NUM_MISCREGS> MiscRegNames = {{
+    [MISCREG_PRV]           = "PRV",
+    [MISCREG_ISA]           = "ISA",
+    [MISCREG_VENDORID]      = "VENDORID",
+    [MISCREG_ARCHID]        = "ARCHID",
+    [MISCREG_IMPID]         = "IMPID",
+    [MISCREG_HARTID]        = "HARTID",
+    [MISCREG_STATUS]        = "STATUS",
+    [MISCREG_IP]            = "IP",
+    [MISCREG_IE]            = "IE",
+    [MISCREG_CYCLE]         = "CYCLE",
+    [MISCREG_TIME]          = "TIME",
+    [MISCREG_INSTRET]       = "INSTRET",
+    [MISCREG_HPMCOUNTER03]  = "HPMCOUNTER03",
+    [MISCREG_HPMCOUNTER04]  = "HPMCOUNTER04",
+    [MISCREG_HPMCOUNTER05]  = "HPMCOUNTER05",
+    [MISCREG_HPMCOUNTER06]  = "HPMCOUNTER06",
+    [MISCREG_HPMCOUNTER07]  = "HPMCOUNTER07",
+    [MISCREG_HPMCOUNTER08]  = "HPMCOUNTER08",
+    [MISCREG_HPMCOUNTER09]  = "HPMCOUNTER09",
+    [MISCREG_HPMCOUNTER10]  = "HPMCOUNTER10",
+    [MISCREG_HPMCOUNTER11]  = "HPMCOUNTER11",
+    [MISCREG_HPMCOUNTER12]  = "HPMCOUNTER12",
+    [MISCREG_HPMCOUNTER13]  = "HPMCOUNTER13",
+    [MISCREG_HPMCOUNTER14]  = "HPMCOUNTER14",
+    [MISCREG_HPMCOUNTER15]  = "HPMCOUNTER15",
+    [MISCREG_HPMCOUNTER16]  = "HPMCOUNTER16",
+    [MISCREG_HPMCOUNTER17]  = "HPMCOUNTER17",
+    [MISCREG_HPMCOUNTER18]  = "HPMCOUNTER18",
+    [MISCREG_HPMCOUNTER19]  = "HPMCOUNTER19",
+    [MISCREG_HPMCOUNTER20]  = "HPMCOUNTER20",
+    [MISCREG_HPMCOUNTER21]  = "HPMCOUNTER21",
+    [MISCREG_HPMCOUNTER22]  = "HPMCOUNTER22",
+    [MISCREG_HPMCOUNTER23]  = "HPMCOUNTER23",
+    [MISCREG_HPMCOUNTER24]  = "HPMCOUNTER24",
+    [MISCREG_HPMCOUNTER25]  = "HPMCOUNTER25",
+    [MISCREG_HPMCOUNTER26]  = "HPMCOUNTER26",
+    [MISCREG_HPMCOUNTER27]  = "HPMCOUNTER27",
+    [MISCREG_HPMCOUNTER28]  = "HPMCOUNTER28",
+    [MISCREG_HPMCOUNTER29]  = "HPMCOUNTER29",
+    [MISCREG_HPMCOUNTER30]  = "HPMCOUNTER30",
+    [MISCREG_HPMCOUNTER31]  = "HPMCOUNTER31",
+    [MISCREG_HPMEVENT03]    = "HPMEVENT03",
+    [MISCREG_HPMEVENT04]    = "HPMEVENT04",
+    [MISCREG_HPMEVENT05]    = "HPMEVENT05",
+    [MISCREG_HPMEVENT06]    = "HPMEVENT06",
+    [MISCREG_HPMEVENT07]    = "HPMEVENT07",
+    [MISCREG_HPMEVENT08]    = "HPMEVENT08",
+    [MISCREG_HPMEVENT09]    = "HPMEVENT09",
+    [MISCREG_HPMEVENT10]    = "HPMEVENT10",
+    [MISCREG_HPMEVENT11]    = "HPMEVENT11",
+    [MISCREG_HPMEVENT12]    = "HPMEVENT12",
+    [MISCREG_HPMEVENT13]    = "HPMEVENT13",
+    [MISCREG_HPMEVENT14]    = "HPMEVENT14",
+    [MISCREG_HPMEVENT15]    = "HPMEVENT15",
+    [MISCREG_HPMEVENT16]    = "HPMEVENT16",
+    [MISCREG_HPMEVENT17]    = "HPMEVENT17",
+    [MISCREG_HPMEVENT18]    = "HPMEVENT18",
+    [MISCREG_HPMEVENT19]    = "HPMEVENT19",
+    [MISCREG_HPMEVENT20]    = "HPMEVENT20",
+    [MISCREG_HPMEVENT21]    = "HPMEVENT21",
+    [MISCREG_HPMEVENT22]    = "HPMEVENT22",
+    [MISCREG_HPMEVENT23]    = "HPMEVENT23",
+    [MISCREG_HPMEVENT24]    = "HPMEVENT24",
+    [MISCREG_HPMEVENT25]    = "HPMEVENT25",
+    [MISCREG_HPMEVENT26]    = "HPMEVENT26",
+    [MISCREG_HPMEVENT27]    = "HPMEVENT27",
+    [MISCREG_HPMEVENT28]    = "HPMEVENT28",
+    [MISCREG_HPMEVENT29]    = "HPMEVENT29",
+    [MISCREG_HPMEVENT30]    = "HPMEVENT30",
+    [MISCREG_HPMEVENT31]    = "HPMEVENT31",
+    [MISCREG_TSELECT]       = "TSELECT",
+    [MISCREG_TDATA1]        = "TDATA1",
+    [MISCREG_TDATA2]        = "TDATA2",
+    [MISCREG_TDATA3]        = "TDATA3",
+    [MISCREG_DCSR]          = "DCSR",
+    [MISCREG_DPC]           = "DPC",
+    [MISCREG_DSCRATCH]      = "DSCRATCH",
+
+    [MISCREG_MEDELEG]       = "MEDELEG",
+    [MISCREG_MIDELEG]       = "MIDELEG",
+    [MISCREG_MTVEC]         = "MTVEC",
+    [MISCREG_MCOUNTEREN]    = "MCOUNTEREN",
+    [MISCREG_MSCRATCH]      = "MSCRATCH",
+    [MISCREG_MEPC]          = "MEPC",
+    [MISCREG_MCAUSE]        = "MCAUSE",
+    [MISCREG_MTVAL]         = "MTVAL",
+    [MISCREG_PMPCFG0]       = "PMPCFG0",
+    // pmpcfg1 rv32 only
+    [MISCREG_PMPCFG2]       = "PMPCFG2",
+    // pmpcfg3 rv32 only
+    [MISCREG_PMPADDR00]     = "PMPADDR00",
+    [MISCREG_PMPADDR01]     = "PMPADDR01",
+    [MISCREG_PMPADDR02]     = "PMPADDR02",
+    [MISCREG_PMPADDR03]     = "PMPADDR03",
+    [MISCREG_PMPADDR04]     = "PMPADDR04",
+    [MISCREG_PMPADDR05]     = "PMPADDR05",
+    [MISCREG_PMPADDR06]     = "PMPADDR06",
+    [MISCREG_PMPADDR07]     = "PMPADDR07",
+    [MISCREG_PMPADDR08]     = "PMPADDR08",
+    [MISCREG_PMPADDR09]     = "PMPADDR09",
+    [MISCREG_PMPADDR10]     = "PMPADDR10",
+    [MISCREG_PMPADDR11]     = "PMPADDR11",
+    [MISCREG_PMPADDR12]     = "PMPADDR12",
+    [MISCREG_PMPADDR13]     = "PMPADDR13",
+    [MISCREG_PMPADDR14]     = "PMPADDR14",
+    [MISCREG_PMPADDR15]     = "PMPADDR15",
+
+    [MISCREG_SEDELEG]       = "SEDELEG",
+    [MISCREG_SIDELEG]       = "SIDELEG",
+    [MISCREG_STVEC]         = "STVEC",
+    [MISCREG_SCOUNTEREN]    = "SCOUNTEREN",
+    [MISCREG_SSCRATCH]      = "SSCRATCH",
+    [MISCREG_SEPC]          = "SEPC",
+    [MISCREG_SCAUSE]        = "SCAUSE",
+    [MISCREG_STVAL]         = "STVAL",
+    [MISCREG_SATP]          = "SATP",
+
+    [MISCREG_UTVEC]         = "UTVEC",
+    [MISCREG_USCRATCH]      = "USCRATCH",
+    [MISCREG_UEPC]          = "UEPC",
+    [MISCREG_UCAUSE]        = "UCAUSE",
+    [MISCREG_UTVAL]         = "UTVAL",
+    [MISCREG_FFLAGS]        = "FFLAGS",
+    [MISCREG_FRM]           = "FRM",
+}};
+
+ISA::ISA(const Params &p) : BaseISA(p)
 {
-    miscRegFile.resize(NumMiscRegs);
+    _regClasses.emplace_back(NumIntRegs, 0);
+    _regClasses.emplace_back(NumFloatRegs);
+    _regClasses.emplace_back(1); // Not applicable to RISCV
+    _regClasses.emplace_back(2); // Not applicable to RISCV
+    _regClasses.emplace_back(1); // Not applicable to RISCV
+    _regClasses.emplace_back(0); // Not applicable to RISCV
+    _regClasses.emplace_back(NUM_MISCREGS);
+
+    miscRegFile.resize(NUM_MISCREGS);
     clear();
 }
 
-const RiscvISAParams *
-ISA::params() const
+void
+ISA::copyRegsFrom(ThreadContext *src)
 {
-    return dynamic_cast<const Params *>(_params);
+    // First loop through the integer registers.
+    for (int i = 0; i < NumIntRegs; ++i)
+        tc->setIntReg(i, src->readIntReg(i));
+
+    // Second loop through the float registers.
+    for (int i = 0; i < NumFloatRegs; ++i)
+        tc->setFloatReg(i, src->readFloatReg(i));
+
+    // Lastly copy PC/NPC
+    tc->pcState(src->pcState());
 }
 
 void ISA::clear()
@@ -71,6 +224,9 @@ void ISA::clear()
                                   (1ULL << FS_OFFSET);
     miscRegFile[MISCREG_MCOUNTEREN] = 0x7;
     miscRegFile[MISCREG_SCOUNTEREN] = 0x7;
+    // don't set it to zero; software may try to determine the supported
+    // triggers, starting at zero. simply set a different value here.
+    miscRegFile[MISCREG_TSELECT] = 1;
 }
 
 bool
@@ -99,18 +255,18 @@ ISA::hpmCounterEnabled(int misc_reg) const
 RegVal
 ISA::readMiscRegNoEffect(int misc_reg) const
 {
-    if (misc_reg > NumMiscRegs || misc_reg < 0) {
+    if (misc_reg > NUM_MISCREGS || misc_reg < 0) {
         // Illegal CSR
         panic("Illegal CSR index %#x\n", misc_reg);
         return -1;
     }
-    DPRINTF(RiscvMisc, "Reading MiscReg %d: %#llx.\n", misc_reg,
-            miscRegFile[misc_reg]);
+    DPRINTF(RiscvMisc, "Reading MiscReg %s (%d): %#x.\n",
+            MiscRegNames[misc_reg], misc_reg, miscRegFile[misc_reg]);
     return miscRegFile[misc_reg];
 }
 
 RegVal
-ISA::readMiscReg(int misc_reg, ThreadContext *tc)
+ISA::readMiscReg(int misc_reg)
 {
     switch (misc_reg) {
       case MISCREG_HARTID:
@@ -128,7 +284,7 @@ ISA::readMiscReg(int misc_reg, ThreadContext *tc)
         if (hpmCounterEnabled(MISCREG_TIME)) {
             DPRINTF(RiscvMisc, "Wall-clock counter at: %llu.\n",
                     std::time(nullptr));
-            return std::time(nullptr);
+            return readMiscRegNoEffect(MISCREG_TIME);
         } else {
             warn("Wall clock disabled.\n");
             return 0;
@@ -154,6 +310,18 @@ ISA::readMiscReg(int misc_reg, ThreadContext *tc)
                     tc->getCpuPtr()->getInterruptController(tc->threadId()));
             return ic->readIE();
         }
+      case MISCREG_SEPC:
+      case MISCREG_MEPC:
+        {
+            auto misa = readMiscRegNoEffect(MISCREG_ISA);
+            auto val = readMiscRegNoEffect(misc_reg);
+            // if compressed instructions are disabled, epc[1] is set to 0
+            if ((misa & ISA_EXT_C_MASK) == 0)
+                return mbits(val, 63, 2);
+            // epc[0] is always 0
+            else
+                return mbits(val, 63, 1);
+        }
       default:
         // Try reading HPM counters
         // As a placeholder, all HPM counters are just cycle counters
@@ -175,22 +343,74 @@ ISA::readMiscReg(int misc_reg, ThreadContext *tc)
 void
 ISA::setMiscRegNoEffect(int misc_reg, RegVal val)
 {
-    if (misc_reg > NumMiscRegs || misc_reg < 0) {
+    if (misc_reg > NUM_MISCREGS || misc_reg < 0) {
         // Illegal CSR
         panic("Illegal CSR index %#x\n", misc_reg);
     }
-    DPRINTF(RiscvMisc, "Setting MiscReg %d to %#x.\n", misc_reg, val);
+    DPRINTF(RiscvMisc, "Setting MiscReg %s (%d) to %#x.\n",
+            MiscRegNames[misc_reg], misc_reg, val);
     miscRegFile[misc_reg] = val;
 }
 
 void
-ISA::setMiscReg(int misc_reg, RegVal val, ThreadContext *tc)
+ISA::setMiscReg(int misc_reg, RegVal val)
 {
     if (misc_reg >= MISCREG_CYCLE && misc_reg <= MISCREG_HPMCOUNTER31) {
         // Ignore writes to HPM counters for now
         warn("Ignoring write to %s.\n", CSRData.at(misc_reg).name);
     } else {
         switch (misc_reg) {
+
+          // From section 3.7.1 of RISCV priv. specs
+          // V1.12, the odd-numbered configuration
+          // registers are illegal for RV64 and
+          // each 64 bit CFG register hold configurations
+          // for 8 PMP entries.
+
+          case MISCREG_PMPCFG0:
+          case MISCREG_PMPCFG2:
+            {
+                // PMP registers should only be modified in M mode
+                assert(readMiscRegNoEffect(MISCREG_PRV) == PRV_M);
+
+                // Specs do not seem to mention what should be
+                // configured first, cfg or address regs!
+                // qemu seems to update the tables when
+                // pmp addr regs are written (with the assumption
+                // that cfg regs are already written)
+
+                for (int i=0; i < sizeof(val); i++) {
+
+                    uint8_t cfg_val = (val >> (8*i)) & 0xff;
+                    auto mmu = dynamic_cast<RiscvISA::MMU *>
+                                (tc->getMMUPtr());
+
+                    // Form pmp_index using the index i and
+                    // PMPCFG register number
+                    // Note: MISCREG_PMPCFG2 - MISCREG_PMPCFG0 = 1
+                    // 8*(misc_reg-MISCREG_PMPCFG0) will be useful
+                    // if a system contains more than 16 PMP entries
+                    uint32_t pmp_index = i+(8*(misc_reg-MISCREG_PMPCFG0));
+                    mmu->getPMP()->pmpUpdateCfg(pmp_index,cfg_val);
+                }
+
+                setMiscRegNoEffect(misc_reg, val);
+            }
+            break;
+          case MISCREG_PMPADDR00 ... MISCREG_PMPADDR15:
+            {
+                // PMP registers should only be modified in M mode
+                assert(readMiscRegNoEffect(MISCREG_PRV) == PRV_M);
+
+                auto mmu = dynamic_cast<RiscvISA::MMU *>
+                              (tc->getMMUPtr());
+                uint32_t pmp_index = misc_reg-MISCREG_PMPADDR00;
+                mmu->getPMP()->pmpUpdateAddr(pmp_index, val);
+
+                setMiscRegNoEffect(misc_reg, val);
+            }
+            break;
+
           case MISCREG_IP:
             {
                 auto ic = dynamic_cast<RiscvISA::Interrupts *>(
@@ -205,16 +425,64 @@ ISA::setMiscReg(int misc_reg, RegVal val, ThreadContext *tc)
                 ic->setIE(val);
             }
             break;
+          case MISCREG_SATP:
+            {
+                // we only support bare and Sv39 mode; setting a different mode
+                // shall have no effect (see 4.1.12 in priv ISA manual)
+                SATP cur_val = readMiscRegNoEffect(misc_reg);
+                SATP new_val = val;
+                if (new_val.mode != AddrXlateMode::BARE &&
+                    new_val.mode != AddrXlateMode::SV39)
+                    new_val.mode = cur_val.mode;
+                setMiscRegNoEffect(misc_reg, new_val);
+            }
+            break;
+          case MISCREG_TSELECT:
+            {
+                // we don't support debugging, so always set a different value
+                // than written
+                setMiscRegNoEffect(misc_reg, val + 1);
+            }
+            break;
+          case MISCREG_ISA:
+            {
+                auto cur_val = readMiscRegNoEffect(misc_reg);
+                // only allow to disable compressed instructions
+                // if the following instruction is 4-byte aligned
+                if ((val & ISA_EXT_C_MASK) == 0 &&
+                    bits(tc->pcState().npc(), 2, 0) != 0)
+                    val |= cur_val & ISA_EXT_C_MASK;
+                setMiscRegNoEffect(misc_reg, val);
+            }
+            break;
+          case MISCREG_STATUS:
+            {
+                // SXL and UXL are hard-wired to 64 bit
+                auto cur = readMiscRegNoEffect(misc_reg);
+                val &= ~(STATUS_SXL_MASK | STATUS_UXL_MASK);
+                val |= cur & (STATUS_SXL_MASK | STATUS_UXL_MASK);
+                setMiscRegNoEffect(misc_reg, val);
+            }
+            break;
           default:
             setMiscRegNoEffect(misc_reg, val);
         }
     }
 }
 
+void
+ISA::serialize(CheckpointOut &cp) const
+{
+    DPRINTF(Checkpoint, "Serializing Riscv Misc Registers\n");
+    SERIALIZE_CONTAINER(miscRegFile);
 }
 
-RiscvISA::ISA *
-RiscvISAParams::create()
+void
+ISA::unserialize(CheckpointIn &cp)
 {
-    return new RiscvISA::ISA(this);
+    DPRINTF(Checkpoint, "Unserializing Riscv Misc Registers\n");
+    UNSERIALIZE_CONTAINER(miscRegFile);
 }
+
+} // namespace RiscvISA
+} // namespace gem5

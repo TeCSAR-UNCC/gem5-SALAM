@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Evans
  */
 
 /** @file
@@ -66,20 +64,11 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-Gicv2m *
-Gicv2mParams::create()
+namespace gem5
 {
-    return new Gicv2m(this);
-}
 
-Gicv2mFrame *
-Gicv2mFrameParams::create()
-{
-    return new Gicv2mFrame(this);
-}
-
-Gicv2m::Gicv2m(const Params *p)
-    : PioDevice(p), pioDelay(p->pio_delay), frames(p->frames), gic(p->gic)
+Gicv2m::Gicv2m(const Params &p)
+    : PioDevice(p), pioDelay(p.pio_delay), frames(p.frames), gic(p.gic)
 {
     // Assert SPI ranges start at 32
     for (int i = 0; i < frames.size(); i++) {
@@ -168,3 +157,5 @@ Gicv2m::frameFromAddr(Addr a) const
     }
     return -1;
 }
+
+} // namespace gem5

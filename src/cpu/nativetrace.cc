@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "cpu/nativetrace.hh"
@@ -35,11 +33,12 @@
 #include "debug/GDBMisc.hh"
 #include "params/NativeTrace.hh"
 
-using namespace std;
+namespace gem5
+{
 
 namespace Trace {
 
-NativeTrace::NativeTrace(const Params *p)
+NativeTrace::NativeTrace(const Params &p)
     : ExeTracer(p)
 {
     if (ListenSocket::allDisabled())
@@ -51,7 +50,7 @@ NativeTrace::NativeTrace(const Params *p)
         DPRINTF(GDBMisc, "Can't bind port %d\n", port);
         port++;
     }
-    ccprintf(cerr, "Listening for native process on port %d\n", port);
+    ccprintf(std::cerr, "Listening for native process on port %d\n", port);
     fd = native_listener.accept();
 }
 
@@ -65,3 +64,4 @@ Trace::NativeTraceRecord::dump()
 }
 
 } // namespace Trace
+} // namespace gem5

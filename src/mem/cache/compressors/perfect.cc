@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Inria
+ * Copyright (c) 2019-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -40,49 +38,44 @@
 #include "debug/CacheComp.hh"
 #include "params/PerfectCompressor.hh"
 
-PerfectCompressor::CompData::CompData(const uint64_t* data,
-    std::size_t num_entries)
-    : CompressionData(), entries(data, data + num_entries)
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
+
+Perfect::Perfect(const Params &p)
+  : Base(p), compressedSize(8 * blkSize / p.max_compression_ratio)
 {
 }
 
-PerfectCompressor::PerfectCompressor(const Params *p)
-    : BaseCacheCompressor(p),
-      compressedSize(8 * blkSize / p->max_compression_ratio),
-      compressionLatency(p->compression_latency),
-      decompressionLatency(p->decompression_latency)
-{
-}
-
-std::unique_ptr<BaseCacheCompressor::CompressionData>
-PerfectCompressor::compress(const uint64_t* cache_line, Cycles& comp_lat,
-    Cycles& decomp_lat)
+std::unique_ptr<Base::CompressionData>
+Perfect::compress(const std::vector<Chunk>& chunks,
+    Cycles& comp_lat, Cycles& decomp_lat)
 {
     // Compress every word sequentially
-    std::unique_ptr<BaseCacheCompressor::CompressionData> comp_data(
-        new CompData(cache_line, blkSize/8));
+    std::unique_ptr<Base::CompressionData> comp_data(new CompData(chunks));
 
     // Set relevant metadata
     comp_data->setSizeBits(compressedSize);
-    comp_lat = compressionLatency;
-    decomp_lat = decompressionLatency;
+
+    // Set latencies based on the degree of parallelization, and any extra
+    // latencies due to shifting or packaging
+    comp_lat = Cycles((chunks.size() / compChunksPerCycle) + compExtraLatency);
+    decomp_lat = Cycles((chunks.size() / decompChunksPerCycle) +
+        decompExtraLatency);
 
     return comp_data;
 }
 
 void
-PerfectCompressor::decompress(const CompressionData* comp_data,
+Perfect::decompress(const CompressionData* comp_data,
     uint64_t* data)
 {
     // Decompress every entry sequentially
-    const std::vector<uint64_t>& entries =
-        static_cast<const CompData*>(comp_data)->entries;
-    assert(entries.size() == (blkSize/8));
-    std::copy(entries.begin(), entries.end(), data);
+    fromChunks(static_cast<const CompData*>(comp_data)->chunks, data);
 }
 
-PerfectCompressor*
-PerfectCompressorParams::create()
-{
-    return new PerfectCompressor(this);
-}
+} // namespace compression
+} // namespace gem5

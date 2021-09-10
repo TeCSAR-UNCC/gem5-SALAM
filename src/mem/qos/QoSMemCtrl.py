@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ARM Limited
+# Copyright (c) 2018-2020 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -32,21 +32,22 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Matteo Andreozzi
 
 from m5.params import *
-from m5.objects.AbstractMemory import AbstractMemory
+from m5.proxy import *
+from m5.objects.ClockedObject import ClockedObject
 from m5.objects.QoSTurnaround import *
 
 # QoS Queue Selection policy used to select packets among same-QoS queues
 class QoSQPolicy(Enum): vals = ["fifo", "lifo", "lrg"]
 
-class QoSMemCtrl(AbstractMemory):
+class QoSMemCtrl(ClockedObject):
     type = 'QoSMemCtrl'
     cxx_header = "mem/qos/mem_ctrl.hh"
-    cxx_class = 'QoS::MemCtrl'
+    cxx_class = 'gem5::memory::qos::MemCtrl'
     abstract = True
+
+    system = Param.System(Parent.any, "System that the controller belongs to.")
 
     ##### QoS support parameters ####
 
@@ -68,7 +69,7 @@ class QoSMemCtrl(AbstractMemory):
         "Memory Controller Requests same-QoS selection policy")
 
     # flag to select QoS syncronised scheduling
-    # (calls the scheduler on all masters at every packet arrival)
+    # (calls the scheduler on all requestors at every packet arrival)
     qos_syncro_scheduler = Param.Bool(False,
         "Enables QoS syncronized scheduling")
 
@@ -76,6 +77,8 @@ class QoSMemCtrl(AbstractMemory):
     qos_priority_escalation = Param.Bool(False,
         "Enables QoS priority escalation")
 
-    # Master ID to be mapped to service parameters in QoS schedulers
-    qos_masters = VectorParam.String(['']* 16,
-        "Master Names to be mapped to service parameters in QoS scheduler")
+    # Requestor ID to be mapped to service parameters in QoS schedulers
+    qos_requestors = VectorParam.String(['']* 16,
+        "Requestor Names to be mapped to service parameters in QoS scheduler")
+    qos_masters = DeprecatedParam(qos_requestors,
+        '`qos_master` is now called `qos_requestors`')

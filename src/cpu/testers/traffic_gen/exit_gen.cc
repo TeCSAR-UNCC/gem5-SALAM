@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Riken Gohil
  */
 
 #include "base/logging.hh"
@@ -42,6 +40,9 @@
 #include "debug/TrafficGen.hh"
 #include "exit_gen.hh"
 #include "sim/sim_exit.hh"
+
+namespace gem5
+{
 
 void
 ExitGen::enter()
@@ -64,3 +65,5 @@ ExitGen::nextPacketTick(bool elastic, Tick delay) const
 {
     return MaxTick;
 }
+
+} // namespace gem5

@@ -43,7 +43,14 @@
 #include "params/MPP_StatisticalCorrector_64KB.hh"
 #include "params/MultiperspectivePerceptronTAGE64KB.hh"
 
-class MPP_StatisticalCorrector_64KB : public MPP_StatisticalCorrector {
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+class MPP_StatisticalCorrector_64KB : public MPP_StatisticalCorrector
+{
     const unsigned numEntriesSecondLocalHistories;
     const unsigned numEntriesThirdLocalHistories;
 
@@ -73,7 +80,7 @@ class MPP_StatisticalCorrector_64KB : public MPP_StatisticalCorrector {
             StatisticalCorrector::BranchInfo *bi, Addr corrTarget) override;
   public:
     MPP_StatisticalCorrector_64KB(
-            const MPP_StatisticalCorrector_64KBParams *p);
+            const MPP_StatisticalCorrector_64KBParams &p);
     size_t getSizeInBits() const override;
 };
 
@@ -82,7 +89,10 @@ class MultiperspectivePerceptronTAGE64KB :
     void createSpecs() override;
   public:
     MultiperspectivePerceptronTAGE64KB(
-            const MultiperspectivePerceptronTAGE64KBParams *p);
+            const MultiperspectivePerceptronTAGE64KBParams &p);
 };
+
+} // namespace branch_prediction
+} // namespace gem5
 
 #endif // __CPU_PRED_MULTIPERSPECTIVE_PERCEPTRON_TAGE_64KB_HH__

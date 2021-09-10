@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __SIM_STATS_HH__
@@ -33,8 +31,14 @@
 
 #include "base/statistics.hh"
 
-extern Stats::Formula simSeconds;
-extern Stats::Value simTicks;
-extern Stats::Value simFreq;
+namespace gem5
+{
+
+extern statistics::Formula &simSeconds;
+extern statistics::Value &simTicks;
+extern statistics::Value &simFreq;
+extern statistics::Value &hostSeconds;
+
+} // namespace gem5
 
 #endif // __SIM_SIM_STATS_HH__

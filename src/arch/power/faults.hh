@@ -25,15 +25,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Timothy M. Jones
  */
 
 #ifndef __ARCH_POWER_FAULTS_HH__
 #define __ARCH_POWER_FAULTS_HH__
 
 #include "sim/faults.hh"
+
+namespace gem5
+{
 
 namespace PowerISA
 {
@@ -63,6 +63,9 @@ class UnimplementedOpcodeFault : public PowerFault
         : PowerFault("Unimplemented Opcode")
     {
     }
+
+    void invoke(ThreadContext *tc, const StaticInstPtr &inst =
+                nullStaticInstPtr) override;
 };
 
 
@@ -78,13 +81,32 @@ class MachineCheckFault : public PowerFault
 
 class AlignmentFault : public PowerFault
 {
+  private:
+    Addr vaddr;
   public:
-    AlignmentFault()
-        : PowerFault("Alignment")
+    AlignmentFault(Addr va)
+        : PowerFault("Alignment"), vaddr(va)
     {
     }
+
+    void invoke(ThreadContext *tc, const StaticInstPtr &inst =
+                nullStaticInstPtr) override;
+};
+
+
+class TrapFault : public PowerFault
+{
+  public:
+    TrapFault()
+        : PowerFault("Trap")
+    {
+    }
+
+    void invoke(ThreadContext *tc, const StaticInstPtr &inst =
+                nullStaticInstPtr) override;
 };
 
 } // namespace PowerISA
+} // namespace gem5
 
 #endif // __ARCH_POWER_FAULTS_HH__

@@ -23,12 +23,10 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.objects.BaseInterrupts import BaseInterrupts
 
 class SparcInterrupts(BaseInterrupts):
     type = 'SparcInterrupts'
-    cxx_class = 'SparcISA::Interrupts'
+    cxx_class = 'gem5::SparcISA::Interrupts'
     cxx_header = 'arch/sparc/interrupts.hh'

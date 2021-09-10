@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 from m5.params import *
 
@@ -33,6 +31,7 @@ from m5.objects.BaseSimpleCPU import BaseSimpleCPU
 class TimingSimpleCPU(BaseSimpleCPU):
     type = 'TimingSimpleCPU'
     cxx_header = "cpu/simple/timing.hh"
+    cxx_class = 'gem5::TimingSimpleCPU'
 
     @classmethod
     def memory_mode(cls):

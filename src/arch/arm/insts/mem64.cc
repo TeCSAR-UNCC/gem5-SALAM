@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013,2018 ARM Limited
+ * Copyright (c) 2011-2013,2018, 2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/insts/mem64.hh"
@@ -43,13 +41,14 @@
 #include "base/loader/symtab.hh"
 #include "mem/request.hh"
 
-using namespace std;
+namespace gem5
+{
 
 namespace ArmISA
 {
 
 std::string
-SysDC64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+SysDC64::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -81,14 +80,14 @@ Memory64::setExcAcRel(bool exclusive, bool acrel)
     else
         memAccessFlags |= ArmISA::TLB::AllowUnaligned;
     if (acrel) {
-        flags[IsMemBarrier] = true;
         flags[IsWriteBarrier] = true;
         flags[IsReadBarrier] = true;
     }
 }
 
 std::string
-MemoryImm64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryImm64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     startDisassembly(ss);
@@ -99,7 +98,8 @@ MemoryImm64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryDImm64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryDImm64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -115,7 +115,8 @@ MemoryDImm64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryDImmEx64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryDImmEx64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -133,7 +134,8 @@ MemoryDImmEx64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryPreIndex64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryPreIndex64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     startDisassembly(ss);
@@ -142,7 +144,8 @@ MemoryPreIndex64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryPostIndex64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryPostIndex64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     startDisassembly(ss);
@@ -153,7 +156,8 @@ MemoryPostIndex64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryReg64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryReg64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     startDisassembly(ss);
@@ -163,7 +167,8 @@ MemoryReg64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryRaw64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryRaw64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     startDisassembly(ss);
@@ -172,7 +177,8 @@ MemoryRaw64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryEx64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryEx64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -186,7 +192,8 @@ MemoryEx64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
 }
 
 std::string
-MemoryLiteral64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+MemoryLiteral64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss, "", false);
@@ -194,4 +201,25 @@ MemoryLiteral64::generateDisassembly(Addr pc, const SymbolTable *symtab) const
     ccprintf(ss, ", #%d", pc + imm);
     return ss.str();
 }
+
+std::string
+MemoryAtomicPair64::generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const
+{
+    std::stringstream ss;
+    printMnemonic(ss, "", false);
+    printIntReg(ss, result);
+    ccprintf(ss, ", ");
+    printIntReg(ss, result2);
+    ccprintf(ss, ", ");
+    printIntReg(ss, dest);
+    ccprintf(ss, ", ");
+    printIntReg(ss, dest2);
+    ccprintf(ss, ", [");
+    printIntReg(ss, base);
+    ccprintf(ss, "]");
+    return ss.str();
 }
+
+} // namespace ArmISA
+} // namespace gem5

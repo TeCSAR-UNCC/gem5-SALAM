@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jairo Balart
  */
 
 #ifndef __DEV_ARM_GICV3_CPU_INTERFACE_H__
@@ -45,6 +43,9 @@
 
 #include "arch/arm/isa_device.hh"
 #include "dev/arm/gic_v3.hh"
+
+namespace gem5
+{
 
 class Gicv3Distributor;
 class Gicv3Redistributor;
@@ -153,16 +154,18 @@ class Gicv3CPUInterface : public ArmISA::BaseISADevice, public Serializable
 
     static const uint8_t GIC_MIN_VBPR = 7 - VIRTUAL_PREEMPTION_BITS;
 
-    typedef struct {
+    struct hppi_t
+    {
         uint32_t intid;
         uint8_t prio;
         Gicv3::GroupId group;
-    } hppi_t;
+    };
 
     hppi_t hppi;
 
     // GIC CPU interface memory mapped control registers (legacy)
-    enum {
+    enum
+    {
         GICC_CTLR    = 0x0000,
         GICC_PMR     = 0x0004,
         GICC_BPR     = 0x0008,
@@ -182,7 +185,8 @@ class Gicv3CPUInterface : public ArmISA::BaseISADevice, public Serializable
     static const AddrRange GICC_NSAPR;
 
     // GIC CPU virtual interface memory mapped control registers (legacy)
-    enum {
+    enum
+    {
         GICH_HCR   = 0x0000,
         GICH_VTR   = 0x0004,
         GICH_VMCR  = 0x0008,
@@ -337,9 +341,13 @@ class Gicv3CPUInterface : public ArmISA::BaseISADevice, public Serializable
     bool virtualIsEOISplitMode() const;
     void virtualUpdate();
     RegVal bpr1(Gicv3::GroupId group);
+    bool havePendingInterrupts(void) const;
+    void clearPendingInterrupts(void);
+    void assertWakeRequest(void);
+    void deassertWakeRequest(void);
 
-    RegVal readBankedMiscReg(MiscRegIndex misc_reg) const;
-    void setBankedMiscReg(MiscRegIndex misc_reg, RegVal val) const;
+    RegVal readBankedMiscReg(ArmISA::MiscRegIndex misc_reg) const;
+    void setBankedMiscReg(ArmISA::MiscRegIndex misc_reg, RegVal val) const;
   public:
 
     Gicv3CPUInterface(Gicv3 * gic, uint32_t cpu_id);
@@ -351,5 +359,7 @@ class Gicv3CPUInterface : public ArmISA::BaseISADevice, public Serializable
     void setMiscReg(int misc_reg, RegVal val) override;
     void setThreadContext(ThreadContext *tc) override;
 };
+
+} // namespace gem5
 
 #endif //__DEV_ARM_GICV3_CPU_INTERFACE_H__

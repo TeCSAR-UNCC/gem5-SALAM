@@ -33,22 +33,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Radhika Jagtap
- *          Andreas Hansson
- *          Thomas Grass
  */
 
 #ifndef __CPU_TRACE_TRACE_CPU_HH__
 #define __CPU_TRACE_TRACE_CPU_HH__
 
-#include <array>
 #include <cstdint>
+#include <list>
 #include <queue>
 #include <set>
 #include <unordered_map>
 
-#include "arch/registers.hh"
 #include "base/statistics.hh"
 #include "cpu/base.hh"
 #include "debug/TraceCPUData.hh"
@@ -58,6 +53,9 @@
 #include "proto/packet.pb.h"
 #include "proto/protoio.hh"
 #include "sim/sim_events.hh"
+
+namespace gem5
+{
 
 /**
  * The trace cpu replays traces generated using the elastic trace probe
@@ -69,7 +67,7 @@
  * same trace is used for playback on different memory sub-systems.
  *
  * The TraceCPU inherits from BaseCPU so some virtual methods need to be
- * defined. It has two port subclasses inherited from MasterPort for
+ * defined. It has two port subclasses inherited from RequestPort for
  * instruction and data ports. It issues the memory requests deducing the
  * timing from the trace and without performing real execution of micro-ops. As
  * soon as the last dependency for an instruction is complete, its
@@ -145,8 +143,7 @@ class TraceCPU : public BaseCPU
 {
 
   public:
-    TraceCPU(TraceCPUParams *params);
-    ~TraceCPU();
+    TraceCPU(const TraceCPUParams &params);
 
     void init();
 
@@ -157,10 +154,7 @@ class TraceCPU : public BaseCPU
      *
      * @return 0
      */
-    Counter totalInsts() const
-    {
-        return 0;
-    }
+    Counter totalInsts() const { return 0; }
 
     /**
      * Return totalOps as the number of committed micro-ops plus the
@@ -168,10 +162,7 @@ class TraceCPU : public BaseCPU
      *
      * @return number of micro-ops i.e. nodes in the elastic data generator
      */
-    Counter totalOps() const
-    {
-        return numOps.value();
-    }
+    Counter totalOps() const { return traceStats.numOps.value(); }
 
     /*
      * Set the no. of ops when elastic data generator completes executing a
@@ -180,10 +171,7 @@ class TraceCPU : public BaseCPU
     void updateNumOps(uint64_t rob_num);
 
     /* Pure virtual function in BaseCPU. Do nothing. */
-    void wakeup(ThreadID tid = 0)
-    {
-        return;
-    }
+    void wakeup(ThreadID tid=0) { return; }
 
     /*
      * When resuming from checkpoint in FS mode, the TraceCPU takes over from
@@ -225,14 +213,13 @@ class TraceCPU : public BaseCPU
     /**
      * IcachePort class that interfaces with L1 Instruction Cache.
      */
-    class IcachePort : public MasterPort
+    class IcachePort : public RequestPort
     {
       public:
         /** Default constructor. */
-        IcachePort(TraceCPU* _cpu)
-            : MasterPort(_cpu->name() + ".icache_port", _cpu),
-                         owner(_cpu)
-        { }
+        IcachePort(TraceCPU* _cpu) :
+            RequestPort(_cpu->name() + ".icache_port", _cpu), owner(_cpu)
+        {}
 
       public:
         /**
@@ -250,7 +237,7 @@ class TraceCPU : public BaseCPU
          *
          * @param pkt Pointer to packet received
          */
-        void recvTimingSnoopReq(PacketPtr pkt) { }
+        void recvTimingSnoopReq(PacketPtr pkt) {}
 
         /**
          * Handle a retry signalled by the cache if instruction read failed in
@@ -265,15 +252,14 @@ class TraceCPU : public BaseCPU
     /**
      * DcachePort class that interfaces with L1 Data Cache.
      */
-    class DcachePort : public MasterPort
+    class DcachePort : public RequestPort
     {
 
       public:
         /** Default constructor. */
-        DcachePort(TraceCPU* _cpu)
-            : MasterPort(_cpu->name() + ".dcache_port", _cpu),
-                         owner(_cpu)
-        { }
+        DcachePort(TraceCPU* _cpu) :
+            RequestPort(_cpu->name() + ".dcache_port", _cpu), owner(_cpu)
+        {}
 
       public:
 
@@ -291,16 +277,14 @@ class TraceCPU : public BaseCPU
          *
          * @param pkt Pointer to packet received
          */
-        void recvTimingSnoopReq(PacketPtr pkt)
-        { }
+        void recvTimingSnoopReq(PacketPtr pkt) {}
 
         /**
          * Required functionally but do nothing.
          *
          * @param pkt Pointer to packet received
          */
-        void recvFunctionalSnoop(PacketPtr pkt)
-        { }
+        void recvFunctionalSnoop(PacketPtr pkt) {}
 
         /**
          * Handle a retry signalled by the cache if data access failed in the
@@ -325,11 +309,11 @@ class TraceCPU : public BaseCPU
     /** Port to connect to L1 data cache. */
     DcachePort dcachePort;
 
-    /** Master id for instruction read requests. */
-    const MasterID instMasterID;
+    /** Requestor id for instruction read requests. */
+    const RequestorID instRequestorID;
 
-    /** Master id for data read and write requests. */
-    const MasterID dataMasterID;
+    /** Requestor id for data read and write requests. */
+    const RequestorID dataRequestorID;
 
     /** File names for input instruction and data traces. */
     std::string instTraceFile, dataTraceFile;
@@ -348,7 +332,8 @@ class TraceCPU : public BaseCPU
         /**
          * This struct stores a line in the trace file.
          */
-        struct TraceElement {
+        struct TraceElement
+        {
 
             /** Specifies if the request is to be a read or a write */
             MemCmd cmd;
@@ -373,16 +358,12 @@ class TraceCPU : public BaseCPU
              *
              * @return if this element is valid
              */
-            bool isValid() const {
-                return cmd != MemCmd::InvalidCmd;
-            }
+            bool isValid() const { return cmd != MemCmd::InvalidCmd; }
 
             /**
              * Make this element invalid.
              */
-            void clear() {
-                cmd = MemCmd::InvalidCmd;
-            }
+            void clear() { cmd = MemCmd::InvalidCmd; }
         };
 
         /**
@@ -392,14 +373,11 @@ class TraceCPU : public BaseCPU
          */
         class InputStream
         {
-
           private:
-
             // Input file stream for the protobuf trace
             ProtoInputStream trace;
 
           public:
-
             /**
              * Create a trace input stream for a given file name.
              *
@@ -424,19 +402,19 @@ class TraceCPU : public BaseCPU
             bool read(TraceElement* element);
         };
 
-        public:
+      public:
         /* Constructor */
         FixedRetryGen(TraceCPU& _owner, const std::string& _name,
-                   MasterPort& _port, MasterID master_id,
-                   const std::string& trace_file)
-            : owner(_owner),
-              port(_port),
-              masterID(master_id),
-              trace(trace_file),
-              genName(owner.name() + ".fixedretry" + _name),
-              retryPkt(nullptr),
-              delta(0),
-              traceComplete(false)
+                   RequestPort& _port, RequestorID requestor_id,
+                   const std::string& trace_file) :
+            owner(_owner),
+            port(_port),
+            requestorId(requestor_id),
+            trace(trace_file),
+            genName(owner.name() + ".fixedretry." + _name),
+            retryPkt(nullptr),
+            delta(0),
+            traceComplete(false), fixedStats(&_owner, _name)
         {
         }
 
@@ -497,18 +475,15 @@ class TraceCPU : public BaseCPU
 
         int64_t tickDelta() { return delta; }
 
-        void regStats();
-
       private:
-
         /** Reference of the TraceCPU. */
         TraceCPU& owner;
 
         /** Reference of the port to be used to issue memory requests. */
-        MasterPort& port;
+        RequestPort& port;
 
-        /** MasterID used for the requests being sent. */
-        const MasterID masterID;
+        /** RequestorID used for the requests being sent. */
+        const RequestorID requestorId;
 
         /** Input stream used for reading the input trace file. */
         InputStream trace;
@@ -533,14 +508,20 @@ class TraceCPU : public BaseCPU
 
         /** Store an element read from the trace to send as the next packet. */
         TraceElement currElement;
-
-        /** Stats for instruction accesses replayed. */
-        Stats::Scalar numSendAttempted;
-        Stats::Scalar numSendSucceeded;
-        Stats::Scalar numSendFailed;
-        Stats::Scalar numRetrySucceeded;
-        /** Last simulated tick by the FixedRetryGen */
-        Stats::Scalar instLastTick;
+      protected:
+        struct FixedRetryGenStatGroup : public statistics::Group
+        {
+            /** name is the extension to the name for these stats */
+            FixedRetryGenStatGroup(statistics::Group *parent,
+                                   const std::string& _name);
+            /** Stats for instruction accesses replayed. */
+            statistics::Scalar numSendAttempted;
+            statistics::Scalar numSendSucceeded;
+            statistics::Scalar numSendFailed;
+            statistics::Scalar numRetrySucceeded;
+            /** Last simulated tick by the FixedRetryGen */
+            statistics::Scalar instLastTick;
+        } fixedStats;
 
     };
 
@@ -557,9 +538,7 @@ class TraceCPU : public BaseCPU
      */
     class ElasticDataGen
     {
-
       private:
-
         /** Node sequence number type. */
         typedef uint64_t NodeSeqNum;
 
@@ -575,21 +554,14 @@ class TraceCPU : public BaseCPU
          * the execution and this struct is used to encapsulate the request
          * data as well as pointers to its dependent GraphNodes.
          */
-        class GraphNode {
-
+        class GraphNode
+        {
           public:
-            /**
-             * The maximum no. of ROB dependencies. There can be at most 2
-             * order dependencies which could exist for a store. For a load
-             * and comp node there can be at most one order dependency.
-             */
-            static const uint8_t maxRobDep = 2;
+            /** Typedef for the list containing the ROB dependencies */
+            typedef std::list<NodeSeqNum> RobDepList;
 
-            /** Typedef for the array containing the ROB dependencies */
-            typedef std::array<NodeSeqNum, maxRobDep> RobDepArray;
-
-            /** Typedef for the array containing the register dependencies */
-            typedef std::array<NodeSeqNum, TheISA::MaxInstSrcRegs> RegDepArray;
+            /** Typedef for the list containing the register dependencies */
+            typedef std::list<NodeSeqNum> RegDepList;
 
             /** Instruction sequence number */
             NodeSeqNum seqNum;
@@ -597,7 +569,10 @@ class TraceCPU : public BaseCPU
             /** ROB occupancy number */
             NodeRobNum robNum;
 
-           /** Type of the node corresponding to the instruction modelled by it */
+           /**
+            * Type of the node corresponding to the instruction modeled by
+            * it.
+            */
             RecordType type;
 
             /** The address for the request if any */
@@ -605,9 +580,6 @@ class TraceCPU : public BaseCPU
 
             /** The virtual address for the request if any */
             Addr virtAddr;
-
-            /** The address space id which is set if the virtual address is set */
-            uint32_t asid;
 
             /** Size of request if any */
             uint32_t size;
@@ -618,23 +590,17 @@ class TraceCPU : public BaseCPU
             /** Instruction PC */
             Addr pc;
 
-            /** Array of order dependencies. */
-            RobDepArray robDep;
-
-            /** Number of order dependencies */
-            uint8_t numRobDep;
+            /** List of order dependencies. */
+            RobDepList robDep;
 
             /** Computational delay */
             uint64_t compDelay;
 
             /**
-             * Array of register dependencies (incoming) if any. Maximum number
+             * List of register dependencies (incoming) if any. Maximum number
              * of source registers used to set maximum size of the array
              */
-            RegDepArray regDep;
-
-            /** Number of register dependencies */
-            uint8_t numRegDep;
+            RegDepList regDep;
 
             /**
              * A vector of nodes dependent (outgoing) on this node. A
@@ -652,12 +618,6 @@ class TraceCPU : public BaseCPU
             /** Is the node a compute (non load/store) node */
             bool isComp() const { return (type == Record::COMP); }
 
-            /** Initialize register dependency array to all zeroes */
-            void clearRegDep();
-
-            /** Initialize register dependency array to all zeroes */
-            void clearRobDep();
-
             /** Remove completed instruction from register dependency array */
             bool removeRegDep(NodeSeqNum reg_dep);
 
@@ -668,7 +628,9 @@ class TraceCPU : public BaseCPU
             bool removeDepOnInst(NodeSeqNum done_seq_num);
 
             /** Return true if node has a request which is strictly ordered */
-            bool isStrictlyOrdered() const {
+            bool
+            isStrictlyOrdered() const
+            {
                 return (flags.isSet(Request::STRICT_ORDER));
             }
             /**
@@ -743,25 +705,25 @@ class TraceCPU : public BaseCPU
              */
             bool awaitingResponse() const;
 
-            /** Print resource occupancy for debugging */
+            /** Print resource occupancy for debugging. */
             void printOccupancy();
 
           private:
             /**
-             * The size of the ROB used to throttle the max. number of in-flight
-             * nodes.
+             * The size of the ROB used to throttle the max. number of
+             * in-flight nodes.
              */
             const uint16_t sizeROB;
 
             /**
-             * The size of store buffer. This is used to throttle the max. number
-             * of in-flight stores.
+             * The size of store buffer. This is used to throttle the max.
+             * number of in-flight stores.
              */
             const uint16_t sizeStoreBuffer;
 
             /**
-             * The size of load buffer. This is used to throttle the max. number
-             * of in-flight loads.
+             * The size of load buffer. This is used to throttle the max.
+             * number of in-flight loads.
              */
             const uint16_t sizeLoadBuffer;
 
@@ -780,10 +742,14 @@ class TraceCPU : public BaseCPU
             /** The ROB number of the oldest in-flight node */
             NodeRobNum oldestInFlightRobNum;
 
-            /** Number of ready loads for which request may or may not be sent */
+            /** Number of ready loads for which request may or may not be
+             * sent.
+             */
             uint16_t numInFlightLoads;
 
-            /** Number of ready stores for which request may or may not be sent */
+            /** Number of ready stores for which request may or may not be
+             * sent.
+             */
             uint16_t numInFlightStores;
         };
 
@@ -794,9 +760,7 @@ class TraceCPU : public BaseCPU
          */
         class InputStream
         {
-
           private:
-
             /** Input file stream for the protobuf trace */
             ProtoInputStream trace;
 
@@ -816,8 +780,8 @@ class TraceCPU : public BaseCPU
              * trace and used to process the dependency trace
              */
             uint32_t windowSize;
-          public:
 
+          public:
             /**
              * Create a trace input stream for a given file name.
              *
@@ -854,20 +818,21 @@ class TraceCPU : public BaseCPU
         public:
         /* Constructor */
         ElasticDataGen(TraceCPU& _owner, const std::string& _name,
-                   MasterPort& _port, MasterID master_id,
-                   const std::string& trace_file, TraceCPUParams *params)
-            : owner(_owner),
-              port(_port),
-              masterID(master_id),
-              trace(trace_file, 1.0 / params->freqMultiplier),
-              genName(owner.name() + ".elastic" + _name),
-              retryPkt(nullptr),
-              traceComplete(false),
-              nextRead(false),
-              execComplete(false),
-              windowSize(trace.getWindowSize()),
-              hwResource(params->sizeROB, params->sizeStoreBuffer,
-                         params->sizeLoadBuffer)
+                   RequestPort& _port, RequestorID requestor_id,
+                   const std::string& trace_file,
+                   const TraceCPUParams &params) :
+            owner(_owner),
+            port(_port),
+            requestorId(requestor_id),
+            trace(trace_file, 1.0 / params.freqMultiplier),
+            genName(owner.name() + ".elastic." + _name),
+            retryPkt(nullptr),
+            traceComplete(false),
+            nextRead(false),
+            execComplete(false),
+            windowSize(trace.getWindowSize()),
+            hwResource(params.sizeROB, params.sizeStoreBuffer,
+                       params.sizeLoadBuffer), elasticStats(&_owner, _name)
         {
             DPRINTF(TraceCPUData, "Window size in the trace is %d.\n",
                     windowSize);
@@ -909,14 +874,11 @@ class TraceCPU : public BaseCPU
          * to the list of dependents of the parent node.
          *
          * @param   new_node    new node to add to the graph
-         * @tparam  dep_array   the dependency array of type rob or register,
+         * @tparam  dep_list    the dependency list of type rob or register,
          *                      that is to be iterated, and may get modified
-         * @param   num_dep     the number of dependencies set in the array
-         *                      which may get modified during iteration
          */
-        template<typename T> void addDepsOnParent(GraphNode *new_node,
-                                                    T& dep_array,
-                                                    uint8_t& num_dep);
+        template<typename T>
+        void addDepsOnParent(GraphNode *new_node, T& dep_list);
 
         /**
          * This is the main execute function which consumes nodes from the
@@ -978,23 +940,20 @@ class TraceCPU : public BaseCPU
          * @param first true if this is the first attempt to issue this node
          * @return true if node was added to readyList
          */
-        bool checkAndIssue(const GraphNode* node_ptr, bool first = true);
+        bool checkAndIssue(const GraphNode* node_ptr, bool first=true);
 
         /** Get number of micro-ops modelled in the TraceCPU replay */
         uint64_t getMicroOpCount() const { return trace.getMicroOpCount(); }
 
-        void regStats();
-
       private:
-
         /** Reference of the TraceCPU. */
         TraceCPU& owner;
 
         /** Reference of the port to be used to issue memory requests. */
-        MasterPort& port;
+        RequestPort& port;
 
-        /** MasterID used for the requests being sent. */
-        const MasterID masterID;
+        /** RequestorID used for the requests being sent. */
+        const RequestorID requestorId;
 
         /** Input stream used for reading the input trace file. */
         InputStream trace;
@@ -1046,18 +1005,26 @@ class TraceCPU : public BaseCPU
         /** List of nodes that are ready to execute */
         std::list<ReadyNode> readyList;
 
-        /** Stats for data memory accesses replayed. */
-        Stats::Scalar maxDependents;
-        Stats::Scalar maxReadyListSize;
-        Stats::Scalar numSendAttempted;
-        Stats::Scalar numSendSucceeded;
-        Stats::Scalar numSendFailed;
-        Stats::Scalar numRetrySucceeded;
-        Stats::Scalar numSplitReqs;
-        Stats::Scalar numSOLoads;
-        Stats::Scalar numSOStores;
-        /** Tick when ElasticDataGen completes execution */
-        Stats::Scalar dataLastTick;
+      protected:
+        // Defining the a stat group
+        struct ElasticDataGenStatGroup : public statistics::Group
+        {
+            /** name is the extension to the name for these stats */
+            ElasticDataGenStatGroup(statistics::Group *parent,
+                                    const std::string& _name);
+            /** Stats for data memory accesses replayed. */
+            statistics::Scalar maxDependents;
+            statistics::Scalar maxReadyListSize;
+            statistics::Scalar numSendAttempted;
+            statistics::Scalar numSendSucceeded;
+            statistics::Scalar numSendFailed;
+            statistics::Scalar numRetrySucceeded;
+            statistics::Scalar numSplitReqs;
+            statistics::Scalar numSOLoads;
+            statistics::Scalar numSOStores;
+            /** Tick when ElasticDataGen completes execution */
+            statistics::Scalar dataLastTick;
+        } elasticStats;
     };
 
     /** Instance of FixedRetryGen to replay instruction read requests. */
@@ -1087,7 +1054,10 @@ class TraceCPU : public BaseCPU
     /** Event for the control flow method schedDcacheNext() */
     EventFunctionWrapper dcacheNextEvent;
 
-    /** This is called when either generator finishes executing from the trace */
+    /**
+     * This is called when either generator finishes executing from the
+     * trace.
+     */
     void checkAndSchedExitEvent();
 
     /** Set to true when one of the generators finishes replaying its trace. */
@@ -1134,14 +1104,18 @@ class TraceCPU : public BaseCPU
      * message is printed.
      */
     uint64_t progressMsgThreshold;
+    struct TraceStats : public statistics::Group
+    {
+        TraceStats(TraceCPU *trace);
+        statistics::Scalar numSchedDcacheEvent;
+        statistics::Scalar numSchedIcacheEvent;
 
-    Stats::Scalar numSchedDcacheEvent;
-    Stats::Scalar numSchedIcacheEvent;
-
-    /** Stat for number of simulated micro-ops. */
-    Stats::Scalar numOps;
-    /** Stat for the CPI. This is really cycles per micro-op and not inst. */
-    Stats::Formula cpi;
+        /** Stat for number of simulated micro-ops. */
+        statistics::Scalar numOps;
+        /** Stat for the CPI. This is really cycles per
+         *  micro-op and not inst. */
+        statistics::Formula cpi;
+    } traceStats;
 
   public:
 
@@ -1151,6 +1125,8 @@ class TraceCPU : public BaseCPU
     /** Used to get a reference to the dcache port. */
     Port &getDataPort() { return dcachePort; }
 
-    void regStats();
 };
+
+} // namespace gem5
+
 #endif // __CPU_TRACE_TRACE_CPU_HH__

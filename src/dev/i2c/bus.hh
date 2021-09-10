@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Peter Enns
  */
 
 
@@ -50,13 +48,17 @@
 #include "dev/io_device.hh"
 #include "params/I2CBus.hh"
 
+namespace gem5
+{
+
 class I2CDevice;
 
 class I2CBus : public BasicPioDevice
 {
   protected:
 
-    enum I2CState {
+    enum I2CState
+    {
         IDLE,
         RECEIVING_ADDR,
         RECEIVING_DATA,
@@ -142,7 +144,7 @@ class I2CBus : public BasicPioDevice
 
   public:
 
-    I2CBus(const I2CBusParams* p);
+    I2CBus(const I2CBusParams &p);
 
     Tick read(PacketPtr pkt) override;
     Tick write(PacketPtr pkt) override;
@@ -150,5 +152,7 @@ class I2CBus : public BasicPioDevice
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 };
+
+} // namespace gem5
 
 #endif // __DEV_I2C_BUS_HH__

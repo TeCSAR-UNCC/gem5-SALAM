@@ -24,17 +24,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/sparc/nativetrace.hh"
 
-#include "arch/sparc/isa_traits.hh"
-#include "arch/sparc/registers.hh"
+#include "arch/sparc/regs/int.hh"
 #include "cpu/thread_context.hh"
 #include "params/SparcNativeTrace.hh"
 #include "sim/byteswap.hh"
+
+namespace gem5
+{
 
 namespace Trace {
 
@@ -84,18 +84,9 @@ Trace::SparcNativeTrace::check(NativeTraceRecord *record)
     // CCR
     read(&realRegVal, sizeof(realRegVal));
     realRegVal = betoh(realRegVal);
-    regVal = tc->readIntReg(SparcISA::NumIntArchRegs + 2);
+    regVal = tc->readIntReg(SparcISA::INTREG_CCR);
     checkReg("ccr", regVal, realRegVal);
 }
 
 } // namespace Trace
-
-////////////////////////////////////////////////////////////////////////
-//
-//  ExeTracer Simulation Object
-//
-Trace::SparcNativeTrace *
-SparcNativeTraceParams::create()
-{
-    return new Trace::SparcNativeTrace(this);
-};
+} // namespace gem5

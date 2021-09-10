@@ -26,14 +26,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Nathan Binkert
- *          Steve Raasch
  */
+
+#include "sim/eventq.hh"
 
 #include <cassert>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -42,10 +41,9 @@
 #include "base/trace.hh"
 #include "cpu/smt.hh"
 #include "debug/Checkpoint.hh"
-#include "sim/core.hh"
-#include "sim/eventq_impl.hh"
 
-using namespace std;
+namespace gem5
+{
 
 Tick simQuantum = 0;
 
@@ -56,7 +54,7 @@ Tick simQuantum = 0;
 // cycle, before the pipeline simulation is performed.
 //
 uint32_t numMainEventQueues = 0;
-vector<EventQueue *> mainEventQueue;
+std::vector<EventQueue *> mainEventQueue;
 __thread EventQueue *_curEventQueue = NULL;
 bool inParallelMode = false;
 
@@ -85,11 +83,7 @@ Event::~Event()
 const std::string
 Event::name() const
 {
-#ifndef NDEBUG
-    return csprintf("Event_%d", instance);
-#else
-    return csprintf("Event_%x", (uintptr_t)this);
-#endif
+    return csprintf("Event_%s", instanceString());
 }
 
 
@@ -224,7 +218,8 @@ EventQueue::serviceOne()
     if (!event->squashed()) {
         // forward current cycle to the time when this event occurs.
         setCurTick(event->when());
-
+        if (debug::Event)
+            event->trace("executed");
         event->process();
         if (event->isExitEvent()) {
             assert(!event->flags.isSet(Event::Managed) ||
@@ -383,17 +378,23 @@ Event::description() const
 void
 Event::trace(const char *action)
 {
-    // This DPRINTF is unconditional because calls to this function
-    // are protected by an 'if (DTRACE(Event))' in the inlined Event
-    // methods.
-    //
     // This is just a default implementation for derived classes where
     // it's not worth doing anything special.  If you want to put a
     // more informative message in the trace, override this method on
     // the particular subclass where you have the information that
     // needs to be printed.
-    DPRINTF_UNCONDITIONAL(Event, "%s event %s @ %d\n",
-            description(), action, when());
+    DPRINTF(Event, "%s %s %s @ %d\n",
+            description(), instanceString(), action, when());
+}
+
+const std::string
+Event::instanceString() const
+{
+#ifndef NDEBUG
+    return csprintf("%d", instance);
+#else
+    return csprintf("%#x", (uintptr_t)this);
+#endif
 }
 
 void
@@ -414,7 +415,7 @@ Event::dump() const
     }
 }
 
-EventQueue::EventQueue(const string &n)
+EventQueue::EventQueue(const std::string &n)
     : objName(n), head(NULL), _curTick(0)
 {
 }
@@ -440,3 +441,5 @@ EventQueue::handleAsyncInsertions()
 
     async_queue_mutex.unlock();
 }
+
+} // namespace gem5

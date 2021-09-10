@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __DEV_ARM_RTC_PL310_HH__
@@ -47,10 +45,14 @@
  * This implements the ARM Primecell 031 RTC
  */
 
+namespace gem5
+{
+
 class PL031 : public AmbaIntDevice
 {
   protected:
-    enum {
+    enum
+    {
         DataReg    = 0x00,
         MatchReg   = 0x04,
         LoadReg    = 0x08,
@@ -99,17 +101,13 @@ class PL031 : public AmbaIntDevice
     void resyncMatch();
 
   public:
-    typedef PL031Params Params;
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    using Params = PL031Params;
+
     /**
       * The constructor for RealView just registers itself with the MMU.
       * @param p params structure
       */
-    PL031(Params *p);
+    PL031(const Params &p);
 
     /**
      * Handle a read to the device
@@ -129,6 +127,6 @@ class PL031 : public AmbaIntDevice
     void unserialize(CheckpointIn &cp) override;
 };
 
+} // namespace gem5
 
 #endif // __DEV_ARM_RTC_PL031_HH__
-

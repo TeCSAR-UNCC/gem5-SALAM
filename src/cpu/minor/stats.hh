@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -50,42 +48,43 @@
 #include "cpu/base.hh"
 #include "sim/ticked_object.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /** Currently unused stats class. */
-class MinorStats
+struct MinorStats : public statistics::Group
 {
-  public:
+    MinorStats(BaseCPU *parent);
+
     /** Number of simulated instructions */
-    Stats::Scalar numInsts;
+    statistics::Scalar numInsts;
 
     /** Number of simulated insts and microops */
-    Stats::Scalar numOps;
+    statistics::Scalar numOps;
 
     /** Number of ops discarded before committing */
-    Stats::Scalar numDiscardedOps;
+    statistics::Scalar numDiscardedOps;
 
     /** Number of times fetch was asked to suspend by Execute */
-    Stats::Scalar numFetchSuspends;
+    statistics::Scalar numFetchSuspends;
 
     /** Number of cycles in quiescent state */
-    Stats::Scalar quiesceCycles;
+    statistics::Scalar quiesceCycles;
 
     /** CPI/IPC for total cycle counts and macro insts */
-    Stats::Formula cpi;
-    Stats::Formula ipc;
+    statistics::Formula cpi;
+    statistics::Formula ipc;
 
     /** Number of instructions by type (OpClass) */
-    Stats::Vector2d committedInstType;
+    statistics::Vector2d committedInstType;
 
-  public:
-    MinorStats();
-
-  public:
-    void regStats(const std::string &name, BaseCPU &baseCpu);
 };
 
-}
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_STATS_HH__ */

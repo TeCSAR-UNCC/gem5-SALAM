@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Dam Sunwoo
- *          Curtis Dunham
  */
 
 #ifndef __CPU_SIMPLE_PROBES_SIMPOINT_HH__
@@ -47,6 +44,9 @@
 #include "cpu/simple_thread.hh"
 #include "params/SimPoint.hh"
 #include "sim/probe/probe.hh"
+
+namespace gem5
+{
 
 /**
  * Probe for SimPoints BBV generation
@@ -60,22 +60,29 @@
  */
 typedef std::pair<Addr, Addr> BasicBlockRange;
 
+} // namespace gem5
+
 /** Overload hash function for BasicBlockRange type */
-namespace std {
+namespace std
+{
 template <>
-struct hash<BasicBlockRange>
+struct hash<gem5::BasicBlockRange>
 {
   public:
-    size_t operator()(const BasicBlockRange &bb) const {
-        return hash<Addr>()(bb.first + bb.second);
+    size_t operator()(const gem5::BasicBlockRange &bb) const
+    {
+        return hash<gem5::Addr>()(bb.first + bb.second);
     }
 };
-}
+} // namespace std
+
+namespace gem5
+{
 
 class SimPoint : public ProbeListenerObject
 {
   public:
-    SimPoint(const SimPointParams *params);
+    SimPoint(const SimPointParams &params);
     virtual ~SimPoint();
 
     virtual void init();
@@ -101,7 +108,8 @@ class SimPoint : public ProbeListenerObject
     OutputStream *simpointStream;
 
     /** Basic Block information */
-    struct BBInfo {
+    struct BBInfo
+    {
         /** Unique ID */
         uint64_t id;
         /** Num of static insts in BB */
@@ -117,5 +125,7 @@ class SimPoint : public ProbeListenerObject
     /** inst count in current basic block */
     uint64_t currentBBVInstCount;
 };
+
+} // namespace gem5
 
 #endif // __CPU_SIMPLE_PROBES_SIMPOINT_HH__

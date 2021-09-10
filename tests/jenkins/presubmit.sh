@@ -34,18 +34,38 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 set -e
 
-# Use ccache with the default directory for caching
-export PATH="/usr/lib/ccache:$PATH"
+DOCKER_IMAGE_ALL_DEP=gcr.io/gem5-test/ubuntu-20.04_all-dependencies
+DOCKER_IMAGE_CLANG_COMPILE=gcr.io/gem5-test/clang-version-9
+PRESUBMIT_STAGE2=tests/jenkins/presubmit-stage2.sh
+GEM5ART_TESTS=tests/jenkins/gem5art-tests.sh
 
-cd git/jenkins-gem5-prod/tests
+# Move the docker base directory to tempfs.
+sudo /etc/init.d/docker stop
+sudo mv /var/lib/docker /tmpfs/
+sudo ln -s /tmpfs/docker /var/lib/docker
+sudo /etc/init.d/docker start
 
-# Build with 4 threads (i.e., pass -j4 to scons)
-# Run 4 tests in parallel
-# Look for tests in the gem5 subdirectory
-# Once complete, run the Google Tests
-./main.py run -j4 -t4 gem5 && scons -C .. build/NULL/unittests.opt
+# Move the CWD to the gem5 checkout.
+cd git/jenkins-gem5-prod/
+
+#  Using a docker image with all the dependencies, we run the gem5art tests.
+docker run -u $UID:$GID --volume $(pwd):$(pwd) -w $(pwd) --rm \
+    "${DOCKER_IMAGE_ALL_DEP}" "${GEM5ART_TESTS}"
+
+#  Using a docker image with all the dependencies, we run the presubmit tests.
+docker run -u $UID:$GID --volume $(pwd):$(pwd) -w $(pwd) --rm \
+    "${DOCKER_IMAGE_ALL_DEP}" "${PRESUBMIT_STAGE2}"
+
+# DOCKER_IMAGE_ALL_DEP compiles gem5.opt with GCC. We run a compilation of
+# gem5.fast on the Clang compiler to ensure changes are compilable with the
+# clang compiler. Due to the costs of compilation, we only compile
+# ARM_MESI_Three_Level_HTM at this point. Further compiler tests are carried
+# out as part of our weekly "Compiler Checks" tests:
+# http://jenkins.gem5.org/job/Compiler-Checks.
+rm -rf build
+docker run -u $UID:$GID --volume $(pwd):$(pwd) -w $(pwd) --rm \
+    "${DOCKER_IMAGE_CLANG_COMPILE}" /usr/bin/env python3 /usr/bin/scons \
+    build/ARM_MESI_Three_Level_HTM/gem5.fast -j4 --no-compress-debug

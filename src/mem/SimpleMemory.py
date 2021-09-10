@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2013 ARM Limited
+# Copyright (c) 2012-2013, 2021 Arm Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -35,9 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-#          Andreas Hansson
 
 from m5.params import *
 from m5.objects.AbstractMemory import *
@@ -45,10 +42,16 @@ from m5.objects.AbstractMemory import *
 class SimpleMemory(AbstractMemory):
     type = 'SimpleMemory'
     cxx_header = "mem/simple_mem.hh"
-    port = SlavePort("Slave ports")
+    cxx_class = 'gem5::memory::SimpleMemory'
+
+    port = ResponsePort("This port sends responses and receives requests")
     latency = Param.Latency('30ns', "Request to response latency")
     latency_var = Param.Latency('0ns', "Request to response latency variance")
-    # The memory bandwidth limit default is set to 12.8GB/s which is
+    # The memory bandwidth limit default is set to 12.8GiB/s which is
     # representative of a x64 DDR3-1600 channel.
-    bandwidth = Param.MemoryBandwidth('12.8GB/s',
+    bandwidth = Param.MemoryBandwidth('12.8GiB/s',
                                       "Combined read and write bandwidth")
+
+    def controller(self):
+        # Simple memory doesn't use a MemCtrl
+        return self

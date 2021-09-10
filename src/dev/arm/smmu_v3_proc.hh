@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_PROC_HH__
@@ -48,13 +46,17 @@
 #include "base/types.hh"
 #include "mem/packet.hh"
 
-class SMMUv3SlaveInterface;
+namespace gem5
+{
+
+class SMMUv3DeviceInterface;
 
 /*
  * The meaning of these becomes apparent when you
  * look at runProcessAtomic()/runProcessTiming().
  */
-enum SMMUActionType {
+enum SMMUActionType
+{
     ACTION_INITIAL_NOP,
     ACTION_SEND_REQ,
     ACTION_SEND_REQ_FINAL,
@@ -69,7 +71,7 @@ struct SMMUAction
 {
     SMMUActionType type;
     PacketPtr pkt;
-    SMMUv3SlaveInterface *ifc;
+    SMMUv3DeviceInterface *ifc;
     Tick delay;
 };
 
@@ -95,7 +97,7 @@ struct SMMUSignal
 class SMMUProcess : public Packet::SenderState
 {
   private:
-    typedef m5::Coroutine<PacketPtr, SMMUAction> Coroutine;
+    typedef gem5::Coroutine<PacketPtr, SMMUAction> Coroutine;
 
     Coroutine *coroutine;
     std::string myName;
@@ -132,5 +134,7 @@ class SMMUProcess : public Packet::SenderState
 
     const std::string name() const { return myName; };
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_PROC_HH__ */

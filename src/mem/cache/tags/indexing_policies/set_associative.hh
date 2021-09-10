@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
- *          Erik Hallnor
  */
 
 /**
@@ -54,6 +51,9 @@
 
 #include "mem/cache/tags/indexing_policies/base.hh"
 #include "params/SetAssociative.hh"
+
+namespace gem5
+{
 
 class ReplaceableEntry;
 
@@ -81,14 +81,14 @@ class ReplaceableEntry;
  */
 class SetAssociative : public BaseIndexingPolicy
 {
-  private:
+  protected:
     /**
      * Apply a hash function to calculate address set.
      *
      * @param addr The address to calculate the set for.
      * @return The set index for given combination of address and way.
      */
-    uint32_t extractSet(const Addr addr) const;
+    virtual uint32_t extractSet(const Addr addr) const;
 
   public:
     /**
@@ -99,7 +99,7 @@ class SetAssociative : public BaseIndexingPolicy
     /**
      * Construct and initialize this policy.
      */
-    SetAssociative(const Params *p);
+    SetAssociative(const Params &p);
 
     /**
      * Destructor.
@@ -128,5 +128,7 @@ class SetAssociative : public BaseIndexingPolicy
     Addr regenerateAddr(const Addr tag, const ReplaceableEntry* entry) const
                                                                    override;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_INDEXING_POLICIES_SET_ASSOCIATIVE_HH__

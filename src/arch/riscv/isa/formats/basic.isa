@@ -26,9 +26,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Maxwell Walter
-//          Alec Roelke
 
 // Basic instruction class declaration template.
 def template BasicDeclare {{
@@ -37,6 +34,9 @@ def template BasicDeclare {{
     //
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         /// Constructor.
         %(class_name)s(MachInst machInst);
@@ -50,6 +50,7 @@ def template BasicConstructor {{
     %(class_name)s::%(class_name)s(MachInst machInst)
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -61,17 +62,11 @@ def template BasicExecute {{
     %(class_name)s::execute(ExecContext *xc,
         Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                %(op_wb)s;
-            }
-        }
-        return fault;
+        %(code)s;
+        %(op_wb)s;
+        return NoFault;
     }
 }};
 

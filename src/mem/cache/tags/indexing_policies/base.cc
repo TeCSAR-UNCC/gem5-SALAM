@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
- *          Erik Hallnor
  */
 
 /**
@@ -55,10 +52,13 @@
 #include "base/logging.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 
-BaseIndexingPolicy::BaseIndexingPolicy(const Params *p)
-    : SimObject(p), assoc(p->assoc),
-      numSets(p->size / (p->entry_size * assoc)),
-      setShift(floorLog2(p->entry_size)), setMask(numSets - 1), sets(numSets),
+namespace gem5
+{
+
+BaseIndexingPolicy::BaseIndexingPolicy(const Params &p)
+    : SimObject(p), assoc(p.assoc),
+      numSets(p.size / (p.entry_size * assoc)),
+      setShift(floorLog2(p.entry_size)), setMask(numSets - 1), sets(numSets),
       tagShift(setShift + floorLog2(numSets))
 {
     fatal_if(!isPowerOf2(numSets), "# of sets must be non-zero and a power " \
@@ -100,3 +100,5 @@ BaseIndexingPolicy::extractTag(const Addr addr) const
 {
     return (addr >> tagShift);
 }
+
+} // namespace gem5

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __DEV_ARM_PCI_HOST_HH__
@@ -43,6 +41,9 @@
 #include "dev/pci/host.hh"
 #include "enums/ArmPciIntRouting.hh"
 
+namespace gem5
+{
+
 class BaseGic;
 struct GenericArmPciHostParams;
 
@@ -50,7 +51,7 @@ class GenericArmPciHost
     : public GenericPciHost
 {
   public:
-    GenericArmPciHost(const GenericArmPciHostParams *p);
+    GenericArmPciHost(const GenericArmPciHostParams &p);
     virtual ~GenericArmPciHost() {}
 
   protected:
@@ -58,9 +59,11 @@ class GenericArmPciHost
                              PciIntPin pin) const override;
 
   protected:
-    const Enums::ArmPciIntRouting intPolicy;
+    const enums::ArmPciIntRouting intPolicy;
     const uint32_t intBase;
     const uint32_t intCount;
 };
+
+} // namespace gem5
 
 #endif // __DEV_ARM_PCI_HOST_HH__

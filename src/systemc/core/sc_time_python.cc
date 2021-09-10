@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "pybind11/operators.h"
@@ -38,7 +36,7 @@ namespace
 struct InstallScTime : public ::sc_gem5::PythonInitFunc
 {
     void
-    run(pybind11::module &systemc) override
+    run(pybind11::module_ &systemc) override
     {
         pybind11::class_<sc_core::sc_time> sc_time(systemc, "sc_time");
         sc_time

@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_CORE_PYTHON_HH__
@@ -50,7 +48,7 @@ struct PythonInitFunc
 
     PythonInitFunc();
     ~PythonInitFunc() {}
-    virtual void run(pybind11::module &systemc) = 0;
+    virtual void run(pybind11::module_ &systemc) = 0;
 };
 
 } // namespace sc_gem5

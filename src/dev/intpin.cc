@@ -23,13 +23,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "dev/intpin.hh"
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 void
 IntSinkPinBase::bind(Port &peer)
@@ -67,3 +68,5 @@ IntSourcePinBase::unbind()
     sink = nullptr;
     Port::unbind();
 }
+
+} // namespace gem5

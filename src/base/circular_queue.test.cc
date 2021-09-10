@@ -33,13 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #include <gtest/gtest.h>
 
 #include "base/circular_queue.hh"
+
+using namespace gem5;
 
 /** Testing that once instantiated with a fixed size,
  * the queue is still empty */
@@ -59,7 +59,7 @@ TEST(CircularQueueTest, HeadTailEmpty)
 {
     const auto cq_size = 8;
     CircularQueue<uint32_t> cq(cq_size);
-    ASSERT_EQ(cq.head(), cq.tail() + 1);
+    ASSERT_EQ(cq.head(), (cq.tail() + 1) % cq_size);
 }
 
 /** Adding elements to the circular queue.
@@ -137,7 +137,7 @@ TEST(CircularQueueTest, Full)
     }
 
     ASSERT_TRUE(cq.full());
-    ASSERT_EQ(cq.head(), cq.tail() + 1);
+    ASSERT_EQ(cq.head(), (cq.tail() + 1) % cq_size);
 }
 
 /** Testing CircularQueue::begin(), CircularQueue::end()
@@ -198,10 +198,8 @@ TEST(CircularQueueTest, IteratorsOp)
     cq.push_back(first_value);
     cq.push_back(second_value);
 
-    auto negative_offset = -(cq_size + 1);
     auto it_1 = cq.begin();
     auto it_2 = cq.begin() + 1;
-    auto it_3 = cq.begin() - negative_offset;
 
     // Operators test
     ASSERT_TRUE(it_1 != it_2);
@@ -215,7 +213,6 @@ TEST(CircularQueueTest, IteratorsOp)
     ASSERT_EQ(it_1, it_2 - 1);
     ASSERT_EQ(it_2 - it_1, 1);
     ASSERT_EQ(it_1 - it_2, -1);
-    ASSERT_EQ(it_3._round, 1);
 
     auto temp_it = it_1;
     ASSERT_EQ(++temp_it, it_2);
@@ -242,7 +239,7 @@ TEST(CircularQueueTest, FullLoop)
     auto starting_it = cq.begin();
     auto ending_it = starting_it + cq_size;
 
-    ASSERT_EQ(starting_it._idx, ending_it._idx);
+    ASSERT_EQ(ending_it - starting_it, cq_size);
     ASSERT_TRUE(starting_it != ending_it);
 }
 
@@ -266,6 +263,5 @@ TEST(CircularQueueTest, MultipleRound)
     auto starting_it = cq.begin();
     auto ending_it = cq.end();
 
-    ASSERT_EQ(starting_it._round + 1, ending_it._round);
     ASSERT_EQ(ending_it - starting_it, cq_size);
 }

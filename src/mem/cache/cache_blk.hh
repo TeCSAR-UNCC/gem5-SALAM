@@ -11,6 +11,7 @@
  * unmodified and in its entirety in all distributions of the software,
  * modified or unmodified, in source code or in binary form.
  *
+ * Copyright (c) 2020 Inria
  * Copyright (c) 2003-2005 The Regents of The University of Michigan
  * All rights reserved.
  *
@@ -36,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Andreas Sandberg
  */
 
 /** @file
@@ -56,42 +54,45 @@
 
 #include "base/printable.hh"
 #include "base/types.hh"
-#include "mem/cache/replacement_policies/base.hh"
+#include "mem/cache/tags/tagged_entry.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
+#include "sim/cur_tick.hh"
 
-/**
- * Cache block status bit assignments
- */
-enum CacheBlkStatusBits : unsigned {
-    /** valid, readable */
-    BlkValid =          0x01,
-    /** write permission */
-    BlkWritable =       0x02,
-    /** read permission (yes, block can be valid but not readable) */
-    BlkReadable =       0x04,
-    /** dirty (modified) */
-    BlkDirty =          0x08,
-    /** block was a hardware prefetch yet unaccessed*/
-    BlkHWPrefetched =   0x20,
-    /** block holds data from the secure memory space */
-    BlkSecure =         0x40,
-    /** block holds compressed data */
-    BlkCompressed =     0x80
-};
+namespace gem5
+{
 
 /**
  * A Basic Cache block.
- * Contains the tag, status, and a pointer to data.
+ * Contains information regarding its coherence, prefetching status, as
+ * well as a pointer to its data.
  */
-class CacheBlk : public ReplaceableEntry
+class CacheBlk : public TaggedEntry
 {
   public:
-    /** Task Id associated with this block */
-    uint32_t task_id;
+    /**
+     * Cache block's enum listing the supported coherence bits. The valid
+     * bit is not defined here because it is part of a TaggedEntry.
+     */
+    enum CoherenceBits : unsigned
+    {
+        /** write permission */
+        WritableBit =       0x02,
+        /**
+         * Read permission. Note that a block can be valid but not readable
+         * if there is an outstanding write upgrade miss.
+         */
+        ReadableBit =       0x04,
+        /** dirty (modified) */
+        DirtyBit =          0x08,
 
-    /** Data block tag value. */
-    Addr tag;
+        /**
+         * Helper enum value that includes all other bits. Whenever a new
+         * bits is added, this should be updated.
+         */
+        AllBits  =          0x0E,
+    };
+
     /**
      * Contains a copy of the data in this block for easy access. This is used
      * for efficient execution when the data could be actually stored in
@@ -101,36 +102,19 @@ class CacheBlk : public ReplaceableEntry
      */
     uint8_t *data;
 
-    /** block state: OR of CacheBlkStatusBit */
-    typedef unsigned State;
-
-    /** The current status of this block. @sa CacheBlockStatusBits */
-    State status;
-
     /**
      * Which curTick() will this block be accessible. Its value is only
      * meaningful if the block is valid.
      */
     Tick whenReady;
 
-    /** Number of references to this block since it was brought in. */
-    unsigned refCount;
-
-    /** holds the source requestor ID for this block. */
-    int srcMasterId;
-
-    /**
-     * Tick on which the block was inserted in the cache. Its value is only
-     * meaningful if the block is valid.
-     */
-    Tick tickInserted;
-
   protected:
     /**
      * Represents that the indicated thread context has a "lock" on
      * the block, in the LL/SC sense.
      */
-    class Lock {
+    class Lock
+    {
       public:
         ContextID contextId;     // locking context
         Addr lowAddr;      // low address of lock range
@@ -168,67 +152,93 @@ class CacheBlk : public ReplaceableEntry
     std::list<Lock> lockList;
 
   public:
-    CacheBlk() : data(nullptr), tickInserted(0)
+    CacheBlk() : TaggedEntry(), data(nullptr), _tickInserted(0)
     {
         invalidate();
     }
 
     CacheBlk(const CacheBlk&) = delete;
     CacheBlk& operator=(const CacheBlk&) = delete;
+    CacheBlk(const CacheBlk&&) = delete;
+    /**
+     * Move assignment operator.
+     * This should only be used to move an existing valid entry into an
+     * invalid one, not to create a new entry. In the end the valid entry
+     * will become invalid, and the invalid, valid. All location related
+     * variables will remain the same, that is, an entry cannot move its
+     * data, just its metadata contents.
+     */
+    virtual CacheBlk&
+    operator=(CacheBlk&& other)
+    {
+        // Copying an entry into a valid one would imply in skipping all
+        // replacement steps, so it cannot be allowed
+        assert(!isValid());
+        assert(other.isValid());
+
+        insert(other.getTag(), other.isSecure());
+
+        if (other.wasPrefetched()) {
+            setPrefetched();
+        }
+        setCoherenceBits(other.coherence);
+        setTaskId(other.getTaskId());
+        setWhenReady(curTick());
+        setRefCount(other.getRefCount());
+        setSrcRequestorId(other.getSrcRequestorId());
+        std::swap(lockList, other.lockList);
+
+        other.invalidate();
+
+        return *this;
+    }
     virtual ~CacheBlk() {};
-
-    /**
-     * Checks the write permissions of this block.
-     * @return True if the block is writable.
-     */
-    bool isWritable() const
-    {
-        const State needed_bits = BlkWritable | BlkValid;
-        return (status & needed_bits) == needed_bits;
-    }
-
-    /**
-     * Checks the read permissions of this block.  Note that a block
-     * can be valid but not readable if there is an outstanding write
-     * upgrade miss.
-     * @return True if the block is readable.
-     */
-    bool isReadable() const
-    {
-        const State needed_bits = BlkReadable | BlkValid;
-        return (status & needed_bits) == needed_bits;
-    }
-
-    /**
-     * Checks that a block is valid.
-     * @return True if the block is valid.
-     */
-    bool isValid() const
-    {
-        return (status & BlkValid) != 0;
-    }
 
     /**
      * Invalidate the block and clear all state.
      */
-    virtual void invalidate()
+    virtual void invalidate() override
     {
-        tag = MaxAddr;
-        task_id = ContextSwitchTaskId::Unknown;
-        status = 0;
-        whenReady = MaxTick;
-        refCount = 0;
-        srcMasterId = Request::invldMasterId;
+        TaggedEntry::invalidate();
+
+        clearPrefetched();
+        clearCoherenceBits(AllBits);
+
+        setTaskId(context_switch_task_id::Unknown);
+        setWhenReady(MaxTick);
+        setRefCount(0);
+        setSrcRequestorId(Request::invldRequestorId);
         lockList.clear();
     }
 
     /**
-     * Check to see if a block has been written.
-     * @return True if the block is dirty.
+     * Sets the corresponding coherence bits.
+     *
+     * @param bits The coherence bits to be set.
      */
-    bool isDirty() const
+    void
+    setCoherenceBits(unsigned bits)
     {
-        return (status & BlkDirty) != 0;
+        assert(isValid());
+        coherence |= bits;
+    }
+
+    /**
+     * Clear the corresponding coherence bits.
+     *
+     * @param bits The coherence bits to be cleared.
+     */
+    void clearCoherenceBits(unsigned bits) { coherence &= ~bits; }
+
+    /**
+     * Checks the given coherence bits are set.
+     *
+     * @return True if the block is readable.
+     */
+    bool
+    isSet(unsigned bits) const
+    {
+        return isValid() && (coherence & bits);
     }
 
     /**
@@ -236,36 +246,16 @@ class CacheBlk : public ReplaceableEntry
      * be touched.
      * @return True if the block was a hardware prefetch, unaccesed.
      */
-    bool wasPrefetched() const
-    {
-        return (status & BlkHWPrefetched) != 0;
-    }
+    bool wasPrefetched() const { return _prefetched; }
 
     /**
-     * Check if this block holds data from the secure memory space.
-     * @return True if the block holds data from the secure memory space.
+     * Clear the prefetching bit. Either because it was recently used, or due
+     * to the block being invalidated.
      */
-    bool isSecure() const
-    {
-        return (status & BlkSecure) != 0;
-    }
+    void clearPrefetched() { _prefetched = false; }
 
-    /**
-     * Set valid bit.
-     */
-    virtual void setValid()
-    {
-        assert(!isValid());
-        status |= BlkValid;
-    }
-
-    /**
-     * Set secure bit.
-     */
-    virtual void setSecure()
-    {
-        status |= BlkSecure;
-    }
+    /** Marks this blocks as a recently prefetched block. */
+    void setPrefetched() { _prefetched = true; }
 
     /**
      * Get tick at which block's data will be available for access.
@@ -287,8 +277,32 @@ class CacheBlk : public ReplaceableEntry
      */
     void setWhenReady(const Tick tick)
     {
-        assert(tick >= tickInserted);
+        assert(tick >= _tickInserted);
         whenReady = tick;
+    }
+
+    /** Get the task id associated to this block. */
+    uint32_t getTaskId() const { return _taskId; }
+
+    /** Get the requestor id associated to this block. */
+    uint32_t getSrcRequestorId() const { return _srcRequestorId; }
+
+    /** Get the number of references to this block since insertion. */
+    unsigned getRefCount() const { return _refCount; }
+
+    /** Get the number of references to this block since insertion. */
+    void increaseRefCount() { _refCount++; }
+
+    /**
+     * Get the block's age, that is, the number of ticks since its insertion.
+     *
+     * @return The block's age.
+     */
+    Tick
+    getAge() const
+    {
+        assert(_tickInserted <= curTick());
+        return curTick() - _tickInserted;
     }
 
     /**
@@ -299,11 +313,12 @@ class CacheBlk : public ReplaceableEntry
      *
      * @param tag Block address tag.
      * @param is_secure Whether the block is in secure space or not.
-     * @param src_master_ID The source requestor ID.
+     * @param src_requestor_ID The source requestor ID.
      * @param task_ID The new task ID.
      */
-    virtual void insert(const Addr tag, const bool is_secure,
-                        const int src_master_ID, const uint32_t task_ID);
+    void insert(const Addr tag, const bool is_secure,
+        const int src_requestor_ID, const uint32_t task_ID);
+    using TaggedEntry::insert;
 
     /**
      * Track the fact that a local locked was issued to the
@@ -345,7 +360,8 @@ class CacheBlk : public ReplaceableEntry
      *
      * @return string with basic state information
      */
-    virtual std::string print() const
+    std::string
+    print() const override
     {
         /**
          *  state       M   O   E   S   I
@@ -362,7 +378,7 @@ class CacheBlk : public ReplaceableEntry
          *
          * Note that only one cache ever has a block in Modified or
          * Owned state, i.e., only one cache owns the block, or
-         * equivalently has the BlkDirty bit set. However, multiple
+         * equivalently has the DirtyBit bit set. However, multiple
          * caches on the same path to memory can have a block in the
          * Exclusive state (despite the name). Exclusive means this
          * cache has the only copy at this level of the hierarchy,
@@ -371,7 +387,8 @@ class CacheBlk : public ReplaceableEntry
          * this branch of the hierarchy, and no caches at or above
          * this level on any other branch have copies either.
          **/
-        unsigned state = isWritable() << 2 | isDirty() << 1 | isValid();
+        unsigned state =
+            isSet(WritableBit) << 2 | isSet(DirtyBit) << 1 | isValid();
         char s = '?';
         switch (state) {
           case 0b111: s = 'M'; break;
@@ -381,10 +398,10 @@ class CacheBlk : public ReplaceableEntry
           case 0b000: s = 'I'; break;
           default:    s = 'T'; break; // @TODO add other types
         }
-        return csprintf("state: %x (%c) valid: %d writable: %d readable: %d "
-                        "dirty: %d | tag: %#x set: %#x way: %#x", status, s,
-                        isValid(), isWritable(), isReadable(), isDirty(), tag,
-                        getSet(), getWay());
+        return csprintf("state: %x (%c) writable: %d readable: %d "
+            "dirty: %d prefetched: %d | %s", coherence, s,
+            isSet(WritableBit), isSet(ReadableBit), isSet(DirtyBit),
+            wasPrefetched(), TaggedEntry::print());
     }
 
     /**
@@ -433,6 +450,46 @@ class CacheBlk : public ReplaceableEntry
             return true;
         }
     }
+
+  protected:
+    /** The current coherence status of this block. @sa CoherenceBits */
+    unsigned coherence;
+
+    // The following setters have been marked as protected because their
+    // respective variables should only be modified at 2 moments:
+    // invalidation and insertion. Because of that, they shall only be
+    // called by the functions that perform those actions.
+
+    /** Set the task id value. */
+    void setTaskId(const uint32_t task_id) { _taskId = task_id; }
+
+    /** Set the source requestor id. */
+    void setSrcRequestorId(const uint32_t id) { _srcRequestorId = id; }
+
+    /** Set the number of references to this block since insertion. */
+    void setRefCount(const unsigned count) { _refCount = count; }
+
+    /** Set the current tick as this block's insertion tick. */
+    void setTickInserted() { _tickInserted = curTick(); }
+
+  private:
+    /** Task Id associated with this block */
+    uint32_t _taskId;
+
+    /** holds the source requestor ID for this block. */
+    int _srcRequestorId;
+
+    /** Number of references to this block since it was brought in. */
+    unsigned _refCount;
+
+    /**
+     * Tick on which the block was inserted in the cache. Its value is only
+     * meaningful if the block is valid.
+     */
+    Tick _tickInserted;
+
+    /** Whether this block is an unaccessed hardware prefetch. */
+    bool _prefetched;
 };
 
 /**
@@ -470,22 +527,11 @@ class TempCacheBlk final : public CacheBlk
         _addr = MaxAddr;
     }
 
-    void insert(const Addr addr, const bool is_secure,
-                const int src_master_ID=0, const uint32_t task_ID=0) override
+    void
+    insert(const Addr addr, const bool is_secure) override
     {
-        // Make sure that the block has been properly invalidated
-        assert(status == 0);
-
-        // Set block address
+        CacheBlk::insert(addr, is_secure);
         _addr = addr;
-
-        // Set secure state
-        if (is_secure) {
-            setSecure();
-        }
-
-        // Validate block
-        setValid();
     }
 
     /**
@@ -514,5 +560,7 @@ class CacheBlkPrintWrapper : public Printable
     void print(std::ostream &o, int verbosity = 0,
                const std::string &prefix = "") const;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_CACHE_BLK_HH__

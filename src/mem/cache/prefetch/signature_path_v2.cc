@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
 #include "mem/cache/prefetch/signature_path_v2.hh"
@@ -36,19 +34,25 @@
 #include "mem/cache/prefetch/associative_set_impl.hh"
 #include "params/SignaturePathPrefetcherV2.hh"
 
-SignaturePathPrefetcherV2::SignaturePathPrefetcherV2(
-    const SignaturePathPrefetcherV2Params *p)
-    : SignaturePathPrefetcher(p),
-      globalHistoryRegister(p->global_history_register_entries,
-                            p->global_history_register_entries,
-                            p->global_history_register_indexing_policy,
-                            p->global_history_register_replacement_policy,
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+SignaturePathV2::SignaturePathV2(const SignaturePathPrefetcherV2Params &p)
+    : SignaturePath(p),
+      globalHistoryRegister(p.global_history_register_entries,
+                            p.global_history_register_entries,
+                            p.global_history_register_indexing_policy,
+                            p.global_history_register_replacement_policy,
                             GlobalHistoryEntry())
 {
 }
 
 void
-SignaturePathPrefetcherV2::handleSignatureTableMiss(stride_t current_block,
+SignaturePathV2::handleSignatureTableMiss(stride_t current_block,
     signature_t &new_signature, double &new_conf, stride_t &new_stride)
 {
     bool found = false;
@@ -76,7 +80,7 @@ SignaturePathPrefetcherV2::handleSignatureTableMiss(stride_t current_block,
 }
 
 double
-SignaturePathPrefetcherV2::calculateLookaheadConfidence(
+SignaturePathV2::calculateLookaheadConfidence(
         PatternEntry const &sig, PatternStrideEntry const &lookahead) const
 {
     if (sig.counter == 0) return 0.0;
@@ -85,7 +89,7 @@ SignaturePathPrefetcherV2::calculateLookaheadConfidence(
 }
 
 double
-SignaturePathPrefetcherV2::calculatePrefetchConfidence(PatternEntry const &sig,
+SignaturePathV2::calculatePrefetchConfidence(PatternEntry const &sig,
         PatternStrideEntry const &entry) const
 {
     if (sig.counter == 0) return 0.0;
@@ -93,7 +97,7 @@ SignaturePathPrefetcherV2::calculatePrefetchConfidence(PatternEntry const &sig,
 }
 
 void
-SignaturePathPrefetcherV2::increasePatternEntryCounter(
+SignaturePathV2::increasePatternEntryCounter(
         PatternEntry &pattern_entry, PatternStrideEntry &pstride_entry)
 {
     if (pattern_entry.counter.isSaturated()) {
@@ -113,7 +117,7 @@ SignaturePathPrefetcherV2::increasePatternEntryCounter(
 }
 
 void
-SignaturePathPrefetcherV2::handlePageCrossingLookahead(signature_t signature,
+SignaturePathV2::handlePageCrossingLookahead(signature_t signature,
             stride_t last_offset, stride_t delta, double path_confidence)
 {
     // Always use the replacement policy to assign new entries, as all
@@ -129,8 +133,5 @@ SignaturePathPrefetcherV2::handlePageCrossingLookahead(signature_t signature,
     gh_entry->confidence = path_confidence;
 }
 
-SignaturePathPrefetcherV2*
-SignaturePathPrefetcherV2Params::create()
-{
-    return new SignaturePathPrefetcherV2(this);
-}
+} // namespace prefetch
+} // namespace gem5

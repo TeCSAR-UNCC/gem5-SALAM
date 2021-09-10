@@ -1,6 +1,6 @@
 # -*- mode:python -*-
 #
-# Copyright (c) 2018 ARM Limited
+# Copyright (c) 2018-2020 ARM Limited
 # All rights reserved
 #
 # The license below extends only to copyright in the software and shall
@@ -37,8 +37,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 Import('*')
 
@@ -48,10 +46,13 @@ Source('comm_monitor.cc')
 SimObject('AbstractMemory.py')
 SimObject('AddrMapper.py')
 SimObject('Bridge.py')
-SimObject('DRAMCtrl.py')
+SimObject('MemCtrl.py')
+SimObject('MemInterface.py')
+SimObject('DRAMInterface.py')
+SimObject('NVMInterface.py')
 SimObject('ExternalMaster.py')
 SimObject('ExternalSlave.py')
-SimObject('MemObject.py')
+SimObject('CfiMemory.py')
 SimObject('SimpleMemory.py')
 SimObject('XBar.py')
 SimObject('HMCController.py')
@@ -62,28 +63,31 @@ Source('abstract_mem.cc')
 Source('addr_mapper.cc')
 Source('bridge.cc')
 Source('coherent_xbar.cc')
+Source('cfi_mem.cc')
 Source('drampower.cc')
-Source('dram_ctrl.cc')
 Source('external_master.cc')
 Source('external_slave.cc')
+Source('mem_ctrl.cc')
+Source('mem_interface.cc')
 Source('noncoherent_xbar.cc')
 Source('packet.cc')
 Source('port.cc')
 Source('packet_queue.cc')
 Source('port_proxy.cc')
 Source('physical.cc')
-Source('secure_port_proxy.cc')
 Source('simple_mem.cc')
 Source('snoop_filter.cc')
 Source('stack_dist_calc.cc')
+Source('token_port.cc')
 Source('tport.cc')
 Source('xbar.cc')
 Source('hmc_controller.cc')
+Source('htm.cc')
 Source('serial_link.cc')
 Source('mem_delay.cc')
 
 if env['TARGET_ISA'] != 'null':
-    Source('fs_translating_port_proxy.cc')
+    Source('translating_port_proxy.cc')
     Source('se_translating_port_proxy.cc')
     Source('page_table.cc')
 
@@ -92,6 +96,11 @@ if env['HAVE_DRAMSIM']:
     Source('dramsim2_wrapper.cc')
     Source('dramsim2.cc')
 
+if env['HAVE_DRAMSIM3']:
+    SimObject('DRAMsim3.py')
+    Source('dramsim3_wrapper.cc')
+    Source('dramsim3.cc')
+
 SimObject('MemChecker.py')
 Source('mem_checker.cc')
 Source('mem_checker_monitor.cc')
@@ -99,6 +108,7 @@ Source('mem_checker_monitor.cc')
 DebugFlag('AddrRanges')
 DebugFlag('BaseXBar')
 DebugFlag('CoherentXBar')
+DebugFlag('CFI')
 DebugFlag('NoncoherentXBar')
 DebugFlag('SnoopFilter')
 CompoundFlag('XBar', ['BaseXBar', 'CoherentXBar', 'NoncoherentXBar',
@@ -109,15 +119,20 @@ DebugFlag('CommMonitor')
 DebugFlag('DRAM')
 DebugFlag('DRAMPower')
 DebugFlag('DRAMState')
+DebugFlag('NVM')
 DebugFlag('ExternalPort')
+DebugFlag('HtmMem', 'Hardware Transactional Memory (Mem side)')
 DebugFlag('LLSC')
+DebugFlag('MemCtrl')
 DebugFlag('MMU')
 DebugFlag('MemoryAccess')
 DebugFlag('PacketQueue')
 DebugFlag('StackDist')
 DebugFlag("DRAMSim2")
+DebugFlag("DRAMsim3")
 DebugFlag('HMCController')
 DebugFlag('SerialLink')
+DebugFlag('TokenPort')
 
 DebugFlag("MemChecker")
 DebugFlag("MemCheckerMonitor")

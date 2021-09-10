@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -34,18 +32,12 @@
 
 #include "dev/sparc/t1000.hh"
 
-#include <deque>
-#include <string>
-#include <vector>
+#include "base/logging.hh"
 
-#include "cpu/intr_control.hh"
-#include "sim/system.hh"
+namespace gem5
+{
 
-using namespace std;
-
-T1000::T1000(const Params *p)
-    : Platform(p), system(p->system)
-{}
+T1000::T1000(const Params &p) : Platform(p) {}
 
 void
 T1000::postConsoleInt()
@@ -73,37 +65,4 @@ T1000::clearPciInt(int line)
     panic("Need implementation\n");
 }
 
-Addr
-T1000::pciToDma(Addr pciAddr) const
-{
-    panic("Need implementation\n");
-    M5_DUMMY_RETURN
-}
-
-
-Addr
-T1000::calcPciConfigAddr(int bus, int dev, int func)
-{
-    panic("Need implementation\n");
-    M5_DUMMY_RETURN
-}
-
-Addr
-T1000::calcPciIOAddr(Addr addr)
-{
-    panic("Need implementation\n");
-    M5_DUMMY_RETURN
-}
-
-Addr
-T1000::calcPciMemAddr(Addr addr)
-{
-    panic("Need implementation\n");
-    M5_DUMMY_RETURN
-}
-
-T1000 *
-T1000Params::create()
-{
-    return new T1000(this);
-}
+} // namespace gem5

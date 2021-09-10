@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Thomas Grass
- *          Andreas Hansson
- *          Sascha Bischoff
- *          Neha Agarwal
  */
 
 #include "cpu/testers/traffic_gen/idle_gen.hh"
@@ -47,6 +42,9 @@
 #include "base/random.hh"
 #include "base/trace.hh"
 #include "debug/TrafficGen.hh"
+
+namespace gem5
+{
 
 void
 IdleGen::enter() { }
@@ -63,3 +61,4 @@ IdleGen::nextPacketTick(bool elastic, Tick delay) const
         return MaxTick;
 }
 
+} // namespace gem5

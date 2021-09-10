@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: William Wang
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -43,6 +41,7 @@ from m5.objects.Graphics import *
 class VncInput(SimObject):
     type = 'VncInput'
     cxx_header = "base/vnc/vncinput.hh"
+    cxx_class = 'gem5::VncInput'
     frame_capture = Param.Bool(False, "capture changed frames to files")
     img_format = Param.ImageFormat(
         "Auto", "Format of the dumped Framebuffer"
@@ -51,5 +50,6 @@ class VncInput(SimObject):
 class VncServer(VncInput):
     type = 'VncServer'
     cxx_header = "base/vnc/vncserver.hh"
+    cxx_class = 'gem5::VncServer'
     port = Param.TcpPort(5900, "listen port")
     number = Param.Int(0, "vnc client number")

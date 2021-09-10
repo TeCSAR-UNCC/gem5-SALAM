@@ -33,15 +33,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "sim/stat_register.hh"
 
 #include "base/statistics.hh"
 
-namespace Stats
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Stats, statistics);
+namespace statistics
 {
 
 extern void pythonDump();
@@ -52,4 +54,5 @@ void registerPythonStatsHandlers()
     registerHandlers(pythonReset, pythonDump);
 }
 
-} // namespace Stats
+} // namespace statistics
+} // namespace gem5

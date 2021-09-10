@@ -23,14 +23,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __MEM_RUBY_NETWORK_DUMMY_PORT_HH__
 #define __MEM_RUBY_NETWORK_DUMMY_PORT_HH__
 
 #include "mem/port.hh"
+
+namespace gem5
+{
+
+namespace ruby
+{
 
 class RubyDummyPort : public Port
 {
@@ -55,5 +59,8 @@ class RubyDummyPort : public Port
         return dummy;
     }
 };
+
+} // namespace ruby
+} // namespace gem5
 
 #endif //__MEM_RUBY_NETWORK_DUMMY_PORT_HH__

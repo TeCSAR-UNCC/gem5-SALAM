@@ -33,15 +33,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __CPU_SIMPLE_NONCACHING_HH__
 #define __CPU_SIMPLE_NONCACHING_HH__
 
+#include "base/addr_range_map.hh"
 #include "cpu/simple/atomic.hh"
+#include "mem/backdoor.hh"
 #include "params/NonCachingSimpleCPU.hh"
+
+namespace gem5
+{
 
 /**
  * The NonCachingSimpleCPU is an AtomicSimpleCPU using the
@@ -50,12 +53,17 @@
 class NonCachingSimpleCPU : public AtomicSimpleCPU
 {
   public:
-    NonCachingSimpleCPU(NonCachingSimpleCPUParams *p);
+    NonCachingSimpleCPU(const NonCachingSimpleCPUParams &p);
 
     void verifyMemoryMode() const override;
 
   protected:
-    Tick sendPacket(MasterPort &port, const PacketPtr &pkt) override;
+    AddrRangeMap<MemBackdoorPtr, 1> memBackdoors;
+
+    Tick sendPacket(RequestPort &port, const PacketPtr &pkt) override;
+    Tick fetchInstMem() override;
 };
+
+} // namespace gem5
 
 #endif // __CPU_SIMPLE_NONCACHING_HH__

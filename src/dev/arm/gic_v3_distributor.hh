@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 ARM Limited
+ * Copyright (c) 2019-2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jairo Balart
  */
 
 #ifndef __DEV_ARM_GICV3_DISTRIBUTOR_H__
@@ -46,6 +44,9 @@
 #include "base/addr_range.hh"
 #include "dev/arm/gic_v3.hh"
 #include "sim/serialize.hh"
+
+namespace gem5
+{
 
 class Gicv3Distributor : public Serializable
 {
@@ -60,13 +61,16 @@ class Gicv3Distributor : public Serializable
     Gicv3 * gic;
     const uint32_t itLines;
 
-    enum {
+    enum
+    {
         // Control Register
         GICD_CTLR  = 0x0000,
         // Interrupt Controller Type Register
         GICD_TYPER = 0x0004,
         // Implementer Identification Register
         GICD_IIDR = 0x0008,
+        // Interrupt Controller Type Register 2
+        GICD_TYPER2 = 0x000C,
         // Error Reporting Status Register
         GICD_STATUSR = 0x0010,
         // Set Non-secure SPI Pending Register
@@ -153,6 +157,7 @@ class Gicv3Distributor : public Serializable
     std::vector <uint8_t> irqGroup;
     std::vector <bool> irqEnabled;
     std::vector <bool> irqPending;
+    std::vector <bool> irqPendingIspendr;
     std::vector <bool> irqActive;
     std::vector <uint8_t> irqPriority;
     std::vector <Gicv3::IntTriggerType> irqConfig;
@@ -224,6 +229,27 @@ class Gicv3Distributor : public Serializable
         }
     }
 
+    bool isLevelSensitive(uint32_t int_id) const
+    {
+        return irqConfig[int_id] == Gicv3::INT_LEVEL_SENSITIVE;
+    }
+
+    /**
+     * This helper is used to check if an interrupt should be treated as
+     * edge triggered in the following scenarios:
+     *
+     * a) While activating the interrupt
+     * b) While clearing an interrupt via ICPENDR
+     *
+     * In fact, in these two situations, a level sensitive interrupt
+     * which had been made pending via a write to ISPENDR, will be
+     * treated as it if was edge triggered.
+     */
+    bool treatAsEdgeTriggered(uint32_t int_id) const
+    {
+        return !isLevelSensitive(int_id) || irqPendingIspendr[int_id];
+    }
+
     inline bool nsAccessToSecInt(uint32_t int_id, bool is_secure_access) const
     {
         return !DS && !is_secure_access && getIntGroup(int_id) != Gicv3::G1NS;
@@ -238,13 +264,16 @@ class Gicv3Distributor : public Serializable
 
     Gicv3Distributor(Gicv3 * gic, uint32_t it_lines);
 
+    void sendInt(uint32_t int_id);
+    void clearInt(uint32_t int_id);
     void deassertSPI(uint32_t int_id);
     void clearIrqCpuInterface(uint32_t int_id);
     void init();
     uint64_t read(Addr addr, size_t size, bool is_secure_access);
-    void sendInt(uint32_t int_id);
     void write(Addr addr, uint64_t data, size_t size,
                bool is_secure_access);
 };
+
+} // namespace gem5
 
 #endif //__DEV_ARM_GICV3_DISTRIBUTOR_H__

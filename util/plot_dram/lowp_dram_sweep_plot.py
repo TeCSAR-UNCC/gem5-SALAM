@@ -34,8 +34,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Radhika Jagtap
 
 import PlotPowerStates as plotter
 import argparse
@@ -83,11 +81,11 @@ def main():
         # place tex and pdf files in outdir
         os.chdir(args.outdir)
         texfile_s = 'stacked_lowp_sweep.tex'
-        print "\t", texfile_s
+        print("\t", texfile_s)
         outfile = open(texfile_s, 'w')
 
         startDocText(outfile)
-        outfile.write("\\begin{figure} \n\centering\n")
+        outfile.write("\\begin{figure} \n\\centering\n")
         ## Time plots for all delay values
         for delay in delays:
             # Time
@@ -97,51 +95,51 @@ def main():
         outfile.write("\end{figure}\n")
 
         # Energy plots for all delay values
-        outfile.write("\\begin{figure} \n\centering\n")
+        outfile.write("\\begin{figure} \n\\centering\n")
         for delay in delays:
             # Energy
             filename = plotter.stateEnergyPlotName(str(delay) + '-')
             outfile.write(wrapForGraphic(filename, textwidth))
             outfile.write(getCaption(delay))
-        outfile.write("\end{figure}\n")
+        outfile.write("\\end{figure}\n")
 
         endDocText(outfile)
         outfile.close()
 
-        print "\n Generating pdf file"
-        print "*******************************"
-        print "\tpdflatex ", texfile_s
+        print("\n Generating pdf file")
+        print("*******************************")
+        print("\tpdflatex ", texfile_s)
         # Run pdflatex to generate to pdf
         call(["pdflatex", texfile_s])
         call(["open", texfile_s.split('.')[0] + '.pdf'])
 
 
 def getCaption(delay):
-    return ('\caption{' +
+    return ('\\caption{' +
             'itt delay = ' + str(delay) +
             '}\n')
 
 def wrapForGraphic(filename, width='1.0'):
     # \t is tab and needs to be escaped, therefore \\textwidth
-    return '\includegraphics[width=' + width + \
+    return '\\includegraphics[width=' + width + \
         '\\textwidth]{' + filename + '}\n'
 
 def startDocText(outfile):
 
-    start_stuff = '''
-\documentclass[a4paper,landscape,twocolumn]{article}
+    start_stuff = """
+\\documentclass[a4paper,landscape,twocolumn]{article}
 
-\usepackage{graphicx}
-\usepackage[margin=0.5cm]{geometry}
+\\usepackage{graphicx}
+\\usepackage[margin=0.5cm]{geometry}
 \\begin{document}
-'''
+"""
     outfile.write(start_stuff)
 
 def endDocText(outfile):
 
     end_stuff = '''
 
-\end{document}
+\\end{document}
 
 '''
     outfile.write(end_stuff)

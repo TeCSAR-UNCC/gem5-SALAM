@@ -33,90 +33,105 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/x86/insts/microop.hh"
 
 #include "arch/x86/regs/misc.hh"
 
+namespace gem5
+{
+
 namespace X86ISA
 {
 
-    bool X86MicroopBase::checkCondition(uint64_t flags, int condition) const
+bool
+X86MicroopBase::checkCondition(uint64_t flags, int condition) const
+{
+    CCFlagBits ccflags = flags;
+    switch(condition)
     {
-        CCFlagBits ccflags = flags;
-        switch(condition)
-        {
-          case ConditionTests::True:
-            return true;
-          case ConditionTests::ECF:
-            return ccflags.ecf;
-          case ConditionTests::EZF:
-            return ccflags.ezf;
-          case ConditionTests::SZnZF:
-            return !(!ccflags.ezf && ccflags.zf);
-          case ConditionTests::MSTRZ:
-            panic("This condition is not implemented!");
-          case ConditionTests::STRZ:
-            panic("This condition is not implemented!");
-          case ConditionTests::MSTRC:
-            panic("This condition is not implemented!");
-          case ConditionTests::STRZnEZF:
-            return !ccflags.ezf && ccflags.zf;
-                //And no interrupts or debug traps are waiting
-          case ConditionTests::OF:
-            return ccflags.of;
-          case ConditionTests::CF:
-            return ccflags.cf;
-          case ConditionTests::ZF:
-            return ccflags.zf;
-          case ConditionTests::CvZF:
-            return ccflags.cf | ccflags.zf;
-          case ConditionTests::SF:
-            return ccflags.sf;
-          case ConditionTests::PF:
-            return ccflags.pf;
-          case ConditionTests::SxOF:
-            return ccflags.sf ^ ccflags.of;
-          case ConditionTests::SxOvZF:
-            return (ccflags.sf ^ ccflags.of) | ccflags.zf;
-          case ConditionTests::False:
-            return false;
-          case ConditionTests::NotECF:
-            return !ccflags.ecf;
-          case ConditionTests::NotEZF:
-            return !ccflags.ezf;
-          case ConditionTests::NotSZnZF:
-            return !ccflags.ezf && ccflags.zf;
-          case ConditionTests::NotMSTRZ:
-            panic("This condition is not implemented!");
-          case ConditionTests::NotSTRZ:
-            panic("This condition is not implemented!");
-          case ConditionTests::NotMSTRC:
-            panic("This condition is not implemented!");
-          case ConditionTests::STRnZnEZF:
-            return !ccflags.ezf && !ccflags.zf;
-                //And no interrupts or debug traps are waiting
-          case ConditionTests::NotOF:
-            return !ccflags.of;
-          case ConditionTests::NotCF:
-            return !ccflags.cf;
-          case ConditionTests::NotZF:
-            return !ccflags.zf;
-          case ConditionTests::NotCvZF:
-            return !(ccflags.cf | ccflags.zf);
-          case ConditionTests::NotSF:
-            return !ccflags.sf;
-          case ConditionTests::NotPF:
-            return !ccflags.pf;
-          case ConditionTests::NotSxOF:
-            return !(ccflags.sf ^ ccflags.of);
-          case ConditionTests::NotSxOvZF:
-            return !((ccflags.sf ^ ccflags.of) | ccflags.zf);
-        }
-        panic("Unknown condition: %d\n", condition);
+      case condition_tests::True:
         return true;
+      case condition_tests::ECF:
+        return ccflags.ecf;
+      case condition_tests::EZF:
+        return ccflags.ezf;
+      case condition_tests::SZnZF:
+        return !(!ccflags.ezf && ccflags.zf);
+      case condition_tests::MSTRZ:
+        panic("This condition is not implemented!");
+      case condition_tests::STRZ:
+        panic("This condition is not implemented!");
+      case condition_tests::MSTRC:
+        panic("This condition is not implemented!");
+      case condition_tests::STRZnEZF:
+        return !ccflags.ezf && ccflags.zf;
+            //And no interrupts or debug traps are waiting
+      case condition_tests::OF:
+        return ccflags.of;
+      case condition_tests::CF:
+        return ccflags.cf;
+      case condition_tests::ZF:
+        return ccflags.zf;
+      case condition_tests::CvZF:
+        return ccflags.cf | ccflags.zf;
+      case condition_tests::SF:
+        return ccflags.sf;
+      case condition_tests::PF:
+        return ccflags.pf;
+      case condition_tests::SxOF:
+        return ccflags.sf ^ ccflags.of;
+      case condition_tests::SxOvZF:
+        return (ccflags.sf ^ ccflags.of) | ccflags.zf;
+      case condition_tests::False:
+        return false;
+      case condition_tests::NotECF:
+        return !ccflags.ecf;
+      case condition_tests::NotEZF:
+        return !ccflags.ezf;
+      case condition_tests::NotSZnZF:
+        return !ccflags.ezf && ccflags.zf;
+      case condition_tests::NotMSTRZ:
+        panic("This condition is not implemented!");
+      case condition_tests::NotSTRZ:
+        panic("This condition is not implemented!");
+      case condition_tests::NotMSTRC:
+        panic("This condition is not implemented!");
+      case condition_tests::STRnZnEZF:
+        return !ccflags.ezf && !ccflags.zf;
+            //And no interrupts or debug traps are waiting
+      case condition_tests::NotOF:
+        return !ccflags.of;
+      case condition_tests::NotCF:
+        return !ccflags.cf;
+      case condition_tests::NotZF:
+        return !ccflags.zf;
+      case condition_tests::NotCvZF:
+        return !(ccflags.cf | ccflags.zf);
+      case condition_tests::NotSF:
+        return !ccflags.sf;
+      case condition_tests::NotPF:
+        return !ccflags.pf;
+      case condition_tests::NotSxOF:
+        return !(ccflags.sf ^ ccflags.of);
+      case condition_tests::NotSxOvZF:
+        return !((ccflags.sf ^ ccflags.of) | ccflags.zf);
     }
+    panic("Unknown condition: %d\n", condition);
+    return true;
 }
+
+PCState
+X86MicroopBase::branchTarget(const PCState &branchPC) const
+{
+    PCState pcs = branchPC;
+        DPRINTF(X86, "branchTarget PC info: %s, Immediate: %lx\n", pcs,
+                (int64_t)machInst.immediate);
+    pcs.npc(pcs.npc() + (int64_t)machInst.immediate);
+    pcs.uEnd();
+    return pcs;
+}
+
+} // namespace X86ISA
+} // namespace gem5

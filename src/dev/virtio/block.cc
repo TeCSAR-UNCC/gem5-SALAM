@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "dev/virtio/block.hh"
@@ -43,11 +41,14 @@
 #include "params/VirtIOBlock.hh"
 #include "sim/system.hh"
 
-VirtIOBlock::VirtIOBlock(Params *params)
+namespace gem5
+{
+
+VirtIOBlock::VirtIOBlock(const Params &params)
     : VirtIODeviceBase(params, ID_BLOCK, sizeof(Config), 0),
-      qRequests(params->system->physProxy, byteOrder,
-                params->queueSize, *this),
-      image(*params->image)
+      qRequests(params.system->physProxy, byteOrder,
+                params.queueSize, *this),
+      image(*params.image)
 {
     registerQueue(qRequests);
 
@@ -167,8 +168,4 @@ VirtIOBlock::RequestQueue::onNotifyDescriptor(VirtDescriptor *desc)
     parent.kick();
 }
 
-VirtIOBlock *
-VirtIOBlockParams::create()
-{
-    return new VirtIOBlock(this);
-}
+} // namespace gem5

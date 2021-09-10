@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -32,16 +30,19 @@ class DiskImage(SimObject):
     type = 'DiskImage'
     abstract = True
     cxx_header = "dev/storage/disk_image.hh"
+    cxx_class = 'gem5::DiskImage'
     image_file = Param.String("disk image file")
     read_only = Param.Bool(False, "read only image")
 
 class RawDiskImage(DiskImage):
     type = 'RawDiskImage'
     cxx_header = "dev/storage/disk_image.hh"
+    cxx_class = 'gem5::RawDiskImage'
 
 class CowDiskImage(DiskImage):
     type = 'CowDiskImage'
     cxx_header = "dev/storage/disk_image.hh"
+    cxx_class = 'gem5::CowDiskImage'
     child = Param.DiskImage(RawDiskImage(read_only=True),
                             "child image")
     table_size = Param.Int(65536, "initial table size")

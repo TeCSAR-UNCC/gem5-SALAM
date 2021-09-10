@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 /**
@@ -46,6 +44,9 @@
 #define __ARCH_ARM_TRACERS_TARMAC_RECORD_V8_HH__
 
 #include "tarmac_record.hh"
+
+namespace gem5
+{
 
 namespace Trace {
 
@@ -165,5 +166,6 @@ class TarmacTracerRecordV8 : public TarmacTracerRecord
 };
 
 } // namespace Trace
+} // namespace gem5
 
 #endif // __ARCH_ARM_TRACERS_TARMAC_RECORD_V8_HH__

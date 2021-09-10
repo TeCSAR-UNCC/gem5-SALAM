@@ -24,15 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __BASE_CONDCODE_HH__
 #define __BASE_CONDCODE_HH__
 
 #include "base/bitfield.hh"
-#include "base/trace.hh"
+
+namespace gem5
+{
 
 /**
  * Calculate the carry flag from an addition. This should work even when
@@ -77,10 +77,12 @@
  *   If we have a carry in, but no carry out:
  *     src1 and src2 can neither be 1. So the overall result bit is 1. Hence:
  *     ~1 + 0 + 0 => 0. We return false.
+ *
+ * @ingroup api_base_utils
  */
-inline
-bool
-findCarry(int width, uint64_t dest, uint64_t src1, uint64_t src2) {
+static inline bool
+findCarry(int width, uint64_t dest, uint64_t src1, uint64_t src2)
+{
     int shift = width - 1;
     return ((~(dest >> shift) & 1) +
             ((src1 >> shift) & 1) +
@@ -89,10 +91,12 @@ findCarry(int width, uint64_t dest, uint64_t src1, uint64_t src2) {
 
 /**
  * Calculate the overflow flag from an addition.
+ *
+ * @ingroup api_base_utils
  */
-inline
-bool
-findOverflow(int width, uint64_t dest, uint64_t src1, uint64_t src2) {
+static inline bool
+findOverflow(int width, uint64_t dest, uint64_t src1, uint64_t src2)
+{
     int shift = width - 1;
     return ((src1 ^ ~src2) & (src1 ^ dest)) & (1ULL << shift);
 }
@@ -112,10 +116,12 @@ findOverflow(int width, uint64_t dest, uint64_t src1, uint64_t src2) {
  *   If the intermediate is still one, then there is exactly one high bit
  *   which does not have a corresponding high bit. Therefore, the value must
  *   have odd parity, and we return 1 accordingly. Otherwise we return 0.
+ *
+ * @ingroup api_base_utils
  */
-inline
-bool
-findParity(int width, uint64_t dest) {
+static inline bool
+findParity(int width, uint64_t dest)
+{
     dest &= mask(width);
     dest ^= (dest >> 32);
     dest ^= (dest >> 16);
@@ -128,20 +134,26 @@ findParity(int width, uint64_t dest) {
 
 /**
  * Calculate the negative flag.
+ *
+ * @ingroup api_base_utils
  */
-inline
-bool
-findNegative(int width, uint64_t dest) {
-    return bits(dest, width - 1, width - 1);
+static inline bool
+findNegative(int width, uint64_t dest)
+{
+    return bits(dest, width - 1);
 }
 
 /**
  * Calculate the zero flag.
+ *
+ * @ingroup api_base_utils
  */
-inline
-bool
-findZero(int width, uint64_t dest) {
+static inline bool
+findZero(int width, uint64_t dest)
+{
     return !(dest & mask(width));
 }
+
+} // namespace gem5
 
 #endif // __BASE_CONDCODE_HH__

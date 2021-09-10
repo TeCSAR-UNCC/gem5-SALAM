@@ -34,8 +34,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Matt Horsnell
 
 // These currently all work on quad words, so some element/register
 // storage/extraction here is fixed as constants.
@@ -49,15 +47,14 @@ def template CryptoPredOpExecute {{
 
         const unsigned rCount = %(r_count)d;
 
-        union RegVect {
+        union RegVect
+        {
             uint32_t regs[rCount];
         };
 
-        if (%(predicate_test)s)
-        {
+        if (%(predicate_test)s) {
             %(code)s;
-            if (fault == NoFault)
-            {
+            if (fault == NoFault) {
                 %(op_wb)s;
             }
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 ARM Limited
+ * Copyright (c) 2018-2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,141 +33,165 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #include "arch/arm/tlbi_op.hh"
 
-#include "arch/arm/tlb.hh"
+#include "arch/arm/mmu.hh"
 #include "cpu/checker/cpu.hh"
+
+namespace gem5
+{
 
 namespace ArmISA {
 
 void
 TLBIALL::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushAllSecurity(secureLookup, targetEL);
-    getDTBPtr(tc)->flushAllSecurity(secureLookup, targetEL);
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+    inHost = (hcr.tge == 1 && hcr.e2h == 1);
+    el2Enabled = EL2Enabled(tc);
+    currentEL = currEL(tc);
+
+    getMMUPtr(tc)->flush(*this);
 
     // If CheckerCPU is connected, need to notify it of a flush
     CheckerCPU *checker = tc->getCheckerCpuPtr();
     if (checker) {
-        getITBPtr(checker)->flushAllSecurity(secureLookup,
-                                               targetEL);
-        getDTBPtr(checker)->flushAllSecurity(secureLookup,
-                                               targetEL);
+        getMMUPtr(checker)->flush(*this);
     }
 }
 
 void
 ITLBIALL::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushAllSecurity(secureLookup, targetEL);
+    el2Enabled = EL2Enabled(tc);
+    getMMUPtr(tc)->iflush(*this);
 }
 
 void
 DTLBIALL::operator()(ThreadContext* tc)
 {
-    getDTBPtr(tc)->flushAllSecurity(secureLookup, targetEL);
+    el2Enabled = EL2Enabled(tc);
+    getMMUPtr(tc)->dflush(*this);
+}
+
+void
+TLBIALLEL::operator()(ThreadContext* tc)
+{
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+    inHost = (hcr.tge == 1 && hcr.e2h == 1);
+    getMMUPtr(tc)->flush(*this);
+
+    // If CheckerCPU is connected, need to notify it of a flush
+    CheckerCPU *checker = tc->getCheckerCpuPtr();
+    if (checker) {
+        getMMUPtr(checker)->flush(*this);
+    }
+}
+
+void
+TLBIVMALL::operator()(ThreadContext* tc)
+{
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+    inHost = (hcr.tge == 1 && hcr.e2h == 1);
+
+    getMMUPtr(tc)->flush(*this);
+
+    // If CheckerCPU is connected, need to notify it of a flush
+    CheckerCPU *checker = tc->getCheckerCpuPtr();
+    if (checker) {
+        getMMUPtr(checker)->flush(*this);
+    }
 }
 
 void
 TLBIASID::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushAsid(asid, secureLookup, targetEL);
-    getDTBPtr(tc)->flushAsid(asid, secureLookup, targetEL);
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+    inHost = (hcr.tge == 1 && hcr.e2h == 1);
+    el2Enabled = EL2Enabled(tc);
+
+    getMMUPtr(tc)->flushStage1(*this);
     CheckerCPU *checker = tc->getCheckerCpuPtr();
     if (checker) {
-        getITBPtr(checker)->flushAsid(asid, secureLookup, targetEL);
-        getDTBPtr(checker)->flushAsid(asid, secureLookup, targetEL);
+        getMMUPtr(checker)->flushStage1(*this);
     }
 }
 
 void
 ITLBIASID::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushAsid(asid, secureLookup, targetEL);
+    el2Enabled = EL2Enabled(tc);
+    getMMUPtr(tc)->iflush(*this);
 }
 
 void
 DTLBIASID::operator()(ThreadContext* tc)
 {
-    getDTBPtr(tc)->flushAsid(asid, secureLookup, targetEL);
+    el2Enabled = EL2Enabled(tc);
+    getMMUPtr(tc)->dflush(*this);
 }
 
 void
 TLBIALLN::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushAllNs(targetEL);
-    getDTBPtr(tc)->flushAllNs(targetEL);
+    getMMUPtr(tc)->flush(*this);
 
     CheckerCPU *checker = tc->getCheckerCpuPtr();
     if (checker) {
-        getITBPtr(checker)->flushAllNs(targetEL);
-        getDTBPtr(checker)->flushAllNs(targetEL);
+        getMMUPtr(checker)->flush(*this);
     }
 }
 
 void
 TLBIMVAA::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushMva(addr, secureLookup, targetEL);
-    getDTBPtr(tc)->flushMva(addr, secureLookup, targetEL);
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+    inHost = (hcr.tge == 1 && hcr.e2h == 1);
+    getMMUPtr(tc)->flushStage1(*this);
 
     CheckerCPU *checker = tc->getCheckerCpuPtr();
     if (checker) {
-        getITBPtr(checker)->flushMva(addr, secureLookup, targetEL);
-        getDTBPtr(checker)->flushMva(addr, secureLookup, targetEL);
+        getMMUPtr(checker)->flushStage1(*this);
     }
 }
 
 void
 TLBIMVA::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushMvaAsid(addr, asid,
-                                  secureLookup, targetEL);
-    getDTBPtr(tc)->flushMvaAsid(addr, asid,
-                                  secureLookup, targetEL);
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+    inHost = (hcr.tge == 1 && hcr.e2h == 1);
+    getMMUPtr(tc)->flushStage1(*this);
 
     CheckerCPU *checker = tc->getCheckerCpuPtr();
     if (checker) {
-        getITBPtr(checker)->flushMvaAsid(
-            addr, asid, secureLookup, targetEL);
-        getDTBPtr(checker)->flushMvaAsid(
-            addr, asid, secureLookup, targetEL);
+        getMMUPtr(checker)->flushStage1(*this);
     }
 }
 
 void
 ITLBIMVA::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushMvaAsid(
-        addr, asid, secureLookup, targetEL);
+    getMMUPtr(tc)->iflush(*this);
 }
 
 void
 DTLBIMVA::operator()(ThreadContext* tc)
 {
-    getDTBPtr(tc)->flushMvaAsid(
-        addr, asid, secureLookup, targetEL);
+    getMMUPtr(tc)->dflush(*this);
 }
 
 void
 TLBIIPA::operator()(ThreadContext* tc)
 {
-    getITBPtr(tc)->flushIpaVmid(addr,
-        secureLookup, targetEL);
-    getDTBPtr(tc)->flushIpaVmid(addr,
-        secureLookup, targetEL);
+    getMMUPtr(tc)->flushStage2(makeStage2());
 
     CheckerCPU *checker = tc->getCheckerCpuPtr();
     if (checker) {
-        getITBPtr(checker)->flushIpaVmid(addr,
-            secureLookup, targetEL);
-        getDTBPtr(checker)->flushIpaVmid(addr,
-            secureLookup, targetEL);
+        getMMUPtr(checker)->flushStage2(makeStage2());
     }
 }
 
 } // namespace ArmISA
+} // namespace gem5

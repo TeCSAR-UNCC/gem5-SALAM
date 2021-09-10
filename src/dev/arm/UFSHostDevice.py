@@ -32,9 +32,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Rene de Jong
-#
+
 import sys
 from m5.params import *
 from m5.proxy import *
@@ -44,7 +42,8 @@ from m5.objects.AbstractNVM import *
 class UFSHostDevice(DmaDevice):
     type = 'UFSHostDevice'
     cxx_header = "dev/arm/ufs_device.hh"
-    pio_addr = Param.Addr("Address for SCSI configuration slave interface")
+    cxx_class = 'gem5::UFSHostDevice'
+    pio_addr = Param.Addr("Address for SCSI configuration responder interface")
     pio_latency = Param.Latency("10ns", "Time between action and write/read \
        result by AMBA DMA Device")
     gic = Param.BaseGic(Parent.any, "Gic to use for interrupting")

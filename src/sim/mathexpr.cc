@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 ARM Limited
+ * Copyright (c) 2016, 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #include "sim/mathexpr.hh"
@@ -45,6 +43,9 @@
 #include <string>
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 MathExpr::MathExpr(std::string expr)
  : ops(
@@ -176,3 +177,18 @@ MathExpr::toStr(Node *n, std::string prefix) const {
     return ret;
 }
 
+void
+MathExpr::getVariables(const Node *n,
+                       std::vector<std::string> &variables) const
+{
+    if (!n || n->op == sValue || n->op == nInvalid) {
+        return;
+    } else if (n->op == sVariable) {
+        variables.push_back(n->variable);
+    } else {
+        getVariables(n->l, variables);
+        getVariables(n->r, variables);
+    }
+}
+
+} // namespace gem5

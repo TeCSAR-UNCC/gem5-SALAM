@@ -1,16 +1,54 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3
+#
+# Copyright 2020 Google, Inc.
+#
+# Copyright (c) 2020 ARM Limited
+# All rights reserved
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met: redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer;
+# redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution;
+# neither the name of the copyright holders nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #
 # gem5img.py
 # Script for managing a gem5 disk image.
 #
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 import os
 from os import environ as env
 import string
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 from sys import exit, argv
-
+import re
 
 # Some constants.
 MaxLBACylinders = 16383
@@ -31,7 +69,7 @@ debug = False
 def chsFromSize(sizeInBlocks):
     if sizeInBlocks >= MaxLBABlocks:
         sizeInMBs = (sizeInBlocks * BlockSize) / MB
-        print '%d MB is too big for LBA, truncating file.' % sizeInMBs
+        print('%d MB is too big for LBA, truncating file.' % sizeInMBs)
         return (MaxLBACylinders, MaxLBAHeads, MaxLBASectors)
 
     sectors = sizeInBlocks
@@ -53,14 +91,14 @@ def needSudo():
     if not hasattr(needSudo, 'notRoot'):
         needSudo.notRoot = (os.geteuid() != 0)
         if needSudo.notRoot:
-            print 'You are not root. Using sudo.'
+            print('You are not root. Using sudo.')
     return needSudo.notRoot
 
 # Run an external command.
 def runCommand(command, inputVal=''):
-    print "%>", ' '.join(command)
+    print("%>", ' '.join(command))
     proc = Popen(command, stdin=PIPE)
-    proc.communicate(inputVal)
+    proc.communicate(inputVal.encode())
     return proc.returncode
 
 # Run an external command and capture its output. This is intended to be
@@ -68,11 +106,11 @@ def runCommand(command, inputVal=''):
 def getOutput(command, inputVal=''):
     global debug
     if debug:
-        print "%>", ' '.join(command)
+        print("%>", ' '.join(command))
     proc = Popen(command, stderr=STDOUT,
                  stdin=PIPE, stdout=PIPE)
     (out, err) = proc.communicate(inputVal)
-    return (out, proc.returncode)
+    return (out.decode(), proc.returncode)
 
 # Run a command as root, using sudo if necessary.
 def runPriv(command, inputVal=''):
@@ -94,7 +132,7 @@ def findProg(program, cleanupDev=None):
         if cleanupDev:
             cleanupDev.destroy()
         exit("Unable to find program %s, check your PATH variable." % program)
-    return string.strip(out)
+    return out.strip()
 
 class LoopbackDevice(object):
     def __init__(self, devFile=None):
@@ -106,9 +144,9 @@ class LoopbackDevice(object):
         assert not self.devFile
         (out, returncode) = privOutput([findProg('losetup'), '-f'])
         if returncode != 0:
-            print out
+            print(out)
             return returncode
-        self.devFile = string.strip(out)
+        self.devFile = out.strip()
         command = [findProg('losetup'), self.devFile, fileName]
         if offset:
             off = findPartOffset(self.devFile, fileName, 0)
@@ -131,18 +169,33 @@ def findPartOffset(devFile, fileName, partition):
     command = [findProg('sfdisk'), '-d', dev.devFile]
     (out, returncode) = privOutput(command)
     if returncode != 0:
-        print out
+        print(out)
         exit(returncode)
+
+    # Parse each line of the sfdisk output looking for the first
+    # partition description.
+    SFDISK_PARTITION_INFO_RE = re.compile(
+        r"^\s*"                        # Start of line
+        r"(?P<name>\S+)"               # Name
+        r"\s*:\s*"                     # Separator
+        r"start=\s*(?P<start>\d+),\s*" # Partition start record
+        r"size=\s*(?P<size>\d+),\s*"   # Partition size record
+        r"type=(?P<type>\d+)"          # Partition type record
+        r"\s*$"                        # End of line
+    )
     lines = out.splitlines()
-    # Make sure the first few lines of the output look like what we expect.
-    assert(lines[0][0] == '#')
-    assert(lines[1] == 'unit: sectors')
-    assert(lines[2] == '')
-    # This line has information about the first partition.
-    chunks = lines[3].split()
-    # The fourth chunk is the offset of the partition in sectors followed by
-    # a comma. We drop the comma and convert that to an integer.
-    sectors = string.atoi(chunks[3][:-1])
+    for line in lines :
+        match = SFDISK_PARTITION_INFO_RE.match(line)
+        if match:
+            sectors = int(match.group("start"))
+            break
+    else:
+        # No partition description was found
+        print("No partition description was found in sfdisk output:")
+        print("\n".join("  {}".format(line.rstrip()) for line in lines))
+        print("Could not determine size of first partition.")
+        exit(1)
+
     # Free the loopback device and return an answer.
     dev.destroy()
     return sectors * BlockSize
@@ -150,13 +203,16 @@ def findPartOffset(devFile, fileName, partition):
 def mountPointToDev(mountPoint):
     (mountTable, returncode) = getOutput([findProg('mount')])
     if returncode != 0:
-        print mountTable
+        print(mountTable)
         exit(returncode)
     mountTable = mountTable.splitlines()
     for line in mountTable:
         chunks = line.split()
-        if os.path.samefile(chunks[2], mountPoint):
-            return LoopbackDevice(chunks[0])
+        try:
+            if os.path.samefile(chunks[2], mountPoint):
+                return LoopbackDevice(chunks[0])
+        except OSError:
+            continue
     return None
 
 
@@ -165,8 +221,8 @@ commands = {}
 commandOrder = []
 
 class Command(object):
-    def addOption(self, *args, **kargs):
-        self.parser.add_option(*args, **kargs)
+    def addArgument(self, *args, **kargs):
+        self.parser.add_argument(*args, **kargs)
 
     def __init__(self, name, description, posArgs):
         self.name = name
@@ -175,19 +231,21 @@ class Command(object):
         self.posArgs = posArgs
         commands[self.name] = self
         commandOrder.append(self.name)
-        usage = 'usage: %prog [options]'
+        usage = '%(prog)s [options]'
         posUsage = ''
         for posArg in posArgs:
             (argName, argDesc) = posArg
             usage += ' %s' % argName
             posUsage += '\n  %s: %s' % posArg
         usage += posUsage
-        self.parser = OptionParser(usage=usage, description=description)
-        self.addOption('-d', '--debug', dest='debug', action='store_true',
-                       help='Verbose output.')
+        self.parser = ArgumentParser(usage=usage, description=description)
+        self.addArgument('-d', '--debug', dest='debug', action='store_true',
+                         help='Verbose output.')
+        self.addArgument('pos', nargs='*')
 
     def parseArgs(self, argv):
-        (self.options, self.args) = self.parser.parse_args(argv[2:])
+        self.options = self.parser.parse_args(argv[2:])
+        self.args = self.options.pos
         if len(self.args) != len(self.posArgs):
             self.parser.error('Incorrect number of arguments')
         global debug
@@ -205,9 +263,9 @@ class Command(object):
 initCom = Command('init', 'Create an image with an empty file system.',
                   [('file', 'Name of the image file.'),
                    ('mb', 'Size of the file in MB.')])
-initCom.addOption('-t', '--type', dest='fstype', action='store',
-                  default='ext2',
-                  help='Type of file system to use. Appended to mkfs.')
+initCom.addArgument('-t', '--type', dest='fstype', action='store',
+                    default='ext2',
+                    help='Type of file system to use. Appended to mkfs.')
 
 # A command to mount the first partition in the image.
 mountCom = Command('mount', 'Mount the first partition in the disk image.',
@@ -217,7 +275,7 @@ mountCom = Command('mount', 'Mount the first partition in the disk image.',
 def mountComFunc(options, args):
     (path, mountPoint) = args
     if not os.path.isdir(mountPoint):
-        print "Mount point %s is not a directory." % mountPoint
+        print("Mount point %s is not a directory." % mountPoint)
 
     dev = LoopbackDevice()
     if dev.setup(path, offset=True) != 0:
@@ -230,18 +288,18 @@ def mountComFunc(options, args):
 mountCom.func = mountComFunc
 
 # A command to unmount the first partition in the image.
-umountCom = Command('umount', 'Unmount the first partition in the disk image.',
-                    [('mount point', 'What mount point to unmount.')])
+umountCom = Command('umount', 'Unmount the disk image mounted at mount_point.',
+                    [('mount_point', 'What mount point to unmount.')])
 
 def umountComFunc(options, args):
     (mountPoint,) = args
     if not os.path.isdir(mountPoint):
-        print "Mount point %s is not a directory." % mountPoint
+        print("Mount point %s is not a directory." % mountPoint)
         exit(1)
 
     dev = mountPointToDev(mountPoint)
     if not dev:
-        print "Unable to find mount information for %s." % mountPoint
+        print("Unable to find mount information for %s." % mountPoint)
 
     # Unmount the loopback device.
     if runPriv([findProg('umount'), mountPoint]) != 0:
@@ -267,11 +325,11 @@ def newImage(file, mb):
     # store to disk and which is defined to read as zero.
     fd = os.open(file, os.O_WRONLY | os.O_CREAT)
     os.lseek(fd, size - 1, os.SEEK_SET)
-    os.write(fd, '\0')
+    os.write(fd, b'\0')
 
 def newComFunc(options, args):
     (file, mb) = args
-    mb = string.atoi(mb)
+    mb = int(mb)
     newImage(file, mb)
 
 
@@ -282,12 +340,11 @@ partitionCom = Command('partition', 'Partition part of "init".',
                        [('file', 'Name of the image file.')])
 
 def partition(dev, cylinders, heads, sectors):
-    # Use fdisk to partition the device
-    comStr = '0,\n;\n;\n;\n'
-    return runPriv([findProg('sfdisk'), '--no-reread', '-D', \
-                   '-C', "%d" % cylinders, \
-                   '-H', "%d" % heads, \
-                   '-S', "%d" % sectors, \
+    # Use sfdisk to partition the device
+    # The specified options are intended to work with both new and old
+    # versions of sfdisk (see https://askubuntu.com/a/819614)
+    comStr = ';'
+    return runPriv([findProg('sfdisk'), '--no-reread', '-u', 'S', '-L', \
                    str(dev)], inputVal=comStr)
 
 def partitionComFunc(options, args):
@@ -310,9 +367,9 @@ partitionCom.func = partitionComFunc
 # A command to format the first partition in the image.
 formatCom = Command('format', 'Formatting part of "init".',
                     [('file', 'Name of the image file.')])
-formatCom.addOption('-t', '--type', dest='fstype', action='store',
-                    default='ext2',
-                    help='Type of file system to use. Appended to mkfs.')
+formatCom.addArgument('-t', '--type', dest='fstype', action='store',
+                      default='ext2',
+                      help='Type of file system to use. Appended to mkfs.')
 
 def formatImage(dev, fsType):
     return runPriv([findProg('mkfs.%s' % fsType, dev), str(dev)])
@@ -335,7 +392,7 @@ formatCom.func = formatComFunc
 
 def initComFunc(options, args):
     (path, mb) = args
-    mb = string.atoi(mb)
+    mb = int(mb)
     newImage(path, mb)
     dev = LoopbackDevice()
     if dev.setup(path) != 0:
@@ -357,14 +414,14 @@ initCom.func = initComFunc
 
 # Figure out what command was requested and execute it.
 if len(argv) < 2 or argv[1] not in commands:
-    print 'Usage: %s [command] <command arguments>'
-    print 'where [command] is one of '
+    print('Usage: %s [command] <command arguments>')
+    print('where [command] is one of ')
     for name in commandOrder:
         command = commands[name]
-        print '    %s: %s' % (command.name, command.description)
-    print 'Watch for orphaned loopback devices and delete them with'
-    print 'losetup -d. Mounted images will belong to root, so you may need'
-    print 'to use sudo to modify their contents.'
+        print('    %s: %s' % (command.name, command.description))
+    print('Watch for orphaned loopback devices and delete them with')
+    print('losetup -d. Mounted images will belong to root, so you may need')
+    print('to use sudo to modify their contents.')
     exit(1)
 
 command = commands[argv[1]]

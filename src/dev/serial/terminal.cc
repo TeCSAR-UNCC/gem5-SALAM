@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Ali Saidi
  */
 
 /* @file
@@ -76,8 +73,8 @@
 #include "dev/platform.hh"
 #include "dev/serial/uart.hh"
 
-using namespace std;
-
+namespace gem5
+{
 
 /*
  * Poll event for the listen socket
@@ -118,19 +115,19 @@ Terminal::DataEvent::process(int revent)
 /*
  * Terminal code
  */
-Terminal::Terminal(const Params *p)
+Terminal::Terminal(const Params &p)
     : SerialDevice(p), listenEvent(NULL), dataEvent(NULL),
-      number(p->number), data_fd(-1), txbuf(16384), rxbuf(16384),
+      number(p.number), data_fd(-1), txbuf(16384), rxbuf(16384),
       outfile(terminalDump(p))
 #if TRACING_ON == 1
       , linebuf(16384)
 #endif
 {
     if (outfile)
-        outfile->stream()->setf(ios::unitbuf);
+        outfile->stream()->setf(std::ios::unitbuf);
 
-    if (p->port)
-        listen(p->port);
+    if (p.port)
+        listen(p.port);
 }
 
 Terminal::~Terminal()
@@ -146,17 +143,17 @@ Terminal::~Terminal()
 }
 
 OutputStream *
-Terminal::terminalDump(const TerminalParams* p)
+Terminal::terminalDump(const TerminalParams &p)
 {
-    switch (p->outfile) {
-      case Enums::TerminalDump::none:
+    switch (p.outfile) {
+      case TerminalDump::none:
         return nullptr;
-      case Enums::TerminalDump::stdoutput:
+      case TerminalDump::stdoutput:
         return simout.findOrCreate("stdout");
-      case Enums::TerminalDump::stderror:
+      case TerminalDump::stderror:
         return simout.findOrCreate("stderr");
-      case Enums::TerminalDump::file:
-        return simout.findOrCreate(p->name);
+      case TerminalDump::file:
+        return simout.findOrCreate(p.name);
       default:
         panic("Invalid option\n");
     }
@@ -181,7 +178,7 @@ Terminal::listen(int port)
         port++;
     }
 
-    ccprintf(cerr, "%s: Listening for connections on port %d\n",
+    ccprintf(std::cerr, "%s: Listening for connections on port %d\n",
              name(), port);
 
     listenEvent = new ListenEvent(this, listener.getfd(), POLLIN);
@@ -206,8 +203,8 @@ Terminal::accept()
     dataEvent = new DataEvent(this, data_fd, POLLIN);
     pollQueue.schedule(dataEvent);
 
-    stringstream stream;
-    ccprintf(stream, "==== m5 slave terminal: Terminal %d ====", number);
+    std::stringstream stream;
+    ccprintf(stream, "==== m5 terminal: Terminal %d ====", number);
 
     // we need an actual carriage return followed by a newline for the
     // terminal
@@ -289,10 +286,10 @@ Terminal::write(const uint8_t *buf, size_t len)
     return ret;
 }
 
-#define MORE_PENDING (ULL(1) << 61)
-#define RECEIVE_SUCCESS (ULL(0) << 62)
-#define RECEIVE_NONE (ULL(2) << 62)
-#define RECEIVE_ERROR (ULL(3) << 62)
+#define MORE_PENDING (1ULL << 61)
+#define RECEIVE_SUCCESS (0ULL << 62)
+#define RECEIVE_NONE (2ULL << 62)
+#define RECEIVE_ERROR (3ULL << 62)
 
 uint8_t
 Terminal::readData()
@@ -330,7 +327,7 @@ void
 Terminal::writeData(uint8_t c)
 {
 #if TRACING_ON == 1
-    if (DTRACE(Terminal)) {
+    if (debug::Terminal) {
         static char last = '\0';
 
         if ((c != '\n' && c != '\r') || (last != '\n' && last != '\r')) {
@@ -363,8 +360,4 @@ Terminal::writeData(uint8_t c)
 
 }
 
-Terminal *
-TerminalParams::create()
-{
-    return new Terminal(this);
-}
+} // namespace gem5

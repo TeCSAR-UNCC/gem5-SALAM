@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Evans
  */
 
 /** @file
@@ -47,12 +45,14 @@
 #define __DEV_ARM_GIC_V2M_H__
 
 #include "base/bitunion.hh"
-#include "cpu/intr_control.hh"
 #include "dev/arm/base_gic.hh"
 #include "dev/io_device.hh"
 #include "dev/platform.hh"
 #include "params/Gicv2m.hh"
 #include "params/Gicv2mFrame.hh"
+
+namespace gem5
+{
 
 /**
  * Ultimately this class should be embedded in the Gicv2m class, but
@@ -67,8 +67,8 @@ class Gicv2mFrame : public SimObject
     const unsigned int  spi_len;
 
     typedef Gicv2mFrameParams Params;
-    Gicv2mFrame(const Params *p) :
-        SimObject(p), addr(p->addr), spi_base(p->spi_base), spi_len(p->spi_len)
+    Gicv2mFrame(const Params &p) :
+        SimObject(p), addr(p.addr), spi_base(p.spi_base), spi_len(p.spi_len)
     {}
 };
 
@@ -95,7 +95,7 @@ class Gicv2m : public PioDevice
 
   public:
     typedef Gicv2mParams Params;
-    Gicv2m(const Params *p);
+    Gicv2m(const Params &p);
 
     /** @{ */
     /** Return the address ranges used by the Gicv2m
@@ -117,5 +117,7 @@ class Gicv2m : public PioDevice
      */
     int frameFromAddr(Addr a) const;
 };
+
+} // namespace gem5
 
 #endif //__DEV_ARM_GIC_V2M_H__

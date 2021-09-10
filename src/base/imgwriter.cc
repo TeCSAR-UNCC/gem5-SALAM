@@ -33,41 +33,44 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #include "base/imgwriter.hh"
 
 #include "base/bmpwriter.hh"
 #include "base/logging.hh"
-#include "config/use_png.hh"
+#include "config/have_png.hh"
 
-#if USE_PNG
+#if HAVE_PNG
 #include "base/pngwriter.hh"
 
 #endif
 
+namespace gem5
+{
+
 std::unique_ptr<ImgWriter>
-createImgWriter(Enums::ImageFormat type, const FrameBuffer *fb)
+createImgWriter(enums::ImageFormat type, const FrameBuffer *fb)
 {
     switch (type) {
-      case Enums::Auto:
+      case enums::Auto:
         // The Auto option allows gem5 to choose automatically the
         // writer type, and it will choose for the best fit in
         // performance.
         // gem5 will try PNG first, and it will fallback to BMP if not
         // available.
 
-        M5_FALLTHROUGH;
-#if USE_PNG
-      case Enums::Png:
+        GEM5_FALLTHROUGH;
+#if HAVE_PNG
+      case enums::Png:
         return std::unique_ptr<PngWriter>(new PngWriter(fb));
 #endif
-      case Enums::Bitmap:
+      case enums::Bitmap:
         return std::unique_ptr<BmpWriter>(new BmpWriter(fb));
       default:
         warn("Invalid Image Type specified, defaulting to Bitmap\n");
         return std::unique_ptr<BmpWriter>(new BmpWriter(fb));
     }
 }
+
+} // namespace gem5

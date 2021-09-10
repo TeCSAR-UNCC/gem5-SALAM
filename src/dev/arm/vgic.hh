@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Evans
  */
 
 
@@ -57,10 +55,12 @@
 
 #include "base/addr_range.hh"
 #include "base/bitunion.hh"
-#include "cpu/intr_control.hh"
 #include "dev/io_device.hh"
 #include "dev/platform.hh"
 #include "params/VGic.hh"
+
+namespace gem5
+{
 
 class VGic : public PioDevice
 {
@@ -154,7 +154,8 @@ class VGic : public PioDevice
     /* State per CPU.  EVERYTHING should be in this struct and simply replicated
      * N times.
      */
-    struct vcpuIntData : public Serializable {
+    struct vcpuIntData : public Serializable
+    {
         vcpuIntData()
             : vctrl(0), hcr(0), eisr(0), VMGrp0En(0), VMGrp1En(0),
               VMAckCtl(0), VMFiqEn(0), VMCBPR(0), VEM(0), VMABP(0), VMBP(0),
@@ -188,13 +189,8 @@ class VGic : public PioDevice
     struct std::array<vcpuIntData, VGIC_CPU_MAX>  vcpuData;
 
   public:
-   typedef VGicParams Params;
-   const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-    VGic(const Params *p);
+    using Params = VGicParams;
+    VGic(const Params &p);
     ~VGic();
 
     AddrRangeList getAddrRanges() const override;
@@ -263,5 +259,7 @@ class VGic : public PioDevice
         return -1;
     }
 };
+
+} // namespace gem5
 
 #endif

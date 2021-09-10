@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Daniel Carvalho
 
 from m5.params import *
 from m5.proxy import *
@@ -33,6 +31,7 @@ from m5.SimObject import SimObject
 class BaseIndexingPolicy(SimObject):
     type = 'BaseIndexingPolicy'
     abstract = True
+    cxx_class = 'gem5::BaseIndexingPolicy'
     cxx_header = "mem/cache/tags/indexing_policies/base.hh"
 
     # Get the size from the parent (cache)
@@ -46,10 +45,10 @@ class BaseIndexingPolicy(SimObject):
 
 class SetAssociative(BaseIndexingPolicy):
     type = 'SetAssociative'
-    cxx_class = 'SetAssociative'
+    cxx_class = 'gem5::SetAssociative'
     cxx_header = "mem/cache/tags/indexing_policies/set_associative.hh"
 
 class SkewedAssociative(BaseIndexingPolicy):
     type = 'SkewedAssociative'
-    cxx_class = 'SkewedAssociative'
+    cxx_class = 'gem5::SkewedAssociative'
     cxx_header = "mem/cache/tags/indexing_policies/skewed_associative.hh"

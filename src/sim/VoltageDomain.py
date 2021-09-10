@@ -32,9 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Vasileios Spiliopoulos
-#          Akash Bagdia
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -42,6 +39,7 @@ from m5.params import *
 class VoltageDomain(SimObject):
     type = 'VoltageDomain'
     cxx_header = "sim/voltage_domain.hh"
+    cxx_class = 'gem5::VoltageDomain'
 
     # Single or list of voltages for the voltage domain.  If only a single
     # voltage is specified, it is used for all different frequencies.

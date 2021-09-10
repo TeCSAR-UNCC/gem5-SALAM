@@ -37,15 +37,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Kevin Lim
- *          Brandon Potter
  */
 
 #ifndef __SIM_SYSCALL_DEBUG_MACROS_HH__
 #define __SIM_SYSCALL_DEBUG_MACROS_HH__
 
+#include "cpu/base.hh"
+#include "cpu/thread_context.hh"
 #include "debug/SyscallBase.hh"
 #include "debug/SyscallVerbose.hh"
 

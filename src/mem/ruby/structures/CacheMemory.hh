@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020-2021 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2012 Mark D. Hill and David A. Wood
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved.
@@ -48,12 +60,18 @@
 #include "params/RubyCache.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class CacheMemory : public SimObject
 {
   public:
     typedef RubyCacheParams Params;
-    typedef std::shared_ptr<ReplacementData> ReplData;
-    CacheMemory(const Params *p);
+    typedef std::shared_ptr<replacement_policy::ReplacementData> ReplData;
+    CacheMemory(const Params &p);
     ~CacheMemory();
 
     void init();
@@ -74,6 +92,13 @@ class CacheMemory : public SimObject
     //   a) a tag match on this address or there is
     //   b) an unused line in the same cache "way"
     bool cacheAvail(Addr address) const;
+
+    // Returns a NULL entry that acts as a placeholder for invalid lines
+    AbstractCacheEntry*
+    getNullEntry() const
+    {
+        return nullptr;
+    }
 
     // find an unused entry and sets the tag appropriate for the address
     AbstractCacheEntry* allocate(Addr address, AbstractCacheEntry* new_entry);
@@ -104,8 +129,8 @@ class CacheMemory : public SimObject
     // Set this address to most recently used
     void setMRU(Addr address);
     void setMRU(Addr addr, int occupancy);
+    void setMRU(AbstractCacheEntry* entry);
     int getReplacementWeight(int64_t set, int64_t loc);
-    void setMRU(const AbstractCacheEntry *e);
 
     // Functions for locking and unlocking cache lines corresponding to the
     // provided address.  These are required for supporting atomic memory
@@ -114,35 +139,21 @@ class CacheMemory : public SimObject
     // provided by the AbstractCacheEntry class.
     void setLocked (Addr addr, int context);
     void clearLocked (Addr addr);
+    void clearLockedAll (int context);
     bool isLocked (Addr addr, int context);
 
     // Print cache contents
     void print(std::ostream& out) const;
     void printData(std::ostream& out) const;
 
-    void regStats();
     bool checkResourceAvailable(CacheResourceType res, Addr addr);
     void recordRequestType(CacheRequestType requestType, Addr addr);
 
+    // hardware transactional memory
+    void htmAbortTransaction();
+    void htmCommitTransaction();
+
   public:
-    Stats::Scalar m_demand_hits;
-    Stats::Scalar m_demand_misses;
-    Stats::Formula m_demand_accesses;
-
-    Stats::Scalar m_sw_prefetches;
-    Stats::Scalar m_hw_prefetches;
-    Stats::Formula m_prefetches;
-
-    Stats::Vector m_accessModeType;
-
-    Stats::Scalar numDataArrayReads;
-    Stats::Scalar numDataArrayWrites;
-    Stats::Scalar numTagArrayReads;
-    Stats::Scalar numTagArrayWrites;
-
-    Stats::Scalar numTagArrayStalls;
-    Stats::Scalar numDataArrayStalls;
-
     int getCacheSize() const { return m_cache_size; }
     int getCacheAssoc() const { return m_cache_assoc; }
     int getNumBlocks() const { return m_cache_num_sets * m_cache_assoc; }
@@ -170,11 +181,8 @@ class CacheMemory : public SimObject
     std::unordered_map<Addr, int> m_tag_index;
     std::vector<std::vector<AbstractCacheEntry*> > m_cache;
 
-    /**
-     * We use BaseReplacementPolicy from Classic system here, hence we can use
-     * different replacement policies from Classic system in Ruby system.
-     */
-    BaseReplacementPolicy *m_replacementPolicy_ptr;
+    /** We use the replacement policies from the Classic memory system. */
+    replacement_policy::Base *m_replacementPolicy_ptr;
 
     BankedArray dataArray;
     BankedArray tagArray;
@@ -202,8 +210,49 @@ class CacheMemory : public SimObject
      * false.
      */
     bool m_use_occupancy;
+
+    private:
+      struct CacheMemoryStats : public statistics::Group
+      {
+          CacheMemoryStats(statistics::Group *parent);
+
+          statistics::Scalar numDataArrayReads;
+          statistics::Scalar numDataArrayWrites;
+          statistics::Scalar numTagArrayReads;
+          statistics::Scalar numTagArrayWrites;
+
+          statistics::Scalar numTagArrayStalls;
+          statistics::Scalar numDataArrayStalls;
+
+          // hardware transactional memory
+          statistics::Histogram htmTransCommitReadSet;
+          statistics::Histogram htmTransCommitWriteSet;
+          statistics::Histogram htmTransAbortReadSet;
+          statistics::Histogram htmTransAbortWriteSet;
+
+          statistics::Scalar m_demand_hits;
+          statistics::Scalar m_demand_misses;
+          statistics::Formula m_demand_accesses;
+
+          statistics::Scalar m_prefetch_hits;
+          statistics::Scalar m_prefetch_misses;
+          statistics::Formula m_prefetch_accesses;
+
+          statistics::Vector m_accessModeType;
+      } cacheMemoryStats;
+
+    public:
+      // These function increment the number of demand hits/misses by one
+      // each time they are called
+      void profileDemandHit();
+      void profileDemandMiss();
+      void profilePrefetchHit();
+      void profilePrefetchMiss();
 };
 
 std::ostream& operator<<(std::ostream& out, const CacheMemory& obj);
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_STRUCTURES_CACHEMEMORY_HH__

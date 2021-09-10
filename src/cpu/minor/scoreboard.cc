@@ -33,18 +33,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "cpu/minor/scoreboard.hh"
 
-#include "arch/registers.hh"
 #include "cpu/reg_class.hh"
 #include "debug/MinorScoreboard.hh"
 #include "debug/MinorTiming.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 bool
@@ -52,48 +53,39 @@ Scoreboard::findIndex(const RegId& reg, Index &scoreboard_index)
 {
     bool ret = false;
 
-    if (reg.isZeroReg()) {
-        /* Don't bother with the zero register */
-        ret = false;
-    } else {
-        switch (reg.classValue())
-        {
-          case IntRegClass:
+    switch (reg.classValue()) {
+      case IntRegClass:
+        if (reg.index() == zeroReg) {
+            /* Don't bother with the zero register */
+            ret = false;
+        } else {
             scoreboard_index = reg.index();
             ret = true;
-            break;
-          case FloatRegClass:
-            scoreboard_index = TheISA::NumIntRegs + TheISA::NumCCRegs +
-                reg.index();
-            ret = true;
-            break;
-          case VecRegClass:
-            scoreboard_index = TheISA::NumIntRegs + TheISA::NumCCRegs +
-                TheISA::NumFloatRegs + reg.index();
-            ret = true;
-            break;
-          case VecElemClass:
-            scoreboard_index = TheISA::NumIntRegs + TheISA::NumCCRegs +
-                TheISA::NumFloatRegs + reg.flatIndex();
-            ret = true;
-            break;
-          case VecPredRegClass:
-            scoreboard_index = TheISA::NumIntRegs + TheISA::NumCCRegs +
-                TheISA::NumFloatRegs + TheISA::NumVecRegs + reg.index();
-            ret = true;
-            break;
-          case CCRegClass:
-            scoreboard_index = TheISA::NumIntRegs + reg.index();
-            ret = true;
-            break;
-          case MiscRegClass:
-              /* Don't bother with Misc registers */
-            ret = false;
-            break;
-          default:
-            panic("Unknown register class: %d",
-                    static_cast<int>(reg.classValue()));
         }
+        break;
+      case FloatRegClass:
+        scoreboard_index = floatRegOffset + reg.index();
+        ret = true;
+        break;
+      case VecRegClass:
+      case VecElemClass:
+        scoreboard_index = vecRegOffset + reg.index();
+        ret = true;
+        break;
+      case VecPredRegClass:
+        scoreboard_index = vecPredRegOffset + reg.index();
+        ret = true;
+        break;
+      case CCRegClass:
+        scoreboard_index = ccRegOffset + reg.index();
+        ret = true;
+        break;
+      case MiscRegClass:
+          /* Don't bother with Misc registers */
+        ret = false;
+        break;
+      default:
+        panic("Unknown register class: %d", reg.classValue());
     }
 
     return ret;
@@ -143,9 +135,8 @@ Scoreboard::markupInstDests(MinorDynInstPtr inst, Cycles retire_time,
                 " regIndex: %d final numResults: %d returnCycle: %d\n",
                 *inst, index, numResults[index], returnCycle[index]);
         } else {
-            /* Use ZeroReg to mark invalid/untracked dests */
-            inst->flatDestRegIdx[dest_index] = RegId(IntRegClass,
-                                                     TheISA::ZeroReg);
+            /* Use zeroReg to mark invalid/untracked dests */
+            inst->flatDestRegIdx[dest_index] = RegId(IntRegClass, zeroReg);
         }
     }
 }
@@ -273,7 +264,7 @@ Scoreboard::canInstIssue(MinorDynInstPtr inst,
         src_index++;
     }
 
-    if (DTRACE(MinorTiming)) {
+    if (debug::MinorTiming) {
         if (ret && num_srcs > num_relative_latencies &&
             num_relative_latencies != 0)
         {
@@ -315,7 +306,8 @@ Scoreboard::minorTrace() const
         i++;
     }
 
-    MINORTRACE("busy=%s\n", result_stream.str());
+    minor::minorTrace("busy=%s\n", result_stream.str());
 }
 
-}
+} // namespace minor
+} // namespace gem5

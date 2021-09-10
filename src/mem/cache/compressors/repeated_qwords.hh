@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Inria
+ * Copyright (c) 2019-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -43,9 +41,16 @@
 
 #include "mem/cache/compressors/dictionary_compressor.hh"
 
+namespace gem5
+{
+
 struct RepeatedQwordsCompressorParams;
 
-class RepeatedQwordsCompressor : public DictionaryCompressor<uint64_t>
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
+
+class RepeatedQwords : public DictionaryCompressor<uint64_t>
 {
   protected:
     using DictionaryEntry = DictionaryCompressor<uint64_t>::DictionaryEntry;
@@ -60,9 +65,10 @@ class RepeatedQwordsCompressor : public DictionaryCompressor<uint64_t>
      * These are used as indexes to reference the pattern data. If a new
      * pattern is added, it must be done before NUM_PATTERNS.
      */
-    typedef enum {
+    enum PatternNumber
+    {
         X, M, NUM_PATTERNS
-    } PatternNumber;
+    };
 
     /**
      * Convenience factory declaration. The templates must be organized by
@@ -91,16 +97,17 @@ class RepeatedQwordsCompressor : public DictionaryCompressor<uint64_t>
 
     void addToDictionary(DictionaryEntry data) override;
 
-    std::unique_ptr<BaseCacheCompressor::CompressionData> compress(
-        const uint64_t* data, Cycles& comp_lat, Cycles& decomp_lat) override;
+    std::unique_ptr<Base::CompressionData> compress(
+        const std::vector<Base::Chunk>& chunks,
+        Cycles& comp_lat, Cycles& decomp_lat) override;
 
   public:
     typedef RepeatedQwordsCompressorParams Params;
-    RepeatedQwordsCompressor(const Params *p);
-    ~RepeatedQwordsCompressor() = default;
+    RepeatedQwords(const Params &p);
+    ~RepeatedQwords() = default;
 };
 
-class RepeatedQwordsCompressor::PatternX
+class RepeatedQwords::PatternX
     : public DictionaryCompressor::UncompressedPattern
 {
   public:
@@ -110,15 +117,18 @@ class RepeatedQwordsCompressor::PatternX
     }
 };
 
-class RepeatedQwordsCompressor::PatternM
+class RepeatedQwords::PatternM
     : public DictionaryCompressor::LocatedMaskedPattern<0xFFFFFFFFFFFFFFFF, 0>
 {
   public:
     PatternM(const DictionaryEntry bytes, const int match_location)
         : LocatedMaskedPattern<0xFFFFFFFFFFFFFFFF, 0>(M, 1, 0, match_location,
-          bytes)
+          bytes, false)
     {
     }
 };
+
+} // namespace compression
+} // namespace gem5
 
 #endif //__MEM_CACHE_COMPRESSORS_REPEATED_QWORDS_HH__

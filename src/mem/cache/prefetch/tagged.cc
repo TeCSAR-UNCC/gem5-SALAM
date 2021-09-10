@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
  */
 
 /**
@@ -37,15 +35,22 @@
 
 #include "params/TaggedPrefetcher.hh"
 
-TaggedPrefetcher::TaggedPrefetcher(const TaggedPrefetcherParams *p)
-    : QueuedPrefetcher(p), degree(p->degree)
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+Tagged::Tagged(const TaggedPrefetcherParams &p)
+    : Queued(p), degree(p.degree)
 {
 
 }
 
 void
-TaggedPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
-        std::vector<AddrPriority> &addresses)
+Tagged::calculatePrefetch(const PrefetchInfo &pfi,
+    std::vector<AddrPriority> &addresses)
 {
     Addr blkAddr = blockAddress(pfi.getAddr());
 
@@ -55,8 +60,5 @@ TaggedPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
     }
 }
 
-TaggedPrefetcher*
-TaggedPrefetcherParams::create()
-{
-   return new TaggedPrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5

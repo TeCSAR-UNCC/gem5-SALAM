@@ -2,6 +2,7 @@
  * Copyright (c) 2013 ARM Limited
  * Copyright (c) 2014-2015 Sven Karlsson
  * Copyright (c) 2018 TU Dresden
+ * Copyright (c) 2020 Barkhausen Institut
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -38,11 +39,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
- *          Sven Karlsson
- *          Alec Roelke
- *          Robert Scheffel
  */
 
 #ifndef __ARCH_RISCV_UTILITY_HH__
@@ -53,11 +49,15 @@
 #include <sstream>
 #include <string>
 
-#include "arch/riscv/registers.hh"
+#include "arch/riscv/regs/float.hh"
+#include "arch/riscv/regs/int.hh"
 #include "base/types.hh"
 #include "cpu/reg_class.hh"
 #include "cpu/static_inst.hh"
 #include "cpu/thread_context.hh"
+
+namespace gem5
+{
 
 namespace RiscvISA
 {
@@ -102,41 +102,10 @@ issignalingnan<double>(double val)
         && (reinterpret_cast<uint64_t&>(val)&0x0004000000000000ULL);
 }
 
-inline PCState
-buildRetPC(const PCState &curPC, const PCState &callPC)
-{
-    PCState retPC = callPC;
-    retPC.advance();
-    retPC.pc(curPC.npc());
-    return retPC;
-}
-
-inline uint64_t
-getArgument(ThreadContext *tc, int &number, uint16_t size, bool fp)
-{
-    return 0;
-}
-
-inline void startupCPU(ThreadContext *tc, int cpuId)
-{
-    tc->activate();
-}
-
-inline void
-copyRegs(ThreadContext *src, ThreadContext *dest)
-{
-    // First loop through the integer registers.
-    for (int i = 0; i < NumIntRegs; ++i)
-        dest->setIntReg(i, src->readIntReg(i));
-
-    // Lastly copy PC/NPC
-    dest->pcState(src->pcState());
-}
-
 inline std::string
 registerName(RegId reg)
 {
-    if (reg.isIntReg()) {
+    if (reg.is(IntRegClass)) {
         if (reg.index() >= NumIntArchRegs) {
             /*
              * This should only happen if a instruction is being speculatively
@@ -162,35 +131,7 @@ registerName(RegId reg)
     }
 }
 
-inline void
-skipFunction(ThreadContext *tc)
-{
-    panic("Not Implemented for Riscv");
-}
-
-inline void
-advancePC(PCState &pc, const StaticInstPtr &inst)
-{
-    inst->advancePC(pc);
-}
-
-static inline bool
-inUserMode(ThreadContext *tc)
-{
-    return true;
-}
-
-inline uint64_t
-getExecutingAsid(ThreadContext *tc)
-{
-    return 0;
-}
-
-/**
- * init Cpu function
- */
-void initCPU(ThreadContext *tc, int cpuId);
-
 } // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_UTILITY_HH__

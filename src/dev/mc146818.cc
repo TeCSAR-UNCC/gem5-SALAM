@@ -24,10 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Andrew Schultz
- *          Miguel Serrano
  */
 
 #include "dev/mc146818.hh"
@@ -43,7 +39,8 @@
 #include "debug/MC146818.hh"
 #include "dev/rtcreg.h"
 
-using namespace std;
+namespace gem5
+{
 
 static uint8_t
 bcdize(uint8_t val)
@@ -91,8 +88,8 @@ MC146818::setTime(const struct tm time)
     }
 }
 
-MC146818::MC146818(EventManager *em, const string &n, const struct tm time,
-                   bool bcd, Tick frequency)
+MC146818::MC146818(EventManager *em, const std::string &n,
+        const struct tm time, bool bcd, Tick frequency)
     : EventManager(em), _name(n), event(this, frequency), tickEvent(this)
 {
     memset(clock_data, 0, sizeof(clock_data));
@@ -181,7 +178,7 @@ MC146818::writeData(const uint8_t addr, const uint8_t data)
                   // from reset to active. So, we simply schedule the
                   // tick after 0.5s.
                   assert(!tickEvent.scheduled());
-                  schedule(tickEvent, curTick() + SimClock::Int::s / 2);
+                  schedule(tickEvent, curTick() + sim_clock::as_int::s / 2);
               }
           } break;
           case RTC_STAT_REGB:
@@ -266,7 +263,7 @@ MC146818::tickClock()
 }
 
 void
-MC146818::serialize(const string &base, CheckpointOut &cp) const
+MC146818::serialize(const std::string &base, CheckpointOut &cp) const
 {
     uint8_t regA_serial(stat_regA);
     uint8_t regB_serial(stat_regB);
@@ -286,7 +283,7 @@ MC146818::serialize(const string &base, CheckpointOut &cp) const
 }
 
 void
-MC146818::unserialize(const string &base, CheckpointIn &cp)
+MC146818::unserialize(const std::string &base, CheckpointIn &cp)
 {
     uint8_t tmp8;
 
@@ -339,7 +336,7 @@ void
 MC146818::RTCTickEvent::process()
 {
     DPRINTF(MC146818, "RTC clock tick\n");
-    parent->schedule(this, curTick() + SimClock::Int::s);
+    parent->schedule(this, curTick() + sim_clock::as_int::s);
     parent->tickClock();
 }
 
@@ -348,3 +345,5 @@ MC146818::RTCTickEvent::description() const
 {
     return "RTC clock tick";
 }
+
+} // namespace gem5

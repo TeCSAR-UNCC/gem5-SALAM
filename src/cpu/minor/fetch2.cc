@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "cpu/minor/fetch2.hh"
@@ -42,19 +40,25 @@
 #include <string>
 
 #include "arch/decoder.hh"
-#include "arch/utility.hh"
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "cpu/minor/pipeline.hh"
+#include "cpu/null_static_inst.hh"
 #include "cpu/pred/bpred_unit.hh"
 #include "debug/Branch.hh"
 #include "debug/Fetch.hh"
 #include "debug/MinorTrace.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 Fetch2::Fetch2(const std::string &name,
     MinorCPU &cpu_,
-    MinorCPUParams &params,
+    const MinorCPUParams &params,
     Latch<ForwardLineData>::Output inp_,
     Latch<BranchData>::Output branchInp_,
     Latch<BranchData>::Input predictionOut_,
@@ -71,7 +75,7 @@ Fetch2::Fetch2(const std::string &name,
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
     fetchInfo(params.numThreads),
-    threadPriority(0)
+    threadPriority(0), stats(&cpu_)
 {
     if (outputWidth < 1)
         fatal("%s: decodeInputWidth must be >= 1 (%d)\n", name, outputWidth);
@@ -329,7 +333,7 @@ Fetch2::evaluate()
                 /* Set the inputIndex to be the MachInst-aligned offset
                  *  from lineBaseAddr of the new PC value */
                 fetch_info.inputIndex =
-                    (line_in->pc.instAddr() & BaseCPU::PCMask) -
+                    (line_in->pc.instAddr() & decoder->pcMask()) -
                     line_in->lineBaseAddr;
                 DPRINTF(Fetch, "Setting new PC value: %s inputIndex: 0x%x"
                     " lineBaseAddr: 0x%x lineWidth: 0x%x\n",
@@ -356,7 +360,7 @@ Fetch2::evaluate()
 
                 /* Make a new instruction and pick up the line, stream,
                  *  prediction, thread ids from the incoming line */
-                dyn_inst = new MinorDynInst(line_in->id);
+                dyn_inst = new MinorDynInst(nullStaticInstPtr, line_in->id);
 
                 /* Fetch and prediction sequence numbers originate here */
                 dyn_inst->id.fetchSeqNum = fetch_info.fetchSeqNum;
@@ -376,15 +380,13 @@ Fetch2::evaluate()
             } else {
                 uint8_t *line = line_in->line;
 
-                /* The instruction is wholly in the line, can just
-                 *  assign */
-                auto inst_word = *reinterpret_cast<TheISA::MachInst *>
-                                  (line + fetch_info.inputIndex);
+                /* The instruction is wholly in the line, can just copy. */
+                memcpy(decoder->moreBytesPtr(), line + fetch_info.inputIndex,
+                        decoder->moreBytesSize());
 
                 if (!decoder->instReady()) {
                     decoder->moreBytes(fetch_info.pc,
-                        line_in->lineBaseAddr + fetch_info.inputIndex,
-                        inst_word);
+                        line_in->lineBaseAddr + fetch_info.inputIndex);
                     DPRINTF(Fetch, "Offering MachInst to decoder addr: 0x%x\n",
                             line_in->lineBaseAddr + fetch_info.inputIndex);
                 }
@@ -393,9 +395,15 @@ Fetch2::evaluate()
                  *  instructions longer than sizeof(MachInst) */
 
                 if (decoder->instReady()) {
+                    /* Note that the decoder can update the given PC.
+                     *  Remember not to assign it until *after* calling
+                     *  decode */
+                    StaticInstPtr decoded_inst =
+                        decoder->decode(fetch_info.pc);
+
                     /* Make a new instruction and pick up the line, stream,
                      *  prediction, thread ids from the incoming line */
-                    dyn_inst = new MinorDynInst(line_in->id);
+                    dyn_inst = new MinorDynInst(decoded_inst, line_in->id);
 
                     /* Fetch and prediction sequence numbers originate here */
                     dyn_inst->id.fetchSeqNum = fetch_info.fetchSeqNum;
@@ -404,28 +412,22 @@ Fetch2::evaluate()
                      *  has not been set */
                     assert(dyn_inst->id.execSeqNum == 0);
 
-                    /* Note that the decoder can update the given PC.
-                     *  Remember not to assign it until *after* calling
-                     *  decode */
-                    StaticInstPtr decoded_inst = decoder->decode(fetch_info.pc);
-                    dyn_inst->staticInst = decoded_inst;
-
                     dyn_inst->pc = fetch_info.pc;
                     DPRINTF(Fetch, "decoder inst %s\n", *dyn_inst);
 
                     // Collect some basic inst class stats
                     if (decoded_inst->isLoad())
-                        loadInstructions++;
+                        stats.loadInstructions++;
                     else if (decoded_inst->isStore())
-                        storeInstructions++;
+                        stats.storeInstructions++;
                     else if (decoded_inst->isAtomic())
-                        amoInstructions++;
+                        stats.amoInstructions++;
                     else if (decoded_inst->isVector())
-                        vecInstructions++;
+                        stats.vecInstructions++;
                     else if (decoded_inst->isFloating())
-                        fpInstructions++;
+                        stats.fpInstructions++;
                     else if (decoded_inst->isInteger())
-                        intInstructions++;
+                        stats.intInstructions++;
 
                     DPRINTF(Fetch, "Instruction extracted from line %s"
                         " lineWidth: %d output_index: %d inputIndex: %d"
@@ -454,7 +456,7 @@ Fetch2::evaluate()
 #endif
 
                     /* Advance PC for the next instruction */
-                    TheISA::advancePC(fetch_info.pc, decoded_inst);
+                    decoded_inst->advancePC(fetch_info.pc);
 
                     /* Predict any branches and issue a branch if
                      *  necessary */
@@ -466,7 +468,7 @@ Fetch2::evaluate()
                 /* Step on the pointer into the line if there's no
                  *  complete instruction waiting */
                 if (decoder->needMoreBytes()) {
-                    fetch_info.inputIndex += sizeof(TheISA::MachInst);
+                    fetch_info.inputIndex += decoder->moreBytesSize();
 
                 DPRINTF(Fetch, "Updated inputIndex value PC: %s"
                     " inputIndex: 0x%x lineBaseAddr: 0x%x lineWidth: 0x%x\n",
@@ -489,10 +491,11 @@ Fetch2::evaluate()
 
                 /* Output MinorTrace instruction info for
                  *  pre-microop decomposition macroops */
-                if (DTRACE(MinorTrace) && !dyn_inst->isFault() &&
+                if (debug::MinorTrace && !dyn_inst->isFault() &&
                     dyn_inst->staticInst->isMacroop())
                 {
-                    dyn_inst->minorTraceInst(*this);
+                    dyn_inst->minorTraceInst(*this,
+                            cpu.threads[0]->getIsaPtr()->regClasses());
                 }
             }
 
@@ -569,13 +572,13 @@ Fetch2::getScheduledThread()
     std::vector<ThreadID> priority_list;
 
     switch (cpu.threadPolicy) {
-      case Enums::SingleThreaded:
+      case enums::SingleThreaded:
         priority_list.push_back(0);
         break;
-      case Enums::RoundRobin:
+      case enums::RoundRobin:
         priority_list = cpu.roundRobinPriority(threadPriority);
         break;
-      case Enums::Random:
+      case enums::Random:
         priority_list = cpu.randomPriority();
         break;
       default:
@@ -604,40 +607,33 @@ Fetch2::isDrained()
            (*predictionOut.inputWire).isBubble();
 }
 
-void
-Fetch2::regStats()
+Fetch2::Fetch2Stats::Fetch2Stats(MinorCPU *cpu)
+      : statistics::Group(cpu, "fetch2"),
+      ADD_STAT(intInstructions, statistics::units::Count::get(),
+               "Number of integer instructions successfully decoded"),
+      ADD_STAT(fpInstructions, statistics::units::Count::get(),
+               "Number of floating point instructions successfully decoded"),
+      ADD_STAT(vecInstructions, statistics::units::Count::get(),
+               "Number of SIMD instructions successfully decoded"),
+      ADD_STAT(loadInstructions, statistics::units::Count::get(),
+               "Number of memory load instructions successfully decoded"),
+      ADD_STAT(storeInstructions, statistics::units::Count::get(),
+               "Number of memory store instructions successfully decoded"),
+      ADD_STAT(amoInstructions, statistics::units::Count::get(),
+               "Number of memory atomic instructions successfully decoded")
 {
-    using namespace Stats;
-
-    intInstructions
-        .name(name() + ".int_instructions")
-        .desc("Number of integer instructions successfully decoded")
-        .flags(total);
-
-    fpInstructions
-        .name(name() + ".fp_instructions")
-        .desc("Number of floating point instructions successfully decoded")
-        .flags(total);
-
-    vecInstructions
-        .name(name() + ".vec_instructions")
-        .desc("Number of SIMD instructions successfully decoded")
-        .flags(total);
-
-    loadInstructions
-        .name(name() + ".load_instructions")
-        .desc("Number of memory load instructions successfully decoded")
-        .flags(total);
-
-    storeInstructions
-        .name(name() + ".store_instructions")
-        .desc("Number of memory store instructions successfully decoded")
-        .flags(total);
-
-    amoInstructions
-        .name(name() + ".amo_instructions")
-        .desc("Number of memory atomic instructions successfully decoded")
-        .flags(total);
+        intInstructions
+            .flags(statistics::total);
+        fpInstructions
+            .flags(statistics::total);
+        vecInstructions
+            .flags(statistics::total);
+        loadInstructions
+            .flags(statistics::total);
+        storeInstructions
+            .flags(statistics::total);
+        amoInstructions
+            .flags(statistics::total);
 }
 
 void
@@ -650,9 +646,11 @@ Fetch2::minorTrace() const
     else
         (*out.inputWire).reportData(data);
 
-    MINORTRACE("inputIndex=%d havePC=%d predictionSeqNum=%d insts=%s\n",
-        fetchInfo[0].inputIndex, fetchInfo[0].havePC, fetchInfo[0].predictionSeqNum, data.str());
+    minor::minorTrace("inputIndex=%d havePC=%d predictionSeqNum=%d insts=%s\n",
+        fetchInfo[0].inputIndex, fetchInfo[0].havePC,
+        fetchInfo[0].predictionSeqNum, data.str());
     inputBuffer[0].minorTrace();
 }
 
-}
+} // namespace minor
+} // namespace gem5

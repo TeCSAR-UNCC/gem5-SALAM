@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /**
@@ -40,7 +38,10 @@
 #include "base/logging.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 
-SkewedAssociative::SkewedAssociative(const Params *p)
+namespace gem5
+{
+
+SkewedAssociative::SkewedAssociative(const Params &p)
     : BaseIndexingPolicy(p), msbShift(floorLog2(numSets) - 1)
 {
     if (assoc > NUM_SKEWING_FUNCTIONS) {
@@ -219,8 +220,4 @@ SkewedAssociative::getPossibleEntries(const Addr addr) const
     return entries;
 }
 
-SkewedAssociative *
-SkewedAssociativeParams::create()
-{
-    return new SkewedAssociative(this);
-}
+} // namespace gem5

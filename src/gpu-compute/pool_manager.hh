@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos
  */
 
 #ifndef __POOL_MANAGER_HH__
@@ -40,11 +38,18 @@
 #include <cstdint>
 #include <string>
 
+#include "params/PoolManager.hh"
+#include "sim/sim_object.hh"
+
+namespace gem5
+{
+
 // Pool Manager Logic
-class PoolManager
+class PoolManager : public SimObject
 {
   public:
-    PoolManager(uint32_t minAlloc, uint32_t poolSize);
+    PoolManager(const PoolManagerParams &p);
+    virtual ~PoolManager() { _poolSize = 0; }
     uint32_t minAllocation() { return _minAllocation; }
     virtual std::string printRegion() = 0;
     virtual uint32_t regionSize(std::pair<uint32_t,uint32_t> &region) = 0;
@@ -55,6 +60,14 @@ class PoolManager
 
     virtual void freeRegion(uint32_t firstIdx, uint32_t lastIdx) = 0;
     uint32_t poolSize() { return _poolSize; }
+    // I don't think with the current API it is possible to do what
+    // we intend to - reset the entire register pool.
+    // Because we need to reset the register pool when all WGs on
+    // the Compute Unit are finished - before launching WGs from
+    // another kernel.
+    // TsungTai Yeh added a virtual method do the very same - at a diff
+    // place though.
+    virtual void resetRegion(const int & regsPerSimd) {}; // do nothing
 
   private:
     // minimum size that can be reserved per allocation
@@ -62,5 +75,7 @@ class PoolManager
     // pool size in number of elements
     uint32_t _poolSize;
 };
+
+} // namespace gem5
 
 #endif // __POOL_MANAGER_HH__

@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020-2021 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved.
@@ -35,6 +47,7 @@
 #define __MEM_RUBY_SLICC_INTERFACE_RUBYSLICC_UTIL_HH__
 
 #include <cassert>
+#include <climits>
 
 #include "debug/RubySlicc.hh"
 #include "mem/packet.hh"
@@ -43,8 +56,19 @@
 #include "mem/ruby/common/DataBlock.hh"
 #include "mem/ruby/common/TypeDefines.hh"
 #include "mem/ruby/common/WriteMask.hh"
+#include "mem/ruby/protocol/RubyRequestType.hh"
+
+namespace gem5
+{
+
+namespace ruby
+{
 
 inline Cycles zero_time() { return Cycles(0); }
+
+inline Cycles intToCycles(int c) { return Cycles(c); }
+
+inline Tick intToTick(int c) { return c; }
 
 inline NodeID
 intToID(int nodenum)
@@ -83,6 +107,85 @@ mod(int val, int mod)
 inline int max_tokens()
 {
   return 1024;
+}
+
+inline bool
+isWriteRequest(RubyRequestType type)
+{
+    if ((type == RubyRequestType_ST) ||
+        (type == RubyRequestType_ATOMIC) ||
+        (type == RubyRequestType_RMW_Read) ||
+        (type == RubyRequestType_RMW_Write) ||
+        (type == RubyRequestType_Store_Conditional) ||
+        (type == RubyRequestType_Locked_RMW_Read) ||
+        (type == RubyRequestType_Locked_RMW_Write) ||
+        (type == RubyRequestType_FLUSH)) {
+            return true;
+    } else {
+            return false;
+    }
+}
+
+inline bool
+isDataReadRequest(RubyRequestType type)
+{
+    if ((type == RubyRequestType_LD) ||
+        (type == RubyRequestType_Load_Linked)) {
+            return true;
+    } else {
+            return false;
+    }
+}
+
+inline bool
+isReadRequest(RubyRequestType type)
+{
+    if (isDataReadRequest(type) ||
+        (type == RubyRequestType_IFETCH)) {
+            return true;
+    } else {
+            return false;
+    }
+}
+
+inline bool
+isHtmCmdRequest(RubyRequestType type)
+{
+    if ((type == RubyRequestType_HTM_Start)  ||
+        (type == RubyRequestType_HTM_Commit) ||
+        (type == RubyRequestType_HTM_Cancel) ||
+        (type == RubyRequestType_HTM_Abort)) {
+            return true;
+    } else {
+            return false;
+    }
+}
+
+inline RubyRequestType
+htmCmdToRubyRequestType(const Packet *pkt)
+{
+    if (pkt->req->isHTMStart()) {
+        return RubyRequestType_HTM_Start;
+    } else if (pkt->req->isHTMCommit()) {
+        return RubyRequestType_HTM_Commit;
+    } else if (pkt->req->isHTMCancel()) {
+        return RubyRequestType_HTM_Cancel;
+    } else if (pkt->req->isHTMAbort()) {
+        return RubyRequestType_HTM_Abort;
+    }
+    else {
+        panic("invalid ruby packet type\n");
+    }
+}
+
+inline int
+addressOffset(Addr addr, Addr base)
+{
+    assert(addr >= base);
+    Addr offset = addr - base;
+    // sanity checks if fits in an int
+    assert(offset < INT_MAX);
+    return offset;
 }
 
 /**
@@ -175,12 +278,15 @@ inline int
 countBoolVec(BoolVec bVec)
 {
     int count = 0;
-    for (const auto &it: bVec) {
-        if (it) {
+    for (const bool e: bVec) {
+        if (e) {
             count++;
         }
     }
     return count;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif //__MEM_RUBY_SLICC_INTERFACE_RUBYSLICC_UTIL_HH__

@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Nikos Nikoleris
  */
 
 /**
@@ -64,6 +61,9 @@
 #include "mem/cache/tags/base.hh"
 #include "mem/packet.hh"
 #include "params/FALRU.hh"
+
+namespace gem5
+{
 
 // Uncomment to enable sanity checks for the FALRU cache and the
 // TrackedCaches class
@@ -156,18 +156,13 @@ class FALRU : public BaseTags
     /**
      * Construct and initialize this cache tagstore.
      */
-    FALRU(const Params *p);
+    FALRU(const Params &p);
     ~FALRU();
 
     /**
      * Initialize blocks as FALRUBlk instances.
      */
     void tagsInit() override;
-
-    /**
-     * Register the stats for this object.
-     */
-    void regStats() override;
 
     /**
      * Invalidate a cache block.
@@ -181,19 +176,18 @@ class FALRU : public BaseTags
      * cache access and should only be used as such.
      * Returns tag lookup latency and the inCachesMask flags as a side effect.
      *
-     * @param addr The address to look for.
-     * @param is_secure True if the target memory space is secure.
+     * @param pkt The packet holding the address to find.
      * @param lat The latency of the tag lookup.
      * @param in_cache_mask Mask indicating the caches in which the blk fits.
      * @return Pointer to the cache block.
      */
-    CacheBlk* accessBlock(Addr addr, bool is_secure, Cycles &lat,
+    CacheBlk* accessBlock(const PacketPtr pkt, Cycles &lat,
                           CachesMask *in_cache_mask);
 
     /**
      * Just a wrapper of above function to conform with the base interface.
      */
-    CacheBlk* accessBlock(Addr addr, bool is_secure, Cycles &lat) override;
+    CacheBlk* accessBlock(const PacketPtr pkt, Cycles &lat) override;
 
     /**
      * Find the block in the cache, do not update the replacement data.
@@ -225,7 +219,7 @@ class FALRU : public BaseTags
      */
     CacheBlk* findVictim(Addr addr, const bool is_secure,
                          const std::size_t size,
-                         std::vector<CacheBlk*>& evict_blks) const override;
+                         std::vector<CacheBlk*>& evict_blks) override;
 
     /**
      * Insert the new block into the cache and update replacement data.
@@ -234,6 +228,8 @@ class FALRU : public BaseTags
      * @param blk The block to update.
      */
     void insertBlock(const PacketPtr pkt, CacheBlk *blk) override;
+
+    void moveBlock(CacheBlk *src_blk, CacheBlk *dest_blk) override;
 
     /**
      * Generate the tag from the addres. For fully associative this is just the
@@ -254,7 +250,7 @@ class FALRU : public BaseTags
      */
     Addr regenerateBlkAddr(const CacheBlk* blk) const override
     {
-        return blk->tag;
+        return blk->getTag();
     }
 
     void forEachBlk(std::function<void(CacheBlk &)> visitor) override {
@@ -279,23 +275,11 @@ class FALRU : public BaseTags
      * caches from a set minimum size of interest up to the actual
      * cache size.
      */
-    class CacheTracking
+    class CacheTracking : public statistics::Group
     {
       public:
         CacheTracking(unsigned min_size, unsigned max_size,
-                      unsigned block_size)
-            : blkSize(block_size),
-              minTrackedSize(min_size),
-              numTrackedCaches(max_size > min_size ?
-                               floorLog2(max_size) - floorLog2(min_size) : 0),
-              inAllCachesMask(mask(numTrackedCaches)),
-              boundaries(numTrackedCaches)
-        {
-            fatal_if(numTrackedCaches > sizeof(CachesMask) * 8,
-                     "Not enough bits (%s) in type CachesMask type to keep "
-                     "track of %d caches\n", sizeof(CachesMask),
-                     numTrackedCaches);
-        }
+                      unsigned block_size, statistics::Group *parent);
 
         /**
          * Initialiaze cache blocks and the tracking mechanism
@@ -353,11 +337,6 @@ class FALRU : public BaseTags
          */
         void check(const FALRUBlk *head, const FALRUBlk *tail) const;
 
-        /**
-         * Register the stats for this object.
-         */
-        void regStats(std::string name);
-
       private:
         /** The size of the cache block */
         const unsigned blkSize;
@@ -379,11 +358,11 @@ class FALRU : public BaseTags
          */
 
         /** Hits in each cache */
-        Stats::Vector hits;
+        statistics::Vector hits;
         /** Misses in each cache */
-        Stats::Vector misses;
+        statistics::Vector misses;
         /** Total number of accesses */
-        Stats::Scalar accesses;
+        statistics::Scalar accesses;
 
         /**
          * @}
@@ -391,5 +370,7 @@ class FALRU : public BaseTags
     };
     CacheTracking cacheTracking;
 };
+
+} // namespace gem5
 
 #endif // __MEM_CACHE_TAGS_FA_LRU_HH__

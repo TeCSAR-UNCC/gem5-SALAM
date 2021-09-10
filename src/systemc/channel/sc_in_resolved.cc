@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "base/cprintf.hh"
@@ -47,7 +45,7 @@ sc_in_resolved::end_of_elaboration()
 {
     sc_in<sc_dt::sc_logic>::end_of_elaboration();
     if (!dynamic_cast<sc_signal_resolved *>(get_interface())) {
-        std::string msg = csprintf("port '%s' (%s)", name(), kind());
+        std::string msg = gem5::csprintf("port '%s' (%s)", name(), kind());
         SC_REPORT_ERROR("(E117) resolved port not bound to resolved signal",
                 msg.c_str());
     }

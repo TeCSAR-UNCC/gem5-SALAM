@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 output header {{
     class CPUIDInst : public X86ISA::X86StaticInst
@@ -50,19 +48,20 @@ output header {{
         }
 
         std::string generateDisassembly(Addr pc,
-                const SymbolTable *symtab) const;
+                const loader::SymbolTable *symtab) const override;
     };
 }};
 
 output decoder {{
-    std::string CPUIDInst::generateDisassembly(Addr PC,
-            const SymbolTable *symtab) const
+    std::string
+    CPUIDInst::generateDisassembly(
+            Addr PC, const loader::SymbolTable *symtab) const
     {
         std::stringstream response;
 
         printMnemonic(response, mnemonic);
         ccprintf(response, " ");
-        printReg(response, _srcRegIdx[0], machInst.opSize);
+        printReg(response, srcRegIdx(0), machInst.opSize);
         return response.str();
     }
 }};

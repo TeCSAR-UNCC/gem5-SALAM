@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "systemc/core/process.hh"
@@ -384,7 +382,7 @@ Process::Process(const char *name, ProcessFuncWrapper *func, bool internal) :
     _needsStart(true), _isUnwinding(false), _terminated(false),
     _scheduled(false), _suspended(false), _disabled(false),
     _syncReset(false), syncResetCount(0), asyncResetCount(0), _waitCount(0),
-    refCount(0), stackSize(::Fiber::DefaultStackSize),
+    refCount(0), stackSize(gem5::Fiber::DefaultStackSize),
     dynamicSensitivity(nullptr)
 {
     _dynamic =

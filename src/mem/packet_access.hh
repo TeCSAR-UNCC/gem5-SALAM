@@ -36,10 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Nathan Binkert
- *          Andreas Sandberg
  */
 
 #ifndef __MEM_PACKET_ACCESS_HH__
@@ -47,6 +43,9 @@
 
 #include "mem/packet.hh"
 #include "sim/byteswap.hh"
+
+namespace gem5
+{
 
 template <typename T>
 inline T
@@ -86,10 +85,10 @@ inline T
 Packet::get(ByteOrder endian) const
 {
     switch (endian) {
-      case BigEndianByteOrder:
+      case ByteOrder::big:
         return getBE<T>();
 
-      case LittleEndianByteOrder:
+      case ByteOrder::little:
         return getLE<T>();
 
       default:
@@ -116,15 +115,17 @@ inline void
 Packet::set(T v, ByteOrder endian)
 {
     switch (endian) {
-      case BigEndianByteOrder:
+      case ByteOrder::big:
         return setBE<T>(v);
 
-      case LittleEndianByteOrder:
+      case ByteOrder::little:
         return setLE<T>(v);
 
       default:
         panic("Illegal byte order in Packet::set()\n");
     };
 }
+
+} // namespace gem5
 
 #endif //__MEM_PACKET_ACCESS_HH__

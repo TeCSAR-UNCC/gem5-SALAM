@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          William Wang
  */
 
 /** @file
@@ -70,15 +67,15 @@
 #include "base/trace.hh"
 #include "debug/VNC.hh"
 #include "sim/byteswap.hh"
-#include "sim/core.hh"
 
-using namespace std;
+namespace gem5
+{
 
 const PixelConverter VncServer::pixelConverter(
     4,        // 4 bytes / pixel
     16, 8, 0, // R in [23, 16], G in [15, 8], B in [7, 0]
     8, 8, 8,  // 8 bits / channel
-    LittleEndianByteOrder);
+    ByteOrder::little);
 
 /** @file
  * Implementiation of a VNC server
@@ -118,13 +115,13 @@ VncServer::DataEvent::process(int revent)
 /**
  * VncServer
  */
-VncServer::VncServer(const Params *p)
-    : VncInput(p), listenEvent(NULL), dataEvent(NULL), number(p->number),
+VncServer::VncServer(const Params &p)
+    : VncInput(p), listenEvent(NULL), dataEvent(NULL), number(p.number),
       dataFd(-1), sendUpdate(false),
       supportsRawEnc(false), supportsResizeEnc(false)
 {
-    if (p->port)
-        listen(p->port);
+    if (p.port)
+        listen(p.port);
 
     curState = WaitForProtocolVersion;
 
@@ -133,7 +130,7 @@ VncServer::VncServer(const Params *p)
     // around for telling the client and making sure it cooperates
     pixelFormat.bpp = 8 * pixelConverter.length;
     pixelFormat.depth = pixelConverter.depth;
-    pixelFormat.bigendian = pixelConverter.byte_order == BigEndianByteOrder;
+    pixelFormat.bigendian = pixelConverter.byte_order == ByteOrder::big;
     pixelFormat.truecolor = 1;
     pixelFormat.redmax = pixelConverter.ch_r.mask;
     pixelFormat.greenmax = pixelConverter.ch_g.mask;
@@ -142,7 +139,7 @@ VncServer::VncServer(const Params *p)
     pixelFormat.greenshift = pixelConverter.ch_g.offset;
     pixelFormat.blueshift = pixelConverter.ch_b.offset;
 
-    DPRINTF(VNC, "Vnc server created at port %d\n", p->port);
+    DPRINTF(VNC, "Vnc server created at port %d\n", p.port);
 }
 
 VncServer::~VncServer()
@@ -174,7 +171,7 @@ VncServer::listen(int port)
         port++;
     }
 
-    ccprintf(cerr, "%s: Listening for connections on port %d\n",
+    ccprintf(std::cerr, "%s: Listening for connections on port %d\n",
              name(), port);
 
     listenEvent = new ListenEvent(this, listener.getfd(), POLLIN);
@@ -381,7 +378,7 @@ VncServer::checkProtocolVersion()
 {
     assert(curState == WaitForProtocolVersion);
 
-    size_t len M5_VAR_USED;
+    GEM5_VAR_USED size_t len;
     char version_string[13];
 
     // Null terminate the message so it's easier to work with
@@ -392,20 +389,22 @@ VncServer::checkProtocolVersion()
         return;
     }
 
-    uint32_t major, minor;
+    uint32_t major_version, minor_version;
 
     // Figure out the major/minor numbers
-    if (sscanf(version_string, "RFB %03d.%03d\n", &major, &minor) != 2) {
+    if (sscanf(version_string, "RFB %03d.%03d\n", &major_version,
+            &minor_version) != 2) {
         warn(" Malformed protocol version %s\n", version_string);
         sendError("Malformed protocol version\n");
         detach();
         return;
     }
 
-    DPRINTF(VNC, "Client request protocol version %d.%d\n", major, minor);
+    DPRINTF(VNC, "Client request protocol version %d.%d\n", major_version,
+        minor_version);
 
     // If it's not 3.X we don't support it
-    if (major != 3 || minor < 2) {
+    if (major_version != 3 || minor_version < 2) {
         warn("Unsupported VNC client version... disconnecting\n");
         uint8_t err = AuthInvalid;
         write(&err);
@@ -413,7 +412,7 @@ VncServer::checkProtocolVersion()
         return;
     }
     // Auth is different based on version number
-    if (minor < 7) {
+    if (minor_version < 7) {
         uint32_t sec_type = htobe((uint32_t)AuthNone);
         if (!write(&sec_type))
             return;
@@ -473,7 +472,7 @@ VncServer::sendServerInit()
     memset(msg.px.padding, 0, 3);
     msg.namelen = 2;
     msg.namelen = htobe(msg.namelen);
-    memcpy(msg.name, "M5", 2);
+    std::memcpy(msg.name, "M5", 2);
 
     if (!write(&msg))
         return;
@@ -733,10 +732,4 @@ VncServer::frameBufferResized()
     }
 }
 
-// create the VNC server object
-VncServer *
-VncServerParams::create()
-{
-    return new VncServer(this);
-}
-
+} // namespace gem5

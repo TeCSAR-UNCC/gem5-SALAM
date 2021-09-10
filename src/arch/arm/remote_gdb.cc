@@ -38,10 +38,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          William Wang
- *          Boris Shingarov
  */
 
 /*
@@ -141,10 +137,10 @@
 
 #include "arch/arm/decoder.hh"
 #include "arch/arm/pagetable.hh"
-#include "arch/arm/registers.hh"
+#include "arch/arm/regs/vec.hh"
 #include "arch/arm/system.hh"
 #include "arch/arm/utility.hh"
-#include "arch/arm/vtophys.hh"
+#include "arch/generic/mmu.hh"
 #include "base/chunk_generator.hh"
 #include "base/intmath.hh"
 #include "base/remote_gdb.hh"
@@ -167,11 +163,32 @@
 #include "sim/full_system.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
+
 using namespace ArmISA;
 
-RemoteGDB::RemoteGDB(System *_system, ThreadContext *tc, int _port)
-    : BaseRemoteGDB(_system, tc, _port), regCache32(this), regCache64(this)
+static bool
+tryTranslate(ThreadContext *tc, Addr addr)
+{
+    // Set up a functional memory Request to pass to the TLB
+    // to get it to translate the vaddr to a paddr
+    auto req = std::make_shared<Request>(addr, 64, 0x40, -1, 0, 0);
+
+    // Check the TLBs for a translation
+    // It's possible that there is a valid translation in the tlb
+    // that is no loger valid in the page table in memory
+    // so we need to check here first
+    //
+    // Calling translateFunctional invokes a table-walk if required
+    // so we should always succeed
+    auto *mmu = tc->getMMUPtr();
+    return mmu->translateFunctional(req, tc, BaseMMU::Read) == NoFault ||
+           mmu->translateFunctional(req, tc, BaseMMU::Execute) == NoFault;
+}
+
+RemoteGDB::RemoteGDB(System *_system, int _port)
+    : BaseRemoteGDB(_system, _port), regCache32(this), regCache64(this)
 {
 }
 
@@ -183,7 +200,7 @@ RemoteGDB::acc(Addr va, size_t len)
 {
     if (FullSystem) {
         for (ChunkGenerator gen(va, len, PageBytes); !gen.done(); gen.next()) {
-            if (!virtvalid(context(), gen.addr())) {
+            if (!tryTranslate(context(), gen.addr())) {
                 DPRINTF(GDBAcc, "acc:   %#x mapping is invalid\n", va);
                 return false;
             }
@@ -343,3 +360,5 @@ RemoteGDB::gdbRegs()
     else
         return &regCache32;
 }
+
+} // namespace gem5

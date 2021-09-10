@@ -35,6 +35,12 @@
 #include "mem/ruby/common/Address.hh"
 #include "mem/ruby/common/Histogram.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class StoreTrace
 {
   public:
@@ -86,5 +92,8 @@ operator<<(std::ostream& out, const StoreTrace& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_PROFILER_STORETRACE_HH__

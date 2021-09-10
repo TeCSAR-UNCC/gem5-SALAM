@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -38,6 +36,9 @@
 #define __MEM_CACHE_TAGS_SUPER_BLK_HH__
 
 #include "mem/cache/tags/sector_blk.hh"
+
+namespace gem5
+{
 
 class SuperBlk;
 
@@ -61,11 +62,39 @@ class CompressionBlk : public SectorSubBlk
      */
     Cycles _decompressionLatency;
 
+    /** Compression bit. */
+    bool _compressed;
+
   public:
+    /**
+     * When an overwrite happens, the data size may change an not fit in its
+     * current container any longer. This enum declared which kind of size
+     * change happened in this situation.
+     */
+    enum OverwriteType : int
+    {
+        /** New data contents are considered smaller than previous contents. */
+        DATA_CONTRACTION = -1,
+        /** New and old contents are considered of similar sizes. */
+        UNCHANGED = 0,
+        /** New data contents are considered larger than previous contents. */
+        DATA_EXPANSION = 1,
+    };
+
     CompressionBlk();
     CompressionBlk(const CompressionBlk&) = delete;
     CompressionBlk& operator=(const CompressionBlk&) = delete;
-    ~CompressionBlk() {};
+    CompressionBlk(CompressionBlk&&) = delete;
+    /**
+     * Move assignment operator.
+     * This should only be used to move an existing valid entry into an
+     * invalid one, not to create a new entry. In the end the valid entry
+     * will become invalid, and the invalid, valid. All location related
+     * variables will remain the same.
+     */
+    CompressionBlk& operator=(CompressionBlk&& other);
+    CacheBlk& operator=(CacheBlk&& other) override;
+    ~CompressionBlk() = default;
 
     /**
      * Check if this block holds compressed data.
@@ -112,6 +141,20 @@ class CompressionBlk : public SectorSubBlk
      */
     void setDecompressionLatency(const Cycles lat);
 
+    void invalidate() override;
+
+    /**
+     * Determines if changing the size of the block will cause a data
+     * expansion (new size is bigger) or contraction (new size is smaller).
+     * Sizes are not necessarily compared at at bit granularities (e.g., 20
+     * bits is considered equal to 23 bits when blocks use 32-bit spaces as
+     * minimum allocation units).
+     *
+     * @param size The new compressed size.
+     * @return Type of size change. @sa OverwriteType.
+     */
+    OverwriteType checkExpansionContraction(const std::size_t size) const;
+
     /**
      * Pretty-print sector offset and other CacheBlk information.
      *
@@ -130,8 +173,15 @@ class SuperBlk : public SectorBlk
     /** Block size, in bytes. */
     std::size_t blkSize;
 
+    /**
+     * Superblock's compression factor. It is aligned to be a power of two,
+     * limited by the maximum compression ratio, and calculated as:
+     *   compressionFactor = uncompressedSize/compressedSize
+     */
+    uint8_t compressionFactor;
+
   public:
-    SuperBlk() : SectorBlk(), blkSize(0) {}
+    SuperBlk();
     SuperBlk(const SuperBlk&) = delete;
     SuperBlk& operator=(const SuperBlk&) = delete;
     ~SuperBlk() {};
@@ -159,6 +209,40 @@ class SuperBlk : public SectorBlk
      * @param blk_size The uncompressed block size.
      */
     void setBlkSize(const std::size_t blk_size);
+
+    /**
+     * Calculate the compression factor (cf) given a compressed size and the
+     * maximum compression ratio. Therefore cf is:
+     *  1 if comp_size > blk_size/2,
+     *  2 if comp_size > blk_size/4,
+     *  4 if comp_size > blk_size/8,
+     *  8 if comp_size > blk_size/16,
+     * and so on.
+     *
+     * @param size The compressed size.
+     * @return Compression factor corresponding to the size.
+     */
+    uint8_t calculateCompressionFactor(const std::size_t size) const;
+
+    /**
+     * Get the compression factor of this superblock.
+     *
+     * @return The compression factor.
+     */
+    uint8_t getCompressionFactor() const;
+
+    /**
+     * Set the compression factor of this superblock.
+     *
+     * @param compression_factor The new compression factor.
+     */
+    void setCompressionFactor(const uint8_t compression_factor);
+
+    void invalidate() override;
+
+    std::string print() const override;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_TAGS_SUPER_BLK_HH__

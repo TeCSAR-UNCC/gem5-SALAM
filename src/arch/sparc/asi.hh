@@ -24,18 +24,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Ali Saidi
  */
 
 #ifndef __ARCH_SPARC_ASI_HH__
 #define __ARCH_SPARC_ASI_HH__
 
+namespace gem5
+{
+
 namespace SparcISA
 {
 
-enum ASI {
+enum ASI
+{
     ASI_IMPLICIT = 0x00,
     /* Priveleged ASIs */
     // 0x00-0x03 implementation dependent
@@ -273,5 +274,7 @@ bool asiIsReg(ASI);
 bool asiIsInterrupt(ASI);
 bool asiIsSparcError(ASI);
 };
+
+} // namespace gem5
 
 #endif // __ARCH_SPARC_ASI_HH__

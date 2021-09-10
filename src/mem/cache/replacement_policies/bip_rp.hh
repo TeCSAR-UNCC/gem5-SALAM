@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /**
@@ -46,9 +44,16 @@
 
 #include "mem/cache/replacement_policies/lru_rp.hh"
 
+namespace gem5
+{
+
 struct BIPRPParams;
 
-class BIPRP : public LRURP
+GEM5_DEPRECATED_NAMESPACE(ReplacementPolicy, replacement_policy);
+namespace replacement_policy
+{
+
+class BIP : public LRU
 {
   protected:
     /**
@@ -58,18 +63,9 @@ class BIPRP : public LRURP
     const unsigned btp;
 
   public:
-    /** Convenience typedef. */
     typedef BIPRPParams Params;
-
-    /**
-     * Construct and initiliaze this replacement policy.
-     */
-    BIPRP(const Params *p);
-
-    /**
-     * Destructor.
-     */
-    ~BIPRP() {}
+    BIP(const Params &p);
+    ~BIP() = default;
 
     /**
      * Reset replacement data for an entry. Used when an entry is inserted.
@@ -81,5 +77,8 @@ class BIPRP : public LRURP
     void reset(const std::shared_ptr<ReplacementData>& replacement_data) const
                                                                      override;
 };
+
+} // namespace replacement_policy
+} // namespace gem5
 
 #endif // __MEM_CACHE_REPLACEMENT_POLICIES_BIP_RP_HH__

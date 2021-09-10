@@ -34,11 +34,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vasileios Spiliopoulos
- *          Akash Bagdia
- *          Christopher Torng
- *          Stephan Diestelhorst
  */
 
 /**
@@ -56,6 +51,9 @@
 #include "params/DerivedClockDomain.hh"
 #include "params/SrcClockDomain.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 /**
  * Forward declaration
@@ -100,7 +98,7 @@ class ClockDomain : public SimObject
   public:
 
     typedef ClockDomainParams Params;
-    ClockDomain(const Params *p, VoltageDomain *voltage_domain);
+    ClockDomain(const Params &p, VoltageDomain *voltage_domain);
 
     /**
      * Get the clock period.
@@ -145,14 +143,14 @@ class ClockDomain : public SimObject
     { children.push_back(clock_domain); }
 
   private:
-    struct ClockDomainStats : public Stats::Group
+    struct ClockDomainStats : public statistics::Group
     {
         ClockDomainStats(ClockDomain &cd);
 
         /**
          * Stat to report clock period of clock domain
          */
-        Stats::Value clock;
+        statistics::Value clock;
     } stats;
 };
 
@@ -171,7 +169,7 @@ class SrcClockDomain : public ClockDomain
   public:
 
     typedef SrcClockDomainParams Params;
-    SrcClockDomain(const Params *p);
+    SrcClockDomain(const Params &p);
 
     /**
      * Set new clock value
@@ -280,7 +278,7 @@ class DerivedClockDomain: public ClockDomain
   public:
 
     typedef DerivedClockDomainParams Params;
-    DerivedClockDomain(const Params *p);
+    DerivedClockDomain(const Params &p);
 
     /**
      * Called by the parent clock domain to propagate changes. This
@@ -302,5 +300,7 @@ class DerivedClockDomain: public ClockDomain
      */
     const uint64_t clockDivider;
 };
+
+} // namespace gem5
 
 #endif

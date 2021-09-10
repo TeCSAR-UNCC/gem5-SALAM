@@ -33,13 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Bobby R. Bruce
  */
 
 #include <gtest/gtest.h>
 
 #include "base/bitfield.hh"
+
+using namespace gem5;
 
 /*
  * The following tests the "mask(N)" function. It is assumed that the mask
@@ -89,22 +89,22 @@ TEST(BitfieldTest, MaskAllBitsGreaterThan64)
  */
 TEST(BitfieldTest, MaskOneBit)
 {
-    EXPECT_EQ(1, mask(0,0));
+    EXPECT_EQ(1, mask(0, 0));
 }
 
 TEST(BitfieldTest, MaskTwoBits)
 {
-    EXPECT_EQ((1 << 1) + 1, mask(1,0));
+    EXPECT_EQ((1 << 1) + 1, mask(1, 0));
 }
 
 TEST(BitfieldTest, MaskThreeBits)
 {
-    EXPECT_EQ((1 << 5) + (1 << 4) + (1 << 3), mask(5,3));
+    EXPECT_EQ((1 << 5) + (1 << 4) + (1 << 3), mask(5, 3));
 }
 
 TEST(BitfieldTest, MaskEntireRange)
 {
-    EXPECT_EQ(0xFFFFFFFFFFFFFFFF, mask(63,0));
+    EXPECT_EQ(0xFFFFFFFFFFFFFFFF, mask(63, 0));
 }
 
 TEST(BitfieldTest, MaskOutsideOfRange)
@@ -166,7 +166,8 @@ TEST(BitfieldTest, MbitsEntireRange)
 
 /*
  * The following tests the "sext<N>(X)" function. sext carries out a sign
- * extention from N bits to 64 bits on value X.
+ * extention from N bits to 64 bits on value X. It does not zero bits past the
+ * sign bit if it was zero.
  */
 TEST(BitfieldTest, SignExtendPositiveInput)
 {
@@ -192,6 +193,36 @@ TEST(BitfieldTest, SignExtendNegativeInputOutsideRange)
     uint64_t val = 0x4800000010000008;
     uint64_t output = 0xF800000010000008;
     EXPECT_EQ(output, sext<60>(val));
+}
+/*
+ * The following tests the "szext<N>(X)" function. szext carries out a sign
+ * extention from N bits to 64 bits on value X. Will zero bits past the sign
+ * bit if it was zero.
+ */
+TEST(BitfieldTest, SignZeroExtendPositiveInput)
+{
+    int8_t val = 14;
+    int64_t output = 14;
+    EXPECT_EQ(output, szext<8>(val));
+}
+
+TEST(BitfieldTest, SignZeroExtendNegativeInput)
+{
+    int8_t val = -14;
+    uint64_t output = -14;
+    EXPECT_EQ(output, szext<8>(val));
+}
+
+TEST(BitfieldTest, SignZeroExtendPositiveInputOutsideRange)
+{
+    EXPECT_EQ(0, szext<8>(1 << 10));
+}
+
+TEST(BitfieldTest, SignZeroExtendNegativeInputOutsideRange)
+{
+    uint64_t val = 0x4800000010000008;
+    uint64_t output = 0xF800000010000008;
+    EXPECT_EQ(output, szext<60>(val));
 }
 
 /* The following tests "insertBits(A, B, C, D)". insertBits returns A
@@ -290,24 +321,6 @@ TEST(BitfieldTest, FindLsb)
 TEST(BitfieldTest, FindLsbZero)
 {
     EXPECT_EQ(64, findLsbSet(0));
-}
-
-/* The following tests a simple function that verifies whether a value is a
- * a power of two or not.
- */
-TEST(BitfieldTest, IsPow2)
-{
-    EXPECT_TRUE(isPow2(32));
-}
-
-TEST(BitfieldTest, IsNotPow2)
-{
-    EXPECT_FALSE(isPow2(36));
-}
-
-TEST(BitfieldTest, IsPow2Zero)
-{
-    EXPECT_TRUE(isPow2(0));
 }
 
 /*

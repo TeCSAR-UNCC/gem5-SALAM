@@ -33,12 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/x86/decoder.hh"
 #include "arch/x86/types.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -117,7 +118,7 @@ namespace X86ISA
 /*  8 */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0,
 /*  9 */ 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1,
 /*  A */ 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 1 , 1 , 1 , 1 , 1,
-/*  B */ 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 1 , 1 , 1 , 1 , 1 , 1,
+/*  B */ 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 0 , 1 , 1 , 1 , 1 , 1 , 1,
 /*  C */ 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0,
 /*  D */ 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1,
 /*  E */ 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1,
@@ -166,7 +167,8 @@ namespace X86ISA
 /*  F */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
     };
 
-    enum SizeType {
+    enum SizeType
+    {
         NoImm,
         NI = NoImm,
         ByteImm,
@@ -236,7 +238,7 @@ namespace X86ISA
 /*  8 */ ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW, ZW,
 /*  9 */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 /*  A */ 0 , 0 , 0 , 0 , BY, 0 , 0 , 0 , 0 , 0 , 0 , 0 , BY, 0 , 0 , 0 ,
-/*  B */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , ZW, 0 , BY, 0 , 0 , 0 , 0 , 0 ,
+/*  B */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , BY, 0 , 0 , 0 , 0 , 0 ,
 /*  C */ 0 , 0 , BY, 0 , BY, BY, BY, 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 /*  D */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 /*  E */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
@@ -284,4 +286,5 @@ namespace X86ISA
 /*  E */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 /*  F */ 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
     };
-}
+} // namespace X86ISA
+} // namespace gem5

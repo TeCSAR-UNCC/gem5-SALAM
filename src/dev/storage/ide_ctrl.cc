@@ -36,17 +36,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Schultz
- *          Ali Saidi
- *          Miguel Serrano
  */
 
 #include "dev/storage/ide_ctrl.hh"
 
 #include <string>
 
-#include "cpu/intr_control.hh"
+#include "base/cprintf.hh"
 #include "debug/IdeCtrl.hh"
 #include "dev/storage/ide_disk.hh"
 #include "mem/packet.hh"
@@ -58,89 +54,78 @@
 // we open up the entire namespace std
 using std::string;
 
+namespace gem5
+{
+
 // Bus master IDE registers
-enum BMIRegOffset {
+enum BMIRegOffset
+{
     BMICommand = 0x0,
     BMIStatus = 0x2,
     BMIDescTablePtr = 0x4
 };
 
-// PCI config space registers
-enum ConfRegOffset {
-    PrimaryTiming = 0x40,
-    SecondaryTiming = 0x42,
-    DeviceTiming = 0x44,
-    UDMAControl = 0x48,
-    UDMATiming = 0x4A,
-    IDEConfig = 0x54
-};
-
-static const uint16_t timeRegWithDecodeEn = 0x8000;
-
-IdeController::Channel::Channel(
-        string newName, Addr _cmdSize, Addr _ctrlSize) :
-    _name(newName),
-    cmdAddr(0), cmdSize(_cmdSize), ctrlAddr(0), ctrlSize(_ctrlSize),
-    master(NULL), slave(NULL), selected(NULL)
+IdeController::Channel::Channel(string newName) : _name(newName)
 {
     bmiRegs.reset();
     bmiRegs.status.dmaCap0 = 1;
     bmiRegs.status.dmaCap1 = 1;
 }
 
-IdeController::Channel::~Channel()
-{
-}
-
-IdeController::IdeController(Params *p)
-    : PciDevice(p), primary(name() + ".primary", BARSize[0], BARSize[1]),
-    secondary(name() + ".secondary", BARSize[2], BARSize[3]),
-    bmiAddr(0), bmiSize(BARSize[4]),
-    primaryTiming(htole(timeRegWithDecodeEn)),
-    secondaryTiming(htole(timeRegWithDecodeEn)),
-    deviceTiming(0), udmaControl(0), udmaTiming(0), ideConfig(0),
-    ioEnabled(false), bmEnabled(false),
-    ioShift(p->io_shift), ctrlOffset(p->ctrl_offset)
+IdeController::IdeController(const Params &p)
+    : PciDevice(p), configSpaceRegs(name() + ".config_space_regs"),
+    primary(name() + ".primary"),
+    secondary(name() + ".secondary"),
+    ioShift(p.io_shift), ctrlOffset(p.ctrl_offset)
 {
 
     // Assign the disks to channels
-    for (int i = 0; i < params()->disks.size(); i++) {
-        if (!params()->disks[i])
+    for (int i = 0; i < params().disks.size(); i++) {
+        if (!params().disks[i])
             continue;
         switch (i) {
           case 0:
-            primary.master = params()->disks[0];
+            primary.device0 = params().disks[0];
             break;
           case 1:
-            primary.slave = params()->disks[1];
+            primary.device1 = params().disks[1];
             break;
           case 2:
-            secondary.master = params()->disks[2];
+            secondary.device0 = params().disks[2];
             break;
           case 3:
-            secondary.slave = params()->disks[3];
+            secondary.device1 = params().disks[3];
             break;
           default:
             panic("IDE controllers support a maximum "
                   "of 4 devices attached!\n");
         }
-        params()->disks[i]->setController(this, sys->getPageBytes());
+        // Arbitrarily set the chunk size to 4K.
+        params().disks[i]->setController(this, 4 * 1024);
     }
 
     primary.select(false);
     secondary.select(false);
+}
 
-    if ((BARAddrs[0] & ~BAR_IO_MASK) && (!legacyIO[0] || ioShift)) {
-        primary.cmdAddr = BARAddrs[0];  primary.cmdSize = BARSize[0];
-        primary.ctrlAddr = BARAddrs[1]; primary.ctrlSize = BARSize[1];
-    }
-    if ((BARAddrs[2] & ~BAR_IO_MASK) && (!legacyIO[2] || ioShift)) {
-        secondary.cmdAddr = BARAddrs[2];  secondary.cmdSize = BARSize[2];
-        secondary.ctrlAddr = BARAddrs[3]; secondary.ctrlSize = BARSize[3];
-    }
+void
+IdeController::ConfigSpaceRegs::serialize(CheckpointOut &cp) const
+{
+    SERIALIZE_SCALAR(primaryTiming);
+    SERIALIZE_SCALAR(secondaryTiming);
+    SERIALIZE_SCALAR(deviceTiming);
+    SERIALIZE_SCALAR(udmaControl);
+    SERIALIZE_SCALAR(udmaTiming);
+}
 
-    ioEnabled = (config.command & htole(PCI_CMD_IOSE));
-    bmEnabled = (config.command & htole(PCI_CMD_BME));
+void
+IdeController::ConfigSpaceRegs::unserialize(CheckpointIn &cp)
+{
+    UNSERIALIZE_SCALAR(primaryTiming);
+    UNSERIALIZE_SCALAR(secondaryTiming);
+    UNSERIALIZE_SCALAR(deviceTiming);
+    UNSERIALIZE_SCALAR(udmaControl);
+    UNSERIALIZE_SCALAR(udmaTiming);
 }
 
 bool
@@ -160,9 +145,9 @@ void
 IdeController::setDmaComplete(IdeDisk *disk)
 {
     Channel *channel;
-    if (disk == primary.master || disk == primary.slave) {
+    if (disk == primary.device0 || disk == primary.device1) {
         channel = &primary;
-    } else if (disk == secondary.master || disk == secondary.slave) {
+    } else if (disk == secondary.device0 || disk == secondary.device1) {
         channel = &secondary;
     } else {
         panic("Unable to find disk based on pointer %#x\n", disk);
@@ -177,79 +162,16 @@ Tick
 IdeController::readConfig(PacketPtr pkt)
 {
     int offset = pkt->getAddr() & PCI_CONFIG_SIZE;
-    if (offset < PCI_DEVICE_SPECIFIC) {
+    if (offset < PCI_DEVICE_SPECIFIC)
         return PciDevice::readConfig(pkt);
-    }
 
-    switch (pkt->getSize()) {
-      case sizeof(uint8_t):
-        switch (offset) {
-          case DeviceTiming:
-            pkt->setLE<uint8_t>(deviceTiming);
-            break;
-          case UDMAControl:
-            pkt->setLE<uint8_t>(udmaControl);
-            break;
-          case PrimaryTiming + 1:
-            pkt->setLE<uint8_t>(bits(htole(primaryTiming), 15, 8));
-            break;
-          case SecondaryTiming + 1:
-            pkt->setLE<uint8_t>(bits(htole(secondaryTiming), 15, 8));
-            break;
-          case IDEConfig:
-            pkt->setLE<uint8_t>(bits(htole(ideConfig), 7, 0));
-            break;
-          case IDEConfig + 1:
-            pkt->setLE<uint8_t>(bits(htole(ideConfig), 15, 8));
-            break;
-          default:
-            panic("Invalid PCI configuration read for size 1 at offset: %#x!\n",
-                    offset);
-        }
-        DPRINTF(IdeCtrl, "PCI read offset: %#x size: 1 data: %#x\n", offset,
-                (uint32_t)pkt->getLE<uint8_t>());
-        break;
-      case sizeof(uint16_t):
-        switch (offset) {
-          case UDMAControl:
-            pkt->setLE<uint16_t>(udmaControl);
-            break;
-          case PrimaryTiming:
-            pkt->setLE<uint16_t>(primaryTiming);
-            break;
-          case SecondaryTiming:
-            pkt->setLE<uint16_t>(secondaryTiming);
-            break;
-          case UDMATiming:
-            pkt->setLE<uint16_t>(udmaTiming);
-            break;
-          case IDEConfig:
-            pkt->setLE<uint16_t>(ideConfig);
-            break;
-          default:
-            panic("Invalid PCI configuration read for size 2 offset: %#x!\n",
-                    offset);
-        }
-        DPRINTF(IdeCtrl, "PCI read offset: %#x size: 2 data: %#x\n", offset,
-                (uint32_t)pkt->getLE<uint16_t>());
-        break;
-      case sizeof(uint32_t):
-        switch (offset) {
-          case PrimaryTiming:
-            pkt->setLE<uint32_t>(primaryTiming);
-            break;
-          case IDEConfig:
-            pkt->setLE<uint32_t>(ideConfig);
-            break;
-          default:
-            panic("No 32bit reads implemented for this device.");
-        }
-        DPRINTF(IdeCtrl, "PCI read offset: %#x size: 4 data: %#x\n", offset,
-                (uint32_t)pkt->getLE<uint32_t>());
-        break;
-      default:
-        panic("invalid access size(?) for PCI configspace!\n");
-    }
+    size_t size = pkt->getSize();
+
+    configSpaceRegs.read(offset, pkt->getPtr<void>(), size);
+
+    DPRINTF(IdeCtrl, "PCI read offset: %#x size: %d data: %#x\n", offset, size,
+            pkt->getUintX(ByteOrder::little));
+
     pkt->makeAtomicResponse();
     return configDelay;
 }
@@ -259,108 +181,18 @@ Tick
 IdeController::writeConfig(PacketPtr pkt)
 {
     int offset = pkt->getAddr() & PCI_CONFIG_SIZE;
-    if (offset < PCI_DEVICE_SPECIFIC) {
-        PciDevice::writeConfig(pkt);
-    } else {
-        switch (pkt->getSize()) {
-          case sizeof(uint8_t):
-            switch (offset) {
-              case DeviceTiming:
-                deviceTiming = pkt->getLE<uint8_t>();
-                break;
-              case UDMAControl:
-                udmaControl = pkt->getLE<uint8_t>();
-                break;
-              case IDEConfig:
-                replaceBits(ideConfig, 7, 0, pkt->getLE<uint8_t>());
-                break;
-              case IDEConfig + 1:
-                replaceBits(ideConfig, 15, 8, pkt->getLE<uint8_t>());
-                break;
-              default:
-                panic("Invalid PCI configuration write "
-                        "for size 1 offset: %#x!\n", offset);
-            }
-            DPRINTF(IdeCtrl, "PCI write offset: %#x size: 1 data: %#x\n",
-                    offset, (uint32_t)pkt->getLE<uint8_t>());
-            break;
-          case sizeof(uint16_t):
-            switch (offset) {
-              case UDMAControl:
-                udmaControl = pkt->getLE<uint16_t>();
-                break;
-              case PrimaryTiming:
-                primaryTiming = pkt->getLE<uint16_t>();
-                break;
-              case SecondaryTiming:
-                secondaryTiming = pkt->getLE<uint16_t>();
-                break;
-              case UDMATiming:
-                udmaTiming = pkt->getLE<uint16_t>();
-                break;
-              case IDEConfig:
-                ideConfig = pkt->getLE<uint16_t>();
-                break;
-              default:
-                panic("Invalid PCI configuration write "
-                        "for size 2 offset: %#x!\n",
-                        offset);
-            }
-            DPRINTF(IdeCtrl, "PCI write offset: %#x size: 2 data: %#x\n",
-                    offset, (uint32_t)pkt->getLE<uint16_t>());
-            break;
-          case sizeof(uint32_t):
-            switch (offset) {
-              case PrimaryTiming:
-                primaryTiming = pkt->getLE<uint32_t>();
-                break;
-              case IDEConfig:
-                ideConfig = pkt->getLE<uint32_t>();
-                break;
-              default:
-                panic("Write of unimplemented PCI config. register: %x\n", offset);
-            }
-            break;
-          default:
-            panic("invalid access size(?) for PCI configspace!\n");
-        }
-        pkt->makeAtomicResponse();
-    }
 
-    /* Trap command register writes and enable IO/BM as appropriate as well as
-     * BARs. */
-    switch(offset) {
-      case PCI0_BASE_ADDR0:
-        if (BARAddrs[0] != 0)
-            primary.cmdAddr = BARAddrs[0];
-        break;
+    if (offset < PCI_DEVICE_SPECIFIC)
+        return PciDevice::writeConfig(pkt);
 
-      case PCI0_BASE_ADDR1:
-        if (BARAddrs[1] != 0)
-            primary.ctrlAddr = BARAddrs[1];
-        break;
+    size_t size = pkt->getSize();
 
-      case PCI0_BASE_ADDR2:
-        if (BARAddrs[2] != 0)
-            secondary.cmdAddr = BARAddrs[2];
-        break;
+    DPRINTF(IdeCtrl, "PCI write offset: %#x size: %d data: %#x\n",
+            offset, size, pkt->getUintX(ByteOrder::little));
 
-      case PCI0_BASE_ADDR3:
-        if (BARAddrs[3] != 0)
-            secondary.ctrlAddr = BARAddrs[3];
-        break;
+    configSpaceRegs.write(offset, pkt->getConstPtr<void>(), size);
 
-      case PCI0_BASE_ADDR4:
-        if (BARAddrs[4] != 0)
-            bmiAddr = BARAddrs[4];
-        break;
-
-      case PCI_COMMAND:
-        DPRINTF(IdeCtrl, "Writing to PCI Command val: %#x\n", config.command);
-        ioEnabled = (config.command & htole(PCI_CMD_IOSE));
-        bmEnabled = (config.command & htole(PCI_CMD_BME));
-        break;
-    }
+    pkt->makeAtomicResponse();
     return configDelay;
 }
 
@@ -490,48 +322,45 @@ IdeController::dispatchAccess(PacketPtr pkt, bool read)
     if (pkt->getSize() != 1 && pkt->getSize() != 2 && pkt->getSize() !=4)
          panic("Bad IDE read size: %d\n", pkt->getSize());
 
-    if (!ioEnabled) {
-        pkt->makeAtomicResponse();
-        DPRINTF(IdeCtrl, "io not enabled\n");
-        return;
-    }
-
     Addr addr = pkt->getAddr();
     int size = pkt->getSize();
     uint8_t *dataPtr = pkt->getPtr<uint8_t>();
 
-    if (addr >= primary.cmdAddr &&
-            addr < (primary.cmdAddr + primary.cmdSize)) {
-        addr -= primary.cmdAddr;
+    int bar_num;
+    Addr offset;
+    panic_if(!getBAR(addr, bar_num, offset),
+        "IDE controller access to invalid address: %#x.", addr);
+
+    switch (bar_num) {
+      case 0:
         // linux may have shifted the address by ioShift,
         // here we shift it back, similarly for ctrlOffset.
-        addr >>= ioShift;
-        primary.accessCommand(addr, size, dataPtr, read);
-    } else if (addr >= primary.ctrlAddr &&
-               addr < (primary.ctrlAddr + primary.ctrlSize)) {
-        addr -= primary.ctrlAddr;
-        addr += ctrlOffset;
-        primary.accessControl(addr, size, dataPtr, read);
-    } else if (addr >= secondary.cmdAddr &&
-               addr < (secondary.cmdAddr + secondary.cmdSize)) {
-        addr -= secondary.cmdAddr;
-        secondary.accessCommand(addr, size, dataPtr, read);
-    } else if (addr >= secondary.ctrlAddr &&
-               addr < (secondary.ctrlAddr + secondary.ctrlSize)) {
-        addr -= secondary.ctrlAddr;
-        secondary.accessControl(addr, size, dataPtr, read);
-    } else if (addr >= bmiAddr && addr < (bmiAddr + bmiSize)) {
-        if (!read && !bmEnabled)
-            return;
-        addr -= bmiAddr;
-        if (addr < sizeof(Channel::BMIRegs)) {
-            primary.accessBMI(addr, size, dataPtr, read);
-        } else {
-            addr -= sizeof(Channel::BMIRegs);
-            secondary.accessBMI(addr, size, dataPtr, read);
+        offset >>= ioShift;
+        primary.accessCommand(offset, size, dataPtr, read);
+        break;
+      case 1:
+        offset += ctrlOffset;
+        primary.accessControl(offset, size, dataPtr, read);
+        break;
+      case 2:
+        secondary.accessCommand(offset, size, dataPtr, read);
+        break;
+      case 3:
+        secondary.accessControl(offset, size, dataPtr, read);
+        break;
+      case 4:
+        {
+            PciCommandRegister command = letoh(config.command);
+            if (!read && !command.busMaster)
+                return;
+
+            if (offset < sizeof(Channel::BMIRegs)) {
+                primary.accessBMI(offset, size, dataPtr, read);
+            } else {
+                offset -= sizeof(Channel::BMIRegs);
+                secondary.accessBMI(offset, size, dataPtr, read);
+            }
         }
-    } else {
-        panic("IDE controller access to invalid address: %#x\n", addr);
     }
 
 #ifndef NDEBUG
@@ -574,28 +403,13 @@ IdeController::serialize(CheckpointOut &cp) const
     secondary.serialize("secondary", cp);
 
     // Serialize config registers
-    SERIALIZE_SCALAR(primaryTiming);
-    SERIALIZE_SCALAR(secondaryTiming);
-    SERIALIZE_SCALAR(deviceTiming);
-    SERIALIZE_SCALAR(udmaControl);
-    SERIALIZE_SCALAR(udmaTiming);
-    SERIALIZE_SCALAR(ideConfig);
-
-    // Serialize internal state
-    SERIALIZE_SCALAR(ioEnabled);
-    SERIALIZE_SCALAR(bmEnabled);
-    SERIALIZE_SCALAR(bmiAddr);
-    SERIALIZE_SCALAR(bmiSize);
+    configSpaceRegs.serialize(cp);
 }
 
 void
 IdeController::Channel::serialize(const std::string &base,
                                   CheckpointOut &cp) const
 {
-    paramOut(cp, base + ".cmdAddr", cmdAddr);
-    paramOut(cp, base + ".cmdSize", cmdSize);
-    paramOut(cp, base + ".ctrlAddr", ctrlAddr);
-    paramOut(cp, base + ".ctrlSize", ctrlSize);
     uint8_t command = bmiRegs.command;
     paramOut(cp, base + ".bmiRegs.command", command);
     paramOut(cp, base + ".bmiRegs.reserved0", bmiRegs.reserved0);
@@ -617,27 +431,12 @@ IdeController::unserialize(CheckpointIn &cp)
     secondary.unserialize("secondary", cp);
 
     // Unserialize config registers
-    UNSERIALIZE_SCALAR(primaryTiming);
-    UNSERIALIZE_SCALAR(secondaryTiming);
-    UNSERIALIZE_SCALAR(deviceTiming);
-    UNSERIALIZE_SCALAR(udmaControl);
-    UNSERIALIZE_SCALAR(udmaTiming);
-    UNSERIALIZE_SCALAR(ideConfig);
-
-    // Unserialize internal state
-    UNSERIALIZE_SCALAR(ioEnabled);
-    UNSERIALIZE_SCALAR(bmEnabled);
-    UNSERIALIZE_SCALAR(bmiAddr);
-    UNSERIALIZE_SCALAR(bmiSize);
+    configSpaceRegs.unserialize(cp);
 }
 
 void
 IdeController::Channel::unserialize(const std::string &base, CheckpointIn &cp)
 {
-    paramIn(cp, base + ".cmdAddr", cmdAddr);
-    paramIn(cp, base + ".cmdSize", cmdSize);
-    paramIn(cp, base + ".ctrlAddr", ctrlAddr);
-    paramIn(cp, base + ".ctrlSize", ctrlSize);
     uint8_t command;
     paramIn(cp, base +".bmiRegs.command", command);
     bmiRegs.command = command;
@@ -651,8 +450,4 @@ IdeController::Channel::unserialize(const std::string &base, CheckpointIn &cp)
     select(selectBit);
 }
 
-IdeController *
-IdeControllerParams::create()
-{
-    return new IdeController(this);
-}
+} // namespace gem5

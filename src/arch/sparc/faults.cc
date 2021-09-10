@@ -24,20 +24,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Kevin Lim
  */
 
 #include "arch/sparc/faults.hh"
 
 #include <algorithm>
 
-#include "arch/sparc/isa_traits.hh"
+#include "arch/sparc/mmu.hh"
 #include "arch/sparc/process.hh"
-#include "arch/sparc/tlb.hh"
+#include "arch/sparc/se_workload.hh"
+#include "arch/sparc/sparc_traits.hh"
 #include "arch/sparc/types.hh"
 #include "base/bitfield.hh"
+#include "base/compiler.hh"
 #include "base/trace.hh"
 #include "cpu/base.hh"
 #include "cpu/thread_context.hh"
@@ -45,7 +44,8 @@
 #include "sim/full_system.hh"
 #include "sim/process.hh"
 
-using namespace std;
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -306,10 +306,10 @@ doREDFault(ThreadContext *tc, TrapType tt)
     RegVal TSTATE = tc->readMiscRegNoEffect(MISCREG_TSTATE);
     PSTATE pstate = tc->readMiscRegNoEffect(MISCREG_PSTATE);
     HPSTATE hpstate = tc->readMiscRegNoEffect(MISCREG_HPSTATE);
-    RegVal CCR = tc->readIntReg(NumIntArchRegs + 2);
+    CCR ccr = tc->readIntReg(INTREG_CCR);
     RegVal ASI = tc->readMiscRegNoEffect(MISCREG_ASI);
     RegVal CWP = tc->readMiscRegNoEffect(MISCREG_CWP);
-    RegVal CANSAVE = tc->readMiscRegNoEffect(NumIntArchRegs + 3);
+    RegVal CANSAVE = tc->readMiscRegNoEffect(INTREG_CANSAVE);
     RegVal GL = tc->readMiscRegNoEffect(MISCREG_GL);
     PCState pc = tc->pcState();
 
@@ -320,7 +320,7 @@ doREDFault(ThreadContext *tc, TrapType tt)
     // set TSTATE.gl to gl
     replaceBits(TSTATE, 42, 40, GL);
     // set TSTATE.ccr to ccr
-    replaceBits(TSTATE, 39, 32, CCR);
+    replaceBits(TSTATE, 39, 32, ccr);
     // set TSTATE.asi to asi
     replaceBits(TSTATE, 31, 24, ASI);
     // set TSTATE.pstate to pstate
@@ -343,7 +343,7 @@ doREDFault(ThreadContext *tc, TrapType tt)
     tc->setMiscRegNoEffect(MISCREG_TT, tt);
 
     // Update GL
-    tc->setMiscReg(MISCREG_GL, min<int>(GL+1, MaxGL));
+    tc->setMiscReg(MISCREG_GL, std::min<int>(GL+1, MaxGL));
 
     bool priv = pstate.priv; // just save the priv bit
     pstate = 0;
@@ -385,10 +385,10 @@ doNormalFault(ThreadContext *tc, TrapType tt, bool gotoHpriv)
     RegVal TSTATE = tc->readMiscRegNoEffect(MISCREG_TSTATE);
     PSTATE pstate = tc->readMiscRegNoEffect(MISCREG_PSTATE);
     HPSTATE hpstate = tc->readMiscRegNoEffect(MISCREG_HPSTATE);
-    RegVal CCR = tc->readIntReg(NumIntArchRegs + 2);
+    CCR ccr = tc->readIntReg(INTREG_CCR);
     RegVal ASI = tc->readMiscRegNoEffect(MISCREG_ASI);
     RegVal CWP = tc->readMiscRegNoEffect(MISCREG_CWP);
-    RegVal CANSAVE = tc->readIntReg(NumIntArchRegs + 3);
+    RegVal CANSAVE = tc->readIntReg(INTREG_CANSAVE);
     RegVal GL = tc->readMiscRegNoEffect(MISCREG_GL);
     PCState pc = tc->pcState();
 
@@ -403,7 +403,7 @@ doNormalFault(ThreadContext *tc, TrapType tt, bool gotoHpriv)
     // set TSTATE.gl to gl
     replaceBits(TSTATE, 42, 40, GL);
     // set TSTATE.ccr to ccr
-    replaceBits(TSTATE, 39, 32, CCR);
+    replaceBits(TSTATE, 39, 32, ccr);
     // set TSTATE.asi to asi
     replaceBits(TSTATE, 31, 24, ASI);
     // set TSTATE.pstate to pstate
@@ -427,9 +427,9 @@ doNormalFault(ThreadContext *tc, TrapType tt, bool gotoHpriv)
 
     // Update the global register level
     if (!gotoHpriv)
-        tc->setMiscReg(MISCREG_GL, min<int>(GL + 1, MaxPGL));
+        tc->setMiscReg(MISCREG_GL, std::min<int>(GL + 1, MaxPGL));
     else
-        tc->setMiscReg(MISCREG_GL, min<int>(GL + 1, MaxGL));
+        tc->setMiscReg(MISCREG_GL, std::min<int>(GL + 1, MaxGL));
 
     // pstate.mm is unchanged
     pstate.pef = 1; // PSTATE.pef = whether or not an fpu is present
@@ -672,8 +672,9 @@ FastInstructionAccessMMUMiss::invoke(ThreadContext *tc,
     // false for syscall emulation mode regardless of whether the
     // address is real in preceding code. Not sure sure that this is
     // correct, but also not sure if it matters at all.
-    dynamic_cast<TLB *>(tc->getITBPtr())->
-        insert(alignedvaddr, partition_id, context_id, false, entry.pte);
+    static_cast<MMU *>(tc->getMMUPtr())->insertItlbEntry(
+        alignedvaddr, partition_id, context_id,
+        false, entry.pte);
 }
 
 void
@@ -686,7 +687,7 @@ FastDataAccessMMUMiss::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 
     Process *p = tc->getProcessPtr();
     const EmulationPageTable::Entry *pte = p->pTable->lookup(vaddr);
-    if (!pte && p->fixupStackFault(vaddr))
+    if (!pte && p->fixupFault(vaddr))
         pte = p->pTable->lookup(vaddr);
     panic_if(!pte, "Tried to access unmapped address %#x.\n", vaddr);
 
@@ -759,8 +760,9 @@ FastDataAccessMMUMiss::invoke(ThreadContext *tc, const StaticInstPtr &inst)
     // false for syscall emulation mode regardless of whether the
     // address is real in preceding code. Not sure sure that this is
     // correct, but also not sure if it matters at all.
-    dynamic_cast<TLB *>(tc->getDTBPtr())->
-        insert(alignedvaddr, partition_id, context_id, false, entry.pte);
+    static_cast<MMU *>(tc->getMMUPtr())->insertDtlbEntry(
+        alignedvaddr, partition_id, context_id,
+        false, entry.pte);
 }
 
 void
@@ -815,11 +817,11 @@ TrapInstruction::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 
     Process *p = tc->getProcessPtr();
 
-    SparcProcess *sp = dynamic_cast<SparcProcess *>(p);
+    GEM5_VAR_USED SparcProcess *sp = dynamic_cast<SparcProcess *>(p);
     assert(sp);
 
-    Fault fault;
-    sp->handleTrap(_n, tc, &fault);
+    auto *workload = dynamic_cast<SEWorkload *>(tc->getSystemPtr()->workload);
+    workload->handleTrap(tc, _n);
 
     // We need to explicitly advance the pc, since that's not done for us
     // on a faulting instruction
@@ -829,4 +831,4 @@ TrapInstruction::invoke(ThreadContext *tc, const StaticInstPtr &inst)
 }
 
 } // namespace SparcISA
-
+} // namespace gem5

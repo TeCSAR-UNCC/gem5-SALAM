@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: William Wang
- *          Ali Saidi
- *          Chris Emmons
- *          Andreas Sandberg
  */
 #ifndef __BASE_BITMAP_HH__
 #define __BASE_BITMAP_HH__
@@ -51,6 +46,9 @@
 /**
  * @file Declaration of a class that writes a frame buffer to a bitmap
  */
+
+namespace gem5
+{
 
 // write frame buffer into a bitmap picture
 class  BmpWriter : public ImgWriter
@@ -80,15 +78,18 @@ class  BmpWriter : public ImgWriter
     void write(std::ostream &bmp) const override;
 
   private:
-    struct FileHeader {
+    struct GEM5_PACKED FileHeader
+    {
         unsigned char magic_number[2];
         uint32_t size;
         uint16_t reserved1;
         uint16_t reserved2;
         uint32_t offset;
-    } M5_ATTR_PACKED;
+    };
 
-    struct InfoHeaderV1 { /* Aka DIB header */
+    struct GEM5_PACKED InfoHeaderV1
+    {
+        /* Aka DIB header */
         uint32_t Size;
         uint32_t Width;
         uint32_t Height;
@@ -100,14 +101,16 @@ class  BmpWriter : public ImgWriter
         uint32_t YPelsPerMeter;
         uint32_t ClrUsed;
         uint32_t ClrImportant;
-    } M5_ATTR_PACKED;
+    };
 
-    struct CompleteV1Header {
+    struct GEM5_PACKED CompleteV1Header
+    {
         FileHeader file;
         InfoHeaderV1 info;
-    } M5_ATTR_PACKED;
+    };
 
-    struct BmpPixel32 {
+    struct GEM5_PACKED BmpPixel32
+    {
         BmpPixel32 &operator=(const Pixel &rhs) {
             red = rhs.red;
             green = rhs.green;
@@ -120,7 +123,7 @@ class  BmpWriter : public ImgWriter
         uint8_t green;
         uint8_t red;
         uint8_t padding;
-    } M5_ATTR_PACKED;
+    };
 
     typedef BmpPixel32 PixelType;
 
@@ -129,6 +132,6 @@ class  BmpWriter : public ImgWriter
     const CompleteV1Header getCompleteHeader() const;
 };
 
+} // namespace gem5
 
 #endif // __BASE_BITMAP_HH__
-

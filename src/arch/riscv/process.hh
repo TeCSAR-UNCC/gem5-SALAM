@@ -25,10 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Ali Saidi
- *          Alec Roelke
  */
 
 #ifndef __RISCV_PROCESS_HH__
@@ -39,39 +35,48 @@
 
 #include "mem/page_table.hh"
 #include "sim/process.hh"
+#include "sim/syscall_abi.hh"
 
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 class ObjectFile;
+} // namespace loader
+
 class System;
 
 class RiscvProcess : public Process
 {
   protected:
-    RiscvProcess(ProcessParams * params, ObjectFile *objFile);
+    RiscvProcess(const ProcessParams &params, loader::ObjectFile *objFile);
     template<class IntType>
     void argsInit(int pageSize);
 
   public:
-    RegVal getSyscallArg(ThreadContext *tc, int &i) override;
-    /// Explicitly import the otherwise hidden getSyscallArg
-    using Process::getSyscallArg;
-    void setSyscallReturn(ThreadContext *tc,
-                          SyscallReturn return_value) override;
-
     virtual bool mmapGrowsDown() const override { return false; }
 };
 
 class RiscvProcess64 : public RiscvProcess
 {
+  public:
+    RiscvProcess64(const ProcessParams &params, loader::ObjectFile *objFile);
+
   protected:
-    RiscvProcess64(ProcessParams * params, ObjectFile *objFile);
     void initState() override;
 };
 
 class RiscvProcess32 : public RiscvProcess
 {
+  public:
+    RiscvProcess32(const ProcessParams &params, loader::ObjectFile *objFile);
+
   protected:
-    RiscvProcess32(ProcessParams * params, ObjectFile *objFile);
     void initState() override;
 };
+
+} // namespace gem5
 
 #endif // __RISCV_PROCESS_HH__

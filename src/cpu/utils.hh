@@ -33,14 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #ifndef __CPU_UTILS_HH__
 #define __CPU_UTILS_HH__
 
 #include "base/types.hh"
+
+namespace gem5
+{
 
 /**
  * Calculates the offset of a given address wrt aligned fixed-size blocks.
@@ -92,5 +93,7 @@ isAnyActiveElement(const std::vector<bool>::const_iterator& it_start,
     for (;it_tmp != it_end && !(*it_tmp); ++it_tmp);
     return (it_tmp != it_end);
 }
+
+} // namespace gem5
 
 #endif // __CPU_UTILS_HH__

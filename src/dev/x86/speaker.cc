@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "dev/x86/speaker.hh"
@@ -36,6 +34,9 @@
 #include "dev/x86/i8254.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+
+namespace gem5
+{
 
 Tick
 X86ISA::Speaker::read(PacketPtr pkt)
@@ -86,8 +87,4 @@ X86ISA::Speaker::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(controlVal);
 }
 
-X86ISA::Speaker *
-PcSpeakerParams::create()
-{
-    return new X86ISA::Speaker(this);
-}
+} // namespace gem5

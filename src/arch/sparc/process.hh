@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Ali Saidi
  */
 
 #ifndef __SPARC_PROCESS_HH__
@@ -36,11 +33,13 @@
 #include <string>
 #include <vector>
 
-#include "arch/sparc/isa_traits.hh"
+#include "arch/sparc/page_size.hh"
 #include "base/loader/object_file.hh"
 #include "mem/page_table.hh"
-#include "sim/byteswap.hh"
 #include "sim/process.hh"
+
+namespace gem5
+{
 
 class SparcProcess : public Process
 {
@@ -51,31 +50,29 @@ class SparcProcess : public Process
     // The locations of the fill and spill handlers
     Addr fillStart, spillStart;
 
-    SparcProcess(ProcessParams * params, ObjectFile *objFile,
+    SparcProcess(const ProcessParams &params, loader::ObjectFile *objFile,
                  Addr _StackBias);
 
-    void initState();
+    void initState() override;
 
     template<class IntType>
     void argsInit(int pageSize);
 
   public:
 
-    // Handles traps which request services from the operating system
-    virtual void handleTrap(int trapNum, ThreadContext *tc, Fault *fault);
-
     Addr readFillStart() { return fillStart; }
     Addr readSpillStart() { return spillStart; }
-
-    virtual void flushWindows(ThreadContext *tc) = 0;
-    void setSyscallReturn(ThreadContext *tc, SyscallReturn return_value);
 };
 
 class Sparc32Process : public SparcProcess
 {
   protected:
 
-    Sparc32Process(ProcessParams * params, ObjectFile *objFile)
+    void initState() override;
+
+  public:
+
+    Sparc32Process(const ProcessParams &params, loader::ObjectFile *objFile)
         : SparcProcess(params, objFile, 0)
     {
         Addr brk_point = image.maxAddr();
@@ -94,30 +91,23 @@ class Sparc32Process : public SparcProcess
         // Set up region for mmaps.
         Addr mmap_end = 0x70000000;
 
-        memState = std::make_shared<MemState>(brk_point, stack_base,
+        memState = std::make_shared<MemState>(this, brk_point, stack_base,
                                               max_stack_size,
                                               next_thread_stack_base,
                                               mmap_end);
     }
 
-    void initState();
-
-  public:
-
     void argsInit(int intSize, int pageSize);
-
-    void flushWindows(ThreadContext *tc);
-
-    RegVal getSyscallArg(ThreadContext *tc, int &i);
-    /// Explicitly import the otherwise hidden getSyscallArg
-    using Process::getSyscallArg;
 };
 
 class Sparc64Process : public SparcProcess
 {
   protected:
+    void initState() override;
 
-    Sparc64Process(ProcessParams * params, ObjectFile *objFile)
+  public:
+
+    Sparc64Process(const ProcessParams &params, loader::ObjectFile *objFile)
         : SparcProcess(params, objFile, 2047)
     {
         Addr brk_point = image.maxAddr();
@@ -135,23 +125,15 @@ class Sparc64Process : public SparcProcess
         // Set up region for mmaps.
         Addr mmap_end = 0xfffff80000000000ULL;
 
-        memState = std::make_shared<MemState>(brk_point, stack_base,
+        memState = std::make_shared<MemState>(this, brk_point, stack_base,
                                               max_stack_size,
                                               next_thread_stack_base,
                                               mmap_end);
     }
 
-    void initState();
-
-  public:
-
     void argsInit(int intSize, int pageSize);
-
-    void flushWindows(ThreadContext *tc);
-
-    RegVal getSyscallArg(ThreadContext *tc, int &i);
-    /// Explicitly import the otherwise hidden getSyscallArg
-    using Process::getSyscallArg;
 };
+
+} // namespace gem5
 
 #endif // __SPARC_PROCESS_HH__

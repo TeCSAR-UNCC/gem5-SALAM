@@ -24,18 +24,15 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 """ This file creates a system with Ruby caches and runs the ruby random tester
-See Part 3 in the Learning gem5 book: learning.gem5.org/book/part3
+See Part 3 in the Learning gem5 book:
+http://gem5.org/documentation/learning_gem5/part3/MSIintro
 
 IMPORTANT: If you modify this file, it's likely that the Learning gem5 book
            also needs to be updated. For now, email Jason <jason@lowepower.com>
 
 """
-from __future__ import print_function
-from __future__ import absolute_import
 
 # import the m5 (gem5) library created when gem5 is built
 import m5

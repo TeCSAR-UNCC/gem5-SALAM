@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /* @file
@@ -39,11 +37,11 @@
 #include <string>
 
 #include "base/pollevent.hh"
-#include "config/use_tuntap.hh"
+#include "config/have_tuntap.hh"
 #include "dev/net/etherint.hh"
 #include "dev/net/etherpkt.hh"
 
-#if USE_TUNTAP
+#if HAVE_TUNTAP
 #include "params/EtherTap.hh"
 
 #endif
@@ -52,21 +50,18 @@
 #include "sim/eventq.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 class TapEvent;
 class EtherTapInt;
 
 class EtherTapBase : public SimObject
 {
   public:
-    typedef EtherTapBaseParams Params;
-    EtherTapBase(const Params *p);
+    using Params = EtherTapBaseParams;
+    EtherTapBase(const Params &p);
     virtual ~EtherTapBase();
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
@@ -138,15 +133,9 @@ class TapListener;
 class EtherTapStub : public EtherTapBase
 {
   public:
-    typedef EtherTapStubParams Params;
-    EtherTapStub(const Params *p);
+    using Params = EtherTapStubParams;
+    EtherTapStub(const Params &p);
     ~EtherTapStub();
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
@@ -169,19 +158,13 @@ class EtherTapStub : public EtherTapBase
 };
 
 
-#if USE_TUNTAP
+#if HAVE_TUNTAP
 class EtherTap : public EtherTapBase
 {
   public:
-    typedef EtherTapParams Params;
-    EtherTap(const Params *p);
+    using Params = EtherTapParams;
+    EtherTap(const Params &p);
     ~EtherTap();
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
 
   protected:
@@ -192,5 +175,6 @@ class EtherTap : public EtherTapBase
 };
 #endif
 
+} // namespace gem5
 
 #endif // __DEV_NET_ETHERTAP_HH__

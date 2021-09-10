@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 categories = ["arithmetic",
               "cache_and_memory_management",
@@ -56,5 +54,5 @@ microcode = '''
 # Microcode for general purpose instructions
 '''
 for category in categories:
-    exec "import %s as cat" % category
+    exec("from . import %s as cat" % category)
     microcode += cat.microcode

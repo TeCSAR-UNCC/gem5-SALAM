@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Konstantinos Aisopos
  */
 
 /*
@@ -47,12 +45,15 @@
 #include "FaultModel.hh"
 #include "base/logging.hh"
 
-using namespace std;
-
 #define MAX(a,b) ((a > b) ? (a) : (b))
 
+namespace gem5
+{
 
-FaultModel::FaultModel(const Params *p) : SimObject(p)
+namespace ruby
+{
+
+FaultModel::FaultModel(const Params &p) : SimObject(p)
 {
     // read configurations into "configurations" vector
     // format: <buff/vc> <vcs> <10 fault types>
@@ -60,17 +61,17 @@ FaultModel::FaultModel(const Params *p) : SimObject(p)
     for (int i = 0; more_records; i += (fields_per_conf_record)){
         system_conf configuration;
         configuration.buff_per_vc =
-            p->baseline_fault_vector_database[i + conf_record_buff_per_vc];
+            p.baseline_fault_vector_database[i + conf_record_buff_per_vc];
         configuration.vcs =
-            p->baseline_fault_vector_database[i + conf_record_vcs];
+            p.baseline_fault_vector_database[i + conf_record_vcs];
         for (int fault_index = 0; fault_index < number_of_fault_types;
             fault_index++){
             configuration.fault_type[fault_index] =
-                p->baseline_fault_vector_database[i +
+                p.baseline_fault_vector_database[i +
                    conf_record_first_fault_type + fault_index] / 100;
         }
         configurations.push_back(configuration);
-        if (p->baseline_fault_vector_database[i+fields_per_conf_record] < 0){
+        if (p.baseline_fault_vector_database[i+fields_per_conf_record] < 0){
             more_records = false;
         }
     }
@@ -80,9 +81,9 @@ FaultModel::FaultModel(const Params *p) : SimObject(p)
     more_records = true;
     for (int i = 0; more_records; i += (fields_per_temperature_record)){
         int record_temperature =
-               p->temperature_weights_database[i + temperature_record_temp];
+               p.temperature_weights_database[i + temperature_record_temp];
         int record_weight =
-               p->temperature_weights_database[i + temperature_record_weight];
+               p.temperature_weights_database[i + temperature_record_weight];
         static int first_record = true;
         if (first_record){
             for (int temperature = 0; temperature < record_temperature;
@@ -93,14 +94,14 @@ FaultModel::FaultModel(const Params *p) : SimObject(p)
         }
         assert(record_temperature == temperature_weights.size());
         temperature_weights.push_back(record_weight);
-        if (p->temperature_weights_database[i +
+        if (p.temperature_weights_database[i +
                fields_per_temperature_record] < 0){
             more_records = false;
         }
     }
 }
 
-string
+std::string
 FaultModel::fault_type_to_string(int ft)
 {
    if (ft == data_corruption__few_bits){
@@ -249,29 +250,27 @@ FaultModel::fault_prob(int routerID,
 void
 FaultModel::print(void)
 {
-    cout << "--- PRINTING configurations ---\n";
+    std::cout << "--- PRINTING configurations ---\n";
     for (int record = 0; record < configurations.size(); record++){
-        cout << "(" << record << ") ";
-        cout << "VCs=" << configurations[record].vcs << " ";
-        cout << "Buff/VC=" << configurations[record].buff_per_vc << " [";
+        std::cout << "(" << record << ") ";
+        std::cout << "VCs=" << configurations[record].vcs << " ";
+        std::cout << "Buff/VC=" << configurations[record].buff_per_vc << " [";
         for (int fault_type_num = 0;
              fault_type_num < number_of_fault_types;
              fault_type_num++){
-            cout << (100 * configurations[record].fault_type[fault_type_num]);
-            cout << "% ";
+            std::cout <<
+                (100 * configurations[record].fault_type[fault_type_num]);
+            std::cout << "% ";
         }
-        cout << "]\n";
+        std::cout << "]\n";
     }
-    cout << "--- PRINTING temperature weights ---\n";
+    std::cout << "--- PRINTING temperature weights ---\n";
     for (int record = 0; record < temperature_weights.size(); record++){
-        cout << "temperature=" << record << " => ";
-        cout << "weight=" << temperature_weights[record];
-        cout << "\n";
+        std::cout << "temperature=" << record << " => ";
+        std::cout << "weight=" << temperature_weights[record];
+        std::cout << "\n";
     }
 }
 
-FaultModel *
-FaultModelParams::create()
-{
-    return new FaultModel(this);
-}
+} // namespace ruby
+} // namespace gem5

@@ -1,6 +1,7 @@
 // -*- mode:c++ -*-
 
 // Copyright (c) 2009 The University of Edinburgh
+// Copyright (c) 2021 IBM Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,8 +26,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Timothy M. Jones
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -36,14 +35,24 @@
 // are reversed sometimes. Not sure of a fix to this though...
 
 // Opcode fields
-def bitfield OPCODE        <31:26>;
-def bitfield X_XO          <10:0>;
-def bitfield XO_XO         <10:1>;
+def bitfield PO            <31:26>;
 def bitfield A_XO          <5:1>;
+def bitfield DS_XO         <1:0>;
+def bitfield DX_XO         <5:1>;
+def bitfield MD_XO         <4:2>;
+def bitfield MDS_XO        <4:1>;
+def bitfield VA_XO         <5:0>;
+def bitfield X_XO          <10:1>;
+def bitfield XFL_XO        <10:1>;
+def bitfield XFX_XO        <10:1>;
+def bitfield XL_XO         <10:1>;
+def bitfield XO_XO         <9:1>;
+def bitfield XS_XO         <10:2>;
 
 // Register fields
 def bitfield RA            <20:16>;
 def bitfield RB            <15:11>;
+def bitfield RC            <10:6>;
 def bitfield RS            <25:21>;
 def bitfield RT            <25:21>;
 def bitfield FRA           <20:16>;
@@ -65,8 +74,10 @@ def bitfield SPR           <20:11>;
 
 // FXM field for mtcrf instruction
 def bitfield FXM           <19:12>;
+def bitfield S             <20>;
 
 // Branch fields
+def bitfield BO            <25:21>;
 def bitfield LK            <0>;
 def bitfield AA            <1>;
 

@@ -35,8 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop RDMSR
@@ -73,6 +71,6 @@ def macroop RDTSCP
     rdtsc t1
     mov rax, rax, t1, dataSize=4
     srli rdx, t1, 32, dataSize=8
-    rdval rcx, "InstRegIndex(MISCREG_TSC_AUX)", dataSize=4
+    rdval rcx, ctrlRegIdx("MISCREG_TSC_AUX"), dataSize=4
 };
 '''

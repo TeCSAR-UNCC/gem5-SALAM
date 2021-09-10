@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -52,24 +50,44 @@
 
 #include <string>
 
+#include "base/named.hh"
 #include "base/trace.hh"
 #include "debug/MinorTrace.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /** DPRINTFN for MinorTrace reporting */
-#define MINORTRACE(...) \
-    DPRINTF(MinorTrace, "MinorTrace: " __VA_ARGS__)
+template <class ...Args>
+inline void
+minorTrace(const char *fmt, Args ...args)
+{
+    DPRINTF(MinorTrace, (std::string("MinorTrace: ") + fmt).c_str(), args...);
+}
 
 /** DPRINTFN for MinorTrace MinorInst line reporting */
-#define MINORINST(sim_object, ...) \
-    DPRINTFS(MinorTrace, (sim_object), "MinorInst: " __VA_ARGS__)
+template <class ...Args>
+inline void
+minorInst(const Named &named, const char *fmt, Args ...args)
+{
+    DPRINTFS(MinorTrace, &named, (std::string("MinorInst: ") + fmt).c_str(),
+             args...);
+}
 
 /** DPRINTFN for MinorTrace MinorLine line reporting */
-#define MINORLINE(sim_object, ...) \
-    DPRINTFS(MinorTrace, (sim_object), "MinorLine: " __VA_ARGS__)
-
+template <class ...Args>
+inline void
+minorLine(const Named &named, const char *fmt, Args ...args)
+{
+    DPRINTFS(MinorTrace, &named, (std::string("MinorLine: ") + fmt).c_str(),
+             args...);
 }
+
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_TRACE_HH__ */

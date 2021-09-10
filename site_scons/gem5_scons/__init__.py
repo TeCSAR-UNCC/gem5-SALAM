@@ -38,11 +38,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-
 import os
+import sys
+import tempfile
+import textwrap
 
 from gem5_scons.util import get_termcap
+from gem5_scons.configure import Configure
+from gem5_scons.defaults import EnvDefaults
 import SCons.Script
 
 termcap = get_termcap()
@@ -56,6 +59,25 @@ def strip_build_path(path, env):
     elif path.startswith(build_base):
         path = path[len(build_base):]
     return path
+
+def TempFileSpawn(scons_env):
+    old_pspawn = scons_env['PSPAWN']
+    old_spawn = scons_env['SPAWN']
+
+    def wrapper(old, sh, esc, cmd, sh_args, *py_args):
+        with tempfile.NamedTemporaryFile() as temp:
+            temp.write(' '.join(sh_args).encode())
+            temp.flush()
+            sh_args = [sh, esc(temp.name)]
+            return old(sh, esc, sh, sh_args, *py_args)
+
+    def new_pspawn(sh, esc, cmd, args, sh_env, stdout, stderr):
+        return wrapper(old_pspawn, sh, esc, cmd, args, sh_env, stdout, stderr)
+    def new_spawn(sh, esc, cmd, args, sh_env):
+        return wrapper(old_spawn, sh, esc, cmd, args, sh_env)
+
+    scons_env['PSPAWN'] = new_pspawn
+    scons_env['SPAWN'] = new_spawn
 
 # Generate a string of the form:
 #   common/path/prefix/src1, src2 -> tgt1, tgt2
@@ -83,10 +105,10 @@ class Transform(object):
         def strip(f):
             return strip_build_path(str(f), env)
         if len(source) > 0:
-            srcs = map(strip, source)
+            srcs = list(map(strip, source))
         else:
             srcs = ['']
-        tgts = map(strip, target)
+        tgts = list(map(strip, target))
         # surprisingly, os.path.commonprefix is a dumb char-by-char string
         # operation that has nothing to do with paths.
         com_pfx = os.path.commonprefix(srcs + tgts)
@@ -123,22 +145,120 @@ class Transform(object):
         # recalculate length in case com_pfx was modified
         com_pfx_len = len(com_pfx)
         def fmt(files):
-            f = map(lambda s: s[com_pfx_len:], files)
+            f = list(map(lambda s: s[com_pfx_len:], files))
             return ', '.join(f)
         return self.format % (com_pfx, fmt(srcs), fmt(tgts))
 
+# The width warning and error messages should be wrapped at.
+text_width = None
+
+# If stdout is not attached to a terminal, default to 80 columns.
+if not sys.stdout.isatty():
+    text_width = 80
+
+# This should work in python 3.3 and above.
+if text_width is None:
+    try:
+        import shutil
+        text_width = shutil.get_terminal_size().columns
+    except:
+        pass
+
+# This should work if the curses python module is installed.
+if text_width is None:
+    try:
+        import curses
+        try:
+            _, text_width = curses.initscr().getmaxyx()
+        finally:
+            curses.endwin()
+    except:
+        pass
+
+# If all else fails, default to 80 columns.
+if text_width is None:
+    text_width = 80
+
 def print_message(prefix, color, message, **kwargs):
-    lines = message.split('\n')
-    message = prefix + ('\n' + ' ' * len(prefix)).join(lines)
-    print(color + termcap.Bold + message + termcap.Normal, **kwargs)
+    prefix_len = len(prefix)
+    if text_width > prefix_len:
+        wrap_width = text_width - prefix_len
+        padding = ' ' * prefix_len
+
+        # First split on newlines.
+        lines = message.split('\n')
+        # Then wrap each line to the required width.
+        wrapped_lines = []
+        for line in lines:
+            wrapped_lines.extend(textwrap.wrap(line, wrap_width))
+        # Finally add the prefix and padding on extra lines, and glue it all
+        # back together.
+        message = prefix + ('\n' + padding).join(wrapped_lines)
+    else:
+        # We have very small terminal, indent formatting doesn't help.
+        message = prefix + message
+    # Add in terminal escape sequences.
+    message = color + termcap.Bold + message + termcap.Normal
+    # Actually print the message.
+    print(message, **kwargs)
+    return message
+
+all_warnings = []
+def summarize_warnings():
+    if not all_warnings:
+        return
+    print(termcap.Yellow + termcap.Bold +
+            '*** Summary of Warnings ***' +
+            termcap.Normal)
+    list(map(print, all_warnings))
 
 def warning(*args, **kwargs):
     message = ' '.join(args)
-    print_message('Warning: ', termcap.Yellow, message, **kwargs)
+    printed = print_message('Warning: ', termcap.Yellow, message, **kwargs)
+    all_warnings.append(printed)
 
 def error(*args, **kwargs):
     message = ' '.join(args)
     print_message('Error: ', termcap.Red, message, **kwargs)
     SCons.Script.Exit(1)
 
-__all__ = ['Transform', 'warning', 'error']
+def parse_build_path(target):
+    path_dirs = target.split('/')
+
+    # Pop off the target file.
+    path_dirs.pop()
+
+    # Search backwards for the "build" directory. Whatever was just before it
+    # was the name of the variant.
+    variant_dir = path_dirs.pop()
+    while path_dirs and path_dirs[-1] != 'build':
+        variant_dir = path_dirs.pop()
+    if not path_dirs:
+        error("No non-leaf 'build' dir found on target path.", t)
+
+    return os.path.join('/', *path_dirs), variant_dir
+
+# The MakeAction wrapper, and a SCons tool to set up the *COMSTR variables.
+if SCons.Script.GetOption('verbose'):
+    def MakeAction(action, string, *args, **kwargs):
+        return SCons.Script.Action(action, *args, **kwargs)
+
+    def MakeActionTool(env):
+        pass
+else:
+    MakeAction = SCons.Script.Action
+
+    def MakeActionTool(env):
+        env['CCCOMSTR']        = Transform("CC")
+        env['CXXCOMSTR']       = Transform("CXX")
+        env['ASCOMSTR']        = Transform("AS")
+        env['ARCOMSTR']        = Transform("AR", 0)
+        env['LINKCOMSTR']      = Transform("LINK", 0)
+        env['SHLINKCOMSTR']    = Transform("SHLINK", 0)
+        env['RANLIBCOMSTR']    = Transform("RANLIB", 0)
+        env['M4COMSTR']        = Transform("M4")
+        env['SHCCCOMSTR']      = Transform("SHCC")
+        env['SHCXXCOMSTR']     = Transform("SHCXX")
+
+__all__ = ['Configure', 'EnvDefaults', 'Transform', 'warning', 'error',
+           'MakeAction', 'MakeActionTool']

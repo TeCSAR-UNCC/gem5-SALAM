@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /* @file
@@ -50,10 +48,11 @@
 #include "mem/port_proxy.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
 
-SimpleDisk::SimpleDisk(const Params *p)
-    : SimObject(p), system(p->system), image(p->disk)
+SimpleDisk::SimpleDisk(const Params &p)
+    : SimObject(p), system(p.system), image(p.disk)
 {}
 
 SimpleDisk::~SimpleDisk()
@@ -85,8 +84,4 @@ SimpleDisk::write(Addr addr, baddr_t block, int count)
     panic("unimplemented!\n");
 }
 
-SimpleDisk *
-SimpleDiskParams::create()
-{
-    return new SimpleDisk(this);
-}
+} // namespace gem5

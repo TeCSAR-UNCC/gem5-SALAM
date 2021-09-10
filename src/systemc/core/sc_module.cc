@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include <memory>
@@ -115,7 +113,7 @@ sc_bind_proxy::sc_bind_proxy(sc_port_base &_port) :
 
 const sc_bind_proxy SC_BIND_PROXY_NIL;
 
-::Port &
+gem5::Port &
 sc_module::gem5_getPort(const std::string &if_name, int idx)
 {
     fatal("%s does not have any port named %s\n", name(), if_name);
@@ -666,7 +664,7 @@ void
 wait(int n)
 {
     if (n <= 0) {
-        std::string msg = csprintf("n = %d", n);
+        std::string msg = gem5::csprintf("n = %d", n);
         SC_REPORT_ERROR(SC_ID_WAIT_N_INVALID_, msg.c_str());
     }
     sc_gem5::Process *p = sc_gem5::scheduler.current();

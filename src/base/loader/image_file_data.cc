@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #include "base/loader/image_file_data.hh"
@@ -41,6 +38,13 @@
 #include <vector>
 
 #include "base/logging.hh"
+
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 static bool
 hasGzipMagic(int fd)
@@ -128,3 +132,6 @@ ImageFileData::~ImageFileData()
 {
     munmap((void *)_data, _len);
 }
+
+} // namespace loader
+} // namespace gem5

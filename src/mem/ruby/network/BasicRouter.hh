@@ -36,12 +36,17 @@
 #include "params/BasicRouter.hh"
 #include "sim/clocked_object.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class BasicRouter : public ClockedObject
 {
   public:
-    typedef BasicRouterParams Params;
-    BasicRouter(const Params *p);
-    const Params *params() const { return (const Params *)_params; }
+    PARAMS(BasicRouter);
+    BasicRouter(const Params &p);
 
     void init();
 
@@ -61,5 +66,8 @@ operator<<(std::ostream& out, const BasicRouter& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif //__MEM_RUBY_NETWORK_BASICROUTER_HH__

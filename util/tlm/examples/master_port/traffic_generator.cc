@@ -28,8 +28,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Christian Menard
  */
 
 #include "base/random.hh"
@@ -47,7 +45,7 @@ TrafficGenerator::TrafficGenerator(sc_core::sc_module_name name)
 void
 TrafficGenerator::process()
 {
-    auto rnd = Random(time(NULL));
+    auto rnd = gem5::Random(time(NULL));
 
     unsigned const memSize = (1 << 10); // 512 MB
 

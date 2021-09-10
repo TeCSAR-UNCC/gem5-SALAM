@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __DEV_ARM_RV_HH__
@@ -50,10 +48,14 @@
  * This implements the simple real view registers on a PBXA9
  */
 
+namespace gem5
+{
+
 class RealViewCtrl : public BasicPioDevice
 {
   public:
-    enum DeviceFunc {
+    enum DeviceFunc
+    {
         FUNC_OSC      = 1,
         FUNC_VOLT     = 2,
         FUNC_AMP      = 3,
@@ -84,7 +86,8 @@ class RealViewCtrl : public BasicPioDevice
     };
 
   protected:
-    enum {
+    enum
+    {
         IdReg      = 0x00,
         SwReg      = 0x04,
         Led        = 0x08,
@@ -155,17 +158,13 @@ class RealViewCtrl : public BasicPioDevice
     uint32_t scData;
 
   public:
-    typedef RealViewCtrlParams Params;
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    PARAMS(RealViewCtrl);
+
     /**
       * The constructor for RealView just registers itself with the MMU.
       * @param p params structure
       */
-    RealViewCtrl(Params *p);
+    RealViewCtrl(const Params &p);
 
     /**
      * Handle a read to the device
@@ -204,7 +203,7 @@ class RealViewOsc
     : public ClockDomain, RealViewCtrl::Device
 {
   public:
-    RealViewOsc(RealViewOscParams *p);
+    RealViewOsc(const RealViewOscParams &p);
     virtual ~RealViewOsc() {};
 
     void startup() override;
@@ -230,11 +229,11 @@ class RealViewTemperatureSensor
     : public SimObject, RealViewCtrl::Device
 {
   public:
-    RealViewTemperatureSensor(RealViewTemperatureSensorParams *p)
+    RealViewTemperatureSensor(const RealViewTemperatureSensorParams &p)
     : SimObject(p),
-      RealViewCtrl::Device(*p->parent, RealViewCtrl::FUNC_TEMP,
-                           p->site, p->position, p->dcc, p->device),
-      system(p->system)
+      RealViewCtrl::Device(*p.parent, RealViewCtrl::FUNC_TEMP,
+                           p.site, p.position, p.dcc, p.device),
+      system(p.system)
     {}
     virtual ~RealViewTemperatureSensor() {};
 
@@ -247,5 +246,6 @@ class RealViewTemperatureSensor
     System * system;
 };
 
+} // namespace gem5
 
 #endif // __DEV_ARM_RV_HH__

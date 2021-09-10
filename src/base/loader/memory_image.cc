@@ -24,13 +24,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #include "base/loader/memory_image.hh"
 #include "mem/port_proxy.hh"
+
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 bool
 MemoryImage::writeSegment(const Segment &seg, const PortProxy &proxy) const
@@ -62,3 +66,6 @@ MemoryImage::move(std::function<Addr(Addr)> mapper)
         seg.base = mapper(seg.base);
     return *this;
 }
+
+} // namespace loader
+} // namespace gem5

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -43,7 +41,14 @@
 #include "base/types.hh"
 #include "mem/cache/compressors/dictionary_compressor.hh"
 
+namespace gem5
+{
+
 struct CPackParams;
+
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
 
 class CPack : public DictionaryCompressor<uint32_t>
 {
@@ -64,9 +69,10 @@ class CPack : public DictionaryCompressor<uint32_t>
      * These are used as indexes to reference the pattern data. If a new
      * pattern is added, it must be done before NUM_PATTERNS.
      */
-    typedef enum {
+    enum PatternNumber
+    {
         ZZZZ, XXXX, MMMM, MMXX, ZZZX, MMMX, NUM_PATTERNS
-    } PatternNumber;
+    };
 
     /**
      * Convenience factory declaration. The templates must be organized by
@@ -98,17 +104,6 @@ class CPack : public DictionaryCompressor<uint32_t>
 
     void addToDictionary(DictionaryEntry data) override;
 
-    /**
-     * Apply compression.
-     *
-     * @param data The cache line to be compressed.
-     * @param comp_lat Compression latency in number of cycles.
-     * @param decomp_lat Decompression latency in number of cycles.
-     * @return Cache line after compression.
-     */
-    std::unique_ptr<BaseCacheCompressor::CompressionData> compress(
-        const uint64_t* data, Cycles& comp_lat, Cycles& decomp_lat) override;
-
   public:
     /** Convenience typedef. */
      typedef CPackParams Params;
@@ -116,7 +111,7 @@ class CPack : public DictionaryCompressor<uint32_t>
     /**
      * Default constructor.
      */
-    CPack(const Params *p);
+    CPack(const Params &p);
 
     /**
      * Default destructor.
@@ -179,5 +174,8 @@ class CPack::PatternMMMX : public MaskedPattern<0xFFFFFF00>
     {
     }
 };
+
+} // namespace compression
+} // namespace gem5
 
 #endif //__MEM_CACHE_COMPRESSORS_CPACK_HH__

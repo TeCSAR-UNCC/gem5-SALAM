@@ -36,71 +36,61 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
- *          Korey Sewell
  */
 
 #ifndef __CPU_O3_FETCH_HH__
 #define __CPU_O3_FETCH_HH__
 
 #include "arch/decoder.hh"
-#include "arch/utility.hh"
+#include "arch/generic/mmu.hh"
 #include "base/statistics.hh"
 #include "config/the_isa.hh"
+#include "cpu/o3/comm.hh"
+#include "cpu/o3/dyn_inst_ptr.hh"
+#include "cpu/o3/limits.hh"
 #include "cpu/pc_event.hh"
 #include "cpu/pred/bpred_unit.hh"
 #include "cpu/timebuf.hh"
 #include "cpu/translation.hh"
-#include "enums/FetchPolicy.hh"
+#include "enums/SMTFetchPolicy.hh"
 #include "mem/packet.hh"
 #include "mem/port.hh"
 #include "sim/eventq.hh"
 #include "sim/probe/probe.hh"
 
-struct DerivO3CPUParams;
-template <class Impl>
-class FullO3CPU;
+namespace gem5
+{
+
+struct O3CPUParams;
+
+namespace o3
+{
+
+class CPU;
 
 /**
- * DefaultFetch class handles both single threaded and SMT fetch. Its
+ * Fetch class handles both single threaded and SMT fetch. Its
  * width is specified by the parameters; each cycle it tries to fetch
  * that many instructions. It supports using a branch predictor to
  * predict direction and targets.
  * It supports the idling functionality of the CPU by indicating to
  * the CPU when it is active and inactive.
  */
-template <class Impl>
-class DefaultFetch
+class Fetch
 {
   public:
-    /** Typedefs from Impl. */
-    typedef typename Impl::CPUPol CPUPol;
-    typedef typename Impl::DynInst DynInst;
-    typedef typename Impl::DynInstPtr DynInstPtr;
-    typedef typename Impl::O3CPU O3CPU;
-
-    /** Typedefs from the CPU policy. */
-    typedef typename CPUPol::FetchStruct FetchStruct;
-    typedef typename CPUPol::TimeStruct TimeStruct;
-
-    /** Typedefs from ISA. */
-    typedef TheISA::MachInst MachInst;
-
     /**
      * IcachePort class for instruction fetch.
      */
-    class IcachePort : public MasterPort
+    class IcachePort : public RequestPort
     {
       protected:
         /** Pointer to fetch. */
-        DefaultFetch<Impl> *fetch;
+        Fetch *fetch;
 
       public:
         /** Default constructor. */
-        IcachePort(DefaultFetch<Impl> *_fetch, FullO3CPU<Impl>* _cpu)
-            : MasterPort(_cpu->name() + ".icache_port", _cpu), fetch(_fetch)
-        { }
+        IcachePort(Fetch *_fetch, CPU *_cpu);
 
       protected:
 
@@ -112,25 +102,21 @@ class DefaultFetch
         virtual void recvReqRetry();
     };
 
-    class FetchTranslation : public BaseTLB::Translation
+    class FetchTranslation : public BaseMMU::Translation
     {
       protected:
-        DefaultFetch<Impl> *fetch;
+        Fetch *fetch;
 
       public:
-        FetchTranslation(DefaultFetch<Impl> *_fetch)
-            : fetch(_fetch)
-        {}
+        FetchTranslation(Fetch *_fetch) : fetch(_fetch) {}
+
+        void markDelayed() {}
 
         void
-        markDelayed()
-        {}
-
-        void
-        finish(const Fault &fault, const RequestPtr &req, ThreadContext *tc,
-               BaseTLB::Mode mode)
+        finish(const Fault &fault, const RequestPtr &req,
+            gem5::ThreadContext *tc, BaseMMU::Mode mode)
         {
-            assert(mode == BaseTLB::Execute);
+            assert(mode == BaseMMU::Execute);
             fetch->finishTranslation(fault, req);
             delete this;
         }
@@ -143,35 +129,30 @@ class DefaultFetch
     class FinishTranslationEvent : public Event
     {
       private:
-        DefaultFetch<Impl> *fetch;
+        Fetch *fetch;
         Fault fault;
         RequestPtr req;
 
       public:
-        FinishTranslationEvent(DefaultFetch<Impl> *_fetch)
+        FinishTranslationEvent(Fetch *_fetch)
             : fetch(_fetch), req(nullptr)
         {}
 
-        void setFault(Fault _fault)
-        {
-            fault = _fault;
-        }
-
-        void setReq(const RequestPtr &_req)
-        {
-            req = _req;
-        }
+        void setFault(Fault _fault) { fault = _fault; }
+        void setReq(const RequestPtr &_req) { req = _req; }
 
         /** Process the delayed finish translation */
-        void process()
+        void
+        process()
         {
             assert(fetch->numInst < fetch->fetchWidth);
             fetch->finishTranslation(fault, req);
         }
 
-        const char *description() const
+        const char *
+        description() const
         {
-            return "FullO3CPU FetchFinishTranslation";
+            return "CPU FetchFinishTranslation";
         }
       };
 
@@ -179,13 +160,15 @@ class DefaultFetch
     /** Overall fetch status. Used to determine if the CPU can
      * deschedule itsef due to a lack of activity.
      */
-    enum FetchStatus {
+    enum FetchStatus
+    {
         Active,
         Inactive
     };
 
     /** Individual thread status. */
-    enum ThreadStatus {
+    enum ThreadStatus
+    {
         Running,
         Idle,
         Squashing,
@@ -205,10 +188,10 @@ class DefaultFetch
     FetchStatus _status;
 
     /** Per-thread status. */
-    ThreadStatus fetchStatus[Impl::MaxThreads];
+    ThreadStatus fetchStatus[MaxThreads];
 
     /** Fetch policy. */
-    FetchPolicy fetchPolicy;
+    SMTFetchPolicy fetchPolicy;
 
     /** List that has the threads organized by priority. */
     std::list<ThreadID> priorityList;
@@ -219,14 +202,12 @@ class DefaultFetch
     ProbePointArg<RequestPtr> *ppFetchRequestSent;
 
   public:
-    /** DefaultFetch constructor. */
-    DefaultFetch(O3CPU *_cpu, DerivO3CPUParams *params);
+    /** Fetch constructor. */
+    Fetch(CPU *_cpu, const O3CPUParams &params);
 
     /** Returns the name of fetch. */
     std::string name() const;
 
-    /** Registers statistics. */
-    void regStats();
 
     /** Registers probes. */
     void regProbePoints();
@@ -287,12 +268,12 @@ class DefaultFetch
     /** Changes the status of this stage to active, and indicates this
      * to the CPU.
      */
-    inline void switchToActive();
+    void switchToActive();
 
     /** Changes the status of this stage to inactive, and indicates
      * this to the CPU.
      */
-    inline void switchToInactive();
+    void switchToInactive();
 
     /**
      * Looks up in the branch predictor to see if the next PC should be
@@ -322,18 +303,15 @@ class DefaultFetch
 
     /** Check if an interrupt is pending and that we need to handle
      */
-    bool
-    checkInterrupt(Addr pc)
-    {
-        return (interruptPending && (THE_ISA != ALPHA_ISA || !(pc & 0x3)));
-    }
+    bool checkInterrupt(Addr pc) { return interruptPending; }
 
     /** Squashes a specific thread and resets the PC. */
-    inline void doSquash(const TheISA::PCState &newPC,
-                         const DynInstPtr squashInst, ThreadID tid);
+    void doSquash(const TheISA::PCState &newPC,
+            const DynInstPtr squashInst, ThreadID tid);
 
     /** Squashes a specific thread and resets the PC. Also tells the CPU to
-     * remove any instructions between fetch and decode that should be sqaushed.
+     * remove any instructions between fetch and decode
+     *  that should be sqaushed.
      */
     void squashFromDecode(const TheISA::PCState &newPC,
                           const DynInstPtr squashInst,
@@ -378,14 +356,14 @@ class DefaultFetch
     }
 
     /** The decoder. */
-    TheISA::Decoder *decoder[Impl::MaxThreads];
+    TheISA::Decoder *decoder[MaxThreads];
 
-    MasterPort &getInstPort() { return icachePort; }
+    RequestPort &getInstPort() { return icachePort; }
 
   private:
     DynInstPtr buildInst(ThreadID tid, StaticInstPtr staticInst,
-                         StaticInstPtr curMacroop, TheISA::PCState thisPC,
-                         TheISA::PCState nextPC, bool trace);
+            StaticInstPtr curMacroop, TheISA::PCState thisPC,
+            TheISA::PCState nextPC, bool trace);
 
     /** Returns the appropriate thread to fetch, given the fetch policy. */
     ThreadID getFetchingThread();
@@ -411,41 +389,41 @@ class DefaultFetch
 
   private:
     /** Pointer to the O3CPU. */
-    O3CPU *cpu;
+    CPU *cpu;
 
     /** Time buffer interface. */
     TimeBuffer<TimeStruct> *timeBuffer;
 
     /** Wire to get decode's information from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromDecode;
+    TimeBuffer<TimeStruct>::wire fromDecode;
 
     /** Wire to get rename's information from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromRename;
+    TimeBuffer<TimeStruct>::wire fromRename;
 
     /** Wire to get iew's information from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromIEW;
+    TimeBuffer<TimeStruct>::wire fromIEW;
 
     /** Wire to get commit's information from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromCommit;
+    TimeBuffer<TimeStruct>::wire fromCommit;
 
     //Might be annoying how this name is different than the queue.
     /** Wire used to write any information heading to decode. */
-    typename TimeBuffer<FetchStruct>::wire toDecode;
+    TimeBuffer<FetchStruct>::wire toDecode;
 
     /** BPredUnit. */
-    BPredUnit *branchPred;
+    branch_prediction::BPredUnit *branchPred;
 
-    TheISA::PCState pc[Impl::MaxThreads];
+    TheISA::PCState pc[MaxThreads];
 
-    Addr fetchOffset[Impl::MaxThreads];
+    Addr fetchOffset[MaxThreads];
 
-    StaticInstPtr macroop[Impl::MaxThreads];
+    StaticInstPtr macroop[MaxThreads];
 
     /** Can the fetch stage redirect from an interrupt on this instruction? */
-    bool delayedCommit[Impl::MaxThreads];
+    bool delayedCommit[MaxThreads];
 
     /** Memory request used to access cache. */
-    RequestPtr memReq[Impl::MaxThreads];
+    RequestPtr memReq[MaxThreads];
 
     /** Variable that tracks if fetch has written to the time buffer this
      * cycle. Used to tell CPU if there is activity this cycle.
@@ -456,13 +434,14 @@ class DefaultFetch
     int numInst;
 
     /** Source of possible stalls. */
-    struct Stalls {
+    struct Stalls
+    {
         bool decode;
         bool drain;
     };
 
     /** Tracks which stages are telling fetch to stall. */
-    Stalls stalls[Impl::MaxThreads];
+    Stalls stalls[MaxThreads];
 
     /** Decode to fetch delay. */
     Cycles decodeToFetchDelay;
@@ -503,25 +482,25 @@ class DefaultFetch
     Addr fetchBufferMask;
 
     /** The fetch data that is being fetched and buffered. */
-    uint8_t *fetchBuffer[Impl::MaxThreads];
+    uint8_t *fetchBuffer[MaxThreads];
 
     /** The PC of the first instruction loaded into the fetch buffer. */
-    Addr fetchBufferPC[Impl::MaxThreads];
+    Addr fetchBufferPC[MaxThreads];
 
     /** The size of the fetch queue in micro-ops */
     unsigned fetchQueueSize;
 
     /** Queue of fetched instructions. Per-thread to prevent HoL blocking. */
-    std::deque<DynInstPtr> fetchQueue[Impl::MaxThreads];
+    std::deque<DynInstPtr> fetchQueue[MaxThreads];
 
     /** Whether or not the fetch buffer data is valid. */
-    bool fetchBufferValid[Impl::MaxThreads];
+    bool fetchBufferValid[MaxThreads];
 
     /** Size of instructions. */
     int instSize;
 
     /** Icache stall statistics. */
-    Counter lastIcacheStall[Impl::MaxThreads];
+    Counter lastIcacheStall[MaxThreads];
 
     /** List of Active Threads */
     std::list<ThreadID> *activeThreads;
@@ -544,62 +523,73 @@ class DefaultFetch
     IcachePort icachePort;
 
     /** Set to true if a pipelined I-cache request should be issued. */
-    bool issuePipelinedIfetch[Impl::MaxThreads];
+    bool issuePipelinedIfetch[MaxThreads];
 
     /** Event used to delay fault generation of translation faults */
     FinishTranslationEvent finishTranslationEvent;
 
-    // @todo: Consider making these vectors and tracking on a per thread basis.
-    /** Stat for total number of cycles stalled due to an icache miss. */
-    Stats::Scalar icacheStallCycles;
-    /** Stat for total number of fetched instructions. */
-    Stats::Scalar fetchedInsts;
-    /** Total number of fetched branches. */
-    Stats::Scalar fetchedBranches;
-    /** Stat for total number of predicted branches. */
-    Stats::Scalar predictedBranches;
-    /** Stat for total number of cycles spent fetching. */
-    Stats::Scalar fetchCycles;
-    /** Stat for total number of cycles spent squashing. */
-    Stats::Scalar fetchSquashCycles;
-    /** Stat for total number of cycles spent waiting for translation */
-    Stats::Scalar fetchTlbCycles;
-    /** Stat for total number of cycles spent blocked due to other stages in
-     * the pipeline.
-     */
-    Stats::Scalar fetchIdleCycles;
-    /** Total number of cycles spent blocked. */
-    Stats::Scalar fetchBlockedCycles;
-    /** Total number of cycles spent in any other state. */
-    Stats::Scalar fetchMiscStallCycles;
-    /** Total number of cycles spent in waiting for drains. */
-    Stats::Scalar fetchPendingDrainCycles;
-    /** Total number of stall cycles caused by no active threads to run. */
-    Stats::Scalar fetchNoActiveThreadStallCycles;
-    /** Total number of stall cycles caused by pending traps. */
-    Stats::Scalar fetchPendingTrapStallCycles;
-    /** Total number of stall cycles caused by pending quiesce instructions. */
-    Stats::Scalar fetchPendingQuiesceStallCycles;
-    /** Total number of stall cycles caused by I-cache wait retrys. */
-    Stats::Scalar fetchIcacheWaitRetryStallCycles;
-    /** Stat for total number of fetched cache lines. */
-    Stats::Scalar fetchedCacheLines;
-    /** Total number of outstanding icache accesses that were dropped
-     * due to a squash.
-     */
-    Stats::Scalar fetchIcacheSquashes;
-    /** Total number of outstanding tlb accesses that were dropped
-     * due to a squash.
-     */
-    Stats::Scalar fetchTlbSquashes;
-    /** Distribution of number of instructions fetched each cycle. */
-    Stats::Distribution fetchNisnDist;
-    /** Rate of how often fetch was idle. */
-    Stats::Formula idleRate;
-    /** Number of branch fetches per cycle. */
-    Stats::Formula branchRate;
-    /** Number of instruction fetched per cycle. */
-    Stats::Formula fetchRate;
+  protected:
+    struct FetchStatGroup : public statistics::Group
+    {
+        FetchStatGroup(CPU *cpu, Fetch *fetch);
+        // @todo: Consider making these
+        // vectors and tracking on a per thread basis.
+        /** Stat for total number of cycles stalled due to an icache miss. */
+        statistics::Scalar icacheStallCycles;
+        /** Stat for total number of fetched instructions. */
+        statistics::Scalar insts;
+        /** Total number of fetched branches. */
+        statistics::Scalar branches;
+        /** Stat for total number of predicted branches. */
+        statistics::Scalar predictedBranches;
+        /** Stat for total number of cycles spent fetching. */
+        statistics::Scalar cycles;
+        /** Stat for total number of cycles spent squashing. */
+        statistics::Scalar squashCycles;
+        /** Stat for total number of cycles spent waiting for translation */
+        statistics::Scalar tlbCycles;
+        /** Stat for total number of cycles
+         *  spent blocked due to other stages in
+         * the pipeline.
+         */
+        statistics::Scalar idleCycles;
+        /** Total number of cycles spent blocked. */
+        statistics::Scalar blockedCycles;
+        /** Total number of cycles spent in any other state. */
+        statistics::Scalar miscStallCycles;
+        /** Total number of cycles spent in waiting for drains. */
+        statistics::Scalar pendingDrainCycles;
+        /** Total number of stall cycles caused by no active threads to run. */
+        statistics::Scalar noActiveThreadStallCycles;
+        /** Total number of stall cycles caused by pending traps. */
+        statistics::Scalar pendingTrapStallCycles;
+        /** Total number of stall cycles
+         *  caused by pending quiesce instructions. */
+        statistics::Scalar pendingQuiesceStallCycles;
+        /** Total number of stall cycles caused by I-cache wait retrys. */
+        statistics::Scalar icacheWaitRetryStallCycles;
+        /** Stat for total number of fetched cache lines. */
+        statistics::Scalar cacheLines;
+        /** Total number of outstanding icache accesses that were dropped
+         * due to a squash.
+         */
+        statistics::Scalar icacheSquashes;
+        /** Total number of outstanding tlb accesses that were dropped
+         * due to a squash.
+         */
+        statistics::Scalar tlbSquashes;
+        /** Distribution of number of instructions fetched each cycle. */
+        statistics::Distribution nisnDist;
+        /** Rate of how often fetch was idle. */
+        statistics::Formula idleRate;
+        /** Number of branch fetches per cycle. */
+        statistics::Formula branchRate;
+        /** Number of instruction fetched per cycle. */
+        statistics::Formula rate;
+    } fetchStats;
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif //__CPU_O3_FETCH_HH__

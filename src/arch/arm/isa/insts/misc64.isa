@@ -1,6 +1,6 @@
 // -*- mode:c++ -*-
 
-// Copyright (c) 2011-2013, 2016-2018 ARM Limited
+// Copyright (c) 2011-2013, 2016-2018, 2020 ARM Limited
 // All rights reserved
 //
 // The license below extends only to copyright in the software and shall
@@ -34,22 +34,32 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 let {{
     svcCode = '''
+    if (xc->inHtmTransactionalState()) {
+        fault = std::make_shared<GenericHtmFailureFault>(
+            xc->getHtmTransactionUid(),
+            HtmFailureFaultCause::EXCEPTION);
+        return fault;
+    }
     fault = std::make_shared<SupervisorCall>(machInst, bits(machInst, 20, 5));
     '''
 
-    svcIop = InstObjParams("svc", "Svc64", "ImmOp64",
-                           svcCode, ["IsSyscall", "IsNonSpeculative",
-                                     "IsSerializeAfter"])
+    svcIop = ArmInstObjParams("svc", "Svc64", "ImmOp64",
+                              svcCode, ["IsSyscall", "IsNonSpeculative",
+                                        "IsSerializeAfter"])
     header_output = ImmOp64Declare.subst(svcIop)
     decoder_output = ImmOp64Constructor.subst(svcIop)
     exec_output = BasicExecute.subst(svcIop)
 
     hvcCode = '''
+    if (xc->inHtmTransactionalState()) {
+        fault = std::make_shared<GenericHtmFailureFault>(
+            xc->getHtmTransactionUid(),
+            HtmFailureFaultCause::EXCEPTION);
+        return fault;
+    }
     SCR scr = Scr64;
     HCR hcr = Hcr64;
     CPSR cpsr = Cpsr;
@@ -58,7 +68,8 @@ let {{
     ExceptionLevel pstate_EL = (ExceptionLevel)(uint8_t)(cpsr.el);
 
     bool unalloc_encod = !ArmSystem::haveEL(tc, EL2) || pstate_EL == EL0 ||
-                         (pstate_EL == EL1 && inSecureState(tc));
+                         (pstate_EL == EL1 && (!IsSecureEL2Enabled(tc) &&
+                         isSecure(tc)));
 
     bool hvc_enable = ArmSystem::haveEL(tc, EL3) ?
         scr.hce : !hcr.hcd;
@@ -70,15 +81,21 @@ let {{
     }
     '''
 
-    hvcIop = InstObjParams("hvc", "Hvc64", "ImmOp64",
-                           hvcCode, ["IsSyscall", "IsNonSpeculative",
-                                     "IsSerializeAfter"])
+    hvcIop = ArmInstObjParams("hvc", "Hvc64", "ImmOp64",
+                              hvcCode, ["IsSyscall", "IsNonSpeculative",
+                                        "IsSerializeAfter"])
     header_output += ImmOp64Declare.subst(hvcIop)
     decoder_output += ImmOp64Constructor.subst(hvcIop)
     exec_output += BasicExecute.subst(hvcIop)
 
     # @todo: extend to take into account Virtualization.
     smcCode = '''
+    if (xc->inHtmTransactionalState()) {
+        fault = std::make_shared<GenericHtmFailureFault>(
+            xc->getHtmTransactionUid(),
+            HtmFailureFaultCause::EXCEPTION);
+        return fault;
+    }
     SCR scr = Scr64;
     CPSR cpsr = Cpsr;
 
@@ -89,8 +106,8 @@ let {{
     }
     '''
 
-    smcIop = InstObjParams("smc", "Smc64", "ImmOp64",
-                           smcCode, ["IsNonSpeculative", "IsSerializeAfter"])
+    smcIop = ArmInstObjParams("smc", "Smc64", "ImmOp64",
+            smcCode, ["IsNonSpeculative", "IsSerializeAfter"])
     header_output += ImmOp64Declare.subst(smcIop)
     decoder_output += ImmOp64Constructor.subst(smcIop)
     exec_output += BasicExecute.subst(smcIop)
@@ -111,23 +128,23 @@ let {{
         bitMask = (bitMask >> imm1) | (bitMask << (intWidth - imm1));
         diff += intWidth;
     }
-    uint64_t topBits M5_VAR_USED = ~mask(diff+1);
+    GEM5_VAR_USED uint64_t topBits = ~mask(diff+1);
     uint64_t result = imm1 == 0 ? Op164 :
                       (Op164 >> imm1) | (Op164 << (intWidth - imm1));
     result &= bitMask;
     '''
 
     bfmCode = bfmMaskCode + 'Dest64 = result | (Dest64 & ~bitMask);'
-    bfmIop = InstObjParams("bfm", "Bfm64", "RegRegImmImmOp64", bfmCode);
+    bfmIop = ArmInstObjParams("bfm", "Bfm64", "RegRegImmImmOp64", bfmCode);
     subst("RegRegImmImmOp64", bfmIop)
 
     ubfmCode = bfmMaskCode + 'Dest64 = result;'
-    ubfmIop = InstObjParams("ubfm", "Ubfm64", "RegRegImmImmOp64", ubfmCode);
+    ubfmIop = ArmInstObjParams("ubfm", "Ubfm64", "RegRegImmImmOp64", ubfmCode);
     subst("RegRegImmImmOp64", ubfmIop)
 
     sbfmCode = bfmMaskCode + \
         'Dest64 = result | (bits(Op164, imm2) ? topBits : 0);'
-    sbfmIop = InstObjParams("sbfm", "Sbfm64", "RegRegImmImmOp64", sbfmCode);
+    sbfmIop = ArmInstObjParams("sbfm", "Sbfm64", "RegRegImmImmOp64", sbfmCode);
     subst("RegRegImmImmOp64", sbfmIop)
 
     extrCode = '''
@@ -137,38 +154,39 @@ let {{
             Dest64 = (Op164 << (intWidth - imm)) | (Op264 >> imm);
         }
     '''
-    extrIop = InstObjParams("extr", "Extr64", "RegRegRegImmOp64", extrCode);
+    extrIop = ArmInstObjParams("extr", "Extr64", "RegRegRegImmOp64", extrCode);
     subst("RegRegRegImmOp64", extrIop);
 
     unknownCode = '''
             return std::make_shared<UndefinedInstruction>(machInst, true);
     '''
-    unknown64Iop = InstObjParams("unknown", "Unknown64", "UnknownOp64",
-                                 unknownCode)
+    unknown64Iop = ArmInstObjParams("unknown", "Unknown64", "UnknownOp64",
+                                    unknownCode)
     header_output += BasicDeclare.subst(unknown64Iop)
     decoder_output += BasicConstructor64.subst(unknown64Iop)
     exec_output += BasicExecute.subst(unknown64Iop)
 
-    isbIop = InstObjParams("isb", "Isb64", "ArmStaticInst", "",
-                           ['IsSquashAfter'])
+    isbIop = ArmInstObjParams("isb", "Isb64", "ArmStaticInst", "",
+                              ['IsSquashAfter'])
     header_output += BasicDeclare.subst(isbIop)
     decoder_output += BasicConstructor64.subst(isbIop)
     exec_output += BasicExecute.subst(isbIop)
 
-    dsbIop = InstObjParams("dsb", "Dsb64", "ArmStaticInst", "",
-                           ['IsMemBarrier', 'IsSerializeAfter'])
+    dsbIop = ArmInstObjParams("dsb", "Dsb64", "ArmStaticInst", "",
+                              ['IsReadBarrier', 'IsWriteBarrier',
+                               'IsSerializeAfter'])
     header_output += BasicDeclare.subst(dsbIop)
     decoder_output += BasicConstructor64.subst(dsbIop)
     exec_output += BasicExecute.subst(dsbIop)
 
-    dmbIop = InstObjParams("dmb", "Dmb64", "ArmStaticInst", "",
-                           ['IsMemBarrier'])
+    dmbIop = ArmInstObjParams("dmb", "Dmb64", "ArmStaticInst", "",
+                              ['IsReadBarrier', 'IsWriteBarrier'])
     header_output += BasicDeclare.subst(dmbIop)
     decoder_output += BasicConstructor64.subst(dmbIop)
     exec_output += BasicExecute.subst(dmbIop)
 
-    clrexIop = InstObjParams("clrex", "Clrex64", "ArmStaticInst",
-                             "LLSCLock = 0;")
+    clrexIop = ArmInstObjParams("clrex", "Clrex64", "ArmStaticInst",
+                                "LLSCLock = 0;")
     header_output += BasicDeclare.subst(clrexIop)
     decoder_output += BasicConstructor64.subst(clrexIop)
     exec_output += BasicExecute.subst(clrexIop)
@@ -179,16 +197,19 @@ let {{
                                                  bits(machInst, 20, 5));
     '''
 
-    brkIop = InstObjParams("brk", "Brk64", "ImmOp64",
-                           brkCode, ["IsSerializeAfter"])
+    brkIop = ArmInstObjParams("brk", "Brk64", "ImmOp64",
+                              brkCode, ["IsSerializeAfter"])
     header_output += ImmOp64Declare.subst(brkIop)
     decoder_output += ImmOp64Constructor.subst(brkIop)
     exec_output += BasicExecute.subst(brkIop)
 
     hltCode = '''
     ThreadContext *tc = xc->tcBase();
-    if (ArmSystem::haveSemihosting(tc) && imm == 0xF000) {
-        X0 = ArmSystem::callSemihosting64(tc, X0 & mask(32), X1);
+    bool have_semi = ArmSystem::haveSemihosting(tc);
+    if (imm == ArmSemihosting::A64Imm && have_semi) {
+        ArmSystem::callSemihosting64(tc);
+    } else if (imm == ArmSemihosting::Gem5Imm && have_semi) {
+        ArmSystem::callSemihosting64(tc, true);
     } else {
         // HLT instructions aren't implemented, so treat them as undefined
         // instructions.
@@ -198,8 +219,8 @@ let {{
 
     '''
 
-    hltIop = InstObjParams("hlt", "Hlt64", "ImmOp64",
-                           hltCode, ["IsNonSpeculative"])
+    hltIop = ArmInstObjParams("hlt", "Hlt64", "ImmOp64", hltCode,
+            ["IsNonSpeculative", "IsSerializeAfter"])
     header_output += ImmOp64Declare.subst(hltIop)
     decoder_output += SemihostConstructor64.subst(hltIop)
     exec_output += BasicExecute.subst(hltIop)

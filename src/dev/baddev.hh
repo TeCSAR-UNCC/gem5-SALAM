@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -39,6 +37,9 @@
 #include "dev/io_device.hh"
 #include "params/BadDevice.hh"
 
+namespace gem5
+{
+
 /**
  * BadDevice
  * This device just panics when accessed. It is supposed to warn
@@ -51,25 +52,19 @@ class BadDevice : public BasicPioDevice
     std::string devname;
 
   public:
-    typedef BadDeviceParams Params;
+    using Params = BadDeviceParams;
 
-  protected:
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-  public:
-     /**
-      * Constructor for the Baddev Class.
-      * @param p object parameters
-      * @param a base address of the write
-      */
-    BadDevice(Params *p);
+    /**
+     * Constructor for the Baddev Class.
+     * @param p object parameters
+     * @param a base address of the write
+     */
+    BadDevice(const Params &p);
 
     virtual Tick read(PacketPtr pkt);
     virtual Tick write(PacketPtr pkt);
 };
+
+} // namespace gem5
 
 #endif // __DEV_BADDEV_HH__

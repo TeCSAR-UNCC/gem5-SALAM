@@ -23,17 +23,17 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Brad Beckmann
 
 from m5.params import *
+from m5.proxy import *
 from m5.objects.ClockedObject import ClockedObject
 from m5.objects.SimpleMemory import *
 
 class RubySystem(ClockedObject):
     type = 'RubySystem'
     cxx_header = "mem/ruby/system/RubySystem.hh"
+    cxx_class = 'gem5::ruby::RubySystem'
+
     randomization = Param.Bool(False,
         "insert random delays on message enqueue times (if True, all message \
          buffers are enforced to have randomization; otherwise, a message \
@@ -44,6 +44,7 @@ class RubySystem(ClockedObject):
         "number of bits that a memory address requires");
 
     phys_mem = Param.SimpleMemory(NULL, "")
+    system = Param.System(Parent.any, "system object")
 
     access_backing_store = Param.Bool(False, "Use phys_mem as the functional \
         store and only use ruby for timing.")

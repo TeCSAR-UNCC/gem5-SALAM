@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 #include "mem/dramsim2.hh"
@@ -46,11 +44,17 @@
 #include "debug/Drain.hh"
 #include "sim/system.hh"
 
-DRAMSim2::DRAMSim2(const Params* p) :
+namespace gem5
+{
+
+namespace memory
+{
+
+DRAMSim2::DRAMSim2(const Params &p) :
     AbstractMemory(p),
     port(name() + ".port", *this),
-    wrapper(p->deviceConfigFile, p->systemConfigFile, p->filePath,
-            p->traceFile, p->range.size() / 1024 / 1024, p->enableDebug),
+    wrapper(p.deviceConfigFile, p.systemConfigFile, p.filePath,
+            p.traceFile, p.range.size() / 1024 / 1024, p.enableDebug),
     retryReq(false), retryResp(false), startTick(0),
     nbrOutstandingReads(0), nbrOutstandingWrites(0),
     sendResponseEvent([this]{ sendResponse(); }, name()),
@@ -70,9 +74,7 @@ DRAMSim2::DRAMSim2(const Params* p) :
 
     // Register a callback to compensate for the destructor not
     // being called. The callback prints the DRAMSim2 stats.
-    Callback* cb = new MakeCallback<DRAMSim2Wrapper,
-        &DRAMSim2Wrapper::printStats>(wrapper);
-    registerExitCallback(cb);
+    registerExitCallback([this]() { wrapper.printStats(); });
 }
 
 void
@@ -148,7 +150,8 @@ DRAMSim2::tick()
         port.sendRetryReq();
     }
 
-    schedule(tickEvent, curTick() + wrapper.clockPeriod() * SimClock::Int::ns);
+    schedule(tickEvent,
+        curTick() + wrapper.clockPeriod() * sim_clock::as_int::ns);
 }
 
 Tick
@@ -258,7 +261,7 @@ DRAMSim2::accessAndRespond(PacketPtr pkt)
     // response
     access(pkt);
 
-    // turn packet around to go back to requester if response expected
+    // turn packet around to go back to requestor if response expected
     if (needsResponse) {
         // access already turned the packet into a response
         assert(pkt->isResponse());
@@ -287,7 +290,7 @@ DRAMSim2::accessAndRespond(PacketPtr pkt)
 void DRAMSim2::readComplete(unsigned id, uint64_t addr, uint64_t cycle)
 {
     assert(cycle == divCeil(curTick() - startTick,
-                            wrapper.clockPeriod() * SimClock::Int::ns));
+                            wrapper.clockPeriod() * sim_clock::as_int::ns));
 
     DPRINTF(DRAMSim2, "Read to address %lld complete\n", addr);
 
@@ -315,7 +318,7 @@ void DRAMSim2::readComplete(unsigned id, uint64_t addr, uint64_t cycle)
 void DRAMSim2::writeComplete(unsigned id, uint64_t addr, uint64_t cycle)
 {
     assert(cycle == divCeil(curTick() - startTick,
-                            wrapper.clockPeriod() * SimClock::Int::ns));
+                            wrapper.clockPeriod() * sim_clock::as_int::ns));
 
     DPRINTF(DRAMSim2, "Write to address %lld complete\n", addr);
 
@@ -356,44 +359,41 @@ DRAMSim2::drain()
 
 DRAMSim2::MemoryPort::MemoryPort(const std::string& _name,
                                  DRAMSim2& _memory)
-    : SlavePort(_name, &_memory), memory(_memory)
+    : ResponsePort(_name, &_memory), mem(_memory)
 { }
 
 AddrRangeList
 DRAMSim2::MemoryPort::getAddrRanges() const
 {
     AddrRangeList ranges;
-    ranges.push_back(memory.getAddrRange());
+    ranges.push_back(mem.getAddrRange());
     return ranges;
 }
 
 Tick
 DRAMSim2::MemoryPort::recvAtomic(PacketPtr pkt)
 {
-    return memory.recvAtomic(pkt);
+    return mem.recvAtomic(pkt);
 }
 
 void
 DRAMSim2::MemoryPort::recvFunctional(PacketPtr pkt)
 {
-    memory.recvFunctional(pkt);
+    mem.recvFunctional(pkt);
 }
 
 bool
 DRAMSim2::MemoryPort::recvTimingReq(PacketPtr pkt)
 {
     // pass it to the memory controller
-    return memory.recvTimingReq(pkt);
+    return mem.recvTimingReq(pkt);
 }
 
 void
 DRAMSim2::MemoryPort::recvRespRetry()
 {
-    memory.recvRespRetry();
+    mem.recvRespRetry();
 }
 
-DRAMSim2*
-DRAMSim2Params::create()
-{
-    return new DRAMSim2(this);
-}
+} // namespace memory
+} // namespace gem5

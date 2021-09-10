@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "base/time.hh"
@@ -40,7 +38,8 @@
 #include "sim/core.hh"
 #include "sim/serialize.hh"
 
-using namespace std;
+namespace gem5
+{
 
 void
 Time::_set(bool monotonic)
@@ -57,21 +56,21 @@ Time::_set(bool monotonic)
 void
 Time::setTick(Tick ticks)
 {
-    uint64_t secs = ticks / SimClock::Frequency;
-    ticks -= secs * SimClock::Frequency;
-    uint64_t nsecs = static_cast<uint64_t>(ticks * SimClock::Float::GHz);
+    uint64_t secs = ticks / sim_clock::Frequency;
+    ticks -= secs * sim_clock::Frequency;
+    uint64_t nsecs = static_cast<uint64_t>(ticks * sim_clock::as_float::GHz);
     set(secs, nsecs);
 }
 
 Tick
 Time::getTick() const
 {
-    return sec() * SimClock::Frequency +
-        static_cast<uint64_t>(nsec() * SimClock::Float::ns);
+    return sec() * sim_clock::Frequency +
+        static_cast<uint64_t>(nsec() * sim_clock::as_float::ns);
 }
 
-string
-Time::date(const string &format) const
+std::string
+Time::date(const std::string &format) const
 {
     time_t sec = this->sec();
     char buf[256];
@@ -91,7 +90,7 @@ Time::date(const string &format) const
     return buf;
 }
 
-string
+std::string
 Time::time() const
 {
     double time = double(*this);
@@ -100,7 +99,7 @@ Time::time() const
     double mins = fmod(all_mins, 60.0);
     double hours = floor(all_mins / 60.0);
 
-    stringstream str;
+    std::stringstream str;
 
     if (hours > 0.0) {
         if (hours < 10.0)
@@ -183,3 +182,4 @@ mkutctime(struct tm *time)
     return ret;
 }
 
+} // namespace gem5

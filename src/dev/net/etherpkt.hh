@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Lisa Hsu
  */
 
 /* @file
@@ -42,6 +39,9 @@
 
 #include "base/types.hh"
 #include "sim/serialize.hh"
+
+namespace gem5
+{
 
 /*
  * Reference counted class containing ethernet packet data
@@ -88,5 +88,7 @@ class EthPacketData
 };
 
 typedef std::shared_ptr<EthPacketData> EthPacketPtr;
+
+} // namespace gem5
 
 #endif // __DEV_NET_ETHERPKT_HH__

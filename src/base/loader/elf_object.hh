@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
  */
 
 #ifndef __BASE_LOADER_ELF_OBJECT_HH__
@@ -46,8 +44,16 @@
 #include <set>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/loader/object_file.hh"
 #include "gelf.h"
+
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 class ElfObjectFormat : public ObjectFileFormat
 {
@@ -63,6 +69,7 @@ class ElfObject : public ObjectFile
 
     void determineArch();
     void determineOpSys();
+    void determineByteOrder();
     void handleLoadableSegment(GElf_Phdr phdr, int seg_num);
 
     // These values are provided to a linux process by the kernel, so we
@@ -105,16 +112,6 @@ class ElfObject : public ObjectFile
 
     MemoryImage buildImage() const override { return image; }
 
-    bool loadAllSymbols(SymbolTable *symtab, Addr base=0,
-                        Addr offset=0, Addr addr_mask=MaxAddr) override;
-    bool loadGlobalSymbols(SymbolTable *symtab, Addr base=0,
-                           Addr offset=0, Addr addr_mask=MaxAddr) override;
-    bool loadLocalSymbols(SymbolTable *symtab, Addr base=0,
-                          Addr offset=0, Addr addr_mask=MaxAddr) override;
-    bool loadWeakSymbols(SymbolTable *symtab, Addr base=0,
-                         Addr offset=0, Addr addr_mask=MaxAddr) override;
-
-
     ObjectFile *getInterpreter() const override { return interpreter; }
     std::string getInterpPath(const GElf_Phdr &phdr) const;
 
@@ -138,5 +135,8 @@ class ElfObject : public ObjectFile
  * @param dirname base path for the interpreter
  */
 void setInterpDir(const std::string &dirname);
+
+} // namespace loader
+} // namespace gem5
 
 #endif // __BASE_LOADER_ELF_OBJECT_HH__

@@ -33,13 +33,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #include "dev/arm/smmu_v3_events.hh"
 
-#include "dev/arm/smmu_v3_slaveifc.hh"
+#include "dev/arm/smmu_v3_deviceifc.hh"
+
+namespace gem5
+{
 
 void
 SMMUDeviceRetryEvent::process()
@@ -52,3 +53,5 @@ SMMUDeviceRetryEvent::name() const
 {
     return smmuIfc.name() + ".device_retry_event";
 }
+
+} // namespace gem5

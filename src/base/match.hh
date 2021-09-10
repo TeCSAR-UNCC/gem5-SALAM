@@ -25,9 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
-            Bobby R. Bruce
  */
 
 /* @file
@@ -39,6 +36,9 @@
 
 #include <string>
 #include <vector>
+
+namespace gem5
+{
 
 /**
  * ObjectMatch contains a vector of expressions. ObjectMatch can then be
@@ -72,5 +72,6 @@ class ObjectMatch
     }
 };
 
-#endif // __BASE_MATCH_HH__
+} // namespace gem5
 
+#endif // __BASE_MATCH_HH__

@@ -38,9 +38,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Sascha Bischoff
  */
 
 // This file will contain default statistics for the simulator that
@@ -53,161 +50,22 @@
 #include <list>
 
 #include "base/callback.hh"
-#include "base/hostinfo.hh"
 #include "base/statistics.hh"
 #include "base/time.hh"
-#include "cpu/base.hh"
 #include "sim/global_event.hh"
 
-using namespace std;
+namespace gem5
+{
 
-Stats::Formula simSeconds;
-Stats::Value simTicks;
-Stats::Value finalTick;
-Stats::Value simFreq;
-
-namespace Stats {
-
-Time statTime(true);
-Tick startTick;
+GEM5_DEPRECATED_NAMESPACE(Stats, statistics);
+namespace statistics
+{
 
 GlobalEvent *dumpEvent;
-
-struct SimTicksReset : public Callback
-{
-    void process()
-    {
-        statTime.setTimer();
-        startTick = curTick();
-    }
-};
-
-double
-statElapsedTime()
-{
-    Time now;
-    now.setTimer();
-
-    Time elapsed = now - statTime;
-    return elapsed;
-}
-
-Tick
-statElapsedTicks()
-{
-    return curTick() - startTick;
-}
-
-Tick
-statFinalTick()
-{
-    return curTick();
-}
-
-SimTicksReset simTicksReset;
-
-struct Global
-{
-    Stats::Formula hostInstRate;
-    Stats::Formula hostOpRate;
-    Stats::Formula hostTickRate;
-    Stats::Value hostMemory;
-    Stats::Value hostSeconds;
-
-    Stats::Value simInsts;
-    Stats::Value simOps;
-
-    Global();
-};
-
-Global::Global()
-{
-    simInsts
-        .functor(BaseCPU::numSimulatedInsts)
-        .name("sim_insts")
-        .desc("Number of instructions simulated")
-        .precision(0)
-        .prereq(simInsts)
-        ;
-
-    simOps
-        .functor(BaseCPU::numSimulatedOps)
-        .name("sim_ops")
-        .desc("Number of ops (including micro ops) simulated")
-        .precision(0)
-        .prereq(simOps)
-        ;
-
-    simSeconds
-        .name("sim_seconds")
-        .desc("Number of seconds simulated")
-        ;
-
-    simFreq
-        .scalar(SimClock::Frequency)
-        .name("sim_freq")
-        .desc("Frequency of simulated ticks")
-        ;
-
-    simTicks
-        .functor(statElapsedTicks)
-        .name("sim_ticks")
-        .desc("Number of ticks simulated")
-        ;
-
-    finalTick
-        .functor(statFinalTick)
-        .name("final_tick")
-        .desc("Number of ticks from beginning of simulation "
-              "(restored from checkpoints and never reset)")
-        ;
-
-    hostInstRate
-        .name("host_inst_rate")
-        .desc("Simulator instruction rate (inst/s)")
-        .precision(0)
-        .prereq(simInsts)
-        ;
-
-    hostOpRate
-        .name("host_op_rate")
-        .desc("Simulator op (including micro ops) rate (op/s)")
-        .precision(0)
-        .prereq(simOps)
-        ;
-
-    hostMemory
-        .functor(memUsage)
-        .name("host_mem_usage")
-        .desc("Number of bytes of host memory used")
-        .prereq(hostMemory)
-        ;
-
-    hostSeconds
-        .functor(statElapsedTime)
-        .name("host_seconds")
-        .desc("Real time elapsed on the host")
-        .precision(2)
-        ;
-
-    hostTickRate
-        .name("host_tick_rate")
-        .desc("Simulator tick rate (ticks/s)")
-        .precision(0)
-        ;
-
-    simSeconds = simTicks / simFreq;
-    hostInstRate = simInsts / hostSeconds;
-    hostOpRate = simOps / hostSeconds;
-    hostTickRate = simTicks / hostSeconds;
-
-    registerResetCallback(&simTicksReset);
-}
 
 void
 initSimStats()
 {
-    static Global global;
 }
 
 /**
@@ -231,13 +89,14 @@ class StatEvent : public GlobalEvent
     process()
     {
         if (dump)
-            Stats::dump();
+            statistics::dump();
 
         if (reset)
-            Stats::reset();
+            statistics::reset();
 
         if (repeat) {
-            Stats::schedStatEvent(dump, reset, curTick() + repeat, repeat);
+            statistics::schedStatEvent(dump, reset, curTick() + repeat,
+                repeat);
         }
     }
 
@@ -259,10 +118,10 @@ periodicStatDump(Tick period)
 {
     /*
      * If the period is set to 0, then we do not want to dump periodically,
-     * thus we deschedule the event. Else, if the period is not 0, but the event
-     * has already been scheduled, we need to get rid of the old event before we
-     * create a new one, as the old event will no longer be moved forward in the
-     * event that we resume from a checkpoint.
+     * thus we deschedule the event. Else, if the period is not 0, but the
+     * event has already been scheduled, we need to get rid of the old event
+     * before we create a new one, as the old event will no longer be moved
+     * forward in the event that we resume from a checkpoint.
      */
     if (dumpEvent != NULL && (period == 0 || dumpEvent->scheduled())) {
         // Event should AutoDelete, so we do not need to free it.
@@ -300,4 +159,5 @@ updateEvents()
     }
 }
 
-} // namespace Stats
+} // namespace statistics
+} // namespace gem5

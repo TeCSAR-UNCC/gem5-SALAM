@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /* @file
@@ -39,6 +37,9 @@
 #include "params/EtherBus.hh"
 #include "sim/eventq.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class EtherDump;
 class EtherInt;
@@ -57,15 +58,9 @@ class EtherBus : public SimObject
     EtherDump *dump;
 
   public:
-    typedef EtherBusParams Params;
-    EtherBus(const Params *p);
+    using Params = EtherBusParams;
+    EtherBus(const Params &p);
     virtual ~EtherBus() {}
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
     void txDone();
     void reg(EtherInt *dev);
@@ -74,5 +69,7 @@ class EtherBus : public SimObject
     Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID) override;
 };
+
+} // namespace gem5
 
 #endif // __DEV_NET_ETHERBUS_HH__

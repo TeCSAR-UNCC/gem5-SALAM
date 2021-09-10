@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.params import *
 from m5.proxy import *
@@ -43,3 +41,7 @@ from m5.objects.Gic import GicV2
 class MuxingKvmGic(GicV2):
     type = 'MuxingKvmGic'
     cxx_header = "arch/arm/kvm/gic.hh"
+    cxx_class = 'gem5::MuxingKvmGic'
+
+    simulate_gic = Param.Bool(False,
+        "Forcing the simulation to use the gem5 GIC instead of the host GIC")

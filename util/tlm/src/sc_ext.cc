@@ -29,10 +29,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors:
- *    Matthias Jung
- *    Christian Menard
  */
 
 #include "sc_ext.hh"
@@ -42,10 +38,9 @@ using namespace tlm;
 namespace Gem5SystemC
 {
 
-Gem5Extension::Gem5Extension(PacketPtr packet)
+Gem5Extension::Gem5Extension(gem5::PacketPtr packet)
 {
     Packet = packet;
-    pipeThrough = false;
 }
 
 Gem5Extension& Gem5Extension::getExtension(const tlm_generic_payload *payload)
@@ -61,7 +56,7 @@ Gem5Extension& Gem5Extension::getExtension(const tlm_generic_payload &payload)
     return Gem5Extension::getExtension(&payload);
 }
 
-PacketPtr Gem5Extension::getPacket()
+gem5::PacketPtr Gem5Extension::getPacket()
 {
     return Packet;
 }

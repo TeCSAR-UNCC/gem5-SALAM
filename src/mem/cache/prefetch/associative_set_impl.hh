@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
 #ifndef __CACHE_PREFETCH_ASSOCIATIVE_SET_IMPL_HH__
@@ -34,9 +32,12 @@
 #include "base/intmath.hh"
 #include "mem/cache/prefetch/associative_set.hh"
 
+namespace gem5
+{
+
 template<class Entry>
 AssociativeSet<Entry>::AssociativeSet(int assoc, int num_entries,
-        BaseIndexingPolicy *idx_policy, BaseReplacementPolicy *rpl_policy,
+        BaseIndexingPolicy *idx_policy, replacement_policy::Base *rpl_policy,
         Entry const &init_value)
   : associativity(assoc), numEntries(num_entries), indexingPolicy(idx_policy),
     replacementPolicy(rpl_policy), entries(numEntries, init_value)
@@ -87,7 +88,7 @@ AssociativeSet<Entry>::findVictim(Addr addr)
     Entry* victim = static_cast<Entry*>(replacementPolicy->getVictim(
                             selected_entries));
     // There is only one eviction for this replacement
-    victim->reset();
+    invalidate(victim);
     return victim;
 }
 
@@ -111,10 +112,18 @@ template<class Entry>
 void
 AssociativeSet<Entry>::insertEntry(Addr addr, bool is_secure, Entry* entry)
 {
-   entry->setValid();
-   entry->setTag(indexingPolicy->extractTag(addr));
-   entry->setSecure(is_secure);
+   entry->insert(indexingPolicy->extractTag(addr), is_secure);
    replacementPolicy->reset(entry->replacementData);
 }
+
+template<class Entry>
+void
+AssociativeSet<Entry>::invalidate(Entry* entry)
+{
+    entry->invalidate();
+    replacementPolicy->invalidate(entry->replacementData);
+}
+
+} // namespace gem5
 
 #endif//__CACHE_PREFETCH_ASSOCIATIVE_SET_IMPL_HH__

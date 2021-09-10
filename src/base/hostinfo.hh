@@ -24,28 +24,23 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __HOSTINFO_HH__
 #define __HOSTINFO_HH__
 
-#include <string>
+#include <cstdint>
 
-#include "base/types.hh"
-
-std::string __get_hostname();
-
-std::string &hostname();
-
-uint64_t procInfo(const char *filename, const char *target);
+namespace gem5
+{
 
 /**
  * Determine the simulator process' total virtual memory usage.
  *
- * @return virtual memory usage in kilobytes
+ * @return Virtual memory usage in kilobytes
  */
 uint64_t memUsage();
+
+} // namespace gem5
 
 #endif // __HOSTINFO_HH__

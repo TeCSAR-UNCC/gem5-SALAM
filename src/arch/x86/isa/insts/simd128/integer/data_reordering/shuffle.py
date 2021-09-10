@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop PSHUFD_XMM_XMM_I {
@@ -85,5 +83,33 @@ def macroop PSHUFLW_XMM_P_I {
     rdip t7
     ldfp ufp1, seg, riprel, "DISPLACEMENT", dataSize=8
     shuffle xmml, ufp1, ufp1, size=2, ext=imm
+};
+
+def macroop PSHUFB_XMM_XMM {
+    movfp ufp1, xmmlm, dataSize=8
+    movfp ufp2, xmmhm, dataSize=8
+    shuffle ufp1, xmml, xmmh, size=1, ext=0
+    shuffle ufp2, xmml, xmmh, size=1, ext=0
+    movfp xmml, ufp1, dataSize=8
+    movfp xmmh, ufp2, dataSize=8
+};
+
+def macroop PSHUFB_XMM_M {
+    ldfp ufp1, seg, sib, "DISPLACEMENT", dataSize=8
+    ldfp ufp2, seg, sib, "DISPLACEMENT + 8", dataSize=8
+    shuffle ufp1, xmml, xmmh, size=1, ext=0
+    shuffle ufp2, xmml, xmmh, size=1, ext=0
+    movfp xmml, ufp1, dataSize=8
+    movfp xmmh, ufp2, dataSize=8
+};
+
+def macroop PSHUFB_XMM_P {
+    rdip t7
+    ldfp ufp1, seg, riprel, "DISPLACEMENT", dataSize=8
+    ldfp ufp2, seg, riprel, "DISPLACEMENT + 8", dataSize=8
+    shuffle ufp1, xmml, xmmh, size=1, ext=0
+    shuffle ufp2, xmml, xmmh, size=1, ext=0
+    movfp xmml, ufp1, dataSize=8
+    movfp xmmh, ufp2, dataSize=8
 };
 '''

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -47,12 +45,21 @@
 #ifndef __CPU_MINOR_NEW_LSQ_HH__
 #define __CPU_MINOR_NEW_LSQ_HH__
 
+#include <string>
+#include <vector>
+
+#include "base/named.hh"
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/pipe_data.hh"
 #include "cpu/minor/trace.hh"
+#include "mem/packet.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /* Forward declaration */
@@ -64,6 +71,8 @@ class LSQ : public Named
     /** My owner(s) */
     MinorCPU &cpu;
     Execute &execute;
+
+    const RegIndex zeroReg;
 
   protected:
     /** State of memory access for head access. */
@@ -118,12 +127,14 @@ class LSQ : public Named
      *  translation, the queues in this port and back from the memory
      *  system. */
     class LSQRequest :
-        public BaseTLB::Translation, /* For TLB lookups */
+        public BaseMMU::Translation, /* For TLB lookups */
         public Packet::SenderState /* For packing into a Packet */
     {
       public:
         /** Owning port */
         LSQ &port;
+
+        const RegIndex zeroReg;
 
         /** Instruction which made this request */
         MinorDynInstPtr inst;
@@ -185,7 +196,7 @@ class LSQ : public Named
         LSQRequestState state;
 
       protected:
-        /** BaseTLB::Translation interface */
+        /** BaseMMU::Translation interface */
         void markDelayed() { isTranslationDelayed = true; }
 
         /** Instructions may want to suppress translation faults (e.g.
@@ -197,7 +208,8 @@ class LSQ : public Named
 
       public:
         LSQRequest(LSQ &port_, MinorDynInstPtr inst_, bool isLoad_,
-            PacketDataPtr data_ = NULL, uint64_t *res_ = NULL);
+                RegIndex zero_reg, PacketDataPtr data_ = NULL,
+                uint64_t *res_ = NULL);
 
         virtual ~LSQRequest();
 
@@ -280,7 +292,7 @@ class LSQ : public Named
       protected:
         /** TLB interace */
         void finish(const Fault &fault_, const RequestPtr &request_,
-                    ThreadContext *tc, BaseTLB::Mode mode)
+                    ThreadContext *tc, BaseMMU::Mode mode)
         { }
 
       public:
@@ -307,7 +319,7 @@ class LSQ : public Named
       public:
         SpecialDataRequest(LSQ &port_, MinorDynInstPtr inst_) :
             /* Say this is a load, not actually relevant */
-            LSQRequest(port_, inst_, true, NULL, 0)
+            LSQRequest(port_, inst_, true, port_.zeroReg, NULL, 0)
         { }
     };
 
@@ -341,7 +353,7 @@ class LSQ : public Named
       protected:
         /** TLB interace */
         void finish(const Fault &fault_, const RequestPtr &request_,
-                    ThreadContext *tc, BaseTLB::Mode mode);
+                    ThreadContext *tc, BaseMMU::Mode mode);
 
         /** Has my only packet been sent to the memory system but has not
          *  yet been responded to */
@@ -374,7 +386,7 @@ class LSQ : public Named
       public:
         SingleDataRequest(LSQ &port_, MinorDynInstPtr inst_,
             bool isLoad_, PacketDataPtr data_ = NULL, uint64_t *res_ = NULL) :
-            LSQRequest(port_, inst_, isLoad_, data_, res_),
+            LSQRequest(port_, inst_, isLoad_, port_.zeroReg, data_, res_),
             packetInFlight(false),
             packetSent(false)
         { }
@@ -414,7 +426,7 @@ class LSQ : public Named
       protected:
         /** TLB response interface */
         void finish(const Fault &fault_, const RequestPtr &request_,
-                    ThreadContext *tc, BaseTLB::Mode mode);
+                    ThreadContext *tc, BaseMMU::Mode mode);
 
       public:
         SplitDataRequest(LSQ &port_, MinorDynInstPtr inst_,
@@ -644,7 +656,8 @@ class LSQ : public Named
         unsigned int max_accesses_in_memory_system, unsigned int line_width,
         unsigned int requests_queue_size, unsigned int transfers_queue_size,
         unsigned int store_buffer_size,
-        unsigned int store_buffer_cycle_store_limit);
+        unsigned int store_buffer_cycle_store_limit,
+        RegIndex zero_reg);
 
     virtual ~LSQ();
 
@@ -732,6 +745,8 @@ class LSQ : public Named
  *  pushed into the packet as senderState */
 PacketPtr makePacketForRequest(const RequestPtr &request, bool isLoad,
     Packet::SenderState *sender_state = NULL, PacketDataPtr data = NULL);
-}
+
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_NEW_LSQ_HH__ */

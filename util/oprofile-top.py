@@ -1,4 +1,4 @@
-#! /usr/bin/env python2.7
+#! /usr/bin/env python3
 
 # Copyright (c) 2005 The Regents of The University of Michigan
 # All rights reserved.
@@ -25,9 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Ali Saidi
-#          Nathan Binkert
 
 # Parse sampled function profile output (quick hack).
 
@@ -42,18 +39,18 @@ def category(app,sym):
     else:
         name = app
 
-    if categories.has_key(name):
+    if name in categories:
         return categories[name]
     for regexp, cat in categories_re:
         if regexp.match(name):
             return cat
-    print "no match for symbol %s" % name
+    print("no match for symbol %s" % name)
     return 'other'
 
 try:
    (opts, files) = getopt.getopt(sys.argv[1:], 'i')
 except getopt.GetoptError:
-        print "usage", sys.argv[0], "[-i] <files>"
+        print("usage", sys.argv[0], "[-i] <files>")
         sys.exit(2)
 
 showidle = True
@@ -61,7 +58,7 @@ showidle = True
 for o,v in opts:
     if o == "-i":
         showidle = False
-print files
+print(files)
 f = open(files.pop())
 total = 0
 prof = {}
@@ -90,6 +87,6 @@ if showidle:
 #    print "%s -- %5.1f%% " % (prof[i][1], 100 * float(prof[i][0])/float(total))
 
 for d in cats:
-    if prof.has_key(d):
-        print "%s -- %5.1f%% " % (d, 100 * float(prof[d])/float(total))
+    if d in prof:
+        print("%s -- %5.1f%% " % (d, 100 * float(prof[d])/float(total)))
 

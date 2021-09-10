@@ -33,14 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nilay Vaish
  */
 
 #ifndef __ARCH_X86_CCREGS_HH__
 #define __ARCH_X86_CCREGS_HH__
 
 #include "arch/x86/x86_traits.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -54,6 +55,7 @@ namespace X86ISA
 
         NUM_CCREGS
     };
-}
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_CCREGS_HH__

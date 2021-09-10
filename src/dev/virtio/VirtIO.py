@@ -34,32 +34,34 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.SimObject import SimObject
 from m5.params import *
 from m5.proxy import *
 from m5.objects.Device import PioDevice
-from m5.objects.PciDevice import PciDevice
+from m5.objects.PciDevice import PciDevice, PciIoBar
 
 
 class VirtIODeviceBase(SimObject):
     type = 'VirtIODeviceBase'
     cxx_header = 'dev/virtio/base.hh'
+    cxx_class = 'gem5::VirtIODeviceBase'
     abstract = True
 
     subsystem = Param.UInt8(0x00, "VirtIO subsystem ID")
 
     system = Param.System(Parent.any, "system object")
+    byte_order = Param.ByteOrder(Parent.byte_order, "Device byte order")
 
 class VirtIODummyDevice(VirtIODeviceBase):
     type = 'VirtIODummyDevice'
     cxx_header = 'dev/virtio/base.hh'
+    cxx_class = 'gem5::VirtIODummyDevice'
 
 class PciVirtIO(PciDevice):
     type = 'PciVirtIO'
     cxx_header = 'dev/virtio/pci.hh'
+    cxx_class = 'gem5::PciVirtIO'
 
     vio = Param.VirtIODeviceBase(VirtIODummyDevice(), "VirtIO device")
 
@@ -69,7 +71,7 @@ class PciVirtIO(PciDevice):
 
     ClassCode = 0xff # Misc device
 
-    BAR0 = 0x00000001 # Anywhere in 32-bit space; IOREG
-    BAR0Size = '0B' # Overridden by the device model
+    # The size is overridden by the device model.
+    BAR0 = PciIoBar(size='4B')
 
     InterruptPin = 0x01 # Use #INTA

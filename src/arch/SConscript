@@ -37,8 +37,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
 
 import sys
 import os
@@ -61,30 +59,24 @@ env.SwitchingHeaders(
     Split('''
         decoder.hh
         isa.hh
-        isa_traits.hh
-        kernel_stats.hh
         locked_mem.hh
-        microcode_rom.hh
-        mmapped_ipr.hh
-        process.hh
-        pseudo_inst.hh
-        registers.hh
-        remote_gdb.hh
-        stacktrace.hh
-        types.hh
-        utility.hh
-        vtophys.hh
+        page_size.hh
+        pcstate.hh
+        vecregs.hh
         '''),
     env.subst('${TARGET_ISA}'))
 
-if env['BUILD_GPU']:
-    env.SwitchingHeaders(
-        Split('''
-            gpu_decoder.hh
-            gpu_isa.hh
-            gpu_types.hh
-            '''),
-        env.subst('${TARGET_GPU_ISA}'))
+amdgpu_isa = ['gcn3', 'vega']
+
+env.SwitchingHeaders(
+    Split('''
+        gpu_decoder.hh
+        gpu_isa.hh
+        gpu_registers.hh
+        gpu_types.hh
+        '''),
+    '{}'.format('amdgpu/' if env['TARGET_GPU_ISA'] in amdgpu_isa else '')+
+    env.subst('${TARGET_GPU_ISA}'))
 
 #################################################################
 #
@@ -113,15 +105,17 @@ SCons.Tool.SourceFileScanner.add_scanner('.cc.inc', SCons.Tool.CScanner)
 # output from the ISA description (*.isa) files.
 #
 
-parser_py = File('isa_parser.py')
+parser_files = Glob('isa_parser/*.py')
 micro_asm_py = File('micro_asm.py')
 
 # import ply here because SCons screws with sys.path when performing actions.
 import ply
 
+arch_dir = Dir('.')
+
 def run_parser(target, source, env):
     # Add the current directory to the system path so we can import files.
-    sys.path[0:0] = [ parser_py.dir.abspath ]
+    sys.path[0:0] = [ arch_dir.abspath ]
     import isa_parser
 
     parser = isa_parser.ISAParser(target[0].dir.abspath)
@@ -192,13 +186,14 @@ def ISADesc(desc, decoder_splits=1, exec_splits=1):
     add_gen('exec-g.cc.inc')
     add_gen('exec-ns.cc.inc')
 
-    add_gen('max_inst_regs.hh')
-
 
     # These generated files are also top level sources.
     def source_gen(name):
         add_gen(name)
-        Source(gen_file(name))
+        append = {}
+        if env['CLANG']:
+            append['CCFLAGS'] = ['-Wno-self-assign']
+        Source(gen_file(name), append=append)
 
     source_gen('decoder.cc')
 
@@ -215,7 +210,7 @@ def ISADesc(desc, decoder_splits=1, exec_splits=1):
             source_gen('generic_cpu_exec_%d.cc' % i)
 
     # Actually create the builder.
-    sources = [desc, parser_py, micro_asm_py]
+    sources = [desc, micro_asm_py] + parser_files
     IsaDescBuilder(target=gen, source=sources, env=env)
     return gen
 

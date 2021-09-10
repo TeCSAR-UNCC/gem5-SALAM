@@ -36,13 +36,12 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Andreas Hansson
- *          William Wang
  */
 
 #include "mem/protocol/timing.hh"
+
+namespace gem5
+{
 
 /* The request protocol. */
 
@@ -103,3 +102,5 @@ TimingResponseProtocol::sendRetrySnoopResp(TimingRequestProtocol *peer)
 {
     peer->recvRetrySnoopResp();
 }
+
+} // namespace gem5

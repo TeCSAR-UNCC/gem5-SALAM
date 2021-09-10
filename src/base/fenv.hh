@@ -24,32 +24,41 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
  */
 
 #ifndef __BASE_FENV_HH__
 #define __BASE_FENV_HH__
 
-#include "config/use_fenv.hh"
+#include "config/have_fenv.hh"
 
-#define M5_FE_DOWNWARD     0
-#define M5_FE_TONEAREST    1
-#define M5_FE_TOWARDZERO   2
-#define M5_FE_UPWARD       3
+namespace gem5
+{
 
-#if USE_FENV
-extern "C" {
-void m5_fesetround(int rm);
-int m5_fegetround();
-}
+enum class RoundingMode
+{
+    Downward = 0,
+    ToNearest = 1,
+    TowardZero = 2,
+    Upward = 3
+};
+
+#if HAVE_FENV
+
+void setFpRound(RoundingMode rm);
+RoundingMode getFpRound();
+
 #else
 
 // Dummy definitions to allow code to compile w/o a real <fenv.h>.
-inline void m5_fesetround(int rm) { ; }
-inline int m5_fegetround() {return 0; }
+static inline void setFpRound(RoundingMode rm) {}
+static inline
+RoundingMode getFpRound()
+{
+    return RoundingMode::Downward;
+}
 
-#endif // USE_FENV
+#endif // HAVE_FENV
 
+} // namespace gem5
 
 #endif // __BASE_FENV_HH__

@@ -40,11 +40,14 @@
 #include "mem/ruby/protocol/SeriesRequestGeneratorStatus.hh"
 #include "params/SeriesRequestGenerator.hh"
 
+namespace gem5
+{
+
 class SeriesRequestGenerator : public DirectedGenerator
 {
   public:
     typedef SeriesRequestGeneratorParams Params;
-    SeriesRequestGenerator(const Params *p);
+    SeriesRequestGenerator(const Params &p);
 
     ~SeriesRequestGenerator();
 
@@ -52,12 +55,13 @@ class SeriesRequestGenerator : public DirectedGenerator
     void performCallback(uint32_t proc, Addr address);
 
   private:
-    SeriesRequestGeneratorStatus m_status;
+    ruby::SeriesRequestGeneratorStatus m_status;
     Addr m_address;
     uint32_t m_active_node;
     uint32_t m_addr_increment_size;
     uint32_t m_percent_writes;
 };
 
-#endif //__CPU_DIRECTEDTEST_SERIESREQUESTGENERATOR_HH__
+} // namespace gem5
 
+#endif //__CPU_DIRECTEDTEST_SERIESREQUESTGENERATOR_HH__

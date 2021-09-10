@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 2013 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -33,8 +45,10 @@ enumeration(CoherenceClass, desc="...") {
   UPGRADE,   desc="UPGRADE to exclusive";
   GETS,      desc="Get Shared";
   GET_INSTR, desc="Get Instruction";
-  INV,       desc="INValidate";
+  INV_OWN,   desc="Invalidate (own)";
+  INV_ELSE,  desc="Invalidate (else)";
   PUTX,      desc="Replacement message";
+  PUTX_COPY, desc="Data block to be copied in L1. L0 will still be in M state";
 
   WB_ACK,    desc="Writeback ack";
 
@@ -46,6 +60,7 @@ enumeration(CoherenceClass, desc="...") {
   DATA, desc="Data block for L1 cache in S state";
   DATA_EXCLUSIVE, desc="Data block for L1 cache in M/E state";
   ACK, desc="Generic invalidate ack";
+  NAK, desc="Used by L0 to tell L1 that it cannot provide the latest value";
 
   // This is a special case in which the L1 cache lost permissions to the
   // shared block before it got the data. So the L0 cache can use the data
@@ -63,6 +78,7 @@ structure(CoherenceMsg, desc="...", interface="Message") {
   MessageSizeType MessageSize,  desc="size category of the message";
   DataBlock DataBlk,            desc="Data for the cache line (if PUTX)";
   bool Dirty, default="false",  desc="Dirty bit";
+  PrefetchBit Prefetch,         desc="Is this a prefetch request";
 
   bool functionalRead(Packet *pkt) {
     // Only PUTX messages contains the data block

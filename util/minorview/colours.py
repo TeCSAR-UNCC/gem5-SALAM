@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andrew Bardsley
 
 import gtk
 
@@ -59,8 +57,8 @@ def name_to_colour(name):
         ret = unknownColour
     return ret
 
-number_colour_code = map(name_to_colour, ['black', 'brown', 'red', 'orange',
-    'yellow', 'green', 'blue', 'violet', 'grey', 'white'])
+number_colour_code = list(map(name_to_colour, ['black', 'brown', 'red',
+    'orange', 'yellow', 'green', 'blue', 'violet', 'grey', 'white']))
 
 def number_to_colour(num):
     """Convert the last decimal digit of an integer into a resistor

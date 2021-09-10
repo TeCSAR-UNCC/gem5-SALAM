@@ -33,18 +33,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "base/circlebuf.hh"
+
+using testing::ElementsAreArray;
+using namespace gem5;
 
 const char data[] = {
     0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
     0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
 };
+
+// A better way to implement this would be with std::span, but that is only
+// available starting in c++20.
+template <typename T>
+std::vector<T>
+subArr(T *arr, int size, int offset=0)
+{
+    return std::vector<T>(arr + offset, arr + offset + size);
+}
 
 // Basic non-overflow functionality
 TEST(CircleBufTest, BasicReadWriteNoOverflow)
@@ -56,14 +69,14 @@ TEST(CircleBufTest, BasicReadWriteNoOverflow)
     buf.write(data, 8);
     EXPECT_EQ(buf.size(), 8);
     buf.peek(foo, 8);
-    EXPECT_EQ(memcmp(foo, data, 8), 0);
+    EXPECT_THAT(subArr(foo, 8), ElementsAreArray(data, 8));
 
     // Read 2
     buf.read(foo, 2);
-    EXPECT_EQ(memcmp(foo, data, 2), 0);
+    EXPECT_THAT(subArr(foo, 2), ElementsAreArray(data, 2));
     EXPECT_EQ(buf.size(), 6);
     buf.read(foo, 6);
-    EXPECT_EQ(memcmp(foo, data + 2, 6), 0);
+    EXPECT_THAT(subArr(foo, 6), ElementsAreArray(data + 2, 6));
     EXPECT_EQ(buf.size(), 0);
 }
 
@@ -76,7 +89,7 @@ TEST(CircleBufTest, SingleWriteOverflow)
     buf.write(data, 16);
     EXPECT_EQ(buf.size(), 8);
     buf.peek(foo, 8);
-    EXPECT_EQ(memcmp(data + 8, foo, 8), 0);
+    EXPECT_THAT(subArr(foo, 8), ElementsAreArray(data + 8, 8));
 }
 
 
@@ -91,8 +104,8 @@ TEST(CircleBufTest, MultiWriteOverflow)
     buf.write(data + 8, 6);
     EXPECT_EQ(buf.size(), 8);
     buf.peek(foo, 8);
-    EXPECT_EQ(memcmp(data + 4, foo, 2), 0);
-    EXPECT_EQ(memcmp(data + 8, foo + 2, 6), 0);
+    EXPECT_THAT(subArr(foo, 2), ElementsAreArray(data + 4, 2));
+    EXPECT_THAT(subArr(foo, 6, 2), ElementsAreArray(data + 8, 6));
 }
 
 // Pointer wrap around
@@ -112,9 +125,28 @@ TEST(CircleBufTest, PointerWrapAround)
     // Normalized: _start == 2, _stop = 4
     buf.read(foo + 4, 6);
     EXPECT_EQ(buf.size(), 2);
-    EXPECT_EQ(memcmp(data, foo, 10), 0);
+    EXPECT_THAT(subArr(foo, 10), ElementsAreArray(data, 10));
     // Normalized: _start == 4, _stop = 4
     buf.read(foo + 10, 2);
     EXPECT_EQ(buf.size(), 0);
-    EXPECT_EQ(memcmp(data, foo, 12), 0);
+    EXPECT_THAT(subArr(foo, 12), ElementsAreArray(data, 12));
+}
+
+// Consume after produce empties queue
+TEST(CircleBufTest, ProduceConsumeEmpty)
+{
+    CircleBuf<char> buf(8);
+    char foo[1];
+
+    // buf is empty to begin with.
+    EXPECT_TRUE(buf.empty());
+    // Produce one element.
+    buf.write(foo, 1);
+    EXPECT_FALSE(buf.empty());
+
+    // Read it back out.
+    buf.read(foo, 1);
+
+    // Now the buffer should be empty again.
+    EXPECT_TRUE(buf.empty());
 }

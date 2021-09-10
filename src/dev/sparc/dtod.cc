@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -46,12 +44,13 @@
 #include "mem/port.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
 
-DumbTOD::DumbTOD(const Params *p)
+DumbTOD::DumbTOD(const Params &p)
     : BasicPioDevice(p, 0x08)
 {
-    struct tm tm = p->time;
+    struct tm tm = p.time;
     todTime = mkutctime(&tm);
 
     DPRINTFN("Real-time clock set to %s\n", asctime(&tm));
@@ -89,8 +88,4 @@ DumbTOD::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(todTime);
 }
 
-DumbTOD *
-DumbTODParams::create()
-{
-    return new DumbTOD(this);
-}
+} // namespace gem5

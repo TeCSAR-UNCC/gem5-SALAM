@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ARM Limited
+ * Copyright (c) 2017,2019 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -51,11 +51,17 @@
 #include "params/RubyDirectoryMemory.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class DirectoryMemory : public SimObject
 {
   public:
     typedef RubyDirectoryMemoryParams Params;
-    DirectoryMemory(const Params *p);
+    DirectoryMemory(const Params &p);
     ~DirectoryMemory();
 
     void init();
@@ -78,6 +84,9 @@ class DirectoryMemory : public SimObject
     bool isPresent(Addr address);
     AbstractCacheEntry *lookup(Addr address);
     AbstractCacheEntry *allocate(Addr address, AbstractCacheEntry* new_entry);
+
+    // Explicitly free up this address
+    void deallocate(Addr address);
 
     void print(std::ostream& out) const;
     void recordRequestType(DirectoryRequestType requestType);
@@ -110,5 +119,8 @@ operator<<(std::ostream& out, const DirectoryMemory& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_STRUCTURES_DIRECTORYMEMORY_HH__

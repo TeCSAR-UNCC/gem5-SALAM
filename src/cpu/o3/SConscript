@@ -25,8 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 import sys
 
@@ -37,10 +35,8 @@ if 'O3CPU' in env['CPU_MODELS']:
     SimObject('FuncUnitConfig.py')
     SimObject('O3CPU.py')
 
-    Source('base_dyn_inst.cc')
     Source('commit.cc')
     Source('cpu.cc')
-    Source('deriv.cc')
     Source('decode.cc')
     Source('dyn_inst.cc')
     Source('fetch.cc')
@@ -58,6 +54,7 @@ if 'O3CPU' in env['CPU_MODELS']:
     Source('scoreboard.cc')
     Source('store_set.cc')
     Source('thread_context.cc')
+    Source('thread_state.cc')
 
     DebugFlag('CommitRate')
     DebugFlag('IEW')

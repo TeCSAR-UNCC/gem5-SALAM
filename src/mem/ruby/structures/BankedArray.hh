@@ -36,7 +36,12 @@
 
 #include "mem/ruby/common/TypeDefines.hh"
 #include "mem/ruby/system/RubySystem.hh"
-#include "sim/core.hh"
+
+namespace gem5
+{
+
+namespace ruby
+{
 
 class BankedArray
 {
@@ -74,5 +79,8 @@ class BankedArray
 
     Cycles getLatency() const { return accessLatency; }
 };
+
+} // namespace ruby
+} // namespace gem5
 
 #endif

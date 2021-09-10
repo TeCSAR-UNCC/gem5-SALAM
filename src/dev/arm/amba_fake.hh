@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 
@@ -54,20 +52,20 @@
 #include "dev/arm/amba_device.hh"
 #include "params/AmbaFake.hh"
 
+namespace gem5
+{
+
 class AmbaFake : public AmbaPioDevice
 {
   public:
-   typedef AmbaFakeParams Params;
-   const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-    AmbaFake(const Params *p);
+    PARAMS(AmbaFake);
+    AmbaFake(const Params &p);
 
     virtual Tick read(PacketPtr pkt);
     virtual Tick write(PacketPtr pkt);
 
 };
+
+} // namespace gem5
 
 #endif //__DEV_ARM_AMBA_FAKE_H__

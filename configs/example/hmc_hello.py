@@ -30,9 +30,6 @@
 #
 # Author: Éder F. Zulian
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import sys
 import argparse
 
@@ -76,6 +73,8 @@ binary = 'tests/test-progs/hello/bin/' + isa + '/linux/hello'
 process = Process()
 # cmd is a list which begins with the executable (like argv)
 process.cmd = [binary]
+# set the system workload
+system.workload = SEWorkload.init_compatible(binary)
 # set the cpu workload
 system.cpu.workload = process
 # create thread contexts

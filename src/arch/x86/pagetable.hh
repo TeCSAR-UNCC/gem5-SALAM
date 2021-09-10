@@ -34,24 +34,23 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_PAGETABLE_HH__
 #define __ARCH_X86_PAGETABLE_HH__
 
-#include <iostream>
-#include <string>
-#include <vector>
+#include <cstdint>
 
+#include "arch/x86/page_size.hh"
 #include "base/bitunion.hh"
 #include "base/types.hh"
 #include "base/trie.hh"
-#include "arch/x86/system.hh"
-#include "debug/MMU.hh"
+#include "mem/port_proxy.hh"
+#include "sim/serialize.hh"
 
-class Checkpoint;
+namespace gem5
+{
+
 class ThreadContext;
 
 namespace X86ISA
@@ -200,6 +199,8 @@ namespace X86ISA
         PageTableEntry pte;
         Addr entryAddr;
     };
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif

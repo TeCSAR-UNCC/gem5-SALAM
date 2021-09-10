@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __ARCH_ARM_LINUX_ATAG_HH__
@@ -45,7 +43,11 @@
 
 #include "base/types.hh"
 
-enum {
+namespace gem5
+{
+
+enum
+{
     CoreTag   = 0x54410001,
     MemTag    = 0x54410002,
     RevTag    = 0x54410007,
@@ -197,23 +199,27 @@ class AtagNone : public AtagHeader
 #define ATAG_CMDLINE    0x54410009
 
 // structures for each atag
-struct atag_header {
+struct atag_header
+{
         u32 size; // length of tag in words including this header
         u32 tag;  // tag type
 };
 
-struct atag_core {
+struct atag_core
+{
         u32 flags;
         u32 pagesize;
         u32 rootdev;
 };
 
-struct atag_mem {
+struct atag_mem
+{
         u32     size;
         u32     start;
 };
 
-struct atag_videotext {
+struct atag_videotext
+{
         u8              x;
         u8              y;
         u16             video_page;
@@ -225,27 +231,32 @@ struct atag_videotext {
         u16             video_points;
 };
 
-struct atag_ramdisk {
+struct atag_ramdisk
+{
         u32 flags;
         u32 size;
         u32 start;
 };
 
-struct atag_initrd2 {
+struct atag_initrd2
+{
         u32 start;
         u32 size;
 };
 
-struct atag_serialnr {
+struct atag_serialnr
+{
         u32 low;
         u32 high;
 };
 
-struct atag_revision {
+struct atag_revision
+{
         u32 rev;
 };
 
-struct atag_videolfb {
+struct atag_videolfb
+{
         u16             lfb_width;
         u16             lfb_height;
         u16             lfb_depth;
@@ -262,13 +273,16 @@ struct atag_videolfb {
         u8              rsvd_pos;
 };
 
-struct atag_cmdline {
+struct atag_cmdline
+{
         char    cmdline[1];
 };
 
-struct atag {
+struct atag
+{
         struct atag_header hdr;
-        union {
+        union
+        {
                 struct atag_core         core;
                 struct atag_mem          mem;
                 struct atag_videotext    videotext;
@@ -282,5 +296,6 @@ struct atag {
 };
 */
 
+} // namespace gem5
 
 #endif // __ARCH_ARM_LINUX_ATAG_HH__

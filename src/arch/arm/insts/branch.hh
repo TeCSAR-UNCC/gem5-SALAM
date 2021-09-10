@@ -36,13 +36,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stephen Hines
  */
+
 #ifndef __ARCH_ARM_INSTS_BRANCH_HH__
 #define __ARCH_ARM_INSTS_BRANCH_HH__
 
 #include "arch/arm/insts/pred_inst.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
@@ -58,7 +60,8 @@ class BranchImm : public PredOp
         PredOp(mnem, _machInst, __opClass), imm(_imm)
     {}
 
-    std::string generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+    std::string generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 // Conditionally Branch to a target computed with an immediate
@@ -87,7 +90,8 @@ class BranchReg : public PredOp
         PredOp(mnem, _machInst, __opClass), op1(_op1)
     {}
 
-    std::string generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+    std::string generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 // Conditionally Branch to a target computed with a register
@@ -117,7 +121,8 @@ class BranchRegReg : public PredOp
         PredOp(mnem, _machInst, __opClass), op1(_op1), op2(_op2)
     {}
 
-    std::string generateDisassembly(Addr pc, const SymbolTable *symtab) const;
+    std::string generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 // Branch to a target computed with an immediate and a register
@@ -134,6 +139,7 @@ class BranchImmReg : public PredOp
     {}
 };
 
-}
+} // namespace ArmISA
+} // namespace gem5
 
 #endif //__ARCH_ARM_INSTS_BRANCH_HH__

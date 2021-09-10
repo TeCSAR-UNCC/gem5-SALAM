@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
- *          Nathanael Premillieu
  */
 
 #ifndef __CPU_O3_COMM_HH__
@@ -47,77 +44,75 @@
 
 #include <vector>
 
-#include "arch/types.hh"
+#include "arch/pcstate.hh"
 #include "base/types.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/o3/dyn_inst_ptr.hh"
+#include "cpu/o3/limits.hh"
 #include "sim/faults.hh"
 
-/** Struct that defines the information passed from fetch to decode. */
-template<class Impl>
-struct DefaultFetchDefaultDecode {
-    typedef typename Impl::DynInstPtr DynInstPtr;
+namespace gem5
+{
 
+namespace o3
+{
+
+/** Struct that defines the information passed from fetch to decode. */
+struct FetchStruct
+{
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth];
+    DynInstPtr insts[MaxWidth];
     Fault fetchFault;
     InstSeqNum fetchFaultSN;
     bool clearFetchFault;
 };
 
 /** Struct that defines the information passed from decode to rename. */
-template<class Impl>
-struct DefaultDecodeDefaultRename {
-    typedef typename Impl::DynInstPtr DynInstPtr;
-
+struct DecodeStruct
+{
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth];
+    DynInstPtr insts[MaxWidth];
 };
 
 /** Struct that defines the information passed from rename to IEW. */
-template<class Impl>
-struct DefaultRenameDefaultIEW {
-    typedef typename Impl::DynInstPtr DynInstPtr;
-
+struct RenameStruct
+{
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth];
+    DynInstPtr insts[MaxWidth];
 };
 
 /** Struct that defines the information passed from IEW to commit. */
-template<class Impl>
-struct DefaultIEWDefaultCommit {
-    typedef typename Impl::DynInstPtr DynInstPtr;
-
+struct IEWStruct
+{
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth];
-    DynInstPtr mispredictInst[Impl::MaxThreads];
-    Addr mispredPC[Impl::MaxThreads];
-    InstSeqNum squashedSeqNum[Impl::MaxThreads];
-    TheISA::PCState pc[Impl::MaxThreads];
+    DynInstPtr insts[MaxWidth];
+    DynInstPtr mispredictInst[MaxThreads];
+    Addr mispredPC[MaxThreads];
+    InstSeqNum squashedSeqNum[MaxThreads];
+    TheISA::PCState pc[MaxThreads];
 
-    bool squash[Impl::MaxThreads];
-    bool branchMispredict[Impl::MaxThreads];
-    bool branchTaken[Impl::MaxThreads];
-    bool includeSquashInst[Impl::MaxThreads];
+    bool squash[MaxThreads];
+    bool branchMispredict[MaxThreads];
+    bool branchTaken[MaxThreads];
+    bool includeSquashInst[MaxThreads];
 };
 
-template<class Impl>
-struct IssueStruct {
-    typedef typename Impl::DynInstPtr DynInstPtr;
-
+struct IssueStruct
+{
     int size;
 
-    DynInstPtr insts[Impl::MaxWidth];
+    DynInstPtr insts[MaxWidth];
 };
 
 /** Struct that defines all backwards communication. */
-template<class Impl>
-struct TimeBufStruct {
-    typedef typename Impl::DynInstPtr DynInstPtr;
-    struct decodeComm {
+struct TimeStruct
+{
+    struct DecodeComm
+    {
         TheISA::PCState nextPC;
         DynInstPtr mispredictInst;
         DynInstPtr squashInst;
@@ -131,14 +126,14 @@ struct TimeBufStruct {
         bool branchTaken;
     };
 
-    decodeComm decodeInfo[Impl::MaxThreads];
+    DecodeComm decodeInfo[MaxThreads];
 
-    struct renameComm {
-    };
+    struct RenameComm {};
 
-    renameComm renameInfo[Impl::MaxThreads];
+    RenameComm renameInfo[MaxThreads];
 
-    struct iewComm {
+    struct IewComm
+    {
         // Also eventually include skid buffer space.
         unsigned freeIQEntries;
         unsigned freeLQEntries;
@@ -154,9 +149,10 @@ struct TimeBufStruct {
         bool usedLSQ;
     };
 
-    iewComm iewInfo[Impl::MaxThreads];
+    IewComm iewInfo[MaxThreads];
 
-    struct commitComm {
+    struct CommitComm
+    {
         /////////////////////////////////////////////////////////////////////
         // This code has been re-structured for better packing of variables
         // instead of by stage which is the more logical way to arrange the
@@ -219,14 +215,17 @@ struct TimeBufStruct {
 
     };
 
-    commitComm commitInfo[Impl::MaxThreads];
+    CommitComm commitInfo[MaxThreads];
 
-    bool decodeBlock[Impl::MaxThreads];
-    bool decodeUnblock[Impl::MaxThreads];
-    bool renameBlock[Impl::MaxThreads];
-    bool renameUnblock[Impl::MaxThreads];
-    bool iewBlock[Impl::MaxThreads];
-    bool iewUnblock[Impl::MaxThreads];
+    bool decodeBlock[MaxThreads];
+    bool decodeUnblock[MaxThreads];
+    bool renameBlock[MaxThreads];
+    bool renameUnblock[MaxThreads];
+    bool iewBlock[MaxThreads];
+    bool iewUnblock[MaxThreads];
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif //__CPU_O3_COMM_HH__

@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kanishk Sugand
- *          Andreas Hansson
  */
 
 #ifndef __MEM_STACK_DIST_CALC_HH__
@@ -46,6 +43,9 @@
 #include <vector>
 
 #include "base/types.hh"
+
+namespace gem5
+{
 
 /**
   * The stack distance calculator is a passive object that merely
@@ -348,7 +348,8 @@ class StackDistCalc
     /**
      * Node which takes form of Leaf, INode or Root
      */
-    struct Node{
+    struct Node
+    {
         // Sum of the left children
         uint64_t sumLeft;
 
@@ -413,5 +414,6 @@ class StackDistCalc
     const bool verifyStack;
 };
 
+} // namespace gem5
 
 #endif //__STACK_DIST_CALC_HH__

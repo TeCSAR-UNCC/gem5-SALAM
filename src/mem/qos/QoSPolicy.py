@@ -32,10 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Giacomo Travaglini
-
-from six import string_types
 
 from m5.SimObject import *
 from m5.params import *
@@ -45,76 +41,83 @@ class QoSPolicy(SimObject):
     type = 'QoSPolicy'
     abstract = True
     cxx_header = "mem/qos/policy.hh"
-    cxx_class = 'QoS::Policy'
+    cxx_class = 'gem5::memory::qos::Policy'
 
 class QoSFixedPriorityPolicy(QoSPolicy):
     type = 'QoSFixedPriorityPolicy'
     cxx_header = "mem/qos/policy_fixed_prio.hh"
-    cxx_class = 'QoS::FixedPriorityPolicy'
+    cxx_class = 'gem5::memory::qos::FixedPriorityPolicy'
 
     cxx_exports = [
-        PyBindMethod('initMasterName'),
-        PyBindMethod('initMasterObj'),
+        PyBindMethod('initRequestorName'),
+        PyBindMethod('initRequestorObj'),
     ]
 
-    _mpriorities = None
+    _requestor_priorities = None
 
-    def setMasterPriority(self, master, priority):
-        if not self._mpriorities:
-            self._mpriorities = []
+    def setRequestorPriority(self, request_port, priority):
+        if not self._requestor_priorities:
+            self._requestor_priorities = []
 
-        self._mpriorities.append([master, priority])
+        self._requestor_priorities.append([request_port, priority])
+
+    def setMasterPriority(self, request_port, priority):
+        warn('QosFixedPriority.setMasterPriority is deprecated in favor of '
+            'setRequestorPriority. See src/mem/qos/QoSPolicy.py for more '
+            'information')
+        self.setRequestorPriority(request_port, priority)
 
     def init(self):
-        if not self._mpriorities:
-            print("Error, use setMasterPriority to init masters/priorities\n");
+        if not self._requestor_priorities:
+            print("Error,"
+                 "use setRequestorPriority to init requestors/priorities\n");
             exit(1)
         else:
-            for mprio in self._mpriorities:
-                master = mprio[0]
-                priority = mprio[1]
-                if isinstance(master, string_types):
-                    self.getCCObject().initMasterName(
-                        master, int(priority))
+            for prio in self._requestor_priorities:
+                request_port = prio[0]
+                priority = prio[1]
+                if isinstance(request_port, str):
+                    self.getCCObject().initRequestorName(
+                        request_port, int(priority))
                 else:
-                    self.getCCObject().initMasterObj(
-                        master.getCCObject(), priority)
+                    self.getCCObject().initRequestorObj(
+                        request_port.getCCObject(), priority)
 
-    # default fixed priority value for non-listed Masters
+    # default fixed priority value for non-listed Requestors
     qos_fixed_prio_default_prio = Param.UInt8(0,
-        "Default priority for non-listed Masters")
+        "Default priority for non-listed Requestors")
 
 class QoSPropFairPolicy(QoSPolicy):
     type = 'QoSPropFairPolicy'
     cxx_header = "mem/qos/policy_pf.hh"
-    cxx_class = 'QoS::PropFairPolicy'
+    cxx_class = 'gem5::memory::qos::PropFairPolicy'
 
     cxx_exports = [
-        PyBindMethod('initMasterName'),
-        PyBindMethod('initMasterObj'),
+        PyBindMethod('initRequestorName'),
+        PyBindMethod('initRequestorObj'),
     ]
 
-    _mscores = None
+    _requestor_scores = None
 
-    def setInitialScore(self, master, score):
-        if not self._mscores:
-            self._mscores = []
+    def setInitialScore(self, request_port, score):
+        if not self._requestor_scores:
+            self._requestor_scores = []
 
-        self._mscores.append([master, score])
+        self._requestor_scores.append([request_port, score])
 
     def init(self):
-        if not self._mscores:
-            print("Error, use setInitialScore to init masters/scores\n");
+        if not self._requestor_scores:
+            print("Error, use setInitialScore to init requestors/scores\n");
             exit(1)
         else:
-            for mprio in self._mscores:
-                master = mprio[0]
-                score = mprio[1]
-                if isinstance(master, string_types):
-                    self.getCCObject().initMasterName(
-                        master, float(score))
+            for prio in self._requestor_scores:
+                request_port = prio[0]
+                score = prio[1]
+                if isinstance(request_port, str):
+                    self.getCCObject().initRequestorName(
+                        request_port, float(score))
                 else:
-                    self.getCCObject().initMasterObj(
-                        master.getCCObject(), float(score))
+                    self.getCCObject().initRequestorObj(
+                        request_port.getCCObject(), float(score))
 
     weight = Param.Float(0.5, "Pf score weight")

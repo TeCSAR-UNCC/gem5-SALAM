@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #ifndef __BASE_LOADER_OBJECT_FILE_HH__
@@ -34,76 +31,70 @@
 
 #include <string>
 
+#include "base/compiler.hh"
 #include "base/loader/image_file.hh"
 #include "base/loader/image_file_data.hh"
 #include "base/loader/memory_image.hh"
+#include "base/loader/symtab.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
+#include "enums/ByteOrder.hh"
+
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
+
+enum Arch
+{
+    UnknownArch,
+    SPARC64,
+    SPARC32,
+    Mips,
+    X86_64,
+    I386,
+    Arm64,
+    Arm,
+    Thumb,
+    Power,
+    Power64,
+    Riscv64,
+    Riscv32
+};
+
+const char *archToString(Arch arch);
+
+enum OpSys
+{
+    UnknownOpSys,
+    Tru64,
+    Linux,
+    Solaris,
+    LinuxArmOABI,
+    LinuxPower64ABIv1,
+    LinuxPower64ABIv2,
+    FreeBSD
+};
+
+const char *opSysToString(OpSys op_sys);
 
 class SymbolTable;
 
 class ObjectFile : public ImageFile
 {
-  public:
-
-    enum Arch {
-        UnknownArch,
-        Alpha,
-        SPARC64,
-        SPARC32,
-        Mips,
-        X86_64,
-        I386,
-        Arm64,
-        Arm,
-        Thumb,
-        Power,
-        Riscv64,
-        Riscv32
-    };
-
-    enum OpSys {
-        UnknownOpSys,
-        Tru64,
-        Linux,
-        Solaris,
-        LinuxArmOABI,
-        FreeBSD
-    };
-
   protected:
     Arch arch = UnknownArch;
     OpSys opSys = UnknownOpSys;
+    ByteOrder byteOrder = ByteOrder::little;
+
+    SymbolTable _symtab;
 
     ObjectFile(ImageFileDataPtr ifd);
 
   public:
     virtual ~ObjectFile() {};
-
-    virtual bool
-    loadAllSymbols(SymbolTable *symtab, Addr base=0,
-            Addr offset=0, Addr mask=MaxAddr)
-    {
-        return true;
-    };
-    virtual bool
-    loadGlobalSymbols(SymbolTable *symtab, Addr base=0,
-                      Addr offset=0, Addr mask=MaxAddr)
-    {
-        return true;
-    }
-    virtual bool
-    loadLocalSymbols(SymbolTable *symtab, Addr base=0,
-                     Addr offset=0, Addr mask=MaxAddr)
-    {
-        return true;
-    }
-    virtual bool
-    loadWeakSymbols(SymbolTable *symtab, Addr base=0,
-                    Addr offset=0, Addr mask=MaxAddr)
-    {
-        return true;
-    }
 
     virtual ObjectFile *getInterpreter() const { return nullptr; }
     virtual bool relocatable() const { return false; }
@@ -123,6 +114,9 @@ class ObjectFile : public ImageFile
 
     Arch  getArch()  const { return arch; }
     OpSys getOpSys() const { return opSys; }
+    ByteOrder getByteOrder() const { return byteOrder; }
+
+    const SymbolTable &symtab() const { return _symtab; }
 
   protected:
     Addr entry = 0;
@@ -144,5 +138,8 @@ class ObjectFileFormat
 };
 
 ObjectFile *createObjectFile(const std::string &fname, bool raw=false);
+
+} // namespace loader
+} // namespace gem5
 
 #endif // __BASE_LOADER_OBJECT_FILE_HH__

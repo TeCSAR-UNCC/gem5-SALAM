@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "dev/x86/i82094aa.hh"
@@ -41,17 +39,20 @@
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
 
-X86ISA::I82094AA::I82094AA(Params *p)
-    : BasicPioDevice(p, 20), extIntPic(p->external_int_pic),
+namespace gem5
+{
+
+X86ISA::I82094AA::I82094AA(const Params &p)
+    : BasicPioDevice(p, 20), extIntPic(p.external_int_pic),
       lowestPriorityOffset(0),
-      intMasterPort(name() + ".int_master", this, this, p->int_latency)
+      intRequestPort(name() + ".int_request", this, this, p.int_latency)
 {
     // This assumes there's only one I/O APIC in the system and since the apic
     // id is stored in a 8-bit field with 0xff meaning broadcast, the id must
     // be less than 0xff
 
-    assert(p->apic_id < 0xff);
-    initialApicId = id = p->apic_id;
+    assert(p.apic_id < 0xff);
+    initialApicId = id = p.apic_id;
     arbId = id;
     regSel = 0;
     RedirTableEntry entry = 0;
@@ -61,7 +62,7 @@ X86ISA::I82094AA::I82094AA(Params *p)
         pinStates[i] = false;
     }
 
-    for (int i = 0; i < p->port_inputs_connection_count; i++)
+    for (int i = 0; i < p.port_inputs_connection_count; i++)
         inputs.push_back(new IntSinkPin<I82094AA>(
                     csprintf("%s.inputs[%d]", name(), i), i, this));
 }
@@ -73,16 +74,16 @@ X86ISA::I82094AA::init()
     // the piodevice init() function.
     BasicPioDevice::init();
 
-    // If the master port isn't connected, we can't send interrupts anywhere.
-    panic_if(!intMasterPort.isConnected(),
+    // If the request port isn't connected, we can't send interrupts anywhere.
+    panic_if(!intRequestPort.isConnected(),
             "Int port not connected to anything!");
 }
 
 Port &
 X86ISA::I82094AA::getPort(const std::string &if_name, PortID idx)
 {
-    if (if_name == "int_master")
-        return intMasterPort;
+    if (if_name == "int_requestor")
+        return intRequestPort;
     if (if_name == "inputs")
         return *inputs.at(idx);
     else
@@ -189,7 +190,7 @@ X86ISA::I82094AA::signalInterrupt(int line)
     } else {
         TriggerIntMessage message = 0;
         message.destination = entry.dest;
-        if (entry.deliveryMode == DeliveryMode::ExtInt) {
+        if (entry.deliveryMode == delivery_mode::ExtInt) {
             assert(extIntPic);
             message.vector = extIntPic->getVector();
         } else {
@@ -200,9 +201,9 @@ X86ISA::I82094AA::signalInterrupt(int line)
         message.level = entry.polarity;
         message.trigger = entry.trigger;
         std::list<int> apics;
-        int numContexts = sys->numContexts();
+        int numContexts = sys->threads.size();
         if (message.destMode == 0) {
-            if (message.deliveryMode == DeliveryMode::LowestPriority) {
+            if (message.deliveryMode == delivery_mode::LowestPriority) {
                 panic("Lowest priority delivery mode from the "
                         "IO APIC aren't supported in physical "
                         "destination mode.\n");
@@ -216,7 +217,7 @@ X86ISA::I82094AA::signalInterrupt(int line)
             }
         } else {
             for (int i = 0; i < numContexts; i++) {
-                BaseInterrupts *base_int = sys->getThreadContext(i)->
+                BaseInterrupts *base_int = sys->threads[i]->
                     getCpuPtr()->getInterruptController(0);
                 auto *localApic = dynamic_cast<Interrupts *>(base_int);
                 if ((localApic->readReg(APIC_LOGICAL_DESTINATION) >> 24) &
@@ -224,7 +225,7 @@ X86ISA::I82094AA::signalInterrupt(int line)
                     apics.push_back(localApic->getInitialApicId());
                 }
             }
-            if (message.deliveryMode == DeliveryMode::LowestPriority &&
+            if (message.deliveryMode == delivery_mode::LowestPriority &&
                     apics.size()) {
                 // The manual seems to suggest that the chipset just does
                 // something reasonable for these instead of actually using
@@ -244,7 +245,7 @@ X86ISA::I82094AA::signalInterrupt(int line)
         }
         for (auto id: apics) {
             PacketPtr pkt = buildIntTriggerPacket(id, message);
-            intMasterPort.sendMessage(pkt, sys->isTimingMode());
+            intRequestPort.sendMessage(pkt, sys->isTimingMode());
         }
     }
 }
@@ -294,8 +295,4 @@ X86ISA::I82094AA::unserialize(CheckpointIn &cp)
     }
 }
 
-X86ISA::I82094AA *
-I82094AAParams::create()
-{
-    return new X86ISA::I82094AA(this);
-}
+} // namespace gem5

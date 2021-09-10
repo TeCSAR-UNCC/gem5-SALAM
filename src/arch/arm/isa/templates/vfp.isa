@@ -34,8 +34,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 let {{
     vfpEnabledCheckCode = '''
@@ -100,6 +98,9 @@ let {{
 def template FpRegRegOpDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(ExtMachInst machInst,
@@ -116,10 +117,11 @@ def template FpRegRegOpConstructor {{
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                 _dest, _op1, mode)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -128,6 +130,9 @@ def template FpRegRegOpConstructor {{
 def template FpRegImmOpDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(ExtMachInst machInst, IntRegIndex _dest,
@@ -142,10 +147,11 @@ def template FpRegImmOpConstructor {{
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                 _dest, _imm, mode)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -154,6 +160,9 @@ def template FpRegImmOpConstructor {{
 def template FpRegRegImmOpDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(ExtMachInst machInst,
@@ -172,10 +181,11 @@ def template FpRegRegImmOpConstructor {{
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                          _dest, _op1, _imm, mode)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -184,6 +194,9 @@ def template FpRegRegImmOpConstructor {{
 def template FpRegRegRegOpDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(ExtMachInst machInst,
@@ -202,10 +215,11 @@ def template FpRegRegRegOpConstructor {{
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                          _dest, _op1, _op2, mode)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -214,6 +228,9 @@ def template FpRegRegRegOpConstructor {{
 def template FpRegRegRegCondOpDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(ExtMachInst machInst,
@@ -234,6 +251,7 @@ def template FpRegRegRegCondOpConstructor {{
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                          _dest, _op1, _op2, _cond, mode)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};

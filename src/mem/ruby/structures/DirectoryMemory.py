@@ -35,9 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Brad Beckmann
 
 from m5.params import *
 from m5.proxy import *
@@ -45,7 +42,8 @@ from m5.SimObject import SimObject
 
 class RubyDirectoryMemory(SimObject):
     type = 'RubyDirectoryMemory'
-    cxx_class = 'DirectoryMemory'
+    cxx_class = 'gem5::ruby::DirectoryMemory'
     cxx_header = "mem/ruby/structures/DirectoryMemory.hh"
+
     addr_ranges = VectorParam.AddrRange(
         Parent.addr_ranges, "Address range this directory responds to")

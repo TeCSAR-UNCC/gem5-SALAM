@@ -37,8 +37,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 decode BIGTHUMB {
     // 16 bit thumb instructions.
@@ -84,7 +82,7 @@ decode BIGTHUMB {
                         default: WarnUnimpl::cdp(); // cdp2
                     }
                     0x1: decode LTCOPROC {
-                        0x1: M5ops::m5ops();
+                        0x1: Gem5Op::gem5op();
                         0xa, 0xb: ShortFpTransfer::shortFpTransfer();
                         0xe: McrMrc14::mcrMrc14();
                         0xf: McrMrc15::mcrMrc15();
@@ -140,14 +138,16 @@ decode BIGTHUMB {
                 0x3: Thumb32LongMulMulAccAndDiv::thumb32LongMulMulAccAndDiv();
                 default: Thumb32DataProcReg::thumb32DataProcReg();
             }
+            0x2: Thumb32NeonSIMD::thumb32NeonSIMD();
             default: decode HTOPCODE_9_8 {
                 0x2: decode LTOPCODE_4 {
                     0x0: decode LTCOPROC {
+                        0x8: Thumb32NeonSIMD::thumb32NeonSIMD();
                         0xa, 0xb: VfpData::vfpData();
                         default: WarnUnimpl::cdp(); // cdp2
                     }
                     0x1: decode LTCOPROC {
-                        0x1: M5ops::m5ops();
+                        0x1: Gem5Op::gem5op();
                         0xa, 0xb: ShortFpTransfer::shortFpTransfer();
                         0xe: McrMrc14::mcrMrc14();
                         0xf: McrMrc15::mcrMrc15();

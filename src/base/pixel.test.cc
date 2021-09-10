@@ -33,13 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include <gtest/gtest.h>
 
 #include "base/pixel.hh"
+
+using namespace gem5;
 
 static Pixel pixel_red(0xff, 0x00, 0x00);
 static Pixel pixel_green(0x00, 0xff, 0x00);

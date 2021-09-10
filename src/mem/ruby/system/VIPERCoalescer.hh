@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Sooraj Puthoor
  */
 
 #ifndef __MEM_RUBY_SYSTEM_VIPERCOALESCER_HH__
@@ -46,29 +44,54 @@
 #include "mem/ruby/system/GPUCoalescer.hh"
 #include "mem/ruby/system/RubyPort.hh"
 
+namespace gem5
+{
+
+struct VIPERCoalescerParams;
+
+namespace ruby
+{
+
 class DataBlock;
 class CacheMsg;
-class MachineID;
+struct MachineID;
 class CacheMemory;
-
-class VIPERCoalescerParams;
 
 class VIPERCoalescer : public GPUCoalescer
 {
   public:
     typedef VIPERCoalescerParams Params;
-    VIPERCoalescer(const Params *);
+    VIPERCoalescer(const Params &);
     ~VIPERCoalescer();
-    void wbCallback(Addr address);
-    void invCallback(Addr address);
-    RequestStatus makeRequest(PacketPtr pkt);
+    void writeCompleteCallback(Addr address, uint64_t instSeqNum);
+    void invTCPCallback(Addr address);
+    RequestStatus makeRequest(PacketPtr pkt) override;
+    void issueRequest(CoalescedRequest* crequest) override;
+
   private:
-    void invL1();
-    void wbL1();
-    void invwbL1();
-    uint64_t m_outstanding_inv;
-    uint64_t m_outstanding_wb;
-    uint64_t m_max_inv_per_cycle;
-    uint64_t m_max_wb_per_cycle;
+    void invTCP();
+
+    // make write-complete response packets from original write request packets
+    void makeWriteCompletePkts(CoalescedRequest* crequest);
+
+    // current cache invalidation packet
+    // nullptr if there is no active cache invalidation request
+    PacketPtr m_cache_inv_pkt;
+
+    // number of remaining cache lines to be invalidated in TCP
+    int m_num_pending_invs;
+
+    // a map of instruction sequence number and corresponding pending
+    // write-complete response packets. Each write-complete response
+    // corresponds to a pending store request that is waiting for
+    // writeCompleteCallback. We may have multiple pending store requests per
+    // wavefront at a time. Each time writeCompleteCallback is called, an entry
+    // with a corresponding seqNum is popped off from map and returned to
+    // compute unit.
+    std::unordered_map<uint64_t, std::vector<PacketPtr>> m_writeCompletePktMap;
 };
+
+} // namespace ruby
+} // namespace gem5
+
 #endif //__MEM_RUBY_SYSTEM_VIPERCOALESCER_HH__

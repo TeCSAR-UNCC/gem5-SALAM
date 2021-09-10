@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.params import *
 
@@ -49,6 +47,7 @@ class NoMaliGpuType(Enum): vals = [
 class NoMaliGpu(PioDevice):
     type = 'NoMaliGpu'
     cxx_header = "dev/arm/gpu_nomali.hh"
+    cxx_class = 'gem5::NoMaliGpu'
 
     pio_addr = Param.Addr("Device base address")
 
@@ -71,6 +70,7 @@ class CustomNoMaliGpu(NoMaliGpu):
 
     type = 'CustomNoMaliGpu'
     cxx_header = "dev/arm/gpu_nomali.hh"
+    cxx_class = 'gem5::CustomNoMaliGpu'
 
     gpu_id = Param.UInt32("")
     l2_features = Param.UInt32("")

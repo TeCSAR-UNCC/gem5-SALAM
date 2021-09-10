@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Thomas Grass
- *          Andreas Hansson
- *          Sascha Bischoff
- *          Neha Agarwal
  */
 
 #include "cpu/testers/traffic_gen/dram_rot_gen.hh"
@@ -48,6 +43,9 @@
 #include "base/trace.hh"
 #include "debug/TrafficGen.hh"
 #include "enums/AddrMap.hh"
+
+namespace gem5
+{
 
 PacketPtr
 DramRotGen::getNextPacket()
@@ -103,13 +101,13 @@ DramRotGen::getNextPacket()
 
     } else {
         // increment the column by one
-        if (addrMapping == Enums::RoRaBaCoCh ||
-            addrMapping == Enums::RoRaBaChCo)
+        if (addrMapping == enums::RoRaBaCoCh ||
+            addrMapping == enums::RoRaBaChCo)
             // Simply increment addr by blocksize to
             // increment the column by one
             addr += blocksize;
 
-        else if (addrMapping ==  Enums::RoCoRaBaCh) {
+        else if (addrMapping ==  enums::RoCoRaBaCh) {
             // Explicity increment the column bits
 
                     unsigned int new_col = ((addr / blocksize /
@@ -137,3 +135,5 @@ DramRotGen::getNextPacket()
     // return the generated packet
     return pkt;
 }
+
+} // namespace gem5

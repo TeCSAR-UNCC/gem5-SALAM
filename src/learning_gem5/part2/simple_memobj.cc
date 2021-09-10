@@ -24,19 +24,21 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jason Lowe-Power
  */
 
 #include "learning_gem5/part2/simple_memobj.hh"
 
+#include "base/trace.hh"
 #include "debug/SimpleMemobj.hh"
 
-SimpleMemobj::SimpleMemobj(SimpleMemobjParams *params) :
+namespace gem5
+{
+
+SimpleMemobj::SimpleMemobj(const SimpleMemobjParams &params) :
     SimObject(params),
-    instPort(params->name + ".inst_port", this),
-    dataPort(params->name + ".data_port", this),
-    memPort(params->name + ".mem_side", this),
+    instPort(params.name + ".inst_port", this),
+    dataPort(params.name + ".data_port", this),
+    memPort(params.name + ".mem_side", this),
     blocked(false)
 {
 }
@@ -230,10 +232,4 @@ SimpleMemobj::sendRangeChange()
     dataPort.sendRangeChange();
 }
 
-
-
-SimpleMemobj*
-SimpleMemobjParams::create()
-{
-    return new SimpleMemobj(this);
-}
+} // namespace gem5

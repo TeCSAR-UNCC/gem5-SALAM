@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __BASE_STL_HELPERS_HH__
@@ -33,66 +31,50 @@
 
 #include <algorithm>
 #include <iostream>
+#include <type_traits>
+#include <vector>
 
-namespace m5 {
-namespace stl_helpers {
+#include "base/compiler.hh"
+
+GEM5_DEPRECATED_NAMESPACE(m5, gem5);
+namespace gem5
+{
+
+namespace stl_helpers
+{
+
+template <typename T, typename Enabled=void>
+struct IsHelpedContainer : public std::false_type {};
+
+template <typename ...Types>
+struct IsHelpedContainer<std::vector<Types...>> : public std::true_type {};
+
+/**
+ * Write out all elements in an stl container as a space separated
+ * list enclosed in square brackets
+ *
+ * @ingroup api_base_utils
+ */
 
 template <typename T>
-void
-deletePointer(T &ptr)
-{
-    delete ptr;
-    ptr = NULL;
-}
-
-template <class T>
-class ContainerPrint
-{
-  private:
-    std::ostream &out;
-    bool first;
-
-  public:
-    ContainerPrint(std::ostream &out)
-        : out(out), first(true)
-    {}
-
-    void
-    operator()(const T &elem)
-    {
-        // First one doesn't get a space before it.  The rest do.
-        if (first)
-            first = false;
-        else
-            out << " ";
-
-        out << elem;
-    }
-};
-
-// Treat all objects in an stl container as pointers to heap objects,
-// calling delete on each one and zeroing the pointers along the way
-template <template <typename T, typename A> class C, typename T, typename A>
-void
-deletePointers(C<T,A> &container)
-{
-    std::for_each(container.begin(), container.end(), deletePointer<T>);
-}
-
-// Write out all elements in an stl container as a space separated
-// list enclosed in square brackets
-template <template <typename T, typename A> class C, typename T, typename A>
-std::ostream &
-operator<<(std::ostream& out, const C<T,A> &vec)
+std::enable_if_t<IsHelpedContainer<T>::value, std::ostream &>
+operator<<(std::ostream& out, const T &t)
 {
     out << "[ ";
-    std::for_each(vec.begin(), vec.end(), ContainerPrint<T>(out));
+    bool first = true;
+    auto printer = [&first, &out](const auto &elem) {
+        if (first)
+            out << elem;
+        else
+            out << " " << elem;
+    };
+    std::for_each(t.begin(), t.end(), printer);
     out << " ]";
     out << std::flush;
     return out;
 }
 
 } // namespace stl_helpers
-} // namespace m5
+} // namespace gem5
 
 #endif // __BASE_STL_HELPERS_HH__

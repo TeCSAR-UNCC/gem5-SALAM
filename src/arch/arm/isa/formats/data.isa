@@ -1,4 +1,4 @@
-// Copyright (c) 2010,2017-2018 ARM Limited
+// Copyright (c) 2010,2017-2018, 2020 ARM Limited
 // All rights reserved
 //
 // The license below extends only to copyright in the software and shall
@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 def format ArmMiscMedia() {{
     decode_block = '''
@@ -607,7 +605,7 @@ def format Thumb32DataProcReg() {{
                     return new MovRegRegCc(machInst, rd,
                             INTREG_ZERO, rn, rm, ROR);
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
             } else if (bits(op2, 3) == 0) {
                 return new Unknown(machInst);
@@ -923,7 +921,7 @@ def format Thumb16ShiftAddSubMoveCmp() {{
                     return new SubImmCc(machInst, rd, rn, imm3, true);
                 }
               default:
-                M5_UNREACHABLE;
+                GEM5_UNREACHABLE;
             }
           case 0x4:
             if (machInst.itstateMask) {
@@ -946,7 +944,7 @@ def format Thumb16ShiftAddSubMoveCmp() {{
                 return new SubImmCc(machInst, rd8, rd8, imm8, true);
             }
           default:
-            M5_UNREACHABLE;
+            GEM5_UNREACHABLE;
         }
     }
     '''
@@ -1051,7 +1049,7 @@ def format Thumb16DataProcessing() {{
                 return new MvnRegCc(machInst, rdn, INTREG_ZERO, rm, 0, LSL);
             }
           default:
-            M5_UNREACHABLE;
+            GEM5_UNREACHABLE;
         }
     }
     '''
@@ -1082,7 +1080,7 @@ def format Thumb16SpecDataAndBx() {{
                                   COND_UC);
             }
           default:
-            M5_UNREACHABLE;
+            GEM5_UNREACHABLE;
         }
     }
     '''
@@ -1138,8 +1136,7 @@ def format ArmMisc() {{
                       case 0x4:
                         return new SevInst(machInst);
                       case 0x5:
-                        return new WarnUnimplemented(
-                                "sevl", machInst);
+                        return new SevlInst(machInst);
                       case 0x10:
                         return new WarnUnimplemented(
                                 "esb", machInst);
@@ -1201,7 +1198,7 @@ def format Thumb16Misc() {{
                   case 0x3:
                     return new Uxtb(machInst, rd, 0, rm);
                   default:
-                    M5_UNREACHABLE;
+                    GEM5_UNREACHABLE;
                 }
             }
           case 0x1:
@@ -1285,6 +1282,8 @@ def format Thumb16Misc() {{
                 return new WfiInst(machInst);
               case 0x4:
                 return new SevInst(machInst);
+              case 0x5:
+                return new SevlInst(machInst);
               default:
                 return new WarnUnimplemented("unallocated_hint", machInst);
             }
@@ -1441,7 +1440,7 @@ def format Thumb32DataProcPlainBin() {{
                 const uint32_t satImm = bits(machInst, 4, 0);
                 return new Ssat16(machInst, rd, satImm + 1, rn);
             }
-            M5_FALLTHROUGH;
+            GEM5_FALLTHROUGH;
           case 0x10:
             {
                 const uint32_t satImm = bits(machInst, 4, 0);
@@ -1474,7 +1473,7 @@ def format Thumb32DataProcPlainBin() {{
                 const uint32_t satImm = bits(machInst, 4, 0);
                 return new Usat16(machInst, rd, satImm, rn);
             }
-            M5_FALLTHROUGH;
+            GEM5_FALLTHROUGH;
           case 0x18:
             {
                 const uint32_t satImm = bits(machInst, 4, 0);

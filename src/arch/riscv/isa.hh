@@ -4,6 +4,7 @@
  * Copyright (c) 2014 Sven Karlsson
  * Copyright (c) 2016 RISC-V Foundation
  * Copyright (c) 2016 The University of Virginia
+ * Copyright (c) 2020 Barkhausen Institut
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,41 +29,42 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Timothy M. Jones
- *          Sven Karlsson
- *          Alec Roelke
  */
 
 #ifndef __ARCH_RISCV_ISA_HH__
 #define __ARCH_RISCV_ISA_HH__
 
-#include <map>
-#include <string>
+#include <vector>
 
-#include "arch/riscv/registers.hh"
+#include "arch/generic/isa.hh"
 #include "arch/riscv/types.hh"
-#include "base/bitfield.hh"
-#include "base/logging.hh"
-#include "cpu/reg_class.hh"
-#include "sim/sim_object.hh"
+#include "base/types.hh"
+
+namespace gem5
+{
 
 struct RiscvISAParams;
-class ThreadContext;
 class Checkpoint;
-class EventManager;
 
 namespace RiscvISA
 {
 
-enum PrivilegeMode {
+enum PrivilegeMode
+{
     PRV_U = 0,
     PRV_S = 1,
     PRV_M = 3
 };
 
-class ISA : public SimObject
+enum FPUStatus
+{
+    OFF = 0,
+    INITIAL = 1,
+    CLEAN = 2,
+    DIRTY = 3,
+};
+
+class ISA : public BaseISA
 {
   protected:
     std::vector<RegVal> miscRegFile;
@@ -70,14 +72,15 @@ class ISA : public SimObject
     bool hpmCounterEnabled(int counter) const;
 
   public:
-    typedef RiscvISAParams Params;
+    using Params = RiscvISAParams;
 
     void clear();
 
+  public:
     RegVal readMiscRegNoEffect(int misc_reg) const;
-    RegVal readMiscReg(int misc_reg, ThreadContext *tc);
+    RegVal readMiscReg(int misc_reg);
     void setMiscRegNoEffect(int misc_reg, RegVal val);
-    void setMiscReg(int misc_reg, RegVal val, ThreadContext *tc);
+    void setMiscReg(int misc_reg, RegVal val);
 
     RegId flattenRegId(const RegId &regId) const { return regId; }
     int flattenIntIndex(int reg) const { return reg; }
@@ -88,16 +91,16 @@ class ISA : public SimObject
     int flattenCCIndex(int reg) const { return reg; }
     int flattenMiscIndex(int reg) const { return reg; }
 
-    void startup(ThreadContext *tc) {}
+    bool inUserMode() const override { return true; }
+    void copyRegsFrom(ThreadContext *src) override;
 
-    /// Explicitly import the otherwise hidden startup
-    using SimObject::startup;
+    void serialize(CheckpointOut &cp) const override;
+    void unserialize(CheckpointIn &cp) override;
 
-    const Params *params() const;
-
-    ISA(Params *p);
+    ISA(const Params &p);
 };
 
 } // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_ISA_HH__

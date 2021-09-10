@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 ARM Limited
+ * Copyright (c) 2012, 2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,26 +36,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_O3_THREAD_STATE_HH__
 #define __CPU_O3_THREAD_STATE_HH__
 
-#include "base/callback.hh"
-#include "base/output.hh"
+#include <memory>
+
 #include "cpu/thread_context.hh"
 #include "cpu/thread_state.hh"
-#include "sim/full_system.hh"
-#include "sim/sim_exit.hh"
 
-class EndQuiesceEvent;
-class Event;
-class FunctionalMemory;
-class FunctionProfile;
+namespace gem5
+{
+
 class Process;
-class ProfileNode;
+
+namespace o3
+{
+
+class CPU;
 
 /**
  * Class that has various thread state, such as the status, the
@@ -64,15 +63,8 @@ class ProfileNode;
  * pointer, etc.  It also handles anything related to a specific
  * thread's process, such as syscalls and checking valid addresses.
  */
-template <class Impl>
-struct O3ThreadState : public ThreadState {
-    typedef ThreadContext::Status Status;
-    typedef typename Impl::O3CPU O3CPU;
-
-  private:
-    /** Pointer to the CPU. */
-    O3CPU *cpu;
-
+class ThreadState : public gem5::ThreadState
+{
   public:
     PCEventQueue pcEventQueue;
     /**
@@ -89,77 +81,29 @@ struct O3ThreadState : public ThreadState {
      * lead to successive restarts and forward progress couldn't be made. This
      * variable controls if the squashing will occur.
      */
-    bool noSquashFromTC;
+    bool noSquashFromTC = false;
 
     /** Whether or not the thread is currently waiting on a trap, and
      * thus able to be externally updated without squashing.
      */
-    bool trapPending;
+    bool trapPending = false;
 
-    O3ThreadState(O3CPU *_cpu, int _thread_num, Process *_process)
-        : ThreadState(_cpu, _thread_num, _process), cpu(_cpu),
-          comInstEventQueue("instruction-based event queue"),
-          noSquashFromTC(false), trapPending(false), tc(nullptr)
-    {
-        if (!FullSystem)
-            return;
+    /** Pointer to the hardware transactional memory checkpoint. */
+    std::unique_ptr<BaseHTMCheckpoint> htmCheckpoint;
 
-        if (cpu->params()->profile) {
-            profile = new FunctionProfile(
-                    cpu->params()->system->kernelSymtab);
-            Callback *cb =
-                new MakeCallback<O3ThreadState,
-                &O3ThreadState::dumpFuncProfile>(this);
-            registerExitCallback(cb);
-        }
+    ThreadState(CPU *_cpu, int _thread_num, Process *_process);
 
-        // let's fill with a dummy node for now so we don't get a segfault
-        // on the first cycle when there's no node available.
-        static ProfileNode dummyNode;
-        profileNode = &dummyNode;
-        profilePC = 3;
-    }
-
-    void serialize(CheckpointOut &cp) const override
-    {
-        ThreadState::serialize(cp);
-        // Use the ThreadContext serialization helper to serialize the
-        // TC.
-        ::serialize(*tc, cp);
-    }
-
-    void unserialize(CheckpointIn &cp) override
-    {
-        // Prevent squashing - we don't have any instructions in
-        // flight that we need to squash since we just instantiated a
-        // clean system.
-        noSquashFromTC = true;
-        ThreadState::unserialize(cp);
-        // Use the ThreadContext serialization helper to unserialize
-        // the TC.
-        ::unserialize(*tc, cp);
-        noSquashFromTC = false;
-    }
+    void serialize(CheckpointOut &cp) const override;
+    void unserialize(CheckpointIn &cp) override;
 
     /** Pointer to the ThreadContext of this thread. */
-    ThreadContext *tc;
+    gem5::ThreadContext *tc = nullptr;
 
     /** Returns a pointer to the TC of this thread. */
-    ThreadContext *getTC() { return tc; }
-
-    /** Handles the syscall. */
-    void syscall(Fault *fault)
-    {
-        process->syscall(tc, fault);
-    }
-
-    void dumpFuncProfile()
-    {
-        OutputStream *os(
-            simout.create(csprintf("profile.%s.dat", cpu->name())));
-        profile->dump(tc, *os->stream());
-        simout.close(os);
-    }
+    gem5::ThreadContext *getTC() { return tc; }
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif // __CPU_O3_THREAD_STATE_HH__

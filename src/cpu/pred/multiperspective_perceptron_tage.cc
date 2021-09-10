@@ -40,6 +40,12 @@
 
 #include "base/random.hh"
 
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
 void
 MPP_TAGE::calculateParameters()
 {
@@ -135,10 +141,10 @@ MPP_TAGE::handleUReset()
         tCounter = 0;
     }
 
-    if (tCounter >= ((ULL(1) << logUResetPeriod))) {
+    if (tCounter >= ((1ULL << logUResetPeriod))) {
         // Update the u bits for the short tags table
         for (int i = 1; i <= nHistoryTables; i++) {
-            for (int j = 0; j < (ULL(1) << logTagTableSizes[i]); j++) {
+            for (int j = 0; j < (1ULL << logTagTableSizes[i]); j++) {
                 resetUctr(gtable[i][j].u);
             }
         }
@@ -161,8 +167,7 @@ int
 MPP_TAGE::bindex(Addr pc_in) const
 {
     uint32_t pc = (uint32_t) pc_in;
-    return ((pc ^ (pc >> 4)) &
-            ((ULL(1) << (logTagTableSizes[0])) - 1));
+    return ((pc ^ (pc >> 4)) & ((1ULL << (logTagTableSizes[0])) - 1));
 }
 
 unsigned
@@ -242,12 +247,6 @@ MPP_TAGE::isHighConfidence(TAGEBase::BranchInfo *bi) const
 
 }
 
-MPP_TAGE*
-MPP_TAGEParams::create()
-{
-    return new MPP_TAGE(this);
-}
-
 bool
 MPP_LoopPredictor::calcConf(int index) const
 {
@@ -261,16 +260,10 @@ MPP_LoopPredictor::optionalAgeInc() const
     return ((random_mt.random<int>() & 7) == 0);
 }
 
-MPP_LoopPredictor*
-MPP_LoopPredictorParams::create()
-{
-    return new MPP_LoopPredictor(this);
-}
-
 MPP_StatisticalCorrector::MPP_StatisticalCorrector(
-        const MPP_StatisticalCorrectorParams *p) : StatisticalCorrector(p),
-    thirdH(0), pnb(p->pnb), logPnb(p->logPnb), pm(p->pm), gnb(p->gnb),
-    logGnb(p->logGnb), gm(p->gm)
+        const MPP_StatisticalCorrectorParams &p) : StatisticalCorrector(p),
+    thirdH(0), pnb(p.pnb), logPnb(p.logPnb), pm(p.pm), gnb(p.gnb),
+    logGnb(p.logGnb), gm(p.gm)
 {
     initGEHLTable(pnb, pm, pgehl, logPnb, wp, -1);
     initGEHLTable(gnb, gm, ggehl, logGnb, wg, -1);
@@ -385,10 +378,10 @@ MPP_StatisticalCorrector::scPredict(ThreadID tid, Addr branch_pc,
 }
 
 MultiperspectivePerceptronTAGE::MultiperspectivePerceptronTAGE(
-    const MultiperspectivePerceptronTAGEParams *p)
-  : MultiperspectivePerceptron(p), tage(p->tage),
-    loopPredictor(p->loop_predictor),
-    statisticalCorrector(p->statistical_corrector)
+    const MultiperspectivePerceptronTAGEParams &p)
+  : MultiperspectivePerceptron(p), tage(p.tage),
+    loopPredictor(p.loop_predictor),
+    statisticalCorrector(p.statistical_corrector)
 {
     fatal_if(tage->isSpeculativeUpdateEnabled(),
         "Speculative updates support is not implemented");
@@ -605,8 +598,6 @@ MultiperspectivePerceptronTAGE::update(ThreadID tid, Addr instPC, bool taken,
     assert(bp_history);
     MPPTAGEBranchInfo *bi = static_cast<MPPTAGEBranchInfo*>(bp_history);
 
-    assert(corrTarget != MaxAddr);
-
     if (squashed) {
         if (tage->isSpeculativeUpdateEnabled()) {
             // This restores the global history, then update it
@@ -695,3 +686,6 @@ MultiperspectivePerceptronTAGE::squash(ThreadID tid, void *bp_history)
     MPPTAGEBranchInfo *bi = static_cast<MPPTAGEBranchInfo*>(bp_history);
     delete bi;
 }
+
+} // namespace branch_prediction
+} // namespace gem5

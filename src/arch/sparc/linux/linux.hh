@@ -24,23 +24,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_SPARC_LINUX_LINUX_HH__
 #define __ARCH_SPARC_LINUX_LINUX_HH__
 
-#include "arch/sparc/utility.hh"
+#include <map>
+
+#include "arch/sparc/asi.hh"
+#include "arch/sparc/regs/int.hh"
+#include "arch/sparc/regs/misc.hh"
+#include "cpu/thread_context.hh"
+#include "kern/linux/flag_tables.hh"
 #include "kern/linux/linux.hh"
 
-class SparcLinux : public Linux
+namespace gem5
+{
+
+class SparcLinux : public Linux, public OpenFlagTable<SparcLinux>
 {
   public:
 
-    static const ByteOrder byteOrder = BigEndianByteOrder;
+    static const ByteOrder byteOrder = ByteOrder::big;
 
-    typedef struct {
+    struct tgt_stat
+    {
         uint32_t st_dev;
         char __pad1[4];
         uint64_t st_ino;
@@ -57,7 +65,32 @@ class SparcLinux : public Linux
         int64_t st_blksize;
         int64_t st_blocks;
         uint64_t __unused4[2];
-    } tgt_stat;
+    };
+
+    struct tgt_stat64
+    {
+        uint64_t st_dev;
+        uint64_t st_ino;
+        uint64_t st_nlink;
+
+        uint32_t st_mode;
+        uint32_t st_uid;
+        uint32_t st_gid;
+        uint32_t __pad0;
+
+        uint64_t st_rdev;
+        int64_t st_size;
+        int64_t st_blksize;
+        int64_t st_blocks;
+
+        uint64_t st_atimeX;
+        uint64_t st_atime_nsec;
+        uint64_t st_mtimeX;
+        uint64_t st_mtime_nsec;
+        uint64_t st_ctimeX;
+        uint64_t st_ctime_nsec;
+        int64_t __unused[3];
+    };
 
     // SPARC receives weird subsignals for several of its signals. If you
     // find yourself needing to implement these in detail, look at the
@@ -97,51 +130,46 @@ class SparcLinux : public Linux
     static const int TGT_SIGUSR1        = 0x00001e;
     static const int TGT_SIGUSR2        = 0x00001f;
 
-    static SyscallFlagTransTable openFlagTable[];
+    static constexpr int TGT_O_RDONLY    = 0x00000000;  //!< O_RDONLY
+    static constexpr int TGT_O_WRONLY    = 0x00000001;  //!< O_WRONLY
+    static constexpr int TGT_O_RDWR      = 0x00000002;  //!< O_RDWR
+    static constexpr int TGT_O_NONBLOCK  = 0x00004000;  //!< O_NONBLOCK
+    static constexpr int TGT_O_APPEND    = 0x00000008;  //!< O_APPEND
+    static constexpr int TGT_FASYNC      = 0x00000040;  //!< FASYNC
+    static constexpr int TGT_O_CREAT     = 0x00000200;  //!< O_CREAT
+    static constexpr int TGT_O_TRUNC     = 0x00000400;  //!< O_TRUNC
+    static constexpr int TGT_O_EXCL      = 0x00000800;  //!< O_EXCL
+    static constexpr int TGT_O_NOCTTY    = 0x00008000;  //!< O_NOCTTY
+    static constexpr int TGT_O_DSYNC     = 0x00002000;  //!< O_DSYNC
+    static constexpr int TGT_O_LARGEFILE = 0x00040000;  //!< O_LARGEFILE
+    static constexpr int TGT_O_DIRECT    = 0x00100000;  //!< O_DIRECT
+    static constexpr int TGT_O_NOATIME   = 0x00200000;  //!< O_NOATIME
+    static constexpr int TGT_O_CLOEXEC   = 0x00400000;  //!< O_CLOEXEC
+    static constexpr int TGT_O_SYNC      = 0x00802000;  //!< O_SYNC
+    static constexpr int TGT_O_PATH      = 0x01000000;  //!< O_PATH
 
-    static const int TGT_O_RDONLY       = 0x00000000;   //!< O_RDONLY
-    static const int TGT_O_WRONLY       = 0x00000001;   //!< O_WRONLY
-    static const int TGT_O_RDWR         = 0x00000002;   //!< O_RDWR
-    static const int TGT_O_NONBLOCK     = 0x00004000;   //!< O_NONBLOCK
-    static const int TGT_O_APPEND       = 0x00000008;   //!< O_APPEND
-    static const int TGT_FASYNC         = 0x00000040;   //!< FASYNC
-    static const int TGT_O_CREAT        = 0x00000200;   //!< O_CREAT
-    static const int TGT_O_TRUNC        = 0x00000400;   //!< O_TRUNC
-    static const int TGT_O_EXCL         = 0x00000800;   //!< O_EXCL
-    static const int TGT_O_NOCTTY       = 0x00008000;   //!< O_NOCTTY
-    static const int TGT_O_DSYNC        = 0x00002000;   //!< O_DSYNC
-    static const int TGT_O_LARGEFILE    = 0x00040000;   //!< O_LARGEFILE
-    static const int TGT_O_DIRECT       = 0x00100000;   //!< O_DIRECT
-    static const int TGT_O_NOATIME      = 0x00200000;   //!< O_NOATIME
-    static const int TGT_O_CLOEXEC      = 0x00400000;   //!< O_CLOEXEC
-    static const int TGT_O_SYNC         = 0x00802000;   //!< O_SYNC
-    static const int TGT_O_PATH         = 0x01000000;   //!< O_PATH
+    static constexpr int TGT_O_DIRECTORY = 000200000;   //!< O_DIRECTORY
+    static constexpr int TGT_O_NOFOLLOW  = 000400000;   //!< O_NOFOLLOW
 
-    static const int TGT_O_DIRECTORY    = 000200000;   //!< O_DIRECTORY
-    static const int TGT_O_NOFOLLOW     = 000400000;   //!< O_NOFOLLOW
+    static constexpr unsigned TGT_MAP_SHARED        = 0x00001;
+    static constexpr unsigned TGT_MAP_PRIVATE       = 0x00002;
+    static constexpr unsigned TGT_MAP_ANON          = 0x00020;
+    static constexpr unsigned TGT_MAP_DENYWRITE     = 0x00800;
+    static constexpr unsigned TGT_MAP_EXECUTABLE    = 0x01000;
+    static constexpr unsigned TGT_MAP_FILE          = 0x00000;
+    static constexpr unsigned TGT_MAP_GROWSDOWN     = 0x00200;
+    static constexpr unsigned TGT_MAP_HUGETLB       = 0x40000;
+    static constexpr unsigned TGT_MAP_LOCKED        = 0x00100;
+    static constexpr unsigned TGT_MAP_NONBLOCK      = 0x10000;
+    static constexpr unsigned TGT_MAP_NORESERVE     = 0x00040;
+    static constexpr unsigned TGT_MAP_POPULATE      = 0x08000;
+    static constexpr unsigned TGT_MAP_STACK         = 0x20000;
+    static constexpr unsigned TGT_MAP_ANONYMOUS     = 0x00020;
+    static constexpr unsigned TGT_MAP_FIXED         = 0x00010;
+    static constexpr unsigned TGT_MAP_INHERIT       = 0x00080;
 
-    static const int NUM_OPEN_FLAGS;
-
-    static const unsigned TGT_MAP_SHARED        = 0x00001;
-    static const unsigned TGT_MAP_PRIVATE       = 0x00002;
-    static const unsigned TGT_MAP_ANON          = 0x00020;
-    static const unsigned TGT_MAP_DENYWRITE     = 0x00800;
-    static const unsigned TGT_MAP_EXECUTABLE    = 0x01000;
-    static const unsigned TGT_MAP_FILE          = 0x00000;
-    static const unsigned TGT_MAP_GROWSDOWN     = 0x00200;
-    static const unsigned TGT_MAP_HUGETLB       = 0x40000;
-    static const unsigned TGT_MAP_LOCKED        = 0x00100;
-    static const unsigned TGT_MAP_NONBLOCK      = 0x10000;
-    static const unsigned TGT_MAP_NORESERVE     = 0x00040;
-    static const unsigned TGT_MAP_POPULATE      = 0x08000;
-    static const unsigned TGT_MAP_STACK         = 0x20000;
-    static const unsigned TGT_MAP_ANONYMOUS     = 0x00020;
-    static const unsigned TGT_MAP_FIXED         = 0x00010;
-    static const unsigned TGT_MAP_INHERIT       = 0x00080;
-
-    static const unsigned NUM_MMAP_FLAGS;
-
-    typedef struct {
+    struct tgt_sysinfo
+    {
         int64_t  uptime;    /* Seconds since boot */
         uint64_t loads[3];  /* 1, 5, and 15 minute load averages */
         uint64_t totalram;  /* Total usable main memory size */
@@ -154,7 +182,7 @@ class SparcLinux : public Linux
         uint64_t totalhigh; /* Total high memory size */
         uint64_t freehigh;  /* Available high memory size */
         uint64_t mem_unit;  /* Memory unit size in bytes */
-    } tgt_sysinfo;
+    };
 
     //@{
     /// ioctl() command codes.
@@ -192,13 +220,13 @@ class SparcLinux : public Linux
               ThreadContext *ptc, ThreadContext *ctc,
               uint64_t stack, uint64_t tls)
     {
-        SparcISA::copyRegs(ptc, ctc);
-        ctc->setIntReg(SparcISA::NumIntArchRegs + 6, 0);
-        ctc->setIntReg(SparcISA::NumIntArchRegs + 4, 0);
-        ctc->setIntReg(SparcISA::NumIntArchRegs + 3, SparcISA::NWindows - 2);
-        ctc->setIntReg(SparcISA::NumIntArchRegs + 5, SparcISA::NWindows);
+        ctc->getIsaPtr()->copyRegsFrom(ptc);
+        ctc->setIntReg(SparcISA::INTREG_OTHERWIN, 0);
+        ctc->setIntReg(SparcISA::INTREG_CANRESTORE, 0);
+        ctc->setIntReg(SparcISA::INTREG_CANSAVE, SparcISA::NWindows - 2);
+        ctc->setIntReg(SparcISA::INTREG_CLEANWIN, SparcISA::NWindows);
         ctc->setMiscReg(SparcISA::MISCREG_CWP, 0);
-        ctc->setIntReg(SparcISA::NumIntArchRegs + 7, 0);
+        ctc->setIntReg(SparcISA::INTREG_WSTATE, 0);
         ctc->setMiscRegNoEffect(SparcISA::MISCREG_TL, 0);
         ctc->setMiscReg(SparcISA::MISCREG_ASI, SparcISA::ASI_PRIMARY);
         for (int y = 8; y < 32; y++)
@@ -206,6 +234,11 @@ class SparcLinux : public Linux
 
         if (stack)
             ctc->setIntReg(SparcISA::StackPointerReg, stack);
+
+        // Set these extra values. Since "clone" doesn't return two values,
+        // we can set these and they won't be clobbered by the syscall ABI.
+        ptc->setIntReg(SparcISA::SyscallPseudoReturnReg, 0);
+        ctc->setIntReg(SparcISA::SyscallPseudoReturnReg, 1);
     }
 };
 
@@ -213,7 +246,8 @@ class Sparc32Linux : public SparcLinux
 {
   public:
 
-    typedef struct {
+    struct tgt_stat64
+    {
         uint64_t st_dev;
         uint64_t st_ino;
         uint32_t st_mode;
@@ -234,9 +268,10 @@ class Sparc32Linux : public SparcLinux
         uint64_t st_ctime_nsec;
         uint32_t __unused4;
         uint32_t __unused5;
-    } tgt_stat64;
+    };
 
-    typedef struct {
+    struct tgt_sysinfo
+    {
         int32_t  uptime;    /* Seconds since boot */
         uint32_t loads[3];  /* 1, 5, and 15 minute load averages */
         uint32_t totalram;  /* Total usable main memory size */
@@ -249,11 +284,13 @@ class Sparc32Linux : public SparcLinux
         uint32_t totalhigh; /* Total high memory size */
         uint32_t freehigh;  /* Available high memory size */
         uint32_t mem_unit;  /* Memory unit size in bytes */
-    } tgt_sysinfo;
+    };
 
     /// Resource constants for getrlimit() (overide some generics).
     static const unsigned TGT_RLIMIT_NPROC = 7;
     static const unsigned TGT_RLIMIT_NOFILE = 6;
 };
+
+} // namespace gem5
 
 #endif

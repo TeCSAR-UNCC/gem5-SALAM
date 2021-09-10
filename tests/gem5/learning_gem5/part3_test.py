@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 from testlib import *
 
@@ -41,7 +39,10 @@ gem5_verify_config(
     config=joinpath(config_path, 'simple_ruby.py'),
     config_args = [],
     protocol = 'MSI',
-    valid_isas=("X86",), # Currently only x86 has the threads test
+    # Currently only x86 has the threads test
+    valid_isas=(constants.gcn3_x86_tag,),
+    # dynamically linked
+    valid_hosts=constants.target_host[constants.gcn3_x86_tag],
 )
 
 gem5_verify_config(
@@ -50,5 +51,6 @@ gem5_verify_config(
     config=joinpath(config_path, 'ruby_test.py'),
     config_args = [],
     protocol = 'MSI',
-    valid_isas=("X86",), # Currently only x86 has the threads test
+    # Currently only x86 has the threads test
+    valid_isas=(constants.gcn3_x86_tag,),
 )

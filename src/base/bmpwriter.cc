@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: William Wang
- *          Ali Saidi
- *          Chris Emmons
- *          Andreas Sandberg
  */
 
 #include "base/bmpwriter.hh"
@@ -45,6 +40,9 @@
 #include <cassert>
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 const char* BmpWriter::_imgExtension = "bmp";
 
@@ -110,4 +108,4 @@ BmpWriter::write(std::ostream &bmp) const
     bmp.flush();
 }
 
-
+} // namespace gem5

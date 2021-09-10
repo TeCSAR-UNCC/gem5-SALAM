@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /**
@@ -39,12 +37,19 @@
 
 #include "mem/cache/replacement_policies/base.hh"
 
+namespace gem5
+{
+
 struct RandomRPParams;
 
-class RandomRP : public BaseReplacementPolicy
+GEM5_DEPRECATED_NAMESPACE(ReplacementPolicy, replacement_policy);
+namespace replacement_policy
+{
+
+class Random : public Base
 {
   protected:
-    /** MRU-specific implementation of replacement data. */
+    /** Random-specific implementation of replacement data. */
     struct RandomReplData : ReplacementData
     {
         /**
@@ -60,18 +65,9 @@ class RandomRP : public BaseReplacementPolicy
     };
 
   public:
-    /** Convenience typedef. */
     typedef RandomRPParams Params;
-
-    /**
-     * Construct and initiliaze this replacement policy.
-     */
-    RandomRP(const Params *p);
-
-    /**
-     * Destructor.
-     */
-    ~RandomRP() {}
+    Random(const Params &p);
+    ~Random() = default;
 
     /**
      * Invalidate replacement data to set it as the next probable victim.
@@ -80,7 +76,7 @@ class RandomRP : public BaseReplacementPolicy
      * @param replacement_data Replacement data to be invalidated.
      */
     void invalidate(const std::shared_ptr<ReplacementData>& replacement_data)
-                                                               const override;
+                                                                    override;
 
     /**
      * Touch an entry to update its replacement data.
@@ -116,5 +112,8 @@ class RandomRP : public BaseReplacementPolicy
      */
     std::shared_ptr<ReplacementData> instantiateEntry() override;
 };
+
+} // namespace replacement_policy
+} // namespace gem5
 
 #endif // __MEM_CACHE_REPLACEMENT_POLICIES_RANDOM_RP_HH__

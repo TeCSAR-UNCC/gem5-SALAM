@@ -25,11 +25,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Lisa Hsu
-#          Nilay Vaish
 
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import gzip
 
 import sys, re, os
@@ -59,7 +56,7 @@ def aggregate(output_dir, cpts, no_compress, memory_size):
     num_digits = len(str(len(cpts)-1))
 
     for (i, arg) in enumerate(cpts):
-        print arg
+        print(arg)
         merged_config = myCP()
         config = myCP()
         config.readfp(open(cpts[i] + "/m5.cpt"))
@@ -97,7 +94,7 @@ def aggregate(output_dir, cpts, no_compress, memory_size):
         ### memory stuff
         pages = int(config.get("system", "pagePtr"))
         page_ptr = page_ptr + pages
-        print "pages to be read: ", pages
+        print("pages to be read: ", pages)
 
         f = open(cpts[i] + "/system.physmem.store0.pmem", "rb")
         gf = gzip.GzipFile(fileobj=f, mode="rb")
@@ -128,9 +125,9 @@ def aggregate(output_dir, cpts, no_compress, memory_size):
         file_size += 4 * 1024
         page_ptr += 1
 
-    print "WARNING: "
-    print "Make sure the simulation using this checkpoint has at least ",
-    print page_ptr, "x 4K of memory"
+    print("WARNING: ")
+    print("Make sure the simulation using this checkpoint has at least ", end=' ')
+    print(page_ptr, "x 4K of memory")
     merged_config.set("system.physmem.store0", "range_size", page_ptr * 4 * 1024)
 
     merged_config.add_section("Globals")
@@ -146,7 +143,7 @@ def aggregate(output_dir, cpts, no_compress, memory_size):
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-    parser = ArgumentParser("usage: %prog [options] <directory names which "\
+    parser = ArgumentParser(usage="%(prog)s [options] <directory names which "\
                             "hold the checkpoints to be combined>")
     parser.add_argument("-o", "--output-dir", action="store",
                         help="Output directory")
@@ -157,7 +154,7 @@ if __name__ == "__main__":
     # Assume x86 ISA.  Any other ISAs would need extra stuff in this script
     # to appropriately parse their page tables and understand page sizes.
     options = parser.parse_args()
-    print options.cpts, len(options.cpts)
+    print(options.cpts, len(options.cpts))
     if len(options.cpts) <= 1:
         parser.error("You must specify atleast two checkpoint files that "\
                      "need to be combined.")

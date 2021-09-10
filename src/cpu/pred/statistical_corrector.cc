@@ -39,43 +39,50 @@
  * Statistical corrector base class
  */
 
- #include "cpu/pred/statistical_corrector.hh"
+#include "cpu/pred/statistical_corrector.hh"
 
- #include "params/StatisticalCorrector.hh"
+#include "params/StatisticalCorrector.hh"
 
- StatisticalCorrector::StatisticalCorrector(
-    const StatisticalCorrectorParams *p)
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+StatisticalCorrector::StatisticalCorrector(
+    const StatisticalCorrectorParams &p)
   : SimObject(p),
-    logBias(p->logBias),
-    logSizeUp(p->logSizeUp),
+    logBias(p.logBias),
+    logSizeUp(p.logSizeUp),
     logSizeUps(logSizeUp / 2),
-    numEntriesFirstLocalHistories(p->numEntriesFirstLocalHistories),
-    bwnb(p->bwnb),
-    logBwnb(p->logBwnb),
-    bwm(p->bwm),
-    lnb(p->lnb),
-    logLnb(p->logLnb),
-    lm(p->lm),
-    inb(p->inb),
-    logInb(p->logInb),
-    im(p->im),
-    chooserConfWidth(p->chooserConfWidth),
-    updateThresholdWidth(p->updateThresholdWidth),
-    pUpdateThresholdWidth(p->pUpdateThresholdWidth),
-    extraWeightsWidth(p->extraWeightsWidth),
-    scCountersWidth(p->scCountersWidth),
+    numEntriesFirstLocalHistories(p.numEntriesFirstLocalHistories),
+    bwnb(p.bwnb),
+    logBwnb(p.logBwnb),
+    bwm(p.bwm),
+    lnb(p.lnb),
+    logLnb(p.logLnb),
+    lm(p.lm),
+    inb(p.inb),
+    logInb(p.logInb),
+    im(p.im),
+    chooserConfWidth(p.chooserConfWidth),
+    updateThresholdWidth(p.updateThresholdWidth),
+    pUpdateThresholdWidth(p.pUpdateThresholdWidth),
+    extraWeightsWidth(p.extraWeightsWidth),
+    scCountersWidth(p.scCountersWidth),
     firstH(0),
-    secondH(0)
+    secondH(0),
+    stats(this)
 {
     wb.resize(1 << logSizeUps, 4);
 
-    initGEHLTable(lnb, lm, lgehl, logLnb, wl, p->lWeightInitValue);
-    initGEHLTable(bwnb, bwm, bwgehl, logBwnb, wbw, p->bwWeightInitValue);
-    initGEHLTable(inb, im, igehl, logInb, wi, p->iWeightInitValue);
+    initGEHLTable(lnb, lm, lgehl, logLnb, wl, p.lWeightInitValue);
+    initGEHLTable(bwnb, bwm, bwgehl, logBwnb, wbw, p.bwWeightInitValue);
+    initGEHLTable(inb, im, igehl, logInb, wi, p.iWeightInitValue);
 
     updateThreshold = 35 << 3;
 
-    pUpdateThreshold.resize(1 << logSizeUp, p->initialUpdateThresholdValue);
+    pUpdateThreshold.resize(1 << logSizeUp, p.initialUpdateThresholdValue);
 
     bias.resize(1 << logBias);
     biasSK.resize(1 << logBias);
@@ -376,9 +383,9 @@ void
 StatisticalCorrector::updateStats(bool taken, BranchInfo *bi)
 {
     if (taken == bi->scPred) {
-        scPredictorCorrect++;
+        stats.correct++;
     } else {
-        scPredictorWrong++;
+        stats.wrong++;
     }
 }
 
@@ -396,16 +403,17 @@ StatisticalCorrector::getSizeInBits() const
     return 0;
 }
 
-void
-StatisticalCorrector::regStats()
+StatisticalCorrector::StatisticalCorrectorStats::StatisticalCorrectorStats(
+    statistics::Group *parent)
+    : statistics::Group(parent),
+      ADD_STAT(correct, statistics::units::Count::get(),
+               "Number of time the SC predictor is the provider and the "
+               "prediction is correct"),
+      ADD_STAT(wrong, statistics::units::Count::get(),
+               "Number of time the SC predictor is the provider and the "
+               "prediction is wrong")
 {
-    scPredictorCorrect
-        .name(name() + ".scPredictorCorrect")
-        .desc("Number of time the SC predictor is the provider and "
-              "the prediction is correct");
-
-    scPredictorWrong
-        .name(name() + ".scPredictorWrong")
-        .desc("Number of time the SC predictor is the provider and "
-              "the prediction is wrong");
 }
+
+} // namespace branch_prediction
+} // namespace gem5

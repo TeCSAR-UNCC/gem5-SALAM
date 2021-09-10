@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Gabrielli
- *          Giacomo Travaglini
  */
 
 /**
@@ -52,11 +49,13 @@
 #ifndef __ARCH_ARM_TRACERS_TARMAC_BASE_HH__
 #define __ARCH_ARM_TRACERS_TARMAC_BASE_HH__
 
-#include "arch/arm/registers.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
 #include "cpu/static_inst.hh"
 #include "sim/insttracer.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
@@ -66,7 +65,8 @@ class TarmacBaseRecord : public InstRecord
 {
   public:
     /** TARMAC trace record type. */
-    enum TarmacRecordType {
+    enum TarmacRecordType
+    {
         TARMAC_INST,
         TARMAC_REG,
         TARMAC_MEM,
@@ -100,7 +100,8 @@ class TarmacBaseRecord : public InstRecord
     /** TARMAC register trace record. */
     struct RegEntry
     {
-        enum RegElement {
+        enum RegElement
+        {
             Lo = 0,
             Hi = 1,
             // Max = (max SVE vector length) 2048b / 64 = 32
@@ -146,5 +147,6 @@ class TarmacBaseRecord : public InstRecord
 
 
 } // namespace Trace
+} // namespace gem5
 
 #endif // __ARCH_ARM_TRACERS_TARMAC_BASE_HH__

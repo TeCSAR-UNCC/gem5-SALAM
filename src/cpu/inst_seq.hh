@@ -24,15 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Raasch
- *          Nathan Binkert
  */
 
 #ifndef __STD_TYPES_HH__
 #define __STD_TYPES_HH__
 
 #include "base/types.hh"
+
+namespace gem5
+{
 
 // inst sequence type, used to order instructions in the ready list,
 // if this rolls over the ready list order temporarily will get messed
@@ -41,5 +41,7 @@ typedef uint64_t InstSeqNum;
 
 // inst tag type, used to tag an operation instance in the IQ
 typedef unsigned int InstTag;
+
+} // namespace gem5
 
 #endif // __STD_TYPES_HH__

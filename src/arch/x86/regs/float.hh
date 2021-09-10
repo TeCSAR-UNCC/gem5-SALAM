@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_FLOATREGS_HH__
@@ -42,6 +40,9 @@
 
 #include "arch/x86/x86_traits.hh"
 #include "base/bitunion.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -150,6 +151,13 @@ namespace X86ISA
     {
         return FLOATREG_FPR((top + index + 8) % 8);
     }
-}
+
+    // Each 128 bit xmm register is broken into two effective 64 bit registers.
+    // Add 8 for the indices that are mapped over the fp stack
+    const int NumFloatRegs =
+        NumMMXRegs + 2 * NumXMMRegs + NumMicroFpRegs + 8;
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_FLOATREGS_HH__

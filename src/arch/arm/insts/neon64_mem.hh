@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Mbou Eyole
- *          Giacomo Gabrielli
  */
 
 /// @file
@@ -44,13 +41,20 @@
 #ifndef __ARCH_ARM_INSTS_NEON64_MEM_HH__
 #define __ARCH_ARM_INSTS_NEON64_MEM_HH__
 
+#include <cassert>
+#include <cstdint>
+
+namespace gem5
+{
+
 namespace ArmISA
 {
 
 typedef uint64_t XReg;
 
 /// 128-bit NEON vector register.
-struct VReg {
+struct VReg
+{
     XReg hi;
     XReg lo;
 };
@@ -123,6 +127,7 @@ readVecElem(VReg src, int index, int eSize)
     return data;
 }
 
-}  // namespace ArmISA
+} // namespace ArmISA
+} // namespace gem5
 
 #endif  // __ARCH_ARM_INSTS_NEON64_MEM_HH__

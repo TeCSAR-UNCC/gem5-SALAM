@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __DEV_X86_I82094AA_HH__
@@ -38,6 +36,9 @@
 #include "dev/intpin.hh"
 #include "dev/io_device.hh"
 #include "params/I82094AA.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -84,18 +85,12 @@ class I82094AA : public BasicPioDevice
 
     std::vector<IntSinkPin<I82094AA> *> inputs;
 
-    IntMasterPort<I82094AA> intMasterPort;
+    IntRequestPort<I82094AA> intRequestPort;
 
   public:
-    typedef I82094AAParams Params;
+    using Params = I82094AAParams;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    I82094AA(Params *p);
+    I82094AA(const Params &p);
 
     void init() override;
 
@@ -119,5 +114,6 @@ class I82094AA : public BasicPioDevice
 };
 
 } // namespace X86ISA
+} // namespace gem5
 
 #endif //__DEV_X86_SOUTH_BRIDGE_I8254_HH__

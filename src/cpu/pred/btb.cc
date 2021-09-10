@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #include "cpu/pred/btb.hh"
@@ -33,6 +31,12 @@
 #include "base/intmath.hh"
 #include "base/trace.hh"
 #include "debug/Fetch.hh"
+
+namespace gem5
+{
+
+namespace branch_prediction
+{
 
 DefaultBTB::DefaultBTB(unsigned _numEntries,
                        unsigned _tagBits,
@@ -138,3 +142,6 @@ DefaultBTB::update(Addr instPC, const TheISA::PCState &target, ThreadID tid)
     btb[btb_idx].target = target;
     btb[btb_idx].tag = getTag(instPC);
 }
+
+} // namespace branch_prediction
+} // namespace gem5

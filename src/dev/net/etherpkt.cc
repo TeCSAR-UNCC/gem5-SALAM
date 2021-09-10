@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "dev/net/etherpkt.hh"
@@ -36,10 +34,11 @@
 #include "base/logging.hh"
 #include "sim/serialize.hh"
 
-using namespace std;
+namespace gem5
+{
 
 void
-EthPacketData::serialize(const string &base, CheckpointOut &cp) const
+EthPacketData::serialize(const std::string &base, CheckpointOut &cp) const
 {
     paramOut(cp, base + ".simLength", simLength);
     paramOut(cp, base + ".bufLength", bufLength);
@@ -48,7 +47,7 @@ EthPacketData::serialize(const string &base, CheckpointOut &cp) const
 }
 
 void
-EthPacketData::unserialize(const string &base, CheckpointIn &cp)
+EthPacketData::unserialize(const std::string &base, CheckpointIn &cp)
 {
     paramIn(cp, base + ".length", length);
     unsigned chkpt_buf_length;
@@ -72,3 +71,4 @@ EthPacketData::unserialize(const string &base, CheckpointIn &cp)
         simLength = length;
 }
 
+} // namespace gem5

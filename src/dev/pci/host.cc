@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "dev/pci/host.hh"
@@ -47,7 +45,10 @@
 #include "params/GenericPciHost.hh"
 #include "params/PciHost.hh"
 
-PciHost::PciHost(const PciHostParams *p)
+namespace gem5
+{
+
+PciHost::PciHost(const PciHostParams &p)
     : PioDevice(p)
 {
 }
@@ -117,13 +118,13 @@ PciHost::DeviceInterface::clearInt()
 }
 
 
-GenericPciHost::GenericPciHost(const GenericPciHostParams *p)
+GenericPciHost::GenericPciHost(const GenericPciHostParams &p)
     : PciHost(p),
-      platform(*p->platform),
-      confBase(p->conf_base), confSize(p->conf_size),
-      confDeviceBits(p->conf_device_bits),
-      pciPioBase(p->pci_pio_base), pciMemBase(p->pci_mem_base),
-      pciDmaBase(p->pci_dma_base)
+      platform(*p.platform),
+      confBase(p.conf_base), confSize(p.conf_size),
+      confDeviceBits(p.conf_device_bits),
+      pciPioBase(p.pci_pio_base), pciMemBase(p.pci_mem_base),
+      pciDmaBase(p.pci_dma_base)
 {
 }
 
@@ -219,9 +220,4 @@ GenericPciHost::mapPciInterrupt(const PciBusAddr &addr, PciIntPin pin) const
     return dev->interruptLine();
 }
 
-
-GenericPciHost *
-GenericPciHostParams::create()
-{
-    return new GenericPciHost(this);
-}
+} // namespace gem5

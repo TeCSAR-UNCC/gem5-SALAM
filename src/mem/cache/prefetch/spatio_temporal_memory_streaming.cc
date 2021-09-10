@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
 #include "mem/cache/prefetch/spatio_temporal_memory_streaming.hh"
@@ -34,30 +32,38 @@
 #include "mem/cache/prefetch/associative_set_impl.hh"
 #include "params/STeMSPrefetcher.hh"
 
-STeMSPrefetcher::STeMSPrefetcher(const STeMSPrefetcherParams *p)
-  : QueuedPrefetcher(p), spatialRegionSize(p->spatial_region_size),
-    spatialRegionSizeBits(floorLog2(p->spatial_region_size)),
-    reconstructionEntries(p->reconstruction_entries),
-    activeGenerationTable(p->active_generation_table_assoc,
-                          p->active_generation_table_entries,
-                          p->active_generation_table_indexing_policy,
-                          p->active_generation_table_replacement_policy,
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+STeMS::STeMS(const STeMSPrefetcherParams &p)
+  : Queued(p), spatialRegionSize(p.spatial_region_size),
+    spatialRegionSizeBits(floorLog2(p.spatial_region_size)),
+    reconstructionEntries(p.reconstruction_entries),
+    activeGenerationTable(p.active_generation_table_assoc,
+                          p.active_generation_table_entries,
+                          p.active_generation_table_indexing_policy,
+                          p.active_generation_table_replacement_policy,
                           ActiveGenerationTableEntry(
                               spatialRegionSize / blkSize)),
-    patternSequenceTable(p->pattern_sequence_table_assoc,
-                         p->pattern_sequence_table_entries,
-                         p->pattern_sequence_table_indexing_policy,
-                         p->pattern_sequence_table_replacement_policy,
+    patternSequenceTable(p.pattern_sequence_table_assoc,
+                         p.pattern_sequence_table_entries,
+                         p.pattern_sequence_table_indexing_policy,
+                         p.pattern_sequence_table_replacement_policy,
                          ActiveGenerationTableEntry(
                              spatialRegionSize / blkSize)),
-    rmob(p->region_miss_order_buffer_entries), rmobHead(0)
+    rmob(p.region_miss_order_buffer_entries)
 {
     fatal_if(!isPowerOf2(spatialRegionSize),
         "The spatial region size must be a power of 2.");
 }
 
 void
-STeMSPrefetcher::checkForActiveGenerationsEnd() {
+STeMS::checkForActiveGenerationsEnd()
+{
     // This prefetcher operates attached to the L1 and it observes all
     // accesses, this guarantees that no evictions are missed
 
@@ -96,26 +102,25 @@ STeMSPrefetcher::checkForActiveGenerationsEnd() {
                 // this also sets the values of the entry
                 pst_entry->update(agt_entry);
                 // Free the AGT entry
-                agt_entry.setInvalid();
+                activeGenerationTable.invalidate(&agt_entry);
             }
         }
     }
 }
 
 void
-STeMSPrefetcher::addToRMOB(Addr sr_addr, Addr pst_addr, unsigned int delta)
+STeMS::addToRMOB(Addr sr_addr, Addr pst_addr, unsigned int delta)
 {
-    RegionMissOrderBufferEntry &rmob_entry = rmob[rmobHead];
-    rmobHead = (rmobHead + 1) % rmob.size();
-
+    RegionMissOrderBufferEntry rmob_entry;
     rmob_entry.srAddress = sr_addr;
     rmob_entry.pstAddress = pst_addr;
     rmob_entry.delta = delta;
-    rmob_entry.valid = true;
+
+    rmob.push_back(rmob_entry);
 }
 
 void
-STeMSPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
+STeMS::calculatePrefetch(const PrefetchInfo &pfi,
                                    std::vector<AddrPriority> &addresses)
 {
     if (!pfi.hasPC()) {
@@ -170,13 +175,12 @@ STeMSPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
     // Prefetch generation: if this is a miss, search for the most recent
     // entry in the RMOB, and reconstruct the registered access sequence
     if (pfi.isCacheMiss()) {
-        for (unsigned int idx = (rmobHead - 1) % rmob.size();
-             idx != rmobHead && rmob[idx].valid;
-             idx = (idx - 1) % rmob.size())
-        {
-            if (rmob[idx].srAddress == sr_addr) {
+        auto it = rmob.end();
+        while (it != rmob.begin()) {
+            --it;
+            if (it->srAddress == sr_addr) {
                 // reconstruct the access sequence
-                reconstructSequence(idx, addresses);
+                reconstructSequence(it, addresses);
                 break;
             }
         }
@@ -184,37 +188,34 @@ STeMSPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
 }
 
 void
-STeMSPrefetcher::reconstructSequence(unsigned int rmob_idx,
+STeMS::reconstructSequence(
+    CircularQueue<RegionMissOrderBufferEntry>::iterator rmob_it,
     std::vector<AddrPriority> &addresses)
 {
     std::vector<Addr> reconstruction(reconstructionEntries, MaxAddr);
     unsigned int idx = 0;
-    // process rmob entries from rmob_idx (most recent with
-    // address = sr_addr) to the last one (rmobHead)
-    for (int i = rmob_idx;
-         i != rmobHead && idx < reconstructionEntries;
-         i = (i + 1) % rmob.size())
-    {
-        reconstruction[idx] = rmob[i].srAddress * spatialRegionSize;
-        unsigned int next_i = (i + 1) % rmob.size();
-        idx += rmob[next_i].delta + 1;
+
+    // Process rmob entries from rmob_it (most recent with address = sr_addr)
+    // to the latest one
+    for (auto it = rmob_it; it != rmob.end() && (idx < reconstructionEntries);
+        it++) {
+        reconstruction[idx] = it->srAddress * spatialRegionSize;
+        idx += (it+1)->delta + 1;
     }
+
     // Now query the PST with the PC of each RMOB entry
     idx = 0;
-    for (int i = rmob_idx;
-         i != rmobHead && idx < reconstructionEntries;
-         i = (i + 1) % rmob.size())
-    {
+    for (auto it = rmob_it; it != rmob.end() && (idx < reconstructionEntries);
+        it++) {
         ActiveGenerationTableEntry *pst_entry =
-            patternSequenceTable.findEntry(rmob[i].pstAddress,
-                                           false /* unused */);
+            patternSequenceTable.findEntry(it->pstAddress, false /* unused */);
         if (pst_entry != nullptr) {
             patternSequenceTable.accessEntry(pst_entry);
             for (auto &seq_entry : pst_entry->sequence) {
                 if (seq_entry.counter > 1) {
                     // 2-bit counter: high enough confidence with a
                     // value greater than 1
-                    Addr rec_addr = rmob[i].srAddress * spatialRegionSize +
+                    Addr rec_addr = it->srAddress * spatialRegionSize +
                         seq_entry.offset;
                     unsigned ridx = idx + seq_entry.delta;
                     // Try to use the corresponding position, if it has been
@@ -240,9 +241,9 @@ STeMSPrefetcher::reconstructSequence(unsigned int rmob_idx,
                 }
             }
         }
-        unsigned int next_i = (i + 1) % rmob.size();
-        idx += rmob[next_i].delta + 1;
+        idx += (it+1)->delta + 1;
     }
+
     for (Addr pf_addr : reconstruction) {
         if (pf_addr != MaxAddr) {
             addresses.push_back(AddrPriority(pf_addr, 0));
@@ -250,8 +251,5 @@ STeMSPrefetcher::reconstructSequence(unsigned int rmob_idx,
     }
 }
 
-STeMSPrefetcher *
-STeMSPrefetcherParams::create()
-{
-   return new STeMSPrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5

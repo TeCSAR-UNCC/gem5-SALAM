@@ -35,30 +35,32 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 // Basic instruction class declaration template.
 def template BasicDeclare {{
-        /**
-         * Static instruction class for "%(mnemonic)s".
-         */
-        class %(class_name)s : public %(base_class)s
-        {
-          public:
-            // Constructor.
-            %(class_name)s(ExtMachInst machInst);
-            Fault execute(ExecContext *, Trace::InstRecord *) const;
-        };
+    /**
+     * Static instruction class for "%(mnemonic)s".
+     */
+    class %(class_name)s : public %(base_class)s
+    {
+      private:
+        %(reg_idx_arr_decl)s;
+
+      public:
+        // Constructor.
+        %(class_name)s(ExtMachInst machInst);
+        Fault execute(ExecContext *, Trace::InstRecord *) const override;
+    };
 }};
 
 // Basic instruction class constructor template.
 def template BasicConstructor {{
-        %(class_name)s::%(class_name)s(ExtMachInst machInst)
-            : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
-        {
-                %(constructor)s;
-        }
+    %(class_name)s::%(class_name)s(ExtMachInst machInst) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
+    {
+        %(set_reg_idx_arr)s;
+        %(constructor)s;
+    }
 }};
 
 // Basic instruction class execute method template.

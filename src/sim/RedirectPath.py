@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: David Hashe
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -38,6 +36,7 @@ class RedirectPath(SimObject):
     """
     type = 'RedirectPath'
     cxx_header = "sim/redirect_path.hh"
+    cxx_class = 'gem5::RedirectPath'
 
     app_path = Param.String("/", "filesystem path from an app's perspective")
     host_paths = VectorParam.String(["/"], "file path on host filesystem")

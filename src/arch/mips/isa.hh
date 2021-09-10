@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_MIPS_ISA_HH__
@@ -35,34 +33,39 @@
 #include <string>
 #include <vector>
 
-#include "arch/mips/registers.hh"
+#include "arch/generic/isa.hh"
+#include "arch/mips/regs/misc.hh"
 #include "arch/mips/types.hh"
+#include "base/types.hh"
 #include "cpu/reg_class.hh"
 #include "sim/eventq.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 class BaseCPU;
 class Checkpoint;
-class EventManager;
 struct MipsISAParams;
 class ThreadContext;
 
 namespace MipsISA
 {
-    class ISA : public SimObject
+    class ISA : public BaseISA
     {
       public:
         // The MIPS name for this file is CP0 or Coprocessor 0
         typedef ISA CP0;
 
-        typedef MipsISAParams Params;
+        using Params = MipsISAParams;
 
       protected:
         // Number of threads and vpes an individual ISA state can handle
         uint8_t numThreads;
         uint8_t numVpes;
 
-        enum BankType {
+        enum BankType
+        {
             perProcessor,
             perThreadContext,
             perVirtProcessor
@@ -75,6 +78,7 @@ namespace MipsISA
       public:
         void clear();
 
+      public:
         void configCP();
 
         unsigned getVPENum(ThreadID tid) const;
@@ -91,15 +95,14 @@ namespace MipsISA
         RegVal readMiscRegNoEffect(int misc_reg, ThreadID tid = 0) const;
 
         //template <class TC>
-        RegVal readMiscReg(int misc_reg, ThreadContext *tc, ThreadID tid = 0);
+        RegVal readMiscReg(int misc_reg, ThreadID tid = 0);
 
         RegVal filterCP0Write(int misc_reg, int reg_sel, RegVal val);
         void setRegMask(int misc_reg, RegVal val, ThreadID tid = 0);
         void setMiscRegNoEffect(int misc_reg, RegVal val, ThreadID tid=0);
 
         //template <class TC>
-        void setMiscReg(int misc_reg, RegVal val,
-                        ThreadContext *tc, ThreadID tid=0);
+        void setMiscReg(int misc_reg, RegVal val, ThreadID tid=0);
 
         //////////////////////////////////////////////////////////
         //
@@ -112,7 +115,8 @@ namespace MipsISA
         bool cp0Updated;
 
         // Enumerated List of CP0 Event Types
-        enum CP0EventType {
+        enum CP0EventType
+        {
             UpdateCP0
         };
 
@@ -126,64 +130,45 @@ namespace MipsISA
         // and if necessary alert the CPU
         void updateCPU(BaseCPU *cpu);
 
-        static std::string miscRegNames[NumMiscRegs];
+        static std::string miscRegNames[MISCREG_NUMREGS];
 
       public:
-        void startup(ThreadContext *tc) {}
-
-        /// Explicitly import the otherwise hidden startup
-        using SimObject::startup;
-
-        const Params *params() const;
-
-        ISA(Params *p);
+        ISA(const Params &p);
 
         RegId flattenRegId(const RegId& regId) const { return regId; }
 
-        int
-        flattenIntIndex(int reg) const
-        {
-            return reg;
-        }
-
-        int
-        flattenFloatIndex(int reg) const
-        {
-            return reg;
-        }
-
-        int
-        flattenVecIndex(int reg) const
-        {
-            return reg;
-        }
-
-        int
-        flattenVecElemIndex(int reg) const
-        {
-            return reg;
-        }
-
-        int
-        flattenVecPredIndex(int reg) const
-        {
-            return reg;
-        }
-
+        int flattenIntIndex(int reg) const { return reg; }
+        int flattenFloatIndex(int reg) const { return reg; }
+        int flattenVecIndex(int reg) const { return reg; }
+        int flattenVecElemIndex(int reg) const { return reg; }
+        int flattenVecPredIndex(int reg) const { return reg; }
         // dummy
-        int
-        flattenCCIndex(int reg) const
+        int flattenCCIndex(int reg) const { return reg; }
+        int flattenMiscIndex(int reg) const { return reg; }
+
+        bool
+        inUserMode() const override
         {
-            return reg;
+            RegVal Stat = readMiscRegNoEffect(MISCREG_STATUS);
+            RegVal Dbg = readMiscRegNoEffect(MISCREG_DEBUG);
+
+            if (// EXL, ERL or CU0 set, CP0 accessible
+                (Stat & 0x10000006) == 0 &&
+                // DM bit set, CP0 accessible
+                (Dbg & 0x40000000) == 0 &&
+                // KSU = 0, kernel mode is base mode
+                (Stat & 0x00000018) != 0) {
+                // Unable to use Status_CU0, etc directly,
+                // using bitfields & masks.
+                return true;
+            } else {
+                return false;
+            }
         }
 
-        int
-        flattenMiscIndex(int reg) const
-        {
-            return reg;
-        }
-
+        void copyRegsFrom(ThreadContext *src) override;
     };
-}
+} // namespace MipsISA
+} // namespace gem5
 
 #endif

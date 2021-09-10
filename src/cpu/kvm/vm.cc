@@ -34,8 +34,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "cpu/kvm/vm.hh"
@@ -52,26 +50,39 @@
 
 #include "cpu/kvm/base.hh"
 #include "debug/Kvm.hh"
+#include "mem/physical.hh"
 #include "params/KvmVM.hh"
 #include "sim/system.hh"
 
-#define EXPECTED_KVM_API_VERSION 12
+namespace gem5
+{
 
-#if EXPECTED_KVM_API_VERSION != KVM_API_VERSION
-#error Unsupported KVM version
-#endif
+namespace
+{
+
+constexpr int ExpectedKvmApiVersion = 12;
+static_assert(KVM_API_VERSION == ExpectedKvmApiVersion,
+        "Unsupported KVM version");
+
+} // anonymous namespace
 
 Kvm *Kvm::instance = NULL;
 
 Kvm::Kvm()
     : kvmFD(-1), apiVersion(-1), vcpuMMapSize(0)
 {
+    static bool created = false;
+    if (created)
+        warn_once("Use of multiple KvmVMs is currently untested!");
+
+    created = true;
+
     kvmFD = ::open("/dev/kvm", O_RDWR);
     if (kvmFD == -1)
         fatal("KVM: Failed to open /dev/kvm\n");
 
     apiVersion = ioctl(KVM_GET_API_VERSION);
-    if (apiVersion != EXPECTED_KVM_API_VERSION)
+    if (apiVersion != ExpectedKvmApiVersion)
         fatal("KVM: Incompatible API version\n");
 
     vcpuMMapSize = ioctl(KVM_GET_VCPU_MMAP_SIZE);
@@ -291,11 +302,12 @@ Kvm::createVM()
 }
 
 
-KvmVM::KvmVM(KvmVMParams *params)
+KvmVM::KvmVM(const KvmVMParams &params)
     : SimObject(params),
       kvm(new Kvm()), system(nullptr),
       vmFD(kvm->createVM()),
       started(false),
+      _hasKernelIRQChip(false),
       nextVCPUID(0)
 {
     maxMemorySlot = kvm->capNumMemSlots();
@@ -303,8 +315,8 @@ KvmVM::KvmVM(KvmVMParams *params)
     if (!maxMemorySlot)
         maxMemorySlot = 32;
     /* Setup the coalesced MMIO regions */
-    for (int i = 0; i < params->coalescedMMIO.size(); ++i)
-        coalesceMMIO(params->coalescedMMIO[i]);
+    for (int i = 0; i < params.coalescedMMIO.size(); ++i)
+        coalesceMMIO(params.coalescedMMIO[i]);
 }
 
 KvmVM::~KvmVM()
@@ -344,7 +356,7 @@ void
 KvmVM::delayedStartup()
 {
     assert(system); // set by the system during its construction
-    const std::vector<BackingStoreEntry> &memories(
+    const std::vector<memory::BackingStoreEntry> &memories(
         system->getPhysMem().getBackingStore());
 
     DPRINTF(Kvm, "Mapping %i memory region(s)\n", memories.size());
@@ -541,7 +553,7 @@ KvmVM::contextIdToVCpuId(ContextID ctx) const
 {
     assert(system != nullptr);
     return dynamic_cast<BaseKvmCPU*>
-        (system->getThreadContext(ctx)->getCpuPtr())->getVCpuID();
+        (system->threads[ctx]->getCpuPtr())->getVCpuID();
 }
 
 int
@@ -581,15 +593,4 @@ KvmVM::ioctl(int request, long p1) const
     return ::ioctl(vmFD, request, p1);
 }
 
-
-KvmVM *
-KvmVMParams::create()
-{
-    static bool created = false;
-    if (created)
-        warn_once("Use of multiple KvmVMs is currently untested!\n");
-
-    created = true;
-
-    return new KvmVM(this);
-}
+} // namespace gem5

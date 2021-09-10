@@ -24,55 +24,29 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
-#include <unistd.h>
+#include "base/hostinfo.hh"
 
 #ifdef __APPLE__
 #include <mach/mach_init.h>
 #include <mach/shared_region.h>
 #include <mach/task.h>
-
-#endif
-
-#include "base/hostinfo.hh"
-
-#include <cctype>
-#include <cerrno>
-#include <cmath>
+#else
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
+#endif
 
 #include "base/logging.hh"
 #include "base/str.hh"
-#include "base/types.hh"
 
-using namespace std;
-
-string
-__get_hostname()
+namespace gem5
 {
-    char host[256];
-    if (gethostname(host, sizeof host) == -1)
-        warn("could not get host name!");
-    return host;
-}
 
-string &
-hostname()
-{
-    static string hostname = __get_hostname();
-    return hostname;
-}
-
+#ifndef __APPLE__
 uint64_t
 procInfo(const char *filename, const char *target)
 {
-    int  done = 0;
+    int done = 0;
     char line[80];
     char format[80];
     long usage;
@@ -86,7 +60,7 @@ procInfo(const char *filename, const char *target)
                 sscanf(line, format, &usage);
 
                 fclose(fp);
-                return usage ;
+                return usage;
             }
         }
     }
@@ -96,6 +70,7 @@ procInfo(const char *filename, const char *target)
 
     return 0;
 }
+#endif
 
 uint64_t
 memUsage()
@@ -120,3 +95,5 @@ memUsage()
     return procInfo("/proc/self/status", "VmSize:");
 #endif
 }
+
+} // namespace gem5

@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2021 ARM Limited
+ * All rights reserved.
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -30,6 +42,12 @@
 
 #include "mem/ruby/common/WriteMask.hh"
 #include "mem/ruby/system/RubySystem.hh"
+
+namespace gem5
+{
+
+namespace ruby
+{
 
 DataBlock::DataBlock(const DataBlock &cp)
 {
@@ -80,15 +98,13 @@ DataBlock::atomicPartial(const DataBlock &dblk, const WriteMask &mask)
 void
 DataBlock::print(std::ostream& out) const
 {
-    using namespace std;
-
     int size = RubySystem::getBlockSizeBytes();
     out << "[ ";
     for (int i = 0; i < size; i++) {
-        out << setw(2) << setfill('0') << hex << "0x" << (int)m_data[i] << " ";
-        out << setfill(' ');
+        out << std::setw(2) << std::setfill('0') << std::hex
+            << "0x" << (int)m_data[i] << " " << std::setfill(' ');
     }
-    out << dec << "]" << flush;
+    out << std::dec << "]" << std::flush;
 }
 
 const uint8_t*
@@ -107,8 +123,15 @@ DataBlock::getDataMod(int offset)
 void
 DataBlock::setData(const uint8_t *data, int offset, int len)
 {
-    assert(offset + len <= RubySystem::getBlockSizeBytes());
     memcpy(&m_data[offset], data, len);
+}
+
+void
+DataBlock::setData(PacketPtr pkt)
+{
+    int offset = getOffset(pkt->getAddr());
+    assert(offset + pkt->getSize() <= RubySystem::getBlockSizeBytes());
+    pkt->writeData(&m_data[offset]);
 }
 
 DataBlock &
@@ -117,3 +140,6 @@ DataBlock::operator=(const DataBlock & obj)
     memcpy(m_data, obj.m_data, RubySystem::getBlockSizeBytes());
     return *this;
 }
+
+} // namespace ruby
+} // namespace gem5

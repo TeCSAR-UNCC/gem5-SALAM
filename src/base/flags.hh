@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Daniel R. Carvalho
  * Copyright (c) 2008 The Hewlett-Packard Development Company
  * All rights reserved.
  *
@@ -24,33 +25,47 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __BASE_FLAGS_HH__
 #define __BASE_FLAGS_HH__
 
+#include <type_traits>
+
+namespace gem5
+{
+
+/**
+ * Wrapper that groups a few flag bits under the same undelying container.
+ *
+ * @tparam T The type of the underlying container. Must be an unsigned integer.
+ */
 template <typename T>
 class Flags
 {
   private:
+    static_assert(std::is_unsigned<T>::value, "Flag type must be unsigned");
+
+    /** The undelying container of the flags' bits. */
     T _flags;
 
   public:
     typedef T Type;
-    Flags() : _flags(0) {}
-    Flags(Type flags) : _flags(flags) {}
+
+    /**
+     * @ingroup api_flags
+     * @{
+     */
+
+    /**
+     * Initialize flags with a given value. If no value is provided, the
+     * flag bits are initialized cleared.
+     *
+     * @param flags The value to initialize the flags with.
+     */
+    Flags(Type flags=0) : _flags(flags) {}
 
     operator const Type() const { return _flags; }
-
-    template <typename U>
-    const Flags<T> &
-    operator=(const Flags<U> &flags)
-    {
-        _flags = flags._flags;
-        return *this;
-    }
 
     const Flags<T> &
     operator=(T flags)
@@ -59,21 +74,77 @@ class Flags
         return *this;
     }
 
-    bool isSet() const { return _flags; }
-    bool isSet(Type flags) const { return (_flags & flags); }
-    bool allSet() const { return !(~_flags); }
-    bool allSet(Type flags) const { return (_flags & flags) == flags; }
-    bool noneSet() const { return _flags == 0; }
-    bool noneSet(Type flags) const { return (_flags & flags) == 0; }
+    /**
+     * Verifies whether any bit matching the given mask is set.
+     *
+     * @param mask The mask containing the bits to verify.
+     * @return True if any matching bit is set; false otherwise.
+     */
+    bool isSet(Type mask) const { return (_flags & mask); }
+
+    /**
+     * Verifies whether no bits matching the given mask are set.
+     *
+     * @param mask The mask containing the bits to verify.
+     * @return True if matching bits are set; false otherwise.
+     */
+    bool allSet(Type mask) const { return (_flags & mask) == mask; }
+
+    /**
+     * Verifies whether no bits matching the given mask are set.
+     *
+     * @param mask The mask containing the bits to verify.
+     * @return True if matching bits are cleared; false otherwise.
+     */
+    bool noneSet(Type mask) const { return (_flags & mask) == 0; }
+
+    /** Clear all flag's bits. */
     void clear() { _flags = 0; }
-    void clear(Type flags) { _flags &= ~flags; }
-    void set(Type flags) { _flags |= flags; }
-    void set(Type f, bool val) { _flags = (_flags & ~f) | (val ? f : 0); }
+
+    /**
+     * Clear all flag's bits matching the given mask.
+     *
+     * @param mask The mask containing the bits to be cleared.
+     */
+    void clear(Type mask) { _flags &= ~mask; }
+
+    /**
+     * Set all flag's bits matching the given mask.
+     *
+     * @param mask The mask containing the bits to be set.
+     */
+    void set(Type mask) { _flags |= mask; }
+
+    /**
+     * Conditionally set or clear some bits of the flag, given a mask.
+     *
+     * @param mask The mask containing the bits to be modified.
+     * @param condition If true, set masked bits; otherwise, clear them.
+     */
     void
-    update(Type flags, Type mask)
+    set(Type mask, bool condition)
+    {
+        condition ? set(mask) : clear(mask);
+    }
+
+    /**
+     * Replace the contents of the bits matching the mask with the
+     * corresponding bits in the provided flags.
+     *
+     * This is equivalent to:
+     *     flags.clear(mask); flags.set(flags & mask);
+     *
+     * @param flags Flags to extract new bits from.
+     * @param mask Mask used to determine which bits are replaced.
+     */
+    void
+    replace(Type flags, Type mask)
     {
         _flags = (_flags & ~mask) | (flags & mask);
     }
+    /** @} */ // end of api_flags
 };
+
+} // namespace gem5
 
 #endif // __BASE_FLAGS_HH__

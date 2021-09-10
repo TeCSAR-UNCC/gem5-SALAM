@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez
- *          Mohammad Alian
  */
 
 /* @file
@@ -39,17 +36,19 @@
 #include "base/trace.hh"
 #include "debug/EthernetAll.hh"
 #include "sim/core.hh"
+#include "sim/cur_tick.hh"
 
-using namespace std;
-
-EtherSwitch::EtherSwitch(const Params *p)
-    : SimObject(p), ttl(p->time_to_live)
+namespace gem5
 {
-    for (int i = 0; i < p->port_interface_connection_count; ++i) {
+
+EtherSwitch::EtherSwitch(const Params &p)
+    : SimObject(p), ttl(p.time_to_live)
+{
+    for (int i = 0; i < p.port_interface_connection_count; ++i) {
         std::string interfaceName = csprintf("%s.interface%d", name(), i);
         Interface *interface = new Interface(interfaceName, this,
-                                        p->output_buffer_size, p->delay,
-                                        p->delay_var, p->fabric_speed, i);
+                                        p.output_buffer_size, p.delay,
+                                        p.delay_var, p.fabric_speed, i);
         interfaces.push_back(interface);
     }
 }
@@ -138,8 +137,8 @@ EtherSwitch::Interface::Interface(const std::string &name,
 bool
 EtherSwitch::Interface::recvPacket(EthPacketPtr packet)
 {
-    Net::EthAddr destMacAddr(packet->data);
-    Net::EthAddr srcMacAddr(&packet->data[6]);
+    networking::EthAddr destMacAddr(packet->data);
+    networking::EthAddr srcMacAddr(&packet->data[6]);
 
     learnSenderAddr(srcMacAddr, this);
     Interface *receiver = lookupDestPort(destMacAddr);
@@ -187,7 +186,7 @@ EtherSwitch::Interface::transmit()
     if (!sendPacket(outputFifo.front())) {
         DPRINTF(Ethernet, "output port busy...retry later\n");
         if (!txEvent.scheduled())
-            parent->schedule(txEvent, curTick() + retryTime);
+            parent->schedule(txEvent, curTick() + sim_clock::as_int::ns);
     } else {
         DPRINTF(Ethernet, "packet sent: len=%d\n", outputFifo.front()->length);
         outputFifo.pop();
@@ -211,7 +210,7 @@ EtherSwitch::Interface::switchingDelay()
 }
 
 EtherSwitch::Interface*
-EtherSwitch::Interface::lookupDestPort(Net::EthAddr destMacAddr)
+EtherSwitch::Interface::lookupDestPort(networking::EthAddr destMacAddr)
 {
     auto it = parent->forwardingTable.find(uint64_t(destMacAddr));
 
@@ -235,7 +234,7 @@ EtherSwitch::Interface::lookupDestPort(Net::EthAddr destMacAddr)
 }
 
 void
-EtherSwitch::Interface::learnSenderAddr(Net::EthAddr srcMacAddr,
+EtherSwitch::Interface::learnSenderAddr(networking::EthAddr srcMacAddr,
                                           Interface *sender)
 {
     // learn the port for the sending MAC address
@@ -311,7 +310,7 @@ EtherSwitch::Interface::PortFifoEntry::serialize(CheckpointOut &cp) const
 void
 EtherSwitch::Interface::PortFifoEntry::unserialize(CheckpointIn &cp)
 {
-    packet = make_shared<EthPacketData>(16384);
+    packet = std::make_shared<EthPacketData>(16384);
     packet->unserialize("packet", cp);
     UNSERIALIZE_SCALAR(recvTick);
     UNSERIALIZE_SCALAR(srcId);
@@ -349,8 +348,4 @@ EtherSwitch::Interface::PortFifo::unserialize(CheckpointIn &cp)
     }
 }
 
-EtherSwitch *
-EtherSwitchParams::create()
-{
-    return new EtherSwitch(this);
-}
+} // namespace gem5

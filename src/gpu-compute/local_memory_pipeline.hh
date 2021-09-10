@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Sooraj Puthoor
  */
 
 #ifndef __LOCAL_MEMORY_PIPELINE_HH__
@@ -39,9 +37,10 @@
 #include <queue>
 #include <string>
 
+#include "base/statistics.hh"
+#include "base/stats/group.hh"
 #include "gpu-compute/misc.hh"
 #include "params/ComputeUnit.hh"
-#include "sim/stats.hh"
 
 /*
  * @file local_memory_pipeline.hh
@@ -51,18 +50,21 @@
  * loads and stores that have returned from the LDS.
  */
 
+namespace gem5
+{
+
 class ComputeUnit;
 class Wavefront;
 
 class LocalMemPipeline
 {
   public:
-    LocalMemPipeline(const ComputeUnitParams *params);
-    void init(ComputeUnit *cu);
+    LocalMemPipeline(const ComputeUnitParams &p, ComputeUnit &cu);
     void exec();
-
-    std::queue<GPUDynInstPtr> &getLMReqFIFO() { return lmIssuedRequests; }
     std::queue<GPUDynInstPtr> &getLMRespFIFO() { return lmReturnedRequests; }
+
+    void issueRequest(GPUDynInstPtr gpuDynInst);
+
 
     bool
     isLMRespFIFOWrRdy() const
@@ -77,19 +79,18 @@ class LocalMemPipeline
     }
 
     const std::string& name() const { return _name; }
-    void regStats();
 
     void
     incLoadVRFBankConflictCycles(int num_cycles)
     {
-        loadVrfBankConflictCycles += num_cycles;
+        stats.loadVrfBankConflictCycles += num_cycles;
     }
 
   private:
-    ComputeUnit *computeUnit;
-    std::string _name;
+    ComputeUnit &computeUnit;
+    const std::string _name;
     int lmQueueSize;
-    Stats::Scalar loadVrfBankConflictCycles;
+
     // Local Memory Request Fifo: all shared memory requests
     // are issued to this FIFO from the memory pipelines
     std::queue<GPUDynInstPtr> lmIssuedRequests;
@@ -97,6 +98,16 @@ class LocalMemPipeline
     // Local Memory Response Fifo: all responses of shared memory
     // requests are sent to this FIFO from LDS
     std::queue<GPUDynInstPtr> lmReturnedRequests;
+
+  protected:
+    struct LocalMemPipelineStats : public statistics::Group
+    {
+        LocalMemPipelineStats(statistics::Group *parent);
+
+        statistics::Scalar loadVrfBankConflictCycles;
+    } stats;
 };
+
+} // namespace gem5
 
 #endif // __LOCAL_MEMORY_PIPELINE_HH__

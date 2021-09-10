@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __DEV_ARM_NOMALI_GPU_HH__
@@ -45,14 +43,17 @@
 #include "dev/io_device.hh"
 #include "libnomali/nomali.h"
 
-class NoMaliGpuParams;
-class CustomNoMaliGpuParams;
+namespace gem5
+{
+
+struct NoMaliGpuParams;
+struct CustomNoMaliGpuParams;
 class RealView;
 
 class NoMaliGpu : public PioDevice
 {
   public:
-    NoMaliGpu(const NoMaliGpuParams *p);
+    NoMaliGpu(const NoMaliGpuParams &p);
     virtual ~NoMaliGpu();
 
     void init() override;
@@ -101,7 +102,7 @@ class NoMaliGpu : public PioDevice
      * @param err Error code from the NoMali library.
      * @param msg Message to print.
      */
-    static void gpuPanic(nomali_error_t err, const char *msg) M5_ATTR_NORETURN;
+    [[noreturn]] static void gpuPanic(nomali_error_t err, const char *msg);
     /**
      * Panic if the NoMali returned an error, do nothing otherwise.
      *
@@ -190,7 +191,7 @@ class NoMaliGpu : public PioDevice
 class CustomNoMaliGpu : public NoMaliGpu
 {
   public:
-    CustomNoMaliGpu(const CustomNoMaliGpuParams *p);
+    CustomNoMaliGpu(const CustomNoMaliGpuParams &p);
     virtual ~CustomNoMaliGpu();
 
   protected:
@@ -200,5 +201,7 @@ class CustomNoMaliGpu : public NoMaliGpu
     /** Map between GPU registers and their custom reset values */
     std::map<nomali_addr_t, uint32_t> idRegs;
 };
+
+} // namespace gem5
 
 #endif // __DEV_ARM_NOMALI_GPU_HH__

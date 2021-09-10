@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_SIMPLE_OBJECT_FEEDER_HH__
@@ -44,18 +42,21 @@
 #include "systemc/ext/channel/sc_buffer.hh"
 
 // This implementation (mostly) just uses standard gem5 mechanisms.
+namespace gem5
+{
 class Gem5_FeederParams;
+} // namespace gem5
 
-class Feeder : public SimObject
+class Feeder : public gem5::SimObject
 {
   public:
-    Feeder(Gem5_FeederParams *params);
+    Feeder(const gem5::Gem5_FeederParams &params);
 
     void feed();
 
   private:
     Printer *printer;
-    Tick delay;
+    gem5::Tick delay;
     std::vector<std::string> strings;
     int index;
 
@@ -63,7 +64,7 @@ class Feeder : public SimObject
     // except to help interact with systemc objects/models.
     sc_core::sc_buffer<const char *> buf;
 
-    EventWrapper<Feeder, &Feeder::feed> event;
+    gem5::EventWrapper<Feeder, &Feeder::feed> event;
 
     void startup() override;
 };

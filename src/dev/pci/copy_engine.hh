@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /* @file
@@ -50,13 +48,15 @@
 
 #include <vector>
 
-#include "base/cp_annotate.hh"
 #include "base/statistics.hh"
 #include "dev/pci/copy_engine_defs.hh"
 #include "dev/pci/device.hh"
 #include "params/CopyEngine.hh"
 #include "sim/drain.hh"
 #include "sim/eventq.hh"
+
+namespace gem5
+{
 
 class CopyEngine : public PciDevice
 {
@@ -65,9 +65,9 @@ class CopyEngine : public PciDevice
       private:
         DmaPort cePort;
         CopyEngine *ce;
-        CopyEngineReg::ChanRegs  cr;
+        copy_engine_reg::ChanRegs  cr;
         int channelId;
-        CopyEngineReg::DmaDesc *curDmaDesc;
+        copy_engine_reg::DmaDesc *curDmaDesc;
         uint8_t *copyBuffer;
 
         bool busy;
@@ -81,7 +81,8 @@ class CopyEngine : public PciDevice
 
         uint64_t completionDataReg;
 
-        enum ChannelState {
+        enum ChannelState
+        {
             Idle,
             AddressFetch,
             DescriptorFetch,
@@ -97,7 +98,13 @@ class CopyEngine : public PciDevice
         virtual ~CopyEngineChannel();
         Port &getPort();
 
-        std::string name() { assert(ce); return ce->name() + csprintf("-chan%d", channelId); }
+        std::string
+        name()
+        {
+            assert(ce);
+            return ce->name() + csprintf("-chan%d", channelId);
+        }
+
         virtual Tick read(PacketPtr pkt)
                         { panic("CopyEngineChannel has no I/O access\n");}
         virtual Tick write(PacketPtr pkt)
@@ -138,60 +145,29 @@ class CopyEngine : public PciDevice
         void recvCommand();
         bool inDrain();
         void restartStateMachine();
-        inline void anBegin(const char *s)
-        {
-            CPA::cpa()->hwBegin(CPA::FL_NONE, ce->sys,
-                         channelId, "CopyEngine", s);
-        }
-
-        inline void anWait()
-        {
-            CPA::cpa()->hwWe(CPA::FL_NONE, ce->sys,
-                     channelId, "CopyEngine", "DMAUnusedDescQ", channelId);
-        }
-
-        inline void anDq()
-        {
-            CPA::cpa()->hwDq(CPA::FL_NONE, ce->sys,
-                      channelId, "CopyEngine", "DMAUnusedDescQ", channelId);
-        }
-
-        inline void anPq()
-        {
-            CPA::cpa()->hwDq(CPA::FL_NONE, ce->sys,
-                      channelId, "CopyEngine", "DMAUnusedDescQ", channelId);
-        }
-
-        inline void anQ(const char * s, uint64_t id, int size = 1)
-        {
-            CPA::cpa()->hwQ(CPA::FL_NONE, ce->sys, channelId,
-                    "CopyEngine", s, id, NULL, size);
-        }
-
     };
 
   private:
 
-    Stats::Vector bytesCopied;
-    Stats::Vector copiesProcessed;
+    struct CopyEngineStats : public statistics::Group
+    {
+        CopyEngineStats(statistics::Group *parent,
+            const uint8_t& channel_count);
+
+        statistics::Vector bytesCopied;
+        statistics::Vector copiesProcessed;
+    } copyEngineStats;
 
     // device registers
-    CopyEngineReg::Regs regs;
+    copy_engine_reg::Regs regs;
 
     // Array of channels each one with regs/dma port/etc
     std::vector<CopyEngineChannel*> chan;
 
   public:
-    typedef CopyEngineParams Params;
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-    CopyEngine(const Params *params);
+    PARAMS(CopyEngine);
+    CopyEngine(const Params &params);
     ~CopyEngine();
-
-    void regStats() override;
 
     Port &getPort(const std::string &if_name,
             PortID idx = InvalidPortID) override;
@@ -203,5 +179,6 @@ class CopyEngine : public PciDevice
     void unserialize(CheckpointIn &cp) override;
 };
 
-#endif //__DEV_PCI_COPY_ENGINE_HH__
+} // namespace gem5
 
+#endif //__DEV_PCI_COPY_ENGINE_HH__

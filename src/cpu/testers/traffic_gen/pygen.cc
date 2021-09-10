@@ -33,11 +33,10 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 #include "cpu/testers/traffic_gen/pygen.hh"
 
+#include "base/trace.hh"
 #include "config/have_protobuf.hh"
 #include "debug/TrafficGen.hh"
 #include "params/PyTrafficGen.hh"
@@ -45,7 +44,10 @@
 
 namespace py = pybind11;
 
-PyTrafficGen::PyTrafficGen(const PyTrafficGenParams *p)
+namespace gem5
+{
+
+PyTrafficGen::PyTrafficGen(const PyTrafficGenParams &p)
     : BaseTrafficGen(p)
 {
 }
@@ -80,20 +82,15 @@ PyTrafficGen::nextGenerator()
 }
 
 void
-pybind_init_tracers(py::module &m_native)
+pybind_init_tracers(py::module_ &m_native)
 {
     using namespace pybind11::literals;
 
-    py::module m = m_native.def_submodule("trace");
+    py::module_ m = m_native.def_submodule("trace");
 
     py::class_<BaseGen, std::shared_ptr<BaseGen>> c_base(m, "BaseGen");
 }
 
 static EmbeddedPyBind _py_tracers("trace", pybind_init_tracers);
 
-PyTrafficGen*
-PyTrafficGenParams::create()
-{
-    return new PyTrafficGen(this);
-}
-
+} // namespace gem5

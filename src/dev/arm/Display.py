@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Giacomo Travaglini
 
 from m5.params import *
 from m5.SimObject import SimObject
@@ -42,6 +40,7 @@ from m5.util.fdthelper import *
 class Display(SimObject):
     type = 'Display'
     cxx_header = "dev/arm/display.hh"
+    cxx_class = 'gem5::Display'
     clock_frequency = Param.Unsigned("clock-frequency property")
     hactive = Param.Unsigned("hactive property")
     vactive = Param.Unsigned("vactive property")

@@ -1,4 +1,5 @@
 # Copyright (c) 2012-2013, 2015-2016 ARM Limited
+# Copyright (c) 2020 Barkhausen Institut
 # All rights reserved
 #
 # The license below extends only to copyright in the software and shall
@@ -35,19 +36,38 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Lisa Hsu
 
 # Configure the M5 cache hierarchy config in one place
 #
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import m5
 from m5.objects import *
-from .Caches import *
+from common.Caches import *
 from common import ObjectList
+
+def _get_hwp(hwp_option):
+    if hwp_option == None:
+        return NULL
+
+    hwpClass = ObjectList.hwp_list.get(hwp_option)
+    return hwpClass()
+
+def _get_cache_opts(level, options):
+    opts = {}
+
+    size_attr = '{}_size'.format(level)
+    if hasattr(options, size_attr):
+        opts['size'] = getattr(options, size_attr)
+
+    assoc_attr = '{}_assoc'.format(level)
+    if hasattr(options, assoc_attr):
+        opts['assoc'] = getattr(options, assoc_attr)
+
+    prefetcher_attr = '{}_hwp_type'.format(level)
+    if hasattr(options, prefetcher_attr):
+        opts['prefetcher'] = _get_hwp(getattr(options, prefetcher_attr))
+
+    return opts
 
 def config_cache(options, system):
     if options.external_memory_system and (options.caches or options.l2cache):
@@ -81,7 +101,7 @@ def config_cache(options, system):
         dcache_class, icache_class, l2_cache_class, walk_cache_class = \
             L1_DCache, L1_ICache, L2Cache, None
 
-        if buildEnv['TARGET_ISA'] == 'x86':
+        if buildEnv['TARGET_ISA'] in ['x86', 'riscv']:
             walk_cache_class = PageTableWalkerCache
 
     # Set the cache line size of the system
@@ -99,30 +119,19 @@ def config_cache(options, system):
         # are not connected using addTwoLevelCacheHierarchy. Use the
         # same clock as the CPUs.
         system.l2 = l2_cache_class(clk_domain=system.cpu_clk_domain,
-                                   size=options.l2_size,
-                                   assoc=options.l2_assoc)
+                                   **_get_cache_opts('l2', options))
 
         system.tol2bus = L2XBar(clk_domain = system.cpu_clk_domain)
         system.l2.cpu_side = system.tol2bus.master
         system.l2.mem_side = system.membus.slave
-        if options.l2_hwp_type:
-            hwpClass = ObjectList.hwp_list.get(options.l2_hwp_type)
-            if system.l2.prefetcher != "Null":
-                print("Warning: l2-hwp-type is set (", hwpClass, "), but",
-                      "the current l2 has a default Hardware Prefetcher",
-                      "of type", type(system.l2.prefetcher), ", using the",
-                      "specified by the flag option.")
-            system.l2.prefetcher = hwpClass()
 
     if options.memchecker:
         system.memchecker = MemChecker()
 
     for i in range(options.num_cpus):
         if options.caches:
-            icache = icache_class(size=options.l1i_size,
-                                  assoc=options.l1i_assoc)
-            dcache = dcache_class(size=options.l1d_size,
-                                  assoc=options.l1d_assoc)
+            icache = icache_class(**_get_cache_opts('l1i', options))
+            dcache = dcache_class(**_get_cache_opts('l1d', options))
 
             # If we have a walker cache specified, instantiate two
             # instances here
@@ -148,24 +157,6 @@ def config_cache(options, system):
                 # Let CPU connect to monitors
                 dcache = dcache_mon
 
-            if options.l1d_hwp_type:
-                hwpClass = ObjectList.hwp_list.get(options.l1d_hwp_type)
-                if dcache.prefetcher != m5.params.NULL:
-                    print("Warning: l1d-hwp-type is set (", hwpClass, "), but",
-                          "the current l1d has a default Hardware Prefetcher",
-                          "of type", type(dcache.prefetcher), ", using the",
-                          "specified by the flag option.")
-                dcache.prefetcher = hwpClass()
-
-            if options.l1i_hwp_type:
-                hwpClass = ObjectList.hwp_list.get(options.l1i_hwp_type)
-                if icache.prefetcher != m5.params.NULL:
-                    print("Warning: l1i-hwp-type is set (", hwpClass, "), but",
-                          "the current l1i has a default Hardware Prefetcher",
-                          "of type", type(icache.prefetcher), ", using the",
-                          "specified by the flag option.")
-                icache.prefetcher = hwpClass()
-
             # When connecting the caches, the clock is also inherited
             # from the CPU in question
             system.cpu[i].addPrivateSplitL1Caches(icache, dcache,
@@ -183,7 +174,7 @@ def config_cache(options, system):
             # on these names.  For simplicity, we would advise configuring
             # it to use this naming scheme; if this isn't possible, change
             # the names below.
-            if buildEnv['TARGET_ISA'] in ['x86', 'arm']:
+            if buildEnv['TARGET_ISA'] in ['x86', 'arm', 'riscv']:
                 system.cpu[i].addPrivateSplitL1Caches(
                         ExternalCache("cpu%d.icache" % i),
                         ExternalCache("cpu%d.dcache" % i),

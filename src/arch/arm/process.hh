@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stephen Hines
  */
 
 #ifndef __ARM_PROCESS_HH__
@@ -46,24 +44,27 @@
 #include <string>
 #include <vector>
 
-#include "arch/arm/intregs.hh"
+#include "arch/arm/regs/int.hh"
 #include "base/loader/object_file.hh"
 #include "mem/page_table.hh"
 #include "sim/process.hh"
+#include "sim/syscall_abi.hh"
 
-class ObjectFile;
+namespace gem5
+{
 
 class ArmProcess : public Process
 {
   protected:
-    ObjectFile::Arch arch;
-    ArmProcess(ProcessParams * params, ObjectFile *objFile,
-               ObjectFile::Arch _arch);
+    loader::Arch arch;
+    ArmProcess(const ProcessParams &params, loader::ObjectFile *objFile,
+               loader::Arch _arch);
     template<class IntType>
     void argsInit(int pageSize, ArmISA::IntRegIndex spIndex);
 
     template<class IntType>
-    IntType armHwcap() const
+    IntType
+    armHwcap() const
     {
         return static_cast<IntType>(armHwcapImpl());
     }
@@ -76,41 +77,30 @@ class ArmProcess : public Process
 
 class ArmProcess32 : public ArmProcess
 {
-  protected:
-    ArmProcess32(ProcessParams * params, ObjectFile *objFile,
-                 ObjectFile::Arch _arch);
+  public:
+    ArmProcess32(const ProcessParams &params, loader::ObjectFile *objFile,
+                 loader::Arch _arch);
 
+  protected:
     void initState() override;
 
     /** AArch32 AT_HWCAP */
     uint32_t armHwcapImpl() const override;
-
-  public:
-
-    RegVal getSyscallArg(ThreadContext *tc, int &i, int width) override;
-    RegVal getSyscallArg(ThreadContext *tc, int &i) override;
-    void setSyscallReturn(ThreadContext *tc,
-            SyscallReturn return_value) override;
 };
 
 class ArmProcess64 : public ArmProcess
 {
-  protected:
-    ArmProcess64(ProcessParams * params, ObjectFile *objFile,
-                 ObjectFile::Arch _arch);
+  public:
+    ArmProcess64(const ProcessParams &params, loader::ObjectFile *objFile,
+                 loader::Arch _arch);
 
+  protected:
     void initState() override;
 
     /** AArch64 AT_HWCAP */
     uint32_t armHwcapImpl() const override;
-
-  public:
-
-    RegVal getSyscallArg(ThreadContext *tc, int &i, int width) override;
-    RegVal getSyscallArg(ThreadContext *tc, int &i) override;
-    void setSyscallReturn(ThreadContext *tc,
-            SyscallReturn return_value) override;
 };
 
-#endif // __ARM_PROCESS_HH__
+} // namespace gem5
 
+#endif // __ARM_PROCESS_HH__

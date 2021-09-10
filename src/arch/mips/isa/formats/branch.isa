@@ -25,8 +25,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Korey Sewell
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -36,7 +34,6 @@
 output header {{
 
 #include <iostream>
-    using namespace std;
 
     /**
      * Base class for instructions whose disassembly is not purely a
@@ -54,7 +51,7 @@ output header {{
         mutable Addr cachedPC;
 
         /// Cached symbol table pointer from last disassembly
-        mutable const SymbolTable *cachedSymtab;
+        mutable const loader::SymbolTable *cachedSymtab;
 
         /// Constructor
         PCDependentDisassembly(const char *mnem, MachInst _machInst,
@@ -65,7 +62,7 @@ output header {{
         }
 
         const std::string &
-        disassemble(Addr pc, const SymbolTable *symtab) const;
+        disassemble(Addr pc, const loader::SymbolTable *symtab) const;
     };
 
     /**
@@ -96,7 +93,7 @@ output header {{
         using StaticInst::branchTarget;
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 
     /**
@@ -126,7 +123,7 @@ output header {{
         using StaticInst::branchTarget;
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 }};
 
@@ -153,17 +150,14 @@ output decoder {{
     }
 
     const std::string &
-    PCDependentDisassembly::disassemble(Addr pc,
-                                        const SymbolTable *symtab) const
+    PCDependentDisassembly::disassemble(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
-        if (!cachedDisassembly ||
-            pc != cachedPC || symtab != cachedSymtab)
-        {
-            if (cachedDisassembly)
-                delete cachedDisassembly;
+        if (!cachedDisassembly || pc != cachedPC || symtab != cachedSymtab) {
+            if (!cachedDisassembly)
+                cachedDisassembly.reset(new std::string);
 
-            cachedDisassembly =
-                new std::string(generateDisassembly(pc, symtab));
+            *cachedDisassembly = generateDisassembly(pc, symtab);
             cachedPC = pc;
             cachedSymtab = symtab;
         }
@@ -172,7 +166,8 @@ output decoder {{
     }
 
     std::string
-    Branch::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+    Branch::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         std::stringstream ss;
 
@@ -183,28 +178,28 @@ output decoder {{
         // branches) or a destination (the link reg for
         // unconditional branches)
         if (_numSrcRegs == 1) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
             ss << ", ";
         } else if(_numSrcRegs == 2) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
             ss << ", ";
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
             ss << ", ";
         }
 
         Addr target = pc + 4 + disp;
 
-        std::string str;
-        if (symtab && symtab->findSymbol(target, str))
-            ss << str;
+        loader::SymbolTable::const_iterator it;
+        if (symtab && (it = symtab->find(target)) != symtab->end())
+            ss << it->name;
         else
-            ccprintf(ss, "0x%x", target);
+            ccprintf(ss, "%#x", target);
 
         return ss.str();
     }
 
     std::string
-    Jump::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+    Jump::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
     {
         std::stringstream ss;
 
@@ -214,17 +209,17 @@ output decoder {{
             Addr npc = pc + 4;
             ccprintf(ss,"0x%x",(npc & 0xF0000000) | disp);
         } else if (_numSrcRegs == 0) {
-            std::string str;
-            if (symtab && symtab->findSymbol(disp, str))
-                ss << str;
+            loader::SymbolTable::const_iterator it;
+            if (symtab && (it = symtab->find(disp)) != symtab->end())
+                ss << it->name;
             else
                 ccprintf(ss, "0x%x", disp);
         } else if (_numSrcRegs == 1) {
-             printReg(ss, _srcRegIdx[0]);
+             printReg(ss, srcRegIdx(0));
         } else if(_numSrcRegs == 2) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
             ss << ", ";
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
         }
 
         return ss.str();
@@ -242,7 +237,6 @@ def format Branch(code, *opt_flags) {{
             code += 'R31 = NNPC;\n'
         elif x == 'Likely':
             not_taken_code = 'NNPC = NPC; NPC = PC;'
-            inst_flags += ('IsCondDelaySlot', )
         else:
             inst_flags += (x, )
 
@@ -281,7 +275,6 @@ def format DspBranch(code, *opt_flags) {{
             code += 'R32 = NNPC;'
         elif x == 'Likely':
             not_taken_code = 'NNPC = NPC, NPC = PC;'
-            inst_flags += ('IsCondDelaySlot', )
         else:
             inst_flags += (x, )
 

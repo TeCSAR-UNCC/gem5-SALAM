@@ -33,22 +33,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #include "arch/arm/interrupts.hh"
 
 #include "arch/arm/system.hh"
 
-ArmISA::Interrupts *
-ArmInterruptsParams::create()
+namespace gem5
 {
-    return new ArmISA::Interrupts(this);
-}
 
 bool
-ArmISA::Interrupts::takeInt(ThreadContext *tc, InterruptTypes int_type) const
+ArmISA::Interrupts::takeInt(InterruptTypes int_type) const
 {
     // Table G1-17~19 of ARM V8 ARM
     InterruptMask mask;
@@ -66,7 +61,7 @@ ArmISA::Interrupts::takeInt(ThreadContext *tc, InterruptTypes int_type) const
     else
         scr = tc->readMiscReg(MISCREG_SCR_EL3);
 
-    bool is_secure = inSecureState(tc);
+    bool is_secure = isSecure(tc);
 
     switch(int_type) {
       case INT_FIQ:
@@ -164,3 +159,4 @@ ArmISA::Interrupts::takeInt(ThreadContext *tc, InterruptTypes int_type) const
             (mask != INT_MASK_P);
 }
 
+} // namespace gem5

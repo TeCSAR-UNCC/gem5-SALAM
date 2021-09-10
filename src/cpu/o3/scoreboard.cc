@@ -25,20 +25,21 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Korey Sewell
- *          Kevin Lim
  */
 
 #include "cpu/o3/scoreboard.hh"
 
-#include "config/the_isa.hh"
-#include "debug/Scoreboard.hh"
-
-Scoreboard::Scoreboard(const std::string &_my_name,
-                       unsigned _numPhysicalRegs)
-    : _name(_my_name),
-      regScoreBoard(_numPhysicalRegs, true),
-      numPhysRegs(_numPhysicalRegs)
+namespace gem5
 {
-}
+
+namespace o3
+{
+
+Scoreboard::Scoreboard(const std::string &_my_name, unsigned _numPhysicalRegs,
+        RegIndex zero_reg) :
+    _name(_my_name), zeroReg(zero_reg), regScoreBoard(_numPhysicalRegs, true),
+    numPhysRegs(_numPhysicalRegs)
+{}
+
+} // namespace o3
+} // namespace gem5

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2009 The Regents of The University of Michigan
  * Copyright (c) 2009 The University of Edinburgh
+ * Copyright (c) 2021 IBM Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,19 +26,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Timothy M. Jones
  */
 
 #ifndef __ARCH_POWER_ISA_HH__
 #define __ARCH_POWER_ISA_HH__
 
-#include "arch/power/registers.hh"
+#include "arch/generic/isa.hh"
+#include "arch/power/regs/misc.hh"
 #include "arch/power/types.hh"
 #include "base/logging.hh"
 #include "cpu/reg_class.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 struct PowerISAParams;
 class ThreadContext;
@@ -47,20 +49,16 @@ class EventManager;
 namespace PowerISA
 {
 
-class ISA : public SimObject
+class ISA : public BaseISA
 {
   protected:
     RegVal dummy;
-    RegVal miscRegs[NumMiscRegs];
+    RegVal miscRegs[NUM_MISCREGS];
 
   public:
-    typedef PowerISAParams Params;
+    void clear() {}
 
-    void
-    clear()
-    {
-    }
-
+  public:
     RegVal
     readMiscRegNoEffect(int misc_reg) const
     {
@@ -69,7 +67,7 @@ class ISA : public SimObject
     }
 
     RegVal
-    readMiscReg(int misc_reg, ThreadContext *tc)
+    readMiscReg(int misc_reg)
     {
         fatal("Power does not currently have any misc regs defined\n");
         return dummy;
@@ -82,7 +80,7 @@ class ISA : public SimObject
     }
 
     void
-    setMiscReg(int misc_reg, RegVal val, ThreadContext *tc)
+    setMiscReg(int misc_reg, RegVal val)
     {
         fatal("Power does not currently have any misc regs defined\n");
     }
@@ -132,16 +130,20 @@ class ISA : public SimObject
         return reg;
     }
 
-    void startup(ThreadContext *tc) {}
+    bool
+    inUserMode() const override
+    {
+        return false;
+    }
 
-    /// Explicitly import the otherwise hidden startup
-    using SimObject::startup;
+    void copyRegsFrom(ThreadContext *src) override;
 
-    const Params *params() const;
+    using Params = PowerISAParams;
 
-    ISA(Params *p);
+    ISA(const Params &p);
 };
 
 } // namespace PowerISA
+} // namespace gem5
 
 #endif // __ARCH_POWER_ISA_HH__

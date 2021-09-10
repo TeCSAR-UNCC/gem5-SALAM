@@ -24,8 +24,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Brad Beckmann
 
 import math
 import m5
@@ -43,7 +41,7 @@ def define_options(parser):
     return
 
 def create_system(options, full_system, system, dma_ports, bootmem,
-                  ruby_system):
+                  ruby_system, cpus):
 
     if buildEnv['PROTOCOL'] != 'MI_example':
         panic("This script requires the MI_example protocol to be built.")
@@ -75,17 +73,7 @@ def create_system(options, full_system, system, dma_ports, bootmem,
                         start_index_bit = block_size_bits)
 
 
-        # the ruby random tester reuses num_cpus to specify the
-        # number of cpu ports connected to the tester object, which
-        # is stored in system.cpu. because there is only ever one
-        # tester object, num_cpus is not necessarily equal to the
-        # size of system.cpu; therefore if len(system.cpu) == 1
-        # we use system.cpu[0] to set the clk_domain, thereby ensuring
-        # we don't index off the end of the cpu list.
-        if len(system.cpu) == 1:
-            clk_domain = system.cpu[0].clk_domain
-        else:
-            clk_domain = system.cpu[i].clk_domain
+        clk_domain = cpus[i].clk_domain
 
         # Only one unified L1 cache exists. Can cache instructions and data.
         l1_cntrl = L1Cache_Controller(version=i, cacheMemory=cache,
@@ -94,7 +82,7 @@ def create_system(options, full_system, system, dma_ports, bootmem,
                                       clk_domain=clk_domain,
                                       ruby_system=ruby_system)
 
-        cpu_seq = RubySequencer(version=i, icache=cache, dcache=cache,
+        cpu_seq = RubySequencer(version=i, dcache=cache,
                                 clk_domain=clk_domain, ruby_system=ruby_system)
 
         l1_cntrl.sequencer = cpu_seq
@@ -115,7 +103,7 @@ def create_system(options, full_system, system, dma_ports, bootmem,
         l1_cntrl.responseToCache = MessageBuffer(ordered = True)
         l1_cntrl.responseToCache.slave = ruby_system.network.master
 
-    phys_mem_size = sum(map(lambda r: r.size(), system.mem_ranges))
+    phys_mem_size = sum([r.size() for r in system.mem_ranges])
     assert(phys_mem_size % options.num_dirs == 0)
     mem_module_size = phys_mem_size / options.num_dirs
 
@@ -144,6 +132,7 @@ def create_system(options, full_system, system, dma_ports, bootmem,
         dir_cntrl.dmaResponseFromDir.master = ruby_system.network.slave
         dir_cntrl.forwardFromDir = MessageBuffer()
         dir_cntrl.forwardFromDir.master = ruby_system.network.slave
+        dir_cntrl.requestToMemory = MessageBuffer()
         dir_cntrl.responseFromMemory = MessageBuffer()
 
 

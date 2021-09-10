@@ -37,10 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Steve Reinhardt
- *          Daniel Carvalho
  */
 
 /**
@@ -57,41 +53,45 @@
 #include "base/random.hh"
 #include "base/trace.hh"
 #include "debug/HWPrefetch.hh"
+#include "mem/cache/prefetch/associative_set_impl.hh"
 #include "mem/cache/replacement_policies/base.hh"
 #include "params/StridePrefetcher.hh"
 
-StridePrefetcher::StrideEntry::StrideEntry()
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+Stride::StrideEntry::StrideEntry(const SatCounter8& init_confidence)
+  : TaggedEntry(), confidence(init_confidence)
 {
     invalidate();
 }
 
 void
-StridePrefetcher::StrideEntry::invalidate()
+Stride::StrideEntry::invalidate()
 {
-    instAddr = 0;
+    TaggedEntry::invalidate();
     lastAddr = 0;
-    isSecure = false;
     stride = 0;
-    confidence = 0;
+    confidence.reset();
 }
 
-StridePrefetcher::StridePrefetcher(const StridePrefetcherParams *p)
-    : QueuedPrefetcher(p),
-      maxConf(p->max_conf),
-      threshConf(p->thresh_conf),
-      minConf(p->min_conf),
-      startConf(p->start_conf),
-      pcTableAssoc(p->table_assoc),
-      pcTableSets(p->table_sets),
-      useMasterId(p->use_master_id),
-      degree(p->degree),
-      replacementPolicy(p->replacement_policy)
+Stride::Stride(const StridePrefetcherParams &p)
+  : Queued(p),
+    initConfidence(p.confidence_counter_bits, p.initial_confidence),
+    threshConf(p.confidence_threshold/100.0),
+    useRequestorId(p.use_requestor_id),
+    degree(p.degree),
+    pcTableInfo(p.table_assoc, p.table_entries, p.table_indexing_policy,
+        p.table_replacement_policy)
 {
-    assert(isPowerOf2(pcTableSets));
 }
 
-StridePrefetcher::PCTable*
-StridePrefetcher::findTable(int context)
+Stride::PCTable*
+Stride::findTable(int context)
 {
     // Check if table for given context exists
     auto it = pcTables.find(context);
@@ -102,12 +102,14 @@ StridePrefetcher::findTable(int context)
     return allocateNewContext(context);
 }
 
-StridePrefetcher::PCTable*
-StridePrefetcher::allocateNewContext(int context)
+Stride::PCTable*
+Stride::allocateNewContext(int context)
 {
     // Create new table
     auto insertion_result = pcTables.insert(std::make_pair(context,
-        PCTable(pcTableAssoc, pcTableSets, name(), replacementPolicy)));
+        PCTable(pcTableInfo.assoc, pcTableInfo.numEntries,
+        pcTableInfo.indexingPolicy, pcTableInfo.replacementPolicy,
+        StrideEntry(initConfidence))));
 
     DPRINTF(HWPrefetch, "Adding context %i with stride entries\n", context);
 
@@ -115,30 +117,8 @@ StridePrefetcher::allocateNewContext(int context)
     return &(insertion_result.first->second);
 }
 
-StridePrefetcher::PCTable::PCTable(int assoc, int sets, const std::string name,
-                                   BaseReplacementPolicy* replacementPolicy)
-    : pcTableSets(sets), _name(name), entries(pcTableSets),
-      replacementPolicy(replacementPolicy)
-{
-    for (int set = 0; set < sets; set++) {
-        entries[set].resize(assoc);
-        for (int way = 0; way < assoc; way++) {
-            // Inform the entry its position
-            entries[set][way].setPosition(set, way);
-
-            // Initialize replacement policy data
-            entries[set][way].replacementData =
-                replacementPolicy->instantiateEntry();
-        }
-    }
-}
-
-StridePrefetcher::PCTable::~PCTable()
-{
-}
-
 void
-StridePrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
+Stride::calculatePrefetch(const PrefetchInfo &pfi,
                                     std::vector<AddrPriority> &addresses)
 {
     if (!pfi.hasPC()) {
@@ -150,41 +130,43 @@ StridePrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
     Addr pf_addr = pfi.getAddr();
     Addr pc = pfi.getPC();
     bool is_secure = pfi.isSecure();
-    MasterID master_id = useMasterId ? pfi.getMasterId() : 0;
+    RequestorID requestor_id = useRequestorId ? pfi.getRequestorId() : 0;
 
     // Get corresponding pc table
-    PCTable* pcTable = findTable(master_id);
+    PCTable* pcTable = findTable(requestor_id);
 
     // Search for entry in the pc table
     StrideEntry *entry = pcTable->findEntry(pc, is_secure);
 
     if (entry != nullptr) {
+        pcTable->accessEntry(entry);
+
         // Hit in table
         int new_stride = pf_addr - entry->lastAddr;
         bool stride_match = (new_stride == entry->stride);
 
         // Adjust confidence for stride entry
         if (stride_match && new_stride != 0) {
-            if (entry->confidence < maxConf)
-                entry->confidence++;
+            entry->confidence++;
         } else {
-            if (entry->confidence > minConf)
-                entry->confidence--;
+            entry->confidence--;
             // If confidence has dropped below the threshold, train new stride
-            if (entry->confidence < threshConf)
+            if (entry->confidence.calcSaturation() < threshConf) {
                 entry->stride = new_stride;
+            }
         }
 
         DPRINTF(HWPrefetch, "Hit: PC %x pkt_addr %x (%s) stride %d (%s), "
                 "conf %d\n", pc, pf_addr, is_secure ? "s" : "ns",
                 new_stride, stride_match ? "match" : "change",
-                entry->confidence);
+                (int)entry->confidence);
 
         entry->lastAddr = pf_addr;
 
         // Abort prefetch generation if below confidence threshold
-        if (entry->confidence < threshConf)
+        if (entry->confidence.calcSaturation() < threshConf) {
             return;
+        }
 
         // Generate up to degree prefetches
         for (int d = 1; d <= degree; d++) {
@@ -204,67 +186,25 @@ StridePrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
 
         StrideEntry* entry = pcTable->findVictim(pc);
 
-        // Invalidate victim
-        entry->invalidate();
-        replacementPolicy->invalidate(entry->replacementData);
-
         // Insert new entry's data
-        entry->instAddr = pc;
         entry->lastAddr = pf_addr;
-        entry->isSecure = is_secure;
-        entry->confidence = startConf;
-        replacementPolicy->reset(entry->replacementData);
+        pcTable->insertEntry(pc, is_secure, entry);
     }
 }
 
-inline Addr
-StridePrefetcher::PCTable::pcHash(Addr pc) const
+uint32_t
+StridePrefetcherHashedSetAssociative::extractSet(const Addr pc) const
 {
-    Addr hash1 = pc >> 1;
-    Addr hash2 = hash1 >> floorLog2(pcTableSets);
-    return (hash1 ^ hash2) & (Addr)(pcTableSets - 1);
+    const Addr hash1 = pc >> 1;
+    const Addr hash2 = hash1 >> tagShift;
+    return (hash1 ^ hash2) & setMask;
 }
 
-inline StridePrefetcher::StrideEntry*
-StridePrefetcher::PCTable::findVictim(Addr pc)
+Addr
+StridePrefetcherHashedSetAssociative::extractTag(const Addr addr) const
 {
-    // Rand replacement for now
-    int set = pcHash(pc);
-
-    // Get possible entries to be victimized
-    std::vector<ReplaceableEntry*> possible_entries;
-    for (auto& entry : entries[set]) {
-        possible_entries.push_back(&entry);
-    }
-
-    // Choose victim based on replacement policy
-    StrideEntry* victim = static_cast<StrideEntry*>(
-        replacementPolicy->getVictim(possible_entries));
-
-    DPRINTF(HWPrefetch, "Victimizing lookup table[%d][%d].\n",
-            victim->getSet(), victim->getWay());
-
-    return victim;
+    return addr;
 }
 
-inline StridePrefetcher::StrideEntry*
-StridePrefetcher::PCTable::findEntry(Addr pc, bool is_secure)
-{
-    int set = pcHash(pc);
-    for (auto& entry : entries[set]) {
-        // Search ways for match
-        if ((entry.instAddr == pc) && (entry.isSecure == is_secure)) {
-            DPRINTF(HWPrefetch, "Lookup hit table[%d][%d].\n", entry.getSet(),
-                    entry.getWay());
-            replacementPolicy->touch(entry.replacementData);
-            return &entry;
-        }
-    }
-    return nullptr;
-}
-
-StridePrefetcher*
-StridePrefetcherParams::create()
-{
-    return new StridePrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5

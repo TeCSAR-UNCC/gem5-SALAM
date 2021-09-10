@@ -23,10 +23,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nilay Vaish
 
-import m5, os, optparse, sys
+import m5, os, argparse, sys
 from m5.objects import *
 m5.util.addToPath('../configs/')
 from common.Benchmarks import SysConfig
@@ -35,28 +33,28 @@ from ruby import Ruby
 from common import Options
 
 # Add the ruby specific and protocol specific options
-parser = optparse.OptionParser()
+parser = argparse.ArgumentParser()
 Options.addCommonOptions(parser)
 Ruby.define_options(parser)
-(options, args) = parser.parse_args()
+args = parser.parse_args()
 
 # Set the default cache size and associativity to be very small to encourage
 # races between requests and writebacks.
-options.l1d_size="32kB"
-options.l1i_size="32kB"
-options.l2_size="4MB"
-options.l1d_assoc=2
-options.l1i_assoc=2
-options.l2_assoc=2
-options.num_cpus = 2
+args.l1d_size="32kB"
+args.l1i_size="32kB"
+args.l2_size="4MB"
+args.l1d_assoc=2
+args.l1i_assoc=2
+args.l2_assoc=2
+args.num_cpus = 2
 
 #the system
-mdesc = SysConfig(disk = 'linux-x86.img')
-system = FSConfig.makeLinuxX86System('timing', options.num_cpus,
+mdesc = SysConfig(disks = ['linux-x86.img'])
+system = FSConfig.makeLinuxX86System('timing', args.num_cpus,
                                      mdesc=mdesc, Ruby=True)
 system.kernel = SysPaths.binary('x86_64-vmlinux-2.6.22.9')
 # Dummy voltage domain for all our clock domains
-system.voltage_domain = VoltageDomain(voltage = options.sys_voltage)
+system.voltage_domain = VoltageDomain(voltage = args.sys_voltage)
 
 system.kernel = FSConfig.binary('x86_64-vmlinux-2.6.22.9.smp')
 system.clk_domain = SrcClockDomain(clock = '1GHz',
@@ -64,12 +62,12 @@ system.clk_domain = SrcClockDomain(clock = '1GHz',
 system.cpu_clk_domain = SrcClockDomain(clock = '2GHz',
                                        voltage_domain = system.voltage_domain)
 system.cpu = [TimingSimpleCPU(cpu_id=i, clk_domain = system.cpu_clk_domain)
-              for i in range(options.num_cpus)]
+              for i in range(args.num_cpus)]
 
-Ruby.create_system(options, True, system, system.iobus, system._dma_ports)
+Ruby.create_system(args, True, system, system.iobus, system._dma_ports)
 
 # Create a seperate clock domain for Ruby
-system.ruby.clk_domain = SrcClockDomain(clock = options.ruby_clock,
+system.ruby.clk_domain = SrcClockDomain(clock = args.ruby_clock,
                                         voltage_domain = system.voltage_domain)
 
 # Connect the ruby io port to the PIO bus,
@@ -80,14 +78,7 @@ for (i, cpu) in enumerate(system.cpu):
     # create the interrupt controller
     cpu.createInterruptController()
     # Tie the cpu ports to the correct ruby system ports
-    cpu.icache_port = system.ruby._cpu_ports[i].slave
-    cpu.dcache_port = system.ruby._cpu_ports[i].slave
-    cpu.itb.walker.port = system.ruby._cpu_ports[i].slave
-    cpu.dtb.walker.port = system.ruby._cpu_ports[i].slave
-
-    cpu.interrupts[0].pio = system.ruby._cpu_ports[i].master
-    cpu.interrupts[0].int_master = system.ruby._cpu_ports[i].slave
-    cpu.interrupts[0].int_slave = system.ruby._cpu_ports[i].master
+    system.ruby._cpu_ports[i].connectCpuPorts(cpu)
 
 root = Root(full_system = True, system = system)
 m5.ticks.setGlobalFrequency('1THz')

@@ -25,10 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
- *          Jaidev Patwardhan
  */
 
 #ifndef __ARCH_MIPS_PAGETABLE_H__
@@ -38,11 +34,10 @@
 #include "base/types.hh"
 #include "sim/serialize.hh"
 
-namespace MipsISA {
-
-struct VAddr
+namespace gem5
 {
-};
+
+namespace MipsISA {
 
 // ITB/DTB page table entry
 struct PTE
@@ -112,6 +107,7 @@ struct TlbEntry
 
 };
 
-};
-#endif // __ARCH_MIPS_PAGETABLE_H__
+} // namespace MipsISA
+} // namespace gem5
 
+#endif // __ARCH_MIPS_PAGETABLE_H__

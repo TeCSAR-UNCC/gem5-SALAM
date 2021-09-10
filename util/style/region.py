@@ -57,8 +57,8 @@ class Region(tuple):
             args = tuple(arg)
 
         if len(args) != 2:
-            raise AttributeError, \
-                "Only one or two arguments allowed, %d provided" % (alen, )
+            raise AttributeError(
+                "Only one or two arguments allowed, %d provided" % (alen, ))
 
         return tuple.__new__(cls, args)
 
@@ -233,19 +233,19 @@ class Regions(object):
 all_regions = Regions(Region(neg_inf, pos_inf))
 
 if __name__ == '__main__':
-    x = Regions(*((i, i + 1) for i in xrange(0,30,2)))
-    y = Regions(*((i, i + 4) for i in xrange(0,30,5)))
+    x = Regions(*((i, i + 1) for i in range(0,30,2)))
+    y = Regions(*((i, i + 4) for i in range(0,30,5)))
     z = Region(6,7)
     n = Region(9,10)
 
     def test(left, right):
-        print "%s == %s: %s" % (left, right, left == right)
-        print "%s != %s: %s" % (left, right, left != right)
-        print "%s <  %s: %s" % (left, right, left <  right)
-        print "%s <= %s: %s" % (left, right, left <= right)
-        print "%s >  %s: %s" % (left, right, left >  right)
-        print "%s >= %s: %s" % (left, right, left >= right)
-        print
+        print("%s == %s: %s" % (left, right, left == right))
+        print("%s != %s: %s" % (left, right, left != right))
+        print("%s <  %s: %s" % (left, right, left <  right))
+        print("%s <= %s: %s" % (left, right, left <= right))
+        print("%s >  %s: %s" % (left, right, left >  right))
+        print("%s >= %s: %s" % (left, right, left >= right))
+        print("\n")
 
     test(neg_inf, neg_inf)
     test(neg_inf, pos_inf)
@@ -268,14 +268,14 @@ if __name__ == '__main__':
     test(-11111, pos_inf)
     test(11111, pos_inf)
 
-    print x
-    print y
-    print x & y
-    print z
+    print(x)
+    print(y)
+    print(x & y)
+    print(z)
 
-    print 4 in x
-    print 4 in z
-    print 5 not in x
-    print 6 not in z
-    print z in y
-    print n in y, n not in y
+    print(4 in x)
+    print(4 in z)
+    print(5 not in x)
+    print(6 not in z)
+    print(z in y)
+    print(n in y, n not in y)

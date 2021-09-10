@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011,2017-2019 ARM Limited
+ * Copyright (c) 2011,2017-2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Gabrielli
  */
 
 #include <algorithm>
@@ -45,18 +43,19 @@
 
 #include "arch/arm/tracers/tarmac_parser.hh"
 
-#include "arch/arm/tlb.hh"
 #include "arch/arm/insts/static_inst.hh"
-#include "config/the_isa.hh"
+#include "arch/arm/mmu.hh"
 #include "cpu/static_inst.hh"
 #include "cpu/thread_context.hh"
-#include "mem/fs_translating_port_proxy.hh"
 #include "mem/packet.hh"
-#include "sim/core.hh"
+#include "mem/port_proxy.hh"
+#include "sim/cur_tick.hh"
 #include "sim/faults.hh"
 #include "sim/sim_exit.hh"
 
-using namespace std;
+namespace gem5
+{
+
 using namespace ArmISA;
 
 namespace Trace {
@@ -70,7 +69,8 @@ TarmacParserRecord::ParserRegEntry TarmacParserRecord::regRecord;
 TarmacParserRecord::ParserMemEntry TarmacParserRecord::memRecord;
 TarmacBaseRecord::TarmacRecordType TarmacParserRecord::currRecordType;
 
-list<TarmacParserRecord::ParserRegEntry> TarmacParserRecord::destRegRecords;
+std::list<TarmacParserRecord::ParserRegEntry>
+    TarmacParserRecord::destRegRecords;
 char TarmacParserRecord::buf[TarmacParserRecord::MaxLineLength];
 TarmacParserRecord::MiscRegMap TarmacParserRecord::miscRegMap = {
 
@@ -95,23 +95,81 @@ TarmacParserRecord::MiscRegMap TarmacParserRecord::miscRegMap = {
     { "dbgbvr3", MISCREG_DBGBVR3 },
     { "dbgbvr4", MISCREG_DBGBVR4 },
     { "dbgbvr5", MISCREG_DBGBVR5 },
+    { "dbgbvr6", MISCREG_DBGBVR6 },
+    { "dbgbvr7", MISCREG_DBGBVR7 },
+    { "dbgbvr8", MISCREG_DBGBVR8 },
+    { "dbgbvr9", MISCREG_DBGBVR9 },
+    { "dbgbvr10", MISCREG_DBGBVR10 },
+    { "dbgbvr11", MISCREG_DBGBVR11 },
+    { "dbgbvr12", MISCREG_DBGBVR12 },
+    { "dbgbvr13", MISCREG_DBGBVR13 },
+    { "dbgbvr14", MISCREG_DBGBVR14 },
+    { "dbgbvr15", MISCREG_DBGBVR15 },
     { "dbgbcr0", MISCREG_DBGBCR0 },
     { "dbgbcr1", MISCREG_DBGBCR1 },
     { "dbgbcr2", MISCREG_DBGBCR2 },
     { "dbgbcr3", MISCREG_DBGBCR3 },
     { "dbgbcr4", MISCREG_DBGBCR4 },
     { "dbgbcr5", MISCREG_DBGBCR5 },
+    { "dbgbcr6", MISCREG_DBGBCR6 },
+    { "dbgbcr7", MISCREG_DBGBCR7 },
+    { "dbgbcr8", MISCREG_DBGBCR8 },
+    { "dbgbcr9", MISCREG_DBGBCR9 },
+    { "dbgbcr10", MISCREG_DBGBCR10 },
+    { "dbgbcr11", MISCREG_DBGBCR11 },
+    { "dbgbcr12", MISCREG_DBGBCR12 },
+    { "dbgbcr13", MISCREG_DBGBCR13 },
+    { "dbgbcr14", MISCREG_DBGBCR14 },
+    { "dbgbcr15", MISCREG_DBGBCR15 },
     { "dbgwvr0", MISCREG_DBGWVR0 },
     { "dbgwvr1", MISCREG_DBGWVR1 },
     { "dbgwvr2", MISCREG_DBGWVR2 },
     { "dbgwvr3", MISCREG_DBGWVR3 },
+    { "dbgwvr4", MISCREG_DBGWVR4 },
+    { "dbgwvr5", MISCREG_DBGWVR5 },
+    { "dbgwvr6", MISCREG_DBGWVR6 },
+    { "dbgwvr7", MISCREG_DBGWVR7 },
+    { "dbgwvr8", MISCREG_DBGWVR8 },
+    { "dbgwvr9", MISCREG_DBGWVR9 },
+    { "dbgwvr10", MISCREG_DBGWVR10 },
+    { "dbgwvr11", MISCREG_DBGWVR11 },
+    { "dbgwvr12", MISCREG_DBGWVR12 },
+    { "dbgwvr13", MISCREG_DBGWVR13 },
+    { "dbgwvr14", MISCREG_DBGWVR14 },
+    { "dbgwvr15", MISCREG_DBGWVR15 },
     { "dbgwcr0", MISCREG_DBGWCR0 },
     { "dbgwcr1", MISCREG_DBGWCR1 },
     { "dbgwcr2", MISCREG_DBGWCR2 },
     { "dbgwcr3", MISCREG_DBGWCR3 },
+    { "dbgwcr4", MISCREG_DBGWCR4 },
+    { "dbgwcr5", MISCREG_DBGWCR5 },
+    { "dbgwcr6", MISCREG_DBGWCR6 },
+    { "dbgwcr7", MISCREG_DBGWCR7 },
+    { "dbgwcr8", MISCREG_DBGWCR8 },
+    { "dbgwcr9", MISCREG_DBGWCR9 },
+    { "dbgwcr10", MISCREG_DBGWCR10 },
+    { "dbgwcr11", MISCREG_DBGWCR11 },
+    { "dbgwcr12", MISCREG_DBGWCR12 },
+    { "dbgwcr13", MISCREG_DBGWCR13 },
+    { "dbgwcr14", MISCREG_DBGWCR14 },
+    { "dbgwcr15", MISCREG_DBGWCR15 },
     { "dbgdrar", MISCREG_DBGDRAR },
+    { "dbgbxvr0", MISCREG_DBGBXVR0 },
+    { "dbgbxvr1", MISCREG_DBGBXVR1 },
+    { "dbgbxvr2", MISCREG_DBGBXVR2 },
+    { "dbgbxvr3", MISCREG_DBGBXVR3 },
     { "dbgbxvr4", MISCREG_DBGBXVR4 },
     { "dbgbxvr5", MISCREG_DBGBXVR5 },
+    { "dbgbxvr6", MISCREG_DBGBXVR6 },
+    { "dbgbxvr7", MISCREG_DBGBXVR7 },
+    { "dbgbxvr8", MISCREG_DBGBXVR8 },
+    { "dbgbxvr9", MISCREG_DBGBXVR9 },
+    { "dbgbxvr10", MISCREG_DBGBXVR10 },
+    { "dbgbxvr11", MISCREG_DBGBXVR11 },
+    { "dbgbxvr12", MISCREG_DBGBXVR12 },
+    { "dbgbxvr13", MISCREG_DBGBXVR13 },
+    { "dbgbxvr14", MISCREG_DBGBXVR14 },
+    { "dbgbxvr15", MISCREG_DBGBXVR15 },
     { "dbgoslar", MISCREG_DBGOSLAR },
     { "dbgoslsr", MISCREG_DBGOSLSR },
     { "dbgosdlr", MISCREG_DBGOSDLR },
@@ -144,12 +202,14 @@ TarmacParserRecord::MiscRegMap TarmacParserRecord::miscRegMap = {
     { "id_mmfr1", MISCREG_ID_MMFR1 },
     { "id_mmfr2", MISCREG_ID_MMFR2 },
     { "id_mmfr3", MISCREG_ID_MMFR3 },
+    { "id_mmfr4", MISCREG_ID_MMFR4 },
     { "id_isar0", MISCREG_ID_ISAR0 },
     { "id_isar1", MISCREG_ID_ISAR1 },
     { "id_isar2", MISCREG_ID_ISAR2 },
     { "id_isar3", MISCREG_ID_ISAR3 },
     { "id_isar4", MISCREG_ID_ISAR4 },
     { "id_isar5", MISCREG_ID_ISAR5 },
+    { "id_isar6", MISCREG_ID_ISAR6 },
     { "ccsidr", MISCREG_CCSIDR },
     { "clidr", MISCREG_CLIDR },
     { "aidr", MISCREG_AIDR },
@@ -356,20 +416,64 @@ TarmacParserRecord::MiscRegMap TarmacParserRecord::miscRegMap = {
     { "dbgbvr3_el1", MISCREG_DBGBVR3_EL1 },
     { "dbgbvr4_el1", MISCREG_DBGBVR4_EL1 },
     { "dbgbvr5_el1", MISCREG_DBGBVR5_EL1 },
+    { "dbgbvr6_el1", MISCREG_DBGBVR6_EL1 },
+    { "dbgbvr7_el1", MISCREG_DBGBVR7_EL1 },
+    { "dbgbvr8_el1", MISCREG_DBGBVR8_EL1 },
+    { "dbgbvr9_el1", MISCREG_DBGBVR9_EL1 },
+    { "dbgbvr10_el1", MISCREG_DBGBVR10_EL1 },
+    { "dbgbvr11_el1", MISCREG_DBGBVR11_EL1 },
+    { "dbgbvr12_el1", MISCREG_DBGBVR12_EL1 },
+    { "dbgbvr13_el1", MISCREG_DBGBVR13_EL1 },
+    { "dbgbvr14_el1", MISCREG_DBGBVR14_EL1 },
+    { "dbgbvr15_el1", MISCREG_DBGBVR15_EL1 },
     { "dbgbcr0_el1", MISCREG_DBGBCR0_EL1 },
     { "dbgbcr1_el1", MISCREG_DBGBCR1_EL1 },
     { "dbgbcr2_el1", MISCREG_DBGBCR2_EL1 },
     { "dbgbcr3_el1", MISCREG_DBGBCR3_EL1 },
     { "dbgbcr4_el1", MISCREG_DBGBCR4_EL1 },
     { "dbgbcr5_el1", MISCREG_DBGBCR5_EL1 },
+    { "dbgbcr6_el1", MISCREG_DBGBCR6_EL1 },
+    { "dbgbcr7_el1", MISCREG_DBGBCR7_EL1 },
+    { "dbgbcr8_el1", MISCREG_DBGBCR8_EL1 },
+    { "dbgbcr9_el1", MISCREG_DBGBCR9_EL1 },
+    { "dbgbcr10_el1", MISCREG_DBGBCR10_EL1 },
+    { "dbgbcr11_el1", MISCREG_DBGBCR11_EL1 },
+    { "dbgbcr12_el1", MISCREG_DBGBCR12_EL1 },
+    { "dbgbcr13_el1", MISCREG_DBGBCR13_EL1 },
+    { "dbgbcr14_el1", MISCREG_DBGBCR14_EL1 },
+    { "dbgbcr15_el1", MISCREG_DBGBCR15_EL1 },
     { "dbgwvr0_el1", MISCREG_DBGWVR0_EL1 },
     { "dbgwvr1_el1", MISCREG_DBGWVR1_EL1 },
     { "dbgwvr2_el1", MISCREG_DBGWVR2_EL1 },
     { "dbgwvr3_el1", MISCREG_DBGWVR3_EL1 },
+    { "dbgwvr4_el1", MISCREG_DBGWVR4_EL1 },
+    { "dbgwvr5_el1", MISCREG_DBGWVR5_EL1 },
+    { "dbgwvr6_el1", MISCREG_DBGWVR6_EL1 },
+    { "dbgwvr7_el1", MISCREG_DBGWVR7_EL1 },
+    { "dbgwvr8_el1", MISCREG_DBGWVR8_EL1 },
+    { "dbgwvr9_el1", MISCREG_DBGWVR9_EL1 },
+    { "dbgwvr10_el1", MISCREG_DBGWVR10_EL1 },
+    { "dbgwvr11_el1", MISCREG_DBGWVR11_EL1 },
+    { "dbgwvr12_el1", MISCREG_DBGWVR12_EL1 },
+    { "dbgwvr13_el1", MISCREG_DBGWVR13_EL1 },
+    { "dbgwvr14_el1", MISCREG_DBGWVR14_EL1 },
+    { "dbgwvr15_el1", MISCREG_DBGWVR15_EL1 },
     { "dbgwcr0_el1", MISCREG_DBGWCR0_EL1 },
     { "dbgwcr1_el1", MISCREG_DBGWCR1_EL1 },
     { "dbgwcr2_el1", MISCREG_DBGWCR2_EL1 },
     { "dbgwcr3_el1", MISCREG_DBGWCR3_EL1 },
+    { "dbgwcr4_el1", MISCREG_DBGWCR4_EL1 },
+    { "dbgwcr5_el1", MISCREG_DBGWCR5_EL1 },
+    { "dbgwcr6_el1", MISCREG_DBGWCR6_EL1 },
+    { "dbgwcr7_el1", MISCREG_DBGWCR7_EL1 },
+    { "dbgwcr8_el1", MISCREG_DBGWCR8_EL1 },
+    { "dbgwcr9_el1", MISCREG_DBGWCR9_EL1 },
+    { "dbgwcr10_el1", MISCREG_DBGWCR10_EL1 },
+    { "dbgwcr11_el1", MISCREG_DBGWCR11_EL1 },
+    { "dbgwcr12_el1", MISCREG_DBGWCR12_EL1 },
+    { "dbgwcr13_el1", MISCREG_DBGWCR13_EL1 },
+    { "dbgwcr14_el1", MISCREG_DBGWCR14_EL1 },
+    { "dbgwcr15_el1", MISCREG_DBGWCR15_EL1 },
     { "mdccsr_el0", MISCREG_MDCCSR_EL0 },
     { "mddtr_el0", MISCREG_MDDTR_EL0 },
     { "mddtrtx_el0", MISCREG_MDDTRTX_EL0 },
@@ -398,12 +502,14 @@ TarmacParserRecord::MiscRegMap TarmacParserRecord::miscRegMap = {
     { "id_mmfr1_el1", MISCREG_ID_MMFR1_EL1 },
     { "id_mmfr2_el1", MISCREG_ID_MMFR2_EL1 },
     { "id_mmfr3_el1", MISCREG_ID_MMFR3_EL1 },
+    { "id_mmfr4_el1", MISCREG_ID_MMFR4_EL1 },
     { "id_isar0_el1", MISCREG_ID_ISAR0_EL1 },
     { "id_isar1_el1", MISCREG_ID_ISAR1_EL1 },
     { "id_isar2_el1", MISCREG_ID_ISAR2_EL1 },
     { "id_isar3_el1", MISCREG_ID_ISAR3_EL1 },
     { "id_isar4_el1", MISCREG_ID_ISAR4_EL1 },
     { "id_isar5_el1", MISCREG_ID_ISAR5_EL1 },
+    { "id_isar6_el1", MISCREG_ID_ISAR6_EL1 },
     { "mvfr0_el1", MISCREG_MVFR0_EL1 },
     { "mvfr1_el1", MISCREG_MVFR1_EL1 },
     { "mvfr2_el1", MISCREG_MVFR2_EL1 },
@@ -633,10 +739,10 @@ TarmacParserRecord::MiscRegMap TarmacParserRecord::miscRegMap = {
 void
 TarmacParserRecord::TarmacParserRecordEvent::process()
 {
-    ostream &outs = Trace::output();
+    std::ostream &outs = Trace::output();
 
-    list<ParserRegEntry>::iterator it = destRegRecords.begin(),
-                                   end = destRegRecords.end();
+    std::list<ParserRegEntry>::iterator it = destRegRecords.begin(),
+                                        end = destRegRecords.end();
 
     std::vector<uint64_t> values;
 
@@ -724,7 +830,7 @@ TarmacParserRecord::TarmacParserRecordEvent::process()
           case REG_Z:
             {
                 int8_t i = maxVectorLength;
-                const TheISA::VecRegContainer& vc = thread->readVecReg(
+                const ArmISA::VecRegContainer& vc = thread->readVecReg(
                     RegId(VecRegClass, it->index));
                 auto vv = vc.as<uint64_t>();
                 while (i > 0) {
@@ -811,14 +917,14 @@ TarmacParserRecord::TarmacParserRecordEvent::process()
                 TarmacParserRecord::printMismatchHeader(inst, pc);
                 mismatch = true;
             }
-            outs << "diff> [" << it->repr << "] gem5: 0x" << hex;
+            outs << "diff> [" << it->repr << "] gem5: 0x" << std::hex;
             for (auto v : values)
-                outs << setw(16) << setfill('0') << v;
+                outs << std::setw(16) << std::setfill('0') << v;
 
-            outs << ", TARMAC: 0x" << hex;
+            outs << ", TARMAC: 0x" << std::hex;
             for (auto v : it->values)
-                outs << setw(16) << setfill('0') << v;
-            outs << endl;
+                outs << std::setw(16) << std::setfill('0') << v;
+            outs << std::endl;
         }
     }
     destRegRecords.clear();
@@ -843,14 +949,14 @@ void
 TarmacParserRecord::printMismatchHeader(const StaticInstPtr staticInst,
                                         ArmISA::PCState pc)
 {
-    ostream &outs = Trace::output();
-    outs << "\nMismatch between gem5 and TARMAC trace @ " << dec << curTick()
-         << " ticks\n"
-         << "[seq_num: " << dec << instRecord.seq_num
-         << ", opcode: 0x" << hex << (staticInst->machInst & 0xffffffff)
+    std::ostream &outs = Trace::output();
+    outs << "\nMismatch between gem5 and TARMAC trace @ " << std::dec
+         << curTick() << " ticks\n"
+         << "[seq_num: " << std::dec << instRecord.seq_num
+         << ", opcode: 0x" << std::hex << (staticInst->getEMI() & 0xffffffff)
          << ", PC: 0x" << pc.pc()
          << ", disasm: " <<  staticInst->disassemble(pc.pc()) << "]"
-         << endl;
+         << std::endl;
 }
 
 TarmacParserRecord::TarmacParserRecord(Tick _when, ThreadContext *_thread,
@@ -872,11 +978,10 @@ TarmacParserRecord::TarmacParserRecord(Tick _when, ThreadContext *_thread,
 void
 TarmacParserRecord::dump()
 {
-    ostream &outs = Trace::output();
+    std::ostream &outs = Trace::output();
 
     uint64_t written_data = 0;
-    unsigned mem_flags = ArmISA::TLB::MustBeOne | 3 |
-        ArmISA::TLB::AllowUnaligned;
+    unsigned mem_flags = 3 | ArmISA::TLB::AllowUnaligned;
 
     ISetState isetstate;
 
@@ -902,8 +1007,8 @@ TarmacParserRecord::dump()
                 if (pc.instAddr() != instRecord.addr) {
                     if (!mismatch)
                         printMismatchHeader(staticInst, pc);
-                    outs << "diff> [PC] gem5: 0x" << hex << pc.instAddr()
-                         << ", TARMAC: 0x" << instRecord.addr << endl;
+                    outs << "diff> [PC] gem5: 0x" << std::hex << pc.instAddr()
+                         << ", TARMAC: 0x" << instRecord.addr << std::endl;
                     mismatch = true;
                     mismatchOnPcOrOpcode = true;
                 }
@@ -911,9 +1016,9 @@ TarmacParserRecord::dump()
                 if (arm_inst->encoding() != instRecord.opcode) {
                     if (!mismatch)
                         printMismatchHeader(staticInst, pc);
-                    outs << "diff> [opcode] gem5: 0x" << hex
+                    outs << "diff> [opcode] gem5: 0x" << std::hex
                          << arm_inst->encoding()
-                         << ", TARMAC: 0x" << instRecord.opcode << endl;
+                         << ", TARMAC: 0x" << instRecord.opcode << std::endl;
                     mismatch = true;
                     mismatchOnPcOrOpcode = true;
                 }
@@ -946,10 +1051,10 @@ TarmacParserRecord::dump()
                 if (written_data != memRecord.data) {
                     if (!mismatch)
                         printMismatchHeader(staticInst, pc);
-                    outs << "diff> [mem(0x" << hex << memRecord.addr
+                    outs << "diff> [mem(0x" << std::hex << memRecord.addr
                          << ")] gem5: 0x" << written_data
                          << ", TARMAC: 0x" << memRecord.data
-                         << endl;
+                         << std::endl;
                 }
                 break;
 
@@ -980,8 +1085,8 @@ TarmacParserRecord::dump()
 bool
 TarmacParserRecord::advanceTrace()
 {
-    ifstream& trace = parent.trace;
-    trace >> hex;  // All integer values are in hex base
+    std::ifstream& trace = parent.trace;
+    trace >> std::hex;  // All integer values are in hex base
 
     if (buf[0] != 'I') {
         trace >> buf;
@@ -1098,9 +1203,9 @@ TarmacParserRecord::advanceTrace()
             regRecord.index = miscRegMap[buf];
         } else {
             // Try match with upper case name (misc. register)
-            string reg_name = buf;
-            transform(reg_name.begin(), reg_name.end(), reg_name.begin(),
-                      ::tolower);
+            std::string reg_name = buf;
+            std::transform(reg_name.begin(), reg_name.end(), reg_name.begin(),
+                           ::tolower);
             if (miscRegMap.count(reg_name.c_str())) {
                 regRecord.type = REG_MISC;
                 regRecord.index = miscRegMap[reg_name.c_str()];
@@ -1185,13 +1290,13 @@ TarmacParserRecord::readMemNoEffect(Addr addr, uint8_t *data, unsigned size,
                                     unsigned flags)
 {
     const RequestPtr &req = memReq;
-    ArmISA::TLB* dtb = static_cast<TLB*>(thread->getDTBPtr());
+    auto mmu = static_cast<MMU*>(thread->getMMUPtr());
 
-    req->setVirt(0, addr, size, flags, thread->pcState().instAddr(),
-                 Request::funcMasterId);
+    req->setVirt(addr, size, flags, thread->pcState().instAddr(),
+                 Request::funcRequestorId);
 
     // Translate to physical address
-    Fault fault = dtb->translateAtomic(req, thread, BaseTLB::Read);
+    Fault fault = mmu->translateAtomic(req, thread, BaseMMU::Read);
 
     // Ignore read if the address falls into the ignored range
     if (parent.ignoredAddrRange.contains(addr))
@@ -1200,8 +1305,8 @@ TarmacParserRecord::readMemNoEffect(Addr addr, uint8_t *data, unsigned size,
     // Now do the access
     if (fault == NoFault &&
         !req->getFlags().isSet(Request::NO_ACCESS)) {
-        if (req->isLLSC() || req->isMmappedIpr())
-            // LLSCs and mem. mapped IPRs are ignored
+        if (req->isLLSC() || req->isLocalAccess())
+            // LLSCs and local accesses are ignored
             return false;
         // the translating proxy will perform the virtual to physical
         // translation again
@@ -1224,7 +1329,7 @@ TarmacParser::advanceTraceToStartPc()
     Addr pc;
     int saved_offset;
 
-    trace >> hex;  // All integer values are in hex base
+    trace >> std::hex;  // All integer values are in hex base
 
     while (true) {
         saved_offset = trace.tellg();
@@ -1235,7 +1340,7 @@ TarmacParser::advanceTraceToStartPc()
             trace >> buf >> pc;
             if (pc == startPc) {
                 // Set file pointer to the beginning of this line
-                trace.seekg(saved_offset, ios::beg);
+                trace.seekg(saved_offset, std::ios::beg);
                 return;
             } else {
                 trace.ignore(TarmacParserRecord::MaxLineLength, '\n');
@@ -1264,9 +1369,4 @@ TarmacParserRecord::iSetStateToStr(ISetState isetstate) const
 }
 
 } // namespace Trace
-
-Trace::TarmacParser *
-TarmacParserParams::create()
-{
-    return new Trace::TarmacParser(this);
-}
+} // namespace gem5

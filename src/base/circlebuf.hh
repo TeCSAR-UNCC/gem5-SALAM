@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __BASE_CIRCLEBUF_HH__
@@ -42,32 +40,47 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iterator>
 #include <vector>
 
-#include "base/circular_queue.hh"
 #include "base/logging.hh"
 #include "sim/serialize.hh"
 
+namespace gem5
+{
+
 /**
- * Circular buffer backed by a vector though a CircularQueue.
+ * Circular buffer backed by a vector.
  *
- * The data in the cricular buffer is stored in a standard
- * vector.
- *
+ * The data in the cricular buffer is stored in a standard vector.
  */
 template<typename T>
-class CircleBuf : public CircularQueue<T>
+class CircleBuf
 {
+  private:
+    std::vector<T> buffer;
+    size_t start = 0;
+    size_t used = 0;
+    size_t maxSize;
+
   public:
-    explicit CircleBuf(size_t size)
-        : CircularQueue<T>(size) {}
-    using CircularQueue<T>::empty;
-    using CircularQueue<T>::size;
-    using CircularQueue<T>::capacity;
-    using CircularQueue<T>::begin;
-    using CircularQueue<T>::end;
-    using CircularQueue<T>::pop_front;
-    using CircularQueue<T>::advance_tail;
+    using value_type = T;
+
+    explicit CircleBuf(size_t size) : buffer(size), maxSize(size) {}
+
+    bool empty() const { return used == 0; }
+    size_t size() const { return used; }
+    size_t capacity() const { return maxSize; }
+
+    /**
+     * Throw away any data in the buffer.
+     */
+    void
+    flush()
+    {
+        start = 0;
+        used = 0;
+    }
 
     /**
      * Copy buffer contents without advancing the read pointer
@@ -76,7 +89,9 @@ class CircleBuf : public CircularQueue<T>
      * @param len Number of elements to copy
      */
     template <class OutputIterator>
-    void peek(OutputIterator out, size_t len) const {
+    void
+    peek(OutputIterator out, size_t len) const
+    {
         peek(out, 0, len);
     }
 
@@ -88,11 +103,30 @@ class CircleBuf : public CircularQueue<T>
      * @param len Number of elements to copy
      */
     template <class OutputIterator>
-    void peek(OutputIterator out, off_t offset, size_t len) const {
-        panic_if(offset + len > size(),
-                 "Trying to read past end of circular buffer.\n");
+    void
+    peek(OutputIterator out, off_t offset, size_t len) const
+    {
+        panic_if(offset + len > used,
+                 "Trying to read past end of circular buffer.");
 
-        std::copy(begin() + offset, begin() + offset + len, out);
+        if (!len)
+            return;
+
+        // The iterator for the next byte to copy out.
+        auto next_it = buffer.begin() + (start + offset) % maxSize;
+        // How much there is to copy from until the end of the buffer.
+        const size_t to_end = buffer.end() - next_it;
+
+        // If the data to be copied wraps, take care of the first part.
+        if (to_end < len) {
+            // Copy it.
+            out = std::copy_n(next_it, to_end, out);
+            // Start copying again at the start of buffer.
+            next_it = buffer.begin();
+            len -= to_end;
+        }
+        // Copy the remaining (or only) chunk of data.
+        std::copy_n(next_it, len, out);
     }
 
     /**
@@ -102,28 +136,65 @@ class CircleBuf : public CircularQueue<T>
      * @param len Number of elements to read
      */
     template <class OutputIterator>
-    void read(OutputIterator out, size_t len) {
+    void
+    read(OutputIterator out, size_t len)
+    {
         peek(out, len);
-        pop_front(len);
+        used -= len;
+        start += len;
     }
 
     /**
-     * Add elements to the end of the ring buffers and advance.
+     * Add elements to the end of the ring buffers and advance. Writes which
+     * would exceed the capacity of the queue fill the avaialble space, and
+     * then continue overwriting the head of the queue. The head advances as
+     * if that data had been read out.
      *
      * @param in Input iterator/pointer
      * @param len Number of elements to read
      */
     template <class InputIterator>
-    void write(InputIterator in, size_t len) {
-        // Writes that are larger than the backing store are allowed,
-        // but only the last part of the buffer will be written.
-        if (len > capacity()) {
-            in += len - capacity();
-            len = capacity();
+    void
+    write(InputIterator in, size_t len)
+    {
+        if (!len)
+            return;
+
+        // Writes that are larger than the buffer size are allowed, but only
+        // the last part of the date will be written since the rest will be
+        // overwritten and not remain in the buffer.
+        if (len > maxSize) {
+            in += len - maxSize;
+            flush();
+            len = maxSize;
         }
 
-        std::copy(in, in + len, end());
-        advance_tail(len);
+        // How much existing data will be overwritten?
+        const size_t total_bytes = used + len;
+        const size_t overflow = total_bytes > maxSize ?
+                                total_bytes - maxSize : 0;
+        // The iterator of the next byte to add.
+        auto next_it = buffer.begin() + (start + used) % maxSize;
+        // How much there is to copy to the end of the buffer.
+        const size_t to_end = buffer.end() - next_it;
+
+        // If this addition wraps, take care of the first part here.
+        if (to_end < len) {
+            // Copy it.
+            std::copy_n(in, to_end, next_it);
+            // Update state to reflect what's left.
+            next_it = buffer.begin();
+            std::advance(in, to_end);
+            len -= to_end;
+            used += to_end;
+        }
+        // Copy the remaining (or only) chunk of data.
+        std::copy_n(in, len, next_it);
+        used += len;
+
+        // Don't count data that was overwritten.
+        used -= overflow;
+        start += overflow;
     }
 };
 
@@ -145,8 +216,7 @@ class Fifo
     typedef T value_type;
 
   public:
-    Fifo(size_t size)
-        : buf(size) {}
+    Fifo(size_t size) : buf(size) {}
 
     bool empty() const { return buf.empty(); }
     size_t size() const { return buf.size(); }
@@ -160,9 +230,10 @@ class Fifo
     void read(OutputIterator out, size_t len) { buf.read(out, len); }
 
     template <class InputIterator>
-    void write(InputIterator in, size_t len) {
-        panic_if(size() + len > capacity(),
-                 "Trying to overfill FIFO buffer.\n");
+    void
+    write(InputIterator in, size_t len)
+    {
+        panic_if(size() + len > capacity(), "Trying to overfill FIFO buffer.");
         buf.write(in, len);
     }
 
@@ -183,8 +254,7 @@ arrayParamOut(CheckpointOut &cp, const std::string &name,
 
 template <typename T>
 void
-arrayParamIn(CheckpointIn &cp, const std::string &name,
-             CircleBuf<T> &param)
+arrayParamIn(CheckpointIn &cp, const std::string &name, CircleBuf<T> &param)
 {
     std::vector<T> temp;
     arrayParamIn(cp, name, temp);
@@ -195,8 +265,7 @@ arrayParamIn(CheckpointIn &cp, const std::string &name,
 
 template <typename T>
 void
-arrayParamOut(CheckpointOut &cp, const std::string &name,
-              const Fifo<T> &param)
+arrayParamOut(CheckpointOut &cp, const std::string &name, const Fifo<T> &param)
 {
     std::vector<T> temp(param.size());
     param.peek(temp.begin(), temp.size());
@@ -205,17 +274,18 @@ arrayParamOut(CheckpointOut &cp, const std::string &name,
 
 template <typename T>
 void
-arrayParamIn(CheckpointIn &cp, const std::string &name,
-             Fifo<T> &param)
+arrayParamIn(CheckpointIn &cp, const std::string &name, Fifo<T> &param)
 {
     std::vector<T> temp;
     arrayParamIn(cp, name, temp);
 
     fatal_if(param.capacity() < temp.size(),
-             "Trying to unserialize data into too small FIFO\n");
+             "Trying to unserialize data into too small FIFO");
 
     param.flush();
     param.write(temp.cbegin(), temp.size());
 }
+
+} // namespace gem5
 
 #endif // __BASE_CIRCLEBUF_HH__

@@ -23,11 +23,9 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Sean Wilson
 
-import suite
-import fixture
+import testlib.suite
+import testlib.fixture
 
-from suite import *
-from fixture import *
+from .suite import *
+from .fixture import *

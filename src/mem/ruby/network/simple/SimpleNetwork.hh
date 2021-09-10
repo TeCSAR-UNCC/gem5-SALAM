@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2021 ARM Limited
+ * All rights reserved.
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -35,6 +47,12 @@
 #include "mem/ruby/network/Network.hh"
 #include "params/SimpleNetwork.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class NetDest;
 class MessageBuffer;
 class Throttle;
@@ -44,8 +62,8 @@ class SimpleNetwork : public Network
 {
   public:
     typedef SimpleNetworkParams Params;
-    SimpleNetwork(const Params *p);
-    ~SimpleNetwork();
+    SimpleNetwork(const Params &p);
+    ~SimpleNetwork() = default;
 
     void init();
 
@@ -60,17 +78,18 @@ class SimpleNetwork : public Network
 
     // Methods used by Topology to setup the network
     void makeExtOutLink(SwitchID src, NodeID dest, BasicLink* link,
-                     const NetDest& routing_table_entry);
+                     std::vector<NetDest>& routing_table_entry);
     void makeExtInLink(NodeID src, SwitchID dest, BasicLink* link,
-                    const NetDest& routing_table_entry);
+                    std::vector<NetDest>& routing_table_entry);
     void makeInternalLink(SwitchID src, SwitchID dest, BasicLink* link,
-                          const NetDest& routing_table_entry,
+                          std::vector<NetDest>& routing_table_entry,
                           PortDirection src_outport,
                           PortDirection dst_inport);
 
     void print(std::ostream& out) const;
 
     bool functionalRead(Packet *pkt);
+    bool functionalRead(Packet *pkt, WriteMask &mask);
     uint32_t functionalWrite(Packet *pkt);
 
   private:
@@ -90,9 +109,15 @@ class SimpleNetwork : public Network
     const int m_endpoint_bandwidth;
     const bool m_adaptive_routing;
 
-    //Statistical variables
-    Stats::Formula m_msg_counts[MessageSizeType_NUM];
-    Stats::Formula m_msg_bytes[MessageSizeType_NUM];
+
+    struct NetworkStats : public statistics::Group
+    {
+        NetworkStats(statistics::Group *parent);
+
+        //Statistical variables
+        statistics::Formula* m_msg_counts[MessageSizeType_NUM];
+        statistics::Formula* m_msg_bytes[MessageSizeType_NUM];
+    } networkStats;
 };
 
 inline std::ostream&
@@ -102,5 +127,8 @@ operator<<(std::ostream& out, const SimpleNetwork& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_NETWORK_SIMPLE_SIMPLENETWORK_HH__

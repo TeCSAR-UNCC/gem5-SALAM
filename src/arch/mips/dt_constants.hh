@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jaidev Patwardhan
  */
 
 #ifndef __ARCH_MIPS_DT_CONSTANTS_HH__
@@ -33,6 +31,9 @@
 
 #include "arch/mips/types.hh"
 #include "base/bitunion.hh"
+
+namespace gem5
+{
 
 namespace MipsISA
 {
@@ -131,6 +132,8 @@ BitUnion32(Debug2Reg)
     Bitfield<1> tup;
     Bitfield<0> paco;
 EndBitUnion(Debug2Reg)
+
 } // namespace MipsISA
+} // namespace gem5
 
 #endif

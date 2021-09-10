@@ -37,9 +37,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Stephen Hines
-//          Gabe Black
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -49,6 +46,9 @@
 def template MicroMemDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        RegIndex _ura, RegIndex _urb, bool _up,
@@ -65,14 +65,15 @@ def template MicroMemConstructor {{
                                    RegIndex _ura,
                                    RegIndex _urb,
                                    bool _up,
-                                   uint8_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                                   uint8_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                          _ura, _urb, _up, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -82,6 +83,9 @@ def template MicroMemConstructor {{
 def template MicroMemPairDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        RegIndex _dreg1, RegIndex _dreg2, RegIndex _base,
@@ -99,14 +103,15 @@ def template MicroMemPairConstructor {{
                                    RegIndex _dreg2,
                                    RegIndex _base,
                                    bool _up,
-                                   uint8_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _dreg1, _dreg2, _base, _up, _imm)
+                                   uint8_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                       _dreg1, _dreg2, _base, _up, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -121,17 +126,21 @@ def template MicroNeonMemDeclare {{
     template <class Element>
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst, RegIndex _dest,
-                       RegIndex _ura, uint32_t _imm, unsigned extraMemFlags)
-            : %(base_class)s("%(mnemonic)s", machInst,
+                       RegIndex _ura, uint32_t _imm, unsigned extraMemFlags) :
+            %(base_class)s("%(mnemonic)s", machInst,
                               %(op_class)s, _dest, _ura, _imm)
         {
             memAccessFlags |= extraMemFlags;
+            %(set_reg_idx_arr)s;
             %(constructor)s;
             if (!(condCode == COND_AL || condCode == COND_UC)) {
                 for (int x = 0; x < _numDestRegs; x++) {
-                    _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                    setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
                 }
             }
         }
@@ -152,6 +161,9 @@ def template MicroNeonMemDeclare {{
 def template MicroSetPCCPSRDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        IntRegIndex _ura,
@@ -165,15 +177,16 @@ def template MicroSetPCCPSRConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst,
                                    IntRegIndex _ura,
                                    IntRegIndex _urb,
-                                   IntRegIndex _urc)
-          : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                                   IntRegIndex _urc) :
+          %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                            _ura, _urb, _urc)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             flags[IsCondControl] = true;
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         } else {
             flags[IsUncondControl] = true;
@@ -185,33 +198,6 @@ def template MicroSetPCCPSRConstructor {{
 //
 // Integer = Integer op Integer microops
 //
-
-def template MicroIntDeclare {{
-    class %(class_name)s : public %(base_class)s
-    {
-      public:
-        %(class_name)s(ExtMachInst machInst,
-                       RegIndex _ura, RegIndex _urb, RegIndex _urc);
-        Fault execute(ExecContext *, Trace::InstRecord *) const override;
-    };
-}};
-
-def template MicroIntConstructor {{
-    %(class_name)s::%(class_name)s(ExtMachInst machInst,
-                                   RegIndex _ura,
-                                   RegIndex _urb,
-                                   RegIndex _urc)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _ura, _urb, _urc)
-    {
-        %(constructor)s;
-        if (!(condCode == COND_AL || condCode == COND_UC)) {
-            for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
-            }
-        }
-    }
-}};
 
 def template MicroNeonMemExecDeclare {{
     template
@@ -240,16 +226,20 @@ def template MicroNeonMixDeclare {{
     template <class Element>
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst, RegIndex _dest, RegIndex _op1,
                        uint8_t _step) :
             %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                            _dest, _op1, _step)
         {
+            %(set_reg_idx_arr)s;
             %(constructor)s;
             if (!(condCode == COND_AL || condCode == COND_UC)) {
                 for (int x = 0; x < _numDestRegs; x++) {
-                    _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                    setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
                 }
             }
         }
@@ -269,11 +259,9 @@ def template MicroNeonMixExecute {{
         %(op_decl)s;
         %(op_rd)s;
 
-        if (%(predicate_test)s)
-        {
+        if (%(predicate_test)s) {
             %(code)s;
-            if (fault == NoFault)
-            {
+            if (fault == NoFault) {
                 %(op_wb)s;
             }
         } else {
@@ -293,16 +281,20 @@ def template MicroNeonMixLaneDeclare {{
     template <class Element>
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst, RegIndex _dest, RegIndex _op1,
                        uint8_t _step, unsigned _lane) :
             %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                            _dest, _op1, _step, _lane)
         {
+            %(set_reg_idx_arr)s;
             %(constructor)s;
             if (!(condCode == COND_AL || condCode == COND_UC)) {
                 for (int x = 0; x < _numDestRegs; x++) {
-                    _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                    setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
                 }
             }
         }
@@ -319,6 +311,9 @@ def template MicroNeonMixLaneDeclare {{
 def template MicroIntMovDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        RegIndex _ura, RegIndex _urb);
@@ -332,10 +327,11 @@ def template MicroIntMovConstructor {{
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                          _ura, _urb)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -349,6 +345,9 @@ def template MicroIntMovConstructor {{
 def template MicroIntImmDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        RegIndex _ura, RegIndex _urb,
@@ -361,14 +360,15 @@ def template MicroIntImmConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst,
                                    RegIndex _ura,
                                    RegIndex _urb,
-                                   int32_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _ura, _urb, _imm)
+                                   int32_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                       _ura, _urb, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -378,10 +378,11 @@ def template MicroIntImmXConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst,
                                    RegIndex _ura,
                                    RegIndex _urb,
-                                   int32_t _imm)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                                   int32_t _imm) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
                          _ura, _urb, _imm)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -389,6 +390,9 @@ def template MicroIntImmXConstructor {{
 def template MicroIntRegDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        RegIndex _ura, RegIndex _urb, RegIndex _urc,
@@ -400,10 +404,11 @@ def template MicroIntRegDeclare {{
 def template MicroIntXERegConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst,
                                    RegIndex _ura, RegIndex _urb, RegIndex _urc,
-                                   ArmExtendType _type, uint32_t _shiftAmt)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _ura, _urb, _urc, _type, _shiftAmt)
+                                   ArmExtendType _type, uint32_t _shiftAmt) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                       _ura, _urb, _urc, _type, _shiftAmt)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -411,6 +416,9 @@ def template MicroIntXERegConstructor {{
 def template MicroIntXERegDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst machInst,
                        RegIndex _ura, RegIndex _urb, RegIndex _urc,
@@ -422,14 +430,16 @@ def template MicroIntXERegDeclare {{
 def template MicroIntRegConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst,
                                    RegIndex _ura, RegIndex _urb, RegIndex _urc,
-                                   int32_t _shiftAmt, ArmShiftType _shiftType)
-        : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
-                         _ura, _urb, _urc, _shiftAmt, _shiftType)
+                                   int32_t _shiftAmt,
+                                   ArmShiftType _shiftType) :
+        %(base_class)s("%(mnemonic)s", machInst, %(op_class)s,
+                       _ura, _urb, _urc, _shiftAmt, _shiftType)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         if (!(condCode == COND_AL || condCode == COND_UC)) {
             for (int x = 0; x < _numDestRegs; x++) {
-                _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+                setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
             }
         }
     }
@@ -446,25 +456,28 @@ def template MacroMemDeclare {{
  */
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, IntRegIndex rn,
-                bool index, bool up, bool user, bool writeback, bool load,
-                uint32_t reglist);
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, IntRegIndex rn, bool index, bool up,
+            bool user, bool writeback, bool load, uint32_t reglist);
 };
 }};
 
 def template MacroMemConstructor {{
 %(class_name)s::%(class_name)s(ExtMachInst machInst, IntRegIndex rn,
         bool index, bool up, bool user, bool writeback, bool load,
-        uint32_t reglist)
-    : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, rn,
+        uint32_t reglist) :
+    %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, rn,
                      index, up, user, writeback, load, reglist)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
     if (!(condCode == COND_AL || condCode == COND_UC)) {
         for (int x = 0; x < _numDestRegs; x++) {
-            _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+            setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
         }
     }
 }
@@ -474,6 +487,9 @@ def template MacroMemConstructor {{
 def template BigFpMemImmDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(const char *mnemonic, ExtMachInst machInst,
@@ -483,9 +499,10 @@ class %(class_name)s : public %(base_class)s
 
 def template BigFpMemImmConstructor {{
 %(class_name)s::%(class_name)s(const char *mnemonic, ExtMachInst machInst,
-        bool load, IntRegIndex dest, IntRegIndex base, int64_t imm)
-    : %(base_class)s(mnemonic, machInst, %(op_class)s, load, dest, base, imm)
+        bool load, IntRegIndex dest, IntRegIndex base, int64_t imm) :
+    %(base_class)s(mnemonic, machInst, %(op_class)s, load, dest, base, imm)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
 }
 }};
@@ -493,6 +510,9 @@ def template BigFpMemImmConstructor {{
 def template BigFpMemRegDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(const char *mnemonic, ExtMachInst machInst,
@@ -504,10 +524,11 @@ class %(class_name)s : public %(base_class)s
 def template BigFpMemRegConstructor {{
 %(class_name)s::%(class_name)s(const char *mnemonic, ExtMachInst machInst,
         bool load, IntRegIndex dest, IntRegIndex base,
-        IntRegIndex offset, ArmExtendType type, int64_t imm)
-    : %(base_class)s(mnemonic, machInst, %(op_class)s, load, dest, base,
-                     offset, type, imm)
+        IntRegIndex offset, ArmExtendType type, int64_t imm) :
+    %(base_class)s(mnemonic, machInst, %(op_class)s, load, dest, base,
+                   offset, type, imm)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
 }
 }};
@@ -515,6 +536,9 @@ def template BigFpMemRegConstructor {{
 def template BigFpMemLitDeclare {{
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor
     %(class_name)s(const char *mnemonic, ExtMachInst machInst,
@@ -524,9 +548,10 @@ class %(class_name)s : public %(base_class)s
 
 def template BigFpMemLitConstructor {{
 %(class_name)s::%(class_name)s(const char *mnemonic, ExtMachInst machInst,
-        IntRegIndex dest, int64_t imm)
-    : %(base_class)s(mnemonic, machInst, %(op_class)s, dest, imm)
+        IntRegIndex dest, int64_t imm) :
+    %(base_class)s(mnemonic, machInst, %(op_class)s, dest, imm)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
 }
 }};
@@ -534,13 +559,16 @@ def template BigFpMemLitConstructor {{
 def template PairMemDeclare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(const char *mnemonic, ExtMachInst machInst,
-                uint32_t size, bool fp, bool load, bool noAlloc, bool signExt,
-                bool exclusive, bool acrel, uint32_t imm,
-                AddrMode mode, IntRegIndex rn, IntRegIndex rt,
-                IntRegIndex rt2);
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(const char *mnemonic, ExtMachInst machInst,
+            uint32_t size, bool fp, bool load, bool noAlloc, bool signExt,
+            bool exclusive, bool acrel, uint32_t imm,
+            AddrMode mode, IntRegIndex rn, IntRegIndex rt,
+            IntRegIndex rt2);
 };
 }};
 
@@ -548,11 +576,12 @@ def template PairMemConstructor {{
 %(class_name)s::%(class_name)s(const char *mnemonic, ExtMachInst machInst,
         uint32_t size, bool fp, bool load, bool noAlloc, bool signExt,
         bool exclusive, bool acrel, uint32_t imm, AddrMode mode,
-        IntRegIndex rn, IntRegIndex rt, IntRegIndex rt2)
-    : %(base_class)s(mnemonic, machInst, %(op_class)s, size,
-                     fp, load, noAlloc, signExt, exclusive, acrel,
-                     imm, mode, rn, rt, rt2)
+        IntRegIndex rn, IntRegIndex rt, IntRegIndex rt2) :
+    %(base_class)s(mnemonic, machInst, %(op_class)s, size,
+                   fp, load, noAlloc, signExt, exclusive, acrel,
+                   imm, mode, rn, rt, rt2)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
 }
 }};
@@ -560,25 +589,29 @@ def template PairMemConstructor {{
 def template VMemMultDeclare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, unsigned width,
-                RegIndex rn, RegIndex vd, unsigned regs, unsigned inc,
-                uint32_t size, uint32_t align, RegIndex rm);
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, unsigned width,
+            RegIndex rn, RegIndex vd, unsigned regs, unsigned inc,
+            uint32_t size, uint32_t align, RegIndex rm);
 };
 }};
 
 def template VMemMultConstructor {{
 %(class_name)s::%(class_name)s(ExtMachInst machInst, unsigned width,
         RegIndex rn, RegIndex vd, unsigned regs, unsigned inc,
-        uint32_t size, uint32_t align, RegIndex rm)
-    : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, width,
-                     rn, vd, regs, inc, size, align, rm)
+        uint32_t size, uint32_t align, RegIndex rm) :
+    %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, width,
+                   rn, vd, regs, inc, size, align, rm)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
     if (!(condCode == COND_AL || condCode == COND_UC)) {
         for (int x = 0; x < _numDestRegs; x++) {
-            _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+            setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
         }
     }
 }
@@ -587,25 +620,29 @@ def template VMemMultConstructor {{
 def template VMemSingleDeclare {{
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, bool all, unsigned width,
-                RegIndex rn, RegIndex vd, unsigned regs, unsigned inc,
-                uint32_t size, uint32_t align, RegIndex rm, unsigned lane = 0);
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, bool all, unsigned width,
+            RegIndex rn, RegIndex vd, unsigned regs, unsigned inc,
+            uint32_t size, uint32_t align, RegIndex rm, unsigned lane=0);
 };
 }};
 
 def template VMemSingleConstructor {{
 %(class_name)s::%(class_name)s(ExtMachInst machInst, bool all, unsigned width,
         RegIndex rn, RegIndex vd, unsigned regs, unsigned inc,
-        uint32_t size, uint32_t align, RegIndex rm, unsigned lane)
-    : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, all, width,
-                     rn, vd, regs, inc, size, align, rm, lane)
+        uint32_t size, uint32_t align, RegIndex rm, unsigned lane) :
+    %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, all, width,
+                   rn, vd, regs, inc, size, align, rm, lane)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
     if (!(condCode == COND_AL || condCode == COND_UC)) {
         for (int x = 0; x < _numDestRegs; x++) {
-            _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+            setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
         }
     }
 }
@@ -617,25 +654,29 @@ def template MacroVFPMemDeclare {{
  */
 class %(class_name)s : public %(base_class)s
 {
-    public:
-        // Constructor
-        %(class_name)s(ExtMachInst machInst, IntRegIndex rn,
-                RegIndex vd, bool single, bool up, bool writeback,
-                bool load, uint32_t offset);
+  private:
+    %(reg_idx_arr_decl)s;
+
+  public:
+    // Constructor
+    %(class_name)s(ExtMachInst machInst, IntRegIndex rn,
+            RegIndex vd, bool single, bool up, bool writeback,
+            bool load, uint32_t offset);
 };
 }};
 
 def template MacroVFPMemConstructor {{
 %(class_name)s::%(class_name)s(ExtMachInst machInst, IntRegIndex rn,
         RegIndex vd, bool single, bool up, bool writeback, bool load,
-        uint32_t offset)
-    : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, rn,
-                     vd, single, up, writeback, load, offset)
+        uint32_t offset) :
+    %(base_class)s("%(mnemonic)s", machInst, %(op_class)s, rn,
+                   vd, single, up, writeback, load, offset)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
     if (!(condCode == COND_AL || condCode == COND_UC)) {
         for (int x = 0; x < _numDestRegs; x++) {
-            _srcRegIdx[_numSrcRegs++] = _destRegIdx[x];
+            setSrcRegIdx(_numSrcRegs++, destRegIdx(x));
         }
     }
 }

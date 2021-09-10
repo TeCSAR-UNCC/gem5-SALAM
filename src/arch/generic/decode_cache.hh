@@ -24,40 +24,59 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_GENERIC_DECODE_CACHE_HH__
 #define __ARCH_GENERIC_DECODE_CACHE_HH__
 
-#include "arch/types.hh"
-#include "config/the_isa.hh"
+#include "base/types.hh"
 #include "cpu/decode_cache.hh"
 #include "cpu/static_inst_fwd.hh"
 
-namespace TheISA
+namespace gem5
 {
-    class Decoder;
-}
 
 namespace GenericISA
 {
 
+template <typename Decoder, typename EMI>
 class BasicDecodeCache
 {
   private:
-    DecodeCache::InstMap<TheISA::ExtMachInst> instMap;
-    DecodeCache::AddrMap<StaticInstPtr> decodePages;
+    decode_cache::InstMap<EMI> instMap;
+    struct AddrMapEntry
+    {
+        StaticInstPtr inst;
+        EMI machInst;
+    };
+    decode_cache::AddrMap<AddrMapEntry> decodePages;
 
   public:
     /// Decode a machine instruction.
     /// @param mach_inst The binary instruction to decode.
     /// @retval A pointer to the corresponding StaticInst object.
-    StaticInstPtr decode(TheISA::Decoder * const decoder,
-            TheISA::ExtMachInst mach_inst, Addr addr);
+    StaticInstPtr
+    decode(Decoder *const decoder, EMI mach_inst, Addr addr)
+    {
+        auto &entry = decodePages.lookup(addr);
+        if (entry.inst && (entry.machInst == mach_inst))
+            return entry.inst;
+
+        entry.machInst = mach_inst;
+
+        auto iter = instMap.find(mach_inst);
+        if (iter != instMap.end()) {
+            entry.inst = iter->second;
+            return entry.inst;
+        }
+
+        entry.inst = decoder->decodeInst(mach_inst);
+        instMap[mach_inst] = entry.inst;
+        return entry.inst;
+    }
 };
 
 } // namespace GenericISA
+} // namespace gem5
 
 #endif // __ARCH_GENERIC_DECODE_CACHE_HH__

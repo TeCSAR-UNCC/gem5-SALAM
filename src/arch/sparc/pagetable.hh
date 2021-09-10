@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __ARCH_SPARC_PAGETABLE_HH__
@@ -33,18 +31,16 @@
 
 #include <cassert>
 
-#include "arch/sparc/isa_traits.hh"
 #include "base/bitfield.hh"
 #include "base/logging.hh"
+#include "base/types.hh"
+#include "sim/serialize.hh"
 
-class Checkpoint;
-
-namespace SparcISA {
-
-struct VAddr
+namespace gem5
 {
-    VAddr(Addr a) { panic("not implemented yet."); }
-};
+
+namespace SparcISA
+{
 
 class TteTag
 {
@@ -72,7 +68,8 @@ class TteTag
 class PageTableEntry
 {
   public:
-    enum EntryType {
+    enum EntryType
+    {
       sun4v,
       sun4u,
       invalid
@@ -282,6 +279,6 @@ struct TlbEntry
 };
 
 } // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_PAGE_TABLE_HH__
-

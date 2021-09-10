@@ -2,6 +2,7 @@
 
 // Copyright (c) 2015 RISC-V Foundation
 // Copyright (c) 2016-2017 The University of Virginia
+// Copyright (c) 2020 Barkhausen Institut
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,8 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Alec Roelke
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -40,12 +39,15 @@ def template ImmDeclare {{
     //
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         /// Constructor.
         %(class_name)s(MachInst machInst);
         Fault execute(ExecContext *, Trace::InstRecord *) const override;
         std::string generateDisassembly(Addr pc,
-            const SymbolTable *symtab) const override;
+            const loader::SymbolTable *symtab) const override;
     };
 }};
 
@@ -53,6 +55,7 @@ def template ImmConstructor {{
     %(class_name)s::%(class_name)s(MachInst machInst)
         : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         %(imm_code)s;
     }
@@ -63,22 +66,16 @@ def template ImmExecute {{
     %(class_name)s::execute(
         ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                %(op_wb)s;
-            }
-        }
-        return fault;
+        %(code)s;
+        %(op_wb)s;
+        return NoFault;
     }
 
     std::string
     %(class_name)s::generateDisassembly(Addr pc,
-            const SymbolTable *symtab) const
+            const loader::SymbolTable *symtab) const
     {
         std::vector<RegId> indices = {%(regs)s};
         std::stringstream ss;
@@ -95,22 +92,16 @@ def template CILuiExecute {{
     %(class_name)s::execute(
         ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                %(op_wb)s;
-            }
-        }
-        return fault;
+        %(code)s;
+        %(op_wb)s;
+        return NoFault;
     }
 
     std::string
     %(class_name)s::generateDisassembly(Addr pc,
-            const SymbolTable *symtab) const
+            const loader::SymbolTable *symtab) const
     {
         std::vector<RegId> indices = {%(regs)s};
         std::stringstream ss;
@@ -129,22 +120,16 @@ def template FenceExecute {{
     %(class_name)s::execute(
         ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                %(op_wb)s;
-            }
-        }
-        return fault;
+        %(code)s;
+        %(op_wb)s;
+        return NoFault;
     }
 
     std::string
     %(class_name)s::generateDisassembly(Addr pc,
-            const SymbolTable *symtab) const
+            const loader::SymbolTable *symtab) const
     {
         std::stringstream ss;
         ss << mnemonic;
@@ -178,13 +163,17 @@ def template BranchDeclare {{
     //
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         /// Constructor.
         %(class_name)s(MachInst machInst);
         Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const override;
+        generateDisassembly(
+                Addr pc, const loader::SymbolTable *symtab) const override;
 
         RiscvISA::PCState
         branchTarget(const RiscvISA::PCState &branchPC) const override;
@@ -198,17 +187,11 @@ def template BranchExecute {{
     %(class_name)s::execute(ExecContext *xc,
         Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                %(op_wb)s;
-            }
-        }
-        return fault;
+        %(code)s;
+        %(op_wb)s;
+        return NoFault;
     }
 
     RiscvISA::PCState
@@ -218,8 +201,8 @@ def template BranchExecute {{
     }
 
     std::string
-    %(class_name)s::generateDisassembly(Addr pc,
-            const SymbolTable *symtab) const
+    %(class_name)s::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         std::vector<RegId> indices = {%(regs)s};
         std::stringstream ss;
@@ -237,13 +220,17 @@ def template JumpDeclare {{
     //
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         /// Constructor.
         %(class_name)s(MachInst machInst);
         Fault execute(ExecContext *, Trace::InstRecord *) const override;
 
         std::string
-        generateDisassembly(Addr pc, const SymbolTable *symtab) const override;
+        generateDisassembly(
+                Addr pc, const loader::SymbolTable *symtab) const override;
 
         RiscvISA::PCState
         branchTarget(ThreadContext *tc) const override;
@@ -257,35 +244,32 @@ def template JumpExecute {{
     %(class_name)s::execute(
         ExecContext *xc, Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                %(op_wb)s;
-            }
-        }
-        return fault;
+        %(code)s;
+        %(op_wb)s;
+        return NoFault;
     }
 
     RiscvISA::PCState
     %(class_name)s::branchTarget(ThreadContext *tc) const
     {
         PCState pc = tc->pcState();
-        pc.set((tc->readIntReg(_srcRegIdx[0].index()) + imm)&~0x1);
+        pc.set((tc->readIntReg(srcRegIdx(0).index()) + imm)&~0x1);
         return pc;
     }
 
     std::string
-    %(class_name)s::generateDisassembly(Addr pc,
-            const SymbolTable *symtab) const
+    %(class_name)s::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
-        std::vector<RegId> indices = {%(regs)s};
         std::stringstream ss;
         ss << mnemonic << ' ';
-        ss << registerName(indices[0]);
+        if (QUADRANT == 0x3)
+            ss << registerName(destRegIdx(0)) << ", "
+               << imm << "(" << registerName(srcRegIdx(0)) << ")";
+        else
+            ss << registerName(srcRegIdx(0));
         return ss.str();
     }
 }};
@@ -295,78 +279,91 @@ def template CSRExecute {{
     %(class_name)s::execute(ExecContext *xc,
         Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
+        if (!valid) {
+            return std::make_shared<IllegalInstFault>(
+                    csprintf("Illegal CSR index %#x\n", csr), machInst);
+        }
 
         %(op_decl)s;
         %(op_rd)s;
 
         RegVal data, olddata;
+
         switch (csr) {
-          case CSR_FCSR:
+          case CSR_SATP: {
+            auto pm = (PrivilegeMode)xc->readMiscReg(MISCREG_PRV);
+            STATUS status = xc->readMiscReg(MISCREG_STATUS);
+            if (pm == PRV_U || (pm == PRV_S && status.tvm == 1)) {
+                return std::make_shared<IllegalInstFault>(
+                        "SATP access in user mode or with TVM enabled\n",
+                        machInst);
+            }
+            break;
+          }
+          case CSR_MSTATUS: {
+            auto pm = (PrivilegeMode)xc->readMiscReg(MISCREG_PRV);
+            if (pm != PrivilegeMode::PRV_M) {
+                return std::make_shared<IllegalInstFault>(
+                        "MSTATUS is only accessibly in machine mode\n",
+                        machInst);
+            }
+            break;
+          }
+          default:
+            break;
+        }
+
+        if (csr == CSR_FCSR) {
             olddata = xc->readMiscReg(MISCREG_FFLAGS) |
                       (xc->readMiscReg(MISCREG_FRM) << FRM_OFFSET);
-            break;
-          default:
-            if (CSRData.find(csr) != CSRData.end()) {
-                olddata = xc->readMiscReg(CSRData.at(csr).physIndex);
-            } else {
-                std::string error = csprintf("Illegal CSR index %#x\n", csr);
-                fault = make_shared<IllegalInstFault>(error, machInst);
-                olddata = 0;
-            }
-            break;
+        } else {
+            olddata = xc->readMiscReg(midx);
         }
-        auto mask = CSRMasks.find(csr);
-        if (mask != CSRMasks.end())
-            olddata &= mask->second;
-        DPRINTF(RiscvMisc, "Reading CSR %s: %#x\n", CSRData.at(csr).name,
-                olddata);
+        auto olddata_all = olddata;
+
+        olddata &= maskVal;
+        DPRINTF(RiscvMisc, "Reading CSR %s: %#x\n", csrName, olddata);
         data = olddata;
 
-        if (fault == NoFault) {
-            %(code)s;
-            if (fault == NoFault) {
-                if (mask != CSRMasks.end())
-                    data &= mask->second;
-                if (data != olddata) {
-                    if (bits(csr, 11, 10) == 0x3) {
-                        std::string error = csprintf("CSR %s is read-only\n",
-                                                     CSRData.at(csr).name);
-                        fault = make_shared<IllegalInstFault>(error, machInst);
-                    } else {
-                        DPRINTF(RiscvMisc, "Writing %#x to CSR %s.\n", data,
-                                CSRData.at(csr).name);
-                        INTERRUPT oldinterrupt = olddata;
-                        INTERRUPT newinterrupt = data;
-                        switch (csr) {
-                          case CSR_FCSR:
-                            xc->setMiscReg(MISCREG_FFLAGS, bits(data, 4, 0));
-                            xc->setMiscReg(MISCREG_FRM, bits(data, 7, 5));
-                            break;
-                          case CSR_MIP: case CSR_MIE:
-                            if (oldinterrupt.mei == newinterrupt.mei &&
-                                oldinterrupt.mti == newinterrupt.mti &&
-                                oldinterrupt.msi == newinterrupt.msi) {
-                                xc->setMiscReg(CSRData.at(csr).physIndex,data);
-                            } else {
-                                std::string error = "Interrupt m bits are "
-                                                    "read-only\n";
-                                fault = make_shared<IllegalInstFault>(error,
-                                                                     machInst);
-                            }
-                            break;
-                          default:
-                            xc->setMiscReg(CSRData.at(csr).physIndex, data);
-                            break;
-                        }
-                    }
-                }
+        %(code)s;
+
+        data &= maskVal;
+        if (data != olddata) {
+            if (bits(csr, 11, 10) == 0x3) {
+                return std::make_shared<IllegalInstFault>(
+                        csprintf("CSR %s is read-only\n", csrName), machInst);
             }
-            if (fault == NoFault) {
-                %(op_wb)s;
+            auto newdata_all = data;
+            // We must keep those original bits not in mask.
+            // olddata and data only contain the bits visable
+            // in current privilige level.
+            newdata_all = (olddata_all & ~maskVal) | data;
+            DPRINTF(RiscvMisc, "Writing %#x to CSR %s.\n",
+                    newdata_all, csrName);
+            switch (csr) {
+              case CSR_FCSR:
+                xc->setMiscReg(MISCREG_FFLAGS, bits(data, 4, 0));
+                xc->setMiscReg(MISCREG_FRM, bits(data, 7, 5));
+                break;
+              case CSR_MIP: case CSR_MIE:
+              case CSR_SIP: case CSR_SIE:
+              case CSR_UIP: case CSR_UIE:
+              case CSR_MSTATUS: case CSR_SSTATUS: case CSR_USTATUS:
+                if (newdata_all != olddata_all) {
+                    xc->setMiscReg(midx, newdata_all);
+                } else {
+                    return std::make_shared<IllegalInstFault>(
+                            "Only bits in mask are allowed to be set\n",
+                            machInst);
+                }
+                break;
+              default:
+                xc->setMiscReg(midx, data);
+                break;
             }
         }
-        return fault;
+        %(op_wb)s;
+        return NoFault;
     }
 }};
 
@@ -380,7 +377,7 @@ def format ROp(code, *opt_flags) {{
 
 def format IOp(code, imm_type='int64_t', imm_code='imm = sext<12>(IMM12);',
               *opt_flags) {{
-    regs = ['_destRegIdx[0]','_srcRegIdx[0]']
+    regs = ['destRegIdx(0)','srcRegIdx(0)']
     iop = InstObjParams(name, Name, 'ImmOp<%s>' % imm_type,
         {'imm_code': imm_code, 'code': code,
          'regs': ','.join(regs)}, opt_flags)
@@ -391,7 +388,7 @@ def format IOp(code, imm_type='int64_t', imm_code='imm = sext<12>(IMM12);',
 }};
 
 def format FenceOp(code, imm_type='int64_t', *opt_flags) {{
-    regs = ['_destRegIdx[0]','_srcRegIdx[0]']
+    regs = ['destRegIdx(0)','srcRegIdx(0)']
     iop = InstObjParams(name, Name, 'ImmOp<%s>' % imm_type,
         {'code': code, 'imm_code': 'imm = sext<12>(IMM12);',
          'regs': ','.join(regs)}, opt_flags)
@@ -409,7 +406,7 @@ def format BOp(code, *opt_flags) {{
                       IMMSIGN << 12;
                 imm = sext<13>(imm);
                """
-    regs = ['_srcRegIdx[0]','_srcRegIdx[1]']
+    regs = ['srcRegIdx(0)','srcRegIdx(1)']
     iop = InstObjParams(name, Name, 'ImmOp<int64_t>',
         {'code': code, 'imm_code': imm_code,
          'regs': ','.join(regs)}, opt_flags)
@@ -420,7 +417,7 @@ def format BOp(code, *opt_flags) {{
 }};
 
 def format Jump(code, *opt_flags) {{
-    regs = ['_srcRegIdx[0]']
+    regs = ['srcRegIdx(0)']
     iop = InstObjParams(name, Name, 'ImmOp<int64_t>',
         {'code': code, 'imm_code': 'imm = sext<12>(IMM12);',
          'regs': ','.join(regs)}, opt_flags)
@@ -431,7 +428,7 @@ def format Jump(code, *opt_flags) {{
 }};
 
 def format UOp(code, *opt_flags) {{
-    regs = ['_destRegIdx[0]']
+    regs = ['destRegIdx(0)']
     iop = InstObjParams(name, Name, 'ImmOp<int64_t>',
         {'code': code, 'imm_code': 'imm = IMM20;',
          'regs': ','.join(regs)}, opt_flags)
@@ -450,7 +447,7 @@ def format JOp(code, *opt_flags) {{
                 imm = sext<21>(imm);
                """
     pc = 'pc.set(pc.pc() + imm);'
-    regs = ['_destRegIdx[0]']
+    regs = ['destRegIdx(0)']
     iop = InstObjParams(name, Name, 'ImmOp<int64_t>',
         {'code': code, 'imm_code': imm_code,
          'regs': ','.join(regs)}, opt_flags)

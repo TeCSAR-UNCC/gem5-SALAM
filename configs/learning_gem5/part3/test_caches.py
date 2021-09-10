@@ -24,20 +24,16 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Power
 
 """ This file creates a set of Ruby caches, the Ruby network, and a simple
 point-to-point topology for the RubyRandomTester to use.
-See Part 3 in the Learning gem5 book: learning.gem5.org/book/part3
+See Part 3 in the Learning gem5 book:
+http://gem5.org/documentation/learning_gem5/part3/MSIintro
 
 IMPORTANT: If you modify this file, it's likely that the Learning gem5 book
            also needs to be updated. For now, email Jason <jason@lowepower.com>
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 from m5.defines import buildEnv
 from m5.util import fatal
@@ -77,7 +73,6 @@ class TestCacheSystem(RubySystem):
 
         self.sequencers = [RubySequencer(version = i,
                               # I/D cache is combined and grab from ctrl
-                              icache = self.controllers[i].cacheMemory,
                               dcache = self.controllers[i].cacheMemory,
                               clk_domain = self.clk_domain,
                               ) for i in range(num_testers)]

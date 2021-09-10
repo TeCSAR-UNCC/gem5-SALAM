@@ -24,24 +24,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Brett Miller
  */
 
 #ifndef __ARCH_MIPS_DSP_HH__
 #define __ARCH_MIPS_DSP_HH__
 
-#include "arch/mips/isa_traits.hh"
 #include "arch/mips/types.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
 namespace MipsISA {
 
 // SIMD formats
-enum {
+enum
+{
     SIMD_FMT_L,    // long word
     SIMD_FMT_W,    // word
     SIMD_FMT_PH,   // paired halfword
@@ -50,7 +51,8 @@ enum {
 };
 
 // DSPControl Fields
-enum {
+enum
+{
     DSP_POS,       // insertion bitfield position
     DSP_SCOUNT,    // insertion bitfield size
     DSP_C,         // carry bit
@@ -61,14 +63,16 @@ enum {
 };
 
 // compare instruction operations
-enum {
+enum
+{
     CMP_EQ,        // equal
     CMP_LT,        // less than
     CMP_LE         // less than or equal
 };
 
 // SIMD operation order modes
-enum {
+enum
+{
     MODE_L,        // left
     MODE_R,        // right
     MODE_LA,       // left-alternate
@@ -102,28 +106,28 @@ const uint32_t SIMD_LOG2N[SIMD_NUM_FMTS] = { 6, 5, 4, 3 };
 
 
 // DSP maximum values
-const uint64_t FIXED_L_SMAX = ULL(0x7fffffffffffffff);
-const uint64_t FIXED_W_SMAX = ULL(0x000000007fffffff);
-const uint64_t FIXED_H_SMAX = ULL(0x0000000000007fff);
-const uint64_t FIXED_B_SMAX = ULL(0x000000000000007f);
-const uint64_t FIXED_L_UMAX = ULL(0xffffffffffffffff);
-const uint64_t FIXED_W_UMAX = ULL(0x00000000ffffffff);
-const uint64_t FIXED_H_UMAX = ULL(0x000000000000ffff);
-const uint64_t FIXED_B_UMAX = ULL(0x00000000000000ff);
+const uint64_t FIXED_L_SMAX = 0x7fffffffffffffffULL;
+const uint64_t FIXED_W_SMAX = 0x000000007fffffffULL;
+const uint64_t FIXED_H_SMAX = 0x0000000000007fffULL;
+const uint64_t FIXED_B_SMAX = 0x000000000000007fULL;
+const uint64_t FIXED_L_UMAX = 0xffffffffffffffffULL;
+const uint64_t FIXED_W_UMAX = 0x00000000ffffffffULL;
+const uint64_t FIXED_H_UMAX = 0x000000000000ffffULL;
+const uint64_t FIXED_B_UMAX = 0x00000000000000ffULL;
 const uint64_t FIXED_SMAX[SIMD_NUM_FMTS] =
 { FIXED_L_SMAX, FIXED_W_SMAX, FIXED_H_SMAX, FIXED_B_SMAX };
 const uint64_t FIXED_UMAX[SIMD_NUM_FMTS] =
 { FIXED_L_UMAX, FIXED_W_UMAX, FIXED_H_UMAX, FIXED_B_UMAX };
 
 // DSP minimum values
-const uint64_t FIXED_L_SMIN = ULL(0x8000000000000000);
-const uint64_t FIXED_W_SMIN = ULL(0xffffffff80000000);
-const uint64_t FIXED_H_SMIN = ULL(0xffffffffffff8000);
-const uint64_t FIXED_B_SMIN = ULL(0xffffffffffffff80);
-const uint64_t FIXED_L_UMIN = ULL(0x0000000000000000);
-const uint64_t FIXED_W_UMIN = ULL(0x0000000000000000);
-const uint64_t FIXED_H_UMIN = ULL(0x0000000000000000);
-const uint64_t FIXED_B_UMIN = ULL(0x0000000000000000);
+const uint64_t FIXED_L_SMIN = 0x8000000000000000ULL;
+const uint64_t FIXED_W_SMIN = 0xffffffff80000000ULL;
+const uint64_t FIXED_H_SMIN = 0xffffffffffff8000ULL;
+const uint64_t FIXED_B_SMIN = 0xffffffffffffff80ULL;
+const uint64_t FIXED_L_UMIN = 0x0000000000000000ULL;
+const uint64_t FIXED_W_UMIN = 0x0000000000000000ULL;
+const uint64_t FIXED_H_UMIN = 0x0000000000000000ULL;
+const uint64_t FIXED_B_UMIN = 0x0000000000000000ULL;
 const uint64_t FIXED_SMIN[SIMD_NUM_FMTS] =
 { FIXED_L_SMIN, FIXED_W_SMIN, FIXED_H_SMIN, FIXED_B_SMIN };
 const uint64_t FIXED_UMIN[SIMD_NUM_FMTS] =
@@ -199,5 +203,6 @@ void writeDSPControl(uint32_t *dspctl, uint32_t value, uint32_t mask);
 uint32_t readDSPControl(uint32_t *dspctl, uint32_t mask);
 
 } // namespace MipsISA
+} // namespace gem5
 
 #endif // __ARCH_MIPS_DSP_HH__

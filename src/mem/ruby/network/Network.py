@@ -23,19 +23,18 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Brad Beckmann
 
 from m5.params import *
+from m5.proxy import *
 from m5.objects.ClockedObject import ClockedObject
 from m5.objects.BasicLink import BasicLink
 
 class RubyNetwork(ClockedObject):
     type = 'RubyNetwork'
-    cxx_class = 'Network'
+    cxx_class = 'gem5::ruby::Network'
     cxx_header = "mem/ruby/network/Network.hh"
     abstract = True
+
     topology = Param.String("Not Specified",
                             "the name of the imported topology module")
 
@@ -52,5 +51,12 @@ class RubyNetwork(ClockedObject):
     ext_links = VectorParam.BasicExtLink("Links to external nodes")
     int_links = VectorParam.BasicIntLink("Links between internal nodes")
 
-    slave = VectorSlavePort("CPU slave port")
-    master = VectorMasterPort("CPU master port")
+    in_port = VectorResponsePort("CPU input port")
+    slave = DeprecatedParam(in_port, '`slave` is now called `in_port`')
+    out_port = VectorRequestPort("CPU output port")
+    master = DeprecatedParam(out_port, '`master` is now called `out_port`')
+
+    data_msg_size = Param.Int(Parent.block_size_bytes,
+                            "Size of data messages. Defaults to the parent "
+                            "RubySystem cache line size.")
+

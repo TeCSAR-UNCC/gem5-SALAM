@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -56,11 +54,15 @@
 #include "params/MinorCPU.hh"
 #include "sim/ticked_object.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /**
- * @namespace Minor
+ * @namespace minor
  *
  * Minor contains all the definitions within the MinorCPU apart from the CPU
  * class itself
@@ -107,7 +109,7 @@ class Pipeline : public Ticked
     bool needToSignalDrained;
 
   public:
-    Pipeline(MinorCPU &cpu_, MinorCPUParams &params);
+    Pipeline(MinorCPU &cpu_, const MinorCPUParams &params);
 
   public:
     /** Wake up the Fetch unit.  This is needed on thread activation esp.
@@ -128,9 +130,6 @@ class Pipeline : public Ticked
 
     void minorTrace() const;
 
-    /** Stats registering */
-    void regStats();
-
     /** Functions below here are BaseCPU operations passed on to pipeline
      *  stages */
 
@@ -143,6 +142,7 @@ class Pipeline : public Ticked
     MinorActivityRecorder *getActivityRecorder() { return &activityRecorder; }
 };
 
-}
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_PIPELINE_HH__ */

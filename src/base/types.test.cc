@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Bobby R. Bruce
  */
 
 #include <gtest/gtest.h>
@@ -42,6 +40,8 @@
 #include <sstream>
 
 #include "base/types.hh"
+
+using namespace gem5;
 
 /*
  * The following test the Cycles class. Cycles is a wrapper for uint64_t.

@@ -42,17 +42,12 @@
 
 #include "base/types.hh"
 
+namespace gem5
+{
+
 namespace X86ISA
 {
     const int NumMicroIntRegs = 16;
-
-    const int NumImplicitIntRegs = 6;
-    //1. The lower part of the result of multiplication.
-    //2. The upper part of the result of multiplication.
-    //3. The quotient from division
-    //4. The remainder from division
-    //5. The divisor for division
-    //6. The register to use for shift doubles
 
     const int NumMMXRegs = 8;
     const int NumXMMRegs = 16;
@@ -64,15 +59,15 @@ namespace X86ISA
     const int NumSegments = 6;
     const int NumSysSegments = 4;
 
-    const Addr IntAddrPrefixMask = ULL(0xffffffff00000000);
-    const Addr IntAddrPrefixCPUID = ULL(0x100000000);
-    const Addr IntAddrPrefixMSR = ULL(0x200000000);
-    const Addr IntAddrPrefixIO = ULL(0x300000000);
+    const Addr IntAddrPrefixMask = 0xffffffff00000000ULL;
+    const Addr IntAddrPrefixCPUID = 0x100000000ULL;
+    const Addr IntAddrPrefixMSR = 0x200000000ULL;
+    const Addr IntAddrPrefixIO = 0x300000000ULL;
 
-    const Addr PhysAddrPrefixIO = ULL(0x8000000000000000);
-    const Addr PhysAddrPrefixPciConfig = ULL(0xC000000000000000);
-    const Addr PhysAddrPrefixLocalAPIC = ULL(0x2000000000000000);
-    const Addr PhysAddrPrefixInterrupts = ULL(0xA000000000000000);
+    const Addr PhysAddrPrefixIO = 0x8000000000000000ULL;
+    const Addr PhysAddrPrefixPciConfig = 0xC000000000000000ULL;
+    const Addr PhysAddrPrefixLocalAPIC = 0x2000000000000000ULL;
+    const Addr PhysAddrPrefixInterrupts = 0xA000000000000000ULL;
     // Each APIC gets two pages. One page is used for local apics to field
     // accesses from the CPU, and the other is for all APICs to communicate.
     const Addr PhysAddrAPICRangeSize = 1 << 12;
@@ -102,6 +97,8 @@ namespace X86ISA
         assert(addr < PhysAddrAPICRangeSize);
         return PhysAddrPrefixInterrupts | (id * PhysAddrAPICRangeSize) | addr;
     }
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif //__ARCH_X86_X86TRAITS_HH__

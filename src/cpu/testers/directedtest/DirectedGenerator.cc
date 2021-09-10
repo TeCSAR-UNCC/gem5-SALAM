@@ -31,11 +31,14 @@
 
 #include "sim/system.hh"
 
-DirectedGenerator::DirectedGenerator(const Params *p)
-    : SimObject(p),
-      masterId(p->system->getMasterId(this))
+namespace gem5
 {
-    m_num_cpus = p->num_cpus;
+
+DirectedGenerator::DirectedGenerator(const Params &p)
+    : SimObject(p),
+      requestorId(p.system->getRequestorId(this))
+{
+    m_num_cpus = p.num_cpus;
     m_directed_tester = NULL;
 }
 
@@ -45,3 +48,5 @@ DirectedGenerator::setDirectedTester(RubyDirectedTester* directed_tester)
     assert(m_directed_tester == NULL);
     m_directed_tester = directed_tester;
 }
+
+} // namespace gem5

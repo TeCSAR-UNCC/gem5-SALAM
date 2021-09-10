@@ -33,18 +33,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #ifndef __DEV_ARM_GICV3_ITS_H__
 #define __DEV_ARM_GICV3_ITS_H__
 
+#include <cstdint>
+#include <memory>
 #include <queue>
+#include <vector>
 
+#include "base/addr_range.hh"
+#include "base/bitunion.hh"
 #include "base/coroutine.hh"
+#include "base/types.hh"
 #include "dev/dma_device.hh"
 #include "params/Gicv3Its.hh"
+
+namespace gem5
+{
 
 class Gicv3;
 class Gicv3Redistributor;
@@ -75,18 +82,19 @@ struct ItsAction
  */
 class Gicv3Its : public BasicPioDevice
 {
-    friend class ::ItsProcess;
-    friend class ::ItsTranslation;
-    friend class ::ItsCommand;
+    friend class gem5::ItsProcess;
+    friend class gem5::ItsTranslation;
+    friend class gem5::ItsCommand;
+
   public:
-    class DataPort : public MasterPort
+    class DataPort : public RequestPort
     {
       protected:
         Gicv3Its &its;
 
       public:
         DataPort(const std::string &_name, Gicv3Its &_its) :
-            MasterPort(_name, &_its),
+            RequestPort(_name, &_its),
             its(_its)
         {}
 
@@ -102,7 +110,7 @@ class Gicv3Its : public BasicPioDevice
     bool recvTimingResp(PacketPtr pkt);
     void recvReqRetry();
 
-    Gicv3Its(const Gicv3ItsParams *params);
+    Gicv3Its(const Gicv3ItsParams &params);
 
     void setGIC(Gicv3 *_gic);
 
@@ -321,7 +329,7 @@ class Gicv3Its : public BasicPioDevice
 
   private:
     std::queue<ItsAction> packetsToRetry;
-    uint32_t masterId;
+    uint32_t requestorId;
     Gicv3 *gic;
     EventFunctionWrapper commandEvent;
 
@@ -350,7 +358,7 @@ class ItsProcess : public Packet::SenderState
     using DTE = Gicv3Its::DTE;
     using ITTE = Gicv3Its::ITTE;
     using CTE = Gicv3Its::CTE;
-    using Coroutine = m5::Coroutine<PacketPtr, ItsAction>;
+    using Coroutine = gem5::Coroutine<PacketPtr, ItsAction>;
     using Yield = Coroutine::CallerType;
 
     ItsProcess(Gicv3Its &_its);
@@ -537,5 +545,7 @@ class ItsCommand : public ItsProcess
         return its.collectionOutOfRange(bits(command.raw[2], 15, 0));
     }
 };
+
+} // namespace gem5
 
 #endif

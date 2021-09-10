@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #include "base/loader/object_file.hh"
@@ -35,14 +32,76 @@
 #include <vector>
 
 #include "base/loader/raw_image.hh"
-#include "base/loader/symtab.hh"
-#include "mem/port_proxy.hh"
 
-using namespace std;
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 ObjectFile::ObjectFile(ImageFileDataPtr ifd) : ImageFile(ifd) {}
 
-namespace {
+const char *
+archToString(Arch arch)
+{
+    switch (arch) {
+      case UnknownArch:
+        return "unknown";
+      case SPARC64:
+        return "sparc64";
+      case SPARC32:
+        return "sparc32";
+      case Mips:
+        return "mips";
+      case X86_64:
+        return "x86_64";
+      case I386:
+        return "i386";
+      case Arm64:
+        return "arm64";
+      case Arm:
+        return "arm";
+      case Thumb:
+        return "thumb";
+      case Power:
+        return "power";
+      case Power64:
+        return "power64";
+      case Riscv64:
+        return "riscv64";
+      case Riscv32:
+        return "riscv32";
+      default:
+        panic("Unrecognized arch %d.", arch);
+    }
+}
+
+const char *
+opSysToString(OpSys op_sys)
+{
+    switch (op_sys) {
+      case UnknownOpSys:
+        return "unknown";
+      case Tru64:
+        return "tru64";
+      case Linux:
+      case LinuxPower64ABIv1:
+      case LinuxPower64ABIv2:
+        return "linux";
+      case Solaris:
+        return "solaris";
+      case LinuxArmOABI:
+        return "linux_arm_OABI";
+      case FreeBSD:
+        return "freebsd";
+      default:
+        panic("Unrecognized operating system %d.", op_sys);
+    }
+}
+
+namespace
+{
 
 typedef std::vector<ObjectFileFormat *> ObjectFileFormatList;
 
@@ -76,3 +135,6 @@ createObjectFile(const std::string &fname, bool raw)
 
     return nullptr;
 }
+
+} // namespace loader
+} // namespace gem5

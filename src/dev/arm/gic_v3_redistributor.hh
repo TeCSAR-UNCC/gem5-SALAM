@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 ARM Limited
+ * Copyright (c) 2019-2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jairo Balart
  */
 
 #ifndef __DEV_ARM_GICV3_REDISTRIBUTOR_H__
@@ -46,6 +44,9 @@
 #include "base/addr_range.hh"
 #include "dev/arm/gic_v3.hh"
 #include "sim/serialize.hh"
+
+namespace gem5
+{
 
 class Gicv3CPUInterface;
 class Gicv3Distributor;
@@ -74,7 +75,8 @@ class Gicv3Redistributor : public Serializable
     static const uint32_t RD_base  = 0x0;
     static const uint32_t SGI_base = 0x10000;
 
-    enum {
+    enum
+    {
         // Control Register
         GICR_CTLR  = RD_base + 0x0000,
         // Implementer Identification Register
@@ -106,7 +108,8 @@ class Gicv3Redistributor : public Serializable
 
     bool peInLowPowerState;
 
-    enum {
+    enum
+    {
         // Interrupt Group Register 0
         GICR_IGROUPR0   = SGI_base + 0x0080,
         // Interrupt Set-Enable Register 0
@@ -135,7 +138,8 @@ class Gicv3Redistributor : public Serializable
     static const AddrRange GICR_IPRIORITYR;
 
     // GIC physical LPI Redistributor register
-    enum {
+    enum
+    {
         // Set LPI Pending Register
         GICR_SETLPIR = RD_base + 0x0040,
         // Clear LPI Pending Register
@@ -155,6 +159,7 @@ class Gicv3Redistributor : public Serializable
     std::vector <uint8_t> irqGroup;
     std::vector <bool> irqEnabled;
     std::vector <bool> irqPending;
+    std::vector <bool> irqPendingIspendr;
     std::vector <bool> irqActive;
     std::vector <uint8_t> irqPriority;
     std::vector <Gicv3::IntTriggerType> irqConfig;
@@ -223,6 +228,29 @@ class Gicv3Redistributor : public Serializable
     void update();
     void updateDistributor();
 
+  protected:
+
+    bool isLevelSensitive(uint32_t int_id) const
+    {
+        return irqConfig[int_id] == Gicv3::INT_LEVEL_SENSITIVE;
+    }
+
+    /**
+     * This helper is used to check if an interrupt should be treated as
+     * edge triggered in the following scenarios:
+     *
+     * a) While activating the interrupt
+     * b) While clearing an interrupt via ICPENDR
+     *
+     * In fact, in these two situations, a level sensitive interrupt
+     * which had been made pending via a write to ISPENDR, will be
+     * treated as it if was edge triggered.
+     */
+    bool treatAsEdgeTriggered(uint32_t int_id) const
+    {
+        return !isLevelSensitive(int_id) || irqPendingIspendr[int_id];
+    }
+
   public:
 
     Gicv3Redistributor(Gicv3 * gic, uint32_t cpu_id);
@@ -230,7 +258,10 @@ class Gicv3Redistributor : public Serializable
     void init();
     uint64_t read(Addr addr, size_t size, bool is_secure_access);
     void sendPPInt(uint32_t int_id);
+    void clearPPInt(uint32_t int_id);
     void write(Addr addr, uint64_t data, size_t size, bool is_secure_access);
 };
+
+} // namespace gem5
 
 #endif //__DEV_ARM_GICV3_REDISTRIBUTOR_H__

@@ -25,10 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
- *          Andreas Sandberg
  */
 
 #ifndef __BASE_CPRINTF_HH__
@@ -41,6 +37,9 @@
 
 #include "base/cprintf_formats.hh"
 
+namespace gem5
+{
+
 namespace cp {
 
 struct Print
@@ -51,14 +50,14 @@ struct Print
     const char *ptr;
     bool cont;
 
-    std::ios::fmtflags saved_flags;
-    char saved_fill;
-    int saved_precision;
-    int saved_width;
+    std::ios::fmtflags savedFlags;
+    char savedFill;
+    int savedPrecision;
+    int savedWidth;
 
     Format fmt;
     void process();
-    void process_flag();
+    void processFlag();
 
   public:
     Print(std::ostream &stream, const std::string &format);
@@ -66,54 +65,54 @@ struct Print
     ~Print();
 
     int
-    get_number(int data)
+    getNumber(int data)
     {
         return data;
     }
 
     template <typename T>
     int
-    get_number(const T& data)
+    getNumber(const T& data)
     {
         return 0;
     }
 
     template <typename T>
     void
-    add_arg(const T &data)
+    addArg(const T &data)
     {
         if (!cont)
             process();
 
-        if (fmt.get_width) {
-            fmt.get_width = false;
+        if (fmt.getWidth) {
+            fmt.getWidth = false;
             cont = true;
-            fmt.width = get_number(data);
+            fmt.width = getNumber(data);
             return;
         }
 
-        if (fmt.get_precision) {
-            fmt.get_precision = false;
+        if (fmt.getPrecision) {
+            fmt.getPrecision = false;
             cont = true;
-            fmt.precision = get_number(data);
+            fmt.precision = getNumber(data);
             return;
         }
 
         switch (fmt.format) {
-          case Format::character:
-            format_char(stream, data, fmt);
+          case Format::Character:
+            formatChar(stream, data, fmt);
             break;
 
-          case Format::integer:
-            format_integer(stream, data, fmt);
+          case Format::Integer:
+            formatInteger(stream, data, fmt);
             break;
 
-          case Format::floating:
-            format_float(stream, data, fmt);
+          case Format::Floating:
+            formatFloat(stream, data, fmt);
             break;
 
-          case Format::string:
-            format_string(stream, data, fmt);
+          case Format::String:
+            formatString(stream, data, fmt);
             break;
 
           default:
@@ -122,7 +121,7 @@ struct Print
         }
     }
 
-    void end_args();
+    void endArgs();
 };
 
 } // namespace cp
@@ -130,14 +129,14 @@ struct Print
 inline void
 ccprintf(cp::Print &print)
 {
-    print.end_args();
+    print.endArgs();
 }
 
 
 template<typename T, typename ...Args> void
 ccprintf(cp::Print &print, const T &value, const Args &...args)
 {
-    print.add_arg(value);
+    print.addArg(value);
 
     ccprintf(print, args...);
 }
@@ -188,5 +187,7 @@ csprintf(const std::string &format, const Args &...args)
 {
     return csprintf(format.c_str(), args...);
 }
+
+} // namespace gem5
 
 #endif // __CPRINTF_HH__

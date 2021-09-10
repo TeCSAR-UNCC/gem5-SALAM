@@ -36,26 +36,33 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Andreas Sandberg
  */
 
 #include "dev/ps2/device.hh"
 
+#include <algorithm>
+
 #include "base/logging.hh"
+#include "base/trace.hh"
 #include "debug/PS2.hh"
 #include "dev/ps2/types.hh"
 #include "params/PS2Device.hh"
+#include "sim/serialize.hh"
 
-PS2Device::PS2Device(const PS2DeviceParams *p)
+namespace gem5
+{
+
+namespace ps2
+{
+
+Device::Device(const PS2DeviceParams &p)
     : SimObject(p)
 {
     inBuffer.reserve(16);
 }
 
 void
-PS2Device::serialize(CheckpointOut &cp) const
+Device::serialize(CheckpointOut &cp) const
 {
     std::vector<uint8_t> buffer(outBuffer.size());
     std::copy(outBuffer.begin(), outBuffer.end(), buffer.begin());
@@ -65,7 +72,7 @@ PS2Device::serialize(CheckpointOut &cp) const
 }
 
 void
-PS2Device::unserialize(CheckpointIn &cp)
+Device::unserialize(CheckpointIn &cp)
 {
     std::vector<uint8_t> buffer;
     arrayParamIn(cp, "outBuffer", buffer);
@@ -76,7 +83,7 @@ PS2Device::unserialize(CheckpointIn &cp)
 }
 
 void
-PS2Device::hostRegDataAvailable(const std::function<void()> &c)
+Device::hostRegDataAvailable(const std::function<void()> &c)
 {
     fatal_if(dataAvailableCallback,
              "A data pending callback has already been associated with this "
@@ -86,7 +93,7 @@ PS2Device::hostRegDataAvailable(const std::function<void()> &c)
 }
 
 uint8_t
-PS2Device::hostRead()
+Device::hostRead()
 {
     uint8_t data = outBuffer.front();
     outBuffer.pop_front();
@@ -94,7 +101,7 @@ PS2Device::hostRead()
 }
 
 void
-PS2Device::hostWrite(uint8_t c)
+Device::hostWrite(uint8_t c)
 {
     DPRINTF(PS2, "PS2: Host -> device: %#x\n", c);
     inBuffer.push_back(c);
@@ -103,7 +110,7 @@ PS2Device::hostWrite(uint8_t c)
 }
 
 void
-PS2Device::send(const uint8_t *data, size_t size)
+Device::send(const uint8_t *data, size_t size)
 {
     assert(data || size == 0);
     while (size) {
@@ -118,7 +125,10 @@ PS2Device::send(const uint8_t *data, size_t size)
 }
 
 void
-PS2Device::sendAck()
+Device::sendAck()
 {
-    send(Ps2::Ack);
+    send(Ack);
 }
+
+} // namespace ps2
+} // namespace gem5

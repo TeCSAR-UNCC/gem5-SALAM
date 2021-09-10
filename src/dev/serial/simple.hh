@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 
@@ -43,12 +41,15 @@
 
 #include "dev/serial/uart.hh"
 
+namespace gem5
+{
+
 struct SimpleUartParams;
 
 class SimpleUart : public Uart
 {
   public:
-    SimpleUart(const SimpleUartParams *p);
+    SimpleUart(const SimpleUartParams &p);
 
   public: // PioDevice
     Tick read(PacketPtr pkt) override;
@@ -65,5 +66,7 @@ class SimpleUart : public Uart
 
     const bool endOnEOT;
 };
+
+} // namespace gem5
 
 #endif // __DEV_SERIAL_SIMPLE_HH__

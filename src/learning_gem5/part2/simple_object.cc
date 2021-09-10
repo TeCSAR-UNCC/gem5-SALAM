@@ -24,22 +24,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Jason Lowe-Power
  */
 
 #include "learning_gem5/part2/simple_object.hh"
 
 #include <iostream>
 
-SimpleObject::SimpleObject(SimpleObjectParams *params) :
+namespace gem5
+{
+
+SimpleObject::SimpleObject(const SimpleObjectParams &params) :
     SimObject(params)
 {
     std::cout << "Hello World! From a SimObject!" << std::endl;
 }
 
-SimpleObject*
-SimpleObjectParams::create()
-{
-    return new SimpleObject(this);
-}
+} // namespace gem5

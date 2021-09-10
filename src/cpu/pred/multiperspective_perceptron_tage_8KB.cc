@@ -39,20 +39,14 @@
 
 #include "cpu/pred/multiperspective_perceptron_tage_8KB.hh"
 
-MPP_TAGE_8KB*
-MPP_TAGE_8KBParams::create()
+namespace gem5
 {
-    return new MPP_TAGE_8KB(this);
-}
 
-MPP_LoopPredictor_8KB*
-MPP_LoopPredictor_8KBParams::create()
+namespace branch_prediction
 {
-    return new MPP_LoopPredictor_8KB(this);
-}
 
 MPP_StatisticalCorrector_8KB::MPP_StatisticalCorrector_8KB(
-        const MPP_StatisticalCorrector_8KBParams *p)
+        const MPP_StatisticalCorrector_8KBParams &p)
   : MPP_StatisticalCorrector(p)
 {
 }
@@ -167,14 +161,8 @@ MPP_StatisticalCorrector_8KB::getSizeInBits() const
     return bits;
 }
 
-MPP_StatisticalCorrector_8KB*
-MPP_StatisticalCorrector_8KBParams::create()
-{
-    return new MPP_StatisticalCorrector_8KB(this);
-}
-
 MultiperspectivePerceptronTAGE8KB::MultiperspectivePerceptronTAGE8KB(
-        const MultiperspectivePerceptronTAGE8KBParams *p)
+        const MultiperspectivePerceptronTAGE8KBParams &p)
     : MultiperspectivePerceptronTAGE(p)
 {
 }
@@ -189,8 +177,5 @@ MultiperspectivePerceptronTAGE8KB::createSpecs()
     addSpec(new IMLI(4, 1.98, 0, 6, *this));
 }
 
-MultiperspectivePerceptronTAGE8KB*
-MultiperspectivePerceptronTAGE8KBParams::create()
-{
-    return new MultiperspectivePerceptronTAGE8KB(this);
-}
+} // namespace branch_prediction
+} // namespace gem5

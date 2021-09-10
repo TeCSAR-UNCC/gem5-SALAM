@@ -54,10 +54,13 @@
 #include "params/RubyTester.hh"
 #include "sim/clocked_object.hh"
 
+namespace gem5
+{
+
 class RubyTester : public ClockedObject
 {
   public:
-    class CpuPort : public MasterPort
+    class CpuPort : public RequestPort
     {
       private:
         RubyTester *tester;
@@ -73,7 +76,7 @@ class RubyTester : public ClockedObject
 
         CpuPort(const std::string &_name, RubyTester *_tester, PortID _id,
                 PortID _index)
-            : MasterPort(_name, _tester, _id), tester(_tester),
+            : RequestPort(_name, _tester, _id), tester(_tester),
               globalIdx(_index)
         {}
 
@@ -85,14 +88,14 @@ class RubyTester : public ClockedObject
 
     struct SenderState : public Packet::SenderState
     {
-        SubBlock subBlock;
+        ruby::SubBlock subBlock;
 
         SenderState(Addr addr, int size) : subBlock(addr, size) {}
 
     };
 
     typedef RubyTesterParams Params;
-    RubyTester(const Params *p);
+    RubyTester(const Params &p);
     ~RubyTester();
 
     Port &getPort(const std::string &if_name,
@@ -101,8 +104,8 @@ class RubyTester : public ClockedObject
     bool isInstOnlyCpuPort(int idx);
     bool isInstDataCpuPort(int idx);
 
-    MasterPort* getReadableCpuPort(int idx);
-    MasterPort* getWritableCpuPort(int idx);
+    RequestPort* getReadableCpuPort(int idx);
+    RequestPort* getWritableCpuPort(int idx);
 
     void init() override;
 
@@ -117,14 +120,14 @@ class RubyTester : public ClockedObject
     void print(std::ostream& out) const;
     bool getCheckFlush() { return m_check_flush; }
 
-    MasterID masterId() { return _masterId; }
+    RequestorID requestorId() { return _requestorId; }
   protected:
     EventFunctionWrapper checkStartEvent;
 
-    MasterID _masterId;
+    RequestorID _requestorId;
 
   private:
-    void hitCallback(NodeID proc, SubBlock* data);
+    void hitCallback(ruby::NodeID proc, ruby::SubBlock* data);
 
     void checkForDeadlock();
 
@@ -137,8 +140,8 @@ class RubyTester : public ClockedObject
 
     int m_num_cpus;
     uint64_t m_checks_completed;
-    std::vector<MasterPort*> writePorts;
-    std::vector<MasterPort*> readPorts;
+    std::vector<RequestPort*> writePorts;
+    std::vector<RequestPort*> readPorts;
     uint64_t m_checks_to_complete;
     int m_deadlock_threshold;
     int m_num_writers;
@@ -156,5 +159,7 @@ operator<<(std::ostream& out, const RubyTester& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace gem5
 
 #endif // __CPU_RUBYTEST_RUBYTESTER_HH__

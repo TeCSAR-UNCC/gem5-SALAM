@@ -33,15 +33,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 #ifndef __MEM_PHYSICAL_HH__
 #define __MEM_PHYSICAL_HH__
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "base/addr_range.hh"
 #include "base/addr_range_map.hh"
 #include "mem/packet.hh"
+#include "sim/serialize.hh"
+
+namespace gem5
+{
+
+namespace memory
+{
 
 /**
  * Forward declaration to avoid header dependencies.
@@ -129,6 +139,8 @@ class PhysicalMemory : public Serializable
     // Let the user choose if we reserve swap space when calling mmap
     const bool mmapUsingNoReserve;
 
+    const std::string sharedBackstore;
+
     // The physical memory used to provide the memory in the simulated
     // system
     std::vector<BackingStoreEntry> backingStore;
@@ -160,7 +172,8 @@ class PhysicalMemory : public Serializable
      */
     PhysicalMemory(const std::string& _name,
                    const std::vector<AbstractMemory*>& _memories,
-                   bool mmap_using_noreserve);
+                   bool mmap_using_noreserve,
+                   const std::string& shared_backstore);
 
     /**
      * Unmap all the backing store we have used.
@@ -266,5 +279,8 @@ class PhysicalMemory : public Serializable
     void unserializeStore(CheckpointIn &cp);
 
 };
+
+} // namespace memory
+} // namespace gem5
 
 #endif //__MEM_PHYSICAL_HH__

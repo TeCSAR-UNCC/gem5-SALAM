@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "dev/virtio/fs9p.hh"
@@ -49,6 +47,7 @@
 #include <unistd.h>
 
 #include <csignal>
+#include <cstring>
 #include <fstream>
 
 #include "base/callback.hh"
@@ -59,9 +58,14 @@
 #include "params/VirtIO9PDiod.hh"
 #include "params/VirtIO9PProxy.hh"
 #include "params/VirtIO9PSocket.hh"
+#include "sim/core.hh"
 #include "sim/system.hh"
 
-struct P9MsgInfo {
+namespace gem5
+{
+
+struct P9MsgInfo
+{
     P9MsgInfo(P9MsgType _type, std::string _name)
         : type(_type), name(_name) {}
 
@@ -114,16 +118,16 @@ static const P9MsgInfoMap p9_msg_info {
 
 #undef P9MSG
 
-VirtIO9PBase::VirtIO9PBase(Params *params)
+VirtIO9PBase::VirtIO9PBase(const Params &params)
     : VirtIODeviceBase(params, ID_9P,
-                       sizeof(Config) + params->tag.size(),
+                       sizeof(Config) + params.tag.size(),
                        F_MOUNT_TAG),
-      queue(params->system->physProxy, byteOrder, params->queueSize, *this)
+      queue(params.system->physProxy, byteOrder, params.queueSize, *this)
 {
     config.reset((Config *)
                  operator new(configSize));
-    config->len = htog(params->tag.size(), byteOrder);
-    memcpy(config->tag, params->tag.c_str(), params->tag.size());
+    config->len = htog(params.tag.size(), byteOrder);
+    memcpy(config->tag, params.tag.c_str(), params.tag.size());
 
     registerQueue(queue);
 }
@@ -194,7 +198,7 @@ void
 VirtIO9PBase::dumpMsg(const P9MsgHeader &header, const uint8_t *data, size_t size)
 {
 #ifndef NDEBUG
-    if (!DTRACE(VIO9P))
+    if (!debug::VIO9P)
         return;
 
     const P9MsgInfoMap::const_iterator it_msg(p9_msg_info.find(header.type));
@@ -211,7 +215,7 @@ VirtIO9PBase::dumpMsg(const P9MsgHeader &header, const uint8_t *data, size_t siz
 }
 
 
-VirtIO9PProxy::VirtIO9PProxy(Params *params)
+VirtIO9PProxy::VirtIO9PProxy(const Params &params)
   : VirtIO9PBase(params), deviceUsed(false)
 {
 }
@@ -312,14 +316,12 @@ VirtIO9PProxy::writeAll(const uint8_t *data, size_t len)
 
 
 
-VirtIO9PDiod::VirtIO9PDiod(Params *params)
+VirtIO9PDiod::VirtIO9PDiod(const Params &params)
     : VirtIO9PProxy(params),
       fd_to_diod(-1), fd_from_diod(-1), diod_pid(-1)
 {
     // Register an exit callback so we can kill the diod process
-    Callback* cb = new MakeCallback<VirtIO9PDiod,
-                                    &VirtIO9PDiod::terminateDiod>(this);
-    registerExitCallback(cb);
+    registerExitCallback([this]() { terminateDiod(); });
 }
 
 VirtIO9PDiod::~VirtIO9PDiod()
@@ -337,83 +339,74 @@ VirtIO9PDiod::startup()
 void
 VirtIO9PDiod::startDiod()
 {
-    const Params *p(dynamic_cast<const Params *>(params()));
+    const Params &p = dynamic_cast<const Params &>(params());
     int pipe_rfd[2];
     int pipe_wfd[2];
-    const int DIOD_RFD = 3;
-    const int DIOD_WFD = 4;
 
-    const char *diod(p->diod.c_str());
+    DPRINTF(VIO9P, "Using diod at %s.\n", p.diod);
 
-    DPRINTF(VIO9P, "Using diod at %s \n", p->diod.c_str());
-
-    if (pipe(pipe_rfd) == -1 || pipe(pipe_wfd) == -1)
-        panic("Failed to create DIOD pipes: %i\n", errno);
+    panic_if(pipe(pipe_rfd) == -1, "Failed to create DIOD read pipe: %s",
+            strerror(errno));
+    panic_if(pipe(pipe_wfd) == -1, "Failed to create DIOD write pipe: %s",
+            strerror(errno));
 
     fd_to_diod = pipe_rfd[1];
     fd_from_diod = pipe_wfd[0];
 
     // Create Unix domain socket
     int socket_id = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (socket_id == -1) {
-        panic("Socket creation failed %i \n", errno);
-    }
+    panic_if(socket_id == -1, "Socket creation failed %i", errno);
+
     // Bind the socket to a path which will not be read
     struct sockaddr_un socket_address;
-    memset(&socket_address, 0, sizeof(struct sockaddr_un));
+    memset(&socket_address, 0, sizeof(socket_address));
     socket_address.sun_family = AF_UNIX;
 
-    const std::string socket_path = simout.resolve(p->socketPath);
-    fatal_if(!OutputDirectory::isAbsolute(socket_path), "Please make the" \
-             " output directory an absolute path, else diod will fail!\n");
+    const std::string socket_path = simout.resolve(p.socketPath);
+    fatal_if(!OutputDirectory::isAbsolute(socket_path), "Please make the"
+             " output directory an absolute path, else diod will fail!");
 
     // Prevent overflow in strcpy
     fatal_if(sizeof(socket_address.sun_path) <= socket_path.length(),
              "Incorrect length of socket path");
     strncpy(socket_address.sun_path, socket_path.c_str(),
             sizeof(socket_address.sun_path) - 1);
-    if (bind(socket_id, (struct sockaddr*) &socket_address,
-             sizeof(struct sockaddr_un)) == -1){
-        perror("Socket binding");
-        panic("Socket binding to %i failed - most likely the output dir" \
-              " and hence unused socket already exists \n", socket_id);
-    }
+    panic_if(bind(socket_id, (struct sockaddr*)&socket_address,
+                sizeof(socket_address)) == -1,
+            "Socket binding to %i failed - most likely the output dir "
+            "and hence unused socket already exists.", socket_id);
 
     diod_pid = fork();
-    if (diod_pid == -1) {
-        panic("Fork failed: %i\n", errno);
-    } else if (diod_pid == 0) {
+    panic_if(diod_pid == -1, "Fork failed: %s", strerror(errno));
+
+    if (diod_pid == 0) {
         // Create the socket which will later by used by the diod process
         close(STDIN_FILENO);
-        if (dup2(pipe_rfd[0], DIOD_RFD) == -1 ||
-            dup2(pipe_wfd[1], DIOD_WFD) == -1) {
+        close(pipe_rfd[1]);
+        close(pipe_wfd[0]);
 
-            panic("Failed to setup read/write pipes: %i\n",
-                  errno);
-        }
+        auto diod_rfd_s = std::to_string(pipe_rfd[0]);
+        auto diod_wfd_s = std::to_string(pipe_wfd[1]);
 
         // Start diod
-        execlp(diod, diod,
-               "-d", DTRACE(VIO9P) ? "1" : "0", // show debug output
+        execlp(p.diod.c_str(), p.diod.c_str(),
+               "-d", debug::VIO9P ? "1" : "0", // show debug output
                "-f", // start in foreground
-               "-r", "3", // setup read FD
-               "-w", "4", // setup write FD
-               "-e", p->root.c_str(), // path to export
+               "-r", diod_rfd_s.c_str(), // setup read FD
+               "-w", diod_wfd_s.c_str(), // setup write FD
+               "-e", p.root.c_str(), // path to export
                "-n", // disable security
                "-S", // squash all users
                "-l", socket_path.c_str(), // pass the socket
-               (char *)NULL);
-        perror("Starting DIOD");
-        panic("Failed to execute diod to %s: %i\n",socket_path, errno);
+               nullptr);
+        panic("Failed to execute diod to %s: %s", socket_path,
+                strerror(errno));
     } else {
         close(pipe_rfd[0]);
         close(pipe_wfd[1]);
-        inform("Started diod with PID %u, you might need to manually kill " \
-                " diod if gem5 crashes \n", diod_pid);
+        inform("Started diod with PID %u, you might need to manually kill "
+                "diod if gem5 crashes", diod_pid);
     }
-
-#undef DIOD_RFD
-#undef DIOD_WFD
 }
 
 ssize_t
@@ -476,18 +469,10 @@ VirtIO9PDiod::terminateDiod()
         // Managed to kill diod
         return;
     }
-
-}
-VirtIO9PDiod *
-VirtIO9PDiodParams::create()
-{
-    return new VirtIO9PDiod(this);
 }
 
 
-
-
-VirtIO9PSocket::VirtIO9PSocket(Params *params)
+VirtIO9PSocket::VirtIO9PSocket(const Params &params)
     : VirtIO9PProxy(params), fdSocket(-1)
 {
 }
@@ -507,7 +492,7 @@ VirtIO9PSocket::startup()
 void
 VirtIO9PSocket::connectSocket()
 {
-    const Params &p(dynamic_cast<const Params &>(*params()));
+    const Params &p = dynamic_cast<const Params &>(params());
 
     int ret;
     struct addrinfo hints, *result;
@@ -574,9 +559,4 @@ VirtIO9PSocket::SocketDataEvent::process(int revent)
     parent.serverDataReady();
 }
 
-
-VirtIO9PSocket *
-VirtIO9PSocketParams::create()
-{
-    return new VirtIO9PSocket(this);
-}
+} // namespace gem5

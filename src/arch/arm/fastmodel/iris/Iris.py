@@ -1,3 +1,15 @@
+# Copyright (c) 2020 ARM Limited
+# All rights reserved.
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright 2019 Google, Inc.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -22,18 +34,42 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.params import *
 from m5.proxy import *
 
 from m5.objects.BaseCPU import BaseCPU
+from m5.objects.BaseInterrupts import BaseInterrupts
+from m5.objects.BaseISA import BaseISA
+from m5.objects.BaseTLB import BaseTLB
+from m5.objects.BaseMMU import BaseMMU
+
+class IrisTLB(BaseTLB):
+    type = 'IrisTLB'
+    cxx_class = 'gem5::Iris::TLB'
+    cxx_header = 'arch/arm/fastmodel/iris/tlb.hh'
+
+class IrisMMU(BaseMMU):
+    type = 'IrisMMU'
+    cxx_class = 'gem5::Iris::MMU'
+    cxx_header = 'arch/arm/fastmodel/iris/mmu.hh'
+    itb = IrisTLB()
+    dtb = IrisTLB()
+
+class IrisInterrupts(BaseInterrupts):
+    type = 'IrisInterrupts'
+    cxx_class = 'gem5::Iris::Interrupts'
+    cxx_header = 'arch/arm/fastmodel/iris/interrupts.hh'
+
+class IrisISA(BaseISA):
+    type = 'IrisISA'
+    cxx_class = 'gem5::Iris::ISA'
+    cxx_header = 'arch/arm/fastmodel/iris/isa.hh'
 
 class IrisBaseCPU(BaseCPU):
     type = 'IrisBaseCPU'
     abstract = True
-    cxx_class = 'Iris::BaseCPU'
+    cxx_class = 'gem5::Iris::BaseCPU'
     cxx_header = 'arch/arm/fastmodel/iris/cpu.hh'
 
     @classmethod
@@ -53,3 +89,14 @@ class IrisBaseCPU(BaseCPU):
             "Fast model exported virtual subsystem holding cores")
     thread_paths = VectorParam.String(
             "Sub-paths to elements in the EVS which support a thread context")
+
+    mmu = IrisMMU()
+
+    def createThreads(self):
+        if len(self.isa) == 0:
+            self.isa = [ IrisISA() for i in range(self.numThreads) ]
+        else:
+            assert(len(self.isa) == int(self.numThreads))
+
+    def createInterruptController(self):
+        self.interrupts = [ IrisInterrupts() for i in range(self.numThreads) ]

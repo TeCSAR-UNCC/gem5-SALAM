@@ -41,23 +41,29 @@
 
 #include "cpu/pred/tage_sc_l_64KB.hh"
 
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
 TAGE_SC_L_64KB_StatisticalCorrector::TAGE_SC_L_64KB_StatisticalCorrector(
-    TAGE_SC_L_64KB_StatisticalCorrectorParams *p)
+    const TAGE_SC_L_64KB_StatisticalCorrectorParams &p)
   : StatisticalCorrector(p),
-    numEntriesSecondLocalHistories(p->numEntriesSecondLocalHistories),
-    numEntriesThirdLocalHistories(p->numEntriesThirdLocalHistories),
-    pnb(p->pnb),
-    logPnb(p->logPnb),
-    pm(p->pm),
-    snb(p->snb),
-    logSnb(p->logSnb),
-    sm(p->sm),
-    tnb(p->tnb),
-    logTnb(p->logTnb),
-    tm(p->tm),
-    imnb(p->imnb),
-    logImnb(p->logImnb),
-    imm(p->imm)
+    numEntriesSecondLocalHistories(p.numEntriesSecondLocalHistories),
+    numEntriesThirdLocalHistories(p.numEntriesThirdLocalHistories),
+    pnb(p.pnb),
+    logPnb(p.logPnb),
+    pm(p.pm),
+    snb(p.snb),
+    logSnb(p.logSnb),
+    sm(p.sm),
+    tnb(p.tnb),
+    logTnb(p.logTnb),
+    tm(p.tm),
+    imnb(p.imnb),
+    logImnb(p.logImnb),
+    imm(p.imm)
 {
     initGEHLTable(pnb, pm, pgehl, logPnb, wp, 7);
     initGEHLTable(snb, sm, sgehl, logSnb, ws, 7);
@@ -190,12 +196,6 @@ TAGE_SC_L_64KB_StatisticalCorrector::gUpdates(ThreadID tid, Addr pc,
             igehl, inb, logInb, wi, bi);
 }
 
-TAGE_SC_L_64KB_StatisticalCorrector*
-TAGE_SC_L_64KB_StatisticalCorrectorParams::create()
-{
-    return new TAGE_SC_L_64KB_StatisticalCorrector(this);
-}
-
 int
 TAGE_SC_L_TAGE_64KB::gindex_ext(int index, int bank) const
 {
@@ -209,7 +209,7 @@ TAGE_SC_L_TAGE_64KB::gtag(ThreadID tid, Addr pc, int bank) const
     int tag = pc ^ threadHistory[tid].computeTags[0][bank].comp ^
               (threadHistory[tid].computeTags[1][bank].comp << 1);
 
-    return (tag & ((ULL(1) << tagTableTagWidths[bank]) - 1));
+    return (tag & ((1ULL << tagTableTagWidths[bank]) - 1));
 }
 
 void
@@ -309,19 +309,10 @@ TAGE_SC_L_TAGE_64KB::handleTAGEUpdate(Addr branch_pc, bool taken,
     }
 }
 
-TAGE_SC_L_TAGE_64KB*
-TAGE_SC_L_TAGE_64KBParams::create()
-{
-    return new TAGE_SC_L_TAGE_64KB(this);
-}
-
-TAGE_SC_L_64KB::TAGE_SC_L_64KB(const TAGE_SC_L_64KBParams *params)
+TAGE_SC_L_64KB::TAGE_SC_L_64KB(const TAGE_SC_L_64KBParams &params)
   : TAGE_SC_L(params)
 {
 }
 
-TAGE_SC_L_64KB*
-TAGE_SC_L_64KBParams::create()
-{
-    return new TAGE_SC_L_64KB(this);
-}
+} // namespace branch_prediction
+} // namespace gem5

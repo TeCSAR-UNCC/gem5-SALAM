@@ -46,18 +46,27 @@
 #include "params/MPP_TAGE_8KB.hh"
 #include "params/MultiperspectivePerceptronTAGE8KB.hh"
 
-class MPP_TAGE_8KB : public MPP_TAGE {
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+class MPP_TAGE_8KB : public MPP_TAGE
+{
   public:
-    MPP_TAGE_8KB(const MPP_TAGE_8KBParams *p) : MPP_TAGE(p) {}
+    MPP_TAGE_8KB(const MPP_TAGE_8KBParams &p) : MPP_TAGE(p) {}
 };
 
-class MPP_LoopPredictor_8KB : public MPP_LoopPredictor {
+class MPP_LoopPredictor_8KB : public MPP_LoopPredictor
+{
   public:
-    MPP_LoopPredictor_8KB(MPP_LoopPredictor_8KBParams *p) :
+    MPP_LoopPredictor_8KB(const MPP_LoopPredictor_8KBParams &p) :
         MPP_LoopPredictor(p) {}
 };
 
-class MPP_StatisticalCorrector_8KB : public MPP_StatisticalCorrector {
+class MPP_StatisticalCorrector_8KB : public MPP_StatisticalCorrector
+{
     StatisticalCorrector::SCThreadHistory *makeThreadHistory() override;
     int gPredictions(ThreadID tid, Addr branch_pc,
             StatisticalCorrector::BranchInfo* bi, int &lsum, int64_t phist)
@@ -69,16 +78,20 @@ class MPP_StatisticalCorrector_8KB : public MPP_StatisticalCorrector {
     void scHistoryUpdate(Addr branch_pc, const StaticInstPtr &inst, bool taken,
             StatisticalCorrector::BranchInfo *bi, Addr corrTarget) override;
   public:
-    MPP_StatisticalCorrector_8KB(const MPP_StatisticalCorrector_8KBParams *p);
+    MPP_StatisticalCorrector_8KB(const MPP_StatisticalCorrector_8KBParams &p);
     size_t getSizeInBits() const override;
 };
 
 class MultiperspectivePerceptronTAGE8KB :
-        public MultiperspectivePerceptronTAGE {
+        public MultiperspectivePerceptronTAGE
+{
     void createSpecs() override;
   public:
     MultiperspectivePerceptronTAGE8KB(
-            const MultiperspectivePerceptronTAGE8KBParams *p);
+            const MultiperspectivePerceptronTAGE8KBParams &p);
 };
+
+} // namespace branch_prediction
+} // namespace gem5
 
 #endif // __CPU_PRED_MULTIPERSPECTIVE_PERCEPTRON_TAGE_8KB_HH__

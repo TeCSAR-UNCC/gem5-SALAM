@@ -23,25 +23,25 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 from m5.SimObject import SimObject
 from m5.params import *
-from m5.objects.PciDevice import PciDevice
+from m5.objects.PciDevice import PciDevice, PciIoBar
 
-class IdeID(Enum): vals = ['master', 'slave']
+class IdeID(Enum): vals = ['device0', 'device1']
 
 class IdeDisk(SimObject):
     type = 'IdeDisk'
     cxx_header = "dev/storage/ide_disk.hh"
+    cxx_class = 'gem5::IdeDisk'
     delay = Param.Latency('1us', "Fixed disk delay in microseconds")
-    driveID = Param.IdeID('master', "Drive ID")
+    driveID = Param.IdeID('device0', "Drive ID")
     image = Param.DiskImage("Disk image")
 
 class IdeController(PciDevice):
     type = 'IdeController'
     cxx_header = "dev/storage/ide_ctrl.hh"
+    cxx_class = 'gem5::IdeController'
     disks = VectorParam.IdeDisk("IDE disks attached to this controller")
 
     VendorID = 0x8086
@@ -52,19 +52,17 @@ class IdeController(PciDevice):
     ClassCode = 0x01
     SubClassCode = 0x01
     ProgIF = 0x85
-    BAR0 = 0x00000001
-    BAR1 = 0x00000001
-    BAR2 = 0x00000001
-    BAR3 = 0x00000001
-    BAR4 = 0x00000001
-    BAR5 = 0x00000001
     InterruptLine = 0x1f
     InterruptPin = 0x01
-    BAR0Size = '8B'
-    BAR1Size = '4B'
-    BAR2Size = '8B'
-    BAR3Size = '4B'
-    BAR4Size = '16B'
+
+    # Primary
+    BAR0 = PciIoBar(size='8B')
+    BAR1 = PciIoBar(size='4B')
+    # Secondary
+    BAR2 = PciIoBar(size='8B')
+    BAR3 = PciIoBar(size='4B')
+    # DMA
+    BAR4 = PciIoBar(size='16B')
 
     io_shift = Param.UInt32(0x0, "IO port shift");
     ctrl_offset = Param.UInt32(0x0, "IDE disk control offset")

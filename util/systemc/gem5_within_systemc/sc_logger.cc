@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -62,9 +60,9 @@ class CuttingStreambuf : public std::streambuf
     std::ostringstream line;
 
     /** Logger to send complete lines to */
-    Trace::Logger *logger;
+    gem5::Trace::Logger *logger;
 
-    CuttingStreambuf(Trace::Logger *logger_) : logger(logger_)
+    CuttingStreambuf(gem5::Trace::Logger *logger_) : logger(logger_)
     { }
 
     /** Accumulate to line up to \n and then emit */
@@ -132,7 +130,7 @@ Logger::~Logger()
 
 /** Log a single message as a single sc_report call */
 void
-Logger::logMessage(Tick when, const std::string &name,
+Logger::logMessage(gem5::Tick when, const std::string &name,
     const std::string &flag, const std::string &message)
 {
     /* Need to chop the newline off the message */
@@ -149,4 +147,4 @@ Logger::getOstream()
     return stream;
 }
 
-}
+} // namespace Gem5SystemC

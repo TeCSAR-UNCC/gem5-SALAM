@@ -36,13 +36,10 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/x86/bios/smbios.hh"
 
-#include "arch/x86/isa_traits.hh"
 #include "base/types.hh"
 #include "mem/port_proxy.hh"
 #include "params/X86SMBiosBiosInformation.hh"
@@ -50,16 +47,17 @@
 #include "params/X86SMBiosSMBiosTable.hh"
 #include "sim/byteswap.hh"
 
-using namespace std;
+namespace gem5
+{
 
-const char X86ISA::SMBios::SMBiosTable::SMBiosHeader::anchorString[] = "_SM_";
-const uint8_t X86ISA::SMBios::SMBiosTable::
+const char X86ISA::smbios::SMBiosTable::SMBiosHeader::anchorString[] = "_SM_";
+const uint8_t X86ISA::smbios::SMBiosTable::
         SMBiosHeader::formattedArea[] = {0,0,0,0,0};
-const uint8_t X86ISA::SMBios::SMBiosTable::
+const uint8_t X86ISA::smbios::SMBiosTable::
         SMBiosHeader::entryPointLength = 0x1F;
-const uint8_t X86ISA::SMBios::SMBiosTable::
+const uint8_t X86ISA::smbios::SMBiosTable::
         SMBiosHeader::entryPointRevision = 0;
-const char X86ISA::SMBios::SMBiosTable::
+const char X86ISA::smbios::SMBiosTable::
         SMBiosHeader::IntermediateHeader::anchorString[] = "_DMI_";
 
 template <class T>
@@ -75,7 +73,7 @@ composeBitVector(T vec)
 }
 
 uint16_t
-X86ISA::SMBios::SMBiosStructure::writeOut(PortProxy& proxy, Addr addr)
+X86ISA::smbios::SMBiosStructure::writeOut(PortProxy& proxy, Addr addr)
 {
     proxy.writeBlob(addr, &type, 1);
 
@@ -88,12 +86,13 @@ X86ISA::SMBios::SMBiosStructure::writeOut(PortProxy& proxy, Addr addr)
     return length + getStringLength();
 }
 
-X86ISA::SMBios::SMBiosStructure::SMBiosStructure(Params * p, uint8_t _type) :
+X86ISA::smbios::SMBiosStructure::SMBiosStructure(
+        const Params &p, uint8_t _type) :
     SimObject(p), type(_type), handle(0), stringFields(false)
 {}
 
 void
-X86ISA::SMBios::SMBiosStructure::writeOutStrings(
+X86ISA::smbios::SMBiosStructure::writeOutStrings(
         PortProxy& proxy, Addr addr)
 {
     std::vector<std::string>::iterator it;
@@ -116,7 +115,7 @@ X86ISA::SMBios::SMBiosStructure::writeOutStrings(
 }
 
 int
-X86ISA::SMBios::SMBiosStructure::getStringLength()
+X86ISA::smbios::SMBiosStructure::getStringLength()
 {
     int size = 0;
     std::vector<std::string>::iterator it;
@@ -129,50 +128,51 @@ X86ISA::SMBios::SMBiosStructure::getStringLength()
 }
 
 int
-X86ISA::SMBios::SMBiosStructure::addString(string & newString)
+X86ISA::smbios::SMBiosStructure::addString(const std::string &new_string)
 {
     stringFields = true;
     // If a string is empty, treat it as not existing. The index for empty
     // strings is 0.
-    if (newString.length() == 0)
+    if (new_string.length() == 0)
         return 0;
-    strings.push_back(newString);
+    strings.push_back(new_string);
     return strings.size();
 }
 
-string
-X86ISA::SMBios::SMBiosStructure::readString(int n)
+std::string
+X86ISA::smbios::SMBiosStructure::readString(int n)
 {
     assert(n > 0 && n <= strings.size());
     return strings[n - 1];
 }
 
 void
-X86ISA::SMBios::SMBiosStructure::setString(int n, std::string & newString)
+X86ISA::smbios::SMBiosStructure::setString(
+        int n, const std::string &new_string)
 {
     assert(n > 0 && n <= strings.size());
-    strings[n - 1] = newString;
+    strings[n - 1] = new_string;
 }
 
-X86ISA::SMBios::BiosInformation::BiosInformation(Params * p) :
+X86ISA::smbios::BiosInformation::BiosInformation(const Params &p) :
         SMBiosStructure(p, Type),
-        startingAddrSegment(p->starting_addr_segment),
-        romSize(p->rom_size),
-        majorVer(p->major), minorVer(p->minor),
-        embContFirmwareMajor(p->emb_cont_firmware_major),
-        embContFirmwareMinor(p->emb_cont_firmware_minor)
+        startingAddrSegment(p.starting_addr_segment),
+        romSize(p.rom_size),
+        majorVer(p.major), minorVer(p.minor),
+        embContFirmwareMajor(p.emb_cont_firmware_major),
+        embContFirmwareMinor(p.emb_cont_firmware_minor)
     {
-        vendor = addString(p->vendor);
-        version = addString(p->version);
-        releaseDate = addString(p->release_date);
+        vendor = addString(p.vendor);
+        version = addString(p.version);
+        releaseDate = addString(p.release_date);
 
-        characteristics = composeBitVector(p->characteristics);
+        characteristics = composeBitVector(p.characteristics);
         characteristicExtBytes =
-            composeBitVector(p->characteristic_ext_bytes);
+            composeBitVector(p.characteristic_ext_bytes);
     }
 
 uint16_t
-X86ISA::SMBios::BiosInformation::writeOut(PortProxy& proxy, Addr addr)
+X86ISA::smbios::BiosInformation::writeOut(PortProxy& proxy, Addr addr)
 {
     uint8_t size = SMBiosStructure::writeOut(proxy, addr);
 
@@ -202,19 +202,19 @@ X86ISA::SMBios::BiosInformation::writeOut(PortProxy& proxy, Addr addr)
     return size;
 }
 
-X86ISA::SMBios::SMBiosTable::SMBiosTable(Params * p) :
-    SimObject(p), structures(p->structures)
+X86ISA::smbios::SMBiosTable::SMBiosTable(const Params &p) :
+    SimObject(p), structures(p.structures)
 {
-    smbiosHeader.majorVersion = p->major_version;
-    smbiosHeader.minorVersion = p->minor_version;
-    assert(p->major_version <= 9);
-    assert(p->minor_version <= 9);
+    smbiosHeader.majorVersion = p.major_version;
+    smbiosHeader.minorVersion = p.minor_version;
+    assert(p.major_version <= 9);
+    assert(p.minor_version <= 9);
     smbiosHeader.intermediateHeader.smbiosBCDRevision =
-        (p->major_version << 4) | p->minor_version;
+        (p.major_version << 4) | p.minor_version;
 }
 
 void
-X86ISA::SMBios::SMBiosTable::writeOut(PortProxy& proxy, Addr addr,
+X86ISA::smbios::SMBiosTable::writeOut(PortProxy& proxy, Addr addr,
         Addr &headerSize, Addr &structSize)
 {
     headerSize = 0x1F;
@@ -323,14 +323,4 @@ X86ISA::SMBios::SMBiosTable::writeOut(PortProxy& proxy, Addr addr,
     proxy.writeBlob(addr + 0x15, &intChecksum, 1);
 }
 
-X86ISA::SMBios::BiosInformation *
-X86SMBiosBiosInformationParams::create()
-{
-    return new X86ISA::SMBios::BiosInformation(this);
-}
-
-X86ISA::SMBios::SMBiosTable *
-X86SMBiosSMBiosTableParams::create()
-{
-    return new X86ISA::SMBios::SMBiosTable(this);
-}
+} // namespace gem5

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright (c) 2016 ARM Limited
 # All rights reserved
@@ -34,8 +34,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
+
+
 
 from tempfile import TemporaryFile
 import os
@@ -68,7 +68,7 @@ staged_mismatch = set()
 
 for status, fname in git.status(filter="MA", cached=True):
     if args.verbose:
-        print "Checking %s..." % fname
+        print("Checking {}...".format(fname))
     if check_ignores(fname):
         continue
     if status == "M":
@@ -76,10 +76,18 @@ for status, fname in git.status(filter="MA", cached=True):
     else:
         regions = all_regions
 
-    # Show they appropriate object and dump it to a file
-    status = git.file_from_index(fname)
+    # Show the appropriate object and dump it to a file
+    try:
+        status = git.file_from_index(fname)
+    except UnicodeDecodeError:
+        print("Decoding '" + fname
+            + "' throws a UnicodeDecodeError.", file=sys.stderr)
+        print("Please check '" + fname
+            + "' exclusively uses utf-8 character encoding.", file=sys.stderr)
+        sys.exit(1)
+
     f = TemporaryFile()
-    f.write(status)
+    f.write(status.encode('utf-8'))
 
     verifiers = [ v(ui, opts, base=repo_base) for v in all_verifiers ]
     for v in verifiers:
@@ -95,22 +103,25 @@ for status, fname in git.status(filter="MA", cached=True):
 
 if failing_files:
     if len(failing_files) > len(staged_mismatch):
-        print >> sys.stderr
-        print >> sys.stderr, "Style checker failed for the following files:"
+        print("\n", file=sys.stderr)
+        print("Style checker failed for the following files:", file=sys.stderr)
         for f in failing_files:
             if f not in staged_mismatch:
-                print >> sys.stderr, "\t%s" % f
-        print >> sys.stderr
-        print >> sys.stderr, \
-        "Please run the style checker manually to fix the offending files.\n" \
-        "To check your modifications, run: util/style.py -m"
+                print("\t{}".format(f), file=sys.stderr)
+        print("\n", file=sys.stderr)
+        print(
+            "Please run the style checker manually to fix "
+            "the offending files.\n"
+            "To check your modifications, run: util/style.py -m",
+            file=sys.stderr)
 
-    print >> sys.stderr
+    print("\n", file=sys.stderr)
     if staged_mismatch:
-        print >> sys.stderr, \
-        "It looks like you have forgotten to stage your fixes for commit in\n"\
-        "the following files: "
+        print(
+            "It looks like you have forgotten to stage your "
+            "fixes for commit in\n"
+            "the following files: ", file=sys.stderr)
         for f in staged_mismatch:
-            print >> sys.stderr, "\t%s" % f
-        print >> sys.stderr, "Please `git --add' them"
+            print("\t{}".format(f), file=sys.stderr)
+        print("Please `git --add' them", file=sys.stderr)
     sys.exit(1)

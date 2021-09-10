@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "cpu/kvm/device.hh"
@@ -47,6 +45,9 @@
 #include <cerrno>
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 KvmDevice::KvmDevice(int _fd)
     : fd(_fd)
@@ -62,7 +63,8 @@ void
 KvmDevice::getAttrPtr(uint32_t group, uint64_t attr, void *data) const
 {
 #ifdef KVM_GET_DEVICE_ATTR
-  struct kvm_device_attr dattr = {
+    struct kvm_device_attr dattr =
+    {
         0, // Flags
         group,
         attr,
@@ -82,7 +84,8 @@ void
 KvmDevice::setAttrPtr(uint32_t group, uint64_t attr, const void *data) const
 {
 #ifdef KVM_SET_DEVICE_ATTR
-    struct kvm_device_attr dattr = {
+    struct kvm_device_attr dattr =
+    {
         0, // Flags
         group,
         attr,
@@ -102,7 +105,8 @@ bool
 KvmDevice::hasAttr(uint32_t group, uint64_t attr) const
 {
 #ifdef KVM_HAS_DEVICE_ATTR
-    struct kvm_device_attr dattr = {
+    struct kvm_device_attr dattr =
+    {
         0, // Flags
         group,
         attr,
@@ -123,3 +127,4 @@ KvmDevice::ioctl(int request, long p1) const
     return ::ioctl(fd, request, p1);
 }
 
+} // namespace gem5

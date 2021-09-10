@@ -24,13 +24,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Hashe
  */
 
 #include "sim/redirect_path.hh"
 
 #include <unistd.h>
+
+#include "base/str.hh"
+
+namespace gem5
+{
 
 static std::string
 normalizePath(std::string path)
@@ -46,18 +49,14 @@ normalizePath(std::string path)
     return path;
 }
 
-RedirectPath::RedirectPath(const RedirectPathParams *p)
+RedirectPath::RedirectPath(const RedirectPathParams &p)
     : SimObject(p)
 {
-    _appPath = normalizePath(p->app_path);
+    _appPath = normalizePath(p.app_path);
 
-    for (auto hp : p->host_paths) {
+    for (auto hp : p.host_paths) {
         _hostPaths.push_back(normalizePath(hp));
     }
 }
 
-RedirectPath*
-RedirectPathParams::create()
-{
-    return new RedirectPath(this);
-}
+} // namespace gem5

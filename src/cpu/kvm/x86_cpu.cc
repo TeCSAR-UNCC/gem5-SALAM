@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "cpu/kvm/x86_cpu.hh"
@@ -36,18 +34,22 @@
 #include <cerrno>
 #include <memory>
 
-#include "arch/registers.hh"
 #include "arch/x86/cpuid.hh"
 #include "arch/x86/faults.hh"
 #include "arch/x86/interrupts.hh"
+#include "arch/x86/regs/int.hh"
 #include "arch/x86/regs/msr.hh"
 #include "arch/x86/utility.hh"
+#include "base/compiler.hh"
 #include "cpu/kvm/base.hh"
 #include "debug/Drain.hh"
 #include "debug/Kvm.hh"
 #include "debug/KvmContext.hh"
 #include "debug/KvmIO.hh"
 #include "debug/KvmInt.hh"
+
+namespace gem5
+{
 
 using namespace X86ISA;
 
@@ -70,15 +72,17 @@ using namespace X86ISA;
 // data) is used to indicate that a segment has been accessed.
 #define SEG_TYPE_BIT_ACCESSED 1
 
-struct FXSave
+struct GEM5_PACKED FXSave
 {
     uint16_t fcw;
     uint16_t fsw;
     uint8_t ftwx;
     uint8_t pad0;
     uint16_t last_opcode;
-    union {
-        struct {
+    union
+    {
+        struct
+        {
             uint32_t fpu_ip;
             uint16_t fpu_cs;
             uint16_t pad1;
@@ -87,7 +91,8 @@ struct FXSave
             uint16_t pad2;
         } ctrl32;
 
-        struct {
+        struct
+        {
             uint64_t fpu_ip;
             uint64_t fpu_dp;
         } ctrl64;
@@ -99,7 +104,7 @@ struct FXSave
     uint8_t xmm[16][16];
 
     uint64_t reserved[12];
-} M5_ATTR_PACKED;
+};
 
 static_assert(sizeof(FXSave) == 512, "Unexpected size of FXSave");
 
@@ -398,7 +403,7 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
       case MISCREG_ES:
         if (seg.unusable)
             break;
-        M5_FALLTHROUGH;
+        GEM5_FALLTHROUGH;
       case MISCREG_CS:
         if (seg.base & 0xffffffff00000000ULL)
             warn("Illegal %s base: 0x%x\n", name, seg.base);
@@ -436,7 +441,7 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
           case 3:
             if (sregs.cs.type == 3 && seg.dpl != 0)
                 warn("CS type is 3, but SS DPL is != 0.\n");
-            M5_FALLTHROUGH;
+            GEM5_FALLTHROUGH;
           case 7:
             if (!(sregs.cr0 & 1) && seg.dpl != 0)
                 warn("SS DPL is %i, but CR0 PE is 0\n", seg.dpl);
@@ -480,7 +485,7 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
       case MISCREG_GS:
         if (seg.unusable)
             break;
-        M5_FALLTHROUGH;
+        GEM5_FALLTHROUGH;
       case MISCREG_CS:
         if (!seg.s)
             warn("%s: S flag not set\n", name);
@@ -489,7 +494,7 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
       case MISCREG_TSL:
         if (seg.unusable)
             break;
-        M5_FALLTHROUGH;
+        GEM5_FALLTHROUGH;
       case MISCREG_TR:
         if (seg.s)
             warn("%s: S flag is set\n", name);
@@ -505,7 +510,7 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
       case MISCREG_TSL:
         if (seg.unusable)
             break;
-        M5_FALLTHROUGH;
+        GEM5_FALLTHROUGH;
       case MISCREG_TR:
       case MISCREG_CS:
         if (!seg.present)
@@ -522,9 +527,9 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
     // TODO: Check CS DB
 }
 
-X86KvmCPU::X86KvmCPU(X86KvmCPUParams *params)
+X86KvmCPU::X86KvmCPU(const X86KvmCPUParams &params)
     : BaseKvmCPU(params),
-      useXSave(params->useXSave)
+      useXSave(params.useXSave)
 {
     Kvm &kvm(*vm.kvm);
 
@@ -682,7 +687,7 @@ X86KvmCPU::updateKvmState()
     updateKvmStateMSRs();
 
     DPRINTF(KvmContext, "X86KvmCPU::updateKvmState():\n");
-    if (DTRACE(KvmContext))
+    if (debug::KvmContext)
         dump();
 }
 
@@ -946,7 +951,7 @@ X86KvmCPU::updateThreadContext()
     getSpecialRegisters(sregs);
 
     DPRINTF(KvmContext, "X86KvmCPU::updateThreadContext():\n");
-    if (DTRACE(KvmContext))
+    if (debug::KvmContext)
         dump();
 
     updateThreadContextRegs(regs, sregs);
@@ -1143,8 +1148,8 @@ X86KvmCPU::deliverInterrupts()
         // they are getInterrupt() and updateIntrInfo() are called
         // atomically.
         EventQueue::ScopedMigration migrate(interrupts[0]->eventQueue());
-        fault = interrupts[0]->getInterrupt(tc);
-        interrupts[0]->updateIntrInfo(tc);
+        fault = interrupts[0]->getInterrupt();
+        interrupts[0]->updateIntrInfo();
     }
 
     X86Interrupt *x86int(dynamic_cast<X86Interrupt *>(fault.get()));
@@ -1202,7 +1207,7 @@ X86KvmCPU::kvmRun(Tick ticks)
             // the thread context and check if there are /really/
             // interrupts that should be delivered now.
             syncThreadContext();
-            if (lapic->checkInterrupts(tc)) {
+            if (lapic->checkInterrupts()) {
                 DPRINTF(KvmInt,
                         "M5 has pending interrupts, delivering interrupt.\n");
 
@@ -1227,7 +1232,7 @@ X86KvmCPU::kvmRun(Tick ticks)
     if (_status == Idle)
         return 0;
     else
-        return kvmRunWrapper(ticks);
+        return BaseKvmCPU::kvmRun(ticks);
 }
 
 Tick
@@ -1247,31 +1252,12 @@ X86KvmCPU::kvmRunDrain()
         // Limit the run to 1 millisecond. That is hopefully enough to
         // reach an interrupt window. Otherwise, we'll just try again
         // later.
-        return kvmRunWrapper(1 * SimClock::Float::ms);
+        return BaseKvmCPU::kvmRun(1 * sim_clock::as_float::ms);
     } else {
         DPRINTF(Drain, "kvmRunDrain: Delivering pending IO\n");
 
-        return kvmRunWrapper(0);
+        return BaseKvmCPU::kvmRun(0);
     }
-}
-
-Tick
-X86KvmCPU::kvmRunWrapper(Tick ticks)
-{
-    struct kvm_run &kvm_run(*getKvmRunState());
-
-    // Synchronize the APIC base and CR8 here since they are present
-    // in the kvm_run struct, which makes the synchronization really
-    // cheap.
-    kvm_run.apic_base = tc->readMiscReg(MISCREG_APIC_BASE);
-    kvm_run.cr8 = tc->readMiscReg(MISCREG_CR8);
-
-    const Tick run_ticks(BaseKvmCPU::kvmRun(ticks));
-
-    tc->setMiscReg(MISCREG_APIC_BASE, kvm_run.apic_base);
-    kvm_run.cr8 = tc->readMiscReg(MISCREG_CR8);
-
-    return run_ticks;
 }
 
 uint64_t
@@ -1353,7 +1339,7 @@ X86KvmCPU::handleKvmExitIO()
     for (int i = 0; i < count; ++i) {
         RequestPtr io_req = std::make_shared<Request>(
             pAddr, kvm_run.io.size,
-            Request::UNCACHEABLE, dataMasterId());
+            Request::UNCACHEABLE, dataRequestorId());
 
         io_req->setContext(tc->contextId());
 
@@ -1404,6 +1390,23 @@ X86KvmCPU::archIsDrained() const
     }
 
     return !pending_events;
+}
+
+void
+X86KvmCPU::ioctlRun()
+{
+    struct kvm_run &kvm_run(*getKvmRunState());
+
+    // Synchronize the APIC base and CR8 here since they are present
+    // in the kvm_run struct, which makes the synchronization really
+    // cheap.
+    kvm_run.apic_base = tc->readMiscReg(MISCREG_APIC_BASE);
+    kvm_run.cr8 = tc->readMiscReg(MISCREG_CR8);
+
+    BaseKvmCPU::ioctlRun();
+
+    tc->setMiscReg(MISCREG_APIC_BASE, kvm_run.apic_base);
+    kvm_run.cr8 = tc->readMiscReg(MISCREG_CR8);
 }
 
 static struct kvm_cpuid_entry2
@@ -1624,8 +1627,4 @@ X86KvmCPU::setVCpuEvents(const struct kvm_vcpu_events &events)
         panic("KVM: Failed to set guest debug registers\n");
 }
 
-X86KvmCPU *
-X86KvmCPUParams::create()
-{
-    return new X86KvmCPU(this);
-}
+} // namespace gem5

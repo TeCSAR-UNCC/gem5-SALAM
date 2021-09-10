@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "cpu/minor/fetch1.hh"
@@ -44,17 +42,24 @@
 #include <sstream>
 
 #include "base/cast.hh"
+#include "base/compiler.hh"
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "cpu/minor/pipeline.hh"
 #include "debug/Drain.hh"
 #include "debug/Fetch.hh"
 #include "debug/MinorTrace.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 Fetch1::Fetch1(const std::string &name_,
     MinorCPU &cpu_,
-    MinorCPUParams &params,
+    const MinorCPUParams &params,
     Latch<BranchData>::Output inp_,
     Latch<ForwardLineData>::Input out_,
     Latch<BranchData>::Output prediction_,
@@ -90,20 +95,19 @@ Fetch1::Fetch1(const std::string &name_,
             maxLineWidth);
     }
 
+    size_t inst_size = cpu.threads[0]->decoder.moreBytesSize();
+
     /* These assertions should be copied to the Python config. as well */
-    if ((lineSnap % sizeof(TheISA::MachInst)) != 0) {
+    if ((lineSnap % inst_size) != 0) {
         fatal("%s: fetch1LineSnapWidth must be a multiple "
-            "of sizeof(TheISA::MachInst) (%d)\n", name_,
-            sizeof(TheISA::MachInst));
+            "of the inst width (%d)\n", name_,
+            inst_size);
     }
 
-    if (!(maxLineWidth >= lineSnap &&
-        (maxLineWidth % sizeof(TheISA::MachInst)) == 0))
-    {
+    if ((maxLineWidth >= lineSnap && (maxLineWidth % inst_size)) != 0) {
         fatal("%s: fetch1LineWidth must be a multiple of"
-            " sizeof(TheISA::MachInst)"
-            " (%d), and >= fetch1LineSnapWidth (%d)\n",
-            name_, sizeof(TheISA::MachInst), lineSnap);
+            " the inst width (%d), and >= fetch1LineSnapWidth (%d)\n",
+            name_, inst_size, lineSnap);
     }
 
     if (fetchLimit < 1) {
@@ -119,13 +123,13 @@ Fetch1::getScheduledThread()
     std::vector<ThreadID> priority_list;
 
     switch (cpu.threadPolicy) {
-      case Enums::SingleThreaded:
+      case enums::SingleThreaded:
         priority_list.push_back(0);
         break;
-      case Enums::RoundRobin:
+      case enums::RoundRobin:
         priority_list = cpu.roundRobinPriority(threadPriority);
         break;
-      case Enums::Random:
+      case enums::Random:
         priority_list = cpu.randomPriority();
         break;
       default:
@@ -169,8 +173,8 @@ Fetch1::fetchLine(ThreadID tid)
         request_id, aligned_pc, thread.pc, line_offset, request_size);
 
     request->request->setContext(cpu.threads[tid]->getTC()->contextId());
-    request->request->setVirt(0 /* asid */,
-        aligned_pc, request_size, Request::INST_FETCH, cpu.instMasterId(),
+    request->request->setVirt(
+        aligned_pc, request_size, Request::INST_FETCH, cpu.instRequestorId(),
         /* I've no idea why we need the PC, but give it */
         thread.pc.instAddr());
 
@@ -186,25 +190,17 @@ Fetch1::fetchLine(ThreadID tid)
     /* Submit the translation request.  The response will come
      *  through finish/markDelayed on this request as it bears
      *  the Translation interface */
-    cpu.threads[request->id.threadId]->itb->translateTiming(
+    cpu.threads[request->id.threadId]->mmu->translateTiming(
         request->request,
         cpu.getContext(request->id.threadId),
-        request, BaseTLB::Execute);
+        request, BaseMMU::Execute);
 
     lineSeqNum++;
 
     /* Step the PC for the next line onto the line aligned next address.
      * Note that as instructions can span lines, this PC is only a
      * reliable 'new' PC if the next line has a new stream sequence number. */
-#if THE_ISA == ALPHA_ISA
-    /* Restore the low bits of the PC used as address space flags */
-    Addr pc_low_bits = thread.pc.instAddr() &
-        ((Addr) (1 << sizeof(TheISA::MachInst)) - 1);
-
-    thread.pc.set(aligned_pc + request_size + pc_low_bits);
-#else
     thread.pc.set(aligned_pc + request_size);
-#endif
 }
 
 std::ostream &
@@ -238,7 +234,7 @@ Fetch1::FetchRequest::makePacket()
 
 void
 Fetch1::FetchRequest::finish(const Fault &fault_, const RequestPtr &request_,
-                             ThreadContext *tc, BaseTLB::Mode mode)
+                             ThreadContext *tc, BaseMMU::Mode mode)
 {
     fault = fault_;
 
@@ -262,7 +258,7 @@ Fetch1::handleTLBResponse(FetchRequestPtr response)
                 response->request->getPaddr() : 0),
             response->request->getVaddr());
 
-        if (DTRACE(MinorTrace))
+        if (debug::MinorTrace)
             minorTraceResponseLine(name(), response);
     } else {
         DPRINTF(Fetch, "Got ITLB response\n");
@@ -398,16 +394,16 @@ void
 Fetch1::minorTraceResponseLine(const std::string &name,
     Fetch1::FetchRequestPtr response) const
 {
-    const RequestPtr &request M5_VAR_USED = response->request;
+    const RequestPtr &request = response->request;
 
     if (response->packet && response->packet->isError()) {
-        MINORLINE(this, "id=F;%s vaddr=0x%x fault=\"error packet\"\n",
+        minorLine(*this, "id=F;%s vaddr=0x%x fault=\"error packet\"\n",
             response->id, request->getVaddr());
     } else if (response->fault != NoFault) {
-        MINORLINE(this, "id=F;%s vaddr=0x%x fault=\"%s\"\n",
+        minorLine(*this, "id=F;%s vaddr=0x%x fault=\"%s\"\n",
             response->id, request->getVaddr(), response->fault->name());
     } else {
-        MINORLINE(this, "id=%s size=%d vaddr=0x%x paddr=0x%x\n",
+        minorLine(*this, "id=%s size=%d vaddr=0x%x paddr=0x%x\n",
             response->id, request->getSize(),
             request->getVaddr(), request->getPaddr());
     }
@@ -431,7 +427,7 @@ Fetch1::recvTimingResp(PacketPtr response)
     numFetchesInMemorySystem--;
     fetch_request->state = FetchRequest::Complete;
 
-    if (DTRACE(MinorTrace))
+    if (debug::MinorTrace)
         minorTraceResponseLine(name(), fetch_request);
 
     if (response->isError()) {
@@ -772,7 +768,7 @@ Fetch1::minorTrace() const
     else
         (*out.inputWire).reportData(data);
 
-    MINORTRACE("state=%s icacheState=%s in_tlb_mem=%s/%s"
+    minor::minorTrace("state=%s icacheState=%s in_tlb_mem=%s/%s"
         " streamSeqNum=%d lines=%s\n", thread.state, icacheState,
         numFetchesInITLB, numFetchesInMemorySystem,
         thread.streamSeqNum, data.str());
@@ -780,4 +776,5 @@ Fetch1::minorTrace() const
     transfers.minorTrace();
 }
 
-}
+} // namespace minor
+} // namespace gem5

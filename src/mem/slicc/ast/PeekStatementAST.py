@@ -42,7 +42,7 @@ class PeekStatementAST(StatementAST):
         return "[PeekStatementAST: %r queue_name: %r type: %r %r]" % \
                (self.method, self.queue_name, self.type_ast, self.statements)
 
-    def generate(self, code, return_type):
+    def generate(self, code, return_type, **kwargs):
         self.symtab.pushFrame()
 
         msg_type = self.type_ast.type
@@ -61,7 +61,7 @@ class PeekStatementAST(StatementAST):
         code('''
 {
     // Declare message
-    const $mtid* in_msg_ptr M5_VAR_USED;
+    GEM5_VAR_USED const $mtid* in_msg_ptr;
     in_msg_ptr = dynamic_cast<const $mtid *>(($qcode).${{self.method}}());
     if (in_msg_ptr == NULL) {
         // If the cast fails, this is the wrong inport (wrong message type).
@@ -91,7 +91,7 @@ class PeekStatementAST(StatementAST):
             ''')
 
         # The other statements
-        self.statements.generate(code, return_type)
+        self.statements.generate(code, return_type, **kwargs)
         self.symtab.popFrame()
         code("}")
 

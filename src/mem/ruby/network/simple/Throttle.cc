@@ -39,7 +39,11 @@
 #include "mem/ruby/slicc_interface/Message.hh"
 #include "mem/ruby/system/RubySystem.hh"
 
-using namespace std;
+namespace gem5
+{
+
+namespace ruby
+{
 
 const int MESSAGE_SIZE_MULTIPLIER = 1000;
 //const int BROADCAST_SCALING = 4; // Have a 16p system act like a 64p systems
@@ -51,8 +55,10 @@ static int network_message_to_size(Message* net_msg_ptr);
 Throttle::Throttle(int sID, RubySystem *rs, NodeID node, Cycles link_latency,
                    int link_bandwidth_multiplier, int endpoint_bandwidth,
                    Switch *em)
-    : Consumer(em), m_switch_id(sID), m_switch(em), m_node(node),
-      m_ruby_system(rs)
+    : Consumer(em),
+      m_switch_id(sID), m_switch(em), m_node(node),
+      m_ruby_system(rs),
+      throttleStats(em, node)
 {
     m_vnets = 0;
 
@@ -67,8 +73,8 @@ Throttle::Throttle(int sID, RubySystem *rs, NodeID node, Cycles link_latency,
 }
 
 void
-Throttle::addLinks(const vector<MessageBuffer*>& in_vec,
-                   const vector<MessageBuffer*>& out_vec)
+Throttle::addLinks(const std::vector<MessageBuffer*>& in_vec,
+                   const std::vector<MessageBuffer*>& out_vec)
 {
     assert(in_vec.size() == out_vec.size());
 
@@ -83,8 +89,8 @@ Throttle::addLinks(const vector<MessageBuffer*>& in_vec,
 
         // Set consumer and description
         in_ptr->setConsumer(this);
-        string desc = "[Queue to Throttle " + to_string(m_switch_id) + " " +
-            to_string(m_node) + "]";
+        std::string desc = "[Queue to Throttle " +
+            std::to_string(m_switch_id) + " " + std::to_string(m_node) + "]";
     }
 }
 
@@ -122,14 +128,15 @@ Throttle::operateVnet(int vnet, int &bw_remaining, bool &schedule_wakeup,
                          m_switch->cyclesToTicks(m_link_latency));
 
             // Count the message
-            m_msg_counts[net_msg_ptr->getMessageSize()][vnet]++;
+            (*(throttleStats.
+                m_msg_counts[net_msg_ptr->getMessageSize()]))[vnet]++;
             DPRINTF(RubyNetwork, "%s\n", *out);
         }
 
         // Calculate the amount of bandwidth we spent on this message
         int diff = m_units_remaining[vnet] - bw_remaining;
-        m_units_remaining[vnet] = max(0, diff);
-        bw_remaining = max(0, -diff);
+        m_units_remaining[vnet] = std::max(0, diff);
+        bw_remaining = std::max(0, -diff);
     }
 
     if (bw_remaining > 0 && (in->isReady(current_time) ||
@@ -200,26 +207,27 @@ Throttle::wakeup()
 }
 
 void
-Throttle::regStats(string parent)
+Throttle::regStats()
 {
-    m_link_utilization
-        .name(parent + csprintf(".throttle%i", m_node) + ".link_utilization");
-
     for (MessageSizeType type = MessageSizeType_FIRST;
          type < MessageSizeType_NUM; ++type) {
-        m_msg_counts[(unsigned int)type]
-            .init(Network::getNumberOfVirtualNetworks())
-            .name(parent + csprintf(".throttle%i", m_node) + ".msg_count." +
-                    MessageSizeType_to_string(type))
-            .flags(Stats::nozero)
-            ;
-        m_msg_bytes[(unsigned int) type]
-            .name(parent + csprintf(".throttle%i", m_node) + ".msg_bytes." +
-                    MessageSizeType_to_string(type))
-            .flags(Stats::nozero)
+        throttleStats.m_msg_counts[(unsigned int)type] =
+            new statistics::Vector(&throttleStats,
+            csprintf("msg_count.%s", MessageSizeType_to_string(type)).c_str());
+        throttleStats.m_msg_counts[(unsigned int)type]
+            ->init(Network::getNumberOfVirtualNetworks())
+            .flags(statistics::nozero)
             ;
 
-        m_msg_bytes[(unsigned int) type] = m_msg_counts[type] * Stats::constant(
+        throttleStats.m_msg_bytes[(unsigned int) type] =
+            new statistics::Formula(&throttleStats,
+            csprintf("msg_bytes.%s", MessageSizeType_to_string(type)).c_str());
+        throttleStats.m_msg_bytes[(unsigned int) type]
+            ->flags(statistics::nozero)
+            ;
+
+        *(throttleStats.m_msg_bytes[(unsigned int) type]) =
+            *(throttleStats.m_msg_counts[type]) * statistics::constant(
                 Network::MessageSizeType_to_int(type));
     }
 }
@@ -236,11 +244,12 @@ Throttle::collateStats()
     double time_delta = double(m_ruby_system->curCycle() -
                                m_ruby_system->getStartCycle());
 
-    m_link_utilization = 100.0 * m_link_utilization_proxy / time_delta;
+    throttleStats.m_link_utilization =
+        100.0 * m_link_utilization_proxy / time_delta;
 }
 
 void
-Throttle::print(ostream& out) const
+Throttle::print(std::ostream& out) const
 {
     ccprintf(out,  "[%i bw: %i]", m_node, getLinkBandwidth());
 }
@@ -259,3 +268,14 @@ network_message_to_size(Message *net_msg_ptr)
 
     return size;
 }
+
+Throttle::
+ThrottleStats::ThrottleStats(statistics::Group *parent, const NodeID &nodeID)
+    : statistics::Group(parent, csprintf("throttle%02i", nodeID).c_str()),
+      m_link_utilization(this, "link_utilization")
+{
+
+}
+
+} // namespace ruby
+} // namespace gem5

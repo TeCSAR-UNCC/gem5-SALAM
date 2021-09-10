@@ -35,15 +35,12 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: David Hashe
-
-from __future__ import print_function
 
 import m5
 from m5.objects import *
 from m5.util.convert import *
 
+from functools import reduce
 import operator, os, platform, getpass
 from os import mkdir, makedirs, getpid, listdir, stat, access
 from pwd import getpwuid
@@ -134,7 +131,7 @@ def config_filesystem(system, options = None):
         file_append((procdir, 'cpuinfo'), one_cpu)
 
     file_append((procdir, 'stat'), 'cpu 0 0 0 0 0 0 0\n')
-    for i in xrange(len(cpus)):
+    for i in range(len(cpus)):
         file_append((procdir, 'stat'), 'cpu%d 0 0 0 0 0 0 0\n' % i)
 
     # Set up /sys
@@ -220,6 +217,8 @@ def register_cache(level, idu_type, size, line_size, assoc, cpus):
         file_append((indexdir, 'number_of_sets'), num_sets)
         file_append((indexdir, 'physical_line_partition'), '1')
         file_append((indexdir, 'shared_cpu_map'), hex_mask(cpus))
+        file_append((indexdir, 'shared_cpu_list'),
+                    ','.join(str(cpu) for cpu in cpus))
 
 def _redirect_paths(options):
     # Redirect filesystem syscalls from src to the first matching dests

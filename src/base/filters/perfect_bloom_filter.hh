@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #ifndef __BASE_FILTERS_PERFECT_BLOOM_FILTER_HH__
@@ -35,9 +33,14 @@
 
 #include "base/filters/base.hh"
 
+namespace gem5
+{
+
 struct BloomFilterPerfectParams;
 
-namespace BloomFilter {
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
 
 /**
  * A perfect bloom filter with no false positives nor false negatives.
@@ -45,7 +48,7 @@ namespace BloomFilter {
 class Perfect : public Base
 {
   public:
-    Perfect(const BloomFilterPerfectParams* p);
+    Perfect(const BloomFilterPerfectParams &p);
     ~Perfect();
 
     void clear() override;
@@ -61,6 +64,7 @@ class Perfect : public Base
     std::unordered_set<Addr> entries;
 };
 
-} // namespace BloomFilter
+} // namespace bloom_filter
+} // namespace gem5
 
 #endif // __BASE_FILTERS_PERFECT_BLOOM_FILTER_HH__

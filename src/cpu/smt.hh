@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /**
@@ -43,6 +41,9 @@
 #define SMT_MAX_THREADS 4
 #endif
 
+namespace gem5
+{
+
 /**
  * The maximum number of active threads across all cpus. Used to
  * initialize per-thread statistics in the cache.
@@ -59,5 +60,7 @@ extern int maxThreadsPerCPU;
  * @param priority The new priority.
  */
 void change_thread_state(ThreadID tid, int activate, int priority);
+
+} // namespace gem5
 
 #endif // __SMT_HH__

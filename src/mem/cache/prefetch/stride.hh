@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Daniel Carvalho
  */
 
 /**
@@ -54,102 +51,94 @@
 #include <unordered_map>
 #include <vector>
 
+#include "base/sat_counter.hh"
 #include "base/types.hh"
+#include "mem/cache/prefetch/associative_set.hh"
 #include "mem/cache/prefetch/queued.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
+#include "mem/cache/tags/indexing_policies/set_associative.hh"
 #include "mem/packet.hh"
+#include "params/StridePrefetcherHashedSetAssociative.hh"
 
-class BaseReplacementPolicy;
+namespace gem5
+{
+
+class BaseIndexingPolicy;
+GEM5_DEPRECATED_NAMESPACE(ReplacementPolicy, replacement_policy);
+namespace replacement_policy
+{
+    class Base;
+}
 struct StridePrefetcherParams;
 
-class StridePrefetcher : public QueuedPrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+/**
+ * Override the default set associative to apply a specific hash function
+ * when extracting a set.
+ */
+class StridePrefetcherHashedSetAssociative : public SetAssociative
 {
   protected:
-    const int maxConf;
-    const int threshConf;
-    const int minConf;
-    const int startConf;
+    uint32_t extractSet(const Addr addr) const override;
+    Addr extractTag(const Addr addr) const override;
 
-    const int pcTableAssoc;
-    const int pcTableSets;
+  public:
+    StridePrefetcherHashedSetAssociative(
+        const StridePrefetcherHashedSetAssociativeParams &p)
+      : SetAssociative(p)
+    {
+    }
+    ~StridePrefetcherHashedSetAssociative() = default;
+};
 
-    const bool useMasterId;
+class Stride : public Queued
+{
+  protected:
+    /** Initial confidence counter value for the pc tables. */
+    const SatCounter8 initConfidence;
+
+    /** Confidence threshold for prefetch generation. */
+    const double threshConf;
+
+    const bool useRequestorId;
 
     const int degree;
 
-    /** Replacement policy used in the PC tables. */
-    BaseReplacementPolicy* replacementPolicy;
-
-    struct StrideEntry : public ReplaceableEntry
+    /**
+     * Information used to create a new PC table. All of them behave equally.
+     */
+    const struct PCTableInfo
     {
-        /** Default constructor */
-        StrideEntry();
+        const int assoc;
+        const int numEntries;
 
-        /** Invalidate the entry */
-        void invalidate();
+        BaseIndexingPolicy* const indexingPolicy;
+        replacement_policy::Base* const replacementPolicy;
 
-        Addr instAddr;
+        PCTableInfo(int assoc, int num_entries,
+            BaseIndexingPolicy* indexing_policy,
+            replacement_policy::Base* repl_policy)
+          : assoc(assoc), numEntries(num_entries),
+            indexingPolicy(indexing_policy), replacementPolicy(repl_policy)
+        {
+        }
+    } pcTableInfo;
+
+    /** Tagged by hashed PCs. */
+    struct StrideEntry : public TaggedEntry
+    {
+        StrideEntry(const SatCounter8& init_confidence);
+
+        void invalidate() override;
+
         Addr lastAddr;
-        bool isSecure;
         int stride;
-        int confidence;
+        SatCounter8 confidence;
     };
-
-    class PCTable
-    {
-      public:
-        /**
-         * Default constructor. Create a table with given parameters.
-         *
-         * @param assoc Associativity of the table.
-         * @param sets Number of sets in the table.
-         * @param name Name of the prefetcher.
-         * @param replacementPolicy Replacement policy used by the table.
-         */
-        PCTable(int assoc, int sets, const std::string name,
-                BaseReplacementPolicy* replacementPolicy);
-
-        /**
-         * Default destructor.
-         */
-        ~PCTable();
-
-        /**
-         * Search for an entry in the pc table.
-         *
-         * @param pc The PC to look for.
-         * @param is_secure True if the target memory space is secure.
-         * @return Pointer to the entry.
-         */
-        StrideEntry* findEntry(Addr pc, bool is_secure);
-
-        /**
-         * Find a replacement victim to make room for given PC.
-         *
-         * @param pc The PC value.
-         * @return The victimized entry.
-         */
-        StrideEntry* findVictim(Addr pc);
-
-      private:
-        const std::string name() {return _name; }
-        const int pcTableSets;
-        const std::string _name;
-        std::vector<std::vector<StrideEntry>> entries;
-
-        /**
-         * Replacement policy used by StridePrefetcher.
-         */
-        BaseReplacementPolicy* replacementPolicy;
-
-        /**
-         * PC hashing function to index sets in the table.
-         *
-         * @param pc The PC value.
-         * @return The set to which this PC maps.
-         */
-        Addr pcHash(Addr pc) const;
-    };
+    typedef AssociativeSet<StrideEntry> PCTable;
     std::unordered_map<int, PCTable> pcTables;
 
     /**
@@ -170,10 +159,13 @@ class StridePrefetcher : public QueuedPrefetcher
     PCTable* allocateNewContext(int context);
 
   public:
-    StridePrefetcher(const StridePrefetcherParams *p);
+    Stride(const StridePrefetcherParams &p);
 
     void calculatePrefetch(const PrefetchInfo &pfi,
                            std::vector<AddrPriority> &addresses) override;
 };
+
+} // namespace prefetch
+} // namespace gem5
 
 #endif // __MEM_CACHE_PREFETCH_STRIDE_HH__

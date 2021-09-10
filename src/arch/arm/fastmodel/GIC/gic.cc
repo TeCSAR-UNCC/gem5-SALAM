@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/fastmodel/GIC/gic.hh"
@@ -33,7 +31,11 @@
 #include "params/FastModelGIC.hh"
 #include "params/SCFastModelGIC.hh"
 
-namespace FastModel
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
 {
 
 int
@@ -299,7 +301,7 @@ SCGIC::before_end_of_elaboration()
 }
 
 GIC::GIC(const FastModelGICParams &params) :
-    BaseGic(&params),
+    BaseGic(params),
     ambaM(params.sc_gic->amba_m, params.name + ".amba_m", -1),
     ambaS(params.sc_gic->amba_s, params.name + ".amba_s", -1),
     redistributors(params.port_redistributor_connection_count),
@@ -359,16 +361,5 @@ GIC::supportsVersion(GicVersion version)
            (version == GicVersion::GIC_V4 && scGIC->params().has_gicv4_1);
 }
 
-} // namespace FastModel
-
-FastModel::SCGIC *
-SCFastModelGICParams::create()
-{
-    return new FastModel::SCGIC(*this, name.c_str());
-}
-
-FastModel::GIC *
-FastModelGICParams::create()
-{
-    return new FastModel::GIC(*this);
-}
+} // namespace fastmodel
+} // namespace gem5

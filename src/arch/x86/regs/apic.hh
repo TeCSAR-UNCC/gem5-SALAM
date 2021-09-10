@@ -24,14 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_APICREGS_HH__
 #define __ARCH_X86_APICREGS_HH__
 
 #include "base/bitunion.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -102,6 +103,8 @@ namespace X86ISA
     BitUnion32(InterruptCommandRegHigh)
         Bitfield<31, 24> destination;
     EndBitUnion(InterruptCommandRegHigh)
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif

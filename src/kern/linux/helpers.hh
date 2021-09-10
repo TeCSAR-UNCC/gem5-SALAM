@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __KERN_LINUX_HELPERS_HH__
@@ -42,9 +40,16 @@
 
 #include <ostream>
 
+#include "base/compiler.hh"
+
+namespace gem5
+{
+
 class ThreadContext;
 
-namespace Linux {
+GEM5_DEPRECATED_NAMESPACE(Linux, linux);
+namespace linux
+{
 
 /**
  * Dump Linux's dmesg log buffer to the an output stream.
@@ -54,6 +59,7 @@ namespace Linux {
  */
 void dumpDmesg(ThreadContext *tc, std::ostream &os);
 
-} // namespace Linux
+} // namespace linux
+} // namespace gem5
 
 #endif // __KERN_LINUX_HELPERS_HH__

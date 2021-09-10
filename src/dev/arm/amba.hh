@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #ifndef __DEV_ARM_AMBA_HH__
@@ -42,17 +40,21 @@
 
 #include "mem/packet.hh"
 
+namespace gem5
+{
+
 namespace AMBA
 {
 
-typedef MasterID OrderID;
+typedef RequestorID OrderID;
 
 static OrderID
 orderId(PacketPtr pkt)
 {
-    return pkt->req->masterId();
+    return pkt->req->requestorId();
 }
 
 } // namespace AMBA
+} // namespace gem5
 
 #endif // __DEV_ARM_AMBA_HH__

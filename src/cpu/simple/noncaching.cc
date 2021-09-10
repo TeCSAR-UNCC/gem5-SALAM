@@ -33,15 +33,21 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "cpu/simple/noncaching.hh"
 
-NonCachingSimpleCPU::NonCachingSimpleCPU(NonCachingSimpleCPUParams *p)
+#include <cassert>
+
+namespace gem5
+{
+
+NonCachingSimpleCPU::NonCachingSimpleCPU(const NonCachingSimpleCPUParams &p)
     : AtomicSimpleCPU(p)
 {
+    assert(p.numThreads == 1);
+    fatal_if(!FullSystem && p.workload.size() != 1,
+             "only one workload allowed");
 }
 
 void
@@ -54,21 +60,43 @@ NonCachingSimpleCPU::verifyMemoryMode() const
 }
 
 Tick
-NonCachingSimpleCPU::sendPacket(MasterPort &port, const PacketPtr &pkt)
+NonCachingSimpleCPU::sendPacket(RequestPort &port, const PacketPtr &pkt)
 {
-    if (system->isMemAddr(pkt->getAddr())) {
-        system->getPhysMem().access(pkt);
-        return 0;
-    } else {
-        return port.sendAtomic(pkt);
+    MemBackdoorPtr bd = nullptr;
+    Tick latency = port.sendAtomicBackdoor(pkt, bd);
+
+    // If the target gave us a backdoor for next time and we didn't
+    // already have it, record it.
+    if (bd && memBackdoors.insert(bd->range(), bd) != memBackdoors.end()) {
+        // Install a callback to erase this backdoor if it goes away.
+        auto callback = [this](const MemBackdoor &backdoor) {
+                for (auto it = memBackdoors.begin();
+                        it != memBackdoors.end(); it++) {
+                    if (it->second == &backdoor) {
+                        memBackdoors.erase(it);
+                        return;
+                    }
+                }
+                panic("Got invalidation for unknown memory backdoor.");
+            };
+        bd->addInvalidationCallback(callback);
     }
+    return latency;
 }
 
-NonCachingSimpleCPU *
-NonCachingSimpleCPUParams::create()
+Tick
+NonCachingSimpleCPU::fetchInstMem()
 {
-    numThreads = 1;
-    if (!FullSystem && workload.size() != 1)
-        fatal("only one workload allowed");
-    return new NonCachingSimpleCPU(this);
+    auto bd_it = memBackdoors.contains(ifetch_req->getPaddr());
+    if (bd_it == memBackdoors.end())
+        return AtomicSimpleCPU::fetchInstMem();
+
+    auto &decoder = threadInfo[curThread]->thread->decoder;
+
+    auto *bd = bd_it->second;
+    Addr offset = ifetch_req->getPaddr() - bd->range().start();
+    memcpy(decoder.moreBytesPtr(), bd->ptr() + offset, ifetch_req->getSize());
+    return 0;
 }
+
+} // namespace gem5

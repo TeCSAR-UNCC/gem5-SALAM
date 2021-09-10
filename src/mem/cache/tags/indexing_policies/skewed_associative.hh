@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /**
@@ -40,6 +38,9 @@
 
 #include "mem/cache/tags/indexing_policies/base.hh"
 #include "params/SkewedAssociative.hh"
+
+namespace gem5
+{
 
 class ReplaceableEntry;
 
@@ -144,7 +145,7 @@ class SkewedAssociative : public BaseIndexingPolicy
     /**
      * Construct and initialize this policy.
      */
-    SkewedAssociative(const Params *p);
+    SkewedAssociative(const Params &p);
 
     /**
      * Destructor.
@@ -173,5 +174,7 @@ class SkewedAssociative : public BaseIndexingPolicy
     Addr regenerateAddr(const Addr tag, const ReplaceableEntry* entry) const
                                                                    override;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_INDEXING_POLICIES_SKEWED_ASSOCIATIVE_HH__

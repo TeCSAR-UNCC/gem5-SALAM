@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 /**
@@ -51,6 +49,12 @@
 #include "mem/ruby/system/RubyPort.hh"
 #include "params/RubyPortProxy.hh"
 
+namespace gem5
+{
+
+namespace ruby
+{
+
 class RubyPortProxy : public RubyPort
 {
 
@@ -61,7 +65,7 @@ class RubyPortProxy : public RubyPort
      *
      * @param p Parameters inherited from the RubyPort
      */
-    RubyPortProxy(const RubyPortProxyParams* p);
+    RubyPortProxy(const RubyPortProxyParams &p);
 
     /**
      * Destruct a RubyPortProxy.
@@ -110,5 +114,8 @@ class RubyPortProxy : public RubyPort
     void descheduleDeadlockEvent() { }
 
 };
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_SYSTEM_RUBYPORTPROXY_HH__

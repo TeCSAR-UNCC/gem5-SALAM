@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 /** @file
@@ -44,10 +42,18 @@
 #ifndef __DEV_ARM_BASE_GIC_H__
 #define __DEV_ARM_BASE_GIC_H__
 
+#include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "arch/arm/system.hh"
+#include "dev/intpin.hh"
 #include "dev/io_device.hh"
+
+#include "enums/ArmInterruptType.hh"
+
+namespace gem5
+{
 
 class Platform;
 class RealView;
@@ -55,10 +61,12 @@ class ThreadContext;
 class ArmInterruptPin;
 class ArmSPI;
 class ArmPPI;
+class ArmSigInterruptPin;
 
 struct ArmInterruptPinParams;
 struct ArmPPIParams;
 struct ArmSPIParams;
+struct ArmSigInterruptPinParams;
 struct BaseGicParams;
 
 class BaseGic :  public PioDevice
@@ -67,11 +75,11 @@ class BaseGic :  public PioDevice
     typedef BaseGicParams Params;
     enum class GicVersion { GIC_V2, GIC_V3, GIC_V4 };
 
-    BaseGic(const Params *p);
+    BaseGic(const Params &p);
     virtual ~BaseGic();
     void init() override;
 
-    const Params * params() const;
+    const Params &params() const;
 
     /**
      * Post an interrupt from a device that is connected to the GIC.
@@ -137,7 +145,7 @@ class BaseGicRegisters
 class ArmInterruptPinGen : public SimObject
 {
   public:
-    ArmInterruptPinGen(const ArmInterruptPinParams *p);
+    ArmInterruptPinGen(const ArmInterruptPinParams &p);
 
     virtual ArmInterruptPin* get(ThreadContext *tc = nullptr) = 0;
 };
@@ -150,7 +158,7 @@ class ArmInterruptPinGen : public SimObject
 class ArmSPIGen : public ArmInterruptPinGen
 {
   public:
-    ArmSPIGen(const ArmSPIParams *p);
+    ArmSPIGen(const ArmSPIParams &p);
 
     ArmInterruptPin* get(ThreadContext *tc = nullptr) override;
   protected:
@@ -165,22 +173,35 @@ class ArmSPIGen : public ArmInterruptPinGen
 class ArmPPIGen : public ArmInterruptPinGen
 {
   public:
-    ArmPPIGen(const ArmPPIParams *p);
+    PARAMS(ArmPPI);
+    ArmPPIGen(const Params &p);
 
     ArmInterruptPin* get(ThreadContext* tc = nullptr) override;
   protected:
     std::unordered_map<ContextID, ArmPPI*> pins;
 };
 
+class ArmSigInterruptPinGen : public ArmInterruptPinGen
+{
+  public:
+    ArmSigInterruptPinGen(const ArmSigInterruptPinParams &p);
+
+    ArmInterruptPin* get(ThreadContext* tc = nullptr) override;
+    Port &getPort(const std::string &if_name,
+                  PortID idx = InvalidPortID) override;
+
+  protected:
+    ArmSigInterruptPin* pin;
+};
+
 /**
  * Generic representation of an Arm interrupt pin.
  */
-class ArmInterruptPin
+class ArmInterruptPin : public Serializable
 {
     friend class ArmInterruptPinGen;
   protected:
-    ArmInterruptPin(Platform *platform, ThreadContext *tc,
-                    uint32_t int_num);
+    ArmInterruptPin(const ArmInterruptPinParams &p, ThreadContext *tc);
 
   public: /* Public interface */
     /**
@@ -195,10 +216,17 @@ class ArmInterruptPin
     /** Get interrupt number */
     uint32_t num() const { return intNum; }
 
+    /** True if interrupt pin is active, false otherwise */
+    bool active() const { return _active; }
+
     /** Signal an interrupt */
     virtual void raise() = 0;
     /** Clear a signalled interrupt */
     virtual void clear() = 0;
+
+  public: /* Serializable interface */
+    void serialize(CheckpointOut &cp) const override;
+    void unserialize(CheckpointIn &cp) override;
 
   protected:
     /**
@@ -220,13 +248,19 @@ class ArmInterruptPin
 
     /** Interrupt number to generate */
     const uint32_t intNum;
+
+    /** Interrupt triggering type */
+    const ArmInterruptType triggerType;
+
+    /** True if interrupt pin is active, false otherwise */
+    bool _active;
 };
 
 class ArmSPI : public ArmInterruptPin
 {
     friend class ArmSPIGen;
   private:
-    ArmSPI(Platform *platform, uint32_t int_num);
+    ArmSPI(const ArmSPIParams &p);
 
   public:
     void raise() override;
@@ -237,11 +271,26 @@ class ArmPPI : public ArmInterruptPin
 {
     friend class ArmPPIGen;
   private:
-    ArmPPI(Platform *platform, ThreadContext *tc, uint32_t int_num);
+    ArmPPI(const ArmPPIParams &p, ThreadContext *tc);
 
   public:
     void raise() override;
     void clear() override;
 };
 
-#endif
+class ArmSigInterruptPin : public ArmInterruptPin
+{
+    friend class ArmSigInterruptPinGen;
+  private:
+    ArmSigInterruptPin(const ArmSigInterruptPinParams &p);
+
+    std::vector<std::unique_ptr<IntSourcePin<ArmSigInterruptPinGen>>> sigPin;
+
+  public:
+    void raise() override;
+    void clear() override;
+};
+
+} // namespace gem5
+
+#endif // __DEV_ARM_BASE_GIC_H__

@@ -22,8 +22,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.params import *
 from m5.proxy import *
@@ -32,21 +30,18 @@ from m5.SimObject import SimObject
 from m5.objects.ArmInterrupts import ArmInterrupts
 from m5.objects.ArmISA import ArmISA
 from m5.objects.FastModel import AmbaInitiatorSocket, AmbaTargetSocket
-from m5.objects.FastModelArch import FastModelArmCPU
 from m5.objects.FastModelGIC import Gicv3CommsTargetSocket
 from m5.objects.Gic import ArmPPI
+from m5.objects.Iris import IrisBaseCPU
 from m5.objects.SystemC import SystemC_ScModule
+from m5.util.fdthelper import FdtNode, FdtPropertyWords
 
-class FastModelCortexA76(FastModelArmCPU):
+class FastModelCortexA76(IrisBaseCPU):
     type = 'FastModelCortexA76'
-    cxx_class = 'FastModel::CortexA76'
+    cxx_class = 'gem5::fastmodel::CortexA76'
     cxx_header = 'arch/arm/fastmodel/CortexA76/cortex_a76.hh'
 
-    cntfrq = 0x1800000
-
-    # We shouldn't need these, but gem5 gets mad without them.
-    interrupts = [ ArmInterrupts() ]
-    isa = [ ArmISA() ]
+    cntfrq = Param.UInt64(0x1800000, "Value for the CNTFRQ timer register")
 
     evs = Parent.evs
 
@@ -141,7 +136,7 @@ class FastModelCortexA76(FastModelArmCPU):
 
 class FastModelCortexA76Cluster(SimObject):
     type = 'FastModelCortexA76Cluster'
-    cxx_class = 'FastModel::CortexA76Cluster'
+    cxx_class = 'gem5::fastmodel::CortexA76Cluster'
     cxx_header = 'arch/arm/fastmodel/CortexA76/cortex_a76.hh'
 
     cores = VectorParam.FastModelCortexA76(
@@ -354,9 +349,25 @@ class FastModelCortexA76Cluster(SimObject):
     walk_cache_latency = Param.UInt64(0, "Walk cache latency for TA (Timing "\
             "Annotation), expressed in simulation ticks")
 
+    def generateDeviceTree(self, state):
+        node = FdtNode("timer")
+
+        node.appendCompatible(["arm,cortex-a15-timer",
+                               "arm,armv7-timer",
+                               "arm,armv8-timer"])
+        node.append(FdtPropertyWords("interrupts", [
+            1, int(self.cntpsirq.num), 0xf08,
+            1, int(self.cntpnsirq.num), 0xf08,
+            1, int(self.cntvirq.num), 0xf08,
+            1, int(self.cnthpirq.num), 0xf08,
+        ]))
+
+        yield node
+
 class FastModelScxEvsCortexA76x1(SystemC_ScModule):
     type = 'FastModelScxEvsCortexA76x1'
-    cxx_class = 'FastModel::ScxEvsCortexA76<FastModel::ScxEvsCortexA76x1Types>'
+    cxx_class = \
+        'gem5::fastmodel::ScxEvsCortexA76<fastmodel::ScxEvsCortexA76x1Types>'
     cxx_template_params = [ 'class Types' ]
     cxx_header = 'arch/arm/fastmodel/CortexA76/evs.hh'
 
@@ -367,7 +378,8 @@ class FastModelCortexA76x1(FastModelCortexA76Cluster):
 
 class FastModelScxEvsCortexA76x2(SystemC_ScModule):
     type = 'FastModelScxEvsCortexA76x2'
-    cxx_class = 'FastModel::ScxEvsCortexA76<FastModel::ScxEvsCortexA76x2Types>'
+    cxx_class = \
+        'gem5::fastmodel::ScxEvsCortexA76<fastmodel::ScxEvsCortexA76x2Types>'
     cxx_template_params = [ 'class Types' ]
     cxx_header = 'arch/arm/fastmodel/CortexA76/evs.hh'
 
@@ -379,7 +391,8 @@ class FastModelCortexA76x2(FastModelCortexA76Cluster):
 
 class FastModelScxEvsCortexA76x3(SystemC_ScModule):
     type = 'FastModelScxEvsCortexA76x3'
-    cxx_class = 'FastModel::ScxEvsCortexA76<FastModel::ScxEvsCortexA76x3Types>'
+    cxx_class = \
+        'gem5::fastmodel::ScxEvsCortexA76<fastmodel::ScxEvsCortexA76x3Types>'
     cxx_template_params = [ 'class Types' ]
     cxx_header = 'arch/arm/fastmodel/CortexA76/evs.hh'
 
@@ -392,7 +405,8 @@ class FastModelCortexA76x3(FastModelCortexA76Cluster):
 
 class FastModelScxEvsCortexA76x4(SystemC_ScModule):
     type = 'FastModelScxEvsCortexA76x4'
-    cxx_class = 'FastModel::ScxEvsCortexA76<FastModel::ScxEvsCortexA76x4Types>'
+    cxx_class = \
+        'gem5::fastmodel::ScxEvsCortexA76<fastmodel::ScxEvsCortexA76x4Types>'
     cxx_template_params = [ 'class Types' ]
     cxx_header = 'arch/arm/fastmodel/CortexA76/evs.hh'
 

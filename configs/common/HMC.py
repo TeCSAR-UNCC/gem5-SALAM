@@ -35,9 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Erfan Azarkhish
-#          Abdul Mutaal Ahmad
 
 # A Simplified model of a complete HMC device. Based on:
 #  [1] http://www.hybridmemorycube.org/specification-download/
@@ -121,9 +118,6 @@
 #   mixed: This is a hybrid architecture. It has 4 crossbars inside the HMC.
 #   2 Crossbars are connected to only local vaults. From other 2 crossbar, a
 #   request can be forwarded to any other vault.
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 import argparse
 
@@ -435,7 +429,7 @@ def config_hmc_dev(opt, system, hmc_host):
                                   for i in range(numx*(opt.mem_chunk-1))]
 
         # Buffer iterator
-        it = iter(range(len(system.hmc_dev.buffers)))
+        it = iter(list(range(len(system.hmc_dev.buffers))))
 
         # necesarry to add system_port to one of the xbar
         system.system_port = system.hmc_dev.xbar[3].slave
@@ -446,7 +440,7 @@ def config_hmc_dev(opt, system, hmc_host):
                 # connect xbar to all other xbars except itself
                 if i != j:
                     # get the next index of buffer
-                    index = it.next()
+                    index = next(it)
 
                     # Change the default values for ranges of bridge
                     system.hmc_dev.buffers[index].ranges = system.mem_ranges[

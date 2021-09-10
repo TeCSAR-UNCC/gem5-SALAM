@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -46,15 +44,25 @@
 #ifndef __CPU_MINOR_FUNC_UNIT_HH__
 #define __CPU_MINOR_FUNC_UNIT_HH__
 
+#include <cstdint>
+#include <ostream>
+#include <string>
+#include <vector>
+
+#include "base/types.hh"
+#include "cpu/func_unit.hh"
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/dyn_inst.hh"
-#include "cpu/func_unit.hh"
 #include "cpu/timing_expr.hh"
 #include "params/MinorFU.hh"
 #include "params/MinorFUPool.hh"
 #include "params/MinorOpClass.hh"
 #include "params/MinorOpClassSet.hh"
 #include "sim/clocked_object.hh"
+#include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 /** Boxing for MinorOpClass to get around a build problem with C++11 but
  *  also allow for future additions to op class checking */
@@ -64,9 +72,9 @@ class MinorOpClass : public SimObject
     OpClass opClass;
 
   public:
-    MinorOpClass(const MinorOpClassParams *params) :
+    MinorOpClass(const MinorOpClassParams &params) :
         SimObject(params),
-        opClass(params->opClass)
+        opClass(params.opClass)
     { }
 };
 
@@ -81,7 +89,7 @@ class MinorOpClassSet : public SimObject
     std::vector<bool> capabilityList;
 
   public:
-    MinorOpClassSet(const MinorOpClassSetParams *params);
+    MinorOpClassSet(const MinorOpClassSetParams &params);
 
   public:
     /** Does this set support the given op class */
@@ -131,7 +139,7 @@ class MinorFUTiming: public SimObject
     MinorOpClassSet *opClasses;
 
   public:
-    MinorFUTiming(const MinorFUTimingParams *params);
+    MinorFUTiming(const MinorFUTimingParams &params);
 
   public:
     /** Does the extra decode in this object support the given op class */
@@ -167,13 +175,13 @@ class MinorFU : public SimObject
     std::vector<MinorFUTiming *> timings;
 
   public:
-    MinorFU(const MinorFUParams *params) :
+    MinorFU(const MinorFUParams &params) :
         SimObject(params),
-        opClasses(params->opClasses),
-        opLat(params->opLat),
-        issueLat(params->issueLat),
-        cantForwardFromFUIndices(params->cantForwardFromFUIndices),
-        timings(params->timings)
+        opClasses(params.opClasses),
+        opLat(params.opLat),
+        issueLat(params.issueLat),
+        cantForwardFromFUIndices(params.cantForwardFromFUIndices),
+        timings(params.timings)
     { }
 };
 
@@ -184,13 +192,14 @@ class MinorFUPool : public SimObject
     std::vector<MinorFU *> funcUnits;
 
   public:
-    MinorFUPool(const MinorFUPoolParams *params) :
+    MinorFUPool(const MinorFUPoolParams &params) :
         SimObject(params),
-        funcUnits(params->funcUnits)
+        funcUnits(params.funcUnits)
     { }
 };
 
-namespace Minor
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /** Container class to box instructions in the FUs to make those
@@ -263,6 +272,7 @@ class FUPipeline : public FUPipelineBase, public FuncUnit
     void advance();
 };
 
-}
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_FUNC_UNIT_HH__ */

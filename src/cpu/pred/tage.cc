@@ -29,9 +29,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vignyan Reddy, Dibakar Gope and Arthur Perais,
- * from André Seznec's code.
  */
 
 /* @file
@@ -47,7 +44,13 @@
 #include "debug/Fetch.hh"
 #include "debug/Tage.hh"
 
-TAGE::TAGE(const TAGEParams *params) : BPredUnit(params), tage(params->tage)
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+TAGE::TAGE(const TAGEParams &params) : BPredUnit(params), tage(params.tage)
 {
 }
 
@@ -60,8 +63,6 @@ TAGE::update(ThreadID tid, Addr branch_pc, bool taken, void* bp_history,
 
     TageBranchInfo *bi = static_cast<TageBranchInfo*>(bp_history);
     TAGEBase::BranchInfo *tage_bi = bi->tageBranchInfo;
-
-    assert(corrTarget != MaxAddr);
 
     if (squashed) {
         // This restores the global history, then update it
@@ -131,8 +132,5 @@ TAGE::uncondBranch(ThreadID tid, Addr br_pc, void* &bp_history)
     tage->updateHistories(tid, br_pc, true, bi->tageBranchInfo, true);
 }
 
-TAGE*
-TAGEParams::create()
-{
-    return new TAGE(this);
-}
+} // namespace branch_prediction
+} // namespace gem5

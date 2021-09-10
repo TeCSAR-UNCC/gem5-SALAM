@@ -38,9 +38,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Andreas Sandberg
  */
 
 #include "pybind11/pybind11.h"
@@ -54,6 +51,8 @@
 
 namespace py = pybind11;
 
+namespace gem5
+{
 
 /**
  * PyBind wrapper for Events
@@ -102,9 +101,9 @@ class PyEvent : public Event
 };
 
 void
-pybind_init_event(py::module &m_native)
+pybind_init_event(py::module_ &m_native)
 {
-    py::module m = m_native.def_submodule("event");
+    py::module_ m = m_native.def_submodule("event");
 
     m.def("simulate", &simulate,
           py::arg("ticks") = MaxTick);
@@ -186,3 +185,5 @@ pybind_init_event(py::module &m_native)
     PRIO(Sim_Exit_Pri);
     PRIO(Maximum_Pri);
 }
+
+} // namespace gem5

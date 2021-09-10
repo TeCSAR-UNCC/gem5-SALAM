@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_O3_CHECKER_HH__
@@ -45,17 +43,30 @@
 
 #include "cpu/checker/cpu.hh"
 #include "cpu/o3/dyn_inst.hh"
-#include "cpu/o3/impl.hh"
+
+namespace gem5
+{
+
+namespace o3
+{
 
 /**
  * Specific non-templated derived class used for SimObject configuration.
  */
-class O3Checker : public Checker<O3CPUImpl>
+class Checker : public gem5::Checker<DynInstPtr>
 {
   public:
-    O3Checker(Params *p)
-          : Checker<O3CPUImpl>(p)
-    { }
+    Checker(const Params &p) : gem5::Checker<DynInstPtr>(p)
+    {
+        // The checker should check all instructions executed by the main
+        // cpu and therefore any parameters for early exit don't make much
+        // sense.
+        fatal_if(p.max_insts_any_thread || p.max_insts_all_threads ||
+                 p.progress_interval, "Invalid checker parameters");
+    }
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif // __CPU_O3_CHECKER_HH__

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 ARM Limited
+ * Copyright (c) 2017-2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,27 +33,37 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matteo Andreozzi
  */
 
-#include "mem_ctrl.hh"
+#include "mem/qos/mem_ctrl.hh"
 
-#include "turnaround_policy.hh"
+#include "mem/qos/policy.hh"
+#include "mem/qos/q_policy.hh"
+#include "mem/qos/turnaround_policy.hh"
+#include "sim/core.hh"
 
-namespace QoS {
+namespace gem5
+{
 
-MemCtrl::MemCtrl(const QoSMemCtrlParams * p)
-  : AbstractMemory(p),
-    policy(p->qos_policy),
-    turnPolicy(p->qos_turnaround_policy),
+namespace memory
+{
+
+GEM5_DEPRECATED_NAMESPACE(QoS, qos);
+namespace qos
+{
+
+MemCtrl::MemCtrl(const QoSMemCtrlParams &p)
+  : ClockedObject(p),
+    policy(p.qos_policy),
+    turnPolicy(p.qos_turnaround_policy),
     queuePolicy(QueuePolicy::create(p)),
-    _numPriorities(p->qos_priorities),
-    qosPriorityEscalation(p->qos_priority_escalation),
-    qosSyncroScheduler(p->qos_syncro_scheduler),
+    _numPriorities(p.qos_priorities),
+    qosPriorityEscalation(p.qos_priority_escalation),
+    qosSyncroScheduler(p.qos_syncro_scheduler),
     totalReadQueueSize(0), totalWriteQueueSize(0),
     busState(READ), busStateNext(READ),
-    stats(*this)
+    stats(*this),
+    _system(p.system)
 {
     // Set the priority policy
     if (policy) {
@@ -79,102 +89,96 @@ MemCtrl::~MemCtrl()
 {}
 
 void
-MemCtrl::init()
-{
-    AbstractMemory::init();
-}
-
-void
-MemCtrl::logRequest(BusState dir, MasterID m_id, uint8_t qos,
+MemCtrl::logRequest(BusState dir, RequestorID id, uint8_t _qos,
                     Addr addr, uint64_t entries)
 {
     // If needed, initialize all counters and statistics
-    // for this master
-    addMaster(m_id);
+    // for this requestor
+    addRequestor(id);
 
     DPRINTF(QOS,
-            "QoSMemCtrl::logRequest MASTER %s [id %d] address %d"
-            " prio %d this master q packets %d"
+            "qos::MemCtrl::logRequest REQUESTOR %s [id %d] address %#x"
+            " prio %d this requestor q packets %d"
             " - queue size %d - requested entries %d\n",
-            masters[m_id], m_id, addr, qos, packetPriorities[m_id][qos],
-            (dir == READ) ? readQueueSizes[qos]: writeQueueSizes[qos],
+            requestors[id], id, addr, _qos, packetPriorities[id][_qos],
+            (dir == READ) ? readQueueSizes[_qos]: writeQueueSizes[_qos],
             entries);
 
     if (dir == READ) {
-        readQueueSizes[qos] += entries;
+        readQueueSizes[_qos] += entries;
         totalReadQueueSize += entries;
     } else if (dir == WRITE) {
-        writeQueueSizes[qos] += entries;
+        writeQueueSizes[_qos] += entries;
         totalWriteQueueSize += entries;
     }
 
-    packetPriorities[m_id][qos] += entries;
+    packetPriorities[id][_qos] += entries;
     for (auto j = 0; j < entries; ++j) {
-        requestTimes[m_id][addr].push_back(curTick());
+        requestTimes[id][addr].push_back(curTick());
     }
 
     // Record statistics
-    stats.avgPriority[m_id].sample(qos);
+    stats.avgPriority[id].sample(_qos);
 
     // Compute avg priority distance
 
-    for (uint8_t i = 0; i < packetPriorities[m_id].size(); ++i) {
+    for (uint8_t i = 0; i < packetPriorities[id].size(); ++i) {
         uint8_t distance =
-            (abs(int(qos) - int(i))) * packetPriorities[m_id][i];
+            (abs(int(_qos) - int(i))) * packetPriorities[id][i];
 
         if (distance > 0) {
-            stats.avgPriorityDistance[m_id].sample(distance);
+            stats.avgPriorityDistance[id].sample(distance);
             DPRINTF(QOS,
-                    "QoSMemCtrl::logRequest MASTER %s [id %d]"
+                    "qos::MemCtrl::logRequest REQUESTOR %s [id %d]"
                     " registering priority distance %d for priority %d"
                     " (packets %d)\n",
-                    masters[m_id], m_id, distance, i,
-                    packetPriorities[m_id][i]);
+                    requestors[id], id, distance, i,
+                    packetPriorities[id][i]);
         }
     }
 
     DPRINTF(QOS,
-            "QoSMemCtrl::logRequest MASTER %s [id %d] prio %d "
-            "this master q packets %d - new queue size %d\n",
-            masters[m_id], m_id, qos, packetPriorities[m_id][qos],
-            (dir == READ) ? readQueueSizes[qos]: writeQueueSizes[qos]);
+            "qos::MemCtrl::logRequest REQUESTOR %s [id %d] prio %d "
+            "this requestor q packets %d - new queue size %d\n",
+            requestors[id], id, _qos, packetPriorities[id][_qos],
+            (dir == READ) ? readQueueSizes[_qos]: writeQueueSizes[_qos]);
 
 }
 
 void
-MemCtrl::logResponse(BusState dir, MasterID m_id, uint8_t qos,
+MemCtrl::logResponse(BusState dir, RequestorID id, uint8_t _qos,
                      Addr addr, uint64_t entries, double delay)
 {
-    panic_if(!hasMaster(m_id),
-        "Logging response with invalid master\n");
+    panic_if(!hasRequestor(id),
+        "Logging response with invalid requestor\n");
 
     DPRINTF(QOS,
-            "QoSMemCtrl::logResponse MASTER %s [id %d] address %d prio"
-            " %d this master q packets %d"
+            "qos::MemCtrl::logResponse REQUESTOR %s [id %d] address %#x prio"
+            " %d this requestor q packets %d"
             " - queue size %d - requested entries %d\n",
-            masters[m_id], m_id, addr, qos, packetPriorities[m_id][qos],
-            (dir == READ) ? readQueueSizes[qos]: writeQueueSizes[qos],
+            requestors[id], id, addr, _qos, packetPriorities[id][_qos],
+            (dir == READ) ? readQueueSizes[_qos]: writeQueueSizes[_qos],
             entries);
 
     if (dir == READ) {
-        readQueueSizes[qos] -= entries;
+        readQueueSizes[_qos] -= entries;
         totalReadQueueSize -= entries;
     } else if (dir == WRITE) {
-        writeQueueSizes[qos] -= entries;
+        writeQueueSizes[_qos] -= entries;
         totalWriteQueueSize -= entries;
     }
 
-    panic_if(packetPriorities[m_id][qos] == 0,
-             "QoSMemCtrl::logResponse master %s negative packets for priority"
-             " %d", masters[m_id], qos);
+    panic_if(packetPriorities[id][_qos] == 0,
+             "qos::MemCtrl::logResponse requestor %s negative packets "
+             "for priority %d", requestors[id], _qos);
 
-    packetPriorities[m_id][qos] -= entries;
+    packetPriorities[id][_qos] -= entries;
 
     for (auto j = 0; j < entries; ++j) {
-        auto it = requestTimes[m_id].find(addr);
-        panic_if(it == requestTimes[m_id].end(),
-                 "QoSMemCtrl::logResponse master %s unmatched response for"
-                 " address %d received", masters[m_id], addr);
+        auto it = requestTimes[id].find(addr);
+        panic_if(it == requestTimes[id].end(),
+                 "qos::MemCtrl::logResponse requestor %s unmatched response "
+                 "for address %#x received", requestors[id], addr);
 
         // Load request time
         uint64_t requestTime = it->second.front();
@@ -184,42 +188,42 @@ MemCtrl::logResponse(BusState dir, MasterID m_id, uint8_t qos,
 
         // Remove whole address entry if last one
         if (it->second.empty()) {
-            requestTimes[m_id].erase(it);
+            requestTimes[id].erase(it);
         }
         // Compute latency
         double latency = (double) (curTick() + delay - requestTime)
-                / SimClock::Float::s;
+                / sim_clock::as_float::s;
 
         if (latency > 0) {
             // Record per-priority latency stats
-            if (stats.priorityMaxLatency[qos].value() < latency) {
-                stats.priorityMaxLatency[qos] = latency;
+            if (stats.priorityMaxLatency[_qos].value() < latency) {
+                stats.priorityMaxLatency[_qos] = latency;
             }
 
-            if (stats.priorityMinLatency[qos].value() > latency
-                    || stats.priorityMinLatency[qos].value() == 0) {
-                stats.priorityMinLatency[qos] = latency;
+            if (stats.priorityMinLatency[_qos].value() > latency
+                    || stats.priorityMinLatency[_qos].value() == 0) {
+                stats.priorityMinLatency[_qos] = latency;
             }
         }
     }
 
     DPRINTF(QOS,
-            "QoSMemCtrl::logResponse MASTER %s [id %d] prio %d "
-            "this master q packets %d - new queue size %d\n",
-            masters[m_id], m_id, qos, packetPriorities[m_id][qos],
-            (dir == READ) ? readQueueSizes[qos]: writeQueueSizes[qos]);
+            "qos::MemCtrl::logResponse REQUESTOR %s [id %d] prio %d "
+            "this requestor q packets %d - new queue size %d\n",
+            requestors[id], id, _qos, packetPriorities[id][_qos],
+            (dir == READ) ? readQueueSizes[_qos]: writeQueueSizes[_qos]);
 }
 
 uint8_t
-MemCtrl::schedule(MasterID m_id, uint64_t data)
+MemCtrl::schedule(RequestorID id, uint64_t data)
 {
     if (policy) {
-        return policy->schedule(m_id, data);
+        return policy->schedule(id, data);
     } else {
         DPRINTF(QOS,
-                "QoSScheduler::schedule master ID [%d] "
+                "qos::MemCtrl::schedule requestor id [%d] "
                 "data received [%d], but QoS scheduler not initialized\n",
-                m_id,data);
+                id,data);
         return 0;
     }
 }
@@ -230,9 +234,9 @@ MemCtrl::schedule(const PacketPtr pkt)
     assert(pkt->req);
 
     if (policy) {
-        return schedule(pkt->req->masterId(), pkt->getSize());
+        return schedule(pkt->req->requestorId(), pkt->getSize());
     } else {
-        DPRINTF(QOS, "QoSScheduler::schedule Packet received [Qv %d], "
+        DPRINTF(QOS, "qos::MemCtrl::schedule Packet received [Qv %d], "
                 "but QoS scheduler not initialized\n",
                 pkt->qosValue());
         return pkt->qosValue();
@@ -246,13 +250,13 @@ MemCtrl::selectNextBusState()
 
     if (turnPolicy) {
         DPRINTF(QOS,
-                "QoSMemoryTurnaround::selectBusState running policy %s\n",
+                "qos::MemCtrl::selectNextBusState running policy %s\n",
                 turnPolicy->name());
 
         bus_state = turnPolicy->selectBusState();
     } else {
         DPRINTF(QOS,
-                "QoSMemoryTurnaround::selectBusState running "
+                "qos::MemCtrl::selectNextBusState running "
                 "default bus direction selection policy\n");
 
         if ((!getTotalReadQueueSize() && bus_state == MemCtrl::READ) ||
@@ -268,40 +272,40 @@ MemCtrl::selectNextBusState()
 }
 
 void
-MemCtrl::addMaster(MasterID m_id)
+MemCtrl::addRequestor(RequestorID id)
 {
-    if (!hasMaster(m_id)) {
-        masters.emplace(m_id, _system->getMasterName(m_id));
-        packetPriorities[m_id].resize(numPriorities(), 0);
+    if (!hasRequestor(id)) {
+        requestors.emplace(id, _system->getRequestorName(id));
+        packetPriorities[id].resize(numPriorities(), 0);
 
         DPRINTF(QOS,
-                "QoSMemCtrl::addMaster registering"
-                " Master %s [id %d]\n",
-                masters[m_id], m_id);
+                "qos::MemCtrl::addRequestor registering"
+                " Requestor %s [id %d]\n",
+                requestors[id], id);
     }
 }
 
 MemCtrl::MemCtrlStats::MemCtrlStats(MemCtrl &mc)
-    : Stats::Group(&mc),
+    : statistics::Group(&mc),
     memCtrl(mc),
 
-    ADD_STAT(avgPriority,
+    ADD_STAT(avgPriority, statistics::units::Count::get(),
              "Average QoS priority value for accepted requests"),
-    ADD_STAT(avgPriorityDistance,
-             "Average QoS priority distance between assigned and "
-             "queued values"),
+    ADD_STAT(avgPriorityDistance, statistics::units::Count::get(),
+             "Average QoS priority distance between assigned and queued "
+             "values"),
 
-    ADD_STAT(priorityMinLatency,
-             "per QoS priority minimum request to response latency (s)"),
-    ADD_STAT(priorityMaxLatency,
-        "per QoS priority maximum request to response latency (s)"),
-    ADD_STAT(numReadWriteTurnArounds,
+    ADD_STAT(priorityMinLatency, statistics::units::Second::get(),
+             "per QoS priority minimum request to response latency"),
+    ADD_STAT(priorityMaxLatency, statistics::units::Second::get(),
+             "per QoS priority maximum request to response latency"),
+    ADD_STAT(numReadWriteTurnArounds, statistics::units::Count::get(),
              "Number of turnarounds from READ to WRITE"),
-    ADD_STAT(numWriteReadTurnArounds,
+    ADD_STAT(numWriteReadTurnArounds, statistics::units::Count::get(),
              "Number of turnarounds from WRITE to READ"),
-    ADD_STAT(numStayReadState,
+    ADD_STAT(numStayReadState, statistics::units::Count::get(),
              "Number of times bus staying in READ state"),
-    ADD_STAT(numStayWriteState,
+    ADD_STAT(numStayWriteState, statistics::units::Count::get(),
              "Number of times bus staying in WRITE state")
 {
 }
@@ -309,23 +313,23 @@ MemCtrl::MemCtrlStats::MemCtrlStats(MemCtrl &mc)
 void
 MemCtrl::MemCtrlStats::regStats()
 {
-    Stats::Group::regStats();
+    statistics::Group::regStats();
 
-    using namespace Stats;
+    using namespace statistics;
 
     System *system = memCtrl._system;
-    const auto max_masters = system->maxMasters();
+    const auto max_requestors = system->maxRequestors();
     const auto num_priorities = memCtrl.numPriorities();
 
-    // Initializes per master statistics
+    // Initializes per requestor statistics
     avgPriority
-        .init(max_masters)
+        .init(max_requestors)
         .flags(nozero | nonan)
         .precision(2)
         ;
 
     avgPriorityDistance
-        .init(max_masters)
+        .init(max_requestors)
         .flags(nozero | nonan)
         ;
 
@@ -339,10 +343,10 @@ MemCtrl::MemCtrlStats::regStats()
         .precision(12)
         ;
 
-    for (int i = 0; i < max_masters; i++) {
-        const std::string master = system->getMasterName(i);
-        avgPriority.subname(i, master);
-        avgPriorityDistance.subname(i, master);
+    for (int i = 0; i < max_requestors; i++) {
+        const std::string name = system->getRequestorName(i);
+        avgPriority.subname(i, name);
+        avgPriorityDistance.subname(i, name);
     }
 
     for (int j = 0; j < num_priorities; ++j) {
@@ -369,4 +373,6 @@ MemCtrl::recordTurnaroundStats()
     }
 }
 
-} // namespace QoS
+} // namespace qos
+} // namespace memory
+} // namespace gem5

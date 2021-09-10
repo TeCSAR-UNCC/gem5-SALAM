@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __ARCH_SPARC_TLB_HH__
@@ -38,22 +36,23 @@
 #include "mem/request.hh"
 #include "params/SparcTLB.hh"
 
+namespace gem5
+{
+
 class ThreadContext;
 class Packet;
 
 namespace SparcISA
 {
 
-const Addr StartVAddrHole = ULL(0x0000800000000000);
-const Addr EndVAddrHole = ULL(0xFFFF7FFFFFFFFFFF);
-const Addr VAddrAMask = ULL(0xFFFFFFFF);
-const Addr PAddrImplMask = ULL(0x000000FFFFFFFFFF);
+const Addr StartVAddrHole = 0x0000800000000000ULL;
+const Addr EndVAddrHole = 0xFFFF7FFFFFFFFFFFULL;
+const Addr VAddrAMask = 0xFFFFFFFFULL;
+const Addr PAddrImplMask = 0x000000FFFFFFFFFFULL;
 
 class TLB : public BaseTLB
 {
-    // These faults need to be able to populate the tlb in SE mode.
-    friend class FastInstructionAccessMMUMiss;
-    friend class FastDataAccessMMUMiss;
+    friend class MMU;
 
     // TLB state
   protected:
@@ -83,7 +82,8 @@ class TLB : public BaseTLB
 
     std::list<TlbEntry*> freeList;
 
-    enum FaultTypes {
+    enum FaultTypes
+    {
         OtherFault = 0,
         PrivViolation = 0x1,
         SideEffect = 0x2,
@@ -94,13 +94,15 @@ class TLB : public BaseTLB
         VaOutOfRangeJmp = 0x40
     };
 
-    enum ContextType {
+    enum ContextType
+    {
         Primary = 0,
         Secondary = 1,
         Nucleus = 2
     };
 
-    enum TsbPageSize {
+    enum TsbPageSize
+    {
         Ps0,
         Ps1
     };
@@ -156,7 +158,7 @@ class TLB : public BaseTLB
 
   public:
     typedef SparcTLBParams Params;
-    TLB(const Params *p);
+    TLB(const Params &p);
 
     void takeOverFrom(BaseTLB *otlb) override {}
 
@@ -169,13 +171,15 @@ class TLB : public BaseTLB
     void dumpAll();
 
     Fault translateAtomic(
-            const RequestPtr &req, ThreadContext *tc, Mode mode) override;
+        const RequestPtr &req, ThreadContext *tc, BaseMMU::Mode mode) override;
+    Fault translateFunctional(
+        const RequestPtr &req, ThreadContext *tc, BaseMMU::Mode mode) override;
     void translateTiming(
-            const RequestPtr &req, ThreadContext *tc,
-            Translation *translation, Mode mode) override;
+        const RequestPtr &req, ThreadContext *tc,
+        BaseMMU::Translation *translation, BaseMMU::Mode mode) override;
     Fault finalizePhysical(
-            const RequestPtr &req,
-            ThreadContext *tc, Mode mode) const override;
+        const RequestPtr &req,
+        ThreadContext *tc, BaseMMU::Mode mode) const override;
     Cycles doMmuRegRead(ThreadContext *tc, Packet *pkt);
     Cycles doMmuRegWrite(ThreadContext *tc, Packet *pkt);
     void GetTsbPtr(ThreadContext *tc, Addr addr, int ctx, Addr *ptrs);
@@ -199,6 +203,7 @@ class TLB : public BaseTLB
     ASI cacheAsi[2];
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_TLB_HH__

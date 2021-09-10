@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -47,12 +45,19 @@
 #ifndef __CPU_MINOR_DECODE_HH__
 #define __CPU_MINOR_DECODE_HH__
 
+#include <vector>
+
+#include "base/named.hh"
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/dyn_inst.hh"
 #include "cpu/minor/pipe_data.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /* Decode takes instructions from Fetch2 and decomposes them into micro-ops
@@ -87,7 +92,8 @@ class Decode : public Named
   protected:
     /** Data members after this line are cycle-to-cycle state */
 
-    struct DecodeThreadInfo {
+    struct DecodeThreadInfo
+    {
 
         /** Default Constructor */
         DecodeThreadInfo() :
@@ -140,7 +146,7 @@ class Decode : public Named
   public:
     Decode(const std::string &name,
         MinorCPU &cpu_,
-        MinorCPUParams &params,
+        const MinorCPUParams &params,
         Latch<ForwardInstData>::Output inp_,
         Latch<ForwardInstData>::Input out_,
         std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer);
@@ -158,6 +164,7 @@ class Decode : public Named
     bool isDrained();
 };
 
-}
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_DECODE_HH__ */

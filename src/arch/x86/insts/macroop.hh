@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_INSTS_MACROOP_HH__
@@ -44,6 +42,9 @@
 #include "arch/x86/insts/static_inst.hh"
 #include "arch/x86/emulenv.hh"
 #include "arch/x86/types.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -75,7 +76,7 @@ class MacroopBase : public X86StaticInst
     StaticInstPtr * microops;
 
     StaticInstPtr
-    fetchMicroop(MicroPC microPC) const
+    fetchMicroop(MicroPC microPC) const override
     {
         if (microPC >= numMicroops)
             return badMicroop;
@@ -84,7 +85,8 @@ class MacroopBase : public X86StaticInst
     }
 
     std::string
-    generateDisassembly(Addr pc, const SymbolTable *symtab) const
+    generateDisassembly(Addr pc,
+                        const loader::SymbolTable *symtab) const override
     {
         return mnemonic;
     }
@@ -102,6 +104,8 @@ class MacroopBase : public X86StaticInst
         return env;
     }
 };
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif //__ARCH_X86_INSTS_MACROOP_HH__

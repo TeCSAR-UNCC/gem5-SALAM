@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #include "mem/cache/replacement_policies/brrip_rp.hh"
@@ -37,16 +35,22 @@
 #include "base/random.hh"
 #include "params/BRRIPRP.hh"
 
-BRRIPRP::BRRIPRP(const Params *p)
-    : BaseReplacementPolicy(p),
-      numRRPVBits(p->num_bits), hitPriority(p->hit_priority), btp(p->btp)
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(ReplacementPolicy, replacement_policy);
+namespace replacement_policy
+{
+
+BRRIP::BRRIP(const Params &p)
+  : Base(p), numRRPVBits(p.num_bits), hitPriority(p.hit_priority),
+    btp(p.btp)
 {
     fatal_if(numRRPVBits <= 0, "There should be at least one bit per RRPV.\n");
 }
 
 void
-BRRIPRP::invalidate(const std::shared_ptr<ReplacementData>& replacement_data)
-const
+BRRIP::invalidate(const std::shared_ptr<ReplacementData>& replacement_data)
 {
     std::shared_ptr<BRRIPReplData> casted_replacement_data =
         std::static_pointer_cast<BRRIPReplData>(replacement_data);
@@ -56,7 +60,7 @@ const
 }
 
 void
-BRRIPRP::touch(const std::shared_ptr<ReplacementData>& replacement_data) const
+BRRIP::touch(const std::shared_ptr<ReplacementData>& replacement_data) const
 {
     std::shared_ptr<BRRIPReplData> casted_replacement_data =
         std::static_pointer_cast<BRRIPReplData>(replacement_data);
@@ -72,7 +76,7 @@ BRRIPRP::touch(const std::shared_ptr<ReplacementData>& replacement_data) const
 }
 
 void
-BRRIPRP::reset(const std::shared_ptr<ReplacementData>& replacement_data) const
+BRRIP::reset(const std::shared_ptr<ReplacementData>& replacement_data) const
 {
     std::shared_ptr<BRRIPReplData> casted_replacement_data =
         std::static_pointer_cast<BRRIPReplData>(replacement_data);
@@ -90,7 +94,7 @@ BRRIPRP::reset(const std::shared_ptr<ReplacementData>& replacement_data) const
 }
 
 ReplaceableEntry*
-BRRIPRP::getVictim(const ReplacementCandidates& candidates) const
+BRRIP::getVictim(const ReplacementCandidates& candidates) const
 {
     // There must be at least one replacement candidate
     assert(candidates.size() > 0);
@@ -139,13 +143,10 @@ BRRIPRP::getVictim(const ReplacementCandidates& candidates) const
 }
 
 std::shared_ptr<ReplacementData>
-BRRIPRP::instantiateEntry()
+BRRIP::instantiateEntry()
 {
     return std::shared_ptr<ReplacementData>(new BRRIPReplData(numRRPVBits));
 }
 
-BRRIPRP*
-BRRIPRPParams::create()
-{
-    return new BRRIPRP(this);
-}
+} // namespace replacement_policy
+} // namespace gem5

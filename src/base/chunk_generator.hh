@@ -24,12 +24,10 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
  */
 
-#ifndef __BASE__CHUNK_GENERATOR_HH__
-#define __BASE__CHUNK_GENERATOR_HH__
+#ifndef __BASE_CHUNK_GENERATOR_HH__
+#define __BASE_CHUNK_GENERATOR_HH__
 
 /**
  * @file
@@ -37,9 +35,13 @@
  */
 
 #include <algorithm>
+#include <cassert>
 
 #include "base/intmath.hh"
 #include "base/types.hh"
+
+namespace gem5
+{
 
 /**
  * This class takes an arbitrary memory region (address/length pair)
@@ -62,13 +64,15 @@ class ChunkGenerator
     /** The starting address of the next chunk (after the current one). */
     Addr nextAddr;
     /** The size of the current chunk (in bytes). */
-    unsigned  curSize;
+    Addr curSize;
+    /** The size of the next chunk (in bytes). */
+    Addr nextSize;
     /** The number of bytes remaining in the region after the current chunk. */
-    unsigned  sizeLeft;
+    Addr sizeLeft;
     /** The start address so we can calculate offset in writing block. */
     const Addr startAddr;
     /** The maximum chunk size, e.g., the cache block size or page size. */
-    const unsigned chunkSize;
+    const Addr chunkSize;
 
   public:
     /**
@@ -77,9 +81,11 @@ class ChunkGenerator
      * @param totalSize The total size of the region.
      * @param _chunkSize The size/alignment of chunks into which
      *    the region should be decomposed.
+     *
+     * @ingroup api_chunk_generator
      */
-    ChunkGenerator(Addr _startAddr, unsigned totalSize, unsigned _chunkSize)
-        : startAddr(_startAddr), chunkSize(_chunkSize)
+    ChunkGenerator(Addr _startAddr, Addr totalSize, Addr _chunkSize) :
+        startAddr(_startAddr), chunkSize(_chunkSize)
     {
         // chunkSize must be a power of two
         assert(chunkSize == 0 || isPowerOf2(chunkSize));
@@ -87,66 +93,111 @@ class ChunkGenerator
         // set up initial chunk.
         curAddr = startAddr;
 
-        if (chunkSize == 0) //Special Case, if we see 0, assume no chuncking
-        {
+        if (chunkSize == 0) { // Special Case, if we see 0, assume no chunking.
             nextAddr = startAddr + totalSize;
-        }
-        else
-        {
-            // nextAddr should be *next* chunk start
+        } else {
+            // nextAddr should be *next* chunk start.
             nextAddr = roundUp(startAddr, chunkSize);
             if (curAddr == nextAddr) {
                 // ... even if startAddr is already chunk-aligned
                 nextAddr += chunkSize;
             }
+            nextAddr = std::min(nextAddr, startAddr + totalSize);
         }
 
-        // how many bytes are left between curAddr and the end of this chunk?
-        unsigned left_in_chunk = nextAddr - curAddr;
-        curSize = std::min(totalSize, left_in_chunk);
+        // How many bytes are left between curAddr and the end of this chunk?
+        curSize = nextAddr - curAddr;
         sizeLeft = totalSize - curSize;
+        nextSize = std::min(sizeLeft, chunkSize);
     }
 
-    /** Return starting address of current chunk. */
+    /**
+     * Return starting address of current chunk.
+     *
+     * @ingroup api_chunk_generator
+     */
     Addr addr() const { return curAddr; }
-    /** Return size in bytes of current chunk. */
-    unsigned size() const { return curSize; }
+    /**
+     * Return size in bytes of current chunk.
+     *
+     * @ingroup api_chunk_generator
+     */
+    Addr size() const { return curSize; }
 
-    /** Number of bytes we have already chunked up. */
-    unsigned complete() const { return curAddr - startAddr; }
+    /**
+     * Number of bytes we have already chunked up.
+     *
+     * @ingroup api_chunk_generator
+     */
+    Addr complete() const { return curAddr - startAddr; }
 
     /**
      * Are we done?  That is, did the last call to next() advance
      * past the end of the region?
      * @return True if yes, false if more to go.
+     *
+     * @ingroup api_chunk_generator
      */
-    bool done() const { return (curSize == 0); }
+    bool done() const { return curSize == 0; }
 
     /**
      * Is this the last chunk?
      * @return True if yes, false if more to go.
+     *
+     * @ingroup api_chunk_generator
      */
-    bool last() const { return (sizeLeft == 0); }
+    bool last() const { return sizeLeft == 0; }
+
+    /**
+     * Grow this chunk to cover additional bytes which are already handled.
+     * @param next The first byte of the next chunk.
+     *
+     * @ingroup api_chunk_generator
+     */
+    void
+    setNext(Addr next)
+    {
+        assert(next >= nextAddr);
+
+        const Addr skipping = std::min(next - nextAddr, sizeLeft);
+
+        sizeLeft -= skipping;
+        curSize += skipping;
+        nextAddr = next;
+
+        assert(chunkSize);
+
+        // nextSize will be enough to get to an alignment boundary,
+        nextSize = roundUp(next, chunkSize) - next;
+        // or if it's already aligned, to the following boundary or the end.
+        if (!nextSize)
+            nextSize = std::min(sizeLeft, chunkSize);
+    }
 
     /**
      * Advance generator to next chunk.
      * @return True if successful, false if unsuccessful
      * (because we were at the last chunk).
+     *
+     * @ingroup api_chunk_generator
      */
     bool
     next()
     {
-        if (sizeLeft == 0) {
+        if (last()) {
             curSize = 0;
             return false;
         }
 
         curAddr = nextAddr;
-        curSize = std::min(sizeLeft, chunkSize);
+        curSize = nextSize;
         sizeLeft -= curSize;
         nextAddr += curSize;
+        nextSize = std::min(sizeLeft, chunkSize);
         return true;
     }
 };
 
-#endif // __BASE__CHUNK_GENERATOR_HH__
+} // namespace gem5
+
+#endif // __BASE_CHUNK_GENERATOR_HH__

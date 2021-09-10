@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 Advanced Micro Devices, Inc.
+ * Copyright (c) 2010-2015, 2018 Advanced Micro Devices, Inc.
  * All rights reserved.
  *
  * For use for simulation and test purposes only
@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Lisa Hsu
  */
 
 
@@ -137,8 +135,8 @@ structure(CPURequestMsg, desc="...", interface="Message") {
   CoherenceRequestType OriginalType, default="CoherenceRequestType_NA",  desc="Type of request from core fwded through region buffer";
   WriteMask writeMask, desc="Write Through Data";
   MachineID WTRequestor,            desc="Node who initiated the write through";
-  HSAScope scope,                      default="HSAScope_SYSTEM", desc="Request Scope";
   int wfid,                         default="0", desc="wavefront id";
+  uint64_t instSeqNum,              desc="instruction sequence number";
   bool NoWriteConflict,             default="true", desc="write collided with CAB entry";
   int ProgramCounter,               desc="PC that accesses to this block";
 
@@ -191,6 +189,7 @@ structure(TDProbeRequestMsg, desc="...", interface="Message") {
   MessageSizeType MessageSize, desc="size category of the message";
   int Phase,              desc="Synchronization Phase";
   int wfid,               desc="wavefront id for Release";
+  uint64_t instSeqNum,    desc="instruction sequence number";
   MachineID Requestor,    desc="Node who initiated the request";
 
   bool functionalRead(Packet *pkt) {
@@ -245,6 +244,7 @@ structure(ResponseMsg, desc="...", interface="Message") {
   bool NoAckNeeded, default="false", desc="For short circuting acks";
   bool isValid, default="false", desc="Is acked block valid";
   int wfid, default="0", desc="wavefront id";
+  uint64_t instSeqNum,    desc="instruction sequence number";
   int Phase,                   desc="Synchronization Phase";
 
   int ProgramCounter,       desc="PC that issues this request";
@@ -346,6 +346,7 @@ structure(FifoMsg, desc="...", interface="Message") {
   Addr addr,          desc="Address";
   FifoType Type,            desc="WriteThrough/WriteFlush";
   int wfid,                 default="0",desc="wavefront id";
+  uint64_t instSeqNum,      desc="instruction sequence number";
   MachineID Requestor,      desc="Flush Requestor";
   MachineID oRequestor,      desc="original Flush Requestor";
 
@@ -359,4 +360,52 @@ structure(FifoMsg, desc="...", interface="Message") {
     return false;
   }
 
+}
+
+enumeration(DMARequestType, desc="...", default="DMARequestType_NULL") {
+  READ,          desc="Memory Read";
+  WRITE,         desc="Memory Write";
+  NULL,          desc="Invalid";
+}
+
+enumeration(DMAResponseType, desc="...", default="DMAResponseType_NULL") {
+  DATA,          desc="DATA read";
+  ACK,           desc="ACK write";
+  NULL,          desc="Invalid";
+}
+
+structure(DMARequestMsg, desc="...", interface="Message") {
+  DMARequestType Type,       desc="Request type (read/write)";
+  Addr PhysicalAddress,   desc="Physical address for this request";
+  Addr LineAddress,       desc="Line address for this request";
+  MachineID Requestor,            desc="Node who initiated the request";
+  NetDest Destination,       desc="Destination";
+  DataBlock DataBlk,         desc="DataBlk attached to this request";
+  int Len,                   desc="The length of the request";
+  MessageSizeType MessageSize, desc="size category of the message";
+
+  bool functionalRead(Packet *pkt) {
+    return testAndRead(LineAddress, DataBlk, pkt);
+  }
+
+  bool functionalWrite(Packet *pkt) {
+    return testAndWrite(LineAddress, DataBlk, pkt);
+  }
+}
+
+structure(DMAResponseMsg, desc="...", interface="Message") {
+  DMAResponseType Type,      desc="Response type (DATA/ACK)";
+  Addr PhysicalAddress,   desc="Physical address for this request";
+  Addr LineAddress,       desc="Line address for this request";
+  NetDest Destination,       desc="Destination";
+  DataBlock DataBlk,         desc="DataBlk attached to this request";
+  MessageSizeType MessageSize, desc="size category of the message";
+
+  bool functionalRead(Packet *pkt) {
+    return testAndRead(LineAddress, DataBlk, pkt);
+  }
+
+  bool functionalWrite(Packet *pkt) {
+    return testAndWrite(LineAddress, DataBlk, pkt);
+  }
 }

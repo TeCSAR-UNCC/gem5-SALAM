@@ -29,91 +29,75 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos,
- *          Sooraj Puthoor
  */
 
 #include "gpu-compute/exec_stage.hh"
 
+#include <sstream>
+
+#include "base/trace.hh"
+#include "debug/GPUSched.hh"
 #include "gpu-compute/compute_unit.hh"
+#include "gpu-compute/vector_register_file.hh"
 #include "gpu-compute/wavefront.hh"
 
-ExecStage::ExecStage(const ComputeUnitParams *p) : numSIMDs(p->num_SIMDs),
-    numMemUnits(p->num_global_mem_pipes + p->num_shared_mem_pipes),
-    vectorAluInstAvail(nullptr), glbMemInstAvail(nullptr),
-    shrMemInstAvail(nullptr), lastTimeInstExecuted(false),
-    thisTimeInstExecuted(false), instrExecuted (false),
-    executionResourcesUsed(0)
+namespace gem5
 {
-    numTransActiveIdle = 0;
+
+ExecStage::ExecStage(const ComputeUnitParams &p, ComputeUnit &cu,
+                     ScheduleToExecute &from_schedule)
+    : computeUnit(cu), fromSchedule(from_schedule),
+      lastTimeInstExecuted(false),
+      thisTimeInstExecuted(false), instrExecuted (false),
+      executionResourcesUsed(0), _name(cu.name() + ".ExecStage"),
+      stats(&cu)
+
+{
+    stats.numTransActiveIdle = 0;
     idle_dur = 0;
 }
 
 void
-ExecStage::init(ComputeUnit *cu)
+ExecStage::init()
 {
-    computeUnit = cu;
-    _name = computeUnit->name() + ".ExecStage";
-    dispatchList = &computeUnit->dispatchList;
-    vectorAluInstAvail = &(computeUnit->vectorAluInstAvail);
-    glbMemInstAvail= &(computeUnit->glbMemInstAvail);
-    shrMemInstAvail= &(computeUnit->shrMemInstAvail);
     idle_dur = 0;
 }
 
 void
 ExecStage::collectStatistics(enum STAT_STATUS stage, int unitId) {
     if (stage == IdleExec) {
-        // count cycles of no vector ALU instruction executed
-        // even if one was the oldest in a WV of that vector SIMD unit
-        if (computeUnit->isVecAlu(unitId) && vectorAluInstAvail->at(unitId)) {
-            numCyclesWithNoInstrTypeIssued[unitId]++;
-        }
-
-        // count cycles of no global memory (vector) instruction executed
-        // even if one was the oldest in a WV of that vector SIMD unit
-        if (computeUnit->isGlbMem(unitId) && *glbMemInstAvail > 0) {
-            numCyclesWithNoInstrTypeIssued[unitId]++;
-            (*glbMemInstAvail)--;
-        }
-
-        // count cycles of no shared memory (vector) instruction executed
-        // even if one was the oldest in a WV of that vector SIMD unit
-        if (computeUnit->isShrMem(unitId) && *shrMemInstAvail > 0) {
-            numCyclesWithNoInstrTypeIssued[unitId]++;
-            (*shrMemInstAvail)--;
-        }
+        // count cycles when no instruction to a specific execution resource
+        // is executed
+        stats.numCyclesWithNoInstrTypeIssued[unitId]++;
     } else if (stage == BusyExec) {
-        // count the number of cycles an instruction to a specific unit
-        // was issued
-        numCyclesWithInstrTypeIssued[unitId]++;
+        // count the number of cycles an instruction to a specific execution
+        // resource type was issued
+        stats.numCyclesWithInstrTypeIssued[unitId]++;
         thisTimeInstExecuted = true;
         instrExecuted = true;
         ++executionResourcesUsed;
     } else if (stage == PostExec) {
         // count the number of transitions from active to idle
         if (lastTimeInstExecuted && !thisTimeInstExecuted) {
-            ++numTransActiveIdle;
+            ++stats.numTransActiveIdle;
         }
 
         if (!lastTimeInstExecuted && thisTimeInstExecuted) {
-            idleDur.sample(idle_dur);
+            stats.idleDur.sample(idle_dur);
             idle_dur = 0;
         } else if (!thisTimeInstExecuted) {
             idle_dur++;
         }
 
         lastTimeInstExecuted = thisTimeInstExecuted;
-        // track the number of cycles we either issued one vector instruction
-        // or issued no instructions at all
+        // track the number of cycles we either issued at least
+        // instruction or issued no instructions at all
         if (instrExecuted) {
-            numCyclesWithInstrIssued++;
+            stats.numCyclesWithInstrIssued++;
         } else {
-            numCyclesWithNoIssue++;
+            stats.numCyclesWithNoIssue++;
         }
-
-        spc.sample(executionResourcesUsed);
+        stats.spc.sample(executionResourcesUsed);
     }
 }
 
@@ -125,80 +109,135 @@ ExecStage::initStatistics()
     thisTimeInstExecuted = false;
 }
 
+std::string
+ExecStage::dispStatusToStr(int i)
+{
+    std::string s("INVALID");
+    switch (i) {
+    case EMPTY:
+        s = "EMPTY";
+        break;
+    case SKIP:
+        s = "SKIP";
+        break;
+    case EXREADY:
+        s = "EXREADY";
+        break;
+    }
+    return s;
+}
+
+void
+ExecStage::dumpDispList()
+{
+    std::stringstream ss;
+    bool empty = true;
+    for (int i = 0; i < computeUnit.numExeUnits(); i++) {
+        DISPATCH_STATUS s = fromSchedule.dispatchStatus(i);
+        ss << i << ": " << dispStatusToStr(s);
+        if (s != EMPTY) {
+            empty = false;
+            GPUDynInstPtr &gpu_dyn_inst = fromSchedule.readyInst(i);
+            Wavefront *wf = gpu_dyn_inst->wavefront();
+            ss << " SIMD[" << wf->simdId << "] WV[" << wf->wfDynId << "]: ";
+            ss << (wf->instructionBuffer.front())->seqNum() << ": ";
+            ss << (wf->instructionBuffer.front())->disassemble();
+        }
+        ss << "\n";
+    }
+    if (!empty) {
+        DPRINTF(GPUSched, "Dispatch List:\n%s", ss.str());
+    }
+}
+
 void
 ExecStage::exec()
 {
     initStatistics();
-
-    for (int unitId = 0; unitId < (numSIMDs + numMemUnits); ++unitId) {
-         // if dispatch list for this execution resource is empty,
-         // skip this execution resource this cycle
-         if (dispatchList->at(unitId).second == EMPTY) {
-             collectStatistics(IdleExec, unitId);
-             continue;
-         }
-
-         collectStatistics(BusyExec, unitId);
-         // execute an instruction for the WF
-         dispatchList->at(unitId).first->exec();
-         // clear the dispatch list entry
-         dispatchList->at(unitId).second = EMPTY;
-         dispatchList->at(unitId).first = (Wavefront*)nullptr;
+    if (debug::GPUSched) {
+        dumpDispList();
+    }
+    for (int unitId = 0; unitId < computeUnit.numExeUnits(); ++unitId) {
+        DISPATCH_STATUS s = fromSchedule.dispatchStatus(unitId);
+        switch (s) {
+          case EMPTY:
+            // Do not execute if empty, waiting for VRF reads,
+            // or LM tied to GM waiting for VRF reads
+            collectStatistics(IdleExec, unitId);
+            break;
+          case EXREADY:
+            {
+                collectStatistics(BusyExec, unitId);
+                GPUDynInstPtr &gpu_dyn_inst = fromSchedule.readyInst(unitId);
+                assert(gpu_dyn_inst);
+                Wavefront *wf = gpu_dyn_inst->wavefront();
+                DPRINTF(GPUSched, "Exec[%d]: SIMD[%d] WV[%d]: %s\n",
+                        unitId, wf->simdId, wf->wfDynId,
+                        gpu_dyn_inst->disassemble());
+                DPRINTF(GPUSched, "dispatchList[%d] EXREADY->EMPTY\n", unitId);
+                wf->exec();
+                (computeUnit.scheduleStage).deleteFromSch(wf);
+                fromSchedule.dispatchTransition(unitId, EMPTY);
+                wf->freeResources();
+                break;
+            }
+          case SKIP:
+            {
+                collectStatistics(BusyExec, unitId);
+                GPUDynInstPtr &gpu_dyn_inst = fromSchedule.readyInst(unitId);
+                assert(gpu_dyn_inst);
+                Wavefront *wf = gpu_dyn_inst->wavefront();
+                DPRINTF(GPUSched, "dispatchList[%d] SKIP->EMPTY\n", unitId);
+                fromSchedule.dispatchTransition(unitId, EMPTY);
+                wf->freeResources();
+                break;
+            }
+          default:
+            panic("Unknown dispatch status in exec()\n");
+        }
     }
 
     collectStatistics(PostExec, 0);
 }
 
-void
-ExecStage::regStats()
+ExecStage::ExecStageStats::ExecStageStats(statistics::Group *parent)
+    : statistics::Group(parent, "ExecStage"),
+      ADD_STAT(numTransActiveIdle,
+               "number of CU transitions from active to idle"),
+      ADD_STAT(numCyclesWithNoIssue, "number of cycles the CU issues nothing"),
+      ADD_STAT(numCyclesWithInstrIssued,
+               "number of cycles the CU issued at least one instruction"),
+      ADD_STAT(spc,
+               "Execution units active per cycle (Exec unit=SIMD,MemPipe)"),
+      ADD_STAT(idleDur, "duration of idle periods in cycles"),
+      ADD_STAT(numCyclesWithInstrTypeIssued, "Number of cycles at least one "
+               "instruction issued to execution resource type"),
+      ADD_STAT(numCyclesWithNoInstrTypeIssued, "Number of clks no instructions"
+               " issued to execution resource type")
 {
-    numTransActiveIdle
-       .name(name() + ".num_transitions_active_to_idle")
-       .desc("number of CU transitions from active to idle")
-        ;
+    ComputeUnit *compute_unit = static_cast<ComputeUnit*>(parent);
 
-    numCyclesWithNoIssue
-        .name(name() + ".num_cycles_with_no_issue")
-        .desc("number of cycles the CU issues nothing")
-        ;
+    spc.init(0, compute_unit->numExeUnits(), 1);
+    idleDur.init(0, 75, 5);
+    numCyclesWithInstrTypeIssued.init(compute_unit->numExeUnits());
+    numCyclesWithNoInstrTypeIssued.init(compute_unit->numExeUnits());
 
-    numCyclesWithInstrIssued
-        .name(name() + ".num_cycles_with_instr_issued")
-        .desc("number of cycles the CU issued at least one instruction")
-        ;
-
-    spc
-        .init(0, numSIMDs + numMemUnits, 1)
-        .name(name() + ".spc")
-        .desc("Execution units active per cycle (Exec unit=SIMD,MemPipe)")
-        ;
-
-    idleDur
-        .init(0,75,5)
-        .name(name() + ".idle_duration_in_cycles")
-        .desc("duration of idle periods in cycles")
-        ;
-
-    numCyclesWithInstrTypeIssued
-        .init(numSIMDs + numMemUnits)
-        .name(name() + ".num_cycles_with_instrtype_issue")
-        .desc("Number of cycles at least one instruction of specific type "
-              "issued")
-        ;
-
-    numCyclesWithNoInstrTypeIssued
-        .init(numSIMDs + numMemUnits)
-       .name(name() + ".num_cycles_with_instr_type_no_issue")
-       .desc("Number of cycles no instruction of specific type issued")
-       ;
-
-    for (int i = 0; i < numSIMDs; ++i) {
-        numCyclesWithInstrTypeIssued.subname(i, csprintf("ALU%d",i));
-        numCyclesWithNoInstrTypeIssued.subname(i, csprintf("ALU%d",i));
+    int c = 0;
+    for (int i = 0; i < compute_unit->numVectorALUs; i++,c++) {
+        std::string s = "VectorALU" + std::to_string(i);
+        numCyclesWithNoInstrTypeIssued.subname(c, s);
+        numCyclesWithInstrTypeIssued.subname(c, s);
     }
+    for (int i = 0; i < compute_unit->numScalarALUs; i++,c++) {
+        std::string s = "ScalarALU" + std::to_string(i);
+        numCyclesWithNoInstrTypeIssued.subname(c, s);
+        numCyclesWithInstrTypeIssued.subname(c, s);
+    }
+    numCyclesWithNoInstrTypeIssued.subname(c, "VectorMemPipe");
+    numCyclesWithInstrTypeIssued.subname(c++, "VectorMemPipe");
 
-    numCyclesWithInstrTypeIssued.subname(numSIMDs, csprintf("GM"));
-    numCyclesWithNoInstrTypeIssued.subname(numSIMDs, csprintf("GM"));
-    numCyclesWithInstrTypeIssued.subname(numSIMDs + 1, csprintf("LM"));
-    numCyclesWithNoInstrTypeIssued.subname(numSIMDs + 1, csprintf("LM"));
+    numCyclesWithNoInstrTypeIssued.subname(c, "SharedMemPipe");
+    numCyclesWithInstrTypeIssued.subname(c++, "SharedMemPipe");
 }
+
+} // namespace gem5

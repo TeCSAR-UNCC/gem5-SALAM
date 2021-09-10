@@ -24,13 +24,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #ifndef __ASYNC_HH__
 #define __ASYNC_HH__
+
+namespace gem5
+{
 
 ///
 /// @file sim/async.hh
@@ -48,5 +48,7 @@ extern volatile bool async_exit;        ///< Async request to exit simulator.
 extern volatile bool async_io;          ///< Async I/O request (SIGIO).
 extern volatile bool async_exception;   ///< Python exception.
 //@}
+
+} // namespace gem5
 
 #endif // __ASYNC_HH__

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_INTMESSAGE_HH__
@@ -33,11 +31,15 @@
 
 #include "arch/x86/x86_traits.hh"
 #include "base/bitunion.hh"
+#include "base/compiler.hh"
 #include "base/types.hh"
 #include "dev/x86/intdev.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 #include "mem/request.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -50,9 +52,11 @@ namespace X86ISA
         Bitfield<21> trigger;
     EndBitUnion(TriggerIntMessage)
 
-    namespace DeliveryMode
+    GEM5_DEPRECATED_NAMESPACE(DeliveryMode, delivery_mode);
+    namespace delivery_mode
     {
-        enum IntDeliveryMode {
+        enum IntDeliveryMode
+        {
             Fixed = 0,
             LowestPriority = 1,
             SMI = 2,
@@ -73,7 +77,7 @@ namespace X86ISA
         {
             return mode == 3;
         }
-    }
+    } // namespace delivery_mode
 
     static const Addr TriggerIntOffset = 0;
 
@@ -83,6 +87,8 @@ namespace X86ISA
         Addr addr = x86InterruptAddress(id, TriggerIntOffset);
         return buildIntPacket(addr, message);
     }
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif

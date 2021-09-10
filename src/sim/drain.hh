@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __SIM_DRAIN_HH__
@@ -43,6 +41,9 @@
 #include <atomic>
 #include <mutex>
 #include <vector>
+
+namespace gem5
+{
 
 class Drainable;
 
@@ -67,30 +68,17 @@ class Drainable;
  * the world through Drainable::getState()) could be used to determine
  * if all objects have entered the Drained state, the protocol is
  * actually a bit more elaborate. See Drainable::drain() for details.
+ *
+ * @ingroup api_drain
  */
-enum class DrainState {
-    Running,  /** Running normally */
-    Draining, /** Draining buffers pending serialization/handover */
-    Drained,  /** Buffers drained, ready for serialization/handover */
-    Resuming, /** Transient state while the simulator is resuming */
+enum class DrainState
+{
+    Running,  /**< Running normally */
+    Draining, /**< Draining buffers pending serialization/handover */
+    Drained,  /**< Buffers drained, ready for serialization/handover */
+    Resuming, /**< Transient state while the simulator is resuming */
 };
 
-/**
- * This class coordinates draining of a System.
- *
- * When draining the simulator, we need to make sure that all
- * Drainable objects within the system have ended up in the drained
- * state before declaring the operation to be successful. This class
- * keeps track of how many objects are still in the process of
- * draining. Once it determines that all objects have drained their
- * state, it exits the simulation loop.
- *
- * @note A System might not be completely drained even though the
- * DrainManager has caused the simulation loop to exit. Draining needs
- * to be restarted until all Drainable objects declare that they don't
- * need further simulation to be completely drained. See Drainable for
- * more information.
- */
 class DrainManager
 {
   private:
@@ -115,16 +103,27 @@ class DrainManager
      *
      * @return true if all objects were drained successfully, false if
      * more simulation is needed.
+     *
+     * @ingroup api_drain
      */
     bool tryDrain();
 
     /**
      * Resume normal simulation in a Drained system.
+     *
+     * @ingroup api_drain
      */
     void resume();
 
     /**
-     * Run state fixups before a checkpoint restore operation
+     * Run state fixups before a checkpoint restore operation.
+     *
+     * This is called before restoring the checkpoint and to make 
+     * sure that everything has been set to drained.
+     *
+     * When restoring from a checkpoint, this function should be called 
+     * first before calling the resume() function. And also before 
+     * calling loadstate() on any object.
      *
      * The drain state of an object isn't stored in a checkpoint since
      * the whole system is always going to be in the Drained state
@@ -133,18 +132,30 @@ class DrainManager
      * state since the state isn't stored in checkpoints. This method
      * performs state fixups on all Drainable objects and the
      * DrainManager itself.
+     *
+     * @ingroup api_drain
      */
     void preCheckpointRestore();
 
-    /** Check if the system is drained */
+    /**
+     * Check if the system is drained
+     *
+     * @ingroup api_drain
+     */
     bool isDrained() const { return _state == DrainState::Drained; }
 
-    /** Get the simulators global drain state */
+    /**
+     * Get the simulators global drain state
+     *
+     * @ingroup api_drain
+     */
     DrainState state() const { return _state; }
 
     /**
      * Notify the DrainManager that a Drainable object has finished
      * draining.
+     *
+     * @ingroup api_drain
      */
     void signalDrainDone();
 
@@ -222,6 +233,22 @@ class DrainManager
  */
 class Drainable
 {
+    /**
+     * This class coordinates draining of a System.
+     *
+     * When draining the simulator, we need to make sure that all
+     * Drainable objects within the system have ended up in the drained
+     * state before declaring the operation to be successful. This class
+     * keeps track of how many objects are still in the process of
+     * draining. Once it determines that all objects have drained their
+     * state, it exits the simulation loop.
+     *
+     * @note A System might not be completely drained even though the
+     * DrainManager has caused the simulation loop to exit. Draining needs
+     * to be restarted until all Drainable objects declare that they don't
+     * need further simulation to be completely drained. See Drainable for
+     * more information.
+     */
     friend class DrainManager;
 
   protected:
@@ -229,7 +256,12 @@ class Drainable
     virtual ~Drainable();
 
     /**
-     * Notify an object that it needs to drain its state.
+     * Draining is the process of clearing out the states of
+     * SimObjects.These are the SimObjects that are partially
+     * executed or are partially in flight. Draining is mostly
+     * used before forking and creating a check point.
+     *
+     * This function notifies an object that it needs to drain its state.
      *
      * If the object does not need further simulation to drain
      * internal buffers, it returns DrainState::Drained and
@@ -248,11 +280,15 @@ class Drainable
      * @return DrainState::Drained if the object is drained at this
      * point in time, DrainState::Draining if it needs further
      * simulation.
+     *
+     * @ingroup api_drain
      */
     virtual DrainState drain() = 0;
 
     /**
      * Resume execution after a successful drain.
+     *
+     * @ingroup api_drain
      */
     virtual void drainResume() {};
 
@@ -263,6 +299,8 @@ class Drainable
      * into a state where it is ready to be drained. The method is
      * safe to call multiple times and there is no need to check that
      * draining has been requested before calling this method.
+     *
+     * @ingroup api_drain
      */
     void signalDrainDone() const {
         switch (_drainState) {
@@ -278,11 +316,19 @@ class Drainable
     }
 
   public:
-    /** Return the current drain state of an object. */
+    /**
+     * Return the current drain state of an object.
+     *
+     * @ingroup api_drain
+     */
     DrainState drainState() const { return _drainState; }
 
     /**
-     * Notify a child process of a fork.
+     * Notify a child process of a fork. SimObjects are told that the
+     * process is going to be forked.
+     *
+     * Forking is a process of splitting a process in to two
+     * processes, which is then used for multiprocessing.
      *
      * When calling fork in gem5, we need to ensure that resources
      * shared between the parent and the child are consistent. This
@@ -292,6 +338,8 @@ class Drainable
      *
      * This method is only called in the child of the fork. The call
      * takes place in a drained system.
+     *
+     * @ingroup api_drain
      */
     virtual void notifyFork() {};
 
@@ -311,5 +359,7 @@ class Drainable
      */
     mutable DrainState _drainState;
 };
+
+} // namespace gem5
 
 #endif

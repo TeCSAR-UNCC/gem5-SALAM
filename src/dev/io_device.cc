@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Nathan Binkert
  */
 
 #include "dev/io_device.hh"
@@ -47,8 +44,11 @@
 #include "debug/AddrRanges.hh"
 #include "sim/system.hh"
 
-PioDevice::PioDevice(const Params *p)
-    : ClockedObject(p), sys(p->system), pioPort(this)
+namespace gem5
+{
+
+PioDevice::PioDevice(const Params &p)
+    : ClockedObject(p), sys(p.system), pioPort(this)
 {}
 
 PioDevice::~PioDevice()
@@ -72,9 +72,9 @@ PioDevice::getPort(const std::string &if_name, PortID idx)
     return ClockedObject::getPort(if_name, idx);
 }
 
-BasicPioDevice::BasicPioDevice(const Params *p, Addr size)
-    : PioDevice(p), pioAddr(p->pio_addr), pioSize(size),
-      pioDelay(p->pio_latency)
+BasicPioDevice::BasicPioDevice(const Params &p, Addr size)
+    : PioDevice(p), pioAddr(p.pio_addr), pioSize(size),
+      pioDelay(p.pio_latency)
 {}
 
 AddrRangeList
@@ -86,3 +86,5 @@ BasicPioDevice::getAddrRanges() const
     ranges.push_back(RangeSize(pioAddr, pioSize));
     return ranges;
 }
+
+} // namespace gem5

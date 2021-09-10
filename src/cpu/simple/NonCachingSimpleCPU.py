@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.params import *
 from m5.objects.AtomicSimpleCPU import AtomicSimpleCPU
@@ -49,6 +47,9 @@ class NonCachingSimpleCPU(AtomicSimpleCPU):
 
     type = 'NonCachingSimpleCPU'
     cxx_header = "cpu/simple/noncaching.hh"
+    cxx_class = 'gem5::NonCachingSimpleCPU'
+
+    numThreads = 1
 
     @classmethod
     def memory_mode(cls):
@@ -57,4 +58,3 @@ class NonCachingSimpleCPU(AtomicSimpleCPU):
     @classmethod
     def support_take_over(cls):
         return True
-

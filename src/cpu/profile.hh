@@ -24,21 +24,92 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __CPU_PROFILE_HH__
 #define __CPU_PROFILE_HH__
 
 #include <map>
+#include <string>
 
-#include "arch/stacktrace.hh"
+#include "base/logging.hh"
 #include "base/types.hh"
-#include "config/the_isa.hh"
 #include "cpu/static_inst.hh"
+#include "debug/Stack.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
+class FunctionProfile;
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
+    class SymbolTable;
+} // namespace loader
+
+class BaseStackTrace
+{
+  private:
+    void dump();
+
+  protected:
+    ThreadContext *tc = nullptr;
+    std::vector<Addr> stack;
+
+    // Subclasses should implement this function so that it collects the
+    // the current and return addresses on the stack in the "stack" vector.
+    virtual void trace(ThreadContext *tc, bool is_call) = 0;
+
+  public:
+    BaseStackTrace() : stack(64) {}
+    virtual ~BaseStackTrace() {}
+
+    void
+    clear()
+    {
+        tc = nullptr;
+        stack.clear();
+    }
+
+    bool valid() const { return tc; }
+
+    bool
+    trace(ThreadContext *tc, const StaticInstPtr &inst)
+    {
+        if (!inst->isCall() && !inst->isReturn())
+            return false;
+
+        if (valid())
+            clear();
+
+        trace(tc, !inst->isReturn());
+        return true;
+    }
+
+    const std::vector<Addr> &getstack() const { return stack; }
+
+    void dprintf() { if (debug::Stack) dump(); }
+
+    // This function can be overridden so that special addresses which don't
+    // actually refer to PCs can be translated into special names. For
+    // instance, the address 1 could translate into "user" for user level
+    // code when the symbol table only has kernel symbols.
+    //
+    // It should return whether addr was recognized and symbol has been set to
+    // something.
+    virtual bool tryGetSymbol(std::string &symbol, Addr addr,
+                              const loader::SymbolTable *symtab);
+
+    void
+    getSymbol(std::string &symbol, Addr addr,
+              const loader::SymbolTable *symtab)
+    {
+        panic_if(!tryGetSymbol(symbol, addr, symtab),
+                 "Could not find symbol for address %#x\n", addr);
+    }
+};
 
 class ProfileNode
 {
@@ -49,44 +120,44 @@ class ProfileNode
     ChildList children;
 
   public:
-    Counter count;
+    Counter count = 0;
 
   public:
-    ProfileNode();
-
     void dump(const std::string &symbol, uint64_t id,
-              const SymbolTable *symtab, std::ostream &os) const;
+              const FunctionProfile &prof, std::ostream &os) const;
     void clear();
 };
 
-class Callback;
 class FunctionProfile
 {
   private:
-    Callback *reset;
-    const SymbolTable *symtab;
+    friend class ProfileNode;
+
+    const loader::SymbolTable &symtab;
     ProfileNode top;
     std::map<Addr, Counter> pc_count;
-    TheISA::StackTrace trace;
+    std::unique_ptr<BaseStackTrace> trace;
 
   public:
-    FunctionProfile(const SymbolTable *symtab);
-    ~FunctionProfile();
+    FunctionProfile(std::unique_ptr<BaseStackTrace> _trace,
+                    const loader::SymbolTable &symtab);
 
     ProfileNode *consume(ThreadContext *tc, const StaticInstPtr &inst);
     ProfileNode *consume(const std::vector<Addr> &stack);
     void clear();
-    void dump(ThreadContext *tc, std::ostream &out) const;
+    void dump(std::ostream &out) const;
     void sample(ProfileNode *node, Addr pc);
 };
 
 inline ProfileNode *
 FunctionProfile::consume(ThreadContext *tc, const StaticInstPtr &inst)
 {
-    if (!trace.trace(tc, inst))
-        return NULL;
-    trace.dprintf();
-    return consume(trace.getstack());
+    if (!trace->trace(tc, inst))
+        return nullptr;
+    trace->dprintf();
+    return consume(trace->getstack());
 }
+
+} // namespace gem5
 
 #endif // __CPU_PROFILE_HH__

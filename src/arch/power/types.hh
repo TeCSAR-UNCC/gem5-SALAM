@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009 The University of Edinburgh
+ * Copyright (c) 2021 IBM Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,16 +25,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Timothy M. Jones
  */
 
 #ifndef __ARCH_POWER_TYPES_HH__
 #define __ARCH_POWER_TYPES_HH__
 
-#include "arch/generic/types.hh"
+#include <cstdint>
+
+#include "arch/power/pcstate.hh"
 #include "base/bitunion.hh"
-#include "base/types.hh"
+
+namespace gem5
+{
 
 namespace PowerISA
 {
@@ -48,25 +51,40 @@ BitUnion32(ExtMachInst)
 
     // Shifts and masks
     Bitfield<15, 11> sh;
+    Bitfield<1>      shn;
     Bitfield<10,  6> mb;
+    Bitfield<5>      mbn;
     Bitfield< 5,  1> me;
+    Bitfield<5>      men;
 
     // Immediate fields
     Bitfield<15,  0> si;
+    Bitfield<15,  0> ui;
     Bitfield<15,  0> d;
+    Bitfield<15,  2> ds;
+    Bitfield<15,  6> d0;
+    Bitfield<20, 16> d1;
+    Bitfield< 1,  0> d2;
+
+    // Compare fields
+    Bitfield<21>     l;
 
     // Special purpose register identifier
     Bitfield<20, 11> spr;
-    Bitfield<25,  2> li;
-    Bitfield<1>      aa;
     Bitfield<25, 23> bf;
-    Bitfield<15,  2> bd;
-    Bitfield<25, 21> bo;
-    Bitfield<20, 16> bi;
     Bitfield<20, 18> bfa;
 
+    // Branch instruction fields
+    Bitfield<1>      aa;
+    Bitfield<15,  2> bd;
+    Bitfield<20, 16> bi;
+    Bitfield<12, 11> bh;
+    Bitfield<25, 21> bo;
+    Bitfield<25,  2> li;
+    Bitfield<0>      lk;
+
     // Record bits
-    Bitfield<0>      rc31;
+    Bitfield<0>      rc;
     Bitfield<10>     oe;
 
     // Condition register fields
@@ -74,11 +92,12 @@ BitUnion32(ExtMachInst)
     Bitfield<20, 16> ba;
     Bitfield<15, 11> bb;
 
+    // Trap instruction fields
+    Bitfield<25, 21> to;
+
     // FXM field for mtcrf instruction
     Bitfield<19, 12> fxm;
 EndBitUnion(ExtMachInst)
-
-typedef GenericISA::SimplePCState<MachInst> PCState;
 
 // typedef uint64_t LargestRead;
 // // Need to use 64 bits to make sure that read requests get handled properly
@@ -86,17 +105,19 @@ typedef GenericISA::SimplePCState<MachInst> PCState;
 // typedef int RegContextParam;
 // typedef int RegContextVal;
 
-} // PowerISA namespace
+} // namespace PowerISA
+} // namespace gem5
 
 namespace std {
 
 template<>
-struct hash<PowerISA::ExtMachInst> : public hash<uint32_t> {
-    size_t operator()(const PowerISA::ExtMachInst &emi) const {
+struct hash<gem5::PowerISA::ExtMachInst> : public hash<uint32_t>
+{
+    size_t operator()(const gem5::PowerISA::ExtMachInst &emi) const {
         return hash<uint32_t>::operator()((uint32_t)emi);
     };
 };
 
-}
+} // namespace std
 
 #endif // __ARCH_POWER_TYPES_HH__

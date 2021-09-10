@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 #ifndef __MEM_QPORT_HH__
@@ -49,15 +47,18 @@
 #include "mem/port.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 /**
  * A queued port is a port that has an infinite queue for outgoing
  * packets and thus decouples the module that wants to send
  * request/responses from the flow control (retry mechanism) of the
- * port. A queued port can be used by both a master and a slave. The
+ * port. A queued port can be used by both a requestor and a responder. The
  * queue is a parameter to allow tailoring of the queue implementation
  * (used in the cache).
  */
-class QueuedSlavePort : public SlavePort
+class QueuedResponsePort : public ResponsePort
 {
 
   protected:
@@ -76,12 +77,12 @@ class QueuedSlavePort : public SlavePort
      * behaviuor in a subclass, and provide the latter to the
      * QueuePort constructor.
      */
-    QueuedSlavePort(const std::string& name, SimObject* owner,
+    QueuedResponsePort(const std::string& name, SimObject* owner,
                     RespPacketQueue &resp_queue, PortID id = InvalidPortID) :
-        SlavePort(name, owner, id), respQueue(resp_queue)
+        ResponsePort(name, owner, id), respQueue(resp_queue)
     { }
 
-    virtual ~QueuedSlavePort() { }
+    virtual ~QueuedResponsePort() { }
 
     /**
      * Schedule the sending of a timing response.
@@ -99,13 +100,13 @@ class QueuedSlavePort : public SlavePort
 };
 
 /**
- * The QueuedMasterPort combines two queues, a request queue and a
+ * The QueuedRequestPort combines two queues, a request queue and a
  * snoop response queue, that both share the same port. The flow
  * control for requests and snoop responses are completely
  * independent, and so each queue manages its own flow control
  * (retries).
  */
-class QueuedMasterPort : public MasterPort
+class QueuedRequestPort : public RequestPort
 {
 
   protected:
@@ -129,15 +130,15 @@ class QueuedMasterPort : public MasterPort
      * behaviuor in a subclass, and provide the latter to the
      * QueuePort constructor.
      */
-    QueuedMasterPort(const std::string& name, SimObject* owner,
+    QueuedRequestPort(const std::string& name, SimObject* owner,
                      ReqPacketQueue &req_queue,
                      SnoopRespPacketQueue &snoop_resp_queue,
                      PortID id = InvalidPortID) :
-        MasterPort(name, owner, id), reqQueue(req_queue),
+        RequestPort(name, owner, id), reqQueue(req_queue),
         snoopRespQueue(snoop_resp_queue)
     { }
 
-    virtual ~QueuedMasterPort() { }
+    virtual ~QueuedRequestPort() { }
 
     /**
      * Schedule the sending of a timing request.
@@ -165,5 +166,7 @@ class QueuedMasterPort : public MasterPort
             snoopRespQueue.trySatisfyFunctional(pkt);
     }
 };
+
+} // namespace gem5
 
 #endif // __MEM_QPORT_HH__

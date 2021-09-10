@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -49,13 +47,20 @@
 #include <iostream>
 #include <queue>
 #include <sstream>
+#include <string>
 
 #include "base/logging.hh"
+#include "base/named.hh"
+#include "base/types.hh"
 #include "cpu/activity.hh"
 #include "cpu/minor/trace.hh"
 #include "cpu/timebuf.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 /** Interface class for data with reporting/tracing facilities.  This
@@ -207,7 +212,7 @@ class MinorBuffer : public Named, public TimeBuffer<ElemType>
                 data << ',';
         }
 
-        MINORTRACE("%s=%s\n", dataName, data.str());
+        minor::minorTrace("%s=%s\n", dataName, data.str());
     }
 };
 
@@ -546,7 +551,7 @@ class Queue : public Named, public Reservable
                 data << ',';
         }
 
-        MINORTRACE("%s=%s\n", dataName, data.str());
+        minor::minorTrace("%s=%s\n", dataName, data.str());
     }
 };
 
@@ -653,6 +658,7 @@ class InputBuffer : public Reservable
     }
 };
 
-}
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_BUFFERS_HH__ */

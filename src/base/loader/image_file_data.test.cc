@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Bobby R. Bruce
  */
 
 #include <gtest/gtest.h>
@@ -36,6 +34,9 @@
 
 #include "base/loader/image_file_data.hh"
 #include "base/loader/small_image_file.test.hh"
+
+using namespace gem5;
+using namespace loader;
 
 TEST(ImageFileDataTest, SimpleImage)
 {

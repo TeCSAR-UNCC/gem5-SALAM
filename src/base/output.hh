@@ -37,11 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Chris Emmons
- *          Andreas Sandberg
- *          Sascha Bischoff
  */
 
 #ifndef __BASE_OUTPUT_HH__
@@ -52,6 +47,9 @@
 #include <string>
 
 #include "base/compiler.hh"
+
+namespace gem5
+{
 
 class OutputDirectory;
 
@@ -305,5 +303,7 @@ class OutputDirectory
 };
 
 extern OutputDirectory simout;
+
+} // namespace gem5
 
 #endif // __BASE_OUTPUT_HH__

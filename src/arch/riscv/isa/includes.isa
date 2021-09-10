@@ -2,6 +2,7 @@
 
 // Copyright (c) 2015 RISC-V Foundation
 // Copyright (c) 2016 The University of Virginia
+// Copyright (c) 2020 Barkhausen Institut
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,9 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Maxwell Walter
-//          Alec Roelke
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -42,9 +40,15 @@ output header {{
 #include <tuple>
 #include <vector>
 
+/* riscv softfloat library */
+#include <internals.h>
+#include <softfloat.h>
+#include <specialize.h>
+
 #include "arch/riscv/insts/amo.hh"
 #include "arch/riscv/insts/compressed.hh"
 #include "arch/riscv/insts/mem.hh"
+#include "arch/riscv/insts/pseudo.hh"
 #include "arch/riscv/insts/standard.hh"
 #include "arch/riscv/insts/static_inst.hh"
 #include "arch/riscv/insts/unknown.hh"
@@ -62,7 +66,7 @@ output decoder {{
 
 #include "arch/riscv/decoder.hh"
 #include "arch/riscv/faults.hh"
-#include "arch/riscv/tlb.hh"
+#include "arch/riscv/mmu.hh"
 #include "base/cprintf.hh"
 #include "base/loader/symtab.hh"
 #include "cpu/thread_context.hh"
@@ -70,8 +74,8 @@ output decoder {{
 #include "mem/request.hh"
 #include "sim/full_system.hh"
 
+using namespace gem5;
 using namespace RiscvISA;
-using namespace std;
 }};
 
 output exec {{
@@ -82,7 +86,11 @@ output exec {{
 
 #include "arch/generic/memhelpers.hh"
 #include "arch/riscv/faults.hh"
-#include "arch/riscv/registers.hh"
+#include "arch/riscv/fp_inst.hh"
+#include "arch/riscv/mmu.hh"
+#include "arch/riscv/reg_abi.hh"
+#include "arch/riscv/regs/float.hh"
+#include "arch/riscv/regs/misc.hh"
 #include "arch/riscv/utility.hh"
 #include "base/condcodes.hh"
 #include "cpu/base.hh"
@@ -93,10 +101,11 @@ output exec {{
 #include "mem/request.hh"
 #include "sim/eventq.hh"
 #include "sim/full_system.hh"
+#include "sim/pseudo_inst.hh"
 #include "sim/sim_events.hh"
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
 
+using namespace gem5;
 using namespace RiscvISA;
-using namespace std;
 }};

@@ -24,11 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #include "cpu/pred/ras.hh"
+
+namespace gem5
+{
+
+namespace branch_prediction
+{
 
 void
 ReturnAddrStack::init(unsigned _numEntries)
@@ -76,4 +80,11 @@ ReturnAddrStack::restore(unsigned top_entry_idx,
     tos = top_entry_idx;
 
     addrStack[tos] = restored;
+
+    if (usedEntries != numEntries) {
+        ++usedEntries;
+    }
 }
+
+} // namespace branch_prediction
+} // namespace gem5

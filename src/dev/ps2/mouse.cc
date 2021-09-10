@@ -36,20 +36,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Andreas Sandberg
  */
 
 #include "dev/ps2/mouse.hh"
 
 #include "base/logging.hh"
+#include "base/trace.hh"
 #include "debug/PS2.hh"
 #include "dev/ps2/types.hh"
 #include "params/PS2Mouse.hh"
+#include "sim/serialize.hh"
 
-PS2Mouse::PS2Mouse(const PS2MouseParams *p)
-    : PS2Device(p),
+namespace gem5
+{
+
+namespace ps2
+{
+
+PS2Mouse::PS2Mouse(const PS2MouseParams &p)
+    : Device(p),
       status(0), resolution(4), sampleRate(100)
 {
 }
@@ -58,45 +63,45 @@ bool
 PS2Mouse::recv(const std::vector<uint8_t> &data)
 {
     switch (data[0]) {
-      case Ps2::ReadID:
+      case ReadID:
         DPRINTF(PS2, "Mouse ID requested.\n");
         sendAck();
-        send(Ps2::Mouse::ID);
+        send(mouse::ID);
         return true;
-      case Ps2::Disable:
+      case Disable:
         DPRINTF(PS2, "Disabling data reporting.\n");
         status.enabled = 0;
         sendAck();
         return true;
-      case Ps2::Enable:
+      case Enable:
         DPRINTF(PS2, "Enabling data reporting.\n");
         status.enabled = 1;
         sendAck();
         return true;
-      case Ps2::Resend:
+      case Resend:
         panic("Mouse resend unimplemented.\n");
-      case Ps2::Reset:
+      case Reset:
         DPRINTF(PS2, "Resetting the mouse.\n");
         sampleRate = 100;
         resolution = 4;
         status.twoToOne = 0;
         status.enabled = 0;
         sendAck();
-        send(Ps2::SelfTestPass);
-        send(Ps2::Mouse::ID);
+        send(SelfTestPass);
+        send(mouse::ID);
         return true;
 
-      case Ps2::Mouse::Scale1to1:
+      case mouse::Scale1to1:
         DPRINTF(PS2, "Setting mouse scale to 1:1.\n");
         status.twoToOne = 0;
         sendAck();
         return true;
-      case Ps2::Mouse::Scale2to1:
+      case mouse::Scale2to1:
         DPRINTF(PS2, "Setting mouse scale to 2:1.\n");
         status.twoToOne = 1;
         sendAck();
         return true;
-      case Ps2::Mouse::SetResolution:
+      case mouse::SetResolution:
         if (data.size() == 1) {
             DPRINTF(PS2, "Setting mouse resolution.\n");
             sendAck();
@@ -107,22 +112,22 @@ PS2Mouse::recv(const std::vector<uint8_t> &data)
             sendAck();
             return true;
         }
-      case Ps2::Mouse::GetStatus:
+      case mouse::GetStatus:
         DPRINTF(PS2, "Getting mouse status.\n");
         sendAck();
         send((uint8_t *)&(status), 1);
         send(&resolution, sizeof(resolution));
         send(&sampleRate, sizeof(sampleRate));
         return true;
-      case Ps2::Mouse::ReadData:
+      case mouse::ReadData:
         panic("Reading mouse data unimplemented.\n");
-      case Ps2::Mouse::ResetWrapMode:
+      case mouse::ResetWrapMode:
         panic("Resetting mouse wrap mode unimplemented.\n");
-      case Ps2::Mouse::WrapMode:
+      case mouse::WrapMode:
         panic("Setting mouse wrap mode unimplemented.\n");
-      case Ps2::Mouse::RemoteMode:
+      case mouse::RemoteMode:
         panic("Setting mouse remote mode unimplemented.\n");
-      case Ps2::Mouse::SampleRate:
+      case mouse::SampleRate:
         if (data.size() == 1) {
             DPRINTF(PS2, "Setting mouse sample rate.\n");
             sendAck();
@@ -134,7 +139,7 @@ PS2Mouse::recv(const std::vector<uint8_t> &data)
             sendAck();
             return true;
         }
-      case Ps2::DefaultsAndDisable:
+      case DefaultsAndDisable:
         DPRINTF(PS2, "Disabling and resetting mouse.\n");
         sampleRate = 100;
         resolution = 4;
@@ -144,7 +149,7 @@ PS2Mouse::recv(const std::vector<uint8_t> &data)
         return true;
       default:
         warn("Unknown mouse command %#02x.\n", data[0]);
-        send(Ps2::Resend);
+        send(Resend);
         return true;
     }
 }
@@ -152,7 +157,7 @@ PS2Mouse::recv(const std::vector<uint8_t> &data)
 void
 PS2Mouse::serialize(CheckpointOut &cp) const
 {
-    PS2Device::serialize(cp);
+    Device::serialize(cp);
 
     SERIALIZE_SCALAR(status);
     SERIALIZE_SCALAR(resolution);
@@ -162,15 +167,12 @@ PS2Mouse::serialize(CheckpointOut &cp) const
 void
 PS2Mouse::unserialize(CheckpointIn &cp)
 {
-    PS2Device::unserialize(cp);
+    Device::unserialize(cp);
 
     UNSERIALIZE_SCALAR(status);
     UNSERIALIZE_SCALAR(resolution);
     UNSERIALIZE_SCALAR(sampleRate);
 }
 
-PS2Mouse *
-PS2MouseParams::create()
-{
-    return new PS2Mouse(this);
-}
+} // namespace ps2
+} // namespace gem5

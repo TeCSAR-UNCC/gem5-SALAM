@@ -35,6 +35,9 @@
 #include "cpu/testers/rubytest/Check.hh"
 #include "debug/RubyTest.hh"
 
+namespace gem5
+{
+
 CheckTable::CheckTable(int _num_writers, int _num_readers, RubyTester* _tester)
     : m_num_writers(_num_writers), m_num_readers(_num_readers),
       m_tester_ptr(_tester)
@@ -83,7 +86,7 @@ void
 CheckTable::addCheck(Addr address)
 {
     if (floorLog2(CHECK_SIZE) != 0) {
-        if (bitSelect(address, 0, CHECK_SIZE_BITS - 1) != 0) {
+        if (ruby::bitSelect(address, 0, CHECK_SIZE_BITS - 1) != 0) {
             panic("Check not aligned");
         }
     }
@@ -133,3 +136,5 @@ void
 CheckTable::print(std::ostream& out) const
 {
 }
+
+} // namespace gem5

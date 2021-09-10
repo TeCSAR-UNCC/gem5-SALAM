@@ -23,37 +23,50 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/fastmodel/CortexA76/evs.hh"
 
 #include "arch/arm/fastmodel/CortexA76/cortex_a76.hh"
-#include "arch/arm/fastmodel/arm/cpu.hh"
+#include "arch/arm/fastmodel/iris/cpu.hh"
 #include "base/logging.hh"
 #include "dev/arm/base_gic.hh"
 #include "sim/core.hh"
 #include "systemc/tlm_bridge/gem5_to_tlm.hh"
 
-namespace FastModel
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
 {
 
 template <class Types>
 void
-ScxEvsCortexA76<Types>::clockChangeHandler()
+ScxEvsCortexA76<Types>::setClkPeriod(Tick clk_period)
 {
-    clockRateControl->set_mul_div(SimClock::Int::s, clockPeriod.value);
+    clockRateControl->set_mul_div(sim_clock::as_int::s, clk_period);
+}
+
+template <class Types>
+void
+ScxEvsCortexA76<Types>::setSysCounterFrq(uint64_t sys_counter_frq)
+{
+    periphClockRateControl->set_mul_div(sys_counter_frq, 1);
+}
+
+template <class Types>
+void
+ScxEvsCortexA76<Types>::setCluster(SimObject *cluster)
+{
+    gem5CpuCluster = dynamic_cast<CortexA76Cluster *>(cluster);
+    panic_if(!gem5CpuCluster, "Cluster should be of type CortexA76Cluster");
 }
 
 template <class Types>
 ScxEvsCortexA76<Types>::ScxEvsCortexA76(
         const sc_core::sc_module_name &mod_name, const Params &p) :
     Base(mod_name), amba(Base::amba, p.name + ".amba", -1),
-    clockChanged(Iris::ClockEventName.c_str()),
-    clockPeriod(Iris::PeriodAttributeName.c_str()),
-    gem5CpuCluster(Iris::Gem5CpuClusterAttributeName.c_str()),
-    sendFunctional(Iris::SendFunctionalAttributeName.c_str()),
     params(p)
 {
     for (int i = 0; i < CoreCount; i++) {
@@ -84,15 +97,7 @@ ScxEvsCortexA76<Types>::ScxEvsCortexA76(
     }
 
     clockRateControl.bind(this->clock_rate_s);
-
-    this->add_attribute(gem5CpuCluster);
-    this->add_attribute(clockPeriod);
-    SC_METHOD(clockChangeHandler);
-    this->dont_initialize();
-    this->sensitive << clockChanged;
-
-    sendFunctional.value = [this](PacketPtr pkt) { sendFunc(pkt); };
-    this->add_attribute(sendFunctional);
+    periphClockRateControl.bind(this->periph_clock_rate_s);
 }
 
 template <class Types>
@@ -111,12 +116,10 @@ ScxEvsCortexA76<Types>::before_end_of_elaboration()
 {
     Base::before_end_of_elaboration();
 
-    auto *cluster = gem5CpuCluster.value;
-
-    auto set_on_change = [cluster](
+    auto set_on_change = [this](
             SignalReceiver &recv, ArmInterruptPinGen *gen, int num)
     {
-        auto *pin = gen->get(cluster->getCore(num)->getContext(0));
+        auto *pin = gen->get(gem5CpuCluster->getCore(num)->getContext(0));
         auto handler = [pin](bool status)
         {
             status ? pin->raise() : pin->clear();
@@ -125,15 +128,15 @@ ScxEvsCortexA76<Types>::before_end_of_elaboration()
     };
 
     for (int i = 0; i < CoreCount; i++) {
-        set_on_change(*cnthpirq[i], cluster->params().cnthpirq, i);
-        set_on_change(*cnthvirq[i], cluster->params().cnthvirq, i);
-        set_on_change(*cntpsirq[i], cluster->params().cntpsirq, i);
-        set_on_change(*cntvirq[i], cluster->params().cntvirq, i);
-        set_on_change(*commirq[i], cluster->params().commirq, i);
-        set_on_change(*ctidbgirq[i], cluster->params().ctidbgirq, i);
-        set_on_change(*pmuirq[i], cluster->params().pmuirq, i);
-        set_on_change(*vcpumntirq[i], cluster->params().vcpumntirq, i);
-        set_on_change(*cntpnsirq[i], cluster->params().cntpnsirq, i);
+        set_on_change(*cnthpirq[i], gem5CpuCluster->params().cnthpirq, i);
+        set_on_change(*cnthvirq[i], gem5CpuCluster->params().cnthvirq, i);
+        set_on_change(*cntpsirq[i], gem5CpuCluster->params().cntpsirq, i);
+        set_on_change(*cntvirq[i], gem5CpuCluster->params().cntvirq, i);
+        set_on_change(*commirq[i], gem5CpuCluster->params().commirq, i);
+        set_on_change(*ctidbgirq[i], gem5CpuCluster->params().ctidbgirq, i);
+        set_on_change(*pmuirq[i], gem5CpuCluster->params().pmuirq, i);
+        set_on_change(*vcpumntirq[i], gem5CpuCluster->params().vcpumntirq, i);
+        set_on_change(*cntpnsirq[i], gem5CpuCluster->params().cntpnsirq, i);
     }
 }
 
@@ -154,28 +157,5 @@ template class ScxEvsCortexA76<ScxEvsCortexA76x2Types>;
 template class ScxEvsCortexA76<ScxEvsCortexA76x3Types>;
 template class ScxEvsCortexA76<ScxEvsCortexA76x4Types>;
 
-} // namespace FastModel
-
-FastModel::ScxEvsCortexA76x1 *
-FastModelScxEvsCortexA76x1Params::create()
-{
-    return new FastModel::ScxEvsCortexA76x1(name.c_str(), *this);
-}
-
-FastModel::ScxEvsCortexA76x2 *
-FastModelScxEvsCortexA76x2Params::create()
-{
-    return new FastModel::ScxEvsCortexA76x2(name.c_str(), *this);
-}
-
-FastModel::ScxEvsCortexA76x3 *
-FastModelScxEvsCortexA76x3Params::create()
-{
-    return new FastModel::ScxEvsCortexA76x3(name.c_str(), *this);
-}
-
-FastModel::ScxEvsCortexA76x4 *
-FastModelScxEvsCortexA76x4Params::create()
-{
-    return new FastModel::ScxEvsCortexA76x4(name.c_str(), *this);
-}
+} // namespace fastmodel
+} // namespace gem5

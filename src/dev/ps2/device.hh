@@ -36,25 +36,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Andreas Sandberg
  */
 
 #ifndef __DEV_PS2_DEVICE_HH__
 #define __DEV_PS2_DEVICE_HH__
 
+#include <cstdint>
 #include <deque>
+#include <functional>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 struct PS2DeviceParams;
 
-class PS2Device : public SimObject
+namespace ps2
+{
+
+class Device : public SimObject
 {
   public:
-    PS2Device(const PS2DeviceParams *p);
+    Device(const PS2DeviceParams &p);
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
@@ -144,5 +150,10 @@ class PS2Device : public SimObject
 
     std::function<void()> dataAvailableCallback;
 };
+
+} // namespace ps2
+} // namespace gem5
+
+GEM5_DEPRECATED_CLASS(PS2Device, gem5::ps2::Device);
 
 #endif // __DEV_PS2_HOUSE_HH__

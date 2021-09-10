@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016, 2019 ARM Limited
+# Copyright (c) 2015-2016, 2019-2021 ARM Limited
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 CPP?=cpp
 DTC?=dtc
@@ -38,19 +36,34 @@ CREATE_TARGET=$(foreach n, $(NUM_CPUS), $(1)_$(n)cpu.dtb)
 TARGET_PREFIX=\
 	armv7_gem5_v1 \
 	armv8_gem5_v1 \
-	armv8_gem5_v2
+	armv8_gem5_v2 \
+	armv7_gem5_v1_hdlcd \
+	armv8_gem5_v1_hdlcd \
+	armv8_gem5_v2_hdlcd
 
 TARGETS=\
 	$(foreach prefix, $(TARGET_PREFIX), $(call CREATE_TARGET, $(prefix))) \
 	armv8_gem5_v1_big_little_2_2.dtb \
-	armv8_gem5_v1_big_little_2_4.dtb
+	armv8_gem5_v1_big_little_2_4.dtb \
+	armv8_gem5_v2_big_little_2_2.dtb \
+	armv8_gem5_v2_big_little_2_4.dtb \
+	armv8_gem5_v1_hdlcd_big_little_2_2.dtb \
+	armv8_gem5_v1_hdlcd_big_little_2_4.dtb \
+	armv8_gem5_v2_hdlcd_big_little_2_2.dtb \
+	armv8_gem5_v2_hdlcd_big_little_2_4.dtb
 
 VEXPRESS_GEM5_V1_DTSIS=\
-	platforms/vexpress_gem5_v1.dtsi \
+	platforms/vexpress_gem5_v1_base.dtsi
+
+VEXPRESS_GEM5_V1_HDLCD_DTSIS=\
+	platforms/vexpress_gem5_v1_hdlcd.dtsi \
 	platforms/vexpress_gem5_v1_base.dtsi
 
 VEXPRESS_GEM5_V2_DTSIS=\
-	platforms/vexpress_gem5_v2.dtsi \
+	platforms/vexpress_gem5_v2_base.dtsi
+
+VEXPRESS_GEM5_V2_HDLCD_DTSIS=\
+	platforms/vexpress_gem5_v2_hdlcd.dtsi \
 	platforms/vexpress_gem5_v2_base.dtsi
 
 GEN_DTS=mkdir -p .gen; \
@@ -62,18 +75,45 @@ GEN_DTS=mkdir -p .gen; \
 
 all: $(TARGETS)
 
-.gen/armv7_gem5_v1_%cpu.dts: armv7.dts $(VEXPRESS_GEM5_V1_DTSIS)
-	$(call GEN_DTS,vexpress_gem5_v1.dtsi,$*)
+.gen/armv7_gem5_v1_%cpu.dts: armv7.dts \
+	$(VEXPRESS_GEM5_V1_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v1_base.dtsi,$*)
 
-.gen/armv8_gem5_v1_%cpu.dts: armv8.dts $(VEXPRESS_GEM5_V1_DTSIS)
-	$(call GEN_DTS,vexpress_gem5_v1.dtsi,$*)
+.gen/armv7_gem5_v1_hdlcd_%cpu.dts: armv7.dts \
+	$(VEXPRESS_GEM5_V1_HDLCD_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v1_hdlcd.dtsi,$*)
 
-.gen/armv8_gem5_v2_%cpu.dts: armv8.dts $(VEXPRESS_GEM5_V2_DTSIS)
-	$(call GEN_DTS,vexpress_gem5_v2.dtsi,$*)
+.gen/armv8_gem5_v1_%cpu.dts: armv8.dts \
+	$(VEXPRESS_GEM5_V1_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v1_base.dtsi,$*)
+
+.gen/armv8_gem5_v1_hdlcd_%cpu.dts: armv8.dts \
+	$(VEXPRESS_GEM5_V1_HDLCD_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v1_hdlcd.dtsi,$*)
+
+.gen/armv8_gem5_v2_%cpu.dts: armv8.dts \
+	$(VEXPRESS_GEM5_V2_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v2_base.dtsi,$*)
+
+.gen/armv8_gem5_v2_hdlcd_%cpu.dts: armv8.dts \
+	$(VEXPRESS_GEM5_V2_HDLCD_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v2_hdlcd.dtsi,$*)
 
 .gen/armv8_gem5_v1_big_little%.dts: armv8_big_little.dts \
 	$(VEXPRESS_GEM5_V1_DTSIS)
-	$(call GEN_DTS,vexpress_gem5_v1.dtsi,$*)
+	$(call GEN_DTS,vexpress_gem5_v1_base.dtsi,$*)
+
+.gen/armv8_gem5_v1_hdlcd_big_little%.dts: armv8_big_little.dts \
+	$(VEXPRESS_GEM5_V1_HDLCD_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v1_hdlcd.dtsi,$*)
+
+.gen/armv8_gem5_v2_big_little%.dts: armv8_big_little.dts \
+	$(VEXPRESS_GEM5_V2_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v2_base.dtsi,$*)
+
+.gen/armv8_gem5_v2_hdlcd_big_little%.dts: armv8_big_little.dts \
+	$(VEXPRESS_GEM5_V2_HDLCD_DTSIS)
+	$(call GEN_DTS,vexpress_gem5_v2_hdlcd.dtsi,$*)
 
 %.dtb: .gen/%.dts
 	$(DTC) -I dts -O dtb -o $@ $<

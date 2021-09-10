@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Mitch Hayenga
  */
 
 #ifndef __MEM_CACHE_PREFETCH_QUEUED_HH__
@@ -44,19 +42,28 @@
 #include <list>
 #include <utility>
 
+#include "arch/generic/mmu.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "mem/cache/prefetch/base.hh"
 #include "mem/packet.hh"
 
+namespace gem5
+{
+
 struct QueuedPrefetcherParams;
 
-class QueuedPrefetcher : public BasePrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class Queued : public Base
 {
   protected:
-    struct DeferredPacket : public BaseTLB::Translation {
+    struct DeferredPacket : public BaseMMU::Translation
+    {
         /** Owner of the packet */
-        QueuedPrefetcher *owner;
+        Queued *owner;
         /** Prefetch info corresponding to this packet */
         PrefetchInfo pfInfo;
         /** Time when this prefetch becomes ready */
@@ -78,7 +85,7 @@ class QueuedPrefetcher : public BasePrefetcher
          * @param p PacketPtr with the memory request of the prefetch
          * @param prio This prefetch priority
          */
-        DeferredPacket(QueuedPrefetcher *o, PrefetchInfo const &pfi, Tick t,
+        DeferredPacket(Queued *o, PrefetchInfo const &pfi, Tick t,
             int32_t prio) : owner(o), pfInfo(pfi), tick(t), pkt(nullptr),
             priority(prio), translationRequest(), tc(nullptr),
             ongoingTranslation(false) {
@@ -101,12 +108,13 @@ class QueuedPrefetcher : public BasePrefetcher
          * Create the associated memory packet
          * @param paddr physical address of this packet
          * @param blk_size block size used by the prefetcher
-         * @param mid Requester ID of the access that generated this prefetch
+         * @param requestor_id Requestor ID of the access that generated
+         * this prefetch
          * @param tag_prefetch flag to indicate if the packet needs to be
          *        tagged
          * @param t time when the prefetch becomes ready
          */
-        void createPkt(Addr paddr, unsigned blk_size, MasterID mid,
+        void createPkt(Addr paddr, unsigned blk_size, RequestorID requestor_id,
                        bool tag_prefetch, Tick t);
 
         /**
@@ -123,7 +131,7 @@ class QueuedPrefetcher : public BasePrefetcher
         {}
 
         void finish(const Fault &fault, const RequestPtr &req,
-                            ThreadContext *tc, BaseTLB::Mode mode) override;
+                            ThreadContext *tc, BaseMMU::Mode mode) override;
 
         /**
          * Issues the translation request to the provided TLB
@@ -167,18 +175,22 @@ class QueuedPrefetcher : public BasePrefetcher
     /** Percentage of requests that can be throttled */
     const unsigned int throttleControlPct;
 
-    // STATS
-    Stats::Scalar pfIdentified;
-    Stats::Scalar pfBufferHit;
-    Stats::Scalar pfInCache;
-    Stats::Scalar pfRemovedFull;
-    Stats::Scalar pfSpanPage;
-
+    struct QueuedStats : public statistics::Group
+    {
+        QueuedStats(statistics::Group *parent);
+        // STATS
+        statistics::Scalar pfIdentified;
+        statistics::Scalar pfBufferHit;
+        statistics::Scalar pfInCache;
+        statistics::Scalar pfRemovedDemand;
+        statistics::Scalar pfRemovedFull;
+        statistics::Scalar pfSpanPage;
+    } statsQueued;
   public:
     using AddrPriority = std::pair<Addr, int32_t>;
 
-    QueuedPrefetcher(const QueuedPrefetcherParams *p);
-    virtual ~QueuedPrefetcher();
+    Queued(const QueuedPrefetcherParams &p);
+    virtual ~Queued();
 
     void notify(const PacketPtr &pkt, const PrefetchInfo &pfi) override;
 
@@ -193,7 +205,7 @@ class QueuedPrefetcher : public BasePrefetcher
         return pfq.empty() ? MaxTick : pfq.front().tick;
     }
 
-    void regStats() override;
+    void printQueue(const std::list<DeferredPacket> &queue) const;
 
   private:
 
@@ -247,5 +259,7 @@ class QueuedPrefetcher : public BasePrefetcher
                                         PacketPtr pkt);
 };
 
-#endif //__MEM_CACHE_PREFETCH_QUEUED_HH__
+} // namespace prefetch
+} // namespace gem5
 
+#endif //__MEM_CACHE_PREFETCH_QUEUED_HH__

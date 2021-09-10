@@ -36,26 +36,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #include "cpu/o3/checker.hh"
 
 #include "cpu/checker/cpu_impl.hh"
-#include "params/O3Checker.hh"
+
+namespace gem5
+{
 
 template
-class Checker<O3CPUImpl>;
+class Checker<o3::DynInstPtr>;
 
-O3Checker *
-O3CheckerParams::create()
-{
-    // The checker should check all instructions executed by the main
-    // cpu and therefore any parameters for early exit don't make much
-    // sense.
-    fatal_if(max_insts_any_thread || max_insts_all_threads ||
-             progress_interval, "Invalid checker parameters");
-
-    return new O3Checker(this);
-}
+} // namespace gem5

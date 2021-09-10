@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright (c) 2014, 2016 ARM Limited
 # All rights reserved
@@ -39,10 +39,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-#          Steve Reinhardt
-#          Andreas Sandberg
 
 from abc import ABCMeta, abstractmethod
 from difflib import SequenceMatcher
@@ -51,10 +47,10 @@ import os
 import re
 import sys
 
-import style
-import sort_includes
-from region import *
-from file_types import lang_type
+from . import style
+from . import sort_includes
+from .region import *
+from .file_types import lang_type
 
 
 def safefix(fix_func):
@@ -104,7 +100,7 @@ def _modified_regions(old, new):
     return regions
 
 
-class Verifier(object):
+class Verifier(object, metaclass=ABCMeta):
     """Base class for style verifiers
 
     Verifiers check for style violations and optionally fix such
@@ -121,7 +117,6 @@ class Verifier(object):
 
     """
 
-    __metaclass__ = ABCMeta
 
     def __init__(self, ui, opts, base=None):
         self.ui = ui
@@ -148,9 +143,9 @@ class Verifier(object):
 
     def open(self, filename, mode):
         try:
-            f = file(filename, mode)
-        except OSError, msg:
-            print 'could not open file %s: %s' % (filename, msg)
+            f = open(filename, mode)
+        except OSError as msg:
+            print('could not open file {}: {}'.format(filename, msg))
             return None
 
         return f
@@ -230,7 +225,7 @@ class LineVerifier(Verifier):
     def check(self, filename, regions=all_regions, fobj=None, silent=False):
         close = False
         if fobj is None:
-            fobj = self.open(filename, 'r')
+            fobj = self.open(filename, 'rb')
             close = True
 
         lang = lang_type(filename)
@@ -240,13 +235,13 @@ class LineVerifier(Verifier):
         for num,line in enumerate(fobj):
             if num not in regions:
                 continue
-            line = line.rstrip('\n')
-            if not self.check_line(line, language=lang):
+            s_line = line.decode('utf-8').rstrip('\n')
+            if not self.check_line(s_line, language=lang):
                 if not silent:
                     self.ui.write("invalid %s in %s:%d\n" % \
                                   (self.test_name, filename, num + 1))
                     if self.ui.verbose:
-                        self.ui.write(">>%s<<\n" % line[:-1])
+                        self.ui.write(">>%s<<\n" % s_line[:-1])
                 errors += 1
         if close:
             fobj.close()
@@ -348,11 +343,11 @@ class SortedIncludes(Verifier):
     def check(self, filename, regions=all_regions, fobj=None, silent=False):
         close = False
         if fobj is None:
-            fobj = self.open(filename, 'r')
+            fobj = self.open(filename, 'rb')
             close = True
         norm_fname = self.normalize_filename(filename)
 
-        old = [ l.rstrip('\n') for l in fobj.xreadlines() ]
+        old = [ l.decode('utf-8').rstrip('\n') for l in fobj ]
         if close:
             fobj.close()
 
@@ -366,8 +361,10 @@ class SortedIncludes(Verifier):
 
         if modified:
             if not silent:
-                self.ui.write("invalid sorting of includes in %s\n"
-                                % (filename))
+                self.ui.write("invalid sorting of includes in %s. Note: If "
+                              "there is more than one empty line under the "
+                              "#include region, please reduce it to one.\n"
+                              % (filename))
                 if self.ui.verbose:
                     for start, end in modified.regions:
                         self.ui.write("bad region [%d, %d)\n" % (start, end))
@@ -432,14 +429,14 @@ class ControlCharacters(LineVerifier):
     test_name = 'control character'
     opt_name = 'ascii'
 
-    valid = ('\n', '\t')
-    invalid = "".join([chr(i) for i in range(0, 0x20) if chr(i) not in valid])
+    invalid = "".join([chr(i) for i in range(0, 0x20) \
+        if chr(i) not in ('\n', '\t')])
 
     def check_line(self, line, **kwargs):
         return self.fix_line(line) == line
 
     def fix_line(self, line, **kwargs):
-        return line.translate(None, ControlCharacters.invalid)
+        return ''.join(c for c in line if c not in ControlCharacters.invalid)
 
 class BoolCompare(LineVerifier):
     languages = set(('C', 'C++', 'python'))
@@ -459,6 +456,83 @@ class BoolCompare(LineVerifier):
             else:
                 self.ui.write("Warning: cannot automatically fix "
                               "comparisons with false/False.\n")
+        return line
+
+class StructureBraces(LineVerifier):
+    """ Check if the opening braces of structures are not on the same line of
+        the structure name. This includes classes, structs, enums and unions.
+
+        This verifier matches lines starting in optional indent, followed by
+        an optional typedef and the structure's keyword, followed by any
+        character until the first opening brace is seen. Any extra characters
+        after the opening brace are saved for a recursive check, if needed.
+
+        This fixes, for example:
+            1) "struct A {"
+            2) "enum{"
+            3) "    class B { // This is a class"
+            4) "union { struct C {"
+        to:
+            1) "struct A\n{"
+            2) "enum\n{"
+            3) "    class B\n    {\n        // This is a class"
+            4) "union\n{\n        struct C\n        {"
+
+        @todo Make this work for multi-line structure declarations. e.g.,
+
+            class MultiLineClass
+              : public BaseClass {
+    """
+
+    languages = set(('C', 'C++'))
+    test_name = 'structure opening brace position'
+    opt_name = 'structurebrace'
+
+    # Matches the indentation of the line
+    regex_indentation = '(?P<indentation>\s*)'
+    # Matches an optional "typedef" before the keyword
+    regex_typedef = '(?P<typedef>(typedef\s+)?)'
+    # Matches the structure's keyword
+    regex_keyword = '(?P<keyword>class|struct|enum|union)'
+    # A negative lookahead to avoid incorrect matches with variable's names
+    # e.g., "classifications = {" should not be fixed here.
+    regex_avoid = '(?![^\{\s])'
+    # Matches anything after the keyword and before the opening brace.
+    # e.g., structure name, base type, type of inheritance, etc
+    regex_name = '(?P<name>[^\{]*)'
+    # Matches anything after the opening brace, which should be
+    # parsed recursively
+    regex_extra = '(?P<extra>.*)$'
+    regex = re.compile(r'^' + regex_indentation + regex_typedef +
+        regex_keyword + regex_avoid + regex_name + '\{' + regex_extra)
+
+    def check_line(self, line, **kwargs):
+        return (self.regex.search(line) == None) or \
+            (line.count('{') == line.count('};'))
+
+    def fix_line(self, line, **kwargs):
+        match = self.regex.search(line)
+
+        if match:
+            # Move the opening brace to the next line
+            match_indentation = match.group('indentation')
+            match_typedef = match.group('typedef')
+            match_keyword = match.group('keyword')
+            match_name = match.group('name').rstrip()
+            match_extra = match.group('extra').lstrip()
+            line = match_indentation + match_typedef + match_keyword + \
+                match_name + "\n" + match_indentation + "{"
+
+            # The opening brace should be alone in its own line, so move any
+            # extra contents to the next line
+            if match_extra != '':
+                # Check if the extra line obeys the opening brace rule
+                # (in case there are nested declarations)
+                line_extra = match_indentation + "    " + match_extra
+                if not self.check_line(line_extra):
+                    line_extra = self.fix_line(line_extra)
+                line += "\n" + line_extra
+
         return line
 
 def is_verifier(cls):

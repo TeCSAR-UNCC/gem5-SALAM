@@ -23,9 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Brad Beckmann
 
 from m5.params import *
 from m5.proxy import *
@@ -37,6 +34,8 @@ from m5.objects.MessageBuffer import MessageBuffer
 class SimpleNetwork(RubyNetwork):
     type = 'SimpleNetwork'
     cxx_header = "mem/ruby/network/simple/SimpleNetwork.hh"
+    cxx_class = 'gem5::ruby::SimpleNetwork'
+
     buffer_size = Param.Int(0,
         "default buffer size; 0 indicates infinite buffering");
     endpoint_bandwidth = Param.Int(1000, "bandwidth adjustment factor");
@@ -75,6 +74,8 @@ class SimpleNetwork(RubyNetwork):
 class Switch(BasicRouter):
     type = 'Switch'
     cxx_header = 'mem/ruby/network/simple/Switch.hh'
+    cxx_class = 'gem5::ruby::Switch'
+
     virt_nets = Param.Int(Parent.number_of_virtual_networks,
                           "number of virtual networks")
     port_buffers = VectorParam.MessageBuffer("Port buffers")

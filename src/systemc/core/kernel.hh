@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_KERNEL_HH__
@@ -44,11 +42,11 @@ namespace sc_gem5
  * accordingly. It also acts as a collecting point for systemc related
  * control functionality.
  */
-class Kernel : public SimObject
+class Kernel : public gem5::SimObject
 {
   public:
-    typedef SystemC_KernelParams Params;
-    Kernel(Params *params);
+    typedef gem5::SystemC_KernelParams Params;
+    Kernel(const Params &params, int);
 
     void init() override;
     void regStats() override;
@@ -67,7 +65,7 @@ class Kernel : public SimObject
   private:
     static void stopWork();
 
-    EventWrapper<Kernel, &Kernel::t0Handler> t0Event;
+    gem5::EventWrapper<Kernel, &Kernel::t0Handler> t0Event;
 };
 
 extern Kernel *kernel;

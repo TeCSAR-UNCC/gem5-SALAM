@@ -24,14 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __BASE_CAST_HH__
 #define __BASE_CAST_HH__
 
 #include <cassert>
+
+namespace gem5
+{
 
 // This is designed for situations where we have a pointer to a base
 // type, but in all cases when we cast it to a derived type, we know
@@ -64,5 +65,7 @@ safe_cast(U ptr)
 }
 
 #endif
+
+} // namespace gem5
 
 #endif // __BASE_CAST_HH__

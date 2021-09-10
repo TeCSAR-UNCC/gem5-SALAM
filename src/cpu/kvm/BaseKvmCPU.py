@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from m5.SimObject import *
 from m5.params import *
@@ -45,6 +43,7 @@ from m5.objects.KvmVM import KvmVM
 class BaseKvmCPU(BaseCPU):
     type = 'BaseKvmCPU'
     cxx_header = "cpu/kvm/base.hh"
+    cxx_class = 'gem5::BaseKvmCPU'
     abstract = True
 
     @cxxMethod

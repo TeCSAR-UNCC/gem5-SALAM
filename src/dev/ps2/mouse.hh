@@ -36,19 +36,23 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Andreas Sandberg
  */
 
 #ifndef __DEV_PS2_MOUSE_HH__
 #define __DEV_PS2_MOUSE_HH__
 
+#include "base/bitunion.hh"
 #include "dev/ps2/device.hh"
+
+namespace gem5
+{
 
 struct PS2MouseParams;
 
-class PS2Mouse : public PS2Device
+namespace ps2
+{
+
+class PS2Mouse : public Device
 {
   protected:
     BitUnion8(Status)
@@ -64,14 +68,17 @@ class PS2Mouse : public PS2Device
     uint8_t sampleRate;
 
   public:
-    PS2Mouse(const PS2MouseParams *p);
+    PS2Mouse(const PS2MouseParams &p);
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 
-  protected: // PS2Device
+  protected: // from Device
     bool recv(const std::vector<uint8_t> &data) override;
 };
+
+} // namespace ps2
+} // namespace gem5
 
 #endif // __DEV_PS2_MOUSE_hH__
 

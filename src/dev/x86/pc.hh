@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 /**
@@ -40,16 +38,15 @@
 #include "dev/platform.hh"
 #include "params/Pc.hh"
 
-class IdeController;
-class System;
+namespace gem5
+{
+
 class SouthBridge;
 
 class Pc : public Platform
 {
   public:
-    /** Pointer to the system */
-    System *system;
-    SouthBridge *southBridge;
+    SouthBridge *southBridge = nullptr;
 
   public:
     typedef PcParams Params;
@@ -59,7 +56,7 @@ class Pc : public Platform
      */
     void init() override;
 
-    Pc(const Params *p);
+    Pc(const Params &p);
 
   public:
     void postConsoleInt() override;
@@ -68,5 +65,7 @@ class Pc : public Platform
     void postPciInt(int line) override;
     void clearPciInt(int line) override;
 };
+
+} // namespace gem5
 
 #endif // __DEV_PC_HH__

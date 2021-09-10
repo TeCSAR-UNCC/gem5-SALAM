@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 /dts-v1/;
@@ -40,7 +38,7 @@
 		compatible = "gem5,armv8", "arm,armv8"; \
 		reg = < n >; \
 		enable-method = "spin-table"; \
-		cpu-release-addr = <0 0x8000fff8>; \
+		cpu-release-addr = <0 0x87fffff8>; \
 	};
 
 / {
@@ -107,41 +105,5 @@
 		#if CONF_CPUS > 16
 		#error Unsupported number of CPUs
 		#endif
-	};
-
-	virt-encoder {
-		compatible = "drm,virtual-encoder";
-		port {
-			dp0_virt_input: endpoint@0 {
-				remote-endpoint = <&dp0_output>;
-			};
-		};
-
-		display-timings {
-			native-mode = <&timing0>;
-
-			timing0: timing_1080p60 {
-				/* 1920x1080-60 */
-				clock-frequency = <148500000>;
-				hactive = <1920>;
-				vactive = <1080>;
-				hfront-porch = <148>;
-				hback-porch = <88>;
-				hsync-len = <44>;
-				vfront-porch = <36>;
-				vback-porch = <4>;
-				vsync-len = <5>;
-			};
-		};
-	};
-};
-
-&dp0 {
-	status = "ok";
-
-	port {
-		dp0_output: endpoint@0 {
-			remote-endpoint = <&dp0_virt_input>;
-		};
 	};
 };

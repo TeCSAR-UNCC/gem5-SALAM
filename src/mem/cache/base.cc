@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Nikos Nikoleris
  */
 
 /**
@@ -55,59 +52,64 @@
 #include "debug/CachePort.hh"
 #include "debug/CacheRepl.hh"
 #include "debug/CacheVerbose.hh"
+#include "debug/HWPrefetch.hh"
 #include "mem/cache/compressors/base.hh"
 #include "mem/cache/mshr.hh"
 #include "mem/cache/prefetch/base.hh"
 #include "mem/cache/queue_entry.hh"
+#include "mem/cache/tags/compressed_tags.hh"
 #include "mem/cache/tags/super_blk.hh"
 #include "params/BaseCache.hh"
 #include "params/WriteAllocator.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
 
-using namespace std;
+namespace gem5
+{
 
-BaseCache::CacheSlavePort::CacheSlavePort(const std::string &_name,
+BaseCache::CacheResponsePort::CacheResponsePort(const std::string &_name,
                                           BaseCache *_cache,
                                           const std::string &_label)
-    : QueuedSlavePort(_name, _cache, queue),
+    : QueuedResponsePort(_name, _cache, queue),
       queue(*_cache, *this, true, _label),
       blocked(false), mustSendRetry(false),
       sendRetryEvent([this]{ processSendRetry(); }, _name)
 {
 }
 
-BaseCache::BaseCache(const BaseCacheParams *p, unsigned blk_size)
+BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     : ClockedObject(p),
-      cpuSidePort (p->name + ".cpu_side", this, "CpuSidePort"),
-      memSidePort(p->name + ".mem_side", this, "MemSidePort"),
-      mshrQueue("MSHRs", p->mshrs, 0, p->demand_mshr_reserve), // see below
-      writeBuffer("write buffer", p->write_buffers, p->mshrs), // see below
-      tags(p->tags),
-      compressor(p->compressor),
-      prefetcher(p->prefetcher),
-      writeAllocator(p->write_allocator),
-      writebackClean(p->writeback_clean),
+      cpuSidePort (p.name + ".cpu_side_port", this, "CpuSidePort"),
+      memSidePort(p.name + ".mem_side_port", this, "MemSidePort"),
+      mshrQueue("MSHRs", p.mshrs, 0, p.demand_mshr_reserve, p.name),
+      writeBuffer("write buffer", p.write_buffers, p.mshrs, p.name),
+      tags(p.tags),
+      compressor(p.compressor),
+      prefetcher(p.prefetcher),
+      writeAllocator(p.write_allocator),
+      writebackClean(p.writeback_clean),
       tempBlockWriteback(nullptr),
       writebackTempBlockAtomicEvent([this]{ writebackTempBlockAtomic(); },
                                     name(), false,
                                     EventBase::Delayed_Writeback_Pri),
       blkSize(blk_size),
-      lookupLatency(p->tag_latency),
-      dataLatency(p->data_latency),
-      forwardLatency(p->tag_latency),
-      fillLatency(p->data_latency),
-      responseLatency(p->response_latency),
-      sequentialAccess(p->sequential_access),
-      numTarget(p->tgts_per_mshr),
+      lookupLatency(p.tag_latency),
+      dataLatency(p.data_latency),
+      forwardLatency(p.tag_latency),
+      fillLatency(p.data_latency),
+      responseLatency(p.response_latency),
+      sequentialAccess(p.sequential_access),
+      numTarget(p.tgts_per_mshr),
       forwardSnoops(true),
-      clusivity(p->clusivity),
-      isReadOnly(p->is_read_only),
+      clusivity(p.clusivity),
+      isReadOnly(p.is_read_only),
+      replaceExpansions(p.replace_expansions),
+      moveContractions(p.move_contractions),
       blocked(0),
       order(0),
       noTargetMSHR(nullptr),
-      missCount(p->max_miss_count),
-      addrRanges(p->addr_ranges.begin(), p->addr_ranges.end()),
-      system(p->system),
+      missCount(p.max_miss_count),
+      addrRanges(p.addr_ranges.begin(), p.addr_ranges.end()),
+      system(p.system),
       stats(*this)
 {
     // the MSHR queue has no reserve entries as we check the MSHR
@@ -117,13 +119,21 @@ BaseCache::BaseCache(const BaseCacheParams *p, unsigned blk_size)
     // buffer before committing to an MSHR
 
     // forward snoops is overridden in init() once we can query
-    // whether the connected master is actually snooping or not
+    // whether the connected requestor is actually snooping or not
 
     tempBlock = new TempCacheBlk(blkSize);
 
     tags->tagsInit();
     if (prefetcher)
         prefetcher->setCache(this);
+
+    fatal_if(compressor && !dynamic_cast<CompressedTags*>(tags),
+        "The tags of compressed cache %s must derive from CompressedTags",
+        name());
+    warn_if(!compressor && dynamic_cast<CompressedTags*>(tags),
+        "Compressed cache %s does not have a compression algorithm", name());
+    if (compressor)
+        compressor->setCache(this);
 }
 
 BaseCache::~BaseCache()
@@ -132,7 +142,7 @@ BaseCache::~BaseCache()
 }
 
 void
-BaseCache::CacheSlavePort::setBlocked()
+BaseCache::CacheResponsePort::setBlocked()
 {
     assert(!blocked);
     DPRINTF(CachePort, "Port is blocking new requests\n");
@@ -147,7 +157,7 @@ BaseCache::CacheSlavePort::setBlocked()
 }
 
 void
-BaseCache::CacheSlavePort::clearBlocked()
+BaseCache::CacheResponsePort::clearBlocked()
 {
     assert(blocked);
     DPRINTF(CachePort, "Port is accepting new requests\n");
@@ -159,7 +169,7 @@ BaseCache::CacheSlavePort::clearBlocked()
 }
 
 void
-BaseCache::CacheSlavePort::processSendRetry()
+BaseCache::CacheResponsePort::processSendRetry()
 {
     DPRINTF(CachePort, "Port is sending retry\n");
 
@@ -273,8 +283,8 @@ BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
                 DPRINTF(Cache, "%s coalescing MSHR for %s\n", __func__,
                         pkt->print());
 
-                assert(pkt->req->masterId() < system->maxMasters());
-                stats.cmdStats(pkt).mshr_hits[pkt->req->masterId()]++;
+                assert(pkt->req->requestorId() < system->maxRequestors());
+                stats.cmdStats(pkt).mshrHits[pkt->req->requestorId()]++;
 
                 // We use forward_time here because it is the same
                 // considering new targets. We have multiple
@@ -297,8 +307,10 @@ BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
         }
     } else {
         // no MSHR
-        assert(pkt->req->masterId() < system->maxMasters());
-        stats.cmdStats(pkt).mshr_misses[pkt->req->masterId()]++;
+        assert(pkt->req->requestorId() < system->maxRequestors());
+        stats.cmdStats(pkt).mshrMisses[pkt->req->requestorId()]++;
+        if (prefetcher && pkt->isDemand())
+            prefetcher->incrDemandMhsrMisses();
 
         if (pkt->isEviction() || pkt->cmd == MemCmd::WriteClean) {
             // We use forward_time here because there is an
@@ -321,9 +333,10 @@ BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
                 // internally, and have a sufficiently weak memory
                 // model, this is probably unnecessary, but at some
                 // point it must have seemed like we needed it...
-                assert((pkt->needsWritable() && !blk->isWritable()) ||
-                       pkt->req->isCacheMaintenance());
-                blk->status &= ~BlkReadable;
+                assert((pkt->needsWritable() &&
+                    !blk->isSet(CacheBlk::WritableBit)) ||
+                    pkt->req->isCacheMaintenance());
+                blk->clearCoherenceBits(CacheBlk::ReadableBit);
             }
             // Here we are using forward_time, modelling the latency of
             // a miss (outbound) just as forwardLatency, neglecting the
@@ -370,7 +383,9 @@ BaseCache::recvTimingReq(PacketPtr pkt)
         ppHit->notify(pkt);
 
         if (prefetcher && blk && blk->wasPrefetched()) {
-            blk->status &= ~BlkHWPrefetched;
+            DPRINTF(Cache, "Hit on prefetch for addr %#x (%s)\n",
+                    pkt->getAddr(), pkt->isSecure() ? "s" : "ns");
+            blk->clearPrefetched();
         }
 
         handleTimingReqHit(pkt, blk, request_time);
@@ -444,13 +459,13 @@ BaseCache::recvTimingResp(PacketPtr pkt)
     const QueueEntry::Target *initial_tgt = mshr->getTarget();
     const Tick miss_latency = curTick() - initial_tgt->recvTime;
     if (pkt->req->isUncacheable()) {
-        assert(pkt->req->masterId() < system->maxMasters());
+        assert(pkt->req->requestorId() < system->maxRequestors());
         stats.cmdStats(initial_tgt->pkt)
-            .mshr_uncacheable_lat[pkt->req->masterId()] += miss_latency;
+            .mshrUncacheableLatency[pkt->req->requestorId()] += miss_latency;
     } else {
-        assert(pkt->req->masterId() < system->maxMasters());
+        assert(pkt->req->requestorId() < system->maxRequestors());
         stats.cmdStats(initial_tgt->pkt)
-            .mshr_miss_latency[pkt->req->masterId()] += miss_latency;
+            .mshrMissLatency[pkt->req->requestorId()] += miss_latency;
     }
 
     PacketList writebacks;
@@ -479,7 +494,7 @@ BaseCache::recvTimingResp(PacketPtr pkt)
     if (blk && blk->isValid() && pkt->isClean() && !pkt->isInvalidate()) {
         // The block was marked not readable while there was a pending
         // cache maintenance operation, restore its flag.
-        blk->status |= BlkReadable;
+        blk->setCoherenceBits(CacheBlk::ReadableBit);
 
         // This was a cache clean operation (without invalidate)
         // and we have a copy of the block already. Since there
@@ -488,7 +503,8 @@ BaseCache::recvTimingResp(PacketPtr pkt)
         mshr->promoteReadable();
     }
 
-    if (blk && blk->isWritable() && !pkt->req->isCacheInvalidate()) {
+    if (blk && blk->isSet(CacheBlk::WritableBit) &&
+        !pkt->req->isCacheInvalidate()) {
         // If at this point the referenced block is writable and the
         // response is not a cache invalidate, we promote targets that
         // were deferred as we couldn't guarrantee a writable copy
@@ -501,7 +517,7 @@ BaseCache::recvTimingResp(PacketPtr pkt)
         // avoid later read getting stale data while write miss is
         // outstanding.. see comment in timingAccess()
         if (blk) {
-            blk->status &= ~BlkReadable;
+            blk->clearCoherenceBits(CacheBlk::ReadableBit);
         }
         mshrQueue.markPending(mshr);
         schedMemSideSendEvent(clockEdge() + pkt->payloadDelay);
@@ -517,7 +533,7 @@ BaseCache::recvTimingResp(PacketPtr pkt)
 
         // Request the bus for a prefetch if this deallocation freed enough
         // MSHRs for a prefetch to take place
-        if (prefetcher && mshrQueue.canPrefetch()) {
+        if (prefetcher && mshrQueue.canPrefetch() && !isBlocked()) {
             Tick next_pf_time = std::max(prefetcher->nextPrefetchReadyTime(),
                                          clockEdge());
             if (next_pf_time != MaxTick)
@@ -554,7 +570,7 @@ BaseCache::recvAtomic(PacketPtr pkt)
     PacketList writebacks;
     bool satisfied = access(pkt, blk, lat, writebacks);
 
-    if (pkt->isClean() && blk && blk->isDirty()) {
+    if (pkt->isClean() && blk && blk->isSet(CacheBlk::DirtyBit)) {
         // A cache clean opearation is looking for a dirty
         // block. If a dirty block is encountered a WriteClean
         // will update any copies to the path to the memory
@@ -644,7 +660,7 @@ BaseCache::functionalAccess(PacketPtr pkt, bool from_cpu_side)
     // data we have is dirty if marked as such or if we have an
     // in-service MSHR that is pending a modified line
     bool have_dirty =
-        have_data && (blk->isDirty() ||
+        have_data && (blk->isSet(CacheBlk::DirtyBit) ||
                       (mshr && mshr->inService && mshr->isPendingModified()));
 
     bool done = have_dirty ||
@@ -675,6 +691,31 @@ BaseCache::functionalAccess(PacketPtr pkt, bool from_cpu_side)
     }
 }
 
+void
+BaseCache::updateBlockData(CacheBlk *blk, const PacketPtr cpkt,
+    bool has_old_data)
+{
+    DataUpdate data_update(regenerateBlkAddr(blk), blk->isSecure());
+    if (ppDataUpdate->hasListeners()) {
+        if (has_old_data) {
+            data_update.oldData = std::vector<uint64_t>(blk->data,
+                blk->data + (blkSize / sizeof(uint64_t)));
+        }
+    }
+
+    // Actually perform the data update
+    if (cpkt) {
+        cpkt->writeDataToBlock(blk->data, blkSize);
+    }
+
+    if (ppDataUpdate->hasListeners()) {
+        if (cpkt) {
+            data_update.newData = std::vector<uint64_t>(blk->data,
+                blk->data + (blkSize / sizeof(uint64_t)));
+        }
+        ppDataUpdate->notify(data_update);
+    }
+}
 
 void
 BaseCache::cmpAndSwap(CacheBlk *blk, PacketPtr pkt)
@@ -690,6 +731,13 @@ BaseCache::cmpAndSwap(CacheBlk *blk, PacketPtr pkt)
     uint8_t *blk_data = blk->data + offset;
 
     assert(sizeof(uint64_t) >= pkt->getSize());
+
+    // Get a copy of the old block's contents for the probe before the update
+    DataUpdate data_update(regenerateBlkAddr(blk), blk->isSecure());
+    if (ppDataUpdate->hasListeners()) {
+        data_update.oldData = std::vector<uint64_t>(blk->data,
+            blk->data + (blkSize / sizeof(uint64_t)));
+    }
 
     overwrite_mem = true;
     // keep a copy of our possible write value, and copy what is at the
@@ -712,7 +760,13 @@ BaseCache::cmpAndSwap(CacheBlk *blk, PacketPtr pkt)
 
     if (overwrite_mem) {
         std::memcpy(blk_data, &overwrite_val, pkt->getSize());
-        blk->status |= BlkDirty;
+        blk->setCoherenceBits(CacheBlk::DirtyBit);
+
+        if (ppDataUpdate->hasListeners()) {
+            data_update.newData = std::vector<uint64_t>(blk->data,
+                blk->data + (blkSize / sizeof(uint64_t)));
+            ppDataUpdate->notify(data_update);
+        }
     }
 }
 
@@ -767,26 +821,39 @@ BaseCache::getNextQueueEntry()
 
     // fall through... no pending requests.  Try a prefetch.
     assert(!miss_mshr && !wq_entry);
-    if (prefetcher && mshrQueue.canPrefetch()) {
+    if (prefetcher && mshrQueue.canPrefetch() && !isBlocked()) {
         // If we have a miss queue slot, we can try a prefetch
         PacketPtr pkt = prefetcher->getPacket();
         if (pkt) {
             Addr pf_addr = pkt->getBlockAddr(blkSize);
-            if (!tags->findBlock(pf_addr, pkt->isSecure()) &&
-                !mshrQueue.findMatch(pf_addr, pkt->isSecure()) &&
-                !writeBuffer.findMatch(pf_addr, pkt->isSecure())) {
+            if (tags->findBlock(pf_addr, pkt->isSecure())) {
+                DPRINTF(HWPrefetch, "Prefetch %#x has hit in cache, "
+                        "dropped.\n", pf_addr);
+                prefetcher->pfHitInCache();
+                // free the request and packet
+                delete pkt;
+            } else if (mshrQueue.findMatch(pf_addr, pkt->isSecure())) {
+                DPRINTF(HWPrefetch, "Prefetch %#x has hit in a MSHR, "
+                        "dropped.\n", pf_addr);
+                prefetcher->pfHitInMSHR();
+                // free the request and packet
+                delete pkt;
+            } else if (writeBuffer.findMatch(pf_addr, pkt->isSecure())) {
+                DPRINTF(HWPrefetch, "Prefetch %#x has hit in the "
+                        "Write Buffer, dropped.\n", pf_addr);
+                prefetcher->pfHitInWB();
+                // free the request and packet
+                delete pkt;
+            } else {
                 // Update statistic on number of prefetches issued
                 // (hwpf_mshr_misses)
-                assert(pkt->req->masterId() < system->maxMasters());
-                stats.cmdStats(pkt).mshr_misses[pkt->req->masterId()]++;
+                assert(pkt->req->requestorId() < system->maxRequestors());
+                stats.cmdStats(pkt).mshrMisses[pkt->req->requestorId()]++;
 
                 // allocate an MSHR and return it, note
                 // that we send the packet straight away, so do not
                 // schedule the send
                 return allocateMissBuffer(pkt, curTick(), false);
-            } else {
-                // free the request and packet
-                delete pkt;
             }
         }
     }
@@ -795,7 +862,44 @@ BaseCache::getNextQueueEntry()
 }
 
 bool
-BaseCache::updateCompressionData(CacheBlk *blk, const uint64_t* data,
+BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
+    PacketList &writebacks)
+{
+    bool replacement = false;
+    for (const auto& blk : evict_blks) {
+        if (blk->isValid()) {
+            replacement = true;
+
+            const MSHR* mshr =
+                mshrQueue.findMatch(regenerateBlkAddr(blk), blk->isSecure());
+            if (mshr) {
+                // Must be an outstanding upgrade or clean request on a block
+                // we're about to replace
+                assert((!blk->isSet(CacheBlk::WritableBit) &&
+                    mshr->needsWritable()) || mshr->isCleaning());
+                return false;
+            }
+        }
+    }
+
+    // The victim will be replaced by a new entry, so increase the replacement
+    // counter if a valid block is being replaced
+    if (replacement) {
+        stats.replacements++;
+
+        // Evict valid blocks associated to this victim block
+        for (auto& blk : evict_blks) {
+            if (blk->isValid()) {
+                evictBlock(blk, writebacks);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool
+BaseCache::updateCompressionData(CacheBlk *&blk, const uint64_t* data,
                                  PacketList &writebacks)
 {
     // tempBlock does not exist in the tags, so don't do anything for it.
@@ -803,89 +907,103 @@ BaseCache::updateCompressionData(CacheBlk *blk, const uint64_t* data,
         return true;
     }
 
-    // Get superblock of the given block
-    CompressionBlk* compression_blk = static_cast<CompressionBlk*>(blk);
-    const SuperBlk* superblock = static_cast<const SuperBlk*>(
-        compression_blk->getSectorBlock());
-
     // The compressor is called to compress the updated data, so that its
     // metadata can be updated.
-    std::size_t compression_size = 0;
     Cycles compression_lat = Cycles(0);
     Cycles decompression_lat = Cycles(0);
-    compressor->compress(data, compression_lat, decompression_lat,
-                         compression_size);
-
-    // If block's compression factor increased, it may not be co-allocatable
-    // anymore. If so, some blocks might need to be evicted to make room for
-    // the bigger block
+    const auto comp_data =
+        compressor->compress(data, compression_lat, decompression_lat);
+    std::size_t compression_size = comp_data->getSizeBits();
 
     // Get previous compressed size
-    const std::size_t M5_VAR_USED prev_size = compression_blk->getSizeBits();
+    CompressionBlk* compression_blk = static_cast<CompressionBlk*>(blk);
+    GEM5_VAR_USED const std::size_t prev_size = compression_blk->getSizeBits();
 
-    // Check if new data is co-allocatable
-    const bool is_co_allocatable = superblock->isCompressed(compression_blk) &&
-        superblock->canCoAllocate(compression_size);
+    // If compressed size didn't change enough to modify its co-allocatability
+    // there is nothing to do. Otherwise we may be facing a data expansion
+    // (block passing from more compressed to less compressed state), or a
+    // data contraction (less to more).
+    bool is_data_expansion = false;
+    bool is_data_contraction = false;
+    const CompressionBlk::OverwriteType overwrite_type =
+        compression_blk->checkExpansionContraction(compression_size);
+    std::string op_name = "";
+    if (overwrite_type == CompressionBlk::DATA_EXPANSION) {
+        op_name = "expansion";
+        is_data_expansion = true;
+    } else if ((overwrite_type == CompressionBlk::DATA_CONTRACTION) &&
+        moveContractions) {
+        op_name = "contraction";
+        is_data_contraction = true;
+    }
 
-    // If block was compressed, possibly co-allocated with other blocks, and
-    // cannot be co-allocated anymore, one or more blocks must be evicted to
-    // make room for the expanded block. As of now we decide to evict the co-
-    // allocated blocks to make room for the expansion, but other approaches
-    // that take the replacement data of the superblock into account may
-    // generate better results
+    // If block changed compression state, it was possibly co-allocated with
+    // other blocks and cannot be co-allocated anymore, so one or more blocks
+    // must be evicted to make room for the expanded/contracted block
     std::vector<CacheBlk*> evict_blks;
-    const bool was_compressed = compression_blk->isCompressed();
-    if (was_compressed && !is_co_allocatable) {
-        // Get all co-allocated blocks
-        for (const auto& sub_blk : superblock->blks) {
-            if (sub_blk->isValid() && (compression_blk != sub_blk)) {
-                // Check for transient state allocations. If any of the
-                // entries listed for eviction has a transient state, the
-                // allocation fails
-                const Addr repl_addr = regenerateBlkAddr(sub_blk);
-                const MSHR *repl_mshr =
-                    mshrQueue.findMatch(repl_addr, sub_blk->isSecure());
-                if (repl_mshr) {
-                    DPRINTF(CacheRepl, "Aborting data expansion of %s due " \
-                            "to replacement of block in transient state: %s\n",
-                            compression_blk->print(), sub_blk->print());
-                    // Too hard to replace block with transient state, so it
-                    // cannot be evicted. Mark the update as failed and expect
-                    // the caller to evict this block. Since this is called
-                    // only when writebacks arrive, and packets do not contain
-                    // compressed data, there is no need to decompress
-                    compression_blk->setSizeBits(blkSize * 8);
-                    compression_blk->setDecompressionLatency(Cycles(0));
-                    compression_blk->setUncompressed();
-                    return false;
-                }
+    if (is_data_expansion || is_data_contraction) {
+        std::vector<CacheBlk*> evict_blks;
+        bool victim_itself = false;
+        CacheBlk *victim = nullptr;
+        if (replaceExpansions || is_data_contraction) {
+            victim = tags->findVictim(regenerateBlkAddr(blk),
+                blk->isSecure(), compression_size, evict_blks);
 
-                evict_blks.push_back(sub_blk);
+            // It is valid to return nullptr if there is no victim
+            if (!victim) {
+                return false;
+            }
+
+            // If the victim block is itself the block won't need to be moved,
+            // and the victim should not be evicted
+            if (blk == victim) {
+                victim_itself = true;
+                auto it = std::find_if(evict_blks.begin(), evict_blks.end(),
+                    [&blk](CacheBlk* evict_blk){ return evict_blk == blk; });
+                evict_blks.erase(it);
+            }
+
+            // Print victim block's information
+            DPRINTF(CacheRepl, "Data %s replacement victim: %s\n",
+                op_name, victim->print());
+        } else {
+            // If we do not move the expanded block, we must make room for
+            // the expansion to happen, so evict every co-allocated block
+            const SuperBlk* superblock = static_cast<const SuperBlk*>(
+                compression_blk->getSectorBlock());
+            for (auto& sub_blk : superblock->blks) {
+                if (sub_blk->isValid() && (blk != sub_blk)) {
+                    evict_blks.push_back(sub_blk);
+                }
             }
         }
 
-        // Update the number of data expansions
-        stats.dataExpansions++;
+        // Try to evict blocks; if it fails, give up on update
+        if (!handleEvictions(evict_blks, writebacks)) {
+            return false;
+        }
 
-        DPRINTF(CacheComp, "Data expansion: expanding [%s] from %d to %d bits"
-                "\n", blk->print(), prev_size, compression_size);
-    }
+        DPRINTF(CacheComp, "Data %s: [%s] from %d to %d bits\n",
+                op_name, blk->print(), prev_size, compression_size);
 
-    // We always store compressed blocks when possible
-    if (is_co_allocatable) {
-        compression_blk->setCompressed();
-    } else {
-        compression_blk->setUncompressed();
-    }
-    compression_blk->setSizeBits(compression_size);
-    compression_blk->setDecompressionLatency(decompression_lat);
-
-    // Evict valid blocks
-    for (const auto& evict_blk : evict_blks) {
-        if (evict_blk->isValid()) {
-            evictBlock(evict_blk, writebacks);
+        if (!victim_itself && (replaceExpansions || is_data_contraction)) {
+            // Move the block's contents to the invalid block so that it now
+            // co-allocates with the other existing superblock entry
+            tags->moveBlock(blk, victim);
+            blk = victim;
+            compression_blk = static_cast<CompressionBlk*>(blk);
         }
     }
+
+    // Update the number of data expansions/contractions
+    if (is_data_expansion) {
+        stats.dataExpansions++;
+    } else if (is_data_contraction) {
+        stats.dataContractions++;
+    }
+
+    compression_blk->setSizeBits(compression_size);
+    compression_blk->setDecompressionLatency(decompression_lat);
 
     return true;
 }
@@ -900,15 +1018,23 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
     // satisfying a string of Read and ReadEx requests from
     // upper-level caches, a Read will mark the block as shared but we
     // can satisfy a following ReadEx anyway since we can rely on the
-    // Read requester(s) to have buffered the ReadEx snoop and to
+    // Read requestor(s) to have buffered the ReadEx snoop and to
     // invalidate their blocks after receiving them.
-    // assert(!pkt->needsWritable() || blk->isWritable());
+    // assert(!pkt->needsWritable() || blk->isSet(CacheBlk::WritableBit));
     assert(pkt->getOffset(blkSize) + pkt->getSize() <= blkSize);
 
     // Check RMW operations first since both isRead() and
     // isWrite() will be true for them
     if (pkt->cmd == MemCmd::SwapReq) {
         if (pkt->isAtomicOp()) {
+            // Get a copy of the old block's contents for the probe before
+            // the update
+            DataUpdate data_update(regenerateBlkAddr(blk), blk->isSecure());
+            if (ppDataUpdate->hasListeners()) {
+                data_update.oldData = std::vector<uint64_t>(blk->data,
+                    blk->data + (blkSize / sizeof(uint64_t)));
+            }
+
             // extract data from cache and save it into the data field in
             // the packet as a return value from this atomic op
             int offset = tags->extractBlkOffset(pkt->getAddr());
@@ -918,8 +1044,15 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
             // execute AMO operation
             (*(pkt->getAtomicOp()))(blk_data);
 
+            // Inform of this block's data contents update
+            if (ppDataUpdate->hasListeners()) {
+                data_update.newData = std::vector<uint64_t>(blk->data,
+                    blk->data + (blkSize / sizeof(uint64_t)));
+                ppDataUpdate->notify(data_update);
+            }
+
             // set block status to dirty
-            blk->status |= BlkDirty;
+            blk->setCoherenceBits(CacheBlk::DirtyBit);
         } else {
             cmpAndSwap(blk, pkt);
         }
@@ -928,16 +1061,16 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // note that the line may be also be considered writable in
         // downstream caches along the path to memory, but always
         // Exclusive, and never Modified
-        assert(blk->isWritable());
+        assert(blk->isSet(CacheBlk::WritableBit));
         // Write or WriteLine at the first cache with block in writable state
         if (blk->checkWrite(pkt)) {
-            pkt->writeDataToBlock(blk->data, blkSize);
+            updateBlockData(blk, pkt, true);
         }
         // Always mark the line as dirty (and thus transition to the
         // Modified state) even if we are a failed StoreCond so we
         // supply data to any snoops that have appended themselves to
         // this cache before knowing the store will fail.
-        blk->status |= BlkDirty;
+        blk->setCoherenceBits(CacheBlk::DirtyBit);
         DPRINTF(CacheVerbose, "%s for %s (write)\n", __func__, pkt->print());
     } else if (pkt->isRead()) {
         if (pkt->isLLSC()) {
@@ -951,15 +1084,15 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // sanity check
         assert(!pkt->hasSharers());
 
-        if (blk->isDirty()) {
+        if (blk->isSet(CacheBlk::DirtyBit)) {
             // we were in the Owned state, and a cache above us that
             // has the line in Shared state needs to be made aware
             // that the data it already has is in fact dirty
             pkt->setCacheResponding();
-            blk->status &= ~BlkDirty;
+            blk->clearCoherenceBits(CacheBlk::DirtyBit);
         }
     } else if (pkt->isClean()) {
-        blk->status &= ~BlkDirty;
+        blk->clearCoherenceBits(CacheBlk::DirtyBit);
     } else {
         assert(pkt->isInvalidate());
         invalidateBlock(blk);
@@ -1029,7 +1162,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
     // Access block in the tags
     Cycles tag_latency(0);
-    blk = tags->accessBlock(pkt->getAddr(), pkt->isSecure(), tag_latency);
+    blk = tags->accessBlock(pkt, tag_latency);
 
     DPRINTF(Cache, "%s for %s %s\n", __func__, pkt->print(),
             blk ? "hit " + blk->print() : "miss");
@@ -1118,6 +1251,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             return true;
         }
 
+        const bool has_old_data = blk && blk->isValid();
         if (!blk) {
             // need to do a replacement
             blk = allocateBlock(pkt, writebacks);
@@ -1127,7 +1261,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 return false;
             }
 
-            blk->status |= BlkReadable;
+            blk->setCoherenceBits(CacheBlk::ReadableBit);
         } else if (compressor) {
             // This is an overwrite to an existing block, therefore we need
             // to check for data expansion (i.e., block was compressed with
@@ -1143,18 +1277,19 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // only mark the block dirty if we got a writeback command,
         // and leave it as is for a clean writeback
         if (pkt->cmd == MemCmd::WritebackDirty) {
-            // TODO: the coherent cache can assert(!blk->isDirty());
-            blk->status |= BlkDirty;
+            // TODO: the coherent cache can assert that the dirty bit is set
+            blk->setCoherenceBits(CacheBlk::DirtyBit);
         }
         // if the packet does not have sharers, it is passing
         // writable, and we got the writeback in Modified or Exclusive
         // state, if not we are in the Owned or Shared state
         if (!pkt->hasSharers()) {
-            blk->status |= BlkWritable;
+            blk->setCoherenceBits(CacheBlk::WritableBit);
         }
         // nothing else to do; writeback doesn't expect response
         assert(!pkt->needsResponse());
-        pkt->writeDataToBlock(blk->data, blkSize);
+
+        updateBlockData(blk, pkt, has_old_data);
         DPRINTF(Cache, "%s new state is %s\n", __func__, blk->print());
         incHitCount(pkt);
 
@@ -1188,6 +1323,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // of the block as well.
         assert(blkSize == pkt->getSize());
 
+        const bool has_old_data = blk && blk->isValid();
         if (!blk) {
             if (pkt->writeThrough()) {
                 // if this is a write through packet, we don't try to
@@ -1203,7 +1339,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                     return false;
                 }
 
-                blk->status |= BlkReadable;
+                blk->setCoherenceBits(CacheBlk::ReadableBit);
             }
         } else if (compressor) {
             // This is an overwrite to an existing block, therefore we need
@@ -1221,13 +1357,14 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // write clean operation and the block is already in this
         // cache, we need to update the data and the block flags
         assert(blk);
-        // TODO: the coherent cache can assert(!blk->isDirty());
+        // TODO: the coherent cache can assert that the dirty bit is set
         if (!pkt->writeThrough()) {
-            blk->status |= BlkDirty;
+            blk->setCoherenceBits(CacheBlk::DirtyBit);
         }
         // nothing else to do; writeback doesn't expect response
         assert(!pkt->needsResponse());
-        pkt->writeDataToBlock(blk->data, blkSize);
+
+        updateBlockData(blk, pkt, has_old_data);
         DPRINTF(Cache, "%s new state is %s\n", __func__, blk->print());
 
         incHitCount(pkt);
@@ -1240,8 +1377,9 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
         // If this a write-through packet it will be sent to cache below
         return !pkt->writeThrough();
-    } else if (blk && (pkt->needsWritable() ? blk->isWritable() :
-                       blk->isReadable())) {
+    } else if (blk && (pkt->needsWritable() ?
+            blk->isSet(CacheBlk::WritableBit) :
+            blk->isSet(CacheBlk::ReadableBit))) {
         // OK to satisfy access
         incHitCount(pkt);
 
@@ -1283,8 +1421,8 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 void
 BaseCache::maintainClusivity(bool from_cache, CacheBlk *blk)
 {
-    if (from_cache && blk && blk->isValid() && !blk->isDirty() &&
-        clusivity == Enums::mostly_excl) {
+    if (from_cache && blk && blk->isValid() &&
+        !blk->isSet(CacheBlk::DirtyBit) && clusivity == enums::mostly_excl) {
         // if we have responded to a cache, and our block is still
         // valid, but not dirty, and this cache is mostly exclusive
         // with respect to the cache above, drop the block
@@ -1299,9 +1437,8 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
     assert(pkt->isResponse());
     Addr addr = pkt->getAddr();
     bool is_secure = pkt->isSecure();
-#if TRACING_ON
-    CacheBlk::State old_state = blk ? blk->status : 0;
-#endif
+    const bool has_old_data = blk && blk->isValid();
+    const std::string old_state = blk ? blk->print() : "";
 
     // When handling a fill, we should have no writes to this line.
     assert(addr == pkt->getBlockAddr(blkSize));
@@ -1335,7 +1472,7 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
     assert(blk->isSecure() == is_secure);
     assert(regenerateBlkAddr(blk) == addr);
 
-    blk->status |= BlkReadable;
+    blk->setCoherenceBits(CacheBlk::ReadableBit);
 
     // sanity check for whole-line writes, which should always be
     // marked as writable as part of the fill, and then later marked
@@ -1355,14 +1492,14 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         // we could get a writable line from memory (rather than a
         // cache) even in a read-only cache, note that we set this bit
         // even for a read-only cache, possibly revisit this decision
-        blk->status |= BlkWritable;
+        blk->setCoherenceBits(CacheBlk::WritableBit);
 
         // check if we got this via cache-to-cache transfer (i.e., from a
         // cache that had the block in Modified or Owned state)
         if (pkt->cacheResponding()) {
             // we got the block in Modified state, and invalidated the
             // owners copy
-            blk->status |= BlkDirty;
+            blk->setCoherenceBits(CacheBlk::DirtyBit);
 
             chatty_assert(!isReadOnly, "Should never see dirty snoop response "
                           "in read-only cache %s\n", name());
@@ -1370,7 +1507,7 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         }
     }
 
-    DPRINTF(Cache, "Block addr %#llx (%s) moving from state %x to %s\n",
+    DPRINTF(Cache, "Block addr %#llx (%s) moving from %s to %s\n",
             addr, is_secure ? "s" : "ns", old_state, blk->print());
 
     // if we got new data, copy it in (checking for a read response
@@ -1380,7 +1517,7 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         assert(pkt->hasData());
         assert(pkt->getSize() == blkSize);
 
-        pkt->writeDataToBlock(blk->data, blkSize);
+        updateBlockData(blk, pkt, has_old_data);
     }
     // The block will be ready when the payload arrives and the fill is done
     blk->setWhenReady(clockEdge(fillLatency) + pkt->headerDelay +
@@ -1411,8 +1548,9 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     // calculate the amount of extra cycles needed to read or write compressed
     // blocks.
     if (compressor && pkt->hasData()) {
-        compressor->compress(pkt->getConstPtr<uint64_t>(), compression_lat,
-                             decompression_lat, blk_size_bits);
+        const auto comp_data = compressor->compress(
+            pkt->getConstPtr<uint64_t>(), compression_lat, decompression_lat);
+        blk_size_bits = comp_data->getSizeBits();
     }
 
     // Find replacement victim
@@ -1427,53 +1565,20 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     // Print victim block's information
     DPRINTF(CacheRepl, "Replacement victim: %s\n", victim->print());
 
-    // Check for transient state allocations. If any of the entries listed
-    // for eviction has a transient state, the allocation fails
-    bool replacement = false;
-    for (const auto& blk : evict_blks) {
-        if (blk->isValid()) {
-            replacement = true;
-
-            Addr repl_addr = regenerateBlkAddr(blk);
-            MSHR *repl_mshr = mshrQueue.findMatch(repl_addr, blk->isSecure());
-            if (repl_mshr) {
-                // must be an outstanding upgrade or clean request
-                // on a block we're about to replace...
-                assert((!blk->isWritable() && repl_mshr->needsWritable()) ||
-                       repl_mshr->isCleaning());
-
-                // too hard to replace block with transient state
-                // allocation failed, block not inserted
-                return nullptr;
-            }
-        }
-    }
-
-    // The victim will be replaced by a new entry, so increase the replacement
-    // counter if a valid block is being replaced
-    if (replacement) {
-        // Evict valid blocks associated to this victim block
-        for (const auto& blk : evict_blks) {
-            if (blk->isValid()) {
-                DPRINTF(CacheRepl, "Evicting %s (%#llx) to make room for " \
-                        "%#llx (%s)\n", blk->print(), regenerateBlkAddr(blk),
-                        addr, is_secure);
-                evictBlock(blk, writebacks);
-            }
-        }
-
-        stats.replacements++;
-    }
-
-    // If using a compressor, set compression data. This must be done before
-    // block insertion, as compressed tags use this information.
-    if (compressor) {
-        compressor->setSizeBits(victim, blk_size_bits);
-        compressor->setDecompressionLatency(victim, decompression_lat);
+    // Try to evict blocks; if it fails, give up on allocation
+    if (!handleEvictions(evict_blks, writebacks)) {
+        return nullptr;
     }
 
     // Insert new block at victimized entry
     tags->insertBlock(pkt, victim);
+
+    // If using a compressor, set compression data. This must be done after
+    // insertion, as the compression bit may be set.
+    if (compressor) {
+        compressor->setSizeBits(victim, blk_size_bits);
+        compressor->setDecompressionLatency(victim, decompression_lat);
+    }
 
     return victim;
 }
@@ -1483,8 +1588,11 @@ BaseCache::invalidateBlock(CacheBlk *blk)
 {
     // If block is still marked as prefetched, then it hasn't been used
     if (blk->wasPrefetched()) {
-        stats.unusedPrefetches++;
+        prefetcher->prefetchUnused();
     }
+
+    // Notify that the data contents for this address are no longer present
+    updateBlockData(blk, nullptr, blk->isValid());
 
     // If handling a block present in the Tags, let it do its invalidation
     // process, which will update stats and invalidate the block itself
@@ -1509,36 +1617,38 @@ BaseCache::writebackBlk(CacheBlk *blk)
 {
     chatty_assert(!isReadOnly || writebackClean,
                   "Writeback from read-only cache");
-    assert(blk && blk->isValid() && (blk->isDirty() || writebackClean));
+    assert(blk && blk->isValid() &&
+        (blk->isSet(CacheBlk::DirtyBit) || writebackClean));
 
-    stats.writebacks[Request::wbMasterId]++;
+    stats.writebacks[Request::wbRequestorId]++;
 
     RequestPtr req = std::make_shared<Request>(
-        regenerateBlkAddr(blk), blkSize, 0, Request::wbMasterId);
+        regenerateBlkAddr(blk), blkSize, 0, Request::wbRequestorId);
 
     if (blk->isSecure())
         req->setFlags(Request::SECURE);
 
-    req->taskId(blk->task_id);
+    req->taskId(blk->getTaskId());
 
     PacketPtr pkt =
-        new Packet(req, blk->isDirty() ?
+        new Packet(req, blk->isSet(CacheBlk::DirtyBit) ?
                    MemCmd::WritebackDirty : MemCmd::WritebackClean);
 
     DPRINTF(Cache, "Create Writeback %s writable: %d, dirty: %d\n",
-            pkt->print(), blk->isWritable(), blk->isDirty());
+        pkt->print(), blk->isSet(CacheBlk::WritableBit),
+        blk->isSet(CacheBlk::DirtyBit));
 
-    if (blk->isWritable()) {
+    if (blk->isSet(CacheBlk::WritableBit)) {
         // not asserting shared means we pass the block in modified
         // state, mark our own block non-writeable
-        blk->status &= ~BlkWritable;
+        blk->clearCoherenceBits(CacheBlk::WritableBit);
     } else {
         // we are in the Owned state, tell the receiver
         pkt->setHasSharers();
     }
 
     // make sure the block is not marked dirty
-    blk->status &= ~BlkDirty;
+    blk->clearCoherenceBits(CacheBlk::DirtyBit);
 
     pkt->allocate();
     pkt->setDataFromBlock(blk->data, blkSize);
@@ -1556,12 +1666,12 @@ PacketPtr
 BaseCache::writecleanBlk(CacheBlk *blk, Request::Flags dest, PacketId id)
 {
     RequestPtr req = std::make_shared<Request>(
-        regenerateBlkAddr(blk), blkSize, 0, Request::wbMasterId);
+        regenerateBlkAddr(blk), blkSize, 0, Request::wbRequestorId);
 
     if (blk->isSecure()) {
         req->setFlags(Request::SECURE);
     }
-    req->taskId(blk->task_id);
+    req->taskId(blk->getTaskId());
 
     PacketPtr pkt = new Packet(req, MemCmd::WriteClean, blkSize, id);
 
@@ -1571,19 +1681,19 @@ BaseCache::writecleanBlk(CacheBlk *blk, Request::Flags dest, PacketId id)
     }
 
     DPRINTF(Cache, "Create %s writable: %d, dirty: %d\n", pkt->print(),
-            blk->isWritable(), blk->isDirty());
+            blk->isSet(CacheBlk::WritableBit), blk->isSet(CacheBlk::DirtyBit));
 
-    if (blk->isWritable()) {
+    if (blk->isSet(CacheBlk::WritableBit)) {
         // not asserting shared means we pass the block in modified
         // state, mark our own block non-writeable
-        blk->status &= ~BlkWritable;
+        blk->clearCoherenceBits(CacheBlk::WritableBit);
     } else {
         // we are in the Owned state, tell the receiver
         pkt->setHasSharers();
     }
 
     // make sure the block is not marked dirty
-    blk->status &= ~BlkDirty;
+    blk->clearCoherenceBits(CacheBlk::DirtyBit);
 
     pkt->allocate();
     pkt->setDataFromBlock(blk->data, blkSize);
@@ -1613,7 +1723,8 @@ BaseCache::memInvalidate()
 bool
 BaseCache::isDirty() const
 {
-    return tags->anyBlk([](CacheBlk &blk) { return blk.isDirty(); });
+    return tags->anyBlk([](CacheBlk &blk) {
+        return blk.isSet(CacheBlk::DirtyBit); });
 }
 
 bool
@@ -1625,13 +1736,13 @@ BaseCache::coalesce() const
 void
 BaseCache::writebackVisitor(CacheBlk &blk)
 {
-    if (blk.isDirty()) {
+    if (blk.isSet(CacheBlk::DirtyBit)) {
         assert(blk.isValid());
 
         RequestPtr request = std::make_shared<Request>(
-            regenerateBlkAddr(&blk), blkSize, 0, Request::funcMasterId);
+            regenerateBlkAddr(&blk), blkSize, 0, Request::funcRequestorId);
 
-        request->taskId(blk.task_id);
+        request->taskId(blk.getTaskId());
         if (blk.isSecure()) {
             request->setFlags(Request::SECURE);
         }
@@ -1641,19 +1752,19 @@ BaseCache::writebackVisitor(CacheBlk &blk)
 
         memSidePort.sendFunctional(&packet);
 
-        blk.status &= ~BlkDirty;
+        blk.clearCoherenceBits(CacheBlk::DirtyBit);
     }
 }
 
 void
 BaseCache::invalidateVisitor(CacheBlk &blk)
 {
-    if (blk.isDirty())
+    if (blk.isSet(CacheBlk::DirtyBit))
         warn_once("Invalidating dirty cache lines. " \
                   "Expect things to break.\n");
 
     if (blk.isValid()) {
-        assert(!blk.isDirty());
+        assert(!blk.isSet(CacheBlk::DirtyBit));
         invalidateBlock(&blk);
     }
 }
@@ -1666,7 +1777,7 @@ BaseCache::nextQueueReadyTime() const
 
     // Don't signal prefetch ready time if no MSHRs available
     // Will signal once enoguh MSHRs are deallocated
-    if (prefetcher && mshrQueue.canPrefetch()) {
+    if (prefetcher && mshrQueue.canPrefetch() && !isBlocked()) {
         nextReady = std::min(nextReady,
                              prefetcher->nextPrefetchReadyTime());
     }
@@ -1729,7 +1840,7 @@ BaseCache::sendMSHRQueuePacket(MSHR* mshr)
     // as forwarded packets may already have existing state
     pkt->pushSenderState(mshr);
 
-    if (pkt->isClean() && blk && blk->isDirty()) {
+    if (pkt->isClean() && blk && blk->isSet(CacheBlk::DirtyBit)) {
         // A cache clean opearation is looking for a dirty block. Mark
         // the packet so that the destination xbar can determine that
         // there will be a follow-up write packet as well.
@@ -1760,7 +1871,7 @@ BaseCache::sendMSHRQueuePacket(MSHR* mshr)
             pkt->cacheResponding();
         markInService(mshr, pending_modified_resp);
 
-        if (pkt->isClean() && blk && blk->isDirty()) {
+        if (pkt->isClean() && blk && blk->isSet(CacheBlk::DirtyBit)) {
             // A cache clean opearation is looking for a dirty
             // block. If a dirty block is encountered a WriteClean
             // will update any copies to the path to the memory
@@ -1837,241 +1948,239 @@ BaseCache::unserialize(CheckpointIn &cp)
 
 BaseCache::CacheCmdStats::CacheCmdStats(BaseCache &c,
                                         const std::string &name)
-    : Stats::Group(&c), cache(c),
-
-    hits(
-        this, (name + "_hits").c_str(),
-        ("number of " + name + " hits").c_str()),
-    misses(
-        this, (name + "_misses").c_str(),
-        ("number of " + name + " misses").c_str()),
-    missLatency(
-        this, (name + "_miss_latency").c_str(),
-        ("number of " + name + " miss cycles").c_str()),
-    accesses(
-        this, (name + "_accesses").c_str(),
-        ("number of " + name + " accesses(hits+misses)").c_str()),
-    missRate(
-        this, (name + "_miss_rate").c_str(),
-        ("miss rate for " + name + " accesses").c_str()),
-    avgMissLatency(
-        this, (name + "_avg_miss_latency").c_str(),
-        ("average " + name + " miss latency").c_str()),
-    mshr_hits(
-        this, (name + "_mshr_hits").c_str(),
-        ("number of " + name + " MSHR hits").c_str()),
-    mshr_misses(
-        this, (name + "_mshr_misses").c_str(),
-        ("number of " + name + " MSHR misses").c_str()),
-    mshr_uncacheable(
-        this, (name + "_mshr_uncacheable").c_str(),
-        ("number of " + name + " MSHR uncacheable").c_str()),
-    mshr_miss_latency(
-        this, (name + "_mshr_miss_latency").c_str(),
-        ("number of " + name + " MSHR miss cycles").c_str()),
-    mshr_uncacheable_lat(
-        this, (name + "_mshr_uncacheable_latency").c_str(),
-        ("number of " + name + " MSHR uncacheable cycles").c_str()),
-    mshrMissRate(
-        this, (name + "_mshr_miss_rate").c_str(),
-        ("mshr miss rate for " + name + " accesses").c_str()),
-    avgMshrMissLatency(
-        this, (name + "_avg_mshr_miss_latency").c_str(),
-        ("average " + name + " mshr miss latency").c_str()),
-    avgMshrUncacheableLatency(
-        this, (name + "_avg_mshr_uncacheable_latency").c_str(),
-        ("average " + name + " mshr uncacheable latency").c_str())
+    : statistics::Group(&c, name.c_str()), cache(c),
+      ADD_STAT(hits, statistics::units::Count::get(),
+               ("number of " + name + " hits").c_str()),
+      ADD_STAT(misses, statistics::units::Count::get(),
+               ("number of " + name + " misses").c_str()),
+      ADD_STAT(missLatency, statistics::units::Tick::get(),
+               ("number of " + name + " miss ticks").c_str()),
+      ADD_STAT(accesses, statistics::units::Count::get(),
+               ("number of " + name + " accesses(hits+misses)").c_str()),
+      ADD_STAT(missRate, statistics::units::Ratio::get(),
+               ("miss rate for " + name + " accesses").c_str()),
+      ADD_STAT(avgMissLatency, statistics::units::Rate<
+                    statistics::units::Tick, statistics::units::Count>::get(),
+               ("average " + name + " miss latency").c_str()),
+      ADD_STAT(mshrHits, statistics::units::Count::get(),
+               ("number of " + name + " MSHR hits").c_str()),
+      ADD_STAT(mshrMisses, statistics::units::Count::get(),
+               ("number of " + name + " MSHR misses").c_str()),
+      ADD_STAT(mshrUncacheable, statistics::units::Count::get(),
+               ("number of " + name + " MSHR uncacheable").c_str()),
+      ADD_STAT(mshrMissLatency, statistics::units::Tick::get(),
+               ("number of " + name + " MSHR miss ticks").c_str()),
+      ADD_STAT(mshrUncacheableLatency, statistics::units::Tick::get(),
+               ("number of " + name + " MSHR uncacheable ticks").c_str()),
+      ADD_STAT(mshrMissRate, statistics::units::Ratio::get(),
+               ("mshr miss rate for " + name + " accesses").c_str()),
+      ADD_STAT(avgMshrMissLatency, statistics::units::Rate<
+                    statistics::units::Tick, statistics::units::Count>::get(),
+               ("average " + name + " mshr miss latency").c_str()),
+      ADD_STAT(avgMshrUncacheableLatency, statistics::units::Rate<
+                    statistics::units::Tick, statistics::units::Count>::get(),
+               ("average " + name + " mshr uncacheable latency").c_str())
 {
 }
 
 void
 BaseCache::CacheCmdStats::regStatsFromParent()
 {
-    using namespace Stats;
+    using namespace statistics;
 
-    Stats::Group::regStats();
+    statistics::Group::regStats();
     System *system = cache.system;
-    const auto max_masters = system->maxMasters();
+    const auto max_requestors = system->maxRequestors();
 
     hits
-        .init(max_masters)
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        hits.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        hits.subname(i, system->getRequestorName(i));
     }
 
     // Miss statistics
     misses
-        .init(max_masters)
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        misses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        misses.subname(i, system->getRequestorName(i));
     }
 
     // Miss latency statistics
     missLatency
-        .init(max_masters)
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        missLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        missLatency.subname(i, system->getRequestorName(i));
     }
 
     // access formulas
     accesses.flags(total | nozero | nonan);
     accesses = hits + misses;
-    for (int i = 0; i < max_masters; i++) {
-        accesses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        accesses.subname(i, system->getRequestorName(i));
     }
 
     // miss rate formulas
     missRate.flags(total | nozero | nonan);
     missRate = misses / accesses;
-    for (int i = 0; i < max_masters; i++) {
-        missRate.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        missRate.subname(i, system->getRequestorName(i));
     }
 
     // miss latency formulas
     avgMissLatency.flags(total | nozero | nonan);
     avgMissLatency = missLatency / misses;
-    for (int i = 0; i < max_masters; i++) {
-        avgMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        avgMissLatency.subname(i, system->getRequestorName(i));
     }
 
     // MSHR statistics
     // MSHR hit statistics
-    mshr_hits
-        .init(max_masters)
+    mshrHits
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        mshr_hits.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        mshrHits.subname(i, system->getRequestorName(i));
     }
 
     // MSHR miss statistics
-    mshr_misses
-        .init(max_masters)
+    mshrMisses
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        mshr_misses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        mshrMisses.subname(i, system->getRequestorName(i));
     }
 
     // MSHR miss latency statistics
-    mshr_miss_latency
-        .init(max_masters)
+    mshrMissLatency
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        mshr_miss_latency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        mshrMissLatency.subname(i, system->getRequestorName(i));
     }
 
     // MSHR uncacheable statistics
-    mshr_uncacheable
-        .init(max_masters)
+    mshrUncacheable
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        mshr_uncacheable.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        mshrUncacheable.subname(i, system->getRequestorName(i));
     }
 
     // MSHR miss latency statistics
-    mshr_uncacheable_lat
-        .init(max_masters)
+    mshrUncacheableLatency
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        mshr_uncacheable_lat.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        mshrUncacheableLatency.subname(i, system->getRequestorName(i));
     }
 
     // MSHR miss rate formulas
     mshrMissRate.flags(total | nozero | nonan);
-    mshrMissRate = mshr_misses / accesses;
+    mshrMissRate = mshrMisses / accesses;
 
-    for (int i = 0; i < max_masters; i++) {
-        mshrMissRate.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        mshrMissRate.subname(i, system->getRequestorName(i));
     }
 
     // mshrMiss latency formulas
     avgMshrMissLatency.flags(total | nozero | nonan);
-    avgMshrMissLatency = mshr_miss_latency / mshr_misses;
-    for (int i = 0; i < max_masters; i++) {
-        avgMshrMissLatency.subname(i, system->getMasterName(i));
+    avgMshrMissLatency = mshrMissLatency / mshrMisses;
+    for (int i = 0; i < max_requestors; i++) {
+        avgMshrMissLatency.subname(i, system->getRequestorName(i));
     }
 
     // mshrUncacheable latency formulas
     avgMshrUncacheableLatency.flags(total | nozero | nonan);
-    avgMshrUncacheableLatency = mshr_uncacheable_lat / mshr_uncacheable;
-    for (int i = 0; i < max_masters; i++) {
-        avgMshrUncacheableLatency.subname(i, system->getMasterName(i));
+    avgMshrUncacheableLatency = mshrUncacheableLatency / mshrUncacheable;
+    for (int i = 0; i < max_requestors; i++) {
+        avgMshrUncacheableLatency.subname(i, system->getRequestorName(i));
     }
 }
 
 BaseCache::CacheStats::CacheStats(BaseCache &c)
-    : Stats::Group(&c), cache(c),
+    : statistics::Group(&c), cache(c),
 
-    demandHits(this, "demand_hits", "number of demand (read+write) hits"),
-
-    overallHits(this, "overall_hits", "number of overall hits"),
-    demandMisses(this, "demand_misses",
-                 "number of demand (read+write) misses"),
-    overallMisses(this, "overall_misses", "number of overall misses"),
-    demandMissLatency(this, "demand_miss_latency",
-                      "number of demand (read+write) miss cycles"),
-    overallMissLatency(this, "overall_miss_latency",
-                       "number of overall miss cycles"),
-    demandAccesses(this, "demand_accesses",
-                   "number of demand (read+write) accesses"),
-    overallAccesses(this, "overall_accesses",
-                    "number of overall (read+write) accesses"),
-    demandMissRate(this, "demand_miss_rate",
-                   "miss rate for demand accesses"),
-    overallMissRate(this, "overall_miss_rate",
-                    "miss rate for overall accesses"),
-    demandAvgMissLatency(this, "demand_avg_miss_latency",
-                         "average overall miss latency"),
-    overallAvgMissLatency(this, "overall_avg_miss_latency",
-                          "average overall miss latency"),
-    blocked_cycles(this, "blocked_cycles",
-                   "number of cycles access was blocked"),
-    blocked_causes(this, "blocked", "number of cycles access was blocked"),
-    avg_blocked(this, "avg_blocked_cycles",
-                "average number of cycles each access was blocked"),
-    unusedPrefetches(this, "unused_prefetches",
-                     "number of HardPF blocks evicted w/o reference"),
-    writebacks(this, "writebacks", "number of writebacks"),
-    demandMshrHits(this, "demand_mshr_hits",
-                   "number of demand (read+write) MSHR hits"),
-    overallMshrHits(this, "overall_mshr_hits",
-                    "number of overall MSHR hits"),
-    demandMshrMisses(this, "demand_mshr_misses",
-                     "number of demand (read+write) MSHR misses"),
-    overallMshrMisses(this, "overall_mshr_misses",
-                      "number of overall MSHR misses"),
-    overallMshrUncacheable(this, "overall_mshr_uncacheable_misses",
-                           "number of overall MSHR uncacheable misses"),
-    demandMshrMissLatency(this, "demand_mshr_miss_latency",
-                          "number of demand (read+write) MSHR miss cycles"),
-    overallMshrMissLatency(this, "overall_mshr_miss_latency",
-                           "number of overall MSHR miss cycles"),
-    overallMshrUncacheableLatency(this, "overall_mshr_uncacheable_latency",
-                                  "number of overall MSHR uncacheable cycles"),
-    demandMshrMissRate(this, "demand_mshr_miss_rate",
-                       "mshr miss rate for demand accesses"),
-    overallMshrMissRate(this, "overall_mshr_miss_rate",
-                        "mshr miss rate for overall accesses"),
-    demandAvgMshrMissLatency(this, "demand_avg_mshr_miss_latency",
-                             "average overall mshr miss latency"),
-    overallAvgMshrMissLatency(this, "overall_avg_mshr_miss_latency",
-                              "average overall mshr miss latency"),
-    overallAvgMshrUncacheableLatency(
-        this, "overall_avg_mshr_uncacheable_latency",
-        "average overall mshr uncacheable latency"),
-    replacements(this, "replacements", "number of replacements"),
-
-    dataExpansions(this, "data_expansions", "number of data expansions"),
+    ADD_STAT(demandHits, statistics::units::Count::get(),
+             "number of demand (read+write) hits"),
+    ADD_STAT(overallHits, statistics::units::Count::get(),
+             "number of overall hits"),
+    ADD_STAT(demandMisses, statistics::units::Count::get(),
+             "number of demand (read+write) misses"),
+    ADD_STAT(overallMisses, statistics::units::Count::get(),
+             "number of overall misses"),
+    ADD_STAT(demandMissLatency, statistics::units::Tick::get(),
+             "number of demand (read+write) miss ticks"),
+    ADD_STAT(overallMissLatency, statistics::units::Tick::get(),
+             "number of overall miss ticks"),
+    ADD_STAT(demandAccesses, statistics::units::Count::get(),
+             "number of demand (read+write) accesses"),
+    ADD_STAT(overallAccesses, statistics::units::Count::get(),
+             "number of overall (read+write) accesses"),
+    ADD_STAT(demandMissRate, statistics::units::Ratio::get(),
+             "miss rate for demand accesses"),
+    ADD_STAT(overallMissRate, statistics::units::Ratio::get(),
+             "miss rate for overall accesses"),
+    ADD_STAT(demandAvgMissLatency, statistics::units::Rate<
+                statistics::units::Cycle, statistics::units::Count>::get(),
+             "average overall miss latency"),
+    ADD_STAT(overallAvgMissLatency, statistics::units::Rate<
+                statistics::units::Cycle, statistics::units::Count>::get(),
+             "average overall miss latency"),
+    ADD_STAT(blockedCycles, statistics::units::Cycle::get(),
+            "number of cycles access was blocked"),
+    ADD_STAT(blockedCauses, statistics::units::Count::get(),
+            "number of times access was blocked"),
+    ADD_STAT(avgBlocked, statistics::units::Rate<
+                statistics::units::Cycle, statistics::units::Count>::get(),
+             "average number of cycles each access was blocked"),
+    ADD_STAT(writebacks, statistics::units::Count::get(),
+             "number of writebacks"),
+    ADD_STAT(demandMshrHits, statistics::units::Count::get(),
+             "number of demand (read+write) MSHR hits"),
+    ADD_STAT(overallMshrHits, statistics::units::Count::get(),
+             "number of overall MSHR hits"),
+    ADD_STAT(demandMshrMisses, statistics::units::Count::get(),
+             "number of demand (read+write) MSHR misses"),
+    ADD_STAT(overallMshrMisses, statistics::units::Count::get(),
+            "number of overall MSHR misses"),
+    ADD_STAT(overallMshrUncacheable, statistics::units::Count::get(),
+             "number of overall MSHR uncacheable misses"),
+    ADD_STAT(demandMshrMissLatency, statistics::units::Tick::get(),
+             "number of demand (read+write) MSHR miss ticks"),
+    ADD_STAT(overallMshrMissLatency, statistics::units::Tick::get(),
+             "number of overall MSHR miss ticks"),
+    ADD_STAT(overallMshrUncacheableLatency, statistics::units::Tick::get(),
+             "number of overall MSHR uncacheable ticks"),
+    ADD_STAT(demandMshrMissRate, statistics::units::Ratio::get(),
+             "mshr miss ratio for demand accesses"),
+    ADD_STAT(overallMshrMissRate, statistics::units::Ratio::get(),
+             "mshr miss ratio for overall accesses"),
+    ADD_STAT(demandAvgMshrMissLatency, statistics::units::Rate<
+                statistics::units::Cycle, statistics::units::Count>::get(),
+             "average overall mshr miss latency"),
+    ADD_STAT(overallAvgMshrMissLatency, statistics::units::Rate<
+                statistics::units::Cycle, statistics::units::Count>::get(),
+             "average overall mshr miss latency"),
+    ADD_STAT(overallAvgMshrUncacheableLatency, statistics::units::Rate<
+                statistics::units::Cycle, statistics::units::Count>::get(),
+             "average overall mshr uncacheable latency"),
+    ADD_STAT(replacements, statistics::units::Count::get(),
+             "number of replacements"),
+    ADD_STAT(dataExpansions, statistics::units::Count::get(),
+             "number of data expansions"),
+    ADD_STAT(dataContractions, statistics::units::Count::get(),
+             "number of data contractions"),
     cmd(MemCmd::NUM_MEM_CMDS)
 {
     for (int idx = 0; idx < MemCmd::NUM_MEM_CMDS; ++idx)
@@ -2081,12 +2190,12 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
 void
 BaseCache::CacheStats::regStats()
 {
-    using namespace Stats;
+    using namespace statistics;
 
-    Stats::Group::regStats();
+    statistics::Group::regStats();
 
     System *system = cache.system;
-    const auto max_masters = system->maxMasters();
+    const auto max_requestors = system->maxRequestors();
 
     for (auto &cs : cmd)
         cs->regStatsFromParent();
@@ -2106,190 +2215,190 @@ BaseCache::CacheStats::regStats()
 
     demandHits.flags(total | nozero | nonan);
     demandHits = SUM_DEMAND(hits);
-    for (int i = 0; i < max_masters; i++) {
-        demandHits.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandHits.subname(i, system->getRequestorName(i));
     }
 
     overallHits.flags(total | nozero | nonan);
     overallHits = demandHits + SUM_NON_DEMAND(hits);
-    for (int i = 0; i < max_masters; i++) {
-        overallHits.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallHits.subname(i, system->getRequestorName(i));
     }
 
     demandMisses.flags(total | nozero | nonan);
     demandMisses = SUM_DEMAND(misses);
-    for (int i = 0; i < max_masters; i++) {
-        demandMisses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandMisses.subname(i, system->getRequestorName(i));
     }
 
     overallMisses.flags(total | nozero | nonan);
     overallMisses = demandMisses + SUM_NON_DEMAND(misses);
-    for (int i = 0; i < max_masters; i++) {
-        overallMisses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallMisses.subname(i, system->getRequestorName(i));
     }
 
     demandMissLatency.flags(total | nozero | nonan);
     demandMissLatency = SUM_DEMAND(missLatency);
-    for (int i = 0; i < max_masters; i++) {
-        demandMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandMissLatency.subname(i, system->getRequestorName(i));
     }
 
     overallMissLatency.flags(total | nozero | nonan);
     overallMissLatency = demandMissLatency + SUM_NON_DEMAND(missLatency);
-    for (int i = 0; i < max_masters; i++) {
-        overallMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallMissLatency.subname(i, system->getRequestorName(i));
     }
 
     demandAccesses.flags(total | nozero | nonan);
     demandAccesses = demandHits + demandMisses;
-    for (int i = 0; i < max_masters; i++) {
-        demandAccesses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandAccesses.subname(i, system->getRequestorName(i));
     }
 
     overallAccesses.flags(total | nozero | nonan);
     overallAccesses = overallHits + overallMisses;
-    for (int i = 0; i < max_masters; i++) {
-        overallAccesses.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallAccesses.subname(i, system->getRequestorName(i));
     }
 
     demandMissRate.flags(total | nozero | nonan);
     demandMissRate = demandMisses / demandAccesses;
-    for (int i = 0; i < max_masters; i++) {
-        demandMissRate.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandMissRate.subname(i, system->getRequestorName(i));
     }
 
     overallMissRate.flags(total | nozero | nonan);
     overallMissRate = overallMisses / overallAccesses;
-    for (int i = 0; i < max_masters; i++) {
-        overallMissRate.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallMissRate.subname(i, system->getRequestorName(i));
     }
 
     demandAvgMissLatency.flags(total | nozero | nonan);
     demandAvgMissLatency = demandMissLatency / demandMisses;
-    for (int i = 0; i < max_masters; i++) {
-        demandAvgMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandAvgMissLatency.subname(i, system->getRequestorName(i));
     }
 
     overallAvgMissLatency.flags(total | nozero | nonan);
     overallAvgMissLatency = overallMissLatency / overallMisses;
-    for (int i = 0; i < max_masters; i++) {
-        overallAvgMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallAvgMissLatency.subname(i, system->getRequestorName(i));
     }
 
-    blocked_cycles.init(NUM_BLOCKED_CAUSES);
-    blocked_cycles
+    blockedCycles.init(NUM_BLOCKED_CAUSES);
+    blockedCycles
         .subname(Blocked_NoMSHRs, "no_mshrs")
         .subname(Blocked_NoTargets, "no_targets")
         ;
 
 
-    blocked_causes.init(NUM_BLOCKED_CAUSES);
-    blocked_causes
+    blockedCauses.init(NUM_BLOCKED_CAUSES);
+    blockedCauses
         .subname(Blocked_NoMSHRs, "no_mshrs")
         .subname(Blocked_NoTargets, "no_targets")
         ;
 
-    avg_blocked
+    avgBlocked
         .subname(Blocked_NoMSHRs, "no_mshrs")
         .subname(Blocked_NoTargets, "no_targets")
         ;
-    avg_blocked = blocked_cycles / blocked_causes;
-
-    unusedPrefetches.flags(nozero);
+    avgBlocked = blockedCycles / blockedCauses;
 
     writebacks
-        .init(max_masters)
+        .init(max_requestors)
         .flags(total | nozero | nonan)
         ;
-    for (int i = 0; i < max_masters; i++) {
-        writebacks.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        writebacks.subname(i, system->getRequestorName(i));
     }
 
     demandMshrHits.flags(total | nozero | nonan);
-    demandMshrHits = SUM_DEMAND(mshr_hits);
-    for (int i = 0; i < max_masters; i++) {
-        demandMshrHits.subname(i, system->getMasterName(i));
+    demandMshrHits = SUM_DEMAND(mshrHits);
+    for (int i = 0; i < max_requestors; i++) {
+        demandMshrHits.subname(i, system->getRequestorName(i));
     }
 
     overallMshrHits.flags(total | nozero | nonan);
-    overallMshrHits = demandMshrHits + SUM_NON_DEMAND(mshr_hits);
-    for (int i = 0; i < max_masters; i++) {
-        overallMshrHits.subname(i, system->getMasterName(i));
+    overallMshrHits = demandMshrHits + SUM_NON_DEMAND(mshrHits);
+    for (int i = 0; i < max_requestors; i++) {
+        overallMshrHits.subname(i, system->getRequestorName(i));
     }
 
     demandMshrMisses.flags(total | nozero | nonan);
-    demandMshrMisses = SUM_DEMAND(mshr_misses);
-    for (int i = 0; i < max_masters; i++) {
-        demandMshrMisses.subname(i, system->getMasterName(i));
+    demandMshrMisses = SUM_DEMAND(mshrMisses);
+    for (int i = 0; i < max_requestors; i++) {
+        demandMshrMisses.subname(i, system->getRequestorName(i));
     }
 
     overallMshrMisses.flags(total | nozero | nonan);
-    overallMshrMisses = demandMshrMisses + SUM_NON_DEMAND(mshr_misses);
-    for (int i = 0; i < max_masters; i++) {
-        overallMshrMisses.subname(i, system->getMasterName(i));
+    overallMshrMisses = demandMshrMisses + SUM_NON_DEMAND(mshrMisses);
+    for (int i = 0; i < max_requestors; i++) {
+        overallMshrMisses.subname(i, system->getRequestorName(i));
     }
 
     demandMshrMissLatency.flags(total | nozero | nonan);
-    demandMshrMissLatency = SUM_DEMAND(mshr_miss_latency);
-    for (int i = 0; i < max_masters; i++) {
-        demandMshrMissLatency.subname(i, system->getMasterName(i));
+    demandMshrMissLatency = SUM_DEMAND(mshrMissLatency);
+    for (int i = 0; i < max_requestors; i++) {
+        demandMshrMissLatency.subname(i, system->getRequestorName(i));
     }
 
     overallMshrMissLatency.flags(total | nozero | nonan);
     overallMshrMissLatency =
-        demandMshrMissLatency + SUM_NON_DEMAND(mshr_miss_latency);
-    for (int i = 0; i < max_masters; i++) {
-        overallMshrMissLatency.subname(i, system->getMasterName(i));
+        demandMshrMissLatency + SUM_NON_DEMAND(mshrMissLatency);
+    for (int i = 0; i < max_requestors; i++) {
+        overallMshrMissLatency.subname(i, system->getRequestorName(i));
     }
 
     overallMshrUncacheable.flags(total | nozero | nonan);
     overallMshrUncacheable =
-        SUM_DEMAND(mshr_uncacheable) + SUM_NON_DEMAND(mshr_uncacheable);
-    for (int i = 0; i < max_masters; i++) {
-        overallMshrUncacheable.subname(i, system->getMasterName(i));
+        SUM_DEMAND(mshrUncacheable) + SUM_NON_DEMAND(mshrUncacheable);
+    for (int i = 0; i < max_requestors; i++) {
+        overallMshrUncacheable.subname(i, system->getRequestorName(i));
     }
 
 
     overallMshrUncacheableLatency.flags(total | nozero | nonan);
     overallMshrUncacheableLatency =
-        SUM_DEMAND(mshr_uncacheable_lat) +
-        SUM_NON_DEMAND(mshr_uncacheable_lat);
-    for (int i = 0; i < max_masters; i++) {
-        overallMshrUncacheableLatency.subname(i, system->getMasterName(i));
+        SUM_DEMAND(mshrUncacheableLatency) +
+        SUM_NON_DEMAND(mshrUncacheableLatency);
+    for (int i = 0; i < max_requestors; i++) {
+        overallMshrUncacheableLatency.subname(i, system->getRequestorName(i));
     }
 
     demandMshrMissRate.flags(total | nozero | nonan);
     demandMshrMissRate = demandMshrMisses / demandAccesses;
-    for (int i = 0; i < max_masters; i++) {
-        demandMshrMissRate.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandMshrMissRate.subname(i, system->getRequestorName(i));
     }
 
     overallMshrMissRate.flags(total | nozero | nonan);
     overallMshrMissRate = overallMshrMisses / overallAccesses;
-    for (int i = 0; i < max_masters; i++) {
-        overallMshrMissRate.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallMshrMissRate.subname(i, system->getRequestorName(i));
     }
 
     demandAvgMshrMissLatency.flags(total | nozero | nonan);
     demandAvgMshrMissLatency = demandMshrMissLatency / demandMshrMisses;
-    for (int i = 0; i < max_masters; i++) {
-        demandAvgMshrMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        demandAvgMshrMissLatency.subname(i, system->getRequestorName(i));
     }
 
     overallAvgMshrMissLatency.flags(total | nozero | nonan);
     overallAvgMshrMissLatency = overallMshrMissLatency / overallMshrMisses;
-    for (int i = 0; i < max_masters; i++) {
-        overallAvgMshrMissLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallAvgMshrMissLatency.subname(i, system->getRequestorName(i));
     }
 
     overallAvgMshrUncacheableLatency.flags(total | nozero | nonan);
     overallAvgMshrUncacheableLatency =
         overallMshrUncacheableLatency / overallMshrUncacheable;
-    for (int i = 0; i < max_masters; i++) {
-        overallAvgMshrUncacheableLatency.subname(i, system->getMasterName(i));
+    for (int i = 0; i < max_requestors; i++) {
+        overallAvgMshrUncacheableLatency.subname(i,
+            system->getRequestorName(i));
     }
 
     dataExpansions.flags(nozero | nonan);
+    dataContractions.flags(nozero | nonan);
 }
 
 void
@@ -2298,6 +2407,8 @@ BaseCache::regProbePoints()
     ppHit = new ProbePointArg<PacketPtr>(this->getProbeManager(), "Hit");
     ppMiss = new ProbePointArg<PacketPtr>(this->getProbeManager(), "Miss");
     ppFill = new ProbePointArg<PacketPtr>(this->getProbeManager(), "Fill");
+    ppDataUpdate =
+        new ProbePointArg<DataUpdate>(this->getProbeManager(), "Data Update");
 }
 
 ///////////////
@@ -2313,7 +2424,7 @@ BaseCache::CpuSidePort::recvTimingSnoopResp(PacketPtr pkt)
 
     assert(pkt->isResponse());
 
-    // Express snoop responses from master to slave, e.g., from L1 to L2
+    // Express snoop responses from requestor to responder, e.g., from L1 to L2
     cache->recvTimingSnoopResp(pkt);
     return true;
 }
@@ -2342,7 +2453,7 @@ BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
     if (cache->system->bypassCaches()) {
         // Just forward the packet if caches are disabled.
         // @todo This should really enqueue the packet rather
-        bool M5_VAR_USED success = cache->memSidePort.sendTimingReq(pkt);
+        GEM5_VAR_USED bool success = cache->memSidePort.sendTimingReq(pkt);
         assert(success);
         return true;
     } else if (tryTiming(pkt)) {
@@ -2387,7 +2498,7 @@ BaseCache::CpuSidePort::getAddrRanges() const
 BaseCache::
 CpuSidePort::CpuSidePort(const std::string &_name, BaseCache *_cache,
                          const std::string &_label)
-    : CacheSlavePort(_name, _cache, _label), cache(_cache)
+    : CacheResponsePort(_name, _cache, _label), cache(_cache)
 {
 }
 
@@ -2474,7 +2585,7 @@ BaseCache::CacheReqPacketQueue::sendDeferredPacket()
 BaseCache::MemSidePort::MemSidePort(const std::string &_name,
                                     BaseCache *_cache,
                                     const std::string &_label)
-    : CacheMasterPort(_name, _cache, _reqQueue, _snoopRespQueue),
+    : CacheRequestPort(_name, _cache, _reqQueue, _snoopRespQueue),
       _reqQueue(*_cache, *this, _snoopRespQueue, _label),
       _snoopRespQueue(*_cache, *this, true, _label), cache(_cache)
 {
@@ -2514,8 +2625,4 @@ WriteAllocator::updateMode(Addr write_addr, unsigned write_size,
     nextAddr = write_addr + write_size;
 }
 
-WriteAllocator*
-WriteAllocatorParams::create()
-{
-    return new WriteAllocator(this);
-}
+} // namespace gem5

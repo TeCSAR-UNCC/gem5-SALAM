@@ -25,9 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Maxwell Walter
- *          Alec Roelke
  */
 
 #ifndef __ARCH_RISCV_STATIC_INST_HH__
@@ -40,6 +37,9 @@
 #include "cpu/static_inst.hh"
 #include "mem/packet.hh"
 
+namespace gem5
+{
+
 namespace RiscvISA
 {
 
@@ -49,10 +49,24 @@ namespace RiscvISA
 class RiscvStaticInst : public StaticInst
 {
   protected:
-    using StaticInst::StaticInst;
+    RiscvStaticInst(const char *_mnemonic, ExtMachInst _machInst,
+            OpClass __opClass) :
+        StaticInst(_mnemonic, __opClass), machInst(_machInst)
+    {}
 
   public:
+    ExtMachInst machInst;
+
     void advancePC(PCState &pc) const override { pc.advance(); }
+
+    PCState
+    buildRetPC(const PCState &curPC, const PCState &callPC) const override
+    {
+        PCState retPC = callPC;
+        retPC.advance();
+        retPC.pc(curPC.npc());
+        return retPC;
+    }
 
     size_t
     asBytes(void *buf, size_t size) override
@@ -120,6 +134,7 @@ class RiscvMicroInst : public RiscvStaticInst
     void advancePC(PCState &pcState) const override;
 };
 
-}
+} // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_STATIC_INST_HH__

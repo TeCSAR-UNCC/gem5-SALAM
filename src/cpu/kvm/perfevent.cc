@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include <fcntl.h>
@@ -52,6 +50,9 @@
 
 #include "base/logging.hh"
 #include "perfevent.hh"
+
+namespace gem5
+{
 
 PerfKvmCounterConfig::PerfKvmCounterConfig(uint32_t type, uint64_t config)
 {
@@ -255,3 +256,5 @@ PerfKvmCounter::read(void *buf, size_t size) const
         }
     } while (_size);
 }
+
+} // namespace gem5

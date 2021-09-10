@@ -38,11 +38,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
 import os
+import sys
 
 import gem5_scons.util
-from m5.util import readCommand
 
 git_style_message = """
 You're missing the gem5 style or commit message hook. These hooks help
@@ -52,7 +51,7 @@ Press enter to continue, or ctrl-c to abort: """
 
 def install_style_hooks(env):
     try:
-        gitdir = env.Dir(readCommand(
+        gitdir = env.Dir(gem5_scons.util.readCommand(
             ["git", "rev-parse", "--git-dir"]).strip("\n"))
     except Exception as e:
         print("Warning: Failed to find git repo directory: %s" % e)
@@ -83,7 +82,7 @@ def install_style_hooks(env):
 
         # Use a relative symlink if the hooks live in the source directory,
         # and the hooks directory is not a symlink to an absolute path.
-        if hook.is_under(env.root) and not abs_symlink_hooks:
+        if hook.is_under(env.Dir("#")) and not abs_symlink_hooks:
             script_path = os.path.relpath(
                 os.path.realpath(script.get_abspath()),
                 os.path.realpath(hook.Dir(".").get_abspath()))
@@ -101,13 +100,13 @@ def install_style_hooks(env):
 
     print(git_style_message, end=' ')
     try:
-        raw_input()
+        input()
     except:
         print("Input exception, exiting scons.\n")
         sys.exit(1)
 
-    git_style_script = env.root.Dir("util").File("git-pre-commit.py")
-    git_msg_script = env.root.Dir("ext").File("git-commit-msg")
+    git_style_script = env.Dir("#util").File("git-pre-commit.py")
+    git_msg_script = env.Dir("#ext").File("git-commit-msg")
 
     hook_install("pre-commit", git_style_script)
     hook_install("commit-msg", git_msg_script)

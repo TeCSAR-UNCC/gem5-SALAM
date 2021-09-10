@@ -33,6 +33,13 @@
 
 #include "base/intmath.hh"
 #include "mem/ruby/system/RubySystem.hh"
+#include "sim/cur_tick.hh"
+
+namespace gem5
+{
+
+namespace ruby
+{
 
 BankedArray::BankedArray(unsigned int banks, Cycles accessLatency,
                          unsigned int startIndexBit, RubySystem *rs)
@@ -99,3 +106,6 @@ BankedArray::mapIndexToBank(int64_t idx)
     }
     return idx % banks;
 }
+
+} // namespace ruby
+} // namespace gem5

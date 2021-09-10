@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_MISCREGS_HH__
@@ -51,9 +49,13 @@
 #undef CR2
 #undef CR3
 
+namespace gem5
+{
+
 namespace X86ISA
 {
-    enum CondFlagBit {
+    enum CondFlagBit
+    {
         CFBit = 1 << 0,
         PFBit = 1 << 2,
         ECFBit = 1 << 3,
@@ -68,7 +70,8 @@ namespace X86ISA
     const uint32_t cfofMask = CFBit | OFBit;
     const uint32_t ccFlagMask = PFBit | AFBit | ZFBit | SFBit;
 
-    enum RFLAGBit {
+    enum RFLAGBit
+    {
         TFBit = 1 << 8,
         IFBit = 1 << 9,
         NTBit = 1 << 14,
@@ -80,7 +83,8 @@ namespace X86ISA
         IDBit = 1 << 21
     };
 
-    enum X87StatusBit {
+    enum X87StatusBit
+    {
         // Exception Flags
         IEBit = 1 << 0,
         DEBit = 1 << 1,
@@ -1053,6 +1057,8 @@ namespace X86ISA
         Bitfield<11> enable;
         Bitfield<8> bsp;
     EndBitUnion(LocalApicBase)
-}
+
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_INTREGS_HH__

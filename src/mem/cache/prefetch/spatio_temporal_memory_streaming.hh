@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
  /**
@@ -45,13 +43,21 @@
 
 #include <vector>
 
+#include "base/circular_queue.hh"
 #include "base/sat_counter.hh"
 #include "mem/cache/prefetch/associative_set.hh"
 #include "mem/cache/prefetch/queued.hh"
 
+namespace gem5
+{
+
 struct STeMSPrefetcherParams;
 
-class STeMSPrefetcher : public QueuedPrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class STeMS : public Queued
 {
     /** Size of each spatial region */
     const size_t spatialRegionSize;
@@ -64,7 +70,8 @@ class STeMSPrefetcher : public QueuedPrefetcher
      * Entry data type for the Active Generation Table (AGT) and the Pattern
      * Sequence Table (PST)
      */
-    struct ActiveGenerationTableEntry : public TaggedEntry {
+    struct ActiveGenerationTableEntry : public TaggedEntry
+    {
         /** Physical address of the spatial region */
         Addr paddress;
         /** PC that started this generation */
@@ -73,9 +80,10 @@ class STeMSPrefetcher : public QueuedPrefetcher
         unsigned int seqCounter;
 
         /** Sequence entry data type */
-        struct SequenceEntry {
+        struct SequenceEntry
+        {
             /** 2-bit confidence counter */
-            SatCounter counter;
+            SatCounter8 counter;
             /** Offset, in cache lines, within the spatial region */
             unsigned int offset;
             /** Intearleaving position on the global access sequence */
@@ -86,12 +94,16 @@ class STeMSPrefetcher : public QueuedPrefetcher
         /** Sequence of accesses */
         std::vector<SequenceEntry> sequence;
 
-        ActiveGenerationTableEntry(int num_positions) : paddress(0), pc(0),
+        ActiveGenerationTableEntry(int num_positions)
+          : TaggedEntry(), paddress(0), pc(0),
             seqCounter(0), sequence(num_positions)
-        {}
-
-        void reset() override
         {
+        }
+
+        void
+        invalidate() override
+        {
+            TaggedEntry::invalidate();
             paddress = 0;
             pc = 0;
             seqCounter = 0;
@@ -147,7 +159,8 @@ class STeMSPrefetcher : public QueuedPrefetcher
     AssociativeSet<ActiveGenerationTableEntry> patternSequenceTable;
 
     /** Data type of the Region Miss Order Buffer entry */
-    struct RegionMissOrderBufferEntry {
+    struct RegionMissOrderBufferEntry
+    {
         /** Address of the spatial region */
         Addr srAddress;
         /**
@@ -157,14 +170,10 @@ class STeMSPrefetcher : public QueuedPrefetcher
         Addr pstAddress;
         /** Delta within the global miss order sequence */
         unsigned int delta;
-        /** Valid bit */
-        bool valid;
     };
 
     /** Region Miss Order Buffer (RMOB) */
-    std::vector<RegionMissOrderBufferEntry> rmob;
-    /** First free position (or older, if it is full) of the RMOB */
-    unsigned int rmobHead;
+    CircularQueue<RegionMissOrderBufferEntry> rmob;
 
     /** Counter to keep the count of accesses between trigger accesses */
     unsigned int lastTriggerCounter;
@@ -182,16 +191,23 @@ class STeMSPrefetcher : public QueuedPrefetcher
     /**
      * Reconstructs a sequence of accesses and generates the prefetch
      * addresses, adding them to the addresses vector
-     * @param rmob_idx rmob position to start generating from
+     *
+     * @param rmob_it rmob position to start generating from.
      * @param addresses vector to add the addresses to be prefetched
      */
-    void reconstructSequence(unsigned int rmob_idx,
-                             std::vector<AddrPriority> &addresses);
+    void reconstructSequence(
+        CircularQueue<RegionMissOrderBufferEntry>::iterator rmob_it,
+        std::vector<AddrPriority> &addresses);
+
   public:
-    STeMSPrefetcher(const STeMSPrefetcherParams* p);
-    ~STeMSPrefetcher() {}
+    STeMS(const STeMSPrefetcherParams &p);
+    ~STeMS() = default;
+
     void calculatePrefetch(const PrefetchInfo &pfi,
                            std::vector<AddrPriority> &addresses) override;
 };
+
+} // namespace prefetch
+} // namespace gem5
 
 #endif//__MEM_CACHE_PREFETCH_SPATIO_TEMPORAL_MEMORY_STREAMING_HH__

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __DEV_X86_I8259_HH__
@@ -35,6 +33,9 @@
 #include "dev/io_device.hh"
 #include "enums/X86I8259CascadeMode.hh"
 #include "params/I8259.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
@@ -50,8 +51,8 @@ class I8259 : public BasicPioDevice
     Tick latency;
     std::vector<IntSourcePin<I8259> *> output;
     std::vector<IntSinkPin<I8259> *> inputs;
-    Enums::X86I8259CascadeMode mode;
-    I8259 * slave;
+    enums::X86I8259CascadeMode mode;
+    I8259 *slave;
 
     // Interrupt Request Register
     uint8_t IRR;
@@ -64,8 +65,9 @@ class I8259 : public BasicPioDevice
     uint8_t vectorOffset;
 
     bool cascadeMode;
-    // A bit vector of lines with slaves attached, or the slave id, depending
-    // on if this is a master or slave PIC.
+    // A bit vector of lines with responders attached, or the
+    // responder id, depending
+    // on if this is a requestor or responder PIC.
     uint8_t cascadeBits;
 
     bool edgeTriggered;
@@ -82,15 +84,9 @@ class I8259 : public BasicPioDevice
     void handleEOI(int line);
 
   public:
-    typedef I8259Params Params;
+    using Params = I8259Params;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    I8259(Params * p);
+    I8259(const Params &p);
 
     Port &
     getPort(const std::string &if_name, PortID idx=InvalidPortID) override
@@ -128,5 +124,6 @@ class I8259 : public BasicPioDevice
 };
 
 } // namespace X86ISA
+} // namespace gem5
 
 #endif //__DEV_X86_I8259_HH__

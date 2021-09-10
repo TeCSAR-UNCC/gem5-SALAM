@@ -33,14 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #include "dev/arm/smmu_v3_cmdexec.hh"
 
 #include "base/bitfield.hh"
 #include "dev/arm/smmu_v3.hh"
+
+namespace gem5
+{
 
 void
 SMMUCommandExecProcess::main(Yield &yield)
@@ -88,3 +89,5 @@ SMMUCommandExecProcess::main(Yield &yield)
         doSleep(yield);
     }
 }
+
+} // namespace gem5

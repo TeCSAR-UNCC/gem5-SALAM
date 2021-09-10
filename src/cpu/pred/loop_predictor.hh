@@ -29,9 +29,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vignyan Reddy, Dibakar Gope and Arthur Perais,
- * from André Seznec's code.
  */
 
 #ifndef __CPU_PRED_LOOP_PREDICTOR_HH__
@@ -41,7 +38,13 @@
 #include "base/types.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 struct LoopPredictorParams;
+
+namespace branch_prediction
+{
 
 class LoopPredictor : public SimObject
 {
@@ -86,9 +89,12 @@ class LoopPredictor : public SimObject
     const unsigned initialLoopAge;
     const bool optionalAgeReset;
 
-    // stats
-    Stats::Scalar loopPredictorCorrect;
-    Stats::Scalar loopPredictorWrong;
+    struct LoopPredictorStats : public statistics::Group
+    {
+        LoopPredictorStats(statistics::Group *parent);
+        statistics::Scalar correct;
+        statistics::Scalar wrong;
+    } stats;
 
     /**
      * Updates an unsigned counter based on up/down parameter
@@ -253,13 +259,12 @@ class LoopPredictor : public SimObject
      */
     void init() override;
 
-    /**
-     * Register stats for this object
-     */
-    void regStats() override;
-
-    LoopPredictor(LoopPredictorParams *p);
+    LoopPredictor(const LoopPredictorParams &p);
 
     size_t getSizeInBits() const;
 };
+
+} // namespace branch_prediction
+} // namespace gem5
+
 #endif//__CPU_PRED_LOOP_PREDICTOR_HH__

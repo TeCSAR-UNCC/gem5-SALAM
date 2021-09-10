@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 /**
@@ -47,6 +45,9 @@
 #include "base/compiler.hh"
 #include "base/framebuffer.hh"
 #include "base/imgwriter.hh"
+
+namespace gem5
+{
 
 /** Image writer implementing support for PNG */
 class PngWriter : public ImgWriter
@@ -78,7 +79,8 @@ class PngWriter : public ImgWriter
     void write(std::ostream &png) const override;
   private:
     /** Png Pixel type: not containing padding */
-    struct PngPixel24 {
+    struct GEM5_PACKED PngPixel24
+    {
         PngPixel24 &operator=(const Pixel &rhs) {
             red = rhs.red;
             green = rhs.green;
@@ -89,7 +91,7 @@ class PngWriter : public ImgWriter
         uint8_t red;
         uint8_t green;
         uint8_t blue;
-    } M5_ATTR_PACKED;
+    };
 
     /**
      * Handle to resources used by libpng:
@@ -105,5 +107,7 @@ class PngWriter : public ImgWriter
 
     static const char* _imgExtension;
 };
+
+} // namespace gem5
 
 #endif // __BASE_PNG_HH__

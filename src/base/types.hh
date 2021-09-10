@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /**
@@ -40,16 +38,13 @@
 #include <inttypes.h>
 
 #include <cassert>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
 
-#include "base/refcnt.hh"
-
-/** uint64_t constant */
-#define ULL(N)          ((uint64_t)N##ULL)
-/** int64_t constant */
-#define LL(N)           ((int64_t)N##LL)
+namespace gem5
+{
 
 /** Statistics counter type.  Not much excuse for not using a 64-bit
  * integer here, but if you're desperate and only run short
@@ -62,7 +57,7 @@ typedef int64_t Counter;
  */
 typedef uint64_t Tick;
 
-const Tick MaxTick = ULL(0xffffffffffffffff);
+const Tick MaxTick = 0xffffffffffffffffULL;
 
 /**
  * Cycles is a wrapper class for representing cycle counts, i.e. a
@@ -100,35 +95,45 @@ class Cycles
     constexpr operator uint64_t() const { return c; }
 
     /** Prefix increment operator. */
-    Cycles& operator++()
-    { ++c; return *this; }
+    Cycles& operator++() { ++c; return *this; }
 
     /** Prefix decrement operator. Is only temporarily used in the O3 CPU. */
-    Cycles& operator--()
-    { assert(c != 0); --c; return *this; }
+    Cycles& operator--() { assert(c != 0); --c; return *this; }
 
     /** In-place addition of cycles. */
-    Cycles& operator+=(const Cycles& cc)
-    { c += cc.c; return *this; }
+    Cycles& operator+=(const Cycles& cc) { c += cc.c; return *this; }
 
     /** Greater than comparison used for > Cycles(0). */
-    constexpr bool operator>(const Cycles& cc) const
-    { return c > cc.c; }
+    constexpr bool
+    operator>(const Cycles& cc) const
+    {
+        return c > cc.c;
+    }
 
-    constexpr Cycles operator +(const Cycles& b) const
-    { return Cycles(c + b.c); }
+    constexpr Cycles
+    operator+(const Cycles& b) const
+    {
+        return Cycles(c + b.c);
+    }
 
-    constexpr Cycles operator -(const Cycles& b) const
+    constexpr Cycles
+    operator-(const Cycles& b) const
     {
         return c >= b.c ? Cycles(c - b.c) :
             throw std::invalid_argument("RHS cycle value larger than LHS");
     }
 
-    constexpr Cycles operator <<(const int32_t shift) const
-    { return Cycles(c << shift); }
+    constexpr Cycles
+    operator <<(const int32_t shift) const
+    {
+        return Cycles(c << shift);
+    }
 
-    constexpr Cycles operator >>(const int32_t shift) const
-    { return Cycles(c >> shift); }
+    constexpr Cycles
+    operator >>(const int32_t shift) const
+    {
+        return Cycles(c >> shift);
+    }
 
     friend std::ostream& operator<<(std::ostream &out, const Cycles & cycles);
 };
@@ -165,7 +170,17 @@ isRomMicroPC(MicroPC upc)
 
 const Addr MaxAddr = (Addr)-1;
 
-typedef uint64_t RegVal;
+using RegVal = uint64_t;
+
+// Logical register index type.
+using RegIndex = uint16_t;
+
+/** Logical vector register elem index type. */
+using ElemIndex = uint16_t;
+
+/** ElemIndex value that indicates that the register is not a vector. */
+static const ElemIndex IllegalElemIndex =
+    std::numeric_limits<ElemIndex>::max();
 
 static inline uint32_t
 floatToBits32(float val)
@@ -244,26 +259,6 @@ typedef std::shared_ptr<FaultBase> Fault;
 // we just create an alias.
 constexpr decltype(nullptr) NoFault = nullptr;
 
-struct AtomicOpFunctor
-{
-    virtual void operator()(uint8_t *p) = 0;
-    virtual AtomicOpFunctor* clone() = 0;
-    virtual ~AtomicOpFunctor() {}
-};
-
-template <class T>
-struct TypedAtomicOpFunctor : public AtomicOpFunctor
-{
-    void operator()(uint8_t *p) { execute((T *)p); }
-    virtual AtomicOpFunctor* clone() = 0;
-    virtual void execute(T * p) = 0;
-};
-
-typedef std::unique_ptr<AtomicOpFunctor> AtomicOpFunctorPtr;
-
-enum ByteOrder {
-    BigEndianByteOrder,
-    LittleEndianByteOrder
-};
+} // namespace gem5
 
 #endif // __BASE_TYPES_HH__

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include <execinfo.h>
@@ -42,6 +40,9 @@
 
 #include "base/atomicio.hh"
 #include "sim/backtrace.hh"
+
+namespace gem5
+{
 
 #define SAFE_MSG(m)                                             \
     do {                                                        \
@@ -63,3 +64,5 @@ print_backtrace()
         STATIC_ERR("Warning: Backtrace may have been truncated.\n");
     STATIC_ERR("--- END LIBC BACKTRACE ---\n");
 }
+
+} // namespace gem5

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "mem/external_slave.hh"
@@ -42,8 +40,12 @@
 #include <cctype>
 #include <iomanip>
 
+#include "base/compiler.hh"
 #include "base/trace.hh"
 #include "debug/ExternalPort.hh"
+
+namespace gem5
+{
 
 /** Implement a `stub' port which just responds to requests by printing
  *  a message.  The stub port can be used to configure and test a system
@@ -98,8 +100,8 @@ class StubSlavePortHandler : public
 Tick
 StubSlavePort::recvAtomic(PacketPtr packet)
 {
-    if (DTRACE(ExternalPort)) {
-        unsigned int M5_VAR_USED size = packet->getSize();
+    if (debug::ExternalPort) {
+        GEM5_VAR_USED unsigned int size = packet->getSize();
 
         DPRINTF(ExternalPort, "StubSlavePort: recvAtomic a: 0x%x size: %d"
             " data: ...\n", packet->getAddr(), size);
@@ -180,13 +182,13 @@ ExternalSlave::ExternalPort::getAddrRanges() const
     return owner.addrRanges;
 }
 
-ExternalSlave::ExternalSlave(ExternalSlaveParams *params) :
+ExternalSlave::ExternalSlave(const ExternalSlaveParams &params) :
     SimObject(params),
     externalPort(NULL),
-    portName(params->name + ".port"),
-    portType(params->port_type),
-    portData(params->port_data),
-    addrRanges(params->addr_ranges.begin(), params->addr_ranges.end())
+    portName(params.name + ".port"),
+    portType(params.port_type),
+    portData(params.port_data),
+    addrRanges(params.addr_ranges.begin(), params.addr_ranges.end())
 {
     /* Register the stub handler if it hasn't already been registered */
     if (portHandlers.find("stub") == portHandlers.end())
@@ -232,15 +234,11 @@ ExternalSlave::init()
     }
 }
 
-ExternalSlave *
-ExternalSlaveParams::create()
-{
-    return new ExternalSlave(this);
-}
-
 void
 ExternalSlave::registerHandler(const std::string &handler_name,
     Handler *handler)
 {
     portHandlers[handler_name] = handler;
 }
+
+} // namespace gem5

@@ -33,15 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Geoffrey Blake
  */
 
 #include "dev/arm/timer_cpulocal.hh"
 
+#include <cassert>
+
 #include "arch/arm/system.hh"
 #include "base/intmath.hh"
+#include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/Checkpoint.hh"
 #include "debug/Timer.hh"
@@ -49,7 +49,10 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-CpuLocalTimer::CpuLocalTimer(Params *p)
+namespace gem5
+{
+
+CpuLocalTimer::CpuLocalTimer(const Params &p)
     : BasicPioDevice(p, 0x38)
 {
 }
@@ -57,17 +60,17 @@ CpuLocalTimer::CpuLocalTimer(Params *p)
 void
 CpuLocalTimer::init()
 {
-   auto p = params();
+   const auto &p = params();
    // Initialize the timer registers for each per cpu timer
-   for (int i = 0; i < sys->numContexts(); i++) {
-        ThreadContext* tc = sys->getThreadContext(i);
+   for (int i = 0; i < sys->threads.size(); i++) {
+        ThreadContext* tc = sys->threads[i];
         std::stringstream oss;
         oss << name() << ".timer" << i;
 
         localTimer.emplace_back(
             new Timer(oss.str(), this,
-                      p->int_timer->get(tc),
-                      p->int_watchdog->get(tc)));
+                      p.int_timer->get(tc),
+                      p.int_watchdog->get(tc)));
     }
 
     BasicPioDevice::init();
@@ -123,8 +126,7 @@ CpuLocalTimer::Timer::read(PacketPtr pkt, Addr daddr)
                 timerZeroEvent.when(), parent->clockPeriod(),
                 timerControl.prescalar);
         time = timerZeroEvent.when() - curTick();
-        time = time / parent->clockPeriod() /
-            power(16, timerControl.prescalar);
+        time = (time / parent->clockPeriod()) >> (4 * timerControl.prescalar);
         DPRINTF(Timer, "-- returning counter at %d\n", time);
         pkt->setLE<uint32_t>(time);
         break;
@@ -143,8 +145,8 @@ CpuLocalTimer::Timer::read(PacketPtr pkt, Addr daddr)
                 watchdogZeroEvent.when(), parent->clockPeriod(),
                 watchdogControl.prescalar);
         time = watchdogZeroEvent.when() - curTick();
-        time = time / parent->clockPeriod() /
-            power(16, watchdogControl.prescalar);
+        time = (time / parent->clockPeriod()) >>
+            (4 * watchdogControl.prescalar);
         DPRINTF(Timer, "-- returning counter at %d\n", time);
         pkt->setLE<uint32_t>(time);
         break;
@@ -269,7 +271,7 @@ CpuLocalTimer::Timer::restartTimerCounter(uint32_t val)
     if (!timerControl.enable)
         return;
 
-    Tick time = parent->clockPeriod() * power(16, timerControl.prescalar);
+    Tick time = parent->clockPeriod() << (4 * timerControl.prescalar);
     time *= val;
 
     if (timerZeroEvent.scheduled()) {
@@ -287,7 +289,7 @@ CpuLocalTimer::Timer::restartWatchdogCounter(uint32_t val)
     if (!watchdogControl.enable)
         return;
 
-    Tick time = parent->clockPeriod() * power(16, watchdogControl.prescalar);
+    Tick time = parent->clockPeriod() << (4 * watchdogControl.prescalar);
     time *= val;
 
     if (watchdogZeroEvent.scheduled()) {
@@ -432,19 +434,15 @@ CpuLocalTimer::Timer::unserialize(CheckpointIn &cp)
 void
 CpuLocalTimer::serialize(CheckpointOut &cp) const
 {
-    for (int i = 0; i < sys->numContexts(); i++)
+    for (int i = 0; i < sys->threads.size(); i++)
         localTimer[i]->serializeSection(cp, csprintf("timer%d", i));
 }
 
 void
 CpuLocalTimer::unserialize(CheckpointIn &cp)
 {
-    for (int i = 0; i < sys->numContexts(); i++)
+    for (int i = 0; i < sys->threads.size(); i++)
         localTimer[i]->unserializeSection(cp, csprintf("timer%d", i));
 }
 
-CpuLocalTimer *
-CpuLocalTimerParams::create()
-{
-    return new CpuLocalTimer(this);
-}
+} // namespace gem5

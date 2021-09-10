@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2011-2012 ARM Limited
+ * Copyright (c) 2011-2012 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stephen Hines
  */
 
 #ifndef __ARM_LINUX_PROCESS_HH__
@@ -47,53 +45,36 @@
 
 #include "arch/arm/process.hh"
 
-class ArmLinuxProcessBits
+namespace gem5
 {
-  protected:
-    SyscallDesc* getLinuxDesc(int callnum);
-
-    struct SyscallTable
-    {
-        int base;
-        SyscallDesc *descs;
-        int size;
-
-        SyscallDesc *getDesc(int offset) const;
-    };
-
-    std::vector<SyscallTable> syscallTables;
-};
 
 /// A process with emulated Arm/Linux syscalls.
-class ArmLinuxProcess32 : public ArmProcess32, public ArmLinuxProcessBits
+class ArmLinuxProcess32 : public ArmProcess32
 {
   public:
-    ArmLinuxProcess32(ProcessParams * params, ObjectFile *objFile,
-                      ObjectFile::Arch _arch);
+    ArmLinuxProcess32(const ProcessParams &params,
+                      loader::ObjectFile *objFile, loader::Arch _arch) :
+        ArmProcess32(params, objFile, _arch)
+    {}
 
-    void initState();
-
-    void syscall(ThreadContext *tc, Fault *fault) override;
-
-    /// Explicitly import the otherwise hidden getSyscallArg
-    using ArmProcess::getSyscallArg;
+    void initState() override;
 
     /// A page to hold "kernel" provided functions. The name might be wrong.
     static const Addr commPage;
-
-    SyscallDesc* getDesc(int callnum);
 };
 
 /// A process with emulated Arm/Linux syscalls.
-class ArmLinuxProcess64 : public ArmProcess64, public ArmLinuxProcessBits
+class ArmLinuxProcess64 : public ArmProcess64
 {
   public:
-    ArmLinuxProcess64(ProcessParams * params, ObjectFile *objFile,
-                      ObjectFile::Arch _arch);
+    ArmLinuxProcess64(const ProcessParams &params,
+                      loader::ObjectFile *objFile, loader::Arch _arch) :
+        ArmProcess64(params, objFile, _arch)
+    {}
 
-    void initState();
-    void syscall(ThreadContext *tc, Fault *fault) override;
-    SyscallDesc* getDesc(int callnum);
+    void initState() override;
 };
+
+} // namespace gem5
 
 #endif // __ARM_LINUX_PROCESS_HH__

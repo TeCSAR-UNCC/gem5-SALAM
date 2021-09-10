@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright (c) 2016 ARM Limited
 # All rights reserved
@@ -34,19 +34,15 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 from abc import *
 import os
 import subprocess
 
-from region import *
-from style import modified_regions
+from .region import *
+from .style import modified_regions
 
-class AbstractRepo(object):
-    __metaclass__ = ABCMeta
-
+class AbstractRepo(object, metaclass=ABCMeta):
     def file_path(self, fname):
         """Get the absolute path to a file relative within the repository. The
         input file name must be a valid path within the repository.
@@ -120,7 +116,8 @@ class GitRepo(AbstractRepo):
     def repo_base(self):
         if self._repo_base is None:
             self._repo_base = subprocess.check_output(
-                [ self.git, "rev-parse", "--show-toplevel" ]).rstrip("\n")
+                [ self.git, "rev-parse", "--show-toplevel" ]) \
+                .decode().rstrip("\n")
 
         return self._repo_base
 
@@ -161,7 +158,7 @@ class GitRepo(AbstractRepo):
         try:
             self._head_revision = subprocess.check_output(
                 [ self.git, "rev-parse", "--verify", "HEAD" ],
-                stderr=subprocess.PIPE).rstrip("\n")
+                stderr=subprocess.PIPE).decode().rstrip("\n")
         except subprocess.CalledProcessError:
             # Assume that the repo is empty and use the semi-magic
             # empty tree revision if git rev-parse returned an error.
@@ -187,7 +184,7 @@ class GitRepo(AbstractRepo):
         if filter:
             cmd += [ "--diff-filter=%s" % filter ]
         cmd += [ self.head_revision(), "--" ] + files
-        status = subprocess.check_output(cmd).rstrip("\n")
+        status = subprocess.check_output(cmd).decode('utf-8').rstrip("\n")
 
         if status:
             return [ f.split("\t") for f in status.split("\n") ]
@@ -196,53 +193,12 @@ class GitRepo(AbstractRepo):
 
     def file_from_index(self, name):
         return subprocess.check_output(
-            [ self.git, "show", ":%s" % (name, ) ])
+            [ self.git, "show", ":%s" % (name, ) ]).decode('utf-8')
 
     def file_from_head(self, name):
         return subprocess.check_output(
-            [ self.git, "show", "%s:%s" % (self.head_revision(), name) ])
-
-class MercurialRepo(AbstractRepo):
-    def __init__(self):
-        self.hg = "hg"
-        self._repo_base = None
-
-    def repo_base(self):
-        if self._repo_base is None:
-            self._repo_base = subprocess.check_output(
-                [ self.hg, "root" ]).rstrip("\n")
-
-        return self._repo_base
-
-    def staged_files(self):
-        added = []
-        modified = []
-        for action, fname in self.status():
-            if action == "M":
-                modified.append(fname)
-            elif action == "A":
-                added.append(fname)
-
-        return added, modified
-
-    def staged_regions(self, fname, context=0):
-        return self.modified_regions(fname, context=context)
-
-    def modified_regions(self, fname, context=0):
-        old = self.file_from_tip(fname).split("\n")
-        new = self.get_file(fname).split("\n")
-
-        return modified_regions(old, new, context=context)
-
-    def status(self, filter=None):
-        files = subprocess.check_output([ self.hg, "status" ]).rstrip("\n")
-        if files:
-            return [ f.split(" ") for f in files.split("\n") ]
-        else:
-            return []
-
-    def file_from_tip(self, name):
-        return subprocess.check_output([ self.hg, "cat", name ])
+            [ self.git, "show", "%s:%s" % (self.head_revision(), name) ]) \
+            .decode('utf-8')
 
 def detect_repo(path="."):
     """Auto-detect the revision control system used for a source code
@@ -257,7 +213,6 @@ def detect_repo(path="."):
 
     _repo_types = (
         (".git", GitRepo),
-        (".hg", MercurialRepo),
     )
 
     repo_types = []

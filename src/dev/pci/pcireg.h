@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Miguel Serrano
  */
 
 /* @file
@@ -53,10 +50,26 @@
 #include "base/bitfield.hh"
 #include "base/bitunion.hh"
 
-union PCIConfig {
+BitUnion16(PciCommandRegister)
+    Bitfield<15, 10> reserved;
+    Bitfield<9> fastBackToBackEn;
+    Bitfield<8> serrEn;
+    Bitfield<7> steppingControl;
+    Bitfield<6> parityErrResp;
+    Bitfield<5> vgaPaletteSnoopEn;
+    Bitfield<4> memWriteInvEn;
+    Bitfield<3> specialCycles;
+    Bitfield<2> busMaster;
+    Bitfield<1> memorySpace;
+    Bitfield<0> ioSpace;
+EndBitUnion(PciCommandRegister)
+
+union PCIConfig
+{
     uint8_t data[64];
 
-    struct {
+    struct
+    {
         uint16_t vendor;
         uint16_t device;
         uint16_t command;
@@ -205,9 +218,11 @@ union PCIConfig {
  *  Defines the Power Management capability register and all its associated
  *  bitfields for a PCIe device.
  */
-union PMCAP {
+union PMCAP
+{
     uint8_t data[6];
-    struct {
+    struct
+    {
         uint16_t pid;  /* 0:7  cid
                         * 8:15 next
                         */
@@ -238,9 +253,11 @@ union PMCAP {
  *  can be filled in if a device model supports both, but only 1 of
  *  MSI/MSIX/INTx interrupt mode can be selected at a given time.
  */
-union MSICAP {
+union MSICAP
+{
     uint8_t data[24];
-    struct {
+    struct
+    {
         uint16_t mid;  /* 0:7  cid
                         *  8:15 next
                         */
@@ -265,9 +282,11 @@ union MSICAP {
  *  Defines the MSI-X Capability register and its associated bitfields for
  *  a PCIe device.
  */
-union MSIXCAP {
+union MSIXCAP
+{
     uint8_t data[12];
-    struct {
+    struct
+    {
         uint16_t mxid; /* 0:7  cid
                         *  8:15 next
                         */
@@ -285,8 +304,10 @@ union MSIXCAP {
     };
 };
 
-union MSIXTable {
-    struct {
+union MSIXTable
+{
+    struct
+    {
         uint32_t addr_lo;
         uint32_t addr_hi;
         uint32_t msg_data;
@@ -296,7 +317,8 @@ union MSIXTable {
 };
 
 #define MSIXVECS_PER_PBA 64
-struct MSIXPbaEntry {
+struct MSIXPbaEntry
+{
     uint64_t bits;
 };
 
@@ -304,9 +326,11 @@ struct MSIXPbaEntry {
  *  Defines the PCI Express capability register and its associated bitfields
  *  for a PCIe device.
  */
-struct PXCAP {
+struct PXCAP
+{
     uint8_t data[48];
-    struct {
+    struct
+    {
         uint16_t pxid; /* 0:7  cid
                         *  8:15 next
                         */

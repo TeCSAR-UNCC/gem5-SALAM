@@ -33,17 +33,19 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_TRANSL_HH__
 #define __DEV_ARM_SMMU_V3_TRANSL_HH__
 
+#include "base/compiler.hh"
+#include "dev/arm/smmu_v3_deviceifc.hh"
 #include "dev/arm/smmu_v3_proc.hh"
 #include "dev/arm/smmu_v3_ptops.hh"
-#include "dev/arm/smmu_v3_slaveifc.hh"
 #include "mem/packet.hh"
+
+namespace gem5
+{
 
 struct SMMUTranslRequest
 {
@@ -92,13 +94,13 @@ class SMMUTranslationProcess : public SMMUProcess
         bool       writable;
     };
 
-    SMMUv3SlaveInterface &ifc;
+    SMMUv3DeviceInterface &ifc;
 
     SMMUTranslRequest request;
     TranslContext context;
 
     Tick recvTick;
-    Tick faultTick;
+    GEM5_CLASS_VAR_USED Tick faultTick;
 
     virtual void main(Yield &yield);
 
@@ -175,12 +177,14 @@ class SMMUTranslationProcess : public SMMUProcess
 
   public:
     SMMUTranslationProcess(const std::string &name, SMMUv3 &_smmu,
-        SMMUv3SlaveInterface &_ifc);
+        SMMUv3DeviceInterface &_ifc);
 
     virtual ~SMMUTranslationProcess();
 
     void beginTransaction(const SMMUTranslRequest &req);
     void resumeTransaction();
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_TRANSL_HH__ */

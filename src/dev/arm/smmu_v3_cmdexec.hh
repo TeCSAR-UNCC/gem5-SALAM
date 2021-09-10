@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_CMDEXEC_HH__
@@ -42,6 +40,9 @@
 
 #include "dev/arm/smmu_v3_defs.hh"
 #include "dev/arm/smmu_v3_proc.hh"
+
+namespace gem5
+{
 
 class SMMUv3;
 
@@ -66,5 +67,7 @@ class SMMUCommandExecProcess : public SMMUProcess
 
     bool isBusy() const { return busy; }
 };
+
+} // namespace gem5
 
 #endif  /* __DEV_ARM_SMMU_V3_CMDEXEC_HH__ */

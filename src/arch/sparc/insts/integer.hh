@@ -24,16 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Gabe Black
- *          Steve Reinhardt
  */
 
 #ifndef __ARCH_SPARC_INSTS_INTEGER_HH__
 #define __ARCH_SPARC_INSTS_INTEGER_HH__
 
 #include "arch/sparc/insts/static_inst.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -52,10 +51,10 @@ class IntOp : public SparcStaticInst
     using SparcStaticInst::SparcStaticInst;
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 
     virtual bool printPseudoOps(std::ostream &os, Addr pc,
-                                const SymbolTable *symtab) const;
+                                const loader::SymbolTable *symtab) const;
 };
 
 /**
@@ -73,10 +72,10 @@ class IntOpImm : public IntOp
     int64_t imm;
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 
     bool printPseudoOps(std::ostream &os, Addr pc,
-                        const SymbolTable *symtab) const override;
+                        const loader::SymbolTable *symtab) const override;
 };
 
 /**
@@ -87,7 +86,7 @@ class IntOpImm10 : public IntOpImm
   protected:
     // Constructor
     IntOpImm10(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        IntOpImm(mnem, _machInst, __opClass, sext<10>(bits(_machInst, 9, 0)))
+        IntOpImm(mnem, _machInst, __opClass, szext<10>(_machInst))
     {}
 };
 
@@ -98,7 +97,7 @@ class IntOpImm11 : public IntOpImm
 {
   protected:
     IntOpImm11(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        IntOpImm(mnem, _machInst, __opClass, sext<10>(bits(_machInst, 10, 0)))
+        IntOpImm(mnem, _machInst, __opClass, szext<11>(_machInst))
     {}
 };
 
@@ -109,7 +108,7 @@ class IntOpImm13 : public IntOpImm
 {
   protected:
     IntOpImm13(const char *mnem, ExtMachInst _machInst, OpClass __opClass) :
-        IntOpImm(mnem, _machInst, __opClass, sext<13>(bits(_machInst, 12, 0)))
+        IntOpImm(mnem, _machInst, __opClass, szext<13>(_machInst))
     {}
 };
 
@@ -125,9 +124,10 @@ class SetHi : public IntOpImm
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARCH_INSTS_INTEGER_HH__

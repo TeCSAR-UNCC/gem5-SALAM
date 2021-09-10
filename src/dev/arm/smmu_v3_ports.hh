@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stan Czerniawski
  */
 
 #ifndef __DEV_ARM_SMMU_V3_PORTS_HH__
@@ -43,10 +41,13 @@
 #include "mem/qport.hh"
 #include "mem/tport.hh"
 
+namespace gem5
+{
+
 class SMMUv3;
-class SMMUv3SlaveInterface;
+class SMMUv3DeviceInterface;
 
-class SMMUMasterPort : public MasterPort
+class SMMURequestPort : public RequestPort
 {
   protected:
     SMMUv3 &smmu;
@@ -55,12 +56,12 @@ class SMMUMasterPort : public MasterPort
     virtual void recvReqRetry();
 
   public:
-    SMMUMasterPort(const std::string &_name, SMMUv3 &_smmu);
-    virtual ~SMMUMasterPort() {}
+    SMMURequestPort(const std::string &_name, SMMUv3 &_smmu);
+    virtual ~SMMURequestPort() {}
 };
 
-// Separate master port to send MMU initiated requests on
-class SMMUMasterTableWalkPort : public MasterPort
+// Separate request port to send MMU initiated requests on
+class SMMUTableWalkPort : public RequestPort
 {
   protected:
     SMMUv3 &smmu;
@@ -69,14 +70,14 @@ class SMMUMasterTableWalkPort : public MasterPort
     virtual void recvReqRetry();
 
   public:
-    SMMUMasterTableWalkPort(const std::string &_name, SMMUv3 &_smmu);
-    virtual ~SMMUMasterTableWalkPort() {}
+    SMMUTableWalkPort(const std::string &_name, SMMUv3 &_smmu);
+    virtual ~SMMUTableWalkPort() {}
 };
 
-class SMMUSlavePort : public QueuedSlavePort
+class SMMUDevicePort : public QueuedResponsePort
 {
   protected:
-    SMMUv3SlaveInterface &ifc;
+    SMMUv3DeviceInterface &ifc;
     RespPacketQueue respQueue;
 
     virtual void recvFunctional(PacketPtr pkt);
@@ -84,10 +85,10 @@ class SMMUSlavePort : public QueuedSlavePort
     virtual bool recvTimingReq(PacketPtr pkt);
 
   public:
-    SMMUSlavePort(const std::string &_name,
-                  SMMUv3SlaveInterface &_ifc,
+    SMMUDevicePort(const std::string &_name,
+                  SMMUv3DeviceInterface &_ifc,
                   PortID _id = InvalidPortID);
-    virtual ~SMMUSlavePort() {}
+    virtual ~SMMUDevicePort() {}
 
     virtual AddrRangeList getAddrRanges() const
     { return AddrRangeList { AddrRange(0, UINT64_MAX) }; }
@@ -108,24 +109,24 @@ class SMMUControlPort : public SimpleTimingPort
     virtual ~SMMUControlPort() {}
 };
 
-class SMMUATSMasterPort : public QueuedMasterPort
+class SMMUATSMemoryPort : public QueuedRequestPort
 {
   protected:
-    SMMUv3SlaveInterface &ifc;
+    SMMUv3DeviceInterface &ifc;
     ReqPacketQueue reqQueue;
     SnoopRespPacketQueue snoopRespQueue;
 
     virtual bool recvTimingResp(PacketPtr pkt);
 
   public:
-    SMMUATSMasterPort(const std::string &_name, SMMUv3SlaveInterface &_ifc);
-    virtual ~SMMUATSMasterPort() {}
+    SMMUATSMemoryPort(const std::string &_name, SMMUv3DeviceInterface &_ifc);
+    virtual ~SMMUATSMemoryPort() {}
 };
 
-class SMMUATSSlavePort : public QueuedSlavePort
+class SMMUATSDevicePort : public QueuedResponsePort
 {
   protected:
-    SMMUv3SlaveInterface &ifc;
+    SMMUv3DeviceInterface &ifc;
     RespPacketQueue respQueue;
 
     virtual void recvFunctional(PacketPtr pkt);
@@ -136,8 +137,10 @@ class SMMUATSSlavePort : public QueuedSlavePort
     { return AddrRangeList(); }
 
   public:
-    SMMUATSSlavePort(const std::string &_name, SMMUv3SlaveInterface &_ifc);
-    virtual ~SMMUATSSlavePort() {}
+    SMMUATSDevicePort(const std::string &_name, SMMUv3DeviceInterface &_ifc);
+    virtual ~SMMUATSDevicePort() {}
 };
+
+} // namespace gem5
 
 #endif /* __DEV_ARM_SMMU_V3_PORTS_HH__ */

@@ -36,22 +36,28 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          William Wang
- *          Andreas Sandberg
  */
 
 #include "dev/ps2/touchkit.hh"
 
+#include <cstdint>
+
 #include "base/logging.hh"
+#include "base/trace.hh"
 #include "debug/PS2.hh"
+#include "dev/ps2/mouse.hh"
 #include "dev/ps2/types.hh"
 #include "params/PS2TouchKit.hh"
 
-PS2TouchKit::PS2TouchKit(const PS2TouchKitParams *p)
-    : PS2Device(p),
-      vnc(p->vnc),
+namespace gem5
+{
+
+namespace ps2
+{
+
+TouchKit::TouchKit(const PS2TouchKitParams &p)
+    : Device(p),
+      vnc(p.vnc),
       enabled(false), touchKitEnabled(false)
 {
     if (vnc)
@@ -59,69 +65,69 @@ PS2TouchKit::PS2TouchKit(const PS2TouchKitParams *p)
 }
 
 void
-PS2TouchKit::serialize(CheckpointOut &cp) const
+TouchKit::serialize(CheckpointOut &cp) const
 {
-    PS2Device::serialize(cp);
+    Device::serialize(cp);
 
     SERIALIZE_SCALAR(enabled);
     SERIALIZE_SCALAR(touchKitEnabled);
 }
 
 void
-PS2TouchKit::unserialize(CheckpointIn &cp)
+TouchKit::unserialize(CheckpointIn &cp)
 {
-    PS2Device::unserialize(cp);
+    Device::unserialize(cp);
 
     UNSERIALIZE_SCALAR(enabled);
     UNSERIALIZE_SCALAR(touchKitEnabled);
 }
 
 bool
-PS2TouchKit::recv(const std::vector<uint8_t> &data)
+TouchKit::recv(const std::vector<uint8_t> &data)
 {
     switch (data[0]) {
-      case Ps2::Reset:
+      case Reset:
         DPRINTF(PS2, "Resetting device.\n");
         enabled = false;
         touchKitEnabled = false;
         sendAck();
-        send(Ps2::SelfTestPass);
+        send(SelfTestPass);
         return true;
 
-      case Ps2::ReadID:
+      case ReadID:
         sendAck();
-        send(Ps2::Mouse::ID);
+        send(mouse::ID);
         return true;
 
-      case Ps2::Disable:
+      case Disable:
         DPRINTF(PS2, "Disabling device.\n");
         enabled = false;
         sendAck();
         return true;
 
-      case Ps2::Enable:
+      case Enable:
         DPRINTF(PS2, "Enabling device.\n");
         enabled = true;
         sendAck();
         return true;
 
-      case Ps2::DefaultsAndDisable:
+      case DefaultsAndDisable:
         DPRINTF(PS2, "Setting defaults and disabling device.\n");
         enabled = false;
         sendAck();
         return true;
 
-      case Ps2::Mouse::Scale1to1:
-      case Ps2::Mouse::Scale2to1:
+      case mouse::Scale1to1:
+      case mouse::Scale2to1:
         sendAck();
         return true;
 
-      case Ps2::Mouse::SetResolution:
-      case Ps2::Mouse::SampleRate:
+      case mouse::SetResolution:
+      case mouse::SampleRate:
         sendAck();
         return data.size() == 2;
 
-      case Ps2::Mouse::GetStatus:
+      case mouse::GetStatus:
         sendAck();
         send(0);
         send(2); // default resolution
@@ -146,7 +152,7 @@ PS2TouchKit::recv(const std::vector<uint8_t> &data)
 }
 
 bool
-PS2TouchKit::recvTouchKit(const std::vector<uint8_t> &data)
+TouchKit::recvTouchKit(const std::vector<uint8_t> &data)
 {
     // Ack all incoming bytes
     sendAck();
@@ -176,7 +182,7 @@ PS2TouchKit::recvTouchKit(const std::vector<uint8_t> &data)
 }
 
 void
-PS2TouchKit::sendTouchKit(const uint8_t *data, size_t size)
+TouchKit::sendTouchKit(const uint8_t *data, size_t size)
 {
     send(TouchKitDiag);
     send(size);
@@ -186,7 +192,7 @@ PS2TouchKit::sendTouchKit(const uint8_t *data, size_t size)
 
 
 void
-PS2TouchKit::mouseAt(uint16_t x, uint16_t y, uint8_t buttons)
+TouchKit::mouseAt(uint16_t x, uint16_t y, uint8_t buttons)
 {
     // If the driver hasn't initialized the device yet, no need to try and send
     // it anything. Similarly we can get vnc mouse events orders of magnitude
@@ -208,8 +214,5 @@ PS2TouchKit::mouseAt(uint16_t x, uint16_t y, uint8_t buttons)
     send(resp, sizeof(resp));
 }
 
-PS2TouchKit *
-PS2TouchKitParams::create()
-{
-    return new PS2TouchKit(this);
-}
+} // namespace ps2
+} // namespace gem5

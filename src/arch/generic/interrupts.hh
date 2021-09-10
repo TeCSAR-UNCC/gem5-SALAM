@@ -23,15 +23,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_GENERIC_INTERRUPTS_HH__
 #define __ARCH_GENERIC_INTERRUPTS_HH__
 
+#include "base/logging.hh"
 #include "params/BaseInterrupts.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 class BaseCPU;
@@ -39,20 +41,14 @@ class BaseCPU;
 class BaseInterrupts : public SimObject
 {
   protected:
-    BaseCPU *cpu;
+    ThreadContext *tc = nullptr;
 
   public:
-    typedef BaseInterruptsParams Params;
+    using Params = BaseInterruptsParams;
 
-    BaseInterrupts(Params *p) : SimObject(p) {}
+    BaseInterrupts(const Params &p) : SimObject(p) {}
 
-    virtual void setCPU(BaseCPU * newCPU) = 0;
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    virtual void setThreadContext(ThreadContext *_tc) { tc = _tc; }
 
     /*
      * Functions for retrieving interrupts for the CPU to handle.
@@ -61,16 +57,16 @@ class BaseInterrupts : public SimObject
     /*
      * Return whether there are any interrupts waiting to be recognized.
      */
-    virtual bool checkInterrupts(ThreadContext *tc) const = 0;
+    virtual bool checkInterrupts() const = 0;
     /*
      * Return an interrupt to process. This should return an interrupt exactly
      * when checkInterrupts returns true.
      */
-    virtual Fault getInterrupt(ThreadContext *tc) = 0;
+    virtual Fault getInterrupt() = 0;
     /*
      * Update interrupt related state after an interrupt has been processed.
      */
-    virtual void updateIntrInfo(ThreadContext *tc) = 0;
+    virtual void updateIntrInfo() = 0;
 
     /*
      * Old functions needed for compatability but which will be phased out
@@ -94,5 +90,7 @@ class BaseInterrupts : public SimObject
         panic("Interrupts::clearAll unimplemented!\n");
     }
 };
+
+} // namespace gem5
 
 #endif // __ARCH_GENERIC_INTERRUPTS_HH__

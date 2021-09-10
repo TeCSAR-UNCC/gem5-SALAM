@@ -1,3 +1,15 @@
+# Copyright (c) 2020 ARM Limited
+# All rights reserved
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 2018 The Regents of the University of California
 # All Rights Reserved.
 #
@@ -23,8 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 '''
 Test file containing simple workloads to run on CPU models.
@@ -36,32 +46,43 @@ from testlib import *
 workloads = ('Bubblesort','FloatMM')
 
 valid_isas = {
-    'x86': ('AtomicSimpleCPU', 'TimingSimpleCPU', 'DerivO3CPU'),
-    'arm': ('AtomicSimpleCPU', 'TimingSimpleCPU', 'MinorCPU', 'DerivO3CPU'),
-    'riscv': ('AtomicSimpleCPU', 'TimingSimpleCPU', 'MinorCPU', 'DerivO3CPU'),
+    constants.gcn3_x86_tag :
+        ('AtomicSimpleCPU', 'TimingSimpleCPU', 'DerivO3CPU'),
+    constants.arm_tag:
+        ('AtomicSimpleCPU', 'TimingSimpleCPU', 'MinorCPU', 'DerivO3CPU'),
+    constants.riscv_tag:
+        ('AtomicSimpleCPU', 'TimingSimpleCPU', 'MinorCPU', 'DerivO3CPU'),
 }
 
 
-base_path = joinpath(absdirpath(__file__), 'benchmarks', 'bin')
-base_url = 'http://gem5.org/dist/current/gem5/cpu_tests/benchmarks/bin/'
+base_path = joinpath(config.bin_path, 'cpu_tests')
+
+base_url = config.resource_url + '/gem5/cpu_tests/benchmarks/bin/'
+
+isa_url = {
+    constants.gcn3_x86_tag : base_url + "x86",
+    constants.arm_tag : base_url + "arm",
+    constants.riscv_tag : base_url + "riscv",
+}
+
 for isa in valid_isas:
-    path = joinpath(base_path, isa)
+    path = joinpath(base_path, isa.lower())
     for workload in workloads:
         ref_path = joinpath(getcwd(), 'ref', workload)
         verifiers = (
                 verifier.MatchStdout(ref_path),
         )
 
-        url = base_url + isa + '/' + workload
+        url = isa_url[isa] + '/' + workload
         workload_binary = DownloadedProgram(url, path, workload)
         binary = joinpath(workload_binary.path, workload)
 
         for cpu in valid_isas[isa]:
-           gem5_verify_config(
+            gem5_verify_config(
                   name='cpu_test_{}_{}'.format(cpu,workload),
                   verifiers=verifiers,
                   config=joinpath(getcwd(), 'run.py'),
                   config_args=['--cpu={}'.format(cpu), binary],
-                  valid_isas=(isa.upper(),),
+                  valid_isas=(isa,),
                   fixtures=[workload_binary]
-           )
+            )

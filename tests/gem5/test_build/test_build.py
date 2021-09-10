@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Sean Wilson
 
 '''
 Test file for simply building gem5
@@ -33,7 +31,7 @@ import re
 import os
 from testlib import *
 
-common_isas = [constants.x86_tag, constants.arm_tag, constants.riscv_tag]
+common_isas = [constants.gcn3_x86_tag, constants.arm_tag, constants.riscv_tag]
 
 for isa in constants.supported_isas:
     if isa is constants.null_tag: continue

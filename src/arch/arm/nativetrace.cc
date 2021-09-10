@@ -36,23 +36,26 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/nativetrace.hh"
 
-#include "arch/arm/isa_traits.hh"
-#include "arch/arm/miscregs.hh"
+#include "arch/arm/regs/cc.hh"
+#include "arch/arm/regs/misc.hh"
+#include "base/compiler.hh"
 #include "cpu/thread_context.hh"
 #include "debug/ExecRegDelta.hh"
 #include "params/ArmNativeTrace.hh"
 #include "sim/byteswap.hh"
 
+namespace gem5
+{
+
+using namespace ArmISA;
+
 namespace Trace {
 
-#if TRACING_ON
-static const char *regNames[] = {
+GEM5_VAR_USED static const char *regNames[] = {
     "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
     "r8", "r9", "r10", "fp", "r12", "sp", "lr", "pc",
     "cpsr", "f0", "f1", "f2", "f3", "f4", "f5", "f6",
@@ -61,7 +64,6 @@ static const char *regNames[] = {
     "f23", "f24", "f25", "f26", "f27", "f28", "f29", "f30",
     "f31", "fpscr"
 };
-#endif
 
 void
 Trace::ArmNativeTrace::ThreadState::update(NativeTrace *parent)
@@ -126,8 +128,7 @@ Trace::ArmNativeTrace::ThreadState::update(ThreadContext *tc)
     changed[STATE_CPSR] = (newState[STATE_CPSR] != oldState[STATE_CPSR]);
 
     for (int i = 0; i < NumVecV7ArchRegs; i++) {
-        auto vec(tc->readVecReg(RegId(VecRegClass,i))
-            .as<uint64_t, MaxSveVecLenInDWords>());
+        auto *vec = tc->readVecReg(RegId(VecRegClass,i)).as<uint64_t>();
         newState[STATE_F0 + 2*i] = vec[0];
         newState[STATE_F0 + 2*i + 1] = vec[1];
     }
@@ -219,13 +220,4 @@ Trace::ArmNativeTrace::check(NativeTraceRecord *record)
 }
 
 } // namespace Trace
-
-////////////////////////////////////////////////////////////////////////
-//
-//  ExeTracer Simulation Object
-//
-Trace::ArmNativeTrace *
-ArmNativeTraceParams::create()
-{
-    return new Trace::ArmNativeTrace(this);
-}
+} // namespace gem5

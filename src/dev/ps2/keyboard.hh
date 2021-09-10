@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Andreas Sandberg
  */
 
 #ifndef __DEV_PS2_KEYBOARD_HH__
@@ -47,9 +44,15 @@
 #include "base/vnc/vncinput.hh"
 #include "dev/ps2/device.hh"
 
+namespace gem5
+{
+
 struct PS2KeyboardParams;
 
-class PS2Keyboard : public PS2Device, VncKeyboard
+namespace ps2
+{
+
+class PS2Keyboard : public Device, VncKeyboard
 {
   protected:
     /** is the shift key currently down */
@@ -59,17 +62,19 @@ class PS2Keyboard : public PS2Device, VncKeyboard
     bool enabled;
 
   public:
-    PS2Keyboard(const PS2KeyboardParams *p);
+    PS2Keyboard(const PS2KeyboardParams &p);
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 
-  protected: // PS2Device
+  protected: // from Device
     bool recv(const std::vector<uint8_t> &data) override;
 
   public: // VncKeyboard
     void keyPress(uint32_t key, bool down) override;
 };
 
-#endif // __DEV_PS2_KEYBOARD_hH__
+} // namespace ps2
+} // namespace gem5
 
+#endif // __DEV_PS2_KEYBOARD_hH__

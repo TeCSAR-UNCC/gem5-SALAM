@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include <vector>
@@ -38,7 +36,7 @@
 // systemc object could accept those parameters however it likes, for instance
 // through its constructor or by assigning them to a member variable.
 Printer *
-SystemC_PrinterParams::create()
+gem5::SystemC_PrinterParams::create() const
 {
     Printer *printer = new Printer(name.c_str());
     printer->prefix = prefix;

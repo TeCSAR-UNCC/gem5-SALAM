@@ -33,21 +33,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "cpu/minor/decode.hh"
 
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "cpu/minor/pipeline.hh"
 #include "debug/Decode.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 Decode::Decode(const std::string &name,
     MinorCPU &cpu_,
-    MinorCPUParams &params,
+    const MinorCPUParams &params,
     Latch<ForwardInstData>::Output inp_,
     Latch<ForwardInstData>::Input out_,
     std::vector<InputBuffer<ForwardInstData>> &next_stage_input_buffer) :
@@ -182,9 +186,9 @@ Decode::evaluate()
                         static_inst->fetchMicroop(
                                 decode_info.microopPC.microPC());
 
-                    output_inst = new MinorDynInst(inst->id);
+                    output_inst =
+                        new MinorDynInst(static_micro_inst, inst->id);
                     output_inst->pc = decode_info.microopPC;
-                    output_inst->staticInst = static_micro_inst;
                     output_inst->fault = NoFault;
 
                     /* Allow a predicted next address only on the last
@@ -300,13 +304,13 @@ Decode::getScheduledThread()
     std::vector<ThreadID> priority_list;
 
     switch (cpu.threadPolicy) {
-      case Enums::SingleThreaded:
+      case enums::SingleThreaded:
         priority_list.push_back(0);
         break;
-      case Enums::RoundRobin:
+      case enums::RoundRobin:
         priority_list = cpu.roundRobinPriority(threadPriority);
         break;
-      case Enums::Random:
+      case enums::Random:
         priority_list = cpu.randomPriority();
         break;
       default:
@@ -344,8 +348,9 @@ Decode::minorTrace() const
     else
         (*out.inputWire).reportData(data);
 
-    MINORTRACE("insts=%s\n", data.str());
+    minor::minorTrace("insts=%s\n", data.str());
     inputBuffer[0].minorTrace();
 }
 
-}
+} // namespace minor
+} // namespace gem5

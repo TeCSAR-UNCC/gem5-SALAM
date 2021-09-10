@@ -1,3 +1,15 @@
+# Copyright (c) 2020-2021 ARM Limited
+# All rights reserved.
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
 # Copyright (c) 2009 The Hewlett-Packard Development Company
 # All rights reserved.
@@ -37,6 +49,9 @@ class DataMember(Var):
         super(DataMember, self).__init__(symtab, ident, location, type,
                                          code, pairs, machine)
         self.init_code = init_code
+        self.real_c_type = self.type.c_ident
+        if "template" in pairs:
+            self.real_c_type += pairs["template"]
 
 class Enumeration(PairContainer):
     def __init__(self, ident, pairs):
@@ -189,12 +204,6 @@ class Type(Symbol):
     def printTypeHH(self, path):
         code = self.symtab.codeFormatter()
         code('''
-/** \\file ${{self.c_ident}}.hh
- *
- *
- * Auto generated C++ code started by $__file__:$__line__
- */
-
 #ifndef __${{self.c_ident}}_HH__
 #define __${{self.c_ident}}_HH__
 
@@ -214,6 +223,12 @@ class Type(Symbol):
             parent = " :  public %s" % self["interface"]
 
         code('''
+namespace gem5
+{
+
+namespace ruby
+{
+
 $klass ${{self.c_ident}}$parent
 {
   public:
@@ -235,34 +250,26 @@ $klass ${{self.c_ident}}$parent
                     code('m_$ident = ${{dm["default"]}}; // default for this field')
                 elif "default" in dm.type:
                     # Look for the type default
-                    tid = dm.type.c_ident
-                    code('m_$ident = ${{dm.type["default"]}}; // default value of $tid')
+                    tid = dm.real_c_type
+                    code('m_$ident = ${{dm.type["default"]}};')
+                    code(' // default value of $tid')
                 else:
                     code('// m_$ident has no default')
             code.dedent()
         code('}')
 
         # ******** Copy constructor ********
-        if not self.isGlobal:
-            code('${{self.c_ident}}(const ${{self.c_ident}}&other)')
+        code('${{self.c_ident}}(const ${{self.c_ident}}&) = default;')
 
-            # Call superclass constructor
-            if "interface" in self:
-                code('    : ${{self["interface"]}}(other)')
+        # ******** Assignment operator ********
 
-            code('{')
-            code.indent()
-
-            for dm in self.data_members.values():
-                code('m_${{dm.ident}} = other.m_${{dm.ident}};')
-
-            code.dedent()
-            code('}')
+        code('${{self.c_ident}}')
+        code('&operator=(const ${{self.c_ident}}&) = default;')
 
         # ******** Full init constructor ********
         if not self.isGlobal:
-            params = [ 'const %s& local_%s' % (dm.type.c_ident, dm.ident) \
-                       for dm in self.data_members.itervalues() ]
+            params = [ 'const %s& local_%s' % (dm.real_c_type, dm.ident) \
+                       for dm in self.data_members.values() ]
             params = ', '.join(params)
 
             if self.isMessage:
@@ -311,7 +318,7 @@ clone() const
 /** \\brief Const accessor method for ${{dm.ident}} field.
  *  \\return ${{dm.ident}} field
  */
-const ${{dm.type.c_ident}}&
+const ${{dm.real_c_type}}&
 get${{dm.ident}}() const
 {
     return m_${{dm.ident}};
@@ -325,7 +332,7 @@ get${{dm.ident}}() const
 /** \\brief Non-const accessor method for ${{dm.ident}} field.
  *  \\return ${{dm.ident}} field
  */
-${{dm.type.c_ident}}&
+${{dm.real_c_type}}&
 get${{dm.ident}}()
 {
     return m_${{dm.ident}};
@@ -338,7 +345,7 @@ get${{dm.ident}}()
                 code('''
 /** \\brief Mutator method for ${{dm.ident}} field */
 void
-set${{dm.ident}}(const ${{dm.type.c_ident}}& local_${{dm.ident}})
+set${{dm.ident}}(const ${{dm.real_c_type}}& local_${{dm.ident}})
 {
     m_${{dm.ident}} = local_${{dm.ident}};
 }
@@ -368,7 +375,7 @@ set${{dm.ident}}(const ${{dm.type.c_ident}}& local_${{dm.ident}})
                 if "desc" in dm:
                     code('/** ${{dm["desc"]}} */')
 
-                code('$const${{dm.type.c_ident}} m_${{dm.ident}}$init;')
+                code('$const${{dm.real_c_type}} m_${{dm.ident}}$init;')
 
         # Prototypes for methods defined for the Type
         for item in self.methods:
@@ -380,13 +387,16 @@ set${{dm.ident}}(const ${{dm.type.c_ident}}& local_${{dm.ident}})
         code('};')
 
         code('''
-inline std::ostream&
-operator<<(std::ostream& out, const ${{self.c_ident}}& obj)
+inline ::std::ostream&
+operator<<(::std::ostream& out, const ${{self.c_ident}}& obj)
 {
     obj.print(out);
-    out << std::flush;
+    out << ::std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __${{self.c_ident}}_HH__
 ''')
@@ -397,24 +407,21 @@ operator<<(std::ostream& out, const ${{self.c_ident}}& obj)
         code = self.symtab.codeFormatter()
 
         code('''
-/** \\file ${{self.c_ident}}.cc
- *
- * Auto generated C++ code started by $__file__:$__line__
- */
-
 #include <iostream>
 #include <memory>
 
 #include "mem/ruby/protocol/${{self.c_ident}}.hh"
 #include "mem/ruby/system/RubySystem.hh"
 
-using namespace std;
-''')
+namespace gem5
+{
 
-        code('''
+namespace ruby
+{
+
 /** \\brief Print the state of this object */
 void
-${{self.c_ident}}::print(ostream& out) const
+${{self.c_ident}}::print(std::ostream& out) const
 {
     out << "[${{self.c_ident}}: ";
 ''')
@@ -439,16 +446,16 @@ out << "${{dm.ident}} = " << printAddress(m_${{dm.ident}}) << " ";''')
         for item in self.methods:
             code(self.methods[item].generateCode())
 
+        code('''
+} // namespace ruby
+} // namespace gem5
+''')
+
         code.write(path, "%s.cc" % self.c_ident)
 
     def printEnumHH(self, path):
         code = self.symtab.codeFormatter()
         code('''
-/** \\file ${{self.c_ident}}.hh
- *
- * Auto generated C++ code started by $__file__:$__line__
- */
-
 #ifndef __${{self.c_ident}}_HH__
 #define __${{self.c_ident}}_HH__
 
@@ -464,6 +471,17 @@ out << "${{dm.ident}} = " << printAddress(m_${{dm.ident}}) << " ";''')
             code('#include "base/logging.hh"')
             code('#include "mem/ruby/common/Address.hh"')
             code('#include "mem/ruby/common/TypeDefines.hh"')
+
+        code('''
+namespace gem5
+{
+
+namespace ruby
+{
+
+''')
+
+        if self.isMachineType:
             code('struct MachineID;')
 
         code('''
@@ -478,7 +496,7 @@ enum ${{self.c_ident}} {
 
         code.indent()
         # For each field
-        for i,(ident,enum) in enumerate(self.enums.iteritems()):
+        for i,(ident,enum) in enumerate(self.enums.items()):
             desc = enum.get("desc", "No description avaliable")
             if i == 0:
                 init = ' = %s_FIRST' % self.c_ident
@@ -491,29 +509,15 @@ enum ${{self.c_ident}} {
 };
 
 // Code to convert from a string to the enumeration
-${{self.c_ident}} string_to_${{self.c_ident}}(const std::string& str);
+${{self.c_ident}} string_to_${{self.c_ident}}(const ::std::string& str);
 
 // Code to convert state to a string
-std::string ${{self.c_ident}}_to_string(const ${{self.c_ident}}& obj);
+::std::string ${{self.c_ident}}_to_string(const ${{self.c_ident}}& obj);
 
 // Code to increment an enumeration type
 ${{self.c_ident}} &operator++(${{self.c_ident}} &e);
 ''')
 
-        if self.isMachineType:
-            code('''
-
-// define a hash function for the MachineType class
-namespace std {
-template<>
-struct hash<MachineType> {
-    std::size_t operator()(const MachineType &mtype) const {
-        return hash<size_t>()(static_cast<size_t>(mtype));
-    }
-};
-}
-
-''')
         # MachineType hack used to set the base component id for each Machine
         if self.isMachineType:
             code('''
@@ -523,7 +527,7 @@ int ${{self.c_ident}}_base_number(const ${{self.c_ident}}& obj);
 int ${{self.c_ident}}_base_count(const ${{self.c_ident}}& obj);
 ''')
 
-            for enum in self.enums.itervalues():
+            for enum in self.enums.values():
                 code('''
 
 MachineID get${{enum.ident}}MachineID(NodeID RubyNode);
@@ -537,10 +541,35 @@ AccessPermission ${{self.c_ident}}_to_permission(const ${{self.c_ident}}& obj);
 
 ''')
 
+        code('''
+
+::std::ostream&
+operator<<(::std::ostream& out, const ${{self.c_ident}}& obj);
+
+} // namespace ruby
+} // namespace gem5
+''')
+
+        if self.isMachineType:
+            code('''
+
+// define a hash function for the MachineType class
+namespace std {
+template<>
+struct hash<gem5::ruby::MachineType>
+{
+    std::size_t
+    operator()(const gem5::ruby::MachineType &mtype) const
+    {
+        return hash<size_t>()(static_cast<size_t>(mtype));
+    }
+};
+}
+
+''')
+
         # Trailer
         code('''
-std::ostream& operator<<(std::ostream& out, const ${{self.c_ident}}& obj);
-
 #endif // __${{self.c_ident}}_HH__
 ''')
 
@@ -549,11 +578,6 @@ std::ostream& operator<<(std::ostream& out, const ${{self.c_ident}}& obj);
     def printEnumCC(self, path):
         code = self.symtab.codeFormatter()
         code('''
-/** \\file ${{self.c_ident}}.hh
- *
- * Auto generated C++ code started by $__file__:$__line__
- */
-
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -561,12 +585,16 @@ std::ostream& operator<<(std::ostream& out, const ${{self.c_ident}}& obj);
 #include "base/logging.hh"
 #include "mem/ruby/protocol/${{self.c_ident}}.hh"
 
-using namespace std;
-
 ''')
 
         if self.isStateDecl:
             code('''
+namespace gem5
+{
+
+namespace ruby
+{
+
 // Code to convert the current state to an access permission
 AccessPermission ${{self.c_ident}}_to_permission(const ${{self.c_ident}}& obj)
 {
@@ -582,29 +610,40 @@ AccessPermission ${{self.c_ident}}_to_permission(const ${{self.c_ident}}& obj)
       default:
         panic("Unknown state access permission converstion for ${{self.c_ident}}");
     }
+    // Appease the compiler since this function has a return value
+    return AccessPermission_Invalid;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 ''')
 
         if self.isMachineType:
-            for enum in self.enums.itervalues():
+            for enum in self.enums.values():
                 if enum.primary:
                     code('#include "mem/ruby/protocol/${{enum.ident}}'
                             '_Controller.hh"')
             code('#include "mem/ruby/common/MachineID.hh"')
 
         code('''
+namespace gem5
+{
+
+namespace ruby
+{
+
 // Code for output operator
-ostream&
-operator<<(ostream& out, const ${{self.c_ident}}& obj)
+::std::ostream&
+operator<<(::std::ostream& out, const ${{self.c_ident}}& obj)
 {
     out << ${{self.c_ident}}_to_string(obj);
-    out << flush;
+    out << ::std::flush;
     return out;
 }
 
 // Code to convert state to a string
-string
+std::string
 ${{self.c_ident}}_to_string(const ${{self.c_ident}}& obj)
 {
     switch(obj) {
@@ -612,7 +651,7 @@ ${{self.c_ident}}_to_string(const ${{self.c_ident}}& obj)
 
         # For each field
         code.indent()
-        for enum in self.enums.itervalues():
+        for enum in self.enums.values():
             code('  case ${{self.c_ident}}_${{enum.ident}}:')
             code('    return "${{enum.ident}}";')
         code.dedent()
@@ -622,18 +661,20 @@ ${{self.c_ident}}_to_string(const ${{self.c_ident}}& obj)
       default:
         panic("Invalid range for type ${{self.c_ident}}");
     }
+    // Appease the compiler since this function has a return value
+    return "";
 }
 
 // Code to convert from a string to the enumeration
 ${{self.c_ident}}
-string_to_${{self.c_ident}}(const string& str)
+string_to_${{self.c_ident}}(const std::string& str)
 {
 ''')
 
         # For each field
         start = ""
         code.indent()
-        for enum in self.enums.itervalues():
+        for enum in self.enums.values():
             code('${start}if (str == "${{enum.ident}}") {')
             code('    return ${{self.c_ident}}_${{enum.ident}};')
             start = "} else "
@@ -672,7 +713,7 @@ ${{self.c_ident}}_base_level(const ${{self.c_ident}}& obj)
 
             # For each field
             code.indent()
-            for i,enum in enumerate(self.enums.itervalues()):
+            for i,enum in enumerate(self.enums.values()):
                 code('  case ${{self.c_ident}}_${{enum.ident}}:')
                 code('    return $i;')
             code.dedent()
@@ -685,6 +726,8 @@ ${{self.c_ident}}_base_level(const ${{self.c_ident}}& obj)
       default:
         panic("Invalid range for type ${{self.c_ident}}");
     }
+    // Appease the compiler since this function has a return value
+    return -1;
 }
 
 /** \\brief returns the machine type for each base vector index used by NetDest
@@ -699,7 +742,7 @@ ${{self.c_ident}}_from_base_level(int type)
 
             # For each field
             code.indent()
-            for i,enum in enumerate(self.enums.itervalues()):
+            for i,enum in enumerate(self.enums.values()):
                 code('  case $i:')
                 code('    return ${{self.c_ident}}_${{enum.ident}};')
             code.dedent()
@@ -732,7 +775,7 @@ ${{self.c_ident}}_base_number(const ${{self.c_ident}}& obj)
                     code('    base += ${{enum.ident}}_Controller::getNumControllers();')
                 else:
                     code('    base += 0;')
-                code('    M5_FALLTHROUGH;')
+                code('    GEM5_FALLTHROUGH;')
                 code('  case ${{self.c_ident}}_${{enum.ident}}:')
             code('    break;')
             code.dedent()
@@ -755,7 +798,7 @@ ${{self.c_ident}}_base_count(const ${{self.c_ident}}& obj)
 ''')
 
             # For each field
-            for enum in self.enums.itervalues():
+            for enum in self.enums.values():
                 code('case ${{self.c_ident}}_${{enum.ident}}:')
                 if enum.primary:
                     code('return ${{enum.ident}}_Controller::getNumControllers();')
@@ -768,10 +811,12 @@ ${{self.c_ident}}_base_count(const ${{self.c_ident}}& obj)
       default:
         panic("Invalid range for type ${{self.c_ident}}");
     }
+    // Appease the compiler since this function has a return value
+    return -1;
 }
 ''')
 
-            for enum in self.enums.itervalues():
+            for enum in self.enums.values():
                 code('''
 
 MachineID
@@ -780,6 +825,11 @@ get${{enum.ident}}MachineID(NodeID RubyNode)
       MachineID mach = {MachineType_${{enum.ident}}, RubyNode};
       return mach;
 }
+''')
+
+        code('''
+} // namespace ruby
+} // namespace gem5
 ''')
 
         # Write the file

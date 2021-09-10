@@ -24,14 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 
 #include "kern/operatingsystem.hh"
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 int
 OperatingSystem::openSpecialFile(std::string path, Process *process,
@@ -43,4 +44,4 @@ OperatingSystem::openSpecialFile(std::string path, Process *process,
     return -1;
 }
 
-
+} // namespace gem5

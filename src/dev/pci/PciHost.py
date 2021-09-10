@@ -32,9 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
-#          Glenn Bergmans
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -44,13 +41,13 @@ from m5.objects.Platform import Platform
 
 class PciHost(PioDevice):
     type = 'PciHost'
-    cxx_class = 'PciHost'
+    cxx_class = 'gem5::PciHost'
     cxx_header = "dev/pci/host.hh"
     abstract = True
 
 class GenericPciHost(PciHost):
     type = 'GenericPciHost'
-    cxx_class = 'GenericPciHost'
+    cxx_class = 'gem5::GenericPciHost'
     cxx_header = "dev/pci/host.hh"
 
     platform = Param.Platform(Parent.any, "Platform to use for interrupts")

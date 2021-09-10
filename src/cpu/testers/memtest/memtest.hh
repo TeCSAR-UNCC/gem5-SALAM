@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 ARM Limited
+ * Copyright (c) 2015, 2021 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,17 +36,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Steve Reinhardt
- *          Andreas Hansson
  */
 
 #ifndef __CPU_MEMTEST_MEMTEST_HH__
 #define __CPU_MEMTEST_MEMTEST_HH__
 
-#include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "base/statistics.hh"
 #include "mem/port.hh"
@@ -54,6 +50,9 @@
 #include "sim/clocked_object.hh"
 #include "sim/eventq.hh"
 #include "sim/stats.hh"
+
+namespace gem5
+{
 
 /**
  * The MemTest class tests a cache coherent memory system by
@@ -74,9 +73,8 @@ class MemTest : public ClockedObject
   public:
 
     typedef MemTestParams Params;
-    MemTest(const Params *p);
+    MemTest(const Params &p);
 
-    void regStats() override;
 
     Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID) override;
@@ -95,14 +93,14 @@ class MemTest : public ClockedObject
 
     EventFunctionWrapper noResponseEvent;
 
-    class CpuPort : public MasterPort
+    class CpuPort : public RequestPort
     {
         MemTest &memtest;
 
       public:
 
         CpuPort(const std::string &_name, MemTest &_memtest)
-            : MasterPort(_name, &_memtest), memtest(_memtest)
+            : RequestPort(_name, &_memtest), memtest(_memtest)
         { }
 
       protected:
@@ -131,11 +129,11 @@ class MemTest : public ClockedObject
     const unsigned percentUncacheable;
 
     /** Request id for all generated traffic */
-    MasterID masterId;
+    RequestorID requestorId;
 
     unsigned int id;
 
-    std::set<Addr> outstandingAddrs;
+    std::unordered_set<Addr> outstandingAddrs;
 
     // store the expected value for the addresses we have touched
     std::unordered_map<Addr, uint8_t> referenceData;
@@ -155,9 +153,9 @@ class MemTest : public ClockedObject
         return (addr & ~blockAddrMask);
     }
 
-    Addr baseAddr1;
-    Addr baseAddr2;
-    Addr uncacheAddr;
+    const Addr baseAddr1;
+    const Addr baseAddr2;
+    const Addr uncacheAddr;
 
     const unsigned progressInterval;  // frequency of progress reports
     const Cycles progressCheck;
@@ -169,10 +167,14 @@ class MemTest : public ClockedObject
 
     const bool atomic;
 
-    const bool suppressFuncWarnings;
-
-    Stats::Scalar numReadsStat;
-    Stats::Scalar numWritesStat;
+    const bool suppressFuncErrors;
+  protected:
+    struct MemTestStats : public statistics::Group
+    {
+        MemTestStats(statistics::Group *parent);
+        statistics::Scalar numReads;
+        statistics::Scalar numWrites;
+    } stats;
 
     /**
      * Complete a request by checking the response.
@@ -187,5 +189,7 @@ class MemTest : public ClockedObject
     void recvRetry();
 
 };
+
+} // namespace gem5
 
 #endif // __CPU_MEMTEST_MEMTEST_HH__

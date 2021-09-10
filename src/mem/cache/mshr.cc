@@ -37,10 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Dave Greene
- *          Nikos Nikoleris
  */
 
 /**
@@ -56,21 +52,28 @@
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "base/types.hh"
-#include "debug/Cache.hh"
+#include "debug/MSHR.hh"
 #include "mem/cache/base.hh"
 #include "mem/request.hh"
-#include "sim/core.hh"
 
-MSHR::MSHR() : downstreamPending(false),
-               pendingModified(false),
-               postInvalidate(false), postDowngrade(false),
-               wasWholeLineWrite(false), isForward(false)
+namespace gem5
+{
+
+MSHR::MSHR(const std::string &name)
+    :   QueueEntry(name),
+        downstreamPending(false),
+        pendingModified(false),
+        postInvalidate(false), postDowngrade(false),
+        wasWholeLineWrite(false), isForward(false),
+        targets(name + ".targets"),
+        deferredTargets(name + ".deferredTargets")
 {
 }
 
-MSHR::TargetList::TargetList()
-    : needsWritable(false), hasUpgrade(false), allocOnFill(false),
-      hasFromCache(false)
+MSHR::TargetList::TargetList(const std::string &name)
+    :   Named(name),
+        needsWritable(false), hasUpgrade(false),
+        allocOnFill(false), hasFromCache(false)
 {}
 
 
@@ -111,6 +114,51 @@ MSHR::TargetList::populateFlags()
     }
 }
 
+void
+MSHR::TargetList::updateWriteFlags(PacketPtr pkt)
+{
+    if (isWholeLineWrite()) {
+        // if we have already seen writes for the full block
+        // stop here, this might be a full line write followed
+        // by other compatible requests (e.g., reads)
+        return;
+    }
+
+    if (canMergeWrites) {
+        if (!pkt->isWrite()) {
+            // We won't allow further merging if this hasn't
+            // been a write
+            canMergeWrites = false;
+            return;
+        }
+
+        // Avoid merging requests with special flags (e.g.,
+        // strictly ordered)
+        const Request::FlagsType no_merge_flags =
+            Request::UNCACHEABLE | Request::STRICT_ORDER |
+            Request::PRIVILEGED | Request::LLSC | Request::MEM_SWAP |
+            Request::MEM_SWAP_COND | Request::SECURE;
+        const auto &req_flags = pkt->req->getFlags();
+        bool compat_write = !req_flags.isSet(no_merge_flags);
+
+        // if this is the first write, it might be a whole
+        // line write and even if we can't merge any
+        // subsequent write requests, we still need to service
+        // it as a whole line write (e.g., SECURE whole line
+        // write)
+        bool first_write = empty();
+        if (first_write || compat_write) {
+            auto offset = pkt->getOffset(blkSize);
+            auto begin = writesBitmap.begin() + offset;
+            std::fill(begin, begin + pkt->getSize(), true);
+        }
+
+        // We won't allow further merging if this has been a
+        // special write
+        canMergeWrites &= compat_write;
+    }
+}
+
 inline void
 MSHR::TargetList::add(PacketPtr pkt, Tick readyTime,
                       Counter order, Target::Source source, bool markPending,
@@ -132,6 +180,8 @@ MSHR::TargetList::add(PacketPtr pkt, Tick readyTime,
     }
 
     emplace_back(pkt, readyTime, order, source, markPending, alloc_on_fill);
+
+    DPRINTF(MSHR, "New target allocated: %s\n", pkt->print());
 }
 
 
@@ -143,13 +193,13 @@ replaceUpgrade(PacketPtr pkt)
 
     if (pkt->cmd == MemCmd::UpgradeReq) {
         pkt->cmd = MemCmd::ReadExReq;
-        DPRINTF(Cache, "Replacing UpgradeReq with ReadExReq\n");
+        DPRINTF(MSHR, "Replacing UpgradeReq with ReadExReq\n");
     } else if (pkt->cmd == MemCmd::SCUpgradeReq) {
         pkt->cmd = MemCmd::SCUpgradeFailReq;
-        DPRINTF(Cache, "Replacing SCUpgradeReq with SCUpgradeFailReq\n");
+        DPRINTF(MSHR, "Replacing SCUpgradeReq with SCUpgradeFailReq\n");
     } else if (pkt->cmd == MemCmd::StoreCondReq) {
         pkt->cmd = MemCmd::StoreCondFailReq;
-        DPRINTF(Cache, "Replacing StoreCondReq with StoreCondFailReq\n");
+        DPRINTF(MSHR, "Replacing StoreCondReq with StoreCondFailReq\n");
     }
 
     if (!has_data) {
@@ -365,12 +415,14 @@ MSHR::allocateTarget(PacketPtr pkt, Tick whenReady, Counter _order,
         targets.add(pkt, whenReady, _order, Target::FromCPU, !inService,
                     alloc_on_fill);
     }
+
+    DPRINTF(MSHR, "After target allocation: %s", print());
 }
 
 bool
 MSHR::handleSnoop(PacketPtr pkt, Counter _order)
 {
-    DPRINTF(Cache, "%s for %s\n", __func__, pkt->print());
+    DPRINTF(MSHR, "%s for %s\n", __func__, pkt->print());
 
     // when we snoop packets the needsWritable and isInvalidate flags
     // should always be the same, however, this assumes that we never
@@ -419,6 +471,10 @@ MSHR::handleSnoop(PacketPtr pkt, Counter _order)
         return true;
     }
 
+    // Start by determining if we will eventually respond or not,
+    // matching the conditions checked in Cache::handleSnoop
+    const bool will_respond = isPendingModified() && pkt->needsResponse() &&
+        !pkt->isClean();
     if (isPendingModified() || pkt->isInvalidate()) {
         // We need to save and replay the packet in two cases:
         // 1. We're awaiting a writable copy (Modified or Exclusive),
@@ -427,11 +483,6 @@ MSHR::handleSnoop(PacketPtr pkt, Counter _order)
         // 2. It's an invalidation (e.g., UpgradeReq), and we need
         //    to forward the snoop up the hierarchy after the current
         //    transaction completes.
-
-        // Start by determining if we will eventually respond or not,
-        // matching the conditions checked in Cache::handleSnoop
-        bool will_respond = isPendingModified() && pkt->needsResponse() &&
-                      !pkt->isClean();
 
         // The packet we are snooping may be deleted by the time we
         // actually process the target, and we consequently need to
@@ -489,7 +540,7 @@ MSHR::handleSnoop(PacketPtr pkt, Counter _order)
         pkt->setHasSharers();
     }
 
-    return true;
+    return will_respond;
 }
 
 MSHR::TargetList
@@ -674,12 +725,12 @@ MSHR::print(std::ostream &os, int verbosity, const std::string &prefix) const
              hasFromCache() ? "HasFromCache" : "");
 
     if (!targets.empty()) {
-        ccprintf(os, "%s  Targets:\n", prefix);
-        targets.print(os, verbosity, prefix + "    ");
+        ccprintf(os, "%s      Targets:\n", prefix);
+        targets.print(os, verbosity, prefix + "        ");
     }
     if (!deferredTargets.empty()) {
-        ccprintf(os, "%s  Deferred Targets:\n", prefix);
-        deferredTargets.print(os, verbosity, prefix + "      ");
+        ccprintf(os, "%s      Deferred Targets:\n", prefix);
+        deferredTargets.print(os, verbosity, prefix + "        ");
     }
 }
 
@@ -711,3 +762,5 @@ MSHR::conflictAddr(const QueueEntry* entry) const
     assert(hasTargets());
     return entry->matchBlockAddr(blkAddr, isSecure);
 }
+
+} // namespace gem5

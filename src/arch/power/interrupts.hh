@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_POWER_INTERRUPT_HH__
@@ -35,6 +33,9 @@
 #include "base/logging.hh"
 #include "params/PowerInterrupts.hh"
 
+namespace gem5
+{
+
 class BaseCPU;
 class ThreadContext;
 
@@ -42,26 +43,10 @@ namespace PowerISA {
 
 class Interrupts : public BaseInterrupts
 {
-  private:
-    BaseCPU * cpu;
-
   public:
-    typedef PowerInterruptsParams Params;
+    using Params = PowerInterruptsParams;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    Interrupts(Params * p) : BaseInterrupts(p), cpu(NULL)
-    {}
-
-    void
-    setCPU(BaseCPU * _cpu)
-    {
-        cpu = _cpu;
-    }
+    Interrupts(const Params &p) : BaseInterrupts(p) {}
 
     void
     post(int int_num, int index)
@@ -82,26 +67,26 @@ class Interrupts : public BaseInterrupts
     }
 
     bool
-    checkInterrupts(ThreadContext *tc) const
+    checkInterrupts() const
     {
         panic("Interrupts::checkInterrupts not implemented.\n");
     }
 
     Fault
-    getInterrupt(ThreadContext *tc)
+    getInterrupt()
     {
-        assert(checkInterrupts(tc));
+        assert(checkInterrupts());
         panic("Interrupts::getInterrupt not implemented.\n");
     }
 
     void
-    updateIntrInfo(ThreadContext *tc)
+    updateIntrInfo()
     {
         panic("Interrupts::updateIntrInfo not implemented.\n");
     }
 };
 
 } // namespace PowerISA
+} // namespace gem5
 
 #endif // __ARCH_POWER_INTERRUPT_HH__
-

@@ -33,11 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Thomas Grass
- *          Andreas Hansson
- *          Sascha Bischoff
- *          Neha Agarwal
  */
 
 #include "cpu/testers/traffic_gen/dram_gen.hh"
@@ -49,8 +44,11 @@
 #include "debug/TrafficGen.hh"
 #include "enums/AddrMap.hh"
 
+namespace gem5
+{
+
 DramGen::DramGen(SimObject &obj,
-                 MasterID master_id, Tick _duration,
+                 RequestorID requestor_id, Tick _duration,
                  Addr start_addr, Addr end_addr,
                  Addr _blocksize, Addr cacheline_size,
                  Tick min_period, Tick max_period,
@@ -58,9 +56,9 @@ DramGen::DramGen(SimObject &obj,
                  unsigned int num_seq_pkts, unsigned int page_size,
                  unsigned int nbr_of_banks_DRAM,
                  unsigned int nbr_of_banks_util,
-                 Enums::AddrMap addr_mapping,
+                 enums::AddrMap addr_mapping,
                  unsigned int nbr_of_ranks)
-        : RandomGen(obj, master_id, _duration, start_addr, end_addr,
+        : RandomGen(obj, requestor_id, _duration, start_addr, end_addr,
           _blocksize, cacheline_size, min_period, max_period,
           read_percent, data_limit),
           numSeqPkts(num_seq_pkts), countNumSeqPkts(0), addr(0),
@@ -110,13 +108,13 @@ DramGen::getNextPacket()
 
     } else {
         // increment the column by one
-        if (addrMapping == Enums::RoRaBaCoCh ||
-            addrMapping == Enums::RoRaBaChCo)
+        if (addrMapping == enums::RoRaBaCoCh ||
+            addrMapping == enums::RoRaBaChCo)
             // Simply increment addr by blocksize to increment
             // the column by one
             addr += blocksize;
 
-        else if (addrMapping == Enums::RoCoRaBaCh) {
+        else if (addrMapping == enums::RoCoRaBaCh) {
             // Explicity increment the column bits
             unsigned int new_col = ((addr / blocksize /
                                        nbrOfBanksDRAM / nbrOfRanks) %
@@ -171,8 +169,8 @@ DramGen::genStartAddr(unsigned int new_bank, unsigned int new_rank)
     unsigned int new_col =
         random_mt.random<unsigned int>(0, columns_per_page - numSeqPkts);
 
-    if (addrMapping == Enums::RoRaBaCoCh ||
-        addrMapping == Enums::RoRaBaChCo) {
+    if (addrMapping == enums::RoRaBaCoCh ||
+        addrMapping == enums::RoRaBaChCo) {
         // Block bits, then page bits, then bank bits, then rank bits
         replaceBits(addr, blockBits + pageBits + bankBits - 1,
                     blockBits + pageBits, new_bank);
@@ -181,7 +179,7 @@ DramGen::genStartAddr(unsigned int new_bank, unsigned int new_rank)
             replaceBits(addr, blockBits + pageBits + bankBits +rankBits - 1,
                         blockBits + pageBits + bankBits, new_rank);
         }
-    } else if (addrMapping == Enums::RoCoRaBaCh) {
+    } else if (addrMapping == enums::RoCoRaBaCh) {
         // Block bits, then bank bits, then rank bits, then page bits
         replaceBits(addr, blockBits + bankBits - 1, blockBits, new_bank);
         replaceBits(addr, blockBits + bankBits + rankBits + pageBits - 1,
@@ -192,3 +190,5 @@ DramGen::genStartAddr(unsigned int new_bank, unsigned int new_rank)
         }
     }
 }
+
+} // namespace gem5

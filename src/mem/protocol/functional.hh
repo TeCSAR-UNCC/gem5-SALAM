@@ -36,16 +36,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Andreas Hansson
- *          William Wang
  */
 
 #ifndef __MEM_GEM5_PROTOCOL_FUNCTIONAL_HH__
 #define __MEM_GEM5_PROTOCOL_FUNCTIONAL_HH__
 
 #include "mem/packet.hh"
+
+namespace gem5
+{
 
 class FunctionalResponseProtocol;
 
@@ -88,5 +87,7 @@ class FunctionalResponseProtocol
      */
     virtual void recvFunctional(PacketPtr pkt) = 0;
 };
+
+} // namespace gem5
 
 #endif //__MEM_GEM5_PROTOCOL_FUNCTIONAL_HH__

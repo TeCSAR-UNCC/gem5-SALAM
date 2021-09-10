@@ -33,25 +33,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Dam Sunwoo
- *          Curtis Dunham
  */
 
 #include "cpu/simple/probes/simpoint.hh"
 
 #include "base/output.hh"
 
-SimPoint::SimPoint(const SimPointParams *p)
+namespace gem5
+{
+
+SimPoint::SimPoint(const SimPointParams &p)
     : ProbeListenerObject(p),
-      intervalSize(p->interval),
+      intervalSize(p.interval),
       intervalCount(0),
       intervalDrift(0),
       simpointStream(NULL),
       currentBBV(0, 0),
       currentBBVInstCount(0)
 {
-    simpointStream = simout.create(p->profile_file, false);
+    simpointStream = simout.create(p.profile_file, false);
     if (!simpointStream)
         fatal("unable to open SimPoint profile_file");
 }
@@ -96,7 +96,8 @@ SimPoint::profile(const std::pair<SimpleThread*, StaticInstPtr>& p)
         auto map_itr = bbMap.find(currentBBV);
         if (map_itr == bbMap.end()){
             // If a new (previously unseen) basic block is found,
-            // add a new unique id, record num of insts and insert into bbMap.
+            // add a new unique id, record num of insts and insert
+            // into bbMap.
             BBInfo info;
             info.id = bbMap.size() + 1;
             info.insts = currentBBVInstCount;
@@ -141,9 +142,4 @@ SimPoint::profile(const std::pair<SimpleThread*, StaticInstPtr>& p)
     }
 }
 
-/** SimPoint SimObject */
-SimPoint*
-SimPointParams::create()
-{
-    return new SimPoint(this);
-}
+} // namespace gem5

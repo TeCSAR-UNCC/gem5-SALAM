@@ -24,29 +24,27 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Lisa Hsu
- *          Nathan Binkert
  */
 
 #include "kern/system_events.hh"
 
-#include "arch/isa_traits.hh"
-#include "arch/utility.hh"
+#include "base/compiler.hh"
 #include "base/trace.hh"
-#include "config/the_isa.hh"
 #include "cpu/thread_context.hh"
 #include "debug/PCEvent.hh"
 
-using namespace TheISA;
+namespace gem5
+{
 
 void
-SkipFuncEvent::process(ThreadContext *tc)
+SkipFuncBase::process(ThreadContext *tc)
 {
-    TheISA::PCState oldPC M5_VAR_USED = tc->pcState();
+    GEM5_VAR_USED TheISA::PCState oldPC = tc->pcState();
 
-    // Call ISA specific code to do the skipping
-    TheISA::skipFunction(tc);
+    returnFromFuncIn(tc);
+
     DPRINTF(PCEvent, "skipping %s: pc = %s, newpc = %s\n", description,
             oldPC, tc->pcState());
 }
+
+} // namespace gem5

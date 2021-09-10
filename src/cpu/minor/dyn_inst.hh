@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -50,14 +48,22 @@
 
 #include <iostream>
 
+#include "arch/generic/isa.hh"
+#include "base/named.hh"
 #include "base/refcnt.hh"
-#include "cpu/minor/buffers.hh"
+#include "base/types.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/minor/buffers.hh"
 #include "cpu/static_inst.hh"
 #include "cpu/timing_expr.hh"
 #include "sim/faults.hh"
+#include "sim/insttracer.hh"
 
-namespace Minor
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Minor, minor);
+namespace minor
 {
 
 class MinorDynInst;
@@ -162,7 +168,7 @@ class MinorDynInst : public RefCounted
     static MinorDynInstPtr bubbleInst;
 
   public:
-    StaticInstPtr staticInst;
+    const StaticInstPtr staticInst;
 
     InstId id;
 
@@ -229,17 +235,18 @@ class MinorDynInst : public RefCounted
     /** Flat register indices so that, when clearing the scoreboard, we
      *  have the same register indices as when the instruction was marked
      *  up */
-    RegId flatDestRegIdx[TheISA::MaxInstDestRegs];
+    std::vector<RegId> flatDestRegIdx;
 
   public:
-    MinorDynInst(InstId id_ = InstId(), Fault fault_ = NoFault) :
-        staticInst(NULL), id(id_), traceData(NULL),
+    MinorDynInst(StaticInstPtr si, InstId id_=InstId(), Fault fault_=NoFault) :
+        staticInst(si), id(id_), traceData(NULL),
         pc(TheISA::PCState(0)), fault(fault_),
         triedToPredict(false), predictedTaken(false),
         fuIndex(0), inLSQ(false), translationFault(NoFault),
         inStoreBuffer(false), canEarlyIssue(false), predicate(true),
         memAccPredicate(true), instToWaitFor(0), extraCommitDelay(Cycles(0)),
-        extraCommitDelayExpr(NULL), minimumCommitCycle(Cycles(0))
+        extraCommitDelayExpr(NULL), minimumCommitCycle(Cycles(0)),
+        flatDestRegIdx(si ? si->numDestRegs() : 0)
     { }
 
   public:
@@ -271,7 +278,8 @@ class MinorDynInst : public RefCounted
 
     /** Print (possibly verbose) instruction information for
      *  MinorTrace using the given Named object's name */
-    void minorTraceInst(const Named &named_object) const;
+    void minorTraceInst(const Named &named_object,
+            const BaseISA::RegClasses &reg_classes) const;
 
     /** ReportIF interface */
     void reportData(std::ostream &os) const;
@@ -290,6 +298,7 @@ class MinorDynInst : public RefCounted
 /** Print a summary of the instruction */
 std::ostream &operator <<(std::ostream &os, const MinorDynInst &inst);
 
-}
+} // namespace minor
+} // namespace gem5
 
 #endif /* __CPU_MINOR_DYN_INST_HH__ */

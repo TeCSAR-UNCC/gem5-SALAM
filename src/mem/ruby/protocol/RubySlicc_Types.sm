@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020-2021 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2005 Mark D. Hill and David A. Wood
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved.
@@ -36,9 +48,21 @@
 // undefined declaration error.
 //
 
-external_type(MessageBuffer, buffer="yes", inport="yes", outport="yes");
-external_type(OutPort, primitive="yes");
+structure(MessageBuffer, buffer="yes", inport="yes", outport="yes",
+                         external = "yes", primitive="yes") {
+  // NOTE: it's recommended to use SLICC's built in resource stall management.
+  // These functions are mostly for including resource utilization info
+  // in debug traces dumped by the protocol.
+  bool areNSlotsAvailable(int n, Tick curTime);
+  int getSize(Tick curTime);
+}
+
 external_type(Scalar, primitive="yes");
+
+structure(OutPort, external = "yes", primitive="yes") {
+    void enqueueDeferredMessages(Addr addr, Tick curTime, Tick delay);
+    bool isDeferredMsgMapEmpty(Addr addr);
+}
 
 structure(InPort, external = "yes", primitive="yes") {
   bool isReady(Tick current_time);
@@ -47,6 +71,7 @@ structure(InPort, external = "yes", primitive="yes") {
   bool isEmpty();
   bool isStallMapEmpty();
   int getStallMapSize();
+  bool hasStalledMsg(Addr addr);
 }
 
 external_type(NodeID, default="0", primitive="yes");
@@ -94,6 +119,7 @@ structure (NetDest, external = "yes", non_obj="yes") {
   bool isEmpty();
   bool intersectionIsEmpty(Set);
   bool intersectionIsEmpty(NetDest);
+  MachineID smallestElement();
   MachineID smallestElement(MachineType);
   NetDest OR(NetDest);
   NetDest AND(NetDest);
@@ -111,50 +137,21 @@ structure (Sequencer, external = "yes") {
   void writeCallback(Addr, DataBlock, bool, MachineType);
   void writeCallback(Addr, DataBlock, bool, MachineType,
                      Cycles, Cycles, Cycles);
+  void writeUniqueCallback(Addr, DataBlock);
 
-  void checkCoherence(Addr);
+  // ll/sc support
+  void writeCallbackScFail(Addr, DataBlock);
+  bool llscCheckMonitor(Addr);
+  void llscClearLocalMonitor();
+
   void evictionCallback(Addr);
   void recordRequestType(SequencerRequestType);
   bool checkResourceAvailable(CacheResourceType, Addr);
-  void invalidateSC(Addr);
 }
 
-structure (GPUCoalescer, external = "yes") {
-  void readCallback(Addr, DataBlock);
-  void readCallback(Addr, MachineType, DataBlock);
-  void readCallback(Addr, MachineType, DataBlock,
-                    Cycles, Cycles, Cycles);
-  void readCallback(Addr, MachineType, DataBlock,
-                    Cycles, Cycles, Cycles, bool);
-  void writeCallback(Addr, DataBlock);
-  void writeCallback(Addr, MachineType, DataBlock);
-  void writeCallback(Addr, MachineType, DataBlock,
-                     Cycles, Cycles, Cycles);
-  void writeCallback(Addr, MachineType, DataBlock,
-                     Cycles, Cycles, Cycles, bool);
-  void checkCoherence(Addr);
-  void evictionCallback(Addr);
-  void recordCPReadCallBack(MachineID, MachineID);
-  void recordCPWriteCallBack(MachineID, MachineID);
-}
-
-structure (VIPERCoalescer, external = "yes") {
-  void readCallback(Addr, DataBlock);
-  void readCallback(Addr, MachineType, DataBlock);
-  void readCallback(Addr, MachineType, DataBlock,
-                    Cycles, Cycles, Cycles);
-  void readCallback(Addr, MachineType, DataBlock,
-                    Cycles, Cycles, Cycles, bool);
-  void writeCallback(Addr, DataBlock);
-  void writeCallback(Addr, MachineType, DataBlock);
-  void writeCallback(Addr, MachineType, DataBlock,
-                     Cycles, Cycles, Cycles);
-  void writeCallback(Addr, MachineType, DataBlock,
-                     Cycles, Cycles, Cycles, bool);
-  void invCallback(Addr);
-  void wbCallback(Addr);
-  void checkCoherence(Addr);
-  void evictionCallback(Addr);
+structure (HTMSequencer, interface="Sequencer", external = "yes") {
+  // hardware transactional memory
+  void htmCallback(Addr, HtmCallbackMode, HtmFailedInCacheReason);
 }
 
 structure(RubyRequest, desc="...", interface="Message", external="yes") {
@@ -169,9 +166,12 @@ structure(RubyRequest, desc="...", interface="Message", external="yes") {
   WriteMask writeMask,       desc="Writethrough mask";
   DataBlock WTData,          desc="Writethrough data block";
   int wfid,                  desc="Writethrough wavefront";
-  HSAScope scope,            desc="HSA scope";
-  HSASegment segment,        desc="HSA segment";
+  uint64_t instSeqNum,       desc="Instruction sequence number";
   PacketPtr pkt,             desc="Packet associated with this request";
+  bool htmFromTransaction,   desc="Memory request originates within a HTM transaction";
+  int htmTransactionUid,     desc="Used to identify the unique HTM transaction that produced this request";
+
+  RequestPtr getRequestPtr();
 }
 
 structure(AbstractCacheEntry, primitive="yes", external = "yes") {
@@ -181,6 +181,7 @@ structure(AbstractCacheEntry, primitive="yes", external = "yes") {
 structure (DirectoryMemory, external = "yes") {
   AbstractCacheEntry allocate(Addr, AbstractCacheEntry);
   AbstractCacheEntry lookup(Addr);
+  void deallocate(Addr);
   bool isPresent(Addr);
   void invalidateBlock(Addr);
   void recordRequestType(DirectoryRequestType);
@@ -189,6 +190,7 @@ structure (DirectoryMemory, external = "yes") {
 structure (CacheMemory, external = "yes") {
   bool cacheAvail(Addr);
   Addr cacheProbe(Addr);
+  AbstractCacheEntry getNullEntry();
   AbstractCacheEntry allocate(Addr, AbstractCacheEntry);
   AbstractCacheEntry allocate(Addr, AbstractCacheEntry, bool);
   void allocateVoid(Addr, AbstractCacheEntry);
@@ -203,12 +205,18 @@ structure (CacheMemory, external = "yes") {
   void recordRequestType(CacheRequestType, Addr);
   bool checkResourceAvailable(CacheResourceType, Addr);
 
+  // hardware transactional memory
+  void htmCommitTransaction();
+  void htmAbortTransaction();
+
   int getCacheSize();
   int getNumBlocks();
   Addr getAddressAtIdx(int);
 
-  Scalar demand_misses;
-  Scalar demand_hits;
+  void profileDemandHit();
+  void profileDemandMiss();
+  void profilePrefetchHit();
+  void profilePrefetchMiss();
 }
 
 structure (WireBuffer, inport="yes", outport="yes", external = "yes") {
@@ -218,6 +226,7 @@ structure (WireBuffer, inport="yes", outport="yes", external = "yes") {
 structure (DMASequencer, external = "yes") {
   void ackCallback(Addr);
   void dataCallback(DataBlock,Addr);
+  void atomicCallback(DataBlock,Addr);
   void recordRequestType(CacheRequestType);
 }
 
@@ -229,7 +238,7 @@ structure (TimerTable, inport="yes", external = "yes") {
   bool isSet(Addr);
 }
 
-structure (Prefetcher, external = "yes") {
+structure (RubyPrefetcher, external = "yes") {
     void observeMiss(Addr, RubyRequestType);
     void observePfHit(Addr);
     void observePfMiss(Addr);

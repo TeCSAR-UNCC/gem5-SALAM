@@ -36,10 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Andreas Hansson
- *          William Wang
  */
 
 /**
@@ -49,7 +45,21 @@
 
 #include "sim/port.hh"
 
+#include "base/logging.hh"
+
+namespace gem5
+{
+
 Port::Port(const std::string& _name, PortID _id) :
     portName(_name), id(_id), _peer(nullptr), _connected(false)
 {}
 Port::~Port() {}
+
+
+void
+Port::reportUnbound() const
+{
+    fatal("%s: Unconnected port!", name());
+}
+
+} // namespace gem5

@@ -41,22 +41,23 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Alec Roelke
  */
+
 #ifndef __ARCH_RISCV_LOCKED_MEM_HH__
 #define __ARCH_RISCV_LOCKED_MEM_HH__
 
 #include <stack>
 #include <unordered_map>
 
-#include "arch/registers.hh"
 #include "base/logging.hh"
 #include "base/trace.hh"
+#include "cpu/base.hh"
 #include "debug/LLSC.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
+
+namespace gem5
+{
 
 /*
  * ISA-specific helper functions for locked memory accesses.
@@ -141,5 +142,6 @@ globalClearExclusive(XC *xc)
 }
 
 } // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_LOCKED_MEM_HH__

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 ARM Limited
+ * Copyright (c) 2018, 2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,58 +33,69 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "arch/arm/semihosting.hh"
 
+#include <unistd.h>
+
+#include <cerrno>
 #include <cstdio>
 
 #include "arch/arm/utility.hh"
 #include "base/logging.hh"
+#include "base/output.hh"
 #include "base/time.hh"
 #include "debug/Semihosting.hh"
 #include "dev/serial/serial.hh"
 #include "mem/physical.hh"
-#include "mem/secure_port_proxy.hh"
+#include "mem/se_translating_port_proxy.hh"
+#include "mem/translating_port_proxy.hh"
 #include "params/ArmSemihosting.hh"
 #include "sim/byteswap.hh"
+#include "sim/full_system.hh"
+#include "sim/pseudo_inst.hh"
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
 
+namespace gem5
+{
+
 const std::map<uint32_t, ArmSemihosting::SemiCall> ArmSemihosting::calls{
-    { 0x01, { "SYS_OPEN", &ArmSemihosting::callOpen, 3, 3 } },
-    { 0x02, { "SYS_CLOSE", &ArmSemihosting::callClose, 1, 1 } },
+    { SYS_OPEN,     { "SYS_OPEN", &ArmSemihosting::callOpen } },
+    { SYS_CLOSE,    { "SYS_CLOSE", &ArmSemihosting::callClose } },
+    { SYS_WRITEC,   { "SYS_WRITEC", &ArmSemihosting::callWriteC } },
+    { SYS_WRITE0,   { "SYS_WRITE0", &ArmSemihosting::callWrite0 } },
+    { SYS_WRITE,    { "SYS_WRITE", &ArmSemihosting::callWrite } },
+    { SYS_READ,     { "SYS_READ", &ArmSemihosting::callRead } },
+    { SYS_READC,    { "SYS_READC", &ArmSemihosting::callReadC } },
+    { SYS_ISERROR,  { "SYS_ISERROR", &ArmSemihosting::callIsError } },
+    { SYS_ISTTY,    { "SYS_ISTTY", &ArmSemihosting::callIsTTY } },
+    { SYS_SEEK,     { "SYS_SEEK", &ArmSemihosting::callSeek } },
+    { SYS_FLEN,     { "SYS_FLEN", &ArmSemihosting::callFLen } },
+    { SYS_TMPNAM,   { "SYS_TMPNAM", &ArmSemihosting::callTmpNam } },
+    { SYS_REMOVE,   { "SYS_REMOVE", &ArmSemihosting::callRemove } },
+    { SYS_RENAME,   { "SYS_RENAME", &ArmSemihosting::callRename } },
+    { SYS_CLOCK,    { "SYS_CLOCK", &ArmSemihosting::callClock } },
+    { SYS_TIME,     { "SYS_TIME", &ArmSemihosting::callTime } },
+    { SYS_SYSTEM,   { "SYS_SYSTEM", &ArmSemihosting::callSystem } },
+    { SYS_ERRNO,    { "SYS_ERRNO", &ArmSemihosting::callErrno } },
+    { SYS_GET_CMDLINE,
+        { "SYS_GET_CMDLINE", &ArmSemihosting::callGetCmdLine } },
+    { SYS_HEAPINFO, { "SYS_HEAPINFO", &ArmSemihosting::callHeapInfo32,
+                                      &ArmSemihosting::callHeapInfo64 } },
 
-    // Write(C|0) are special since we want to read the character
-    // manually. We therefore declare them as having 0 params.
-    { 0x03, { "SYS_WRITEC", &ArmSemihosting::callWriteC, 0, 0 } },
-    { 0x04, { "SYS_WRITE0", &ArmSemihosting::callWrite0, 1, 1 } },
+    { SYS_EXIT,     { "SYS_EXIT", &ArmSemihosting::callExit32,
+                                  &ArmSemihosting::callExit64} },
+    { SYS_EXIT_EXTENDED,
+        { "SYS_EXIT_EXTENDED", &ArmSemihosting::callExitExtended } },
 
-    { 0x05, { "SYS_WRITE", &ArmSemihosting::callWrite, 3, 3 } },
-    { 0x06, { "SYS_READ", &ArmSemihosting::callRead, 3, 3 } },
-    { 0x07, { "SYS_READC", &ArmSemihosting::callReadC, 0, 0 } },
-    { 0x08, { "SYS_ISERROR", &ArmSemihosting::callIsError, 1, 1 } },
-    { 0x09, { "SYS_ISTTY", &ArmSemihosting::callIsTTY, 1, 1 } },
-    { 0x0A, { "SYS_SEEK", &ArmSemihosting::callSeek, 2, 2 } },
-    { 0x0C, { "SYS_FLEN", &ArmSemihosting::callFLen, 1, 1 } },
-    { 0x0D, { "SYS_TMPNAM", &ArmSemihosting::callTmpNam, 3, 3 } },
-    { 0x0E, { "SYS_REMOVE", &ArmSemihosting::callRemove, 2, 2} },
-    { 0x0F, { "SYS_RENAME", &ArmSemihosting::callRename, 4, 4} },
-    { 0x10, { "SYS_CLOCK", &ArmSemihosting::callClock, 0, 0} },
-    { 0x11, { "SYS_TIME", &ArmSemihosting::callTime, 0, 0} },
-    { 0x12, { "SYS_SYSTEM", &ArmSemihosting::callSystem, 2, 2} },
-    { 0x13, { "SYS_ERRNO", &ArmSemihosting::callErrno, 0, 0 } },
-    { 0x15, { "SYS_GET_CMDLINE", &ArmSemihosting::callGetCmdLine, 2, 2} },
-    { 0x16, { "SYS_HEAPINFO", &ArmSemihosting::callHeapInfo, 1, 1} },
-
-    // Exit is special and requires custom handling in aarch32.
-    { 0x18, { "SYS_EXIT", &ArmSemihosting::callExit, 0, 2 } },
-    { 0x20, { "SYS_EXIT_EXTENDED", &ArmSemihosting::callExitExtended, 2, 2 } },
-
-    { 0x30, { "SYS_ELAPSED", &ArmSemihosting::callElapsed, 0, 0 } },
-    { 0x31, { "SYS_TICKFREQ", &ArmSemihosting::callTickFreq, 0, 0 } },
+    { SYS_ELAPSED,  { "SYS_ELAPSED", &ArmSemihosting::callElapsed32,
+                                     &ArmSemihosting::callElapsed64 } },
+    { SYS_TICKFREQ, { "SYS_TICKFREQ", &ArmSemihosting::callTickFreq } },
+    { SYS_GEM5_PSEUDO_OP,
+        { "SYS_GEM5_PSEUDO_OP", &ArmSemihosting::callGem5PseudoOp32,
+                                &ArmSemihosting::callGem5PseudoOp64 } },
 };
 
 const std::vector<const char *> ArmSemihosting::fmodes{
@@ -130,18 +141,21 @@ const std::map<const std::string, FILE *> ArmSemihosting::stdioMap{
     {"stderr", ::stderr},
 };
 
-ArmSemihosting::ArmSemihosting(const ArmSemihostingParams *p)
+ArmSemihosting::ArmSemihosting(const ArmSemihostingParams &p)
     : SimObject(p),
-      cmdLine(p->cmd_line),
-      memReserve(p->mem_reserve),
-      stackSize(p->stack_size),
-      timeBase([p]{ struct tm t = p->time; return mkutctime(&t); }()),
+      cmdLine(p.cmd_line),
+      memReserve(p.mem_reserve),
+      stackSize(p.stack_size),
+      timeBase([p]{ struct tm t = p.time; return mkutctime(&t); }()),
       tickShift(calcTickShift()),
       semiErrno(0),
-      stdin(getSTDIO("stdin", p->stdin, "r")),
-      stdout(getSTDIO("stdout", p->stdout, "w")),
-      stderr(p->stderr == p->stdout ?
-             stdout : getSTDIO("stderr", p->stderr, "w"))
+      filesRootDir(!p.files_root_dir.empty() &&
+                   p.files_root_dir.back() != '/' ?
+                   p.files_root_dir + '/' : p.files_root_dir),
+      stdin(getSTDIO("stdin", p.stdin, "r")),
+      stdout(getSTDIO("stdout", p.stdout, "w")),
+      stderr(p.stderr == p.stdout ?
+             stdout : getSTDIO("stderr", p.stderr, "w"))
 {
     // Create an empty place-holder file for position 0 as semi-hosting
     // calls typically expect non-zero file handles.
@@ -152,74 +166,56 @@ ArmSemihosting::ArmSemihosting(const ArmSemihostingParams *p)
                tickShift);
 }
 
-uint64_t
-ArmSemihosting::call64(ThreadContext *tc, uint32_t op, uint64_t param)
+bool
+ArmSemihosting::call64(ThreadContext *tc, bool gem5_ops)
 {
-    const SemiCall *call = getCall(op, true);
-    if (!call) {
-        warn("Unknown aarch64 semihosting call: op = 0x%x, param = 0x%x",
-             op, param);
-
-        return (uint64_t)-1;
-    } else if (!call->implemented64()) {
-        warn("Unimplemented aarch64 semihosting call: "
-             "%s (op = 0x%x, param = 0x%x)",
-             call->name, op, param);
-
-        return (uint64_t)-1;
+    RegVal op = tc->readIntReg(ArmISA::INTREG_X0 & mask(32));
+    if (op > MaxStandardOp && !gem5_ops) {
+        unrecognizedCall<Abi64>(
+                tc, "Gem5 semihosting op (0x%x) disabled from here.", op);
+        return false;
     }
 
-    std::vector<uint64_t> argv(call->argc64 + 1);
-    PortProxy &proxy = physProxy(tc);
-    ByteOrder endian = ArmISA::byteOrder(tc);
-
-    DPRINTF(Semihosting, "Semihosting call64: %s(0x%x)\n", call->name, param);
-    argv[0] = param;
-    for (int i = 0; i < call->argc64; ++i) {
-        argv[i + 1] = proxy.read<uint64_t>(param + i * 8, endian);
-        DPRINTF(Semihosting, "\t: 0x%x\n", argv[i + 1]);
+    auto it = calls.find(op);
+    if (it == calls.end()) {
+        unrecognizedCall<Abi64>(
+                tc, "Unknown aarch64 semihosting call: op = 0x%x", op);
+        return false;
     }
+    const SemiCall &call = it->second;
 
-    auto ret_errno = (this->*call->call)(tc, true, argv);
-    semiErrno = ret_errno.second;
-    DPRINTF(Semihosting, "\t ->: 0x%x, %i\n",
-            ret_errno.first, ret_errno.second);
-    return ret_errno.first;
+    DPRINTF(Semihosting, "Semihosting call64: %s\n", call.dump64(tc));
+    auto err = call.call64(this, tc);
+    semiErrno = err.second;
+    DPRINTF(Semihosting, "\t ->: 0x%x, %i\n", err.first, err.second);
+
+    return true;
 }
 
-uint32_t
-ArmSemihosting::call32(ThreadContext *tc, uint32_t op, uint32_t param)
+bool
+ArmSemihosting::call32(ThreadContext *tc, bool gem5_ops)
 {
-    const SemiCall *call = getCall(op, false);
-    if (!call) {
-        warn("Unknown aarch32 semihosting call: op = 0x%x, param = 0x%x",
-             op, param);
-
-        return (uint32_t)-1;
-    } else if (!call->implemented32()) {
-        warn("Unimplemented aarch32 semihosting call: "
-             "%s (op = 0x%x, param = 0x%x)",
-             call->name, op, param);
-
-        return (uint32_t)-1;
+    RegVal op = tc->readIntReg(ArmISA::INTREG_R0);
+    if (op > MaxStandardOp && !gem5_ops) {
+        unrecognizedCall<Abi32>(
+                tc, "Gem5 semihosting op (0x%x) disabled from here.", op);
+        return false;
     }
 
-    std::vector<uint64_t> argv(call->argc32 + 1);
-    PortProxy &proxy = physProxy(tc);
-    ByteOrder endian = ArmISA::byteOrder(tc);
-
-    DPRINTF(Semihosting, "Semihosting call32: %s(0x%x)\n", call->name, param);
-    argv[0] = param;
-    for (int i = 0; i < call->argc32; ++i) {
-        argv[i + 1] = proxy.read<uint32_t>(param + i * 4, endian);
-        DPRINTF(Semihosting, "\t: 0x%x\n", argv[i + 1]);
+    auto it = calls.find(op);
+    if (it == calls.end()) {
+        unrecognizedCall<Abi32>(
+                tc, "Unknown aarch32 semihosting call: op = 0x%x", op);
+        return false;
     }
+    const SemiCall &call = it->second;
 
-    auto ret_errno = (this->*call->call)(tc, false, argv);
-    semiErrno = ret_errno.second;
-    DPRINTF(Semihosting, "\t ->: 0x%x, %i\n",
-            ret_errno.first, ret_errno.second);
-    return ret_errno.first;
+    DPRINTF(Semihosting, "Semihosting call32: %s\n", call.dump32(tc));
+    auto err = call.call32(this, tc);
+    semiErrno = err.second;
+    DPRINTF(Semihosting, "\t ->: 0x%x, %i\n", err.first, err.second);
+
+    return true;
 }
 
 void
@@ -250,18 +246,28 @@ ArmSemihosting::unserialize(CheckpointIn &cp)
 }
 
 PortProxy &
-ArmSemihosting::physProxy(ThreadContext *tc)
+ArmSemihosting::portProxy(ThreadContext *tc)
 {
-    if (ArmISA::inSecureState(tc)) {
-        if (!physProxyS) {
-            System *sys = tc->getSystemPtr();
-            physProxyS.reset(new SecurePortProxy(
-                                 sys->getSystemPort(),
-                                 sys->cacheLineSize()));
+    static std::unique_ptr<PortProxy> port_proxy_s;
+    static System *secure_sys = nullptr;
+
+    if (ArmISA::isSecure(tc)) {
+        System *sys = tc->getSystemPtr();
+        if (sys != secure_sys) {
+            if (FullSystem) {
+                port_proxy_s.reset(
+                        new TranslatingPortProxy(tc, Request::SECURE));
+            } else {
+                port_proxy_s.reset(
+                        new SETranslatingPortProxy(
+                            tc, SETranslatingPortProxy::NextPage,
+                            Request::SECURE));
+            }
         }
-        return *physProxyS;
+        secure_sys = sys;
+        return *port_proxy_s;
     } else {
-        return tc->getPhysProxy();
+        return tc->getVirtProxy();
     }
 }
 
@@ -272,31 +278,31 @@ ArmSemihosting::readString(ThreadContext *tc, Addr ptr, size_t len)
     std::vector<char> buf(len + 1);
 
     buf[len] = '\0';
-    physProxy(tc).readBlob(ptr, buf.data(), len);
+    portProxy(tc).readBlob(ptr, buf.data(), len);
 
     return std::string(buf.data());
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callOpen(ThreadContext *tc, bool aarch64,
-                         std::vector<uint64_t> &argv)
+ArmSemihosting::callOpen(ThreadContext *tc, const Addr name_base,
+                         int fmode, size_t name_size)
 {
-    const Addr name_base = argv[1];
-    const char *mode = argv[2] < fmodes.size() ? fmodes[argv[2]] : nullptr;
-    const Addr name_size = argv[3];
+    const char *mode = fmode < fmodes.size() ? fmodes[fmode] : nullptr;
 
     DPRINTF(Semihosting, "Semihosting SYS_OPEN(0x%x, %i[%s], %i)\n",
-            name_base, argv[2], mode ? mode : "-", name_size);
+            name_base, fmode, mode ? mode : "-", name_size);
     if (!mode || !name_base)
         return retError(EINVAL);
 
     std::string fname = readString(tc, name_base, name_size);
+    if (!fname.empty() && fname.front() != '/')
+        fname = filesRootDir + fname;
 
     std::unique_ptr<ArmSemihosting::FileBase> file =
         FileBase::create(*this, fname, mode);
     int64_t ret = file->open();
     DPRINTF(Semihosting, "Semihosting SYS_OPEN(\"%s\", %i[%s]): %i\n",
-            fname, argv[2], mode, ret);
+            fname, fmode, mode, ret);
     if (ret < 0) {
         return retError(-ret);
     } else {
@@ -306,33 +312,31 @@ ArmSemihosting::callOpen(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callClose(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callClose(ThreadContext *tc, Handle handle)
 {
-    if (argv[1] > files.size()) {
+    if (handle > files.size()) {
         DPRINTF(Semihosting, "Semihosting SYS_CLOSE(%i): Illegal file\n");
         return retError(EBADF);
     }
 
-    std::unique_ptr<FileBase> &file = files[argv[1]];
+    std::unique_ptr<FileBase> &file = files[handle];
     int64_t error = file->close();
     DPRINTF(Semihosting, "Semihosting SYS_CLOSE(%i[%s]): %i\n",
-            argv[1], file->fileName(), error);
+            handle, file->fileName(), error);
     if (error < 0) {
         return retError(-error);
     } else {
         // Zap the pointer and free the entry in the file table as
         // well.
-        files[argv[1]].reset();
+        files[handle].reset();
         return retOK(0);
     }
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callWriteC(ThreadContext *tc, bool aarch64,
-                           std::vector<uint64_t> &argv)
+ArmSemihosting::callWriteC(ThreadContext *tc, InPlaceArg arg)
 {
-    const char c = physProxy(tc).read<char>(argv[0]);
+    const char c = portProxy(tc).read<char>(arg.addr);
 
     DPRINTF(Semihosting, "Semihosting SYS_WRITEC('%c')\n", c);
     std::cout.put(c);
@@ -341,90 +345,78 @@ ArmSemihosting::callWriteC(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callWrite0(ThreadContext *tc, bool aarch64,
-                           std::vector<uint64_t> &argv)
+ArmSemihosting::callWrite0(ThreadContext *tc, InPlaceArg arg)
 {
     DPRINTF(Semihosting, "Semihosting SYS_WRITE0(...)\n");
-    PortProxy &proxy = physProxy(tc);
-    for (Addr addr = (Addr)argv[0]; ; ++addr) {
-        char data = proxy.read<char>(addr);
-        if (data == 0)
-            break;
-
-        std::cout.put(data);
-    }
+    PortProxy &proxy = portProxy(tc);
+    std::string str;
+    proxy.readString(str, arg.addr);
+    std::cout.write(str.c_str(), str.size());
 
     return retOK(0);
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callWrite(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callWrite(ThreadContext *tc, Handle handle, Addr addr,
+                          size_t size)
 {
-    if (argv[1] > files.size() || !files[argv[1]])
-        return RetErrno(argv[3], EBADF);
+    if (handle > files.size() || !files[handle])
+        return RetErrno(size, EBADF);
 
-    std::vector<uint8_t> buffer(argv[3]);
-    physProxy(tc).readBlob(argv[2], buffer.data(), buffer.size());
+    std::vector<uint8_t> buffer(size);
+    portProxy(tc).readBlob(addr, buffer.data(), buffer.size());
 
-    int64_t ret = files[argv[1]]->write(buffer.data(), buffer.size());
+    int64_t ret = files[handle]->write(buffer.data(), buffer.size());
     if (ret < 0) {
         // No bytes written (we're returning the number of bytes not
         // written)
-        return RetErrno(argv[3], -ret);
+        return RetErrno(size, -ret);
     } else {
         // Return the number of bytes not written
-        return RetErrno(argv[3] - ret, 0);
+        return RetErrno(size - ret, 0);
     }
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callRead(ThreadContext *tc, bool aarch64,
-                         std::vector<uint64_t> &argv)
+ArmSemihosting::callRead(ThreadContext *tc, Handle handle, Addr addr,
+                         size_t size)
 {
-    if (argv[1] > files.size() || !files[argv[1]])
-        return RetErrno(argv[3], EBADF);
+    if (handle > files.size() || !files[handle])
+        return RetErrno(size, EBADF);
 
-    std::vector<uint8_t> buffer(argv[3]);
-    int64_t ret = files[argv[1]]->read(buffer.data(), buffer.size());
+    std::vector<uint8_t> buffer(size);
+    int64_t ret = files[handle]->read(buffer.data(), buffer.size());
     if (ret < 0) {
-        return RetErrno(argv[3], -ret);
+        return RetErrno(size, -ret);
     } else {
         panic_if(ret > buffer.size(), "Read longer than buffer size.");
 
-        physProxy(tc).writeBlob(argv[2], buffer.data(), ret);
+        portProxy(tc).writeBlob(addr, buffer.data(), ret);
 
         // Return the number of bytes not written
-        return retOK(argv[3] - ret);
+        return retOK(size - ret);
     }
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callReadC(ThreadContext *tc, bool aarch64,
-                           std::vector<uint64_t> &argv)
+ArmSemihosting::callReadC(ThreadContext *tc)
 {
     return retOK((char)std::cin.get());
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callIsError(ThreadContext *tc, bool aarch64,
-                            std::vector<uint64_t> &argv)
+ArmSemihosting::callIsError(ThreadContext *tc, int64_t status)
 {
-    // Sign extend from a 32 bit integer in aarch32 since the argument
-    // reader zero extends to a uint64_t.
-    const int64_t status = (int64_t)(aarch64 ? argv[1] :sext<32>(argv[1]));
-    // Assume there was an error if the status value is negative.
     return retOK(status < 0 ? 1 : 0);
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callIsTTY(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callIsTTY(ThreadContext *tc, Handle handle)
 {
-    if (argv[1] > files.size() || !files[argv[1]])
+    if (handle > files.size() || !files[handle])
         return retError(EBADF);
 
-    int64_t ret = files[argv[1]]->isTTY();
+    int64_t ret = files[handle]->isTTY();
     if (ret < 0) {
         return retError(-ret);
     } else {
@@ -433,13 +425,12 @@ ArmSemihosting::callIsTTY(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callSeek(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callSeek(ThreadContext *tc, Handle handle, uint64_t pos)
 {
-    if (argv[1] > files.size() || !files[argv[1]])
+    if (handle > files.size() || !files[handle])
         return retError(EBADF);
 
-    int64_t ret = files[argv[1]]->seek(argv[2]);
+    int64_t ret = files[handle]->seek(pos);
     if (ret < 0) {
         return retError(-ret);
     } else {
@@ -448,46 +439,45 @@ ArmSemihosting::callSeek(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callFLen(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callFLen(ThreadContext *tc, Handle handle)
 {
-    if (argv[1] > files.size() || !files[argv[1]])
+    if (handle > files.size() || !files[handle])
         return retError(EBADF);
 
-    int64_t ret = files[argv[1]]->isTTY();
+    int64_t ret = files[handle]->flen();
     if (ret < 0) {
         return retError(-ret);
     } else {
-        return retOK(0);
+        return retOK(ret);
     }
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callTmpNam(ThreadContext *tc, bool aarch64,
-                           std::vector<uint64_t> &argv)
+ArmSemihosting::callTmpNam(ThreadContext *tc, Addr addr, uint64_t id,
+                           size_t size)
 {
-    const Addr guest_buf = argv[1];
-    //const uint64_t id = argv[2];
-    const uint64_t max_len = argv[3];
+    std::string path = "";
+    int64_t unlink_call_ret = 0;
 
-    std::vector<char> buf(L_tmpnam);
-    char *path = tmpnam(buf.data());
-    if (!path)
-        return retError(EINVAL);
+    do {
+        path = simout.resolve(csprintf("%s.tmp%05i", name(), tmpNameIndex++));
+        // remove the (potentially existing) file of the given path
+        unlink_call_ret = unlink(path.c_str());
+    // if the file is busy, find another name
+    } while ((unlink_call_ret < 0) && (errno == EBUSY));
 
-    const size_t path_len = strlen(path);
-    if (path_len >= max_len)
+    const size_t path_len = path.length();
+    if (path_len >= size)
         return retError(ENOSPC);
 
-    physProxy(tc).writeBlob(guest_buf, path, path_len + 1);
+    portProxy(tc).writeBlob(addr, path.c_str(), path_len + 1);
     return retOK(0);
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callRemove(ThreadContext *tc, bool aarch64,
-                           std::vector<uint64_t> &argv)
+ArmSemihosting::callRemove(ThreadContext *tc, Addr name_base, size_t name_size)
 {
-    std::string fname = readString(tc, argv[1], argv[2]);
+    std::string fname = readString(tc, name_base, name_size);
 
     if (remove(fname.c_str()) != 0) {
         return retError(errno);
@@ -497,11 +487,11 @@ ArmSemihosting::callRemove(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callRename(ThreadContext *tc, bool aarch64,
-                           std::vector<uint64_t> &argv)
+ArmSemihosting::callRename(ThreadContext *tc, Addr from_addr, size_t from_size,
+                           Addr to_addr, size_t to_size)
 {
-    std::string from = readString(tc, argv[1], argv[2]);
-    std::string to = readString(tc, argv[3], argv[4]);
+    std::string from = readString(tc, from_addr, from_size);
+    std::string to = readString(tc, to_addr, to_size);
 
     if (rename(from.c_str(), to.c_str()) != 0) {
         return retError(errno);
@@ -511,24 +501,21 @@ ArmSemihosting::callRename(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callClock(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callClock(ThreadContext *tc)
 {
-    return retOK(curTick() / (SimClock::Int::s / 100));
+    return retOK(curTick() / (sim_clock::as_int::s / 100));
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callTime(ThreadContext *tc, bool aarch64,
-                         std::vector<uint64_t> &argv)
+ArmSemihosting::callTime(ThreadContext *tc)
 {
-    return retOK(timeBase + round(curTick() / SimClock::Float::s));
+    return retOK(timeBase + round(curTick() / sim_clock::as_float::s));
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callSystem(ThreadContext *tc, bool aarch64,
-                         std::vector<uint64_t> &argv)
+ArmSemihosting::callSystem(ThreadContext *tc, Addr cmd_addr, size_t cmd_size)
 {
-    const std::string cmd = readString(tc, argv[1], argv[2]);
+    const std::string cmd = readString(tc, cmd_addr, cmd_size);
     warn("Semihosting: SYS_SYSTEM not implemented. Guest tried to run: %s\n",
          cmd);
     return retError(EINVAL);
@@ -536,44 +523,42 @@ ArmSemihosting::callSystem(ThreadContext *tc, bool aarch64,
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callErrno(ThreadContext *tc, bool aarch64,
-                          std::vector<uint64_t> &argv)
+ArmSemihosting::callErrno(ThreadContext *tc)
 {
     // Preserve errno by returning it in errno as well.
     return RetErrno(semiErrno, semiErrno);
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callGetCmdLine(ThreadContext *tc, bool aarch64,
-                               std::vector<uint64_t> &argv)
+ArmSemihosting::callGetCmdLine(ThreadContext *tc, Addr addr,
+                               InPlaceArg size_arg)
 {
-    if (cmdLine.size() + 1 < argv[2]) {
-        PortProxy &proxy = physProxy(tc);
-        ByteOrder endian = ArmISA::byteOrder(tc);
-        proxy.writeBlob((Addr)argv[1], cmdLine.c_str(), cmdLine.size() + 1);
+    PortProxy &proxy = portProxy(tc);
+    ByteOrder endian = ArmISA::byteOrder(tc);
+    size_t size = size_arg.read(tc, endian);
 
-        if (aarch64)
-            proxy.write<uint64_t>(argv[0] + 1 * 8, cmdLine.size(), endian);
-        else
-            proxy.write<uint32_t>(argv[0] + 1 * 4, cmdLine.size(), endian);
+    if (cmdLine.size() + 1 < size) {
+        proxy.writeBlob(addr, cmdLine.c_str(), cmdLine.size() + 1);
+        size_arg.write(tc, cmdLine.size(), endian);
         return retOK(0);
     } else {
         return retError(0);
     }
 }
 
-ArmSemihosting::RetErrno
-ArmSemihosting::callHeapInfo(ThreadContext *tc, bool aarch64,
-                             std::vector<uint64_t> &argv)
+void
+ArmSemihosting::gatherHeapInfo(ThreadContext *tc, bool aarch64,
+                               Addr &heap_base, Addr &heap_limit,
+                               Addr &stack_base, Addr &stack_limit)
 {
-    const PhysicalMemory &phys = tc->getSystemPtr()->getPhysMem();
+    const memory::PhysicalMemory &phys = tc->getSystemPtr()->getPhysMem();
     const AddrRangeList memories = phys.getConfAddrRanges();
     fatal_if(memories.size() < 1, "No memories reported from System");
     warn_if(memories.size() > 1, "Multiple physical memory ranges available. "
             "Using first range heap/stack.");
-    const AddrRange memory = *memories.begin();
-    const Addr mem_start = memory.start() + memReserve;
-    Addr mem_end = memory.end();
+    const AddrRange mem = *memories.begin();
+    const Addr mem_start = mem.start() + memReserve;
+    Addr mem_end = mem.end();
 
     // Make sure that 32-bit guests can access their memory.
     if (!aarch64) {
@@ -589,11 +574,10 @@ ArmSemihosting::callHeapInfo(ThreadContext *tc, bool aarch64,
     fatal_if(mem_start + stackSize >= mem_end,
              "Physical memory too small to fit desired stack and a heap.");
 
-    const Addr heap_base = mem_start;
-    const Addr heap_limit = mem_end - stackSize + 1;
-    const Addr stack_base = (mem_end + 1) & ~0x7ULL; // 8 byte stack alignment
-    const Addr stack_limit = heap_limit;
-
+    heap_base = mem_start;
+    heap_limit = mem_end - stackSize + 1;
+    stack_base = (mem_end + 1) & ~0x7ULL; // 8 byte stack alignment
+    stack_limit = heap_limit;
 
     inform("Reporting heap/stack info to guest:\n"
            "\tHeap base: 0x%x\n"
@@ -601,44 +585,56 @@ ArmSemihosting::callHeapInfo(ThreadContext *tc, bool aarch64,
            "\tStack base: 0x%x\n"
            "\tStack limit: 0x%x\n",
            heap_base, heap_limit, stack_base, stack_limit);
+}
 
-    Addr base = argv[1];
-    PortProxy &proxy = physProxy(tc);
-    ByteOrder endian = ArmISA::byteOrder(tc);
-    if (aarch64) {
-        proxy.write<uint64_t>(base + 0 * 8, heap_base, endian);
-        proxy.write<uint64_t>(base + 1 * 8, heap_limit, endian);
-        proxy.write<uint64_t>(base + 2 * 8, stack_base, endian);
-        proxy.write<uint64_t>(base + 3 * 8, stack_limit, endian);
-    } else {
-        proxy.write<uint32_t>(base + 0 * 4, heap_base, endian);
-        proxy.write<uint32_t>(base + 1 * 4, heap_limit, endian);
-        proxy.write<uint32_t>(base + 2 * 4, stack_base, endian);
-        proxy.write<uint32_t>(base + 3 * 4, stack_limit, endian);
-    }
+ArmSemihosting::RetErrno
+ArmSemihosting::callHeapInfo32(ThreadContext *tc, Addr block_addr)
+{
+    uint64_t heap_base, heap_limit, stack_base, stack_limit;
+    gatherHeapInfo(tc, false, heap_base, heap_limit, stack_base, stack_limit);
+
+    std::array<uint32_t, 4> block = {{
+        (uint32_t)heap_base, (uint32_t)heap_limit,
+        (uint32_t)stack_base, (uint32_t)stack_limit
+    }};
+    portProxy(tc).write(block_addr, block, ArmISA::byteOrder(tc));
 
     return retOK(0);
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callExit(ThreadContext *tc, bool aarch64,
-                         std::vector<uint64_t> &argv)
+ArmSemihosting::callHeapInfo64(ThreadContext *tc, Addr block_addr)
 {
-    if (aarch64) {
-        semiExit(argv[1], argv[2]);
-    } else {
-        semiExit(argv[0], 0);
-    }
+    uint64_t heap_base, heap_limit, stack_base, stack_limit;
+    gatherHeapInfo(tc, true, heap_base, heap_limit, stack_base, stack_limit);
+
+    std::array<uint64_t, 4> block = {{
+        heap_base, heap_limit, stack_base, stack_limit
+    }};
+    portProxy(tc).write(block_addr, block, ArmISA::byteOrder(tc));
 
     return retOK(0);
 }
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callExitExtended(ThreadContext *tc, bool aarch64,
-                                 std::vector<uint64_t> &argv)
+ArmSemihosting::callExit32(ThreadContext *tc, InPlaceArg code)
 {
-    semiExit(argv[1], argv[2]);
+    semiExit(code.addr, 0);
+    return retOK(0);
+}
 
+ArmSemihosting::RetErrno
+ArmSemihosting::callExit64(ThreadContext *tc, uint64_t code, uint64_t subcode)
+{
+    semiExit(code, subcode);
+    return retOK(0);
+}
+
+ArmSemihosting::RetErrno
+ArmSemihosting::callExitExtended(ThreadContext *tc,
+                                 uint64_t code, uint64_t subcode)
+{
+    semiExit(code, subcode);
     return retOK(0);
 }
 
@@ -655,40 +651,101 @@ ArmSemihosting::semiExit(uint64_t code, uint64_t subcode)
 
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callElapsed(ThreadContext *tc, bool aarch64,
-                            std::vector<uint64_t> &argv)
+ArmSemihosting::callElapsed32(ThreadContext *tc, InPlaceArg low,
+                              InPlaceArg high)
 {
-    PortProxy &proxy = physProxy(tc);
     ByteOrder endian = ArmISA::byteOrder(tc);
-    const uint64_t tick = semiTick(curTick());
+    uint64_t tick = semiTick(curTick());
 
-    if (aarch64) {
-        proxy.write<uint64_t>(argv[0], tick, endian);
-    } else {
-        proxy.write<uint32_t>(argv[0] + 0 * 4, tick, endian);
-        proxy.write<uint32_t>(argv[0] + 1 * 4, tick >> 32, endian);
-    }
+    low.write(tc, tick, endian);
+    high.write(tc, tick >> 32, endian);
 
     return retOK(0);
 }
 
 
 ArmSemihosting::RetErrno
-ArmSemihosting::callTickFreq(ThreadContext *tc, bool aarch64,
-                             std::vector<uint64_t> &argv)
+ArmSemihosting::callElapsed64(ThreadContext *tc, InPlaceArg ticks)
 {
-    return retOK(semiTick(SimClock::Frequency));
+    ticks.write(tc, semiTick(curTick()), ArmISA::byteOrder(tc));
+    return retOK(0);
 }
 
-const ArmSemihosting::SemiCall *
-ArmSemihosting::getCall(uint32_t op, bool aarch64)
+
+ArmSemihosting::RetErrno
+ArmSemihosting::callTickFreq(ThreadContext *tc)
 {
-    auto it = calls.find(op);
-    if (it == calls.end())
-        return nullptr;
-    else {
-        return &it->second;
-    }
+    return retOK(semiTick(sim_clock::Frequency));
+}
+
+
+struct SemiPseudoAbi32 : public ArmSemihosting::Abi32
+{
+    class State : public ArmSemihosting::Abi32::State
+    {
+      public:
+        State(const ThreadContext *tc) : ArmSemihosting::Abi32::State(tc)
+        {
+            // Use getAddr() to skip the func number in the first slot.
+            getAddr();
+        }
+    };
+};
+
+struct SemiPseudoAbi64 : public ArmSemihosting::Abi64
+{
+    class State : public ArmSemihosting::Abi64::State
+    {
+      public:
+        State(const ThreadContext *tc) : ArmSemihosting::Abi64::State(tc)
+        {
+            // Use getAddr() to skip the func number in the first slot.
+            getAddr();
+        }
+    };
+};
+
+GEM5_DEPRECATED_NAMESPACE(GuestABI, guest_abi);
+namespace guest_abi
+{
+
+// Handle arguments the same as for semihosting operations. Skipping the first
+// slot is handled internally by the State type.
+template <typename T>
+struct Argument<SemiPseudoAbi32, T> :
+    public Argument<ArmSemihosting::Abi32, T>
+{};
+template <typename T>
+struct Argument<SemiPseudoAbi64, T> :
+    public Argument<ArmSemihosting::Abi64, T>
+{};
+
+} // namespace guest_abi
+
+ArmSemihosting::RetErrno
+ArmSemihosting::callGem5PseudoOp32(ThreadContext *tc, uint32_t encoded_func)
+{
+    uint8_t func;
+    pseudo_inst::decodeAddrOffset(encoded_func, func);
+
+    uint64_t ret;
+    if (pseudo_inst::pseudoInst<SemiPseudoAbi32>(tc, func, ret))
+        return retOK(ret);
+    else
+        return retError(EINVAL);
+}
+
+ArmSemihosting::RetErrno
+ArmSemihosting::callGem5PseudoOp64(ThreadContext *tc, uint64_t encoded_func)
+{
+    uint8_t func;
+    pseudo_inst::decodeAddrOffset(encoded_func, func);
+
+    uint64_t ret;
+    if (pseudo_inst::pseudoInst<SemiPseudoAbi64>(tc, func, ret))
+        return retOK(ret);
+    else
+        return retError(EINVAL);
 }
 
 FILE *
@@ -984,9 +1041,11 @@ ArmSemihosting::File::unserialize(CheckpointIn &cp)
     }
 }
 
-
-ArmSemihosting *
-ArmSemihostingParams::create()
+std::ostream &
+operator << (std::ostream &os, const ArmSemihosting::InPlaceArg &ipa)
 {
-    return new ArmSemihosting(this);
+    ccprintf(os, "[%#x-%#x)", ipa.addr, ipa.addr + ipa.size - 1);
+    return os;
 }
+
+} // namespace gem5

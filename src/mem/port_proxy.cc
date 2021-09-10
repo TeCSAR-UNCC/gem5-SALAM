@@ -33,13 +33,26 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 #include "mem/port_proxy.hh"
 
 #include "base/chunk_generator.hh"
+#include "cpu/thread_context.hh"
+#include "mem/port.hh"
+
+namespace gem5
+{
+
+PortProxy::PortProxy(ThreadContext *tc, unsigned int cache_line_size) :
+    PortProxy([tc](PacketPtr pkt)->void { tc->sendFunctional(pkt); },
+        cache_line_size)
+{}
+
+PortProxy::PortProxy(const RequestPort &port, unsigned int cache_line_size) :
+    PortProxy([&port](PacketPtr pkt)->void { port.sendFunctional(pkt); },
+        cache_line_size)
+{}
 
 void
 PortProxy::readBlobPhys(Addr addr, Request::Flags flags,
@@ -49,7 +62,7 @@ PortProxy::readBlobPhys(Addr addr, Request::Flags flags,
          gen.next()) {
 
         auto req = std::make_shared<Request>(
-            gen.addr(), gen.size(), flags, Request::funcMasterId);
+            gen.addr(), gen.size(), flags, Request::funcRequestorId);
 
         Packet pkt(req, MemCmd::ReadReq);
         pkt.dataStatic(static_cast<uint8_t *>(p));
@@ -66,7 +79,7 @@ PortProxy::writeBlobPhys(Addr addr, Request::Flags flags,
          gen.next()) {
 
         auto req = std::make_shared<Request>(
-            gen.addr(), gen.size(), flags, Request::funcMasterId);
+            gen.addr(), gen.size(), flags, Request::funcRequestorId);
 
         Packet pkt(req, MemCmd::WriteReq);
         pkt.dataStaticConst(static_cast<const uint8_t *>(p));
@@ -125,3 +138,5 @@ PortProxy::tryReadString(char *str, Addr addr, size_t maxlen) const
     *--str = '\0';
     return true;
 }
+
+} // namespace gem5

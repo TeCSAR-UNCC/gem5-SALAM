@@ -35,8 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.defines import buildEnv
 from m5.params import *
@@ -48,13 +46,20 @@ from m5.SimObject import SimObject
 
 class X86LocalApic(BaseInterrupts):
     type = 'X86LocalApic'
-    cxx_class = 'X86ISA::Interrupts'
+    cxx_class = 'gem5::X86ISA::Interrupts'
     cxx_header = 'arch/x86/interrupts.hh'
-    int_master = MasterPort("Port for sending interrupt messages")
-    int_slave = SlavePort("Port for receiving interrupt messages")
+
+    int_requestor = RequestPort("Port for sending interrupt messages")
+    int_master    = DeprecatedParam(int_requestor,
+                        '`int_master` is now called `int_requestor`')
+
+    int_responder = ResponsePort("Port for receiving interrupt messages")
+    int_slave     = DeprecatedParam(int_responder,
+                        '`int_slave` is now called `int_responder`')
+
     int_latency = Param.Latency('1ns', \
             "Latency for an interrupt to propagate through this device.")
-    pio = SlavePort("Programmed I/O port")
+    pio = ResponsePort("Programmed I/O port")
     system = Param.System(Parent.any, "System this device is part of")
 
     pio_latency = Param.Latency('100ns', 'Programmed IO latency')

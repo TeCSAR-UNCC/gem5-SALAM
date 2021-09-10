@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
  /**
@@ -47,9 +45,16 @@
 #include "mem/cache/prefetch/queued.hh"
 #include "mem/packet.hh"
 
+namespace gem5
+{
+
 struct SignaturePathPrefetcherParams;
 
-class SignaturePathPrefetcher : public QueuedPrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class SignaturePath : public Queued
 {
   protected:
     /** Signature type */
@@ -87,7 +92,7 @@ class SignaturePathPrefetcher : public QueuedPrefetcher
         /** stride in a page in blkSize increments */
         stride_t stride;
         /** Saturating counter */
-        SatCounter counter;
+        SatCounter8 counter;
         PatternStrideEntry(unsigned bits) : stride(0), counter(bits)
         {}
     };
@@ -97,14 +102,18 @@ class SignaturePathPrefetcher : public QueuedPrefetcher
         /** group of stides */
         std::vector<PatternStrideEntry> strideEntries;
         /** use counter, used by SPPv2 */
-        SatCounter counter;
+        SatCounter8 counter;
         PatternEntry(size_t num_strides, unsigned counter_bits)
-            : strideEntries(num_strides, counter_bits), counter(counter_bits)
-        {}
+          : TaggedEntry(), strideEntries(num_strides, counter_bits),
+            counter(counter_bits)
+        {
+        }
 
         /** Reset the entries to their initial values */
-        void reset() override
+        void
+        invalidate() override
         {
+            TaggedEntry::invalidate();
             for (auto &entry : strideEntries) {
                 entry.counter.reset();
                 entry.stride = 0;
@@ -275,10 +284,14 @@ class SignaturePathPrefetcher : public QueuedPrefetcher
     }
 
   public:
-    SignaturePathPrefetcher(const SignaturePathPrefetcherParams* p);
-    ~SignaturePathPrefetcher() {}
+    SignaturePath(const SignaturePathPrefetcherParams &p);
+    ~SignaturePath() = default;
+
     void calculatePrefetch(const PrefetchInfo &pfi,
                            std::vector<AddrPriority> &addresses) override;
 };
+
+} // namespace prefetch
+} // namespace gem5
 
 #endif//__MEM_CACHE_PREFETCH_SIGNATURE_PATH_HH__

@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #ifndef __BASE_FILTERS_MULTI_BIT_SEL_BLOOM_FILTER_HH__
@@ -34,9 +32,14 @@
 
 #include "base/filters/base.hh"
 
+namespace gem5
+{
+
 struct BloomFilterMultiBitSelParams;
 
-namespace BloomFilter {
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
 
 /**
  * The MultiBitSel Bloom Filter associates an address to multiple entries
@@ -45,7 +48,7 @@ namespace BloomFilter {
 class MultiBitSel : public Base
 {
   public:
-    MultiBitSel(const BloomFilterMultiBitSelParams* p);
+    MultiBitSel(const BloomFilterMultiBitSelParams &p);
     ~MultiBitSel();
 
     void set(Addr addr) override;
@@ -77,6 +80,7 @@ class MultiBitSel : public Base
     const int skipBits;
 };
 
-} // namespace BloomFilter
+} // namespace bloom_filter
+} // namespace gem5
 
 #endif // __BASE_FILTERS_MULTI_BIT_SEL_BLOOM_FILTER_HH__

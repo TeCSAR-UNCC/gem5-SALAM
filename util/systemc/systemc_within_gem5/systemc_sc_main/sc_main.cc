@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include <vector>
@@ -32,6 +30,8 @@
 #include "base/trace.hh"
 
 #include "systemc/ext/systemc"
+
+using namespace gem5;
 
 class Printer : public sc_core::sc_module
 {

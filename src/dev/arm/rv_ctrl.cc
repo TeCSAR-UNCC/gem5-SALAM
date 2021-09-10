@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010,2013,2015 ARM Limited
+ * Copyright (c) 2010, 2013, 2015, 2021 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #include "dev/arm/rv_ctrl.hh"
@@ -47,7 +45,10 @@
 #include "sim/system.hh"
 #include "sim/voltage_domain.hh"
 
-RealViewCtrl::RealViewCtrl(Params *p)
+namespace gem5
+{
+
+RealViewCtrl::RealViewCtrl(const Params &p)
     : BasicPioDevice(p, 0xD4), flags(0), scData(0)
 {
 }
@@ -61,19 +62,19 @@ RealViewCtrl::read(PacketPtr pkt)
 
     switch(daddr) {
       case ProcId0:
-        pkt->setLE(params()->proc_id0);
+        pkt->setLE(params().proc_id0);
         break;
       case ProcId1:
-        pkt->setLE(params()->proc_id1);
+        pkt->setLE(params().proc_id1);
         break;
       case Clock24:
         Tick clk;
-        clk = SimClock::Float::MHz * curTick() * 24;
+        clk = sim_clock::as_float::MHz * curTick() * 24;
         pkt->setLE((uint32_t)(clk));
         break;
       case Clock100:
         Tick clk100;
-        clk100 = SimClock::Float::MHz * curTick() * 100;
+        clk100 = sim_clock::as_float::MHz * curTick() * 100;
         pkt->setLE((uint32_t)(clk100));
         break;
       case Flash:
@@ -104,7 +105,7 @@ RealViewCtrl::read(PacketPtr pkt)
         pkt->setLE<uint32_t>(flags);
         break;
       case IdReg:
-        pkt->setLE<uint32_t>(params()->idreg);
+        pkt->setLE<uint32_t>(params().idreg);
         break;
       case CfgStat:
         pkt->setLE<uint32_t>(1);
@@ -236,17 +237,17 @@ RealViewCtrl::registerDevice(DeviceFunc func, uint8_t site, uint8_t pos,
 }
 
 
-RealViewOsc::RealViewOsc(RealViewOscParams *p)
-    : ClockDomain(p, p->voltage_domain),
-      RealViewCtrl::Device(*p->parent, RealViewCtrl::FUNC_OSC,
-                           p->site, p->position, p->dcc, p->device)
+RealViewOsc::RealViewOsc(const RealViewOscParams &p)
+    : ClockDomain(p, p.voltage_domain),
+      RealViewCtrl::Device(*p.parent, RealViewCtrl::FUNC_OSC,
+                           p.site, p.position, p.dcc, p.device)
 {
-    if (SimClock::Float::s  / p->freq > UINT32_MAX) {
+    if (sim_clock::as_float::s  / p.freq > UINT32_MAX) {
         fatal("Oscillator frequency out of range: %f\n",
-            SimClock::Float::s  / p->freq / 1E6);
+            sim_clock::as_float::s  / p.freq / 1E6);
     }
 
-    _clockPeriod = p->freq;
+    _clockPeriod = p.freq;
 }
 
 void
@@ -288,7 +289,7 @@ RealViewOsc::clockPeriod(Tick clock_period)
 uint32_t
 RealViewOsc::read() const
 {
-    const uint32_t freq(SimClock::Float::s / _clockPeriod);
+    const uint32_t freq(sim_clock::as_float::s / _clockPeriod);
     DPRINTF(RVCTRL, "Reading OSC frequency: %f MHz\n", freq / 1E6);
     return freq;
 }
@@ -297,7 +298,7 @@ void
 RealViewOsc::write(uint32_t freq)
 {
     DPRINTF(RVCTRL, "Setting new OSC frequency: %f MHz\n", freq / 1E6);
-    clockPeriod(SimClock::Float::s / freq);
+    clockPeriod(sim_clock::as_float::s / freq);
 }
 
 uint32_t
@@ -306,7 +307,7 @@ RealViewTemperatureSensor::read() const
     // Temperature reported in uC
     ThermalModel * tm = system->getThermalModel();
     if (tm) {
-        double t = tm->getTemp();
+        double t = tm->getTemperature().toCelsius();
         if (t < 0)
             warn("Temperature below zero!\n");
         return fmax(0, t) * 1000000;
@@ -316,20 +317,4 @@ RealViewTemperatureSensor::read() const
     return 25000000;
 }
 
-RealViewCtrl *
-RealViewCtrlParams::create()
-{
-    return new RealViewCtrl(this);
-}
-
-RealViewOsc *
-RealViewOscParams::create()
-{
-    return new RealViewOsc(this);
-}
-
-RealViewTemperatureSensor *
-RealViewTemperatureSensorParams::create()
-{
-    return new RealViewTemperatureSensor(this);
-}
+} // namespace gem5

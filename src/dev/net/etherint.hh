@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /* @file
@@ -40,6 +38,9 @@
 
 #include "dev/net/etherpkt.hh"
 #include "mem/port.hh"
+
+namespace gem5
+{
 
 /*
  * Class representing the actual interface between two ethernet
@@ -76,5 +77,7 @@ class EtherInt : public Port
     bool askBusy() {return peer->isBusy(); }
     virtual bool isBusy() { return false; }
 };
+
+} // namespace gem5
 
 #endif // __DEV_NET_ETHERINT_HH__

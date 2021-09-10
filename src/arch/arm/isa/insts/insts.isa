@@ -34,8 +34,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 //AArch64 instructions
 ##include "aarch64.isa"
@@ -89,6 +87,9 @@ split exec;
 //VFP
 ##include "fp.isa"
 ##include "fp64.isa"
+
+//AArch64 pointer authentification operations
+##include "pauth.isa"
 
 split exec;
 

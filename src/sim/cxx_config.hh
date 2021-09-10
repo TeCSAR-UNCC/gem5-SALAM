@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 /**
@@ -58,6 +56,9 @@
 #include <vector>
 
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class CxxConfigParams;
 
@@ -97,12 +98,12 @@ class CxxConfigDirectoryEntry
         /* Is this a vector or singleton parameters/SimObject */
         const bool isVector;
 
-        /** Is this a master or slave port */
-        const bool isMaster;
+        /** Is this a request or response port */
+        const bool isRequestor;
 
         PortDesc(const std::string &name_,
-            bool isVector_, bool isMaster_) :
-            name(name_), isVector(isVector_), isMaster(isMaster_)
+            bool isVector_, bool isRequestor_) :
+            name(name_), isVector(isVector_), isRequestor(isRequestor_)
         { }
     };
 
@@ -131,7 +132,7 @@ class CxxConfigParams
     /** Flags passable to setParam... to smooth over any parsing difference
      *  between different config files */
     typedef uint32_t FlagsType;
-    typedef ::Flags<FlagsType> Flags;
+    typedef gem5::Flags<FlagsType> Flags;
 
     /** Example flag */
     /* static const FlagsType MY_NEW_FLAG = 0x00000001; */
@@ -235,5 +236,7 @@ extern std::map<std::string, CxxConfigDirectoryEntry *>
 /** Initialise cxx_config_directory.  This is defined in the
  *  auto-generated .../cxx_config/init.cc */
 void cxxConfigInit();
+
+} // namespace gem5
 
 #endif // __SIM_CXX_CONFIG_HH__

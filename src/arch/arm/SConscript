@@ -1,6 +1,6 @@
 # -*- mode:python -*-
 
-# Copyright (c) 2009, 2012-2013, 2017-2018 ARM Limited
+# Copyright (c) 2009, 2012-2013, 2017-2018, 2020 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -37,9 +37,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Stephen Hines
-#          Ali Saidi
 
 Import('*')
 
@@ -47,8 +44,11 @@ if env['TARGET_ISA'] == 'arm':
 # Workaround for bug in SCons version > 0.97d20071212
 # Scons bug id: 2006 M5 Bug id: 308
     Dir('isa/formats')
+
+    GTest('aapcs64.test', 'aapcs64.test.cc')
     Source('decoder.cc')
     Source('faults.cc')
+    Source('htm.cc')
     Source('insts/branch.cc')
     Source('insts/branch64.cc')
     Source('insts/data64.cc')
@@ -65,40 +65,51 @@ if env['TARGET_ISA'] == 'arm':
     Source('insts/vfp.cc')
     Source('insts/fplib.cc')
     Source('insts/crypto.cc')
+    Source('insts/tme64.cc')
+    if env['PROTOCOL'] == 'MESI_Three_Level_HTM':
+        Source('insts/tme64ruby.cc')
+    else:
+        Source('insts/tme64classic.cc')
     Source('interrupts.cc')
     Source('isa.cc')
     Source('isa_device.cc')
-    Source('linux/linux.cc')
     Source('linux/process.cc')
-    Source('linux/system.cc')
-    Source('freebsd/freebsd.cc')
-    Source('freebsd/process.cc')
-    Source('freebsd/system.cc')
-    Source('miscregs.cc')
+    Source('linux/se_workload.cc')
+    Source('linux/fs_workload.cc')
+    Source('freebsd/fs_workload.cc')
+    Source('freebsd/se_workload.cc')
+    Source('fs_workload.cc')
+    Source('regs/misc.cc')
+    Source('mmu.cc')
     Source('nativetrace.cc')
+    Source('pauth_helpers.cc')
     Source('pmu.cc')
     Source('process.cc')
+    Source('qarma.cc')
     Source('remote_gdb.cc')
+    Source('reg_abi.cc')
     Source('semihosting.cc')
-    Source('stacktrace.cc')
     Source('system.cc')
     Source('table_walker.cc')
-    Source('stage2_mmu.cc')
+    Source('self_debug.cc')
     Source('stage2_lookup.cc')
     Source('tlb.cc')
     Source('tlbi_op.cc')
     Source('utility.cc')
-    Source('vtophys.cc')
 
+    SimObject('ArmFsWorkload.py')
     SimObject('ArmInterrupts.py')
     SimObject('ArmISA.py')
+    SimObject('ArmMMU.py')
     SimObject('ArmNativeTrace.py')
     SimObject('ArmSemihosting.py')
+    SimObject('ArmSeWorkload.py')
     SimObject('ArmSystem.py')
     SimObject('ArmTLB.py')
     SimObject('ArmPMU.py')
 
     DebugFlag('Arm')
+    DebugFlag('ArmTme', 'Transactional Memory Extension')
     DebugFlag('Semihosting')
     DebugFlag('Decoder', "Instructions returned by the predecoder")
     DebugFlag('Faults', "Trace Exceptions, interrupts, svc/swi")

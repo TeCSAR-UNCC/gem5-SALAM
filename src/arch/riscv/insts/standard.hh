@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 RISC-V Foundation
  * Copyright (c) 2017 The University of Virginia
+ * Copyright (c) 2020 Barkhausen Institut
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +26,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Alec Roelke
  */
 
 #ifndef __ARCH_RISCV_STANDARD_INST_HH__
@@ -36,8 +35,12 @@
 
 #include "arch/riscv/insts/bitfields.hh"
 #include "arch/riscv/insts/static_inst.hh"
+#include "arch/riscv/regs/misc.hh"
 #include "cpu/exec_context.hh"
 #include "cpu/static_inst.hh"
+
+namespace gem5
+{
 
 namespace RiscvISA
 {
@@ -51,7 +54,7 @@ class RegOp : public RiscvStaticInst
     using RiscvStaticInst::RiscvStaticInst;
 
     std::string generateDisassembly(
-        Addr pc, const SymbolTable *symtab) const override;
+        Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 /**
@@ -76,11 +79,8 @@ class SystemOp : public RiscvStaticInst
   protected:
     using RiscvStaticInst::RiscvStaticInst;
 
-    std::string
-    generateDisassembly(Addr pc, const SymbolTable *symtab) const override
-    {
-        return mnemonic;
-    }
+    std::string generateDisassembly(
+        Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 /**
@@ -92,16 +92,40 @@ class CSROp : public RiscvStaticInst
     uint64_t csr;
     uint64_t uimm;
 
+    bool valid = false;
+    RegIndex midx = 0;
+    std::string csrName;
+    uint64_t maskVal = 0;
+
     /// Constructor
     CSROp(const char *mnem, MachInst _machInst, OpClass __opClass)
         : RiscvStaticInst(mnem, _machInst, __opClass),
             csr(FUNCT12), uimm(CSRIMM)
-    {}
+    {
+        auto csr_data_it = CSRData.find(csr);
+        if (csr_data_it == CSRData.end()) {
+            valid = false;
+        } else {
+            valid = true;
+            midx = csr_data_it->second.physIndex;
+            csrName = csr_data_it->second.name;
+            auto mask_it = CSRMasks.find(csr);
+            if (mask_it == CSRMasks.end())
+                maskVal = mask(64);
+            else
+                maskVal = mask_it->second;
+        }
+
+        if (csr == CSR_SATP) {
+            flags[IsSquashAfter] = true;
+        }
+    }
 
     std::string generateDisassembly(
-        Addr pc, const SymbolTable *symtab) const override;
+        Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-}
+} // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_STANDARD_INST_HH__

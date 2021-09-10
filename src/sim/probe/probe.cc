@@ -11,6 +11,9 @@
  * unmodified and in its entirety in all distributions of the software,
  * modified or unmodified, in source code or in binary form.
  *
+ * Copyright (c) 2020 Inria
+ * All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met: redistributions of source code must retain the above copyright
@@ -33,14 +36,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Matt Horsnell
  */
 
 #include "sim/probe/probe.hh"
 
 #include "debug/ProbeVerbose.hh"
 #include "params/ProbeListenerObject.hh"
+
+namespace gem5
+{
 
 ProbePoint::ProbePoint(ProbeManager *manager, const std::string& _name)
     : name(_name)
@@ -50,9 +54,10 @@ ProbePoint::ProbePoint(ProbeManager *manager, const std::string& _name)
     }
 }
 
-ProbeListenerObject::ProbeListenerObject(const ProbeListenerObjectParams *params)
+ProbeListenerObject::ProbeListenerObject(
+        const ProbeListenerObjectParams &params)
     : SimObject(params),
-      manager(params->manager->getProbeManager())
+      manager(params.manager->getProbeManager())
 {
 }
 
@@ -75,42 +80,40 @@ ProbeListener::~ProbeListener()
     manager->removeListener(name, *this);
 }
 
-ProbeListenerObject*
-ProbeListenerObjectParams::create()
-{
-    return new ProbeListenerObject(this);
-}
-
 bool
-ProbeManager::addListener(std::string pointName, ProbeListener &listener)
+ProbeManager::addListener(std::string point_name, ProbeListener &listener)
 {
-    DPRINTFR(ProbeVerbose, "Probes: Call to addListener to \"%s\" on %s.\n", pointName, object->name());
+    DPRINTFR(ProbeVerbose, "Probes: Call to addListener to \"%s\" on %s.\n",
+        point_name, object->name());
     bool added = false;
     for (auto p = points.begin(); p != points.end(); ++p) {
-        if ((*p)->getName() == pointName) {
+        if ((*p)->getName() == point_name) {
             (*p)->addListener(&listener);
             added = true;
         }
     }
     if (!added) {
-        DPRINTFR(ProbeVerbose, "Probes: Call to addListener to \"%s\" on %s failed, no such point.\n", pointName, object->name());
+        DPRINTFR(ProbeVerbose, "Probes: Call to addListener to \"%s\" on "
+            "%s failed, no such point.\n", point_name, object->name());
     }
     return added;
 }
 
 bool
-ProbeManager::removeListener(std::string pointName, ProbeListener &listener)
+ProbeManager::removeListener(std::string point_name, ProbeListener &listener)
 {
-    DPRINTFR(ProbeVerbose, "Probes: Call to removeListener from \"%s\" on %s.\n", pointName, object->name());
+    DPRINTFR(ProbeVerbose, "Probes: Call to removeListener from \"%s\" on "
+        "%s.\n", point_name, object->name());
     bool removed = false;
     for (auto p = points.begin(); p != points.end(); ++p) {
-        if ((*p)->getName() == pointName) {
+        if ((*p)->getName() == point_name) {
             (*p)->removeListener(&listener);
             removed = true;
         }
     }
     if (!removed) {
-        DPRINTFR(ProbeVerbose, "Probes: Call to removeListener from \"%s\" on %s failed, no such point.\n", pointName, object->name());
+        DPRINTFR(ProbeVerbose, "Probes: Call to removeListener from \"%s\" "
+            "on %s failed, no such point.\n", point_name, object->name());
     }
     return removed;
 }
@@ -118,13 +121,17 @@ ProbeManager::removeListener(std::string pointName, ProbeListener &listener)
 void
 ProbeManager::addPoint(ProbePoint &point)
 {
-    DPRINTFR(ProbeVerbose, "Probes: Call to addPoint \"%s\" to %s.\n", point.getName(), object->name());
+    DPRINTFR(ProbeVerbose, "Probes: Call to addPoint \"%s\" to %s.\n",
+        point.getName(), object->name());
 
     for (auto p = points.begin(); p != points.end(); ++p) {
         if ((*p)->getName() == point.getName()) {
-            DPRINTFR(ProbeVerbose, "Probes: Call to addPoint \"%s\" to %s failed, already added.\n", point.getName(), object->name());
+            DPRINTFR(ProbeVerbose, "Probes: Call to addPoint \"%s\" to %s "
+                "failed, already added.\n", point.getName(), object->name());
             return;
         }
     }
     points.push_back(&point);
 }
+
+} // namespace gem5

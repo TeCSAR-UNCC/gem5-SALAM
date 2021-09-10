@@ -2,6 +2,7 @@
 
 // Copyright (c) 2003-2005 The Regents of The University of Michigan
 // Copyright (c) 2009 The University of Edinburgh
+// Copyright (c) 2021 IBM Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,10 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Steve Reinhardt
-//          Korey Sewell
-//          Timothy M. Jones
 
 // Some instructions ignore the contents of Ra if Ra == 0,
 // so check for this.
@@ -82,16 +79,75 @@ def template CheckLkDecode {{
      if (LK == 0) {
          return new %(class_name)s(machInst);
      } else {
-         return new %(class_name)sUpdateLr(machInst);
+         return new %(class_name)sLkSet(machInst);
      }
  }
 }};
 
+def template CheckAaDecode {{
+ {
+     if (AA == 0) {
+         return new %(class_name)s(machInst);
+     } else {
+         return new %(class_name)sAaSet(machInst);
+     }
+ }
+}};
+
+def template CheckAaLkDecode {{
+ {
+     if (AA == 0) {
+         if (LK == 0) {
+             return new %(class_name)s(machInst);
+         } else {
+             return new %(class_name)sLkSet(machInst);
+         }
+     } else {
+         if (LK == 0) {
+             return new %(class_name)sAaSet(machInst);
+         } else {
+             return new %(class_name)sAaSetLkSet(machInst);
+         }
+     }
+ }
+}};
+
+def template CheckBoLkDecode {{
+ {
+     if (!bits(BO, 2)) {
+         return new Unknown(machInst);
+     } else if (LK == 0) {
+         return new %(class_name)s(machInst);
+     } else {
+         return new %(class_name)sLkSet(machInst);
+     }
+ }
+}};
+
+def template CheckRaRtDecode {{
+ {
+     if ((RA == 0) || (RA == RT)) {
+         return new Unknown(machInst);
+     } else {
+         return new %(class_name)s(machInst);
+     }
+ }
+}};
+
+def template CheckRaZeroDecode {{
+ {
+     if (RA == 0) {
+         return new Unknown(machInst);
+     } else {
+         return new %(class_name)s(machInst);
+     }
+ }
+}};
 
 let {{
 
-def LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
-                  base_class = 'MemOp',
+def LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                  mem_flags, inst_flags, base_class = 'MemOp',
                   decode_template = BasicDecode, exec_template_base = ''):
     # Make sure flags are in lists (convert to lists if not).
     mem_flags = makeList(mem_flags)
@@ -100,11 +156,12 @@ def LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
     # Generate InstObjParams for the memory access.
     iop = InstObjParams(name, Name, base_class,
                         {'ea_code': ea_code,
-                         'memacc_code': memacc_code},
+                         'memacc_code': memacc_code,
+                         'update_code': update_code},
                         inst_flags)
 
     if mem_flags:
-        s = '\n\tmemAccessFlags = ' + string.join(mem_flags, '|') + ';'
+        s = '\n\tmemAccessFlags = ' + '|'.join(mem_flags) + ';'
         iop.constructor += s
 
     fullExecTemplate = eval(exec_template_base + 'Execute')

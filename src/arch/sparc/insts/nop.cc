@@ -23,9 +23,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
-//          Steve Reinhardt
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -57,13 +54,14 @@ output header {{
             }
 
             std::string generateDisassembly(Addr pc,
-                    const SymbolTable *symtab) const override;
+                    const loader::SymbolTable *symtab) const override;
         };
 }};
 
 output decoder {{
-        std::string Nop::generateDisassembly(Addr pc,
-                const SymbolTable *symtab) const
+        std::string
+        Nop::generateDisassembly(
+                Addr pc, const loader::SymbolTable *symtab) const
         {
             std::stringstream response;
             printMnemonic(response, mnemonic);

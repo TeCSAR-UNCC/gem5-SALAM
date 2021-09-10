@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabor Dozsa
- *          Mohammad Alian
  */
 
 /* @file
@@ -55,6 +52,8 @@
 #include <cstring>
 #include <vector>
 
+#include "base/compiler.hh"
+#include "base/trace.hh"
 #include "base/types.hh"
 #include "debug/DistEthernet.hh"
 #include "debug/DistEthernetCmd.hh"
@@ -72,14 +71,15 @@
 #endif
 #endif
 
-using namespace std;
+namespace gem5
+{
 
 std::vector<std::pair<TCPIface::NodeInfo, int> > TCPIface::nodes;
-vector<int> TCPIface::sockRegistry;
+std::vector<int> TCPIface::sockRegistry;
 int TCPIface::fdStatic = -1;
 bool TCPIface::anyListening = false;
 
-TCPIface::TCPIface(string server_name, unsigned server_port,
+TCPIface::TCPIface(std::string server_name, unsigned server_port,
                    unsigned dist_rank, unsigned dist_size,
                    Tick sync_start, Tick sync_repeat,
                    EventManager *em, bool use_pseudo_op, bool is_switch,
@@ -88,7 +88,7 @@ TCPIface::TCPIface(string server_name, unsigned server_port,
               is_switch, num_nodes), serverName(server_name),
     serverPort(server_port), isSwitch(is_switch), listening(false)
 {
-    if (is_switch && isMaster) {
+    if (is_switch && isPrimary) {
         while (!listen(serverPort)) {
             DPRINTF(DistEthernet, "TCPIface(listen): Can't bind port %d\n",
                     serverPort);
@@ -106,7 +106,7 @@ TCPIface::TCPIface(string server_name, unsigned server_port,
             DPRINTF(DistEthernet, "First connection, waiting for link info\n");
             if (!recvTCP(sock, &ni, sizeof(ni)))
                 panic("Failed to receive link info");
-            nodes.push_back(make_pair(ni, sock));
+            nodes.push_back(std::make_pair(ni, sock));
         }
     }
 }
@@ -158,10 +158,10 @@ TCPIface::establishConnection()
     if (isSwitch) {
         if (cur_id == 0) { // first connection accepted in the ctor already
             auto const &iface0 =
-                find_if(nodes.begin(), nodes.end(),
-                        [](const pair<NodeInfo, int> &cn) -> bool {
-                            return cn.first.rank == cur_rank;
-                        });
+                std::find_if(nodes.begin(), nodes.end(),
+                             [](const std::pair<NodeInfo, int> &cn) -> bool {
+                                 return cn.first.rank == cur_rank;
+                             });
             assert(iface0 != nodes.end());
             assert(iface0->first.distIfaceId == 0);
             sock = iface0->second;
@@ -224,7 +224,7 @@ TCPIface::connect()
     struct addrinfo addr_hint, *addr_results;
      int ret;
 
-     string port_str = to_string(serverPort);
+     std::string port_str = std::to_string(serverPort);
 
      sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
      panic_if(sock < 0, "socket() failed: %s", strerror(errno));
@@ -254,7 +254,7 @@ TCPIface::connect()
 
 TCPIface::~TCPIface()
 {
-    int M5_VAR_USED ret;
+    GEM5_VAR_USED int ret;
 
     ret = close(sock);
     assert(ret == 0);
@@ -308,7 +308,7 @@ TCPIface::sendCmd(const Header &header)
 {
     DPRINTF(DistEthernetCmd, "TCPIface::sendCmd() type: %d\n",
             static_cast<int>(header.msgType));
-    // Global commands (i.e. sync request) are always sent by the master
+    // Global commands (i.e. sync request) are always sent by the primary
     // DistIface. The transfer method is simply implemented as point-to-point
     // messages for now
     for (auto s: sockRegistry)
@@ -327,7 +327,7 @@ TCPIface::recvHeader(Header &header)
 void
 TCPIface::recvPacket(const Header &header, EthPacketPtr &packet)
 {
-    packet = make_shared<EthPacketData>(header.dataPacketLength);
+    packet = std::make_shared<EthPacketData>(header.dataPacketLength);
     bool ret = recvTCP(sock, packet->data, header.dataPacketLength);
     panic_if(!ret, "Error while reading socket");
     packet->simLength = header.simLength;
@@ -342,3 +342,5 @@ TCPIface::initTransport()
     // phase. That information is necessary for global connection ordering.
     establishConnection();
 }
+
+} // namespace gem5

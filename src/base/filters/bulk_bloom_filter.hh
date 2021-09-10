@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #ifndef __BASE_FILTERS_BULK_BLOOM_FILTER_HH__
@@ -34,9 +32,14 @@
 
 #include "base/filters/multi_bit_sel_bloom_filter.hh"
 
+namespace gem5
+{
+
 struct BloomFilterBulkParams;
 
-namespace BloomFilter {
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
 
 /**
  * Implementation of the bloom filter, as described in "Bulk Disambiguation of
@@ -46,7 +49,7 @@ namespace BloomFilter {
 class Bulk : public MultiBitSel
 {
   public:
-    Bulk(const BloomFilterBulkParams* p);
+    Bulk(const BloomFilterBulkParams &p);
     ~Bulk();
 
   protected:
@@ -65,6 +68,7 @@ class Bulk : public MultiBitSel
     const int sectorBits;
 };
 
-} // namespace BloomFilter
+} // namespace bloom_filter
+} // namespace gem5
 
 #endif // __BASE_FILTERS_BULK_BLOOM_FILTER_HH__

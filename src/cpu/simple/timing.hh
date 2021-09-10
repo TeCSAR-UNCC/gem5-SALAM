@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013,2015,2018 ARM Limited
+ * Copyright (c) 2012-2013,2015,2018,2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,23 +36,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
  */
 
 #ifndef __CPU_SIMPLE_TIMING_HH__
 #define __CPU_SIMPLE_TIMING_HH__
 
+#include "arch/generic/mmu.hh"
 #include "cpu/simple/base.hh"
 #include "cpu/simple/exec_context.hh"
 #include "cpu/translation.hh"
 #include "params/TimingSimpleCPU.hh"
 
+namespace gem5
+{
+
 class TimingSimpleCPU : public BaseSimpleCPU
 {
   public:
 
-    TimingSimpleCPU(TimingSimpleCPUParams * params);
+    TimingSimpleCPU(const TimingSimpleCPUParams &params);
     virtual ~TimingSimpleCPU();
 
     void init() override;
@@ -106,7 +108,7 @@ class TimingSimpleCPU : public BaseSimpleCPU
         }
     };
 
-    class FetchTranslation : public BaseTLB::Translation
+    class FetchTranslation : public BaseMMU::Translation
     {
       protected:
         TimingSimpleCPU *cpu;
@@ -125,7 +127,7 @@ class TimingSimpleCPU : public BaseSimpleCPU
 
         void
         finish(const Fault &fault, const RequestPtr &req, ThreadContext *tc,
-               BaseTLB::Mode mode)
+               BaseMMU::Mode mode)
         {
             cpu->sendFetch(fault, req, tc);
         }
@@ -157,12 +159,12 @@ class TimingSimpleCPU : public BaseSimpleCPU
      * scheduling of handling of incoming packets in the following
      * cycle.
      */
-    class TimingCPUPort : public MasterPort
+    class TimingCPUPort : public RequestPort
     {
       public:
 
         TimingCPUPort(const std::string& _name, TimingSimpleCPU* _cpu)
-            : MasterPort(_name, _cpu), cpu(_cpu),
+            : RequestPort(_name, _cpu), cpu(_cpu),
               retryRespEvent([this]{ sendRetryResp(); }, name())
         { }
 
@@ -322,11 +324,17 @@ class TimingSimpleCPU : public BaseSimpleCPU
      */
     void finishTranslation(WholeTranslationState *state);
 
+    /** hardware transactional memory **/
+    Fault initiateHtmCmd(Request::Flags flags) override;
+
+    void htmSendAbortSignal(HtmFailureFaultCause) override;
+
   private:
 
     EventFunctionWrapper fetchEvent;
 
-    struct IprEvent : Event {
+    struct IprEvent : Event
+    {
         Packet *pkt;
         TimingSimpleCPU *cpu;
         IprEvent(Packet *_pkt, TimingSimpleCPU *_cpu, Tick t);
@@ -365,5 +373,7 @@ class TimingSimpleCPU : public BaseSimpleCPU
      */
     bool tryCompleteDrain();
 };
+
+} // namespace gem5
 
 #endif // __CPU_SIMPLE_TIMING_HH__

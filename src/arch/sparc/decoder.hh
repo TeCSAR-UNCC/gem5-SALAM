@@ -24,32 +24,35 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_SPARC_DECODER_HH__
 #define __ARCH_SPARC_DECODER_HH__
 
 #include "arch/generic/decode_cache.hh"
-#include "arch/sparc/registers.hh"
-#include "arch/types.hh"
+#include "arch/generic/decoder.hh"
+#include "arch/sparc/types.hh"
 #include "cpu/static_inst.hh"
+#include "debug/Decode.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
 
 class ISA;
-class Decoder
+class Decoder : public InstDecoder
 {
   protected:
     // The extended machine instruction being generated
     ExtMachInst emi;
+    uint32_t machInst;
     bool instDone;
     RegVal asi;
 
   public:
-    Decoder(ISA* isa = nullptr) : instDone(false), asi(0)
+    Decoder(ISA* isa=nullptr) : InstDecoder(&machInst), instDone(false), asi(0)
     {}
 
     void process() {}
@@ -63,19 +66,19 @@ class Decoder
     // Use this to give data to the predecoder. This should be used
     // when there is control flow.
     void
-    moreBytes(const PCState &pc, Addr fetchPC, MachInst inst)
+    moreBytes(const PCState &pc, Addr fetchPC)
     {
-        emi = betoh(inst);
+        emi = betoh(machInst);
         // The I bit, bit 13, is used to figure out where the ASI
         // should come from. Use that in the ExtMachInst. This is
         // slightly redundant, but it removes the need to put a condition
         // into all the execute functions
         if (emi & (1 << 13)) {
             emi |= (static_cast<ExtMachInst>(
-                        asi << (sizeof(MachInst) * 8)));
+                        asi << (sizeof(machInst) * 8)));
         } else {
             emi |= (static_cast<ExtMachInst>(bits(emi, 12, 5))
-                    << (sizeof(MachInst) * 8));
+                    << (sizeof(machInst) * 8));
         }
         instDone = true;
     }
@@ -102,9 +105,9 @@ class Decoder
 
   protected:
     /// A cache of decoded instruction objects.
-    static GenericISA::BasicDecodeCache defaultCache;
+    static GenericISA::BasicDecodeCache<Decoder, ExtMachInst> defaultCache;
+    friend class GenericISA::BasicDecodeCache<Decoder, ExtMachInst>;
 
-  public:
     StaticInstPtr decodeInst(ExtMachInst mach_inst);
 
     /// Decode a machine instruction.
@@ -113,9 +116,13 @@ class Decoder
     StaticInstPtr
     decode(ExtMachInst mach_inst, Addr addr)
     {
-        return defaultCache.decode(this, mach_inst, addr);
+        StaticInstPtr si = defaultCache.decode(this, mach_inst, addr);
+        DPRINTF(Decode, "Decode: Decoded %s instruction: %#x\n",
+                si->getName(), mach_inst);
+        return si;
     }
 
+  public:
     StaticInstPtr
     decode(SparcISA::PCState &nextPC)
     {
@@ -127,5 +134,6 @@ class Decoder
 };
 
 } // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_DECODER_HH__

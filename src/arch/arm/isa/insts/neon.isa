@@ -34,8 +34,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 output header {{
     template <template <typename T> class Base>
@@ -1148,12 +1146,21 @@ let {{
     allTypes = unsignedTypes + signedTypes
 
     def threeEqualRegInst(name, Name, opClass, types, rCount, op,
-                          readDest=False, pairwise=False,
-                          standardFpcsr=False):
+                          readDest=False, pairwise=False, byElem=False,
+                          standardFpcsr=False, complex=False, extra=''):
         global header_output, exec_output
         eWalkCode = simdEnabledCheckCode + '''
-        RegVect srcReg1, srcReg2, destReg;
-        '''
+                    RegVect srcReg1, destReg;
+                    '''
+        if byElem:
+            # 2nd register operand has to be read fully
+            eWalkCode += '''
+                FullRegVect srcReg2;
+                '''
+        else:
+            eWalkCode += '''
+            RegVect srcReg2;
+            '''
         for reg in range(rCount):
             eWalkCode += '''
                 srcReg1.regs[%(reg)d] = htole(FpOp1P%(reg)d_uw);
@@ -1163,6 +1170,13 @@ let {{
                 eWalkCode += '''
                     destReg.regs[%(reg)d] = htole(FpDestP%(reg)d_uw);
                 ''' % { "reg" : reg }
+        if byElem:
+            # 2nd operand has to be read fully
+            for reg in range(rCount, 4):
+                eWalkCode += '''
+        srcReg2.regs[%(reg)d] = htole(FpOp2P%(reg)d_uw);
+        ''' % { "reg" : reg }
+
         readDestCode = ''
         if standardFpcsr:
             eWalkCode += '''
@@ -1170,7 +1184,10 @@ let {{
             '''
         if readDest:
             readDestCode = 'destElem = letoh(destReg.elements[i]);'
-        if pairwise:
+
+        if complex:
+            eWalkCode += op
+        elif pairwise:
             eWalkCode += '''
             for (unsigned i = 0; i < eCount; i++) {
                 Element srcElem1 = letoh(2 * i < eCount ?
@@ -1186,6 +1203,7 @@ let {{
             }
             ''' % { "op" : op, "readDest" : readDestCode }
         else:
+            eWalkCode += extra
             eWalkCode += '''
             for (unsigned i = 0; i < eCount; i++) {
                 Element srcElem1 = letoh(srcReg1.elements[i]);
@@ -1204,13 +1222,16 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
-        header_output += NeonRegRegRegOpDeclare.subst(iop)
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegRegImmOp" if byElem else "RegRegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
+        if byElem:
+            header_output += NeonRegRegRegImmOpDeclare.subst(iop)
+        else:
+            header_output += NeonRegRegRegOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
             substDict = { "targs" : type,
@@ -1289,12 +1310,12 @@ let {{
                 eWalkCode += '''
                 FpDestP%(reg)d = destRegs[%(reg)d];
                 ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "FpRegRegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "FpRegRegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegRegOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1353,12 +1374,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegRegOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -1378,7 +1399,8 @@ let {{
         threeUnequalRegInst(name, Name, opClass, types, op,
                             True, False, True, readDest)
 
-    def twoEqualRegInst(name, Name, opClass, types, rCount, op, readDest=False):
+    def twoEqualRegInst(name, Name, opClass, types, rCount, op,
+                        readDest=False, extra=''):
         global header_output, exec_output
         eWalkCode = simdEnabledCheckCode + '''
         RegVect srcReg1, srcReg2, destReg;
@@ -1395,10 +1417,11 @@ let {{
         readDestCode = ''
         if readDest:
             readDestCode = 'destElem = letoh(destReg.elements[i]);'
+        eWalkCode += extra
         eWalkCode += '''
-        if (imm < 0 && imm >= eCount) {
-            fault = std::make_shared<UndefinedInstruction>(machInst, false,
-                                                           mnemonic);
+        if (imm >= eCount) {
+            return std::make_shared<UndefinedInstruction>(machInst, false,
+                                                          mnemonic);
         } else {
             for (unsigned i = 0; i < eCount; i++) {
                 Element srcElem1 = letoh(srcReg1.elements[i]);
@@ -1414,12 +1437,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegRegImmOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1432,7 +1455,7 @@ let {{
         rCount = 2
         eWalkCode = simdEnabledCheckCode + '''
         RegVect srcReg1, srcReg2;
-        BigRegVect destReg;
+        BigRegVect destReg = {};
         '''
         for reg in range(rCount):
             eWalkCode += '''
@@ -1448,7 +1471,7 @@ let {{
         if readDest:
             readDestCode = 'destElem = letoh(destReg.elements[i]);'
         eWalkCode += '''
-        if (imm < 0 && imm >= eCount) {
+        if (imm >= eCount) {
             fault = std::make_shared<UndefinedInstruction>(machInst, false,
                                                           mnemonic);
         } else {
@@ -1466,12 +1489,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegRegImmOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -1498,9 +1521,9 @@ let {{
         if readDest:
             readDestCode = 'destReg = destRegs[i];'
         eWalkCode += '''
-        if (imm < 0 && imm >= eCount) {
-            fault = std::make_shared<UndefinedInstruction>(machInst, false,
-                                                           mnemonic);
+        if (imm >= eCount) {
+            return std::make_shared<UndefinedInstruction>(machInst, false,
+                                                          mnemonic);
         } else {
             for (unsigned i = 0; i < rCount; i++) {
                 float srcReg1 = srcRegs1[i];
@@ -1516,12 +1539,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d = destRegs[%(reg)d];
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "FpRegRegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "FpRegRegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegRegImmOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1573,12 +1596,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destRegs.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegImmOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1617,12 +1640,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegImmOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -1634,7 +1657,7 @@ let {{
         global header_output, exec_output
         eWalkCode = simdEnabledCheckCode + '''
         RegVect srcReg1;
-        BigRegVect destReg;
+        BigRegVect destReg = {};
         '''
         for reg in range(2):
             eWalkCode += '''
@@ -1661,12 +1684,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegImmOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -1704,12 +1727,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1746,12 +1769,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegImmOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1781,12 +1804,12 @@ let {{
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             FpOp1P%(reg)d_uw = letoh(srcReg1.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1847,12 +1870,12 @@ let {{
                 eWalkCode += '''
                 FpDestP%(reg)d = destRegs[%(reg)d];
                 ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "FpRegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "FpRegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1864,7 +1887,7 @@ let {{
         global header_output, exec_output
         eWalkCode = simdEnabledCheckCode + '''
         RegVect srcRegs;
-        BigRegVect destReg;
+        BigRegVect destReg = {};
         '''
         for reg in range(rCount):
             eWalkCode += '''
@@ -1891,12 +1914,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -1935,12 +1958,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -1973,12 +1996,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegImmOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -1990,7 +2013,7 @@ let {{
         global header_output, exec_output
         eWalkCode = simdEnabledCheckCode + '''
         RegVect srcReg1;
-        BigRegVect destReg;
+        BigRegVect destReg = {};
         '''
         for reg in range(2):
             eWalkCode += '''
@@ -2017,12 +2040,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonUnequalRegExecute.subst(iop)
         for type in types:
@@ -2187,6 +2210,119 @@ let {{
                    (sizeof(Element) * 8);
     '''
     threeRegNarrowInst("vrsubhn", "Vrsubhn", "SimdAddOp", smallTypes, vrsubhnCode)
+
+    vcaddCode = '''
+        bool rot = bits(machInst, 24);
+        Element el1;
+        Element el3;
+
+        for (int i = 0; i < eCount/2; ++i) {
+            Element srcElem1_1 = letoh(srcReg1.elements[2*i]);
+            Element srcElem1_2 = letoh(srcReg1.elements[2*i+1]);
+            Element srcElem2_1 = letoh(srcReg2.elements[2*i]);
+            Element srcElem2_2 = letoh(srcReg2.elements[2*i+1]);
+            Element destElem_1;
+            Element destElem_2;
+            if (rot) {
+                el1 = srcElem2_2;
+                el3 = fplibNeg<Element>(srcElem2_1);
+            } else {
+                el1 = fplibNeg<Element>(srcElem2_2);
+                el3 = srcElem2_1;
+            }
+
+            destElem_1 = fplibAdd<Element>(srcElem1_1, el1, fpscr);
+            destElem_2 = fplibAdd<Element>(srcElem1_2, el3, fpscr);
+            destReg.elements[2*i] = htole(destElem_1);
+            destReg.elements[2*i+1] = htole(destElem_2);
+         }
+         '''
+
+    # VCADD
+    threeEqualRegInst("vcadd", "VcaddD", "SimdFloatAddOp",
+                            ("uint16_t", "uint32_t"), 2, vcaddCode,
+                            standardFpcsr=True, complex=True)
+    threeEqualRegInst("vcadd", "VcaddQ", "SimdFloatAddOp",
+                            ("uint16_t", "uint32_t"), 4,
+                           vcaddCode, standardFpcsr=True, complex=True)
+
+    vcmlaCode = '''
+        uint8_t rot = bits(machInst, %(rot)s);
+        Element el1;
+        Element el2;
+        Element el3;
+        Element el4;
+        for (int i = 0; i < eCount/2; ++i) {
+
+            Element srcElem1_1 = letoh(srcReg1.elements[2*i]);
+            Element srcElem1_2 = letoh(srcReg1.elements[2*i+1]);
+            Element srcElem2_1 = letoh(srcReg2.elements[2*%(index)s]);
+            Element srcElem2_2 = letoh(srcReg2.elements[2*%(index)s+1]);
+            Element destElem_1 = letoh(destReg.elements[2*i]);
+            Element destElem_2 = letoh(destReg.elements[2*i+1]);
+
+            switch (rot) {
+              case 0x0:
+                {
+                  el1 = srcElem2_1;
+                  el2 = srcElem1_1;
+                  el3 = srcElem2_2;
+                  el4 = srcElem1_1;
+                  break;
+                }
+              case 0x1:
+                {
+                  el1 = fplibNeg<Element>(srcElem2_2);
+                  el2 = srcElem1_2;
+                  el3 = srcElem2_1;
+                  el4 = srcElem1_2;
+                  break;
+                }
+              case 0x2:
+                {
+                  el1 = fplibNeg<Element>(srcElem2_1);
+                  el2 = srcElem1_1;
+                  el3 = fplibNeg<Element>(srcElem2_2);
+                  el4 = srcElem1_1;
+                  break;
+                }
+              case 0x3:
+                {
+                  el1 = srcElem2_2;
+                  el2 = srcElem1_2;
+                  el3 = fplibNeg<Element>(srcElem2_1);
+                  el4 = srcElem1_2;
+                  break;
+                }
+            }
+
+            destElem_1 = fplibMulAdd<Element>(destElem_1, el2, el1, fpscr);
+            destElem_2 = fplibMulAdd<Element>(destElem_2, el4, el3, fpscr);
+
+            destReg.elements[2*i] = htole(destElem_1);
+            destReg.elements[2*i+1] = htole(destElem_2);
+         }
+         '''
+
+    # VCMLA (by element)
+    vcmla_imm = vcmlaCode % {'rot': '21, 20', 'index': 'imm'}
+    threeEqualRegInst("vcmla", "VcmlaElemD", "SimdFloatMultAccOp",
+                           ("uint16_t", "uint32_t"), 2, vcmla_imm,
+                           readDest=True, byElem=True, standardFpcsr=True,
+                           complex=True)
+    threeEqualRegInst("vcmla", "VcmlaElemQ", "SimdFloatMultAccOp",
+                           ("uint16_t", "uint32_t"), 4, vcmla_imm,
+                           readDest=True, byElem=True, standardFpcsr=True,
+                           complex=True)
+
+    # FCMLA (vector)
+    vcmla_vec = vcmlaCode % {'rot': '24, 23', 'index': 'i'}
+    threeEqualRegInst("vcmla", "VcmlaD", "SimdFloatMultAccOp",
+                            ("uint16_t", "uint32_t"), 2, vcmla_vec,
+                             readDest=True, standardFpcsr=True, complex=True)
+    threeEqualRegInst("vcmla", "VcmlaQ", "SimdFloatMultAccOp",
+                            ("uint16_t", "uint32_t"), 4, vcmla_vec,
+                             readDest=True, standardFpcsr=True, complex=True)
 
     vqaddSCode = '''
         destElem = srcElem1 + srcElem2;
@@ -2650,6 +2786,55 @@ let {{
     threeEqualRegInst("vqdmulh", "VqdmulhD", "SimdMultOp", smallSignedTypes, 2, vqdmulhCode)
     threeEqualRegInst("vqdmulh", "VqdmulhQ", "SimdMultOp", smallSignedTypes, 4, vqdmulhCode)
 
+
+    vqrdmCode = '''
+          FPSCR fpscr = (FPSCR) FpscrQc;
+          int nbits = sizeof(Element)*8;
+
+          auto val_max = std::numeric_limits<Element>::max();
+          auto val_min = std::numeric_limits<Element>::min();
+          BigElement unsat_value = ((BigElement)destElem << nbits) %(code)s
+                ((BigElement)srcElem1 * (BigElement)srcElem2 * 2) +
+                ((BigElement)1 << (nbits - 1));
+          unsat_value >>= nbits;
+
+          if (unsat_value > val_max) {
+              fpscr.qc = 1;
+              destElem = val_max;
+          } else if (unsat_value < val_min) {
+              fpscr.qc = 1;
+              destElem = val_min;
+          } else {
+              destElem = unsat_value;
+          }
+          FpscrQc = fpscr;
+    '''
+    code_add = "+"
+    vqrdmlahCode = vqrdmCode % {'code': code_add}
+    rdm_check = '''
+      int sz = bits(machInst, 21, 20);
+      RegVal isar5 = xc->tcBase()->readMiscReg(MISCREG_ID_ISAR5);
+      if (!(bits(isar5, 27, 24) == 0x1) || sz == 3 || sz == 0)
+          return std::make_shared<UndefinedInstruction>(machInst, true);
+      typedef __int128_t BigElement;
+    '''
+    threeEqualRegInst("vqrdmlah", "VqrdmlahD",
+            "SimdMultOp", smallSignedTypes, 2, vqrdmlahCode, readDest=True,
+            extra=rdm_check)
+    threeEqualRegInst("vqrdmlah", "VqrdmlahQ",
+            "SimdMultOp", smallSignedTypes, 4, vqrdmlahCode, readDest=True,
+            extra=rdm_check)
+
+    code_sub = "-"
+    vqrdmlshCode = vqrdmCode % {'code': code_sub}
+    threeEqualRegInst("vqrdmlsh", "VqrdmlshD",
+            "SimdMultOp", smallSignedTypes, 2, vqrdmlshCode, readDest=True,
+            extra=rdm_check)
+    threeEqualRegInst("vqrdmlsh", "VqrdmlshQ",
+            "SimdMultOp", smallSignedTypes, 4, vqrdmlshCode, readDest=True,
+            extra=rdm_check)
+
+
     vqrdmulhCode = '''
         FPSCR fpscr = (FPSCR) FpscrQc;
         destElem = (2 * (int64_t)srcElem1 * (int64_t)srcElem2 +
@@ -2900,6 +3085,18 @@ let {{
             "SimdMultOp", smallSignedTypes, 2, vqrdmulhCode)
     twoEqualRegInst("vqrdmulh", "VqrdmulhsQ",
             "SimdMultOp", smallSignedTypes, 4, vqrdmulhCode)
+    twoEqualRegInst("vqrdmlah", "VqrdmlahsD",
+            "SimdMultOp", smallSignedTypes, 2, vqrdmlahCode, readDest=True,
+            extra=rdm_check)
+    twoEqualRegInst("vqrdmlah", "VqrdmlahsQ",
+            "SimdMultOp", smallSignedTypes, 4, vqrdmlahCode, readDest=True,
+            extra=rdm_check)
+    twoEqualRegInst("vqrdmlsh", "VqrdmlshsD",
+            "SimdMultOp", smallSignedTypes, 2, vqrdmlshCode, readDest=True,
+            extra=rdm_check)
+    twoEqualRegInst("vqrdmlsh", "VqrdmlshsQ",
+            "SimdMultOp", smallSignedTypes, 4, vqrdmlshCode, readDest=True,
+            extra=rdm_check)
 
     vshrCode = '''
         if (imm >= sizeof(srcElem1) * 8) {
@@ -3725,12 +3922,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -3811,12 +4008,12 @@ let {{
             eWalkCode += '''
             FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
             ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "RegRegRegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegRegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += NeonRegRegRegImmOpDeclare.subst(iop)
         exec_output += NeonEqualRegExecute.subst(iop)
         for type in types:
@@ -3889,11 +4086,11 @@ let {{
         FpDestP0_uw = letoh(destReg.regs[0]);
         FpDestP1_uw = letoh(destReg.regs[1]);
         '''
-        iop = InstObjParams(name, Name,
-                            "RegRegRegOp",
-                            { "code": code,
-                              "predicate_test": predicateTest,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "RegRegRegOp",
+                               { "code": code,
+                                 "predicate_test": predicateTest,
+                                 "op_class": opClass }, [])
         header_output += RegRegRegOpDeclare.subst(iop)
         decoder_output += RegRegRegOpConstructor.subst(iop)
         exec_output += PredOpExecute.subst(iop)

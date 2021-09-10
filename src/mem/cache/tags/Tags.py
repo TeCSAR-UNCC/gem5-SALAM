@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Prakash Ramrakhyani
 
 from m5.params import *
 from m5.proxy import *
@@ -44,6 +42,7 @@ class BaseTags(ClockedObject):
     type = 'BaseTags'
     abstract = True
     cxx_header = "mem/cache/tags/base.hh"
+    cxx_class = 'gem5::BaseTags'
 
     # Get system to which it belongs
     system = Param.System(Parent.any, "System we belong to")
@@ -76,6 +75,7 @@ class BaseTags(ClockedObject):
 class BaseSetAssoc(BaseTags):
     type = 'BaseSetAssoc'
     cxx_header = "mem/cache/tags/base_set_assoc.hh"
+    cxx_class = 'gem5::BaseSetAssoc'
 
     # Get the cache associativity
     assoc = Param.Int(Parent.assoc, "associativity")
@@ -87,6 +87,7 @@ class BaseSetAssoc(BaseTags):
 class SectorTags(BaseTags):
     type = 'SectorTags'
     cxx_header = "mem/cache/tags/sector_tags.hh"
+    cxx_class = 'gem5::SectorTags'
 
     # Get the cache associativity
     assoc = Param.Int(Parent.assoc, "associativity")
@@ -104,6 +105,7 @@ class SectorTags(BaseTags):
 class CompressedTags(SectorTags):
     type = 'CompressedTags'
     cxx_header = "mem/cache/tags/compressed_tags.hh"
+    cxx_class = 'gem5::CompressedTags'
 
     # Maximum number of compressed blocks per tag
     max_compression_ratio = Param.Int(2,
@@ -118,11 +120,11 @@ class CompressedTags(SectorTags):
 
 class FALRU(BaseTags):
     type = 'FALRU'
-    cxx_class = 'FALRU'
     cxx_header = "mem/cache/tags/fa_lru.hh"
+    cxx_class = 'gem5::FALRU'
 
-    min_tracked_cache_size = Param.MemorySize("128kB", "Minimum cache size for"
-                                              " which we track statistics")
+    min_tracked_cache_size = Param.MemorySize("128KiB", "Minimum cache size"
+                                              " for which we track statistics")
 
     # This tag uses its own embedded indexing
     indexing_policy = NULL

@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2020 The Regents of the University of California
+ * All rights reserved
+ *
  * Copyright (c) 2002-2005 The Regents of The University of Michigan
  * All rights reserved.
  *
@@ -24,8 +27,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include "base/socket.hh"
@@ -42,12 +43,21 @@
 #include "base/types.hh"
 #include "sim/byteswap.hh"
 
-using namespace std;
+namespace gem5
+{
 
 bool ListenSocket::listeningDisabled = false;
 bool ListenSocket::anyListening = false;
 
 bool ListenSocket::bindToLoopback = false;
+
+void
+ListenSocket::cleanup()
+{
+    listeningDisabled = false;
+    anyListening = false;
+    bindToLoopback = false;
+}
 
 void
 ListenSocket::disableAll()
@@ -92,9 +102,12 @@ ListenSocket::listen(int port, bool reuse)
     if (listening)
         panic("Socket already listening!");
 
-    fd = ::socket(PF_INET, SOCK_STREAM, 0);
-    if (fd < 0)
-        panic("Can't create socket:%s !", strerror(errno));
+    // only create socket if not already created by a previous call
+    if (fd == -1) {
+        fd = ::socket(PF_INET, SOCK_STREAM, 0);
+        if (fd < 0)
+            panic("Can't create socket:%s !", strerror(errno));
+    }
 
     if (reuse) {
         int i = 1;
@@ -109,7 +122,7 @@ ListenSocket::listen(int port, bool reuse)
         htobe<in_addr_t>(bindToLoopback ? INADDR_LOOPBACK : INADDR_ANY);
     sockaddr.sin_port = htons(port);
     // finally clear sin_zero
-    memset(&sockaddr.sin_zero, 0, sizeof(sockaddr.sin_zero));
+    std::memset(&sockaddr.sin_zero, 0, sizeof(sockaddr.sin_zero));
     int ret = ::bind(fd, (struct sockaddr *)&sockaddr, sizeof (sockaddr));
     if (ret != 0) {
         if (ret == -1 && errno != EADDRINUSE)
@@ -147,3 +160,5 @@ ListenSocket::accept(bool nodelay)
 
     return sfd;
 }
+
+} // namespace gem5

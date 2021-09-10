@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Omar Naji
  */
 
 /**
@@ -46,7 +44,10 @@
 #define __MEM_DRAM_POWER_HH__
 
 #include "libdrampower/LibDRAMPower.h"
-#include "params/DRAMCtrl.hh"
+#include "params/DRAMInterface.hh"
+
+namespace gem5
+{
 
 /**
  * DRAMPower is a standalone tool which calculates the power consumed by a
@@ -59,45 +60,47 @@ class DRAMPower
 
     /**
      * Transform the architechture parameters defined in
-     * DRAMCtrlParams to the memSpec of DRAMPower
+     * DRAMInterfaceParams to the memSpec of DRAMPower
      */
-    static Data::MemArchitectureSpec getArchParams(const DRAMCtrlParams* p);
+    static Data::MemArchitectureSpec getArchParams(
+                                     const DRAMInterfaceParams &p);
 
     /**
-     * Transforms the timing parameters defined in DRAMCtrlParams to
+     * Transforms the timing parameters defined in DRAMInterfaceParams to
      * the memSpec of DRAMPower
      */
-    static Data::MemTimingSpec getTimingParams(const DRAMCtrlParams* p);
+    static Data::MemTimingSpec getTimingParams(const DRAMInterfaceParams &p);
 
     /**
      * Transforms the power and current parameters defined in
-     * DRAMCtrlParam to the memSpec of DRAMPower
+     * DRAMInterfaceParams to the memSpec of DRAMPower
      */
-    static Data::MemPowerSpec getPowerParams(const DRAMCtrlParams* p);
+    static Data::MemPowerSpec getPowerParams(const DRAMInterfaceParams &p);
 
     /**
      * Determine data rate, either one or two.
      */
-    static uint8_t getDataRate(const DRAMCtrlParams* p);
+    static uint8_t getDataRate(const DRAMInterfaceParams &p);
 
     /**
      * Determine if DRAM has two voltage domains (or one)
      */
-    static bool hasTwoVDD(const DRAMCtrlParams* p);
+    static bool hasTwoVDD(const DRAMInterfaceParams &p);
 
     /**
-     * Return an instance of MemSpec based on the DRAMCtrlParams
+     * Return an instance of MemSpec based on the DRAMInterfaceParams
      */
-    static Data::MemorySpecification getMemSpec(const DRAMCtrlParams* p);
+    static Data::MemorySpecification getMemSpec(const DRAMInterfaceParams &p);
 
  public:
 
     // Instance of DRAMPower Library
     libDRAMPower powerlib;
 
-    DRAMPower(const DRAMCtrlParams* p, bool include_io);
+    DRAMPower(const DRAMInterfaceParams &p, bool include_io);
 
 };
 
-#endif //__MEM_DRAM_POWER_HH__
+} // namespace gem5
 
+#endif //__MEM_DRAM_POWER_HH__

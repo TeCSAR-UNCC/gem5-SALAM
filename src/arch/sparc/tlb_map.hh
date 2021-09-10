@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #ifndef __ARCH_SPARC_TLB_MAP_HH__
@@ -34,6 +32,9 @@
 #include <map>
 
 #include "arch/sparc/pagetable.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -164,6 +165,7 @@ class TlbMap
 
 };
 
-};
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_TLB_MAP_HH__

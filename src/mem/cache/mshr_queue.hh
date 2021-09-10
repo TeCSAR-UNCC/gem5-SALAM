@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Andreas Sandberg
  */
 
 /** @file
@@ -54,6 +51,9 @@
 #include "mem/cache/mshr.hh"
 #include "mem/cache/queue.hh"
 #include "mem/packet.hh"
+
+namespace gem5
+{
 
 /**
  * A Class for maintaining a list of pending and allocated memory requests.
@@ -79,7 +79,7 @@ class MSHRQueue : public Queue<MSHR>
      * demand accesses.
      */
     MSHRQueue(const std::string &_label, int num_entries, int reserve,
-              int demand_reserve);
+              int demand_reserve, std::string cache_name);
 
     /**
      * Allocates a new MSHR for the request and size. This places the request
@@ -98,6 +98,11 @@ class MSHRQueue : public Queue<MSHR>
      */
     MSHR *allocate(Addr blk_addr, unsigned blk_size, PacketPtr pkt,
                    Tick when_ready, Counter order, bool alloc_on_fill);
+
+    /**
+     * Deallocate a MSHR and its targets
+     */
+    void deallocate(MSHR *mshr) override;
 
     /**
      * Moves the MSHR to the front of the pending list if it is not
@@ -157,5 +162,7 @@ class MSHRQueue : public Queue<MSHR>
         return (allocated < numEntries - (numReserve + 1 + demandReserve));
     }
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_MSHR_QUEUE_HH__

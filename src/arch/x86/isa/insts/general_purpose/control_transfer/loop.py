@@ -32,11 +32,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 microcode = '''
 def macroop LOOP_I {
+    .control_direct
+
     # Make the default data size of pops 64 bits in 64 bit mode
     .adjust_env oszIn64Override
     rdip t1
@@ -45,6 +45,8 @@ def macroop LOOP_I {
 };
 
 def macroop LOOPNE_I {
+    .control_direct
+
     # Make the default data size of pops 64 bits in 64 bit mode
     .adjust_env oszIn64Override
     rdip t1
@@ -53,6 +55,8 @@ def macroop LOOPNE_I {
 };
 
 def macroop LOOPE_I {
+    .control_direct
+
     # Make the default data size of pops 64 bits in 64 bit mode
     .adjust_env oszIn64Override
     rdip t1

@@ -24,8 +24,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 import os
 import argparse
@@ -120,6 +118,8 @@ parser.add_argument('--mem', choices = valid_mem.keys(),
 args = parser.parse_args()
 
 system = System()
+
+system.workload = SEWorkload.init_compatible(args.binary)
 
 system.clk_domain = SrcClockDomain()
 system.clk_domain.clock = '1GHz'

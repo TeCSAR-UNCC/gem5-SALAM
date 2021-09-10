@@ -24,16 +24,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_SPARC_HANDLERS_HH__
 #define __ARCH_SPARC_HANDLERS_HH__
 
-#include "arch/sparc/isa_traits.hh"
 #include "arch/sparc/types.hh"
 #include "sim/byteswap.hh"
+
+namespace gem5
+{
 
 namespace SparcISA {
 
@@ -187,4 +187,6 @@ const MachInst spillHandler32[numSpillInsts] =
 };
 
 } // namespace SparcISA
+} // namespace gem5
+
 #endif // __ARCH_SPARC_HANDLERS_HH__

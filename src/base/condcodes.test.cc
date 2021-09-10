@@ -24,14 +24,13 @@
  * THEORY OF LIABILITY,  WHETHER IN CONTRACT,  STRICT LIABILITY,  OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Bobby R. Bruce
- *          Jared J. Barocsi
  */
 
 #include <gtest/gtest.h>
 
 #include "base/condcodes.hh"
+
+using namespace gem5;
 
 /*
  * Add 0x80 + 0x80 to get 0x100. findCarry should report a carry flag after

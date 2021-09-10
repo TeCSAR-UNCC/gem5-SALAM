@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Riken Gohil
  */
 
 /**
@@ -47,6 +45,9 @@
 
 #include "base_gen.hh"
 
+namespace gem5
+{
+
 /**
  * The exit generator exits from the simulation
  * once entered.
@@ -56,8 +57,8 @@ class ExitGen : public BaseGen
 
   public:
 
-    ExitGen(SimObject &obj, MasterID master_id, Tick _duration)
-        : BaseGen(obj, master_id, _duration)
+    ExitGen(SimObject &obj, RequestorID requestor_id, Tick _duration)
+        : BaseGen(obj, requestor_id, _duration)
     { }
 
     void enter();
@@ -67,5 +68,7 @@ class ExitGen : public BaseGen
     Tick nextPacketTick(bool elastic, Tick delay) const;
 
 };
+
+} // namespace gem5
 
 #endif

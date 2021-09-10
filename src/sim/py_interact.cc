@@ -24,14 +24,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #include <Python.h>
 
 #include "sim/py_interact.hh"
+
+namespace gem5
+{
 
 void
 py_interact()
@@ -49,3 +49,4 @@ py_interact()
     Py_DECREF(locals);
 }
 
+} // namespace gem5

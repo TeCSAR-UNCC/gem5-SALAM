@@ -25,12 +25,11 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Nathan Binkert
  */
 
 #include "sim/sim_object.hh"
+
+#include <cassert>
 
 #include "base/logging.hh"
 #include "base/match.hh"
@@ -38,8 +37,8 @@
 #include "debug/Checkpoint.hh"
 #include "sim/probe/probe.hh"
 
-using namespace std;
-
+namespace gem5
+{
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -51,13 +50,14 @@ using namespace std;
 // static list of all SimObjects, used for initialization etc.
 //
 SimObject::SimObjectList SimObject::simObjectList;
+SimObjectResolver *SimObject::_objNameResolver = NULL;
 
 //
 // SimObject constructor: used to maintain static simObjectList
 //
-SimObject::SimObject(const Params *p)
-    : EventManager(getEventQueue(p->eventq_index)),
-      Stats::Group(nullptr),
+SimObject::SimObject(const Params &p)
+    : EventManager(getEventQueue(p.eventq_index)),
+      statistics::Group(nullptr), Named(p.name),
       _params(p)
 {
 #ifdef DEBUG
@@ -132,8 +132,11 @@ SimObject::getPort(const std::string &if_name, PortID idx)
 // static function: serialize all SimObjects.
 //
 void
-SimObject::serializeAll(CheckpointOut &cp)
+SimObject::serializeAll(const std::string &cpt_dir)
 {
+    std::ofstream cp;
+    Serializable::generateCheckpointOut(cpt_dir, cp);
+
     SimObjectList::reverse_iterator ri = simObjectList.rbegin();
     SimObjectList::reverse_iterator rend = simObjectList.rend();
 
@@ -145,13 +148,12 @@ SimObject::serializeAll(CheckpointOut &cp)
    }
 }
 
-
 #ifdef DEBUG
 //
 // static function: flag which objects should have the debugger break
 //
 void
-SimObject::debugObjectBreak(const string &objs)
+SimObject::debugObjectBreak(const std::string &objs)
 {
     SimObjectList::const_iterator i = simObjectList.begin();
     SimObjectList::const_iterator end = simObjectList.end();
@@ -166,7 +168,7 @@ SimObject::debugObjectBreak(const string &objs)
 void
 debugObjectBreak(const char *objs)
 {
-    SimObject::debugObjectBreak(string(objs));
+    SimObject::debugObjectBreak(std::string(objs));
 }
 #endif
 
@@ -184,3 +186,36 @@ SimObject::find(const char *name)
 
     return NULL;
 }
+
+void
+SimObject::setSimObjectResolver(SimObjectResolver *resolver)
+{
+    assert(!_objNameResolver);
+    _objNameResolver = resolver;
+}
+
+SimObjectResolver *
+SimObject::getSimObjectResolver()
+{
+    assert(_objNameResolver);
+    return _objNameResolver;
+}
+
+void
+objParamIn(CheckpointIn &cp, const std::string &name, SimObject * &param)
+{
+    const std::string &section(Serializable::currentSection());
+    std::string path;
+    if (!cp.find(section, name, path)) {
+        fatal("Can't unserialize '%s:%s'\n", section, name);
+    }
+    param = SimObject::getSimObjectResolver()->resolveSimObject(path);
+}
+
+void
+debug_serialize(const std::string &cpt_dir)
+{
+    SimObject::serializeAll(cpt_dir);
+}
+
+} // namespace gem5

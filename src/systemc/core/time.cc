@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "systemc/core/time.hh"
@@ -61,7 +59,7 @@ double TimeUnitScale[] = {
     [::sc_core::SC_SEC] = 1.0
 };
 
-Tick TimeUnitFrequency[] = {
+gem5::Tick TimeUnitFrequency[] = {
     [::sc_core::SC_FS] = 1ULL * 1000 * 1000 * 1000 * 1000 * 1000,
     [::sc_core::SC_PS] = 1ULL * 1000 * 1000 * 1000 * 1000,
     [::sc_core::SC_NS] = 1ULL * 1000 * 1000 * 1000,

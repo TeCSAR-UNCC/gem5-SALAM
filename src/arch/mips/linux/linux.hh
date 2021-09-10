@@ -24,20 +24,24 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Korey Sewell
  */
 
 #ifndef __ARCH_MIPS_LINUX_LINUX_HH__
 #define __ARCH_MIPS_LINUX_LINUX_HH__
 
+#include <map>
+
+#include "kern/linux/flag_tables.hh"
 #include "kern/linux/linux.hh"
 
-class MipsLinux : public Linux
+namespace gem5
+{
+
+class MipsLinux : public Linux, public OpenFlagTable<MipsLinux>
 {
   public:
 
-    static const ByteOrder byteOrder = LittleEndianByteOrder;
+    static const ByteOrder byteOrder = ByteOrder::little;
 
     static const int TGT_SIGHUP         = 0x000001;
     static const int TGT_SIGINT         = 0x000002;
@@ -74,53 +78,44 @@ class MipsLinux : public Linux
     static const int TGT_SIGXCPU        = 0x00001e;
     static const int TGT_SIGXFSZ        = 0x00001f;
 
-    /// This table maps the target open() flags to the corresponding
-    /// host open() flags.
-    static SyscallFlagTransTable openFlagTable[];
-
-    /// Number of entries in openFlagTable[].
-    static const int NUM_OPEN_FLAGS;
-
     //@{
     /// open(2) flag values.
-    static const int TGT_O_RDONLY       = 0x00000000;   //!< O_RDONLY
-    static const int TGT_O_WRONLY       = 0x00000001;   //!< O_WRONLY
-    static const int TGT_O_RDWR         = 0x00000002;   //!< O_RDWR
-    static const int TGT_O_CREAT        = 0x00000100;   //!< O_CREAT
-    static const int TGT_O_EXCL         = 0x00000400;   //!< O_EXCL
-    static const int TGT_O_NOCTTY       = 0x00000800;   //!< O_NOCTTY
-    static const int TGT_O_TRUNC        = 0x00000200;   //!< O_TRUNC
-    static const int TGT_O_APPEND       = 0x00000008;   //!< O_APPEND
-    static const int TGT_O_NONBLOCK     = 0x00000080;   //!< O_NONBLOCK
-    static const int TGT_O_DSYNC        = 0x00000010;   //!< O_DSYNC
-    static const int TGT_FASYNC         = 0x00001000;   //!< O_FASYNC
-    static const int TGT_O_DIRECT       = 0x00008000;   //!< O_DIRECT
-    static const int TGT_O_LARGEFILE    = 0x00002000;   //!< O_LARGEFILE
-    static const int TGT_O_DIRECTORY    = 0x00010000;   //!< O_DIRECTORY
-    static const int TGT_O_NOFOLLOW     = 0x00020000;   //!< O_NOFOLLOW
-    static const int TGT_O_NOATIME      = 0x00040000;   //!< O_NOATIME
-    static const int TGT_O_CLOEXEC      = 0x00080000;   //!< O_CLOEXEC
-    static const int TGT_O_SYNC         = 0x00004010;   //!< O_SYNC
-    static const int TGT_O_PATH         = 0x00200000;   //!< O_PATH
+    static constexpr int TGT_O_RDONLY       = 0x00000000;   //!< O_RDONLY
+    static constexpr int TGT_O_WRONLY       = 0x00000001;   //!< O_WRONLY
+    static constexpr int TGT_O_RDWR         = 0x00000002;   //!< O_RDWR
+    static constexpr int TGT_O_CREAT        = 0x00000100;   //!< O_CREAT
+    static constexpr int TGT_O_EXCL         = 0x00000400;   //!< O_EXCL
+    static constexpr int TGT_O_NOCTTY       = 0x00000800;   //!< O_NOCTTY
+    static constexpr int TGT_O_TRUNC        = 0x00000200;   //!< O_TRUNC
+    static constexpr int TGT_O_APPEND       = 0x00000008;   //!< O_APPEND
+    static constexpr int TGT_O_NONBLOCK     = 0x00000080;   //!< O_NONBLOCK
+    static constexpr int TGT_O_DSYNC        = 0x00000010;   //!< O_DSYNC
+    static constexpr int TGT_FASYNC         = 0x00001000;   //!< O_FASYNC
+    static constexpr int TGT_O_DIRECT       = 0x00008000;   //!< O_DIRECT
+    static constexpr int TGT_O_LARGEFILE    = 0x00002000;   //!< O_LARGEFILE
+    static constexpr int TGT_O_DIRECTORY    = 0x00010000;   //!< O_DIRECTORY
+    static constexpr int TGT_O_NOFOLLOW     = 0x00020000;   //!< O_NOFOLLOW
+    static constexpr int TGT_O_NOATIME      = 0x00040000;   //!< O_NOATIME
+    static constexpr int TGT_O_CLOEXEC      = 0x00080000;   //!< O_CLOEXEC
+    static constexpr int TGT_O_SYNC         = 0x00004010;   //!< O_SYNC
+    static constexpr int TGT_O_PATH         = 0x00200000;   //!< O_PATH
     //@}
 
-    static const unsigned TGT_MAP_SHARED        = 0x00001;
-    static const unsigned TGT_MAP_PRIVATE       = 0x00002;
-    static const unsigned TGT_MAP_ANON          = 0x00800;
-    static const unsigned TGT_MAP_DENYWRITE     = 0x02000;
-    static const unsigned TGT_MAP_EXECUTABLE    = 0x04000;
-    static const unsigned TGT_MAP_FILE          = 0x00000;
-    static const unsigned TGT_MAP_GROWSDOWN     = 0x01000;
-    static const unsigned TGT_MAP_HUGETLB       = 0x80000;
-    static const unsigned TGT_MAP_LOCKED        = 0x08000;
-    static const unsigned TGT_MAP_NONBLOCK      = 0x20000;
-    static const unsigned TGT_MAP_NORESERVE     = 0x00400;
-    static const unsigned TGT_MAP_POPULATE      = 0x10000;
-    static const unsigned TGT_MAP_STACK         = 0x40000;
-    static const unsigned TGT_MAP_ANONYMOUS     = 0x00800;
-    static const unsigned TGT_MAP_FIXED         = 0x00010;
-
-    static const unsigned NUM_MMAP_FLAGS;
+    static constexpr unsigned TGT_MAP_SHARED        = 0x00001;
+    static constexpr unsigned TGT_MAP_PRIVATE       = 0x00002;
+    static constexpr unsigned TGT_MAP_ANON          = 0x00800;
+    static constexpr unsigned TGT_MAP_DENYWRITE     = 0x02000;
+    static constexpr unsigned TGT_MAP_EXECUTABLE    = 0x04000;
+    static constexpr unsigned TGT_MAP_FILE          = 0x00000;
+    static constexpr unsigned TGT_MAP_GROWSDOWN     = 0x01000;
+    static constexpr unsigned TGT_MAP_HUGETLB       = 0x80000;
+    static constexpr unsigned TGT_MAP_LOCKED        = 0x08000;
+    static constexpr unsigned TGT_MAP_NONBLOCK      = 0x20000;
+    static constexpr unsigned TGT_MAP_NORESERVE     = 0x00400;
+    static constexpr unsigned TGT_MAP_POPULATE      = 0x10000;
+    static constexpr unsigned TGT_MAP_STACK         = 0x40000;
+    static constexpr unsigned TGT_MAP_ANONYMOUS     = 0x00800;
+    static constexpr unsigned TGT_MAP_FIXED         = 0x00010;
 
     //@{
     /// For getsysinfo().
@@ -181,7 +176,8 @@ class MipsLinux : public Linux
     /// the root users.
     static const int NUM_ROOT_PROCS = 2;
 
-    typedef struct {
+    struct tgt_sysinfo
+    {
        int32_t  uptime;    /* Seconds since boot */
        uint32_t loads[3];  /* 1, 5, and 15 minute load averages */
        uint32_t totalram;  /* Total usable main memory size */
@@ -194,8 +190,10 @@ class MipsLinux : public Linux
        uint32_t totalhigh; /* Total high memory size */
        uint32_t freehigh;  /* Available high memory size */
        uint32_t mem_unit;  /* Memory unit size in bytes */
-    } tgt_sysinfo;
+    };
 
 };
+
+} // namespace gem5
 
 #endif

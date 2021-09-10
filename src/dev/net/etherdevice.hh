@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /**
@@ -42,75 +40,94 @@
 #include "params/EtherDevice.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
 class EtherInt;
 
 class EtherDevice : public PciDevice
 {
   public:
-    typedef EtherDeviceParams Params;
-    EtherDevice(const Params *params)
-        : PciDevice(params)
+    using Params = EtherDeviceParams;
+    EtherDevice(const Params &params)
+        : PciDevice(params),
+          etherDeviceStats(this)
     {}
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-  public:
-    void regStats();
-
   protected:
-    Stats::Scalar txBytes;
-    Stats::Scalar rxBytes;
-    Stats::Scalar txPackets;
-    Stats::Scalar rxPackets;
-    Stats::Scalar txIpChecksums;
-    Stats::Scalar rxIpChecksums;
-    Stats::Scalar txTcpChecksums;
-    Stats::Scalar rxTcpChecksums;
-    Stats::Scalar txUdpChecksums;
-    Stats::Scalar rxUdpChecksums;
-    Stats::Scalar descDmaReads;
-    Stats::Scalar descDmaWrites;
-    Stats::Scalar descDmaRdBytes;
-    Stats::Scalar descDmaWrBytes;
-    Stats::Formula totBandwidth;
-    Stats::Formula totPackets;
-    Stats::Formula totBytes;
-    Stats::Formula totPacketRate;
-    Stats::Formula txBandwidth;
-    Stats::Formula rxBandwidth;
-    Stats::Formula txPacketRate;
-    Stats::Formula rxPacketRate;
-    Stats::Scalar postedSwi;
-    Stats::Formula coalescedSwi;
-    Stats::Scalar totalSwi;
-    Stats::Scalar postedRxIdle;
-    Stats::Formula coalescedRxIdle;
-    Stats::Scalar totalRxIdle;
-    Stats::Scalar postedRxOk;
-    Stats::Formula coalescedRxOk;
-    Stats::Scalar totalRxOk;
-    Stats::Scalar postedRxDesc;
-    Stats::Formula coalescedRxDesc;
-    Stats::Scalar totalRxDesc;
-    Stats::Scalar postedTxOk;
-    Stats::Formula coalescedTxOk;
-    Stats::Scalar totalTxOk;
-    Stats::Scalar postedTxIdle;
-    Stats::Formula coalescedTxIdle;
-    Stats::Scalar totalTxIdle;
-    Stats::Scalar postedTxDesc;
-    Stats::Formula coalescedTxDesc;
-    Stats::Scalar totalTxDesc;
-    Stats::Scalar postedRxOrn;
-    Stats::Formula coalescedRxOrn;
-    Stats::Scalar totalRxOrn;
-    Stats::Formula coalescedTotal;
-    Stats::Scalar postedInterrupts;
-    Stats::Scalar droppedPackets;
+    struct EtherDeviceStats : public statistics::Group
+    {
+        EtherDeviceStats(statistics::Group *parent);
+
+        statistics::Scalar postedInterrupts;
+
+        statistics::Scalar txBytes;
+        statistics::Scalar rxBytes;
+
+        statistics::Scalar txPackets;
+        statistics::Scalar rxPackets;
+
+        statistics::Formula txBandwidth;
+        statistics::Formula rxBandwidth;
+
+        statistics::Scalar txIpChecksums;
+        statistics::Scalar rxIpChecksums;
+
+        statistics::Scalar txTcpChecksums;
+        statistics::Scalar rxTcpChecksums;
+
+        statistics::Scalar txUdpChecksums;
+        statistics::Scalar rxUdpChecksums;
+
+        statistics::Scalar descDmaReads;
+        statistics::Scalar descDmaWrites;
+
+        statistics::Scalar descDmaRdBytes;
+        statistics::Scalar descDmaWrBytes;
+
+        statistics::Formula totBandwidth;
+        statistics::Formula totPackets;
+        statistics::Formula totBytes;
+        statistics::Formula totPacketRate;
+
+        statistics::Formula txPacketRate;
+        statistics::Formula rxPacketRate;
+
+        statistics::Scalar postedSwi;
+        statistics::Scalar totalSwi;
+        statistics::Formula coalescedSwi;
+
+        statistics::Scalar postedRxIdle;
+        statistics::Scalar totalRxIdle;
+        statistics::Formula coalescedRxIdle;
+
+        statistics::Scalar postedRxOk;
+        statistics::Scalar totalRxOk;
+        statistics::Formula coalescedRxOk;
+
+        statistics::Scalar postedRxDesc;
+        statistics::Scalar totalRxDesc;
+        statistics::Formula coalescedRxDesc;
+
+        statistics::Scalar postedTxOk;
+        statistics::Scalar totalTxOk;
+        statistics::Formula coalescedTxOk;
+
+        statistics::Scalar postedTxIdle;
+        statistics::Scalar totalTxIdle;
+        statistics::Formula coalescedTxIdle;
+
+        statistics::Scalar postedTxDesc;
+        statistics::Scalar totalTxDesc;
+        statistics::Formula coalescedTxDesc;
+
+        statistics::Scalar postedRxOrn;
+        statistics::Scalar totalRxOrn;
+        statistics::Formula coalescedRxOrn;
+
+        statistics::Formula coalescedTotal;
+        statistics::Scalar droppedPackets;
+    } etherDeviceStats;
 };
 
 /**
@@ -126,17 +143,12 @@ class EtherDevice : public PciDevice
 class EtherDevBase : public EtherDevice
 {
   public:
-    EtherDevBase(const EtherDevBaseParams *params)
+    using Params = EtherDevBaseParams;
+    EtherDevBase(const Params &params)
         : EtherDevice(params)
     {}
-
-    const EtherDevBaseParams *
-    params() const
-    {
-        return dynamic_cast<const EtherDevBaseParams *>(_params);
-    }
-
 };
 
-#endif // __DEV_NET_ETHERDEVICE_HH__
+} // namespace gem5
 
+#endif // __DEV_NET_ETHERDEVICE_HH__

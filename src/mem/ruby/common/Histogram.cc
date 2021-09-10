@@ -32,8 +32,13 @@
 #include <iomanip>
 
 #include "base/intmath.hh"
+#include "base/logging.hh"
 
-using namespace std;
+namespace gem5
+{
+
+namespace ruby
+{
 
 Histogram::Histogram(int binsize, uint32_t bins)
 {
@@ -88,7 +93,7 @@ void
 Histogram::add(int64_t value)
 {
     assert(value >= 0);
-    m_max = max(m_max, value);
+    m_max = std::max(m_max, value);
     m_count++;
 
     m_sumSamples += value;
@@ -116,7 +121,7 @@ Histogram::add(int64_t value)
 
     assert(index < m_data.size());
     m_data[index]++;
-    m_largest_bin = max(m_largest_bin, index);
+    m_largest_bin = std::max(m_largest_bin, index);
 }
 
 void
@@ -133,7 +138,7 @@ Histogram::add(Histogram& hist)
         }
     }
 
-    m_max = max(m_max, hist.getMax());
+    m_max = std::max(m_max, hist.getMax());
     m_count += hist.size();
     m_sumSamples += hist.getTotal();
     m_sumSquaredSamples += hist.getSquaredTotal();
@@ -185,13 +190,13 @@ Histogram::getStandardDeviation() const
 }
 
 void
-Histogram::print(ostream& out) const
+Histogram::print(std::ostream& out) const
 {
     printWithMultiplier(out, 1.0);
 }
 
 void
-Histogram::printPercent(ostream& out) const
+Histogram::printPercent(std::ostream& out) const
 {
     if (m_count == 0) {
         printWithMultiplier(out, 0.0);
@@ -201,7 +206,7 @@ Histogram::printPercent(ostream& out) const
 }
 
 void
-Histogram::printWithMultiplier(ostream& out, double multiplier) const
+Histogram::printWithMultiplier(std::ostream& out, double multiplier) const
 {
     if (m_binsize == -1) {
         out << "[binsize: log2 ";
@@ -215,7 +220,7 @@ Histogram::printWithMultiplier(ostream& out, double multiplier) const
         out << "average: NaN |";
         out << "standard deviation: NaN |";
     } else {
-        out << "average: " << setw(5) << ((double) m_sumSamples)/m_count
+        out << "average: " << std::setw(5) << ((double) m_sumSamples)/m_count
             << " | ";
         out << "standard deviation: " << getStandardDeviation() << " |";
     }
@@ -235,3 +240,6 @@ node_less_then_eq(const Histogram* n1, const Histogram* n2)
 {
     return (n1->size() > n2->size());
 }
+
+} // namespace ruby
+} // namespace gem5

@@ -32,9 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Giacomo Gabrielli
-#          Giacomo Travaglini
 
 from m5.SimObject import SimObject
 from m5.params import *
@@ -42,7 +39,7 @@ from m5.objects.InstTracer import InstTracer
 
 class TarmacParser(InstTracer):
     type = 'TarmacParser'
-    cxx_class = 'Trace::TarmacParser'
+    cxx_class = 'gem5::Trace::TarmacParser'
     cxx_header = "arch/arm/tracers/tarmac_parser.hh"
 
     path_to_trace = Param.String("tarmac.log", "path to TARMAC trace")
@@ -67,7 +64,7 @@ class TarmacParser(InstTracer):
 
 class TarmacTracer(InstTracer):
     type = 'TarmacTracer'
-    cxx_class = 'Trace::TarmacTracer'
+    cxx_class = 'gem5::Trace::TarmacTracer'
     cxx_header = "arch/arm/tracers/tarmac_tracer.hh"
 
     start_tick = Param.Tick(0,

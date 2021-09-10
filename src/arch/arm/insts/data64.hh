@@ -33,14 +33,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
+
 #ifndef __ARCH_ARM_INSTS_DATA64_HH__
 #define __ARCH_ARM_INSTS_DATA64_HH__
 
 #include "arch/arm/insts/static_inst.hh"
 #include "base/trace.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
@@ -58,7 +60,7 @@ class DataXImmOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataXImmOnlyOp : public ArmStaticInst
@@ -74,7 +76,7 @@ class DataXImmOnlyOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataXSRegOp : public ArmStaticInst
@@ -93,7 +95,7 @@ class DataXSRegOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataXERegOp : public ArmStaticInst
@@ -112,7 +114,7 @@ class DataXERegOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataX1RegOp : public ArmStaticInst
@@ -126,7 +128,7 @@ class DataX1RegOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataX1RegImmOp : public ArmStaticInst
@@ -142,7 +144,7 @@ class DataX1RegImmOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataX1Reg2ImmOp : public ArmStaticInst
@@ -159,7 +161,7 @@ class DataX1Reg2ImmOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataX2RegOp : public ArmStaticInst
@@ -174,7 +176,7 @@ class DataX2RegOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataX2RegImmOp : public ArmStaticInst
@@ -191,7 +193,7 @@ class DataX2RegImmOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataX3RegOp : public ArmStaticInst
@@ -207,7 +209,7 @@ class DataX3RegOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataXCondCompImmOp : public ArmStaticInst
@@ -226,7 +228,7 @@ class DataXCondCompImmOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataXCondCompRegOp : public ArmStaticInst
@@ -244,7 +246,7 @@ class DataXCondCompRegOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
 class DataXCondSelOp : public ArmStaticInst
@@ -261,9 +263,10 @@ class DataXCondSelOp : public ArmStaticInst
     {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 };
 
-}
+} // namespace ArmISA
+} // namespace gem5
 
 #endif //__ARCH_ARM_INSTS_PREDINST_HH__

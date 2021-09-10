@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2016,2019 ARM Limited
+# Copyright (c) 2012-2016,2019-2020 ARM Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -35,9 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-#          Glenn Bergmans
 
 from m5.params import *
 from m5.proxy import *
@@ -48,41 +45,47 @@ from m5.objects.ClockedObject import ClockedObject
 class PioDevice(ClockedObject):
     type = 'PioDevice'
     cxx_header = "dev/io_device.hh"
+    cxx_class = 'gem5::PioDevice'
     abstract = True
-    pio = SlavePort("Programmed I/O port")
+
+    pio = ResponsePort("Programmed I/O port")
     system = Param.System(Parent.any, "System this device is part of")
 
     def generateBasicPioDeviceNode(self, state, name, pio_addr,
                                    size, interrupts = None):
-        node = FdtNode("%s@%x" % (name, long(pio_addr)))
+        node = FdtNode("%s@%x" % (name, int(pio_addr)))
         node.append(FdtPropertyWords("reg",
             state.addrCells(pio_addr) +
             state.sizeCells(size) ))
 
         if interrupts:
-            if any([i < 32 for i in interrupts]):
+            if any([i.num < 32 for i in interrupts]):
                 raise(("Interrupt number smaller than 32 "+
                        " in PioDevice %s") % name)
 
-            # subtracting 32 because Linux assumes that SPIs start at 0, while
-            # gem5 uses the internal GIC numbering (SPIs start at 32)
+            gic = self._parent.unproxy(self).gic
+
             node.append(FdtPropertyWords("interrupts", sum(
-                [[0, i  - 32, 4] for i in interrupts], []) ))
+                [ i.generateFdtProperty(gic) for i in interrupts], []) ))
 
         return node
 
 class BasicPioDevice(PioDevice):
     type = 'BasicPioDevice'
     cxx_header = "dev/io_device.hh"
+    cxx_class = 'gem5::BasicPioDevice'
     abstract = True
+
     pio_addr = Param.Addr("Device Address")
     pio_latency = Param.Latency('100ns', "Programmed IO latency")
 
 class DmaDevice(PioDevice):
     type = 'DmaDevice'
     cxx_header = "dev/dma_device.hh"
+    cxx_class = 'gem5::DmaDevice'
     abstract = True
-    dma = MasterPort("DMA port")
+
+    dma = RequestPort("DMA port")
 
     _iommu = None
 
@@ -105,9 +108,17 @@ class DmaDevice(PioDevice):
             node.append(FdtPropertyWords("iommus",
                 [ state.phandle(self._iommu), self.sid ]))
 
+class DmaVirtDevice(DmaDevice):
+    type = 'DmaVirtDevice'
+    cxx_header = "dev/dma_virt_device.hh"
+    cxx_class = 'gem5::DmaVirtDevice'
+    abstract = True
+
 class IsaFake(BasicPioDevice):
     type = 'IsaFake'
     cxx_header = "dev/isa_fake.hh"
+    cxx_class = 'gem5::IsaFake'
+
     pio_size = Param.Addr(0x8, "Size of address range")
     ret_data8 = Param.UInt8(0xFF, "Default data to return")
     ret_data16 = Param.UInt16(0xFFFF, "Default data to return")

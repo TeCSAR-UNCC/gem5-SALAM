@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ivan Pizarro
  */
 
 #include "mem/cache/prefetch/pif.hh"
@@ -36,21 +34,27 @@
 #include "mem/cache/prefetch/associative_set_impl.hh"
 #include "params/PIFPrefetcher.hh"
 
-PIFPrefetcher::PIFPrefetcher(const PIFPrefetcherParams *p)
-    : QueuedPrefetcher(p),
-      precSize(p->prec_spatial_region_bits),
-      succSize(p->succ_spatial_region_bits),
-      maxCompactorEntries(p->compactor_entries),
-      maxStreamAddressBufferEntries(p->stream_address_buffer_entries),
-      historyBuffer(p->history_buffer_size),
-      historyBufferTail(0),
-      index(p->index_assoc, p->index_entries, p->index_indexing_policy,
-            p->index_replacement_policy),
-      streamAddressBuffer(), listenersPC()
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+PIF::PIF(const PIFPrefetcherParams &p)
+    : Queued(p),
+      precSize(p.prec_spatial_region_bits),
+      succSize(p.succ_spatial_region_bits),
+      maxCompactorEntries(p.compactor_entries),
+      historyBuffer(p.history_buffer_size),
+      index(p.index_assoc, p.index_entries, p.index_indexing_policy,
+            p.index_replacement_policy),
+      streamAddressBuffer(p.stream_address_buffer_entries),
+      listenersPC()
 {
 }
 
-PIFPrefetcher::CompactorEntry::CompactorEntry(Addr addr,
+PIF::CompactorEntry::CompactorEntry(Addr addr,
     unsigned int prec_size, unsigned int succ_size)
 {
     trigger = addr;
@@ -59,7 +63,7 @@ PIFPrefetcher::CompactorEntry::CompactorEntry(Addr addr,
 }
 
 Addr
-PIFPrefetcher::CompactorEntry::distanceFromTrigger(Addr target,
+PIF::CompactorEntry::distanceFromTrigger(Addr target,
         unsigned int log_blk_size) const
 {
     const Addr target_blk = target >> log_blk_size;
@@ -70,33 +74,33 @@ PIFPrefetcher::CompactorEntry::distanceFromTrigger(Addr target,
 }
 
 bool
-PIFPrefetcher::CompactorEntry::inSameSpatialRegion(Addr pc,
+PIF::CompactorEntry::inSameSpatialRegion(Addr pc,
         unsigned int log_blk_size, bool update)
 {
     Addr blk_distance = distanceFromTrigger(pc, log_blk_size);
 
     bool hit = (pc > trigger) ?
-        (succ.size() >= blk_distance) : (prec.size() >= blk_distance);
+        (succ.size() > blk_distance) : (prec.size() > blk_distance);
     if (hit && update) {
         if (pc > trigger) {
-            succ[blk_distance - 1] = true;
+            succ[blk_distance] = true;
         } else if (pc < trigger) {
-            prec[blk_distance - 1] = true;
+            prec[blk_distance] = true;
         }
     }
     return hit;
 }
 
 bool
-PIFPrefetcher::CompactorEntry::hasAddress(Addr target,
+PIF::CompactorEntry::hasAddress(Addr target,
                                           unsigned int log_blk_size) const
 {
     Addr blk_distance = distanceFromTrigger(target, log_blk_size);
     bool hit = false;
     if (target > trigger) {
-        hit = blk_distance <= succ.size() && succ[blk_distance - 1];
+        hit = blk_distance < succ.size() && succ[blk_distance];
     } else if (target < trigger) {
-        hit = blk_distance <= prec.size() && succ[blk_distance - 1];
+        hit = blk_distance < prec.size() && prec[blk_distance];
     } else {
         hit = true;
     }
@@ -104,7 +108,7 @@ PIFPrefetcher::CompactorEntry::hasAddress(Addr target,
 }
 
 void
-PIFPrefetcher::CompactorEntry::getPredictedAddresses(unsigned int log_blk_size,
+PIF::CompactorEntry::getPredictedAddresses(unsigned int log_blk_size,
     std::vector<AddrPriority> &addresses) const
 {
     // Calculate the addresses of the instruction blocks that are encoded
@@ -130,11 +134,12 @@ PIFPrefetcher::CompactorEntry::getPredictedAddresses(unsigned int log_blk_size,
 }
 
 void
-PIFPrefetcher::notifyRetiredInst(const Addr pc)
+PIF::notifyRetiredInst(const Addr pc)
 {
     // First access to the prefetcher
     if (temporalCompactor.size() == 0) {
         spatialCompactor = CompactorEntry(pc, precSize, succSize);
+        temporalCompactor.push_back(spatialCompactor);
     } else {
         // If the PC of the instruction retired is in the same spatial region
         // than the last trigger address, update the bit vectors based on the
@@ -169,8 +174,8 @@ PIFPrefetcher::notifyRetiredInst(const Addr pc)
             // updating the trigger address and resetting the vector bits
             if (!is_in_temporal_compactor) {
                 // Insert the spatial entry into the history buffer and update
-                // the 'index' table to point to the new entry
-                historyBuffer[historyBufferTail] = spatialCompactor;
+                // the 'iterator' table to point to the new entry
+                historyBuffer.push_back(spatialCompactor);
 
                 IndexEntry *idx_entry =
                     index.findEntry(spatialCompactor.trigger, false);
@@ -182,12 +187,8 @@ PIFPrefetcher::notifyRetiredInst(const Addr pc)
                     index.insertEntry(spatialCompactor.trigger, false,
                                       idx_entry);
                 }
-                idx_entry->historyIndex = historyBufferTail;
-
-                historyBufferTail++;
-                if (historyBufferTail == historyBuffer.size()) {
-                    historyBufferTail = 0;
-                }
+                idx_entry->historyIt =
+                    historyBuffer.getIterator(historyBuffer.tail());
 
                 // Reset the spatial compactor fields with the new address
                 spatialCompactor = CompactorEntry(pc, precSize, succSize);
@@ -197,22 +198,20 @@ PIFPrefetcher::notifyRetiredInst(const Addr pc)
 }
 
 void
-PIFPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
+PIF::calculatePrefetch(const PrefetchInfo &pfi,
     std::vector<AddrPriority> &addresses)
 {
-    const Addr addr = pfi.getAddr();
+    if (!pfi.hasPC()) {
+        return;
+    }
+
+    const Addr pc = pfi.getPC();
 
     // First check if the access has been prefetched, this is done by
     // comparing the access against the active Stream Address Buffers
     for (auto &sabEntry : streamAddressBuffer) {
-        if (sabEntry->hasAddress(addr, lBlkSize)) {
-            // Advance to the next entry (first check if we have reached the
-            // end of the history buffer)
-            if (sabEntry == &(historyBuffer[historyBuffer.size() - 1])) {
-                sabEntry = &(historyBuffer[0]);
-            } else {
-                sabEntry++;
-            }
+        if (sabEntry->hasAddress(pc, lBlkSize)) {
+            sabEntry++;
             sabEntry->getPredictedAddresses(lBlkSize, addresses);
             // We are done
             return;
@@ -221,19 +220,15 @@ PIFPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
 
     // Check if a valid entry in the 'index' table is found and allocate a new
     // active prediction stream
-    IndexEntry *idx_entry = index.findEntry(addr, /* unused */ false);
+    IndexEntry *idx_entry = index.findEntry(pc, /* unused */ false);
 
     if (idx_entry != nullptr) {
         index.accessEntry(idx_entry);
         // Trigger address from the 'index' table and index to the history
         // buffer
-        const unsigned int hb_entry = idx_entry->historyIndex;
-        CompactorEntry *entry = &historyBuffer[hb_entry];
+        auto entry = idx_entry->historyIt;
 
         // Track the block in the Stream Address Buffer
-        if (streamAddressBuffer.size() == maxStreamAddressBufferEntries) {
-            streamAddressBuffer.pop_front();
-        }
         streamAddressBuffer.push_back(entry);
 
         entry->getPredictedAddresses(lBlkSize, addresses);
@@ -241,20 +236,17 @@ PIFPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
 }
 
 void
-PIFPrefetcher::PrefetchListenerPC::notify(const Addr& pc)
+PIF::PrefetchListenerPC::notify(const Addr& pc)
 {
     parent.notifyRetiredInst(pc);
 }
 
 void
-PIFPrefetcher::addEventProbeRetiredInsts(SimObject *obj, const char *name)
+PIF::addEventProbeRetiredInsts(SimObject *obj, const char *name)
 {
     ProbeManager *pm(obj->getProbeManager());
     listenersPC.push_back(new PrefetchListenerPC(*this, pm, name));
 }
 
-PIFPrefetcher*
-PIFPrefetcherParams::create()
-{
-    return new PIFPrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5

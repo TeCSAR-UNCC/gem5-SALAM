@@ -24,14 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #ifndef __BASE_ATOMICIO_HH__
 #define __BASE_ATOMICIO_HH__
 
 #include <unistd.h>
+
+namespace gem5
+{
 
 // These functions keep reading/writing, if possible, until all data
 // has been transferred.  Basically, try again when there's no error,
@@ -64,5 +65,7 @@ ssize_t atomic_write(int fd, const void *s, size_t n);
  * error handling might not be feasible.
  */
 #define STATIC_ERR(m) STATIC_MSG(STDERR_FILENO, m)
+
+} // namespace gem5
 
 #endif // __BASE_ATOMICIO_HH__

@@ -35,10 +35,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
-
-from __future__ import print_function
 
 import code
 import datetime
@@ -99,9 +95,9 @@ def parse_options():
         choices=listener_modes, default="auto",
         help="Port (e.g., gdb) listener mode (auto: Enable if running " \
         "interactively) [Default: %default]")
-    option("--listener-loopback-only", action="store_true", default=False,
-        help="Port listeners will only accept connections over the " \
-        "loopback device")
+    option("--allow-remote-connections", action="store_true", default=False,
+        help="Port listeners will accept connections from anywhere (0.0.0.0). "
+        "Default is only localhost.")
     option('-i', "--interactive", action="store_true", default=False,
         help="Invoke the interactive interpreter after running the script")
     option("--pdb", action="store_true", default=False,
@@ -275,6 +271,7 @@ def main(*args):
         done = True
         print('Build information:')
         print()
+        print('gem5 version %s' % defines.gem5Version)
         print('compiled %s' % defines.compileDate)
         print('build options:')
         keys = list(defines.buildEnv.keys())
@@ -338,6 +335,7 @@ def main(*args):
         print(brief_copyright)
         print()
 
+        print("gem5 version %s" % defines.gem5Version)
         print("gem5 compiled %s" % defines.compileDate)
 
         print("gem5 started %s" %
@@ -379,7 +377,7 @@ def main(*args):
     else:
         panic("Unhandled listener mode: %s" % options.listener_mode)
 
-    if options.listener_loopback_only:
+    if not options.allow_remote_connections:
         m5.listenersLoopbackOnly()
 
     # set debugging options

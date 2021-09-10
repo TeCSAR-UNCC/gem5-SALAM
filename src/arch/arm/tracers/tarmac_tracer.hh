@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 /**
@@ -49,6 +47,9 @@
 #include "arch/arm/tracers/tarmac_record_v8.hh"
 #include "params/TarmacTracer.hh"
 #include "sim/insttracer.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
@@ -89,7 +90,7 @@ class TarmacTracer : public InstTracer
   public:
     typedef TarmacTracerParams Params;
 
-    TarmacTracer(const Params *p);
+    TarmacTracer(const Params &p);
 
     /**
      * Generates a TarmacTracerRecord, depending on the Tarmac version.
@@ -128,5 +129,6 @@ class TarmacTracer : public InstTracer
 };
 
 } // namespace Trace
+} // namespace gem5
 
 #endif // __ARCH_ARM_TRACERS_TARMAC_TRACER_HH__

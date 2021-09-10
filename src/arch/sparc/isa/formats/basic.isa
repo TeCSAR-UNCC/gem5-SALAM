@@ -23,10 +23,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Ali Saidi
-//          Gabe Black
-//          Steve Reinhardt
 
 // Basic instruction class declaration template.
 def template BasicDeclare {{
@@ -35,6 +31,9 @@ def template BasicDeclare {{
  */
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor.
     %(class_name)s(ExtMachInst machInst);
@@ -49,11 +48,14 @@ def template FpBasicDeclare {{
  */
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor.
     %(class_name)s(ExtMachInst machInst);
     Fault execute(ExecContext *, Trace::InstRecord *) const override;
-    Fault doFpOp(ExecContext *, Trace::InstRecord *) const M5_NO_INLINE;
+    GEM5_NO_INLINE Fault doFpOp(ExecContext *, Trace::InstRecord *) const;
 };
 }};
 
@@ -64,6 +66,9 @@ def template BasicDeclareWithMnemonic {{
  */
 class %(class_name)s : public %(base_class)s
 {
+  private:
+    %(reg_idx_arr_decl)s;
+
   public:
     // Constructor.
     %(class_name)s(const char *mnemonic, ExtMachInst machInst);
@@ -76,6 +81,7 @@ def template BasicConstructor {{
 %(class_name)s::%(class_name)s(ExtMachInst machInst) :
         %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
 }
 }};
@@ -85,6 +91,7 @@ def template BasicConstructorWithMnemonic {{
 %(class_name)s::%(class_name)s(const char *mnemonic, ExtMachInst machInst) :
         %(base_class)s(mnemonic, machInst, %(op_class)s)
 {
+    %(set_reg_idx_arr)s;
     %(constructor)s;
 }
 }};
@@ -149,19 +156,27 @@ def format FpBasic(code, *flags) {{
     exec_code = """
     Fsr |= bits(Fsr, 4, 0) << 5;
     Fsr = insertBits(Fsr, 4, 0, 0);
-    int newrnd = M5_FE_TONEAREST;
+    gem5::RoundingMode newrnd = gem5::RoundingMode::ToNearest;
     switch (Fsr<31:30>) {
-      case 0: newrnd = M5_FE_TONEAREST; break;
-      case 1: newrnd = M5_FE_TOWARDZERO; break;
-      case 2: newrnd = M5_FE_UPWARD; break;
-      case 3: newrnd = M5_FE_DOWNWARD; break;
+      case 0:
+        newrnd = gem5::RoundingMode::ToNearest;
+        break;
+      case 1:
+        newrnd = gem5::RoundingMode::TowardZero;
+        break;
+      case 2:
+        newrnd = gem5::RoundingMode::Upward;
+        break;
+      case 3:
+        newrnd = gem5::RoundingMode::Downward;
+        break;
     }
-    int oldrnd = m5_fegetround();
-    m5_fesetround(newrnd);
+    gem5::RoundingMode oldrnd = gem5::getFpRound();
+    gem5::setFpRound(newrnd);
     __asm__ __volatile__("" ::: "memory");
     fault = doFpOp(xc, traceData);
     __asm__ __volatile__("" ::: "memory");
-    m5_fesetround(oldrnd);
+    gem5::setFpRound(oldrnd);
     return fault;
 """
     fp_code = filterDoubles(code)

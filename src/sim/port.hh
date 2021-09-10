@@ -36,10 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Andreas Hansson
- *          William Wang
  */
 
 /**
@@ -50,9 +46,14 @@
 #ifndef __SIM_PORT_HH__
 #define __SIM_PORT_HH__
 
+#include <cassert>
+#include <ostream>
 #include <string>
 
 #include "base/types.hh"
+
+namespace gem5
+{
 
 /**
  * Ports are used to interface objects to each other.
@@ -66,6 +67,10 @@ class Port
     const std::string portName;
 
   protected:
+
+    class UnboundPortException {};
+
+    [[noreturn]] void reportUnbound() const;
 
     /**
      * A numeric identifier to distinguish ports in a vector, and set
@@ -92,12 +97,12 @@ class Port
      */
     Port(const std::string& _name, PortID _id);
 
+  public:
+
     /**
      * Virtual destructor due to inheritance.
      */
     virtual ~Port();
-
-  public:
 
     /** Return a reference to this port's peer. */
     Port &getPeer() { return *_peer; }
@@ -153,5 +158,7 @@ operator << (std::ostream &os, const Port &port)
     os << port.name();
     return os;
 }
+
+} // namespace gem5
 
 #endif //__SIM_PORT_HH__

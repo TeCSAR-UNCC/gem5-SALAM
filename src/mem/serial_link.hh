@@ -37,11 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Steve Reinhardt
- *          Andreas Hansson
- *          Erfan Azarkhish
  */
 
 /**
@@ -59,6 +54,9 @@
 #include "mem/port.hh"
 #include "params/SerialLink.hh"
 #include "sim/clocked_object.hh"
+
+namespace gem5
+{
 
 /**
  * SerialLink is a simple variation of the Bridge class, with the ability to
@@ -87,16 +85,16 @@ class SerialLink : public ClockedObject
         { }
     };
 
-    // Forward declaration to allow the slave port to have a pointer
-    class SerialLinkMasterPort;
+    // Forward declaration to allow the CPU-side port to have a pointer
+    class SerialLinkRequestPort;
 
     /**
      * The port on the side that receives requests and sends
-     * responses. The slave port has a set of address ranges that it
-     * is responsible for. The slave port also has a buffer for the
+     * responses. The CPU-side port has a set of address ranges that it
+     * is responsible for. The CPU-side port also has a buffer for the
      * responses not yet sent.
      */
-    class SerialLinkSlavePort : public SlavePort
+    class SerialLinkResponsePort : public ResponsePort
     {
 
       private:
@@ -105,9 +103,9 @@ class SerialLink : public ClockedObject
         SerialLink& serial_link;
 
         /**
-         * Master port on the other side of the serial_link.
+         * Request port on the other side of the serial_link.
          */
-        SerialLinkMasterPort& masterPort;
+        SerialLinkRequestPort& mem_side_port;
 
         /** Minimum request delay though this serial_link. */
         const Cycles delay;
@@ -152,18 +150,18 @@ class SerialLink : public ClockedObject
       public:
 
         /**
-         * Constructor for the SerialLinkSlavePort.
+         * Constructor for the SerialLinkResponsePort.
          *
          * @param _name the port name including the owner
          * @param _serial_link the structural owner
-         * @param _masterPort the master port on the other side of the
+         * @param _mem_side_port the memory-side port on the other side of the
          * serial_link
          * @param _delay the delay in cycles from receiving to sending
          * @param _resp_limit the size of the response queue
          * @param _ranges a number of address ranges to forward
          */
-        SerialLinkSlavePort(const std::string& _name, SerialLink&
-                        _serial_link, SerialLinkMasterPort& _masterPort,
+        SerialLinkResponsePort(const std::string& _name, SerialLink&
+                        _serial_link, SerialLinkRequestPort& _mem_side_port,
                         Cycles _delay, int _resp_limit, const
                         std::vector<AddrRange>& _ranges);
 
@@ -209,10 +207,10 @@ class SerialLink : public ClockedObject
 
     /**
      * Port on the side that forwards requests and receives
-     * responses. The master port has a buffer for the requests not
+     * responses. The memory-side port has a buffer for the requests not
      * yet sent.
      */
-    class SerialLinkMasterPort : public MasterPort
+    class SerialLinkRequestPort : public RequestPort
     {
 
       private:
@@ -221,9 +219,10 @@ class SerialLink : public ClockedObject
         SerialLink& serial_link;
 
         /**
-         * The slave port on the other side of the serial_link.
+         * The response (CPU-side port) port on the other side of
+         * the serial_link.
          */
-        SerialLinkSlavePort& slavePort;
+        SerialLinkResponsePort& cpu_side_port;
 
         /** Minimum delay though this serial_link. */
         const Cycles delay;
@@ -252,18 +251,18 @@ class SerialLink : public ClockedObject
       public:
 
         /**
-         * Constructor for the SerialLinkMasterPort.
+         * Constructor for the SerialLinkRequestPort.
          *
          * @param _name the port name including the owner
          * @param _serial_link the structural owner
-         * @param _slavePort the slave port on the other side of the
-         * serial_link
+         * @param _cpu_side_port the CPU-side port on the other
+         * side of the serial_link
          * @param _delay the delay in cycles from receiving to sending
          * @param _req_limit the size of the request queue
          */
-        SerialLinkMasterPort(const std::string& _name, SerialLink&
-                         _serial_link, SerialLinkSlavePort& _slavePort, Cycles
-                         _delay, int _req_limit);
+        SerialLinkRequestPort(const std::string& _name, SerialLink&
+                         _serial_link, SerialLinkResponsePort& _cpu_side_port,
+                         Cycles _delay, int _req_limit);
 
         /**
          * Is this side blocked from accepting new request packets.
@@ -302,11 +301,11 @@ class SerialLink : public ClockedObject
         void recvReqRetry();
     };
 
-    /** Slave port of the serial_link. */
-    SerialLinkSlavePort slavePort;
+    /** Response port of the serial_link. */
+    SerialLinkResponsePort cpu_side_port;
 
-    /** Master port of the serial_link. */
-    SerialLinkMasterPort masterPort;
+    /** Request port of the serial_link. */
+    SerialLinkRequestPort mem_side_port;
 
     /** Number of parallel lanes in this serial link */
     unsigned num_lanes;
@@ -323,7 +322,9 @@ class SerialLink : public ClockedObject
 
     typedef SerialLinkParams Params;
 
-    SerialLink(SerialLinkParams *p);
+    SerialLink(const SerialLinkParams &p);
 };
+
+} // namespace gem5
 
 #endif //__MEM_SERIAL_LINK_HH__

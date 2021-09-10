@@ -23,13 +23,10 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "base/logging.hh"
 #include "base/types.hh"
-#include "sim/core.hh"
 #include "sim/eventq.hh"
 #include "systemc/core/kernel.hh"
 #include "systemc/core/process_types.hh"
@@ -56,7 +53,7 @@ class ClockTick : public ScEvent
     ClockTick(::sc_core::sc_clock *clock, bool to,
             ::sc_core::sc_time _period) :
         ScEvent([this]() { tick(); }),
-        _period(_period), name(clock->basename()), p(nullptr),
+        _period(_period), name(clock->name()), p(nullptr),
         funcWrapper(clock, to ? &::sc_core::sc_clock::tickUp :
                                 &::sc_core::sc_clock::tickDown)
     {

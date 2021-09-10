@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
- *          Erik Hallnor
  */
 
 /**
@@ -51,7 +48,10 @@
 
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 
-SetAssociative::SetAssociative(const Params *p)
+namespace gem5
+{
+
+SetAssociative::SetAssociative(const Params &p)
     : BaseIndexingPolicy(p)
 {
 }
@@ -75,8 +75,4 @@ SetAssociative::getPossibleEntries(const Addr addr) const
     return sets[extractSet(addr)];
 }
 
-SetAssociative*
-SetAssociativeParams::create()
-{
-    return new SetAssociative(this);
-}
+} // namespace gem5

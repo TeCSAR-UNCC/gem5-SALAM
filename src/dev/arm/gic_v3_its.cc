@@ -33,12 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #include "dev/arm/gic_v3_its.hh"
 
+#include <cassert>
+#include <functional>
+
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "debug/AddrRanges.hh"
 #include "debug/Drain.hh"
 #include "debug/GIC.hh"
@@ -49,6 +52,9 @@
 #include "mem/packet_access.hh"
 
 #define COMMAND(x, method) { x, DispatchEntry(#x, method) }
+
+namespace gem5
+{
 
 const AddrRange Gicv3Its::GITS_BASER(0x0100, 0x0140);
 
@@ -91,9 +97,9 @@ ItsProcess::doRead(Yield &yield, Addr addr, void *ptr, size_t size)
     a.type = ItsActionType::SEND_REQ;
 
     RequestPtr req = std::make_shared<Request>(
-        addr, size, 0, its.masterId);
+        addr, size, 0, its.requestorId);
 
-    req->taskId(ContextSwitchTaskId::DMA);
+    req->taskId(context_switch_task_id::DMA);
 
     a.pkt = new Packet(req, MemCmd::ReadReq);
     a.pkt->dataStatic(ptr);
@@ -115,9 +121,9 @@ ItsProcess::doWrite(Yield &yield, Addr addr, void *ptr, size_t size)
     a.type = ItsActionType::SEND_REQ;
 
     RequestPtr req = std::make_shared<Request>(
-        addr, size, 0, its.masterId);
+        addr, size, 0, its.requestorId);
 
-    req->taskId(ContextSwitchTaskId::DMA);
+    req->taskId(context_switch_task_id::DMA);
 
     a.pkt = new Packet(req, MemCmd::WriteReq);
     a.pkt->dataStatic(ptr);
@@ -773,15 +779,15 @@ ItsCommand::vsync(Yield &yield, CommandEntry &command)
     panic("ITS %s command unimplemented", __func__);
 }
 
-Gicv3Its::Gicv3Its(const Gicv3ItsParams *params)
- : BasicPioDevice(params, params->pio_size),
+Gicv3Its::Gicv3Its(const Gicv3ItsParams &params)
+ : BasicPioDevice(params, params.pio_size),
    dmaPort(name() + ".dma", *this),
    gitsControl(CTLR_QUIESCENT),
-   gitsTyper(params->gits_typer),
+   gitsTyper(params.gits_typer),
    gitsCbaser(0), gitsCreadr(0),
    gitsCwriter(0), gitsIidr(0),
    tableBases(NUM_BASER_REGS, 0),
-   masterId(params->system->getMasterId(this)),
+   requestorId(params.system->getRequestorId(this)),
    gic(nullptr),
    commandEvent([this] { checkCommandQueue(); }, name()),
    pendingCommands(false),
@@ -884,7 +890,7 @@ Gicv3Its::read(PacketPtr pkt)
         }
     }
 
-    pkt->setUintX(value, LittleEndianByteOrder);
+    pkt->setUintX(value, ByteOrder::little);
     pkt->makeAtomicResponse();
     return pioDelay;
 }
@@ -1289,8 +1295,4 @@ Gicv3Its::moveAllPendingState(
     rd2->updateDistributor();
 }
 
-Gicv3Its *
-Gicv3ItsParams::create()
-{
-    return new Gicv3Its(this);
-}
+} // namespace gem5

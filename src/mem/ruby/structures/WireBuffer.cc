@@ -38,15 +38,19 @@
 #include "base/stl_helpers.hh"
 #include "mem/ruby/system/RubySystem.hh"
 
-using namespace std;
+namespace gem5
+{
+
+namespace ruby
+{
 
 // Output operator definition
 
-ostream&
-operator<<(ostream& out, const WireBuffer& obj)
+std::ostream&
+operator<<(std::ostream& out, const WireBuffer& obj)
 {
     obj.print(out);
-    out << flush;
+    out << std::flush;
     return out;
 }
 
@@ -54,7 +58,7 @@ operator<<(ostream& out, const WireBuffer& obj)
 // ****************************************************************
 
 // CONSTRUCTOR
-WireBuffer::WireBuffer(const Params *p)
+WireBuffer::WireBuffer(const Params &p)
     : SimObject(p)
 {
     m_msg_counter = 0;
@@ -92,7 +96,7 @@ WireBuffer::dequeue(Tick current_time)
 {
     assert(isReady(current_time));
     pop_heap(m_message_queue.begin(), m_message_queue.end(),
-        greater<MsgPtr>());
+        std::greater<MsgPtr>());
     m_message_queue.pop_back();
 }
 
@@ -113,14 +117,15 @@ WireBuffer::recycle(Tick current_time, Tick recycle_latency)
     // being stuck behind something if you're not actually supposed to.
     assert(isReady(current_time));
     MsgPtr node = m_message_queue.front();
-    pop_heap(m_message_queue.begin(), m_message_queue.end(), greater<MsgPtr>());
+    pop_heap(m_message_queue.begin(), m_message_queue.end(),
+            std::greater<MsgPtr>());
 
     Tick future_time = current_time + recycle_latency;
     node->setLastEnqueueTime(future_time);
 
     m_message_queue.back() = node;
     push_heap(m_message_queue.begin(), m_message_queue.end(),
-        greater<MsgPtr>());
+        std::greater<MsgPtr>());
     m_consumer_ptr->
         scheduleEventAbsolute(future_time);
 }
@@ -133,7 +138,7 @@ WireBuffer::isReady(Tick current_time)
 }
 
 void
-WireBuffer::print(ostream& out) const
+WireBuffer::print(std::ostream& out) const
 {
 }
 
@@ -142,8 +147,5 @@ WireBuffer::wakeup()
 {
 }
 
-WireBuffer *
-RubyWireBufferParams::create()
-{
-    return new WireBuffer(this);
-}
+} // namespace ruby
+} // namespace gem5

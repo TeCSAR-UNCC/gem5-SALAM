@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Nathan Binkert
  */
 
 #ifndef __CPU_EXETRACE_HH__
@@ -39,6 +36,9 @@
 #include "debug/ExecEnable.hh"
 #include "params/ExeTracer.hh"
 #include "sim/insttracer.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
@@ -63,7 +63,7 @@ class ExeTracer : public InstTracer
 {
   public:
     typedef ExeTracerParams Params;
-    ExeTracer(const Params *params) : InstTracer(params)
+    ExeTracer(const Params &params) : InstTracer(params)
     {}
 
     InstRecord *
@@ -71,7 +71,7 @@ class ExeTracer : public InstTracer
             const StaticInstPtr staticInst, TheISA::PCState pc,
             const StaticInstPtr macroStaticInst = NULL)
     {
-        if (!Debug::ExecEnable)
+        if (!debug::ExecEnable)
             return NULL;
 
         return new ExeTracerRecord(when, tc,
@@ -80,5 +80,6 @@ class ExeTracer : public InstTracer
 };
 
 } // namespace Trace
+} // namespace gem5
 
 #endif // __CPU_EXETRACE_HH__

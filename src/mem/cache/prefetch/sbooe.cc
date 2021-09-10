@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ivan Pizarro
  */
 
 #include "mem/cache/prefetch/sbooe.hh"
@@ -33,55 +31,55 @@
 #include "debug/HWPrefetch.hh"
 #include "params/SBOOEPrefetcher.hh"
 
-SBOOEPrefetcher::SBOOEPrefetcher(const SBOOEPrefetcherParams *p)
-    : QueuedPrefetcher(p),
-      latencyBufferSize(p->latency_buffer_size),
-      sequentialPrefetchers(p->sequential_prefetchers),
-      scoreThreshold((p->sandbox_entries*p->score_threshold_pct)/100),
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+SBOOE::SBOOE(const SBOOEPrefetcherParams &p)
+    : Queued(p),
+      sequentialPrefetchers(p.sequential_prefetchers),
+      scoreThreshold((p.sandbox_entries*p.score_threshold_pct)/100),
+      latencyBuffer(p.latency_buffer_size),
       averageAccessLatency(0), latencyBufferSum(0),
       bestSandbox(NULL),
       accesses(0)
 {
-    if (!(p->score_threshold_pct >= 0 && p->score_threshold_pct <= 100)) {
-        fatal("%s: the score threshold should be between 0 and 100\n", name());
-    }
-
     // Initialize a sandbox for every sequential prefetcher between
     // -1 and the number of sequential prefetchers defined
     for (int i = 0; i < sequentialPrefetchers; i++) {
-        sandboxes.push_back(Sandbox(p->sandbox_entries, i-1));
+        sandboxes.push_back(Sandbox(p.sandbox_entries, i-1));
     }
 }
 
 void
-SBOOEPrefetcher::Sandbox::insert(Addr addr, Tick tick)
+SBOOE::Sandbox::access(Addr addr, Tick tick)
 {
-    entries[index].valid = true;
-    entries[index].line = addr + stride;
-    entries[index].expectedArrivalTick = tick;
-
-    index++;
-
-    if (index == entries.size()) {
-        index = 0;
+    // Search for the address in the FIFO queue to update the score
+    for (const SandboxEntry &entry: entries) {
+        if (entry.valid && entry.line == addr) {
+            sandboxScore++;
+            if (entry.expectedArrivalTick > curTick()) {
+                lateScore++;
+            }
+        }
     }
+
+    // Insert new access in this sandbox
+    SandboxEntry entry;
+    entry.valid = true;
+    entry.line = addr + stride;
+    entry.expectedArrivalTick = tick;
+    entries.push_back(entry);
 }
 
 bool
-SBOOEPrefetcher::access(Addr access_line)
+SBOOE::access(Addr access_line)
 {
     for (Sandbox &sb : sandboxes) {
-        // Search for the address in the FIFO queue
-        for (const SandboxEntry &entry: sb.entries) {
-            if (entry.valid && entry.line == access_line) {
-                sb.sandboxScore++;
-                if (entry.expectedArrivalTick > curTick()) {
-                    sb.lateScore++;
-                }
-            }
-        }
-
-        sb.insert(access_line, curTick() + averageAccessLatency);
+        sb.access(access_line, curTick() + averageAccessLatency);
 
         if (bestSandbox == NULL || sb.score() > bestSandbox->score()) {
             bestSandbox = &sb;
@@ -94,7 +92,7 @@ SBOOEPrefetcher::access(Addr access_line)
 }
 
 void
-SBOOEPrefetcher::notifyFill(const PacketPtr& pkt)
+SBOOE::notifyFill(const PacketPtr& pkt)
 {
     // (1) Look for the address in the demands list
     // (2) Calculate the elapsed cycles until it was filled (curTick)
@@ -106,13 +104,11 @@ SBOOEPrefetcher::notifyFill(const PacketPtr& pkt)
     if (it != demandAddresses.end()) {
         Tick elapsed_ticks = curTick() - it->second;
 
+        if (latencyBuffer.full()) {
+            latencyBufferSum -= latencyBuffer.front();
+        }
         latencyBuffer.push_back(elapsed_ticks);
         latencyBufferSum += elapsed_ticks;
-
-        if (latencyBuffer.size() > latencyBufferSize) {
-            latencyBufferSum -= latencyBuffer.front();
-            latencyBuffer.pop_front();
-        }
 
         averageAccessLatency = latencyBufferSum / latencyBuffer.size();
 
@@ -121,7 +117,7 @@ SBOOEPrefetcher::notifyFill(const PacketPtr& pkt)
 }
 
 void
-SBOOEPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
+SBOOE::calculatePrefetch(const PrefetchInfo &pfi,
                                    std::vector<AddrPriority> &addresses)
 {
     const Addr pfi_addr = pfi.getAddr();
@@ -141,8 +137,5 @@ SBOOEPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
     }
 }
 
-SBOOEPrefetcher*
-SBOOEPrefetcherParams::create()
-{
-    return new SBOOEPrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5

@@ -37,8 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_O3_FREE_LIST_HH__
@@ -46,13 +44,20 @@
 
 #include <iostream>
 #include <queue>
-#include <vector>
 
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "cpu/o3/comm.hh"
 #include "cpu/o3/regfile.hh"
 #include "debug/FreeList.hh"
+
+namespace gem5
+{
+
+namespace o3
+{
+
+class UnifiedRenameMap;
 
 /**
  * Free list for a single class of registers (e.g., integer
@@ -338,5 +343,7 @@ UnifiedFreeList::addReg(PhysRegIdPtr freed_reg)
     // assert(freeFloatRegs.size() <= numPhysicalFloatRegs);
 }
 
+} // namespace o3
+} // namespace gem5
 
 #endif // __CPU_O3_FREE_LIST_HH__

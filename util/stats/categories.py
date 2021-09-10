@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 func_categories = { \
     # Buffer management functions
@@ -112,7 +110,7 @@ func_categories = { \
     }
 
 def func_categorize(symbol):
-    from categories import func_categories
+    from .categories import func_categories
     if symbol in func_categories:
         return func_categories[symbol]
     return None
@@ -1929,7 +1927,7 @@ pc_categories_re = [
 ]
 
 def pc_categorize(symbol):
-    from categories import pc_categories, pc_categories_re
+    from .categories import pc_categories, pc_categories_re
     if symbol in pc_categories:
         return pc_categories[symbol]
     for regexp, category in pc_categories_re:

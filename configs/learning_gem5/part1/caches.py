@@ -24,8 +24,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Power
 
 """ Caches with options for a simple gem5 configuration script
 
@@ -33,9 +31,6 @@ This file contains L1 I/D and L2 caches to be used in the simple
 gem5 configuration script. It uses the SimpleOpts wrapper to set up command
 line options from each individual class.
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 import m5
 from m5.objects import Cache
@@ -64,7 +59,7 @@ class L1Cache(Cache):
 
     def connectBus(self, bus):
         """Connect this cache to a memory-side bus"""
-        self.mem_side = bus.slave
+        self.mem_side = bus.cpu_side_ports
 
     def connectCPU(self, cpu):
         """Connect this cache's port to a CPU-side port
@@ -130,7 +125,7 @@ class L2Cache(Cache):
         self.size = opts.l2_size
 
     def connectCPUSideBus(self, bus):
-        self.cpu_side = bus.master
+        self.cpu_side = bus.mem_side_ports
 
     def connectMemSideBus(self, bus):
-        self.mem_side = bus.slave
+        self.mem_side = bus.cpu_side_ports

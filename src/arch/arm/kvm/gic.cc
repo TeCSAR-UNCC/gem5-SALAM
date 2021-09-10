@@ -33,9 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
- *          Curtis Dunham
  */
 
 #include "arch/arm/kvm/gic.hh"
@@ -46,6 +43,9 @@
 #include "debug/GIC.hh"
 #include "debug/Interrupt.hh"
 #include "params/MuxingKvmGic.hh"
+
+namespace gem5
+{
 
 KvmKernelGicV2::KvmKernelGicV2(KvmVM &_vm, Addr cpu_addr, Addr dist_addr,
                                unsigned it_lines)
@@ -167,15 +167,16 @@ KvmKernelGicV2::writeCpu(ContextID ctx, Addr daddr, uint32_t data)
 
 
 
-MuxingKvmGic::MuxingKvmGic(const MuxingKvmGicParams *p)
+MuxingKvmGic::MuxingKvmGic(const MuxingKvmGicParams &p)
     : GicV2(p),
-      system(*p->system),
+      system(*p.system),
       kernelGic(nullptr),
       usingKvm(false)
 {
-    if (auto vm = system.getKvmVM()) {
-        kernelGic = new KvmKernelGicV2(*vm, p->cpu_addr, p->dist_addr,
-                                       p->it_lines);
+    auto vm = system.getKvmVM();
+    if (vm && !p.simulate_gic) {
+        kernelGic = new KvmKernelGicV2(*vm, p.cpu_addr, p.dist_addr,
+                                       p.it_lines);
     }
 }
 
@@ -305,7 +306,7 @@ void
 MuxingKvmGic::copyBankedDistRange(BaseGicRegisters* from, BaseGicRegisters* to,
                                   Addr daddr, size_t size)
 {
-    for (int ctx = 0; ctx < system.numContexts(); ++ctx)
+    for (int ctx = 0; ctx < system.threads.size(); ++ctx)
         for (auto a = daddr; a < daddr + size; a += 4)
             copyDistRegister(from, to, ctx, a);
 }
@@ -314,7 +315,7 @@ void
 MuxingKvmGic::clearBankedDistRange(BaseGicRegisters* to,
                                    Addr daddr, size_t size)
 {
-    for (int ctx = 0; ctx < system.numContexts(); ++ctx)
+    for (int ctx = 0; ctx < system.threads.size(); ++ctx)
         for (auto a = daddr; a < daddr + size; a += 4)
             to->writeDistributor(ctx, a, 0xFFFFFFFF);
 }
@@ -345,7 +346,7 @@ MuxingKvmGic::copyGicState(BaseGicRegisters* from, BaseGicRegisters* to)
     // Copy CPU Interface Control Register (CTLR),
     //      Interrupt Priority Mask Register (PMR), and
     //      Binary Point Register (BPR)
-    for (int ctx = 0; ctx < system.numContexts(); ++ctx) {
+    for (int ctx = 0; ctx < system.threads.size(); ++ctx) {
         copyCpuRegister(from, to, ctx, GICC_CTLR);
         copyCpuRegister(from, to, ctx, GICC_PMR);
         copyCpuRegister(from, to, ctx, GICC_BPR);
@@ -423,14 +424,10 @@ MuxingKvmGic::fromKvmToGicV2()
     // have been shifted by three bits due to its having been emulated by
     // a VGIC with only 5 PMR bits in its VMCR register.  Presently the
     // Linux kernel does not repair this inaccuracy, so we correct it here.
-    for (int cpu = 0; cpu < system.numContexts(); ++cpu) {
+    for (int cpu = 0; cpu < system.threads.size(); ++cpu) {
        cpuPriority[cpu] <<= 3;
        assert((cpuPriority[cpu] & ~0xff) == 0);
     }
 }
 
-MuxingKvmGic *
-MuxingKvmGicParams::create()
-{
-    return new MuxingKvmGic(this);
-}
+} // namespace gem5

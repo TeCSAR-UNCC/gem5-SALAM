@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, 2015-2018 ARM Limited
+ * Copyright (c) 2010, 2013, 2015-2018, 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -36,20 +36,22 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Prakash Ramrakhyani
  */
 
 #include "dev/arm/gic_v2.hh"
 
+#include "base/compiler.hh"
 #include "base/trace.hh"
+#include "cpu/base.hh"
 #include "debug/Checkpoint.hh"
 #include "debug/GIC.hh"
 #include "debug/IPI.hh"
 #include "debug/Interrupt.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+
+namespace gem5
+{
 
 const AddrRange GicV2::GICD_IGROUPR   (0x080, 0x100);
 const AddrRange GicV2::GICD_ISENABLER (0x100, 0x180);
@@ -62,20 +64,20 @@ const AddrRange GicV2::GICD_IPRIORITYR(0x400, 0x800);
 const AddrRange GicV2::GICD_ITARGETSR (0x800, 0xc00);
 const AddrRange GicV2::GICD_ICFGR     (0xc00, 0xd00);
 
-GicV2::GicV2(const Params *p)
+GicV2::GicV2(const Params &p)
     : BaseGic(p),
-      gicdPIDR(p->gicd_pidr),
-      gicdIIDR(p->gicd_iidr),
-      giccIIDR(p->gicc_iidr),
-      distRange(RangeSize(p->dist_addr, DIST_SIZE)),
-      cpuRange(RangeSize(p->cpu_addr, p->cpu_size)),
+      gicdPIDR(p.gicd_pidr),
+      gicdIIDR(p.gicd_iidr),
+      giccIIDR(p.gicc_iidr),
+      distRange(RangeSize(p.dist_addr, DIST_SIZE)),
+      cpuRange(RangeSize(p.cpu_addr, p.cpu_size)),
       addrRanges{distRange, cpuRange},
-      distPioDelay(p->dist_pio_delay),
-      cpuPioDelay(p->cpu_pio_delay), intLatency(p->int_latency),
-      enabled(false), haveGem5Extensions(p->gem5_extensions),
-      itLines(p->it_lines),
+      distPioDelay(p.dist_pio_delay),
+      cpuPioDelay(p.cpu_pio_delay), intLatency(p.int_latency),
+      enabled(false), haveGem5Extensions(p.gem5_extensions),
+      itLines(p.it_lines),
       intEnabled {}, pendingInt {}, activeInt {},
-      intPriority {}, cpuTarget {}, intConfig {},
+      intPriority {}, intConfig {}, cpuTarget {},
       cpuSgiPending {}, cpuSgiActive {},
       cpuSgiPendingExt {}, cpuSgiActiveExt {},
       cpuPpiPending {}, cpuPpiActive {},
@@ -253,10 +255,7 @@ GicV2::readDistributor(ContextID ctx, Addr daddr, size_t resp_sz)
 
     if (GICD_ICFGR.contains(daddr)) {
         uint32_t ix = (daddr - GICD_ICFGR.start()) >> 2;
-        assert(ix < 64);
-        /** @todo software generated interrupts and PPIs
-         * can't be configured in some ways */
-        return intConfig[ix];
+        return getIntConfig(ctx, ix);
     }
 
     switch(daddr) {
@@ -266,7 +265,7 @@ GicV2::readDistributor(ContextID ctx, Addr daddr, size_t resp_sz)
         /* The 0x100 is a made-up flag to show that gem5 extensions
          * are available,
          * write 0x200 to this register to enable it.  */
-        return (((sys->numRunningContexts() - 1) << 5) |
+        return (((sys->threads.numRunning() - 1) << 5) |
                 (itLines/INT_BITS_MAX -1) |
                 (haveGem5Extensions ? 0x100 : 0x0));
       case GICD_PIDR0:
@@ -294,10 +293,9 @@ GicV2::readCpu(PacketPtr pkt)
 
     assert(pkt->req->hasContextId());
     const ContextID ctx = pkt->req->contextId();
-    assert(ctx < sys->numRunningContexts());
+    assert(ctx < sys->threads.numRunning());
 
-    DPRINTF(GIC, "gic cpu read register %#x cpu context: %d\n", daddr,
-            ctx);
+    DPRINTF(GIC, "gic cpu read register %#x cpu context: %d\n", daddr, ctx);
 
     pkt->setLE<uint32_t>(readCpu(ctx, daddr));
 
@@ -329,7 +327,7 @@ GicV2::readCpu(ContextID ctx, Addr daddr)
                     panic_if(!cpuSgiPending[active_int],
                             "Interrupt %d active but no CPU generated it?\n",
                             active_int);
-                    for (int x = 0; x < sys->numRunningContexts(); x++) {
+                    for (int x = 0; x < sys->threads.numRunning(); x++) {
                         // See which CPU generated the interrupt
                         uint8_t cpugen =
                             bits(cpuSgiPending[active_int], 7 + 8 * x, 8 * x);
@@ -338,11 +336,11 @@ GicV2::readCpu(ContextID ctx, Addr daddr)
                             break;
                         }
                     }
-                    uint64_t sgi_num = ULL(1) << (ctx + 8 * iar.cpu_id);
+                    uint64_t sgi_num = 1ULL << (ctx + 8 * iar.cpu_id);
                     cpuSgiActive[iar.ack_id] |= sgi_num;
                     cpuSgiPending[iar.ack_id] &= ~sgi_num;
                 } else {
-                    uint64_t sgi_num = ULL(1) << iar.ack_id;
+                    uint64_t sgi_num = 1ULL << iar.ack_id;
                     cpuSgiActiveExt[ctx] |= sgi_num;
                     cpuSgiPendingExt[ctx] &= ~sgi_num;
                 }
@@ -350,7 +348,9 @@ GicV2::readCpu(ContextID ctx, Addr daddr)
                 uint32_t int_num = 1 << (cpuHighestInt[ctx] - SGI_MAX);
                 cpuPpiActive[ctx] |= int_num;
                 updateRunPri();
-                cpuPpiPending[ctx] &= ~int_num;
+                if (!isLevelSensitive(ctx, active_int)) {
+                    cpuPpiPending[ctx] &= ~int_num;
+                }
 
             } else {
                 uint32_t int_num = 1 << intNumToBit(cpuHighestInt[ctx]);
@@ -394,7 +394,7 @@ GicV2::writeDistributor(PacketPtr pkt)
     const ContextID ctx = pkt->req->contextId();
     const size_t data_sz = pkt->getSize();
 
-    uint32_t pkt_data M5_VAR_USED;
+    GEM5_VAR_USED uint32_t pkt_data;
     switch (data_sz)
     {
       case 1:
@@ -525,8 +525,10 @@ GicV2::writeDistributor(ContextID ctx, Addr daddr, uint32_t data,
 
     if (GICD_ICFGR.contains(daddr)) {
         uint32_t ix = (daddr - GICD_ICFGR.start()) >> 2;
-        assert(ix < INT_BITS_MAX*2);
-        intConfig[ix] = data;
+        // Since the GICD_ICFGR0 is RO (WI), we are discarding the write
+        // if ix = 0
+        if (ix != 0)
+            getIntConfig(ctx, ix) = data;
         if (data & NN_CONFIG_MASK)
             warn("GIC N:N mode selected and not supported at this time\n");
         return;
@@ -593,7 +595,7 @@ GicV2::writeCpu(ContextID ctx, Addr daddr, uint32_t data)
         const IAR iar = data;
         if (iar.ack_id < SGI_MAX) {
             // Clear out the bit that corresponds to the cleared int
-            uint64_t clr_int = ULL(1) << (ctx + 8 * iar.cpu_id);
+            uint64_t clr_int = 1ULL << (ctx + 8 * iar.cpu_id);
             if (!(cpuSgiActive[iar.ack_id] & clr_int) &&
                 !(cpuSgiActiveExt[ctx] & (1 << iar.ack_id)))
                 panic("Done handling a SGI that isn't active?\n");
@@ -663,7 +665,7 @@ GicV2::softInt(ContextID ctx, SWI swi)
           } break;
           case 1: {
              // interrupt all
-             for (int i = 0; i < sys->numContexts(); i++) {
+             for (int i = 0; i < sys->threads.size(); i++) {
                  DPRINTF(IPI, "Processing CPU %d\n", i);
                  if (!cpuEnabled(i))
                      continue;
@@ -689,7 +691,7 @@ GicV2::softInt(ContextID ctx, SWI swi)
             // interrupt all
             uint8_t cpu_list;
             cpu_list = 0;
-            for (int x = 0; x < sys->numContexts(); x++)
+            for (int x = 0; x < sys->threads.size(); x++)
                 cpu_list |= cpuEnabled(x) ? 1 << x : 0;
             swi.cpu_list = cpu_list;
             break;
@@ -702,7 +704,7 @@ GicV2::softInt(ContextID ctx, SWI swi)
 
         DPRINTF(IPI, "Generating softIRQ from CPU %d for %#x\n", ctx,
                 swi.cpu_list);
-        for (int i = 0; i < sys->numContexts(); i++) {
+        for (int i = 0; i < sys->threads.size(); i++) {
             DPRINTF(IPI, "Processing CPU %d\n", i);
             if (!cpuEnabled(i))
                 continue;
@@ -718,9 +720,8 @@ GicV2::softInt(ContextID ctx, SWI swi)
 uint64_t
 GicV2::genSwiMask(int cpu)
 {
-    if (cpu > sys->numContexts())
-        panic("Invalid CPU ID\n");
-    return ULL(0x0101010101010101) << cpu;
+    panic_if(cpu > sys->threads.size(), "Invalid CPU ID.");
+    return 0x0101010101010101ULL << cpu;
 }
 
 uint8_t
@@ -737,7 +738,7 @@ GicV2::getCpuPriority(unsigned cpu)
 void
 GicV2::updateIntState(int hint)
 {
-    for (int cpu = 0; cpu < sys->numContexts(); cpu++) {
+    for (int cpu = 0; cpu < sys->threads.size(); cpu++) {
         if (!cpuEnabled(cpu))
             continue;
 
@@ -776,7 +777,7 @@ GicV2::updateIntState(int hint)
             }
         }
 
-        bool mp_sys = sys->numRunningContexts() > 1;
+        bool mp_sys = sys->threads.numRunning() > 1;
         // Check other ints
         for (int x = 0; x < (itLines/INT_BITS_MAX); x++) {
             if (getIntEnabled(cpu, x) & getPendingInt(cpu, x)) {
@@ -835,7 +836,7 @@ GicV2::updateIntState(int hint)
 void
 GicV2::updateRunPri()
 {
-    for (int cpu = 0; cpu < sys->numContexts(); cpu++) {
+    for (int cpu = 0; cpu < sys->threads.size(); cpu++) {
         if (!cpuEnabled(cpu))
             continue;
         uint8_t maxPriority = 0xff;
@@ -906,19 +907,26 @@ GicV2::clearInt(uint32_t num)
 void
 GicV2::clearPPInt(uint32_t num, uint32_t cpu)
 {
-    DPRINTF(Interrupt, "Clearing PPI %d, cpuTarget %#x: \n",
-            num, cpu);
-    cpuPpiPending[cpu] &= ~(1 << (num - SGI_MAX));
-    updateIntState(intNumToWord(num));
+    if (isLevelSensitive(cpu, num)) {
+        DPRINTF(Interrupt, "Clearing PPI %d, cpuTarget %#x: \n",
+                num, cpu);
+        cpuPpiPending[cpu] &= ~(1 << (num - SGI_MAX));
+        updateIntState(intNumToWord(num));
+    } else {
+        /* Nothing to do :
+         * Edge-triggered interrupt remain pending until software
+         * writes GICD_ICPENDR or reads GICC_IAR */
+    }
 }
 
 void
 GicV2::clearInt(ContextID ctx, uint32_t int_num)
 {
+    auto tc = sys->threads[ctx];
     if (isFiq(ctx, int_num)) {
-        platform->intrctrl->clear(ctx, ArmISA::INT_FIQ, 0);
+        tc->getCpuPtr()->clearInterrupt(tc->threadId(), ArmISA::INT_FIQ, 0);
     } else {
-        platform->intrctrl->clear(ctx, ArmISA::INT_IRQ, 0);
+        tc->getCpuPtr()->clearInterrupt(tc->threadId(), ArmISA::INT_IRQ, 0);
     }
 }
 
@@ -934,7 +942,8 @@ GicV2::postInt(uint32_t cpu, Tick when)
 void
 GicV2::postDelayedInt(uint32_t cpu)
 {
-    platform->intrctrl->post(cpu, ArmISA::INT_IRQ, 0);
+    auto tc = sys->threads[cpu];
+    tc->getCpuPtr()->postInterrupt(tc->threadId(), ArmISA::INT_IRQ, 0);
     --pendingDelayedInterrupts;
     assert(pendingDelayedInterrupts >= 0);
     if (pendingDelayedInterrupts == 0)
@@ -959,7 +968,8 @@ GicV2::supportsVersion(GicVersion version)
 void
 GicV2::postDelayedFiq(uint32_t cpu)
 {
-    platform->intrctrl->post(cpu, ArmISA::INT_FIQ, 0);
+    auto tc = sys->threads[cpu];
+    tc->getCpuPtr()->postInterrupt(tc->threadId(), ArmISA::INT_FIQ, 0);
     --pendingDelayedInterrupts;
     assert(pendingDelayedInterrupts >= 0);
     if (pendingDelayedInterrupts == 0)
@@ -998,7 +1008,7 @@ GicV2::serialize(CheckpointOut &cp) const
     SERIALIZE_ARRAY(iccrpr, CPU_MAX);
     SERIALIZE_ARRAY(intPriority, GLOBAL_INT_LINES);
     SERIALIZE_ARRAY(cpuTarget, GLOBAL_INT_LINES);
-    SERIALIZE_ARRAY(intConfig, INT_BITS_MAX * 2);
+    SERIALIZE_ARRAY(intConfig, INT_BITS_MAX * 2 - 2);
     SERIALIZE_ARRAY(cpuControl, CPU_MAX);
     SERIALIZE_ARRAY(cpuPriority, CPU_MAX);
     SERIALIZE_ARRAY(cpuBpr, CPU_MAX);
@@ -1025,6 +1035,7 @@ GicV2::BankedRegs::serialize(CheckpointOut &cp) const
     SERIALIZE_SCALAR(pendingInt);
     SERIALIZE_SCALAR(activeInt);
     SERIALIZE_SCALAR(intGroup);
+    SERIALIZE_ARRAY(intConfig, 2);
     SERIALIZE_ARRAY(intPriority, SGI_MAX + PPI_MAX);
 }
 
@@ -1042,7 +1053,7 @@ GicV2::unserialize(CheckpointIn &cp)
     UNSERIALIZE_ARRAY(iccrpr, CPU_MAX);
     UNSERIALIZE_ARRAY(intPriority, GLOBAL_INT_LINES);
     UNSERIALIZE_ARRAY(cpuTarget, GLOBAL_INT_LINES);
-    UNSERIALIZE_ARRAY(intConfig, INT_BITS_MAX * 2);
+    UNSERIALIZE_ARRAY(intConfig, INT_BITS_MAX * 2 - 2);
     UNSERIALIZE_ARRAY(cpuControl, CPU_MAX);
     UNSERIALIZE_ARRAY(cpuPriority, CPU_MAX);
     UNSERIALIZE_ARRAY(cpuBpr, CPU_MAX);
@@ -1084,11 +1095,8 @@ GicV2::BankedRegs::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(pendingInt);
     UNSERIALIZE_SCALAR(activeInt);
     UNSERIALIZE_SCALAR(intGroup);
+    UNSERIALIZE_ARRAY(intConfig, 2);
     UNSERIALIZE_ARRAY(intPriority, SGI_MAX + PPI_MAX);
 }
 
-GicV2 *
-GicV2Params::create()
-{
-    return new GicV2(this);
-}
+} // namespace gem5

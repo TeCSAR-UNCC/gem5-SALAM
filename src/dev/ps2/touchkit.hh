@@ -33,39 +33,46 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __DEV_PS2_TOUCHKIT_HH__
 #define __DEV_PS2_TOUCHKIT_HH__
 
+#include "base/compiler.hh"
 #include "base/vnc/vncinput.hh"
 #include "dev/ps2/device.hh"
 
+namespace gem5
+{
+
 struct PS2TouchKitParams;
 
-class PS2TouchKit : public PS2Device, public VncMouse
+namespace ps2
+{
+
+class TouchKit : public Device, public VncMouse
 {
   protected:
-    enum PS2Commands {
+    enum PS2Commands
+    {
         TpReadId = 0xE1,
         TouchKitDiag = 0x0A,
     };
 
-    enum TKCommands {
+    enum TKCommands
+    {
         TouchKitActive = 'A',
         TouchKitFWRev = 'D',
         TouchKitCtrlType = 'E',
     };
 
   public:
-    PS2TouchKit(const PS2TouchKitParams *p);
+    TouchKit(const PS2TouchKitParams &p);
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 
-  protected: // PS2Device
+  protected: // from Device
     bool recv(const std::vector<uint8_t> &data) override;
 
   public: // VncMouse
@@ -89,5 +96,9 @@ class PS2TouchKit : public PS2Device, public VncMouse
     bool touchKitEnabled;
 };
 
-#endif // __DEV_PS2_TOUCHKIT_HH__
+} // namespace ps2
+} // namespace gem5
 
+GEM5_DEPRECATED_CLASS(PS2TouchKit, gem5::ps2::TouchKit);
+
+#endif // __DEV_PS2_TOUCHKIT_HH__

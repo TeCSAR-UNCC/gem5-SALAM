@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/x86/emulenv.hh"
@@ -42,6 +40,9 @@
 #include <cassert>
 
 #include "base/logging.hh"
+
+namespace gem5
+{
 
 using namespace X86ISA;
 
@@ -56,10 +57,10 @@ void EmulEnv::doModRM(const ExtMachInst & machInst)
         //In this special case, we don't use a base. The displacement also
         //changes, but that's managed by the decoder.
         if (machInst.sib.base == INTREG_RBP && machInst.modRM.mod == 0)
-            base = NUM_INTREGS;
+            base = INTREG_T0;
         //In -this- special case, we don't use an index.
         if (index == INTREG_RSP)
-            index = NUM_INTREGS;
+            index = INTREG_T0;
     } else {
         if (machInst.addrSize == 2) {
             unsigned rm = machInst.modRM.rm;
@@ -94,7 +95,7 @@ void EmulEnv::doModRM(const ExtMachInst & machInst)
             if (machInst.modRM.mod == 0 && machInst.modRM.rm == 5) {
                 //Since we need to use a different encoding of this
                 //instruction anyway, just ignore the base in those cases
-                base = NUM_INTREGS;
+                base = INTREG_T0;
             }
         }
     }
@@ -120,3 +121,5 @@ void EmulEnv::setSeg(const ExtMachInst & machInst)
     if (segFromInst)
         seg = (SegmentRegIndex)(segFromInst - 1);
 }
+
+} // namespace gem5

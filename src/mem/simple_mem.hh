@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ron Dreslinski
- *          Andreas Hansson
  */
 
 /**
@@ -54,6 +51,12 @@
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
 #include "params/SimpleMemory.hh"
+
+namespace gem5
+{
+
+namespace memory
+{
 
 /**
  * The simple memory is a basic single-ported memory controller with
@@ -82,10 +85,10 @@ class SimpleMemory : public AbstractMemory
         { }
     };
 
-    class MemoryPort : public SlavePort
+    class MemoryPort : public ResponsePort
     {
       private:
-        SimpleMemory& memory;
+        SimpleMemory& mem;
 
       public:
         MemoryPort(const std::string& _name, SimpleMemory& _memory);
@@ -176,7 +179,7 @@ class SimpleMemory : public AbstractMemory
 
   public:
 
-    SimpleMemory(const SimpleMemoryParams *p);
+    SimpleMemory(const SimpleMemoryParams &p);
 
     DrainState drain() override;
 
@@ -191,5 +194,8 @@ class SimpleMemory : public AbstractMemory
     bool recvTimingReq(PacketPtr pkt);
     void recvRespRetry();
 };
+
+} // namespace memory
+} // namespace gem5
 
 #endif //__MEM_SIMPLE_MEMORY_HH__

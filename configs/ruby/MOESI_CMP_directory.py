@@ -36,15 +36,13 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Brad Beckmann
 
 import math
 import m5
 from m5.objects import *
 from m5.defines import buildEnv
-from Ruby import create_topology, create_directories
-from Ruby import send_evicts
+from .Ruby import create_topology, create_directories
+from .Ruby import send_evicts
 
 #
 # Declare caches used by the protocol
@@ -61,7 +59,7 @@ def define_options(parser):
     return
 
 def create_system(options, full_system, system, dma_ports, bootmem,
-                  ruby_system):
+                  ruby_system, cpus):
 
     if buildEnv['PROTOCOL'] != 'MOESI_CMP_directory':
         panic("This script requires the MOESI_CMP_directory protocol to be built.")
@@ -96,17 +94,7 @@ def create_system(options, full_system, system, dma_ports, bootmem,
                             start_index_bit = block_size_bits,
                             is_icache = False)
 
-        # the ruby random tester reuses num_cpus to specify the
-        # number of cpu ports connected to the tester object, which
-        # is stored in system.cpu. because there is only ever one
-        # tester object, num_cpus is not necessarily equal to the
-        # size of system.cpu; therefore if len(system.cpu) == 1
-        # we use system.cpu[0] to set the clk_domain, thereby ensuring
-        # we don't index off the end of the cpu list.
-        if len(system.cpu) == 1:
-            clk_domain = system.cpu[0].clk_domain
-        else:
-            clk_domain = system.cpu[i].clk_domain
+        clk_domain = cpus[i].clk_domain
 
         l1_cntrl = L1Cache_Controller(version=i, L1Icache=l1i_cache,
                                       L1Dcache=l1d_cache,
@@ -115,7 +103,7 @@ def create_system(options, full_system, system, dma_ports, bootmem,
                                       clk_domain=clk_domain,
                                       ruby_system=ruby_system)
 
-        cpu_seq = RubySequencer(version=i, icache=l1i_cache,
+        cpu_seq = RubySequencer(version=i,
                                 dcache=l1d_cache, clk_domain=clk_domain,
                                 ruby_system=ruby_system)
 
@@ -211,7 +199,9 @@ def create_system(options, full_system, system, dma_ports, bootmem,
         dir_cntrl.responseFromDir.master = ruby_system.network.slave
         dir_cntrl.forwardFromDir = MessageBuffer()
         dir_cntrl.forwardFromDir.master = ruby_system.network.slave
+        dir_cntrl.requestToMemory = MessageBuffer()
         dir_cntrl.responseFromMemory = MessageBuffer()
+        dir_cntrl.triggerQueue = MessageBuffer(ordered = True)
 
 
     for i, dma_port in enumerate(dma_ports):

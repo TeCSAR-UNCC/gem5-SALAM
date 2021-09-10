@@ -33,23 +33,23 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vasileios Spiliopoulos
- *          Akash Bagdia
  */
 
 #include "sim/voltage_domain.hh"
 
 #include <algorithm>
 
-#include "base/statistics.hh"
+#include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/VoltageDomain.hh"
 #include "params/VoltageDomain.hh"
-#include "sim/sim_object.hh"
+#include "sim/serialize.hh"
 
-VoltageDomain::VoltageDomain(const Params *p)
-    : SimObject(p), voltageOpPoints(p->voltage), _perfLevel(0), stats(*this)
+namespace gem5
+{
+
+VoltageDomain::VoltageDomain(const Params &p)
+    : SimObject(p), voltageOpPoints(p.voltage), _perfLevel(0), stats(*this)
 {
     fatal_if(voltageOpPoints.empty(), "DVFS: Empty set of voltages for "\
              "voltage domain %s\n", name());
@@ -127,12 +127,6 @@ VoltageDomain::startup() {
     }
 }
 
-VoltageDomain *
-VoltageDomainParams::create()
-{
-    return new VoltageDomain(this);
-}
-
 void
 VoltageDomain::serialize(CheckpointOut &cp) const
 {
@@ -147,8 +141,10 @@ VoltageDomain::unserialize(CheckpointIn &cp)
 }
 
 VoltageDomain::VoltageDomainStats::VoltageDomainStats(VoltageDomain &vd)
-    : Stats::Group(&vd),
-    ADD_STAT(voltage, "Voltage in Volts")
+    : statistics::Group(&vd),
+    ADD_STAT(voltage, statistics::units::Volt::get(), "Voltage in Volts")
 {
     voltage.method(&vd, &VoltageDomain::voltage);
 }
+
+} // namespace gem5

@@ -29,22 +29,26 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos,
- *          Sooraj Puthoor
  */
 
 #ifndef __EXEC_STAGE_HH__
 #define __EXEC_STAGE_HH__
 
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "sim/stats.hh"
+#include "base/statistics.hh"
+#include "base/stats/group.hh"
+
+namespace gem5
+{
 
 class ComputeUnit;
+class ScheduleToExecute;
 class Wavefront;
+
 struct ComputeUnitParams;
 
 enum STAT_STATUS
@@ -56,8 +60,9 @@ enum STAT_STATUS
 
 enum DISPATCH_STATUS
 {
-    EMPTY = 0,
-    FILLED
+    EMPTY = 0, // no wave present in dispatchList slot
+    EXREADY, // wave ready for execution
+    SKIP, // extra memory resource needed, Shared Mem. only
 };
 
 // Execution stage.
@@ -70,61 +75,55 @@ enum DISPATCH_STATUS
 class ExecStage
 {
   public:
-    ExecStage(const ComputeUnitParams* params);
+    ExecStage(const ComputeUnitParams &p, ComputeUnit &cu,
+              ScheduleToExecute &from_schedule);
     ~ExecStage() { }
-    void init(ComputeUnit *cu);
+    void init();
     void exec();
 
-    std::string name() { return _name; }
-    void regStats();
-    // number of idle cycles
-    Stats::Scalar numCyclesWithNoIssue;
-    // number of busy cycles
-    Stats::Scalar numCyclesWithInstrIssued;
-    // number of cycles (per execution unit) during which at least one
-    // instruction was issued to that unit
-    Stats::Vector numCyclesWithInstrTypeIssued;
-    // number of idle cycles (per execution unit) during which the unit issued
-    // no instruction targeting that unit, even though there is at least one
-    // Wavefront with such an instruction as the oldest
-    Stats::Vector numCyclesWithNoInstrTypeIssued;
-    // SIMDs active per cycle
-    Stats::Distribution spc;
+    std::string dispStatusToStr(int j);
+    void dumpDispList();
+
+    const std::string& name() const { return _name; }
 
   private:
     void collectStatistics(enum STAT_STATUS stage, int unitId);
     void initStatistics();
-    ComputeUnit *computeUnit;
-    uint32_t numSIMDs;
+    ComputeUnit &computeUnit;
+    ScheduleToExecute &fromSchedule;
 
-    // Number of memory execution resources;
-    // both global and local memory execution resources in CU
-    uint32_t numMemUnits;
-
-    // List of waves which will be dispatched to
-    // each execution resource. A FILLED implies
-    // dispatch list is non-empty and
-    // execution unit has something to execute
-    // this cycle. Currently, the dispatch list of
-    // an execution resource can hold only one wave because
-    // an execution resource can execute only one wave in a cycle.
-    // dispatchList is used to communicate between schedule
-    // and exec stage
-    std::vector<std::pair<Wavefront*, DISPATCH_STATUS>> *dispatchList;
-    // flag per vector SIMD unit that is set when there is at least one
-    // WV that has a vector ALU instruction as the oldest in its
-    // Instruction Buffer
-    std::vector<bool> *vectorAluInstAvail;
-    int *glbMemInstAvail;
-    int *shrMemInstAvail;
     bool lastTimeInstExecuted;
     bool thisTimeInstExecuted;
     bool instrExecuted;
-    Stats::Scalar  numTransActiveIdle;
-    Stats::Distribution idleDur;
-    uint32_t executionResourcesUsed;
+    int executionResourcesUsed;
     uint64_t idle_dur;
-    std::string _name;
+    const std::string _name;
+
+  protected:
+    struct ExecStageStats : public statistics::Group
+    {
+        ExecStageStats(statistics::Group *parent);
+
+        // number of transitions from active to idle
+        statistics::Scalar numTransActiveIdle;
+        // number of idle cycles
+        statistics::Scalar numCyclesWithNoIssue;
+        // number of busy cycles
+        statistics::Scalar numCyclesWithInstrIssued;
+        // SIMDs active per cycle
+        statistics::Distribution spc;
+        // duration of idle periods in cycles
+        statistics::Distribution idleDur;
+        // number of cycles during which at least one
+        // instruction was issued to an execution resource type
+        statistics::Vector numCyclesWithInstrTypeIssued;
+        // number of idle cycles during which the scheduler
+        // issued no instructions targeting a specific
+        // execution resource type
+        statistics::Vector numCyclesWithNoInstrTypeIssued;
+    } stats;
 };
+
+} // namespace gem5
 
 #endif // __EXEC_STAGE_HH__

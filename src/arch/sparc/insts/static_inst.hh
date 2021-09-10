@@ -25,17 +25,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
+
 #ifndef __ARCH_SPARC_INSTS_STATIC_INST_HH__
 #define __ARCH_SPARC_INSTS_STATIC_INST_HH__
 
 #include <cstdint>
 
+#include "arch/sparc/types.hh"
 #include "base/trace.hh"
 #include "cpu/exec_context.hh"
 #include "cpu/static_inst.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -88,10 +91,15 @@ enum FpCondTest
 class SparcStaticInst : public StaticInst
 {
   protected:
-    using StaticInst::StaticInst;
+    ExtMachInst machInst;
+
+    SparcStaticInst(const char *_mnemonic, ExtMachInst _machInst,
+            OpClass __opClass) :
+        StaticInst(_mnemonic, __opClass), machInst(_machInst)
+    {}
 
     std::string generateDisassembly(
-            Addr pc, const SymbolTable *symtab) const override;
+            Addr pc, const loader::SymbolTable *symtab) const override;
 
     static void printMnemonic(std::ostream &os, const char *mnemonic);
     static void printReg(std::ostream &os, RegId reg);
@@ -100,7 +108,7 @@ class SparcStaticInst : public StaticInst
     void printDestReg(std::ostream &os, int reg) const;
 
     void printRegArray(std::ostream &os,
-        const RegId indexArray[], int num) const;
+        const RegId *indexArray, int num) const;
 
     void advancePC(PCState &pcState) const override;
 
@@ -112,8 +120,18 @@ class SparcStaticInst : public StaticInst
     {
         return simpleAsBytes(buf, size, machInst);
     }
+
+    PCState
+    buildRetPC(const PCState &curPC, const PCState &callPC) const override
+    {
+        PCState ret = callPC;
+        ret.uEnd();
+        ret.pc(curPC.npc());
+        return ret;
+    }
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif //__ARCH_SPARC_INSTS_STATIC_INST_HH__

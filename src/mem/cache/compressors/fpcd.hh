@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Inria
+ * Copyright (c) 2019-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -49,7 +47,14 @@
 #include "base/types.hh"
 #include "mem/cache/compressors/dictionary_compressor.hh"
 
+namespace gem5
+{
+
 struct FPCDParams;
+
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
 
 class FPCD : public DictionaryCompressor<uint32_t>
 {
@@ -92,11 +97,12 @@ class FPCD : public DictionaryCompressor<uint32_t>
      * These are used as indexes to reference the pattern data. If a new
      * pattern is added, it must be done before NUM_PATTERNS.
      */
-    typedef enum {
+    enum PatternNumber
+    {
         ZZZZ, FFFF, MMMMPenultimate, MMMMPrevious, ZZZX, XZZZ, RRRR,
         MMMXPenultimate, MMMXPrevious, ZZXX, ZXZX, FFXX, XXZZ,
         MMXXPenultimate, MMXXPrevious, XXXX, NUM_PATTERNS
-    } PatternNumber;
+    };
 
     /**
      * Convenience factory declaration. The templates must be organized by
@@ -139,12 +145,9 @@ class FPCD : public DictionaryCompressor<uint32_t>
 
     void addToDictionary(DictionaryEntry data) override;
 
-    std::unique_ptr<BaseCacheCompressor::CompressionData> compress(
-        const uint64_t* data, Cycles& comp_lat, Cycles& decomp_lat) override;
-
   public:
     typedef FPCDParams Params;
-    FPCD(const Params *p);
+    FPCD(const Params &p);
     ~FPCD() = default;
 };
 
@@ -319,5 +322,8 @@ class FPCD::PatternXXXX : public UncompressedPattern
     {
     }
 };
+
+} // namespace compression
+} // namespace gem5
 
 #endif //__MEM_CACHE_COMPRESSORS_FPCD_HH__

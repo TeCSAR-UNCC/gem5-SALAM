@@ -28,16 +28,13 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Sooraj Puthoor,
-#          Lisa Hsu
 
 import math
 import m5
 from m5.objects import *
 from m5.defines import buildEnv
 from m5.util import addToPath, convert
-from CntrlBase import *
+from .CntrlBase import *
 
 addToPath('../')
 
@@ -81,7 +78,6 @@ class CPCntrl(AMD_Base_Controller, CntrlBase):
 
         self.sequencer = RubySequencer()
         self.sequencer.version = self.seqCount()
-        self.sequencer.icache = self.L1Icache
         self.sequencer.dcache = self.L1D0cache
         self.sequencer.ruby_system = ruby_system
         self.sequencer.coreid = 0
@@ -89,7 +85,6 @@ class CPCntrl(AMD_Base_Controller, CntrlBase):
 
         self.sequencer1 = RubySequencer()
         self.sequencer1.version = self.seqCount()
-        self.sequencer1.icache = self.L1Icache
         self.sequencer1.dcache = self.L1D1cache
         self.sequencer1.ruby_system = ruby_system
         self.sequencer1.coreid = 1
@@ -104,7 +99,7 @@ class CPCntrl(AMD_Base_Controller, CntrlBase):
             self.recycle_latency = options.recycle_latency
 
 def define_options(parser):
-    parser.add_option("--cpu-to-dir-latency", type="int", default=15)
+    parser.add_argument("--cpu-to-dir-latency", type=int, default=15)
 
 def construct(options, system, ruby_system):
     if (buildEnv['PROTOCOL'] != 'GPU_VIPER' or

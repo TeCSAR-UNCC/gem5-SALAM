@@ -1,4 +1,4 @@
-#! /usr/bin/env python2.7
+#! /usr/bin/env python3
 
 # Copyright (c) 2015 ARM Limited
 # All rights reserved
@@ -34,14 +34,12 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Hansson
 
-import optparse
+import argparse
 import subprocess
 import sys
 
-parser = optparse.OptionParser()
+parser = argparse.ArgumentParser()
 
 # This script lets the user run a soak test using the false-sharing
 # memtest.py example script. It runs a number of iterations with
@@ -49,22 +47,17 @@ parser = optparse.OptionParser()
 # of ticks. Both the iteration count and the ticks for each run can be
 # set on the command line.
 
-parser.add_option('-c', '--count', type='int', default=100)
-parser.add_option('-t', '--ticks', type='int', default=100000000000)
+parser.add_argument('-c', '--count', type=int, default=100)
+parser.add_argument('-t', '--ticks', type=int, default=100000000000)
+parser.add_argument('binary')
 
-(options, args) = parser.parse_args()
+args = parser.parse_args()
 
-if len(args) != 1:
-    print "Error: Expecting a single argument specifying the gem5 binary"
-    sys.exit(1)
-
-gem5_binary = args[0]
-
-for i in range(options.count):
-    status = subprocess.call([gem5_binary, 'configs/example/memtest.py',
-                              '-r', '-m %d' % (options.ticks)])
+for i in range(args.count):
+    status = subprocess.call([args.binary, 'configs/example/memtest.py',
+                              '-r', '-m %d' % (args.ticks)])
     if status != 0:
-        print "Error: memtest run failed\n"
+        print("Error: memtest run failed\n")
         sys.exit(1)
 
-print "memtest soak finished without errors"
+print("memtest soak finished without errors")

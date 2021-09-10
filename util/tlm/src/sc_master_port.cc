@@ -28,8 +28,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Christian Menard
  */
 
 #include <sstream>
@@ -43,22 +41,22 @@
 namespace Gem5SystemC
 {
 
-PacketPtr
+gem5::PacketPtr
 SCMasterPort::generatePacket(tlm::tlm_generic_payload& trans)
 {
-    Request::Flags flags;
-    auto req = std::make_shared<Request>(
+    gem5::Request::Flags flags;
+    auto req = std::make_shared<gem5::Request>(
         trans.get_address(), trans.get_data_length(), flags,
-        owner.masterId);
+        owner.id);
 
-    MemCmd cmd;
+    gem5::MemCmd cmd;
 
     switch (trans.get_command()) {
         case tlm::TLM_READ_COMMAND:
-            cmd = MemCmd::ReadReq;
+            cmd = gem5::MemCmd::ReadReq;
             break;
         case tlm::TLM_WRITE_COMMAND:
-            cmd = MemCmd::WriteReq;
+            cmd = gem5::MemCmd::WriteReq;
             break;
         default:
             SC_REPORT_FATAL("SCMasterPort",
@@ -69,23 +67,23 @@ SCMasterPort::generatePacket(tlm::tlm_generic_payload& trans)
      * Allocate a new Packet. The packet will be deleted when it returns from
      * the gem5 world as a response.
      */
-    auto pkt = new Packet(req, cmd);
+    auto pkt = new gem5::Packet(req, cmd);
     pkt->dataStatic(trans.get_data_ptr());
 
     return pkt;
 }
 
 void
-SCMasterPort::destroyPacket(PacketPtr pkt)
+SCMasterPort::destroyPacket(gem5::PacketPtr pkt)
 {
     delete pkt;
 }
 
 SCMasterPort::SCMasterPort(const std::string& name_,
                            const std::string& systemc_name,
-                           ExternalMaster& owner_,
+                           gem5::ExternalMaster& owner_,
                            Gem5SimControl& simControl)
-  : ExternalMaster::Port(name_, owner_),
+  : gem5::ExternalMaster::ExternalPort(name_, owner_),
     peq(this, &SCMasterPort::peq_cb),
     waitForRetry(false),
     pendingRequest(nullptr),
@@ -95,8 +93,8 @@ SCMasterPort::SCMasterPort(const std::string& name_,
     transactor(nullptr),
     simControl(simControl)
 {
-    system =
-        dynamic_cast<const ExternalMasterParams*>(owner_.params())->system;
+    system = dynamic_cast<const gem5::ExternalMasterParams&>(
+        owner_.params()).system;
 }
 
 void
@@ -172,7 +170,7 @@ SCMasterPort::peq_cb(tlm::tlm_generic_payload& trans,
 {
     // catch up with SystemC time
     simControl.catchup();
-    assert(curTick() == sc_core::sc_time_stamp().value());
+    assert(gem5::curTick() == sc_core::sc_time_stamp().value());
 
     switch (phase) {
         case tlm::BEGIN_REQ:
@@ -199,7 +197,7 @@ SCMasterPort::handleBeginReq(tlm::tlm_generic_payload& trans)
 
     trans.acquire();
 
-    PacketPtr pkt = nullptr;
+    gem5::PacketPtr pkt = nullptr;
 
     Gem5Extension* extension = nullptr;
     trans.get_extension(extension);
@@ -208,7 +206,6 @@ SCMasterPort::handleBeginReq(tlm::tlm_generic_payload& trans)
     // world and we can pipe through the original packet. Otherwise, we
     // generate a new packet based on the transaction.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         pkt = extension->getPacket();
     } else {
         pkt = generatePacket(trans);
@@ -260,26 +257,25 @@ SCMasterPort::b_transport(tlm::tlm_generic_payload& trans,
     Gem5Extension* extension = nullptr;
     trans.get_extension(extension);
 
-    PacketPtr pkt = nullptr;
+    gem5::PacketPtr pkt = nullptr;
 
     // If there is an extension, this transaction was initiated by the gem5
     // world and we can pipe through the original packet.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         pkt = extension->getPacket();
     } else {
         pkt = generatePacket(trans);
     }
 
-    Tick ticks = sendAtomic(pkt);
+    gem5::Tick ticks = sendAtomic(pkt);
 
     // send an atomic request to gem5
     panic_if(pkt->needsResponse() && !pkt->isResponse(),
              "Packet sending failed!\n");
 
     // one tick is a pico second
-    auto delay =
-      sc_core::sc_time((double)(ticks / SimClock::Int::ps), sc_core::SC_PS);
+    auto delay = sc_core::sc_time(
+        (double)(ticks / gem5::sim_clock::as_int::ps), sc_core::SC_PS);
 
     // update time
     t += delay;
@@ -299,7 +295,6 @@ SCMasterPort::transport_dbg(tlm::tlm_generic_payload& trans)
     // If there is an extension, this transaction was initiated by the gem5
     // world and we can pipe through the original packet.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         sendFunctional(extension->getPacket());
     } else {
         auto pkt = generatePacket(trans);
@@ -318,7 +313,7 @@ SCMasterPort::get_direct_mem_ptr(tlm::tlm_generic_payload& trans,
 }
 
 bool
-SCMasterPort::recvTimingResp(PacketPtr pkt)
+SCMasterPort::recvTimingResp(gem5::PacketPtr pkt)
 {
     // exclusion rule
     // We need to Wait for END_RESP before sending next BEGIN_RESP
@@ -355,8 +350,6 @@ SCMasterPort::recvTimingResp(PacketPtr pkt)
     // delete it. The packet travels back with the transaction.
     if (extension == nullptr)
         destroyPacket(pkt);
-    else
-        sc_assert(extension->isPipeThrough());
 
     sendBeginResp(trans, delay);
     trans.release();
@@ -412,9 +405,9 @@ SCMasterPort::recvRangeChange()
                       "received address range change but ignored it");
 }
 
-ExternalMaster::Port*
+gem5::ExternalMaster::ExternalPort*
 SCMasterPortHandler::getExternalPort(const std::string &name,
-                                     ExternalMaster &owner,
+                                     gem5::ExternalMaster &owner,
                                      const std::string &port_data)
 {
     // Create and register a new SystemC master port

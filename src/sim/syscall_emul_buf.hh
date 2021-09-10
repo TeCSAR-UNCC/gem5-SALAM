@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
  */
 
 #ifndef __SIM_SYSCALL_EMUL_BUF_HH__
@@ -42,6 +40,9 @@
 #include "base/types.hh"
 #include "mem/se_translating_port_proxy.hh"
 
+namespace gem5
+{
+
 /**
  * Base class for BufferArg and TypedBufferArg, Not intended to be
  * used directly.
@@ -53,7 +54,8 @@
  * and copyOut() methods copy the user-space buffer to and from the
  * simulator-space buffer, respectively.
  */
-class BaseBufferArg {
+class BaseBufferArg
+{
 
   public:
 
@@ -76,7 +78,7 @@ class BaseBufferArg {
      * copy data into simulator space (read from target memory)
      */
     bool
-    copyIn(PortProxy &memproxy)
+    copyIn(const PortProxy &memproxy)
     {
         memproxy.readBlob(addr, bufPtr, size);
         return true;    // no EFAULT detection for now
@@ -86,7 +88,7 @@ class BaseBufferArg {
      * copy data out of simulator space (write to target memory)
      */
     bool
-    copyOut(PortProxy &memproxy)
+    copyOut(const PortProxy &memproxy)
     {
         memproxy.writeBlob(addr, bufPtr, size);
         return true;    // no EFAULT detection for now
@@ -166,5 +168,6 @@ class TypedBufferArg : public BaseBufferArg
     T &operator[](int i) { return ((T *)bufPtr)[i]; }
 };
 
+} // namespace gem5
 
 #endif // __SIM_SYSCALL_EMUL_BUF_HH__

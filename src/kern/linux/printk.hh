@@ -24,18 +24,30 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Ali Saidi
  */
 
-#ifndef __PRINTK_HH__
-#define __PRINTK_HH__
+#ifndef __KERN_LINUX_PRINTK_HH__
+#define __KERN_LINUX_PRINTK_HH__
 
-#include <sstream>
+#include <string>
 
-class Arguments;
+#include "base/compiler.hh"
+#include "base/types.hh"
+#include "sim/guest_abi.hh"
 
-void Printk(std::stringstream &out, Arguments args);
+namespace gem5
+{
 
-#endif // __PRINTK_HH__
+GEM5_DEPRECATED_NAMESPACE(Linux, linux);
+namespace linux
+{
+
+using PrintkVarArgs =
+    guest_abi::VarArgs<Addr, int32_t, uint32_t, int64_t, uint64_t>;
+int printk(std::string &out, ThreadContext *tc, Addr format_ptr,
+           PrintkVarArgs args);
+
+} // namespace linux
+} // namespace gem5
+
+#endif // __KERN_LINUX_PRINTK_HH__

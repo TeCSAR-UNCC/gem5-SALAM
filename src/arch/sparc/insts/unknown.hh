@@ -24,15 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Steve Reinhardt
  */
 
 #ifndef __ARCH_SPARC_INSTS_UNKNOWN_HH__
 #define __ARCH_SPARC_INSTS_UNKNOWN_HH__
 
 #include "arch/sparc/insts/static_inst.hh"
+
+namespace gem5
+{
 
 namespace SparcISA
 {
@@ -56,13 +56,15 @@ class Unknown : public SparcStaticInst
     }
 
     std::string
-    generateDisassembly(Addr pc, const SymbolTable *symtab) const override
+    generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override
     {
         return "Unknown instruction";
     }
 
 };
 
-}
+} // namespace SparcISA
+} // namespace gem5
 
 #endif // __ARCH_SPARC_INSTS_UNKNOWN_HH__

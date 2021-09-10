@@ -25,9 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Steve Reinhardt
-#          Gabe Black
 
 Import('*')
 
@@ -35,6 +32,7 @@ SimObject('Device.py')
 Source('io_device.cc')
 Source('isa_fake.cc')
 Source('dma_device.cc')
+Source('dma_virt_device.cc')
 
 SimObject('IntPin.py')
 Source('intpin.cc')
@@ -57,3 +55,5 @@ Source('pixelpump.cc')
 
 DebugFlag('Intel8254Timer')
 DebugFlag('MC146818')
+
+GTest('reg_bank.test', 'reg_bank.test.cc')

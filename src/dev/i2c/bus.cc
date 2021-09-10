@@ -33,32 +33,35 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Peter Enns
  */
 
 #include "dev/i2c/bus.hh"
 
+#include "base/trace.hh"
 #include "debug/Checkpoint.hh"
 #include "dev/i2c/device.hh"
 #include "mem/packet_access.hh"
+#include "sim/serialize.hh"
 
 // clang complains about std::set being overloaded with Packet::set if
 // we open up the entire namespace std
 using std::vector;
 using std::map;
 
+namespace gem5
+{
+
 /**
  * 4KB - see e.g.
  * http://infocenter.arm.com/help/topic/com.arm.doc.dui0440b/Bbajihec.html
  */
-I2CBus::I2CBus(const I2CBusParams *p)
+I2CBus::I2CBus(const I2CBusParams &p)
     : BasicPioDevice(p, 0x1000), scl(1), sda(1), state(IDLE), currBit(7),
       i2cAddr(0x00), message(0x00)
 {
-    vector<I2CDevice*> devs = p->devices;
+    vector<I2CDevice*> devs = p.devices;
 
-    for (auto d : p->devices) {
+    for (auto d : p.devices) {
         devices[d->i2cAddr()] = d;
     }
 }
@@ -236,8 +239,4 @@ I2CBus::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(message);
 }
 
-I2CBus*
-I2CBusParams::create()
-{
-    return new I2CBus(this);
-}
+} // namespace gem5

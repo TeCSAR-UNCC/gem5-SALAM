@@ -23,26 +23,35 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Lowe-Power
 
 from testlib import *
 
 config_path = joinpath(config.base_dir, 'configs', 'learning_gem5', 'part1')
 
+# The "quick" simple tests.
 gem5_verify_config(
     name='simple_test',
     verifiers = (),
     config=joinpath(config_path, 'simple.py'),
     config_args = [],
-    valid_isas=('X86', 'RISCV', 'ARM'),
+    length = constants.quick_tag,
+    valid_isas=(
+        constants.gcn3_x86_tag,
+        constants.riscv_tag,
+        constants.arm_tag,
+    ),
 )
 
+# The "quick" two level tests.
 gem5_verify_config(
     name='two_level_test',
     verifiers = (),
     config=joinpath(config_path, 'two_level.py'),
     config_args = [],
-    valid_isas=('X86', 'RISCV', 'ARM'),
+    length = constants.quick_tag,
+    valid_isas=(
+        constants.gcn3_x86_tag,
+        constants.riscv_tag,
+        constants.arm_tag
+    ),
 )
-

@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 #include "base/filters/multi_bit_sel_bloom_filter.hh"
@@ -37,15 +35,20 @@
 #include "base/logging.hh"
 #include "params/BloomFilterMultiBitSel.hh"
 
-namespace BloomFilter {
-
-MultiBitSel::MultiBitSel(const BloomFilterMultiBitSelParams* p)
-    : Base(p), numHashes(p->num_hashes),
-      parFilterSize(p->size / numHashes),
-      isParallel(p->is_parallel), skipBits(p->skip_bits)
+namespace gem5
 {
-    if (p->size % numHashes) {
-        fatal("Can't divide filter (%d) in %d equal portions", p->size,
+
+GEM5_DEPRECATED_NAMESPACE(BloomFilter, bloom_filter);
+namespace bloom_filter
+{
+
+MultiBitSel::MultiBitSel(const BloomFilterMultiBitSelParams &p)
+    : Base(p), numHashes(p.num_hashes),
+      parFilterSize(p.size / numHashes),
+      isParallel(p.is_parallel), skipBits(p.skip_bits)
+{
+    if (p.size % numHashes) {
+        fatal("Can't divide filter (%d) in %d equal portions", p.size,
               numHashes);
     }
 }
@@ -95,11 +98,6 @@ MultiBitSel::hash(Addr addr, int hash_number) const
     }
 }
 
-} // namespace BloomFilter
-
-BloomFilter::MultiBitSel*
-BloomFilterMultiBitSelParams::create()
-{
-    return new BloomFilter::MultiBitSel(this);
-}
+} // namespace bloom_filter
+} // namespace gem5
 

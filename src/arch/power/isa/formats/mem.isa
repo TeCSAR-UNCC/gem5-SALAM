@@ -1,6 +1,7 @@
 // -*- mode:c++ -*-
 
 // Copyright (c) 2009 The University of Edinburgh
+// Copyright (c) 2021 IBM Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,8 +26,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Timothy M. Jones
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -39,8 +38,10 @@ def template LoadStoreDeclare {{
      */
     class %(class_name)s : public %(base_class)s
     {
-      public:
+      private:
+        %(reg_idx_arr_decl)s;
 
+      public:
         /// Constructor.
         %(class_name)s(ExtMachInst machInst);
 
@@ -56,6 +57,7 @@ def template LoadStoreConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst)
          : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -67,17 +69,21 @@ def template LoadExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
+        Msr msr = xc->tcBase()->readIntReg(INTREG_MSR);
 
         %(op_decl)s;
         %(op_rd)s;
         %(ea_code)s;
 
         if (fault == NoFault) {
-            fault = readMemAtomicBE(xc, traceData, EA, Mem, memAccessFlags);
+            fault = msr.le ?
+                    readMemAtomicLE(xc, traceData, EA, Mem, memAccessFlags) :
+                    readMemAtomicBE(xc, traceData, EA, Mem, memAccessFlags);
             %(memacc_code)s;
         }
 
         if (fault == NoFault) {
+            %(update_code)s;
             %(op_wb)s;
         }
 
@@ -111,22 +117,26 @@ def template LoadCompleteAcc {{
                                       ExecContext *xc,
                                       Trace::InstRecord *traceData) const
     {
-        Addr M5_VAR_USED EA;
+        GEM5_VAR_USED Addr EA;
         Fault fault = NoFault;
+        Msr msr = xc->tcBase()->readIntReg(INTREG_MSR);
 
         %(op_decl)s;
+        EA = pkt->req->getVaddr();
         %(op_rd)s;
 
-        EA = pkt->req->getVaddr();
-
-        getMemBE(pkt, Mem, traceData);
+        if (msr.le)
+            getMemLE(pkt, Mem, traceData);
+        else
+            getMemBE(pkt, Mem, traceData);
 
         if (fault == NoFault) {
             %(memacc_code)s;
         }
 
         if (fault == NoFault) {
-          %(op_wb)s;
+            %(update_code)s;
+            %(op_wb)s;
         }
 
         return fault;
@@ -140,6 +150,7 @@ def template StoreExecute {{
     {
         Addr EA;
         Fault fault = NoFault;
+        Msr msr = xc->tcBase()->readIntReg(INTREG_MSR);
 
         %(op_decl)s;
         %(op_rd)s;
@@ -150,11 +161,15 @@ def template StoreExecute {{
         }
 
         if (fault == NoFault) {
-            fault = writeMemAtomicBE(xc, traceData, Mem, EA, memAccessFlags,
-                    NULL);
+            fault = msr.le ?
+                    writeMemAtomicLE(xc, traceData, Mem, EA, memAccessFlags,
+                                     NULL) :
+                    writeMemAtomicBE(xc, traceData, Mem, EA, memAccessFlags,
+                                     NULL);
         }
 
         if (fault == NoFault) {
+            %(update_code)s;
             %(op_wb)s;
         }
 
@@ -169,6 +184,7 @@ def template StoreInitiateAcc {{
     {
         Addr EA;
         Fault fault = NoFault;
+        Msr msr = xc->tcBase()->readIntReg(INTREG_MSR);
 
         %(op_decl)s;
         %(op_rd)s;
@@ -179,13 +195,11 @@ def template StoreInitiateAcc {{
         }
 
         if (fault == NoFault) {
-            fault = writeMemTimingBE(xc, traceData, Mem, EA, memAccessFlags,
-                    NULL);
-        }
-
-        // Need to write back any potential address register update
-        if (fault == NoFault) {
-            %(op_wb)s;
+            fault = msr.le ?
+                    writeMemTimingLE(xc, traceData, Mem, EA, memAccessFlags,
+                                     NULL) :
+                    writeMemTimingBE(xc, traceData, Mem, EA, memAccessFlags,
+                                     NULL);
         }
 
         return fault;
@@ -197,7 +211,20 @@ def template StoreCompleteAcc {{
     Fault %(class_name)s::completeAcc(PacketPtr pkt, ExecContext *xc,
                                       Trace::InstRecord *traceData) const
     {
-        return NoFault;
+        GEM5_VAR_USED Addr EA;
+        Fault fault = NoFault;
+
+        %(op_decl)s;
+        EA = pkt->req->getVaddr();
+        %(op_rd)s;
+
+        // Need to write back any potential address register update
+        if (fault == NoFault) {
+            %(update_code)s;
+            %(op_wb)s;
+        }
+
+        return fault;
     }
 }};
 
@@ -208,19 +235,22 @@ def template StoreCompleteAcc {{
 // dependence on Ra.
 let {{
 
-def GenMemOp(name, Name, memacc_code, ea_code, ea_code_ra0, base,
+def GenMemOp(name, Name, memacc_code, update_code, ea_code, ea_code_ra0, base,
              load_or_store, mem_flags = [], inst_flags = []):
 
     # First the version where Ra is non-zero
     (header_output, decoder_output, decode_block, exec_output) = \
-        LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
+        LoadStoreBase(name, Name, ea_code,
+                      memacc_code, update_code,
+                      mem_flags, inst_flags,
                       base_class = base,
                       decode_template = CheckRaDecode,
                       exec_template_base = load_or_store)
 
     # Now another version where Ra == 0
     (header_output_ra0, decoder_output_ra0, _, exec_output_ra0) = \
-        LoadStoreBase(name, Name + 'RaZero', ea_code_ra0, memacc_code,
+        LoadStoreBase(name, Name + 'RaZero', ea_code_ra0,
+                      memacc_code, update_code,
                       mem_flags, inst_flags,
                       base_class = base,
                       exec_template_base = load_or_store)
@@ -234,21 +264,23 @@ def GenMemOp(name, Name, memacc_code, ea_code, ea_code_ra0, base,
 }};
 
 
-def format LoadIndexOp(memacc_code, ea_code = {{ EA = Ra + Rb; }},
+def format LoadIndexOp(memacc_code, update_code = {{ }},
+                       ea_code = {{ EA = Ra + Rb; }},
                        ea_code_ra0 = {{ EA = Rb; }},
                        mem_flags = [], inst_flags = []) {{
     (header_output, decoder_output, decode_block, exec_output) = \
-        GenMemOp(name, Name, memacc_code, ea_code, ea_code_ra0,
-                 'MemOp', 'Load', mem_flags, inst_flags)
+        GenMemOp(name, Name, memacc_code, update_code, ea_code, ea_code_ra0,
+                 'MemIndexOp', 'Load', mem_flags, inst_flags)
 }};
 
 
-def format StoreIndexOp(memacc_code, ea_code = {{ EA = Ra + Rb; }},
+def format StoreIndexOp(memacc_code, update_code = {{ }},
+                        ea_code = {{ EA = Ra + Rb; }},
                         ea_code_ra0 = {{ EA = Rb; }},
                         mem_flags = [], inst_flags = []) {{
     (header_output, decoder_output, decode_block, exec_output) = \
-        GenMemOp(name, Name, memacc_code, ea_code, ea_code_ra0,
-                 'MemOp', 'Store', mem_flags, inst_flags)
+        GenMemOp(name, Name, memacc_code, update_code, ea_code, ea_code_ra0,
+                 'MemIndexOp', 'Store', mem_flags, inst_flags)
 }};
 
 
@@ -256,12 +288,14 @@ def format LoadIndexUpdateOp(memacc_code, ea_code = {{ EA = Ra + Rb; }},
                              mem_flags = [], inst_flags = []) {{
 
     # Add in the update code
-    memacc_code += 'Ra = EA;'
+    update_code = 'Ra = EA;'
 
     # Generate the class
     (header_output, decoder_output, decode_block, exec_output) = \
-        LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
-                      base_class = 'MemOp',
+        LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                      mem_flags, inst_flags,
+                      base_class = 'MemIndexOp',
+                      decode_template = CheckRaRtDecode,
                       exec_template_base = 'Load')
 }};
 
@@ -270,57 +304,117 @@ def format StoreIndexUpdateOp(memacc_code, ea_code = {{ EA = Ra + Rb; }},
                               mem_flags = [], inst_flags = []) {{
 
     # Add in the update code
-    memacc_code += 'Ra = EA;'
+    update_code = 'Ra = EA;'
 
     # Generate the class
     (header_output, decoder_output, decode_block, exec_output) = \
-        LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
-                      base_class = 'MemOp',
+        LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                      mem_flags, inst_flags,
+                      base_class = 'MemIndexOp',
+                      decode_template = CheckRaZeroDecode,
                       exec_template_base = 'Store')
 }};
 
 
-def format LoadDispOp(memacc_code, ea_code = {{ EA = Ra + disp; }},
-                      ea_code_ra0 = {{ EA = disp; }},
+def format LoadDispOp(memacc_code, ea_code = {{ EA = Ra + d; }},
+                      ea_code_ra0 = {{ EA = d; }},
                       mem_flags = [], inst_flags = []) {{
     (header_output, decoder_output, decode_block, exec_output) = \
-        GenMemOp(name, Name, memacc_code, ea_code, ea_code_ra0,
+        GenMemOp(name, Name, memacc_code, '', ea_code, ea_code_ra0,
                  'MemDispOp', 'Load', mem_flags, inst_flags)
 }};
 
 
-def format StoreDispOp(memacc_code, ea_code = {{ EA = Ra + disp; }},
-                       ea_code_ra0 = {{ EA = disp; }},
+def format StoreDispOp(memacc_code, ea_code = {{ EA = Ra + d; }},
+                       ea_code_ra0 = {{ EA = d; }},
                        mem_flags = [], inst_flags = []) {{
     (header_output, decoder_output, decode_block, exec_output) = \
-        GenMemOp(name, Name, memacc_code, ea_code, ea_code_ra0,
+        GenMemOp(name, Name, memacc_code, '', ea_code, ea_code_ra0,
                  'MemDispOp', 'Store', mem_flags, inst_flags)
 }};
 
 
-def format LoadDispUpdateOp(memacc_code, ea_code = {{ EA = Ra + disp; }},
+def format LoadDispShiftOp(memacc_code,
+                           ea_code = {{ EA = Ra + (ds << 2); }},
+                           ea_code_ra0 = {{ EA = (ds << 2); }},
+                           mem_flags = [], inst_flags = []) {{
+    (header_output, decoder_output, decode_block, exec_output) = \
+        GenMemOp(name, Name, memacc_code, '', ea_code, ea_code_ra0,
+                 'MemDispShiftOp', 'Load', mem_flags, inst_flags)
+}};
+
+
+def format StoreDispShiftOp(memacc_code,
+                            ea_code = {{ EA = Ra + (ds << 2); }},
+                            ea_code_ra0 = {{ EA = (ds << 2); }},
+                            mem_flags = [], inst_flags = []) {{
+    (header_output, decoder_output, decode_block, exec_output) = \
+        GenMemOp(name, Name, memacc_code, '', ea_code, ea_code_ra0,
+                 'MemDispShiftOp', 'Store', mem_flags, inst_flags)
+}};
+
+
+def format LoadDispUpdateOp(memacc_code, ea_code = {{ EA = Ra + d; }},
                             mem_flags = [], inst_flags = []) {{
 
     # Add in the update code
-    memacc_code += 'Ra = EA;'
+    update_code = 'Ra = EA;'
 
     # Generate the class
     (header_output, decoder_output, decode_block, exec_output) = \
-        LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
+        LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                      mem_flags, inst_flags,
                       base_class = 'MemDispOp',
+                      decode_template = CheckRaRtDecode,
                       exec_template_base = 'Load')
 }};
 
 
-def format StoreDispUpdateOp(memacc_code, ea_code = {{ EA = Ra + disp; }},
+def format StoreDispUpdateOp(memacc_code, ea_code = {{ EA = Ra + d; }},
                              mem_flags = [], inst_flags = []) {{
 
     # Add in the update code
-    memacc_code += 'Ra = EA;'
+    update_code = 'Ra = EA;'
 
     # Generate the class
     (header_output, decoder_output, decode_block, exec_output) = \
-        LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
+        LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                      mem_flags, inst_flags,
                       base_class = 'MemDispOp',
+                      decode_template = CheckRaZeroDecode,
+                      exec_template_base = 'Store')
+}};
+
+
+def format LoadDispShiftUpdateOp(memacc_code,
+                                 ea_code = {{ EA = Ra + (ds << 2); }},
+                                 mem_flags = [], inst_flags = []) {{
+
+    # Add in the update code
+    update_code = 'Ra = EA;'
+
+    # Generate the class
+    (header_output, decoder_output, decode_block, exec_output) = \
+        LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                      mem_flags, inst_flags,
+                      base_class = 'MemDispShiftOp',
+                      decode_template = CheckRaRtDecode,
+                      exec_template_base = 'Load')
+}};
+
+
+def format StoreDispShiftUpdateOp(memacc_code,
+                                  ea_code = {{ EA = Ra + (ds << 2); }},
+                                  mem_flags = [], inst_flags = []) {{
+
+    # Add in the update code
+    update_code = 'Ra = EA;'
+
+    # Generate the class
+    (header_output, decoder_output, decode_block, exec_output) = \
+        LoadStoreBase(name, Name, ea_code, memacc_code, update_code,
+                      mem_flags, inst_flags,
+                      base_class = 'MemDispShiftOp',
+                      decode_template = CheckRaZeroDecode,
                       exec_template_base = 'Store')
 }};

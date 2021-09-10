@@ -32,8 +32,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Gabe Black
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -400,9 +398,9 @@
                         // will sign extend it, and there's no easy way to
                         // specify only checking the first byte.
                         0xffffffffffffff80:
-                            SyscallInst::int80('xc->syscall(&fault)',
-                                               IsSyscall, IsNonSpeculative,
-                                               IsSerializeAfter);
+                            SyscallInst::int80({{
+                                return std::make_shared<SESyscallFault>();
+                            }});
                     }
 
                     default: Inst::INT(Ib);
@@ -485,7 +483,7 @@
             0x0: LOOPNE(Jb);
             0x1: LOOPE(Jb);
             0x2: LOOP(Jb);
-            0x3: JRCX(Jb);
+            0x3: JRCXZ(Jb);
             0x4: IN(rAb,Ib);
             0x5: IN(rAv,Iv);
             0x6: OUT(Ib,rAb);

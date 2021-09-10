@@ -25,8 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nilay Vaish
 
 Import('*')
 
@@ -42,6 +40,7 @@ Source('DirectoryMemory.cc')
 Source('CacheMemory.cc')
 Source('WireBuffer.cc')
 Source('PersistentTable.cc')
-Source('Prefetcher.cc')
+Source('RubyPrefetcher.cc')
 Source('TimerTable.cc')
 Source('BankedArray.cc')
+Source('TBEStorage.cc')

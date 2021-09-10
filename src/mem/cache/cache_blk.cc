@@ -11,6 +11,7 @@
  * unmodified and in its entirety in all distributions of the software,
  * modified or unmodified, in source code or in binary form.
  *
+ * Copyright (c) 2020 Inria
  * Copyright (c) 2007 The Regents of The University of Michigan
  * All rights reserved.
  *
@@ -42,35 +43,29 @@
 
 #include "base/cprintf.hh"
 
+namespace gem5
+{
+
 void
 CacheBlk::insert(const Addr tag, const bool is_secure,
-                 const int src_master_ID, const uint32_t task_ID)
+                 const int src_requestor_ID, const uint32_t task_ID)
 {
     // Make sure that the block has been properly invalidated
-    assert(status == 0);
+    assert(!isValid());
 
-    // Set block tag
-    this->tag = tag;
+    insert(tag, is_secure);
 
     // Set source requestor ID
-    srcMasterId = src_master_ID;
+    setSrcRequestorId(src_requestor_ID);
 
     // Set task ID
-    task_id = task_ID;
+    setTaskId(task_ID);
 
     // Set insertion tick as current tick
-    tickInserted = curTick();
+    setTickInserted();
 
     // Insertion counts as a reference to the block
-    refCount = 1;
-
-    // Set secure state
-    if (is_secure) {
-        setSecure();
-    }
-
-    // Validate block
-    setValid();
+    increaseRefCount();
 }
 
 void
@@ -79,8 +74,9 @@ CacheBlkPrintWrapper::print(std::ostream &os, int verbosity,
 {
     ccprintf(os, "%sblk %c%c%c%c\n", prefix,
              blk->isValid()    ? 'V' : '-',
-             blk->isWritable() ? 'E' : '-',
-             blk->isDirty()    ? 'M' : '-',
+             blk->isSet(CacheBlk::WritableBit) ? 'E' : '-',
+             blk->isSet(CacheBlk::DirtyBit)    ? 'M' : '-',
              blk->isSecure()   ? 'S' : '-');
 }
 
+} // namespace gem5

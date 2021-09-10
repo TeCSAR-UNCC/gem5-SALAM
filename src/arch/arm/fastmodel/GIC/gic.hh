@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_ARM_FASTMODEL_GIC_GIC_HH__
@@ -45,7 +43,11 @@
 #include "systemc/ext/core/sc_module_name.hh"
 #include "systemc/sc_port_wrapper.hh"
 
-namespace FastModel
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
 {
 
 // The fast model exports a class called scx_evs_GIC which represents
@@ -85,6 +87,7 @@ class SCGIC : public scx_evs_GIC
     const SCFastModelGICParams &_params;
 
   public:
+    SCGIC(const SCFastModelGICParams &p) : SCGIC(p, p.name.c_str()) {}
     SCGIC(const SCFastModelGICParams &params, sc_core::sc_module_name _name);
 
     SignalInterruptInitiatorSocket signalInterrupt;
@@ -98,11 +101,7 @@ class SCGIC : public scx_evs_GIC
         scx_evs_GIC::start_of_simulation();
     }
     void start_of_simulation() override {}
-    const SCFastModelGICParams &
-    params()
-    {
-        return _params;
-    }
+    PARAMS(SCFastModelGIC);
 };
 
 // This class pairs with the one above to implement the receiving end of gem5's
@@ -141,6 +140,7 @@ class GIC : public BaseGic
     Tick write(PacketPtr pkt) override { return 0; }
 };
 
-} // namespace FastModel
+} // namespace fastmodel
+} // namespace gem5
 
 #endif // __ARCH_ARM_FASTMODEL_GIC_GIC_HH__

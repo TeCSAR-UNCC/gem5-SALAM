@@ -1,4 +1,4 @@
-#! /usr/bin/env python2.7
+#! /usr/bin/env python3
 
 # Copyright (c) 2010 Advanced Micro Devices, Inc.
 # All rights reserved.
@@ -39,7 +39,7 @@
 #    c. Dump a checkpoint and end the simulation
 #    d. Diff the new checkpoint with the original checkpoint N+1
 #
-# Note that '--' must be used to separate the script options from the
+# Note that '--' must be used to separate the script args from the
 # M5 command line.
 #
 # Caveats:
@@ -55,50 +55,51 @@
 #
 # Examples:
 #
-# util/checkpoint-tester.py -i 400000 -- build/ALPHA_SE/m5.opt \
-#      configs/example/se.py -c tests/test-progs/hello/bin/alpha/tru64/hello \
+# util/checkpoint-tester.py -i 400000 -- build/<ISA>/gem5.opt \
+#      configs/example/se.py -c tests/test-progs/hello/bin/<isa>/linux/hello \
 #      --output=progout --errout=progerr
 #
-# util/checkpoint-tester.py -i 200000000000 -- build/ALPHA_FS/m5.opt \
-#      configs/example/fs.py --script tests/halt.sh
+# util/checkpoint-tester.py -i 200000000000 -- build/<ISA>/gem5.opt \
+#      configs/example/fs.py --script configs/boot/halt.sh
 #
 
 
 import os, sys, re
 import subprocess
-import optparse
+import argparse
 
-parser = optparse.OptionParser()
+parser = argparse.ArgumentParser()
 
-parser.add_option('-i', '--interval', type='int')
-parser.add_option('-d', '--directory', default='checkpoint-test')
+parser.add_argument('-i', '--interval', type=int)
+parser.add_argument('-d', '--directory', default='checkpoint-test')
+parser.add_argument('cmdline', nargs='+', help='gem5 command line')
 
-(options, args) = parser.parse_args()
+args = parser.parse_args()
 
-interval = options.interval
+interval = args.interval
 
-if os.path.exists(options.directory):
-    print 'Error: test directory', options.directory, 'exists'
-    print '       Tester needs to create directory from scratch'
+if os.path.exists(args.directory):
+    print('Error: test directory', args.directory, 'exists')
+    print('       Tester needs to create directory from scratch')
     sys.exit(1)
 
-top_dir = options.directory
+top_dir = args.directory
 os.mkdir(top_dir)
 
 cmd_echo = open(os.path.join(top_dir, 'command'), 'w')
-print >>cmd_echo, ' '.join(sys.argv)
+print(' '.join(sys.argv), file=cmd_echo)
 cmd_echo.close()
 
-m5_binary = args[0]
+m5_binary = args.cmdline[0]
 
-options = args[1:]
+args = args.cmdline[1:]
 
-initial_args = ['--take-checkpoints', '%d,%d' % (interval, interval)]
+checkpoint_args = ['--take-checkpoints', '%d,%d' % (interval, interval)]
 
 cptdir = os.path.join(top_dir, 'm5out')
 
-print '===> Running initial simulation.'
-subprocess.call([m5_binary] + ['-red', cptdir] + options + initial_args)
+print('===> Running initial simulation.')
+subprocess.call([m5_binary] + ['-red', cptdir] + args + checkpoint_args)
 
 dirs = os.listdir(cptdir)
 expr = re.compile('cpt\.([0-9]*)')
@@ -115,9 +116,10 @@ cpts.sort()
 # original checkpoint N+1.  Thus the number of tests we can run is one
 # less than tha number of checkpoints.
 for i in range(1, len(cpts)):
-    print '===> Running test %d of %d.' % (i, len(cpts)-1)
+    print('===> Running test %d of %d.' % (i, len(cpts)-1))
+    checkpoint_args = ['--take-checkpoints', '%d,%d' % (cpts[i], interval)]
     mydir = os.path.join(top_dir, 'test.%d' % i)
-    subprocess.call([m5_binary] + ['-red', mydir] + options + initial_args +
+    subprocess.call([m5_binary] + ['-red', mydir] + args + checkpoint_args +
                     ['--max-checkpoints' , '1', '--checkpoint-dir', cptdir,
                      '--checkpoint-restore', str(i)])
     cpt_name = 'cpt.%d' % cpts[i]
@@ -129,7 +131,7 @@ for i in range(1, len(cpts)):
     diffout.close()
     # print out the diff
     diffout = open(diff_name)
-    print diffout.read(),
+    print(diffout.read(), end=' ')
     diffout.close()
 
 

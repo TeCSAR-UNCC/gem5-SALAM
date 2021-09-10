@@ -36,10 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Andreas Hansson
- *          William Wang
  */
 
 /**
@@ -54,37 +50,41 @@
 #include "debug/NoncoherentXBar.hh"
 #include "debug/XBar.hh"
 
-NoncoherentXBar::NoncoherentXBar(const NoncoherentXBarParams *p)
+namespace gem5
+{
+
+NoncoherentXBar::NoncoherentXBar(const NoncoherentXBarParams &p)
     : BaseXBar(p)
 {
-    // create the ports based on the size of the master and slave
-    // vector ports, and the presence of the default port, the ports
-    // are enumerated starting from zero
-    for (int i = 0; i < p->port_master_connection_count; ++i) {
-        std::string portName = csprintf("%s.master[%d]", name(), i);
-        MasterPort* bp = new NoncoherentXBarMasterPort(portName, *this, i);
-        masterPorts.push_back(bp);
+    // create the ports based on the size of the memory-side port and
+    // CPU-side port vector ports, and the presence of the default port,
+    // the ports are enumerated starting from zero
+    for (int i = 0; i < p.port_mem_side_ports_connection_count; ++i) {
+        std::string portName = csprintf("%s.mem_side_port[%d]", name(), i);
+        RequestPort* bp = new NoncoherentXBarRequestPort(portName, *this, i);
+        memSidePorts.push_back(bp);
         reqLayers.push_back(new ReqLayer(*bp, *this,
                                          csprintf("reqLayer%d", i)));
     }
 
-    // see if we have a default slave device connected and if so add
-    // our corresponding master port
-    if (p->port_default_connection_count) {
-        defaultPortID = masterPorts.size();
+    // see if we have a default CPU-side-port device connected and if so add
+    // our corresponding memory-side port
+    if (p.port_default_connection_count) {
+        defaultPortID = memSidePorts.size();
         std::string portName = name() + ".default";
-        MasterPort* bp = new NoncoherentXBarMasterPort(portName, *this,
+        RequestPort* bp = new NoncoherentXBarRequestPort(portName, *this,
                                                       defaultPortID);
-        masterPorts.push_back(bp);
+        memSidePorts.push_back(bp);
         reqLayers.push_back(new ReqLayer(*bp, *this, csprintf("reqLayer%d",
                                                               defaultPortID)));
     }
 
-    // create the slave ports, once again starting at zero
-    for (int i = 0; i < p->port_slave_connection_count; ++i) {
-        std::string portName = csprintf("%s.slave[%d]", name(), i);
-        QueuedSlavePort* bp = new NoncoherentXBarSlavePort(portName, *this, i);
-        slavePorts.push_back(bp);
+    // create the CPU-side ports, once again starting at zero
+    for (int i = 0; i < p.port_cpu_side_ports_connection_count; ++i) {
+        std::string portName = csprintf("%s.cpu_side_ports[%d]", name(), i);
+        QueuedResponsePort* bp = new NoncoherentXBarResponsePort(portName,
+                                                                *this, i);
+        cpuSidePorts.push_back(bp);
         respLayers.push_back(new RespLayer(*bp, *this,
                                            csprintf("respLayer%d", i)));
     }
@@ -99,20 +99,20 @@ NoncoherentXBar::~NoncoherentXBar()
 }
 
 bool
-NoncoherentXBar::recvTimingReq(PacketPtr pkt, PortID slave_port_id)
+NoncoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
 {
     // determine the source port based on the id
-    SlavePort *src_port = slavePorts[slave_port_id];
+    ResponsePort *src_port = cpuSidePorts[cpu_side_port_id];
 
     // we should never see express snoops on a non-coherent crossbar
     assert(!pkt->isExpressSnoop());
 
     // determine the destination based on the address
-    PortID master_port_id = findPort(pkt->getAddrRange());
+    PortID mem_side_port_id = findPort(pkt->getAddrRange());
 
     // test if the layer should be considered occupied for the current
     // port
-    if (!reqLayers[master_port_id]->tryTiming(src_port)) {
+    if (!reqLayers[mem_side_port_id]->tryTiming(src_port)) {
         DPRINTF(NoncoherentXBar, "recvTimingReq: src %s %s 0x%x BUSY\n",
                 src_port->name(), pkt->cmdString(), pkt->getAddr());
         return false;
@@ -144,7 +144,7 @@ NoncoherentXBar::recvTimingReq(PacketPtr pkt, PortID slave_port_id)
         !pkt->cacheResponding();
 
     // since it is a normal request, attempt to send the packet
-    bool success = masterPorts[master_port_id]->sendTimingReq(pkt);
+    bool success = memSidePorts[mem_side_port_id]->sendTimingReq(pkt);
 
     if (!success)  {
         DPRINTF(NoncoherentXBar, "recvTimingReq: src %s %s 0x%x RETRY\n",
@@ -154,7 +154,7 @@ NoncoherentXBar::recvTimingReq(PacketPtr pkt, PortID slave_port_id)
         pkt->headerDelay = old_header_delay;
 
         // occupy until the header is sent
-        reqLayers[master_port_id]->failedTiming(src_port,
+        reqLayers[mem_side_port_id]->failedTiming(src_port,
                                                 clockEdge(Cycles(1)));
 
         return false;
@@ -163,35 +163,35 @@ NoncoherentXBar::recvTimingReq(PacketPtr pkt, PortID slave_port_id)
     // remember where to route the response to
     if (expect_response) {
         assert(routeTo.find(pkt->req) == routeTo.end());
-        routeTo[pkt->req] = slave_port_id;
+        routeTo[pkt->req] = cpu_side_port_id;
     }
 
-    reqLayers[master_port_id]->succeededTiming(packetFinishTime);
+    reqLayers[mem_side_port_id]->succeededTiming(packetFinishTime);
 
     // stats updates
-    pktCount[slave_port_id][master_port_id]++;
-    pktSize[slave_port_id][master_port_id] += pkt_size;
+    pktCount[cpu_side_port_id][mem_side_port_id]++;
+    pktSize[cpu_side_port_id][mem_side_port_id] += pkt_size;
     transDist[pkt_cmd]++;
 
     return true;
 }
 
 bool
-NoncoherentXBar::recvTimingResp(PacketPtr pkt, PortID master_port_id)
+NoncoherentXBar::recvTimingResp(PacketPtr pkt, PortID mem_side_port_id)
 {
     // determine the source port based on the id
-    MasterPort *src_port = masterPorts[master_port_id];
+    RequestPort *src_port = memSidePorts[mem_side_port_id];
 
     // determine the destination
     const auto route_lookup = routeTo.find(pkt->req);
     assert(route_lookup != routeTo.end());
-    const PortID slave_port_id = route_lookup->second;
-    assert(slave_port_id != InvalidPortID);
-    assert(slave_port_id < respLayers.size());
+    const PortID cpu_side_port_id = route_lookup->second;
+    assert(cpu_side_port_id != InvalidPortID);
+    assert(cpu_side_port_id < respLayers.size());
 
     // test if the layer should be considered occupied for the current
     // port
-    if (!respLayers[slave_port_id]->tryTiming(src_port)) {
+    if (!respLayers[cpu_side_port_id]->tryTiming(src_port)) {
         DPRINTF(NoncoherentXBar, "recvTimingResp: src %s %s 0x%x BUSY\n",
                 src_port->name(), pkt->cmdString(), pkt->getAddr());
         return false;
@@ -214,57 +214,59 @@ NoncoherentXBar::recvTimingResp(PacketPtr pkt, PortID master_port_id)
     // determine how long to be crossbar layer is busy
     Tick packetFinishTime = clockEdge(Cycles(1)) + pkt->payloadDelay;
 
-    // send the packet through the destination slave port, and pay for
+    // send the packet through the destination CPU-side port, and pay for
     // any outstanding latency
     Tick latency = pkt->headerDelay;
     pkt->headerDelay = 0;
-    slavePorts[slave_port_id]->schedTimingResp(pkt, curTick() + latency);
+    cpuSidePorts[cpu_side_port_id]->schedTimingResp(pkt,
+                                        curTick() + latency);
 
     // remove the request from the routing table
     routeTo.erase(route_lookup);
 
-    respLayers[slave_port_id]->succeededTiming(packetFinishTime);
+    respLayers[cpu_side_port_id]->succeededTiming(packetFinishTime);
 
     // stats updates
-    pktCount[slave_port_id][master_port_id]++;
-    pktSize[slave_port_id][master_port_id] += pkt_size;
+    pktCount[cpu_side_port_id][mem_side_port_id]++;
+    pktSize[cpu_side_port_id][mem_side_port_id] += pkt_size;
     transDist[pkt_cmd]++;
 
     return true;
 }
 
 void
-NoncoherentXBar::recvReqRetry(PortID master_port_id)
+NoncoherentXBar::recvReqRetry(PortID mem_side_port_id)
 {
     // responses never block on forwarding them, so the retry will
     // always be coming from a port to which we tried to forward a
     // request
-    reqLayers[master_port_id]->recvRetry();
+    reqLayers[mem_side_port_id]->recvRetry();
 }
 
 Tick
-NoncoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID slave_port_id,
+NoncoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID cpu_side_port_id,
                                     MemBackdoorPtr *backdoor)
 {
     DPRINTF(NoncoherentXBar, "recvAtomic: packet src %s addr 0x%x cmd %s\n",
-            slavePorts[slave_port_id]->name(), pkt->getAddr(),
+            cpuSidePorts[cpu_side_port_id]->name(), pkt->getAddr(),
             pkt->cmdString());
 
     unsigned int pkt_size = pkt->hasData() ? pkt->getSize() : 0;
     unsigned int pkt_cmd = pkt->cmdToIndex();
 
     // determine the destination port
-    PortID master_port_id = findPort(pkt->getAddrRange());
+    PortID mem_side_port_id = findPort(pkt->getAddrRange());
 
     // stats updates for the request
-    pktCount[slave_port_id][master_port_id]++;
-    pktSize[slave_port_id][master_port_id] += pkt_size;
+    pktCount[cpu_side_port_id][mem_side_port_id]++;
+    pktSize[cpu_side_port_id][mem_side_port_id] += pkt_size;
     transDist[pkt_cmd]++;
 
     // forward the request to the appropriate destination
-    auto master = masterPorts[master_port_id];
+    auto mem_side_port = memSidePorts[mem_side_port_id];
     Tick response_latency = backdoor ?
-        master->sendAtomicBackdoor(pkt, *backdoor) : master->sendAtomic(pkt);
+        mem_side_port->sendAtomicBackdoor(pkt, *backdoor) :
+        mem_side_port->sendAtomic(pkt);
 
     // add the response data
     if (pkt->isResponse()) {
@@ -272,8 +274,8 @@ NoncoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID slave_port_id,
         pkt_cmd = pkt->cmdToIndex();
 
         // stats updates
-        pktCount[slave_port_id][master_port_id]++;
-        pktSize[slave_port_id][master_port_id] += pkt_size;
+        pktCount[cpu_side_port_id][mem_side_port_id]++;
+        pktSize[cpu_side_port_id][mem_side_port_id] += pkt_size;
         transDist[pkt_cmd]++;
     }
 
@@ -283,18 +285,18 @@ NoncoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID slave_port_id,
 }
 
 void
-NoncoherentXBar::recvFunctional(PacketPtr pkt, PortID slave_port_id)
+NoncoherentXBar::recvFunctional(PacketPtr pkt, PortID cpu_side_port_id)
 {
     if (!pkt->isPrint()) {
         // don't do DPRINTFs on PrintReq as it clutters up the output
         DPRINTF(NoncoherentXBar,
                 "recvFunctional: packet src %s addr 0x%x cmd %s\n",
-                slavePorts[slave_port_id]->name(), pkt->getAddr(),
+                cpuSidePorts[cpu_side_port_id]->name(), pkt->getAddr(),
                 pkt->cmdString());
     }
 
-    // since our slave ports are queued ports we need to check them as well
-    for (const auto& p : slavePorts) {
+    // since our CPU-side ports are queued ports we need to check them as well
+    for (const auto& p : cpuSidePorts) {
         // if we find a response that has the data, then the
         // downstream caches/memories may be out of date, so simply stop
         // here
@@ -309,11 +311,7 @@ NoncoherentXBar::recvFunctional(PacketPtr pkt, PortID slave_port_id)
     PortID dest_id = findPort(pkt->getAddrRange());
 
     // forward the request to the appropriate destination
-    masterPorts[dest_id]->sendFunctional(pkt);
+    memSidePorts[dest_id]->sendFunctional(pkt);
 }
 
-NoncoherentXBar*
-NoncoherentXBarParams::create()
-{
-    return new NoncoherentXBar(this);
-}
+} // namespace gem5

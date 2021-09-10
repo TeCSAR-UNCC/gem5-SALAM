@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Giacomo Travaglini
 
 from m5.SimObject import SimObject
 
@@ -41,10 +39,10 @@ from m5.SimObject import SimObject
 class QoSTurnaroundPolicy(SimObject):
     type = 'QoSTurnaroundPolicy'
     cxx_header = "mem/qos/turnaround_policy.hh"
-    cxx_class = 'QoS::TurnaroundPolicy'
+    cxx_class = 'gem5::memory::qos::TurnaroundPolicy'
     abstract = True
 
 class QoSTurnaroundPolicyIdeal(QoSTurnaroundPolicy):
     type = 'QoSTurnaroundPolicyIdeal'
     cxx_header = "mem/qos/turnaround_policy_ideal.hh"
-    cxx_class = 'QoS::TurnaroundPolicyIdeal'
+    cxx_class = 'gem5::memory::qos::TurnaroundPolicyIdeal'

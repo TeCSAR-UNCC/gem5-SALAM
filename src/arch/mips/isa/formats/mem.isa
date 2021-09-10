@@ -25,9 +25,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Steve Reinhardt
-//          Korey Sewell
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -47,7 +44,6 @@ output header {{
         /// Displacement for EA calculation (signed).
         int32_t disp;
 
-        /// Constructor
         Memory(const char *mnem, MachInst _machInst, OpClass __opClass)
             : MipsStaticInst(mnem, _machInst, __opClass),
               disp(sext<16>(OFFSET))
@@ -55,7 +51,7 @@ output header {{
         }
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 
      /**
@@ -65,28 +61,26 @@ output header {{
     class MemoryNoDisp : public Memory
     {
       protected:
-        /// Constructor
-        MemoryNoDisp(const char *mnem, ExtMachInst _machInst, OpClass __opClass)
-            : Memory(mnem, _machInst, __opClass)
-        {
-        }
+        using Memory::Memory;
 
         std::string generateDisassembly(
-                Addr pc, const SymbolTable *symtab) const override;
+                Addr pc, const loader::SymbolTable *symtab) const override;
     };
 }};
 
 
 output decoder {{
     std::string
-    Memory::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+    Memory::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         return csprintf("%-10s %c%d, %d(r%d)", mnemonic,
                         flags[IsFloating] ? 'f' : 'r', RT, disp, RS);
     }
 
     std::string
-    MemoryNoDisp::generateDisassembly(Addr pc, const SymbolTable *symtab) const
+    MemoryNoDisp::generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const
     {
         return csprintf("%-10s %c%d, r%d(r%d)", mnemonic,
                         flags[IsFloating] ? 'f' : 'r',
@@ -135,8 +129,10 @@ def template LoadStoreDeclare {{
      */
     class %(class_name)s : public %(base_class)s
     {
-      public:
+      private:
+        %(reg_idx_arr_decl)s;
 
+      public:
         /// Constructor.
         %(class_name)s(ExtMachInst machInst);
 
@@ -152,6 +148,7 @@ def template LoadStoreConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst)
          : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
@@ -410,7 +407,7 @@ def template MiscExecute {{
     Fault %(class_name)s::execute(ExecContext *xc,
                                   Trace::InstRecord *traceData) const
     {
-        Addr EA M5_VAR_USED = 0;
+        GEM5_VAR_USED Addr EA = 0;
         Fault fault = NoFault;
 
         %(fp_enable_check)s;
@@ -464,7 +461,6 @@ def format StoreMemory(memacc_code, ea_code = {{ EA = Rs + disp; }},
 
 def format LoadIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
                      mem_flags = [], inst_flags = []) {{
-    inst_flags += ['IsIndexed']
     (header_output, decoder_output, decode_block, exec_output) = \
         LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
                       decode_template = ImmNopCheckDecode,
@@ -473,7 +469,6 @@ def format LoadIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
 
 def format StoreIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
                      mem_flags = [], inst_flags = []) {{
-    inst_flags += ['IsIndexed']
     (header_output, decoder_output, decode_block, exec_output) = \
         LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
                       exec_template_base = 'Store')
@@ -481,7 +476,7 @@ def format StoreIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
 
 def format LoadFPIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
                      mem_flags = [], inst_flags = []) {{
-    inst_flags += ['IsIndexed', 'IsFloating']
+    inst_flags += ['IsFloating']
     (header_output, decoder_output, decode_block, exec_output) = \
         LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
                       decode_template = ImmNopCheckDecode,
@@ -490,7 +485,7 @@ def format LoadFPIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
 
 def format StoreFPIndexedMemory(memacc_code, ea_code = {{ EA = Rs + Rt; }},
                      mem_flags = [], inst_flags = []) {{
-    inst_flags += ['IsIndexed', 'IsFloating']
+    inst_flags += ['IsFloating']
     (header_output, decoder_output, decode_block, exec_output) = \
         LoadStoreBase(name, Name, ea_code, memacc_code, mem_flags, inst_flags,
                       exec_template_base = 'Store')
@@ -503,8 +498,6 @@ def format LoadUnalignedMemory(memacc_code, ea_code = {{ EA = (Rs + disp) & ~3; 
         uint32_t mem_word = Mem_uw;
         uint32_t unalign_addr = Rs + disp;
         uint32_t byte_offset = unalign_addr & 3;
-        if (GuestByteOrder == BigEndianByteOrder)
-            byte_offset ^= 3;
     '''
 
     memacc_code = decl_code + memacc_code
@@ -521,8 +514,6 @@ def format StoreUnalignedMemory(memacc_code, ea_code = {{ EA = (Rs + disp) & ~3;
         uint32_t mem_word = 0;
         uint32_t unaligned_addr = Rs + disp;
         uint32_t byte_offset = unaligned_addr & 3;
-        if (GuestByteOrder == BigEndianByteOrder)
-            byte_offset ^= 3;
         fault = readMemAtomicLE(xc, traceData, EA, mem_word, memAccessFlags);
     '''
     memacc_code = decl_code + memacc_code + '\nMem = mem_word;\n'

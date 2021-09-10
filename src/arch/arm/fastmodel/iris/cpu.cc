@@ -23,43 +23,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/fastmodel/iris/cpu.hh"
 
 #include "arch/arm/fastmodel/iris/thread_context.hh"
+#include "scx/scx.h"
+#include "sim/serialize.hh"
+
+namespace gem5
+{
 
 namespace Iris
 {
 
-BaseCPU::BaseCPU(BaseCPUParams *params, sc_core::sc_module *_evs) :
-    ::BaseCPU::BaseCPU(params), evs(_evs),
-    clockEvent(nullptr), periodAttribute(nullptr)
+BaseCPU::BaseCPU(const BaseCPUParams &params, sc_core::sc_module *_evs) :
+    gem5::BaseCPU::BaseCPU(params), evs(_evs),
+    evs_base_cpu(dynamic_cast<Iris::BaseCpuEvs *>(_evs))
 {
-    sc_core::sc_attr_base *base;
+    panic_if(!evs_base_cpu, "EVS should be of type BaseCpuEvs");
 
-    const auto &event_vec = evs->get_child_events();
-    auto event_it = std::find_if(event_vec.begin(), event_vec.end(),
-            [](const sc_core::sc_event *e) -> bool {
-                return e->basename() == ClockEventName; });
-    if (event_it != event_vec.end())
-        clockEvent = *event_it;
-
-    base = evs->get_attribute(PeriodAttributeName);
-    periodAttribute = dynamic_cast<sc_core::sc_attribute<Tick> *>(base);
-    panic_if(base && !periodAttribute,
-            "The EVS clock period attribute is not of type "
-            "sc_attribute<Tick>.");
-
-    base = evs->get_attribute(SendFunctionalAttributeName);
-    sendFunctional =
-        dynamic_cast<sc_core::sc_attribute<PortProxy::SendFunctionalFunc> *>(
-                base);
-    panic_if(base && !sendFunctional,
-            "The EVS send functional attribute is not of type "
-            "sc_attribute<PortProxy::SendFunctionalFunc>.");
+    // Make sure fast model knows we're using debugging mechanisms to control
+    // the simulation, and it shouldn't shut down if simulation time stops
+    // for some reason. Despite the misleading name, this doesn't start a CADI
+    // server because it's first parameter is false.
+    scx::scx_start_cadi_server(false, false, true);
 }
 
 BaseCPU::~BaseCPU()
@@ -78,4 +66,19 @@ BaseCPU::totalInsts() const
     return count;
 }
 
+void
+BaseCPU::init()
+{
+    gem5::BaseCPU::init();
+    for (auto *tc: threadContexts)
+        tc->initMemProxies(tc);
+}
+
+void
+BaseCPU::serializeThread(CheckpointOut &cp, ThreadID tid) const
+{
+    gem5::serialize(*threadContexts[tid], cp);
+}
+
 } // namespace Iris
+} // namespace gem5

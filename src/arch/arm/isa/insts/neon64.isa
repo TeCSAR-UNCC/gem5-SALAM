@@ -34,9 +34,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Giacomo Gabrielli
-//          Mbou Eyole
 
 let {{
 
@@ -49,13 +46,14 @@ let {{
     smallFloatTypes = ("uint32_t",)
 
     zeroSveVecRegUpperPartCode = '''
-        TheISA::ISA::zeroSveVecRegUpperPart(%s,
+        ArmISA::ISA::zeroSveVecRegUpperPart(%s,
             ArmStaticInst::getCurSveVecLen<uint64_t>(xc->tcBase()));
     '''
 
     def threeEqualRegInstX(name, Name, opClass, types, rCount, op,
                            readDest=False, pairwise=False, scalar=False,
-                           byElem=False, decoder='Generic'):
+                           byElem=False, decoder='Generic', complex=False,
+                           extra=''):
         assert (not pairwise) or ((not byElem) and (not scalar))
         global header_output, exec_output, decoders
         eWalkCode = simd64EnabledCheckCode + '''
@@ -88,7 +86,10 @@ let {{
         readDestCode = ''
         if readDest:
             readDestCode = 'destElem = letoh(destReg.elements[i]);'
-        if pairwise:
+
+        if complex:
+            eWalkCode += op
+        elif pairwise:
             eWalkCode += '''
         for (unsigned i = 0; i < eCount; i++) {
             Element srcElem1 = letoh(2 * i < eCount ?
@@ -110,6 +111,7 @@ let {{
                 continue;
             }
             '''
+            eWalkCode += extra
             eWalkCode += '''
         for (unsigned i = 0; i < eCount; i++) {
             %(scalarCheck)s
@@ -132,11 +134,11 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX2RegImmOp" if byElem else "DataX2RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "DataX2RegImmOp" if byElem else "DataX2RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         if byElem:
             header_output += NeonX2RegImmOpDeclare.subst(iop)
@@ -242,11 +244,11 @@ let {{
                     eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;''' % { "reg" : reg }
 
-        iop = InstObjParams(name, Name,
-                            "DataX2RegImmOp" if byElem else "DataX2RegOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "DataX2RegImmOp" if byElem else "DataX2RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         if byElem:
             header_output += NeonX2RegImmOpDeclare.subst(iop)
@@ -330,11 +332,11 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegImmOp" if hasImm else "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "DataX1RegImmOp" if hasImm else "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         if hasImm:
             header_output += NeonX1RegImmOpDeclare.subst(iop)
@@ -351,7 +353,7 @@ let {{
         global header_output, exec_output
         eWalkCode = simd64EnabledCheckCode + '''
         RegVect srcReg1;
-        BigRegVect destReg;
+        BigRegVect destReg = {};
         '''
         destReg = 0 if not hi else 2
         for reg in range(2):
@@ -382,11 +384,11 @@ let {{
             eWalkCode += '''
         AA64FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegImmOp" if hasImm else "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "DataX1RegImmOp" if hasImm else "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         if hasImm:
             header_output += NeonX1RegImmOpDeclare.subst(iop)
@@ -454,11 +456,11 @@ let {{
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
 
-        iop = InstObjParams(name, Name,
-                            "DataX1RegImmOp" if hasImm else "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": 2,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name,
+                               "DataX1RegImmOp" if hasImm else "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": 2,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         if hasImm:
             header_output += NeonX1RegImmOpDeclare.subst(iop)
@@ -490,11 +492,10 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX2RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX2RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX2RegOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -526,11 +527,10 @@ let {{
             eWalkCode += '''
         AA64FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1Reg2ImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1Reg2ImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1Reg2ImmOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -555,7 +555,7 @@ let {{
         %(op)s
         destReg.elements[0] = htole(destElem);
         ''' % { "op" : op }
-        destCnt = rCount / 2
+        destCnt = rCount // 2
         for reg in range(destCnt):
             eWalkCode += '''
         AA64FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
@@ -564,11 +564,10 @@ let {{
             eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1RegOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -611,11 +610,10 @@ let {{
             eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1RegOpDeclare.subst(iop)
         if long:
@@ -632,7 +630,7 @@ let {{
         global header_output, exec_output
         eWalkCode = simd64EnabledCheckCode + '''
         RegVect srcRegs;
-        BigRegVect destReg;
+        BigRegVect destReg = {};
         '''
         for reg in range(rCount):
             eWalkCode += '''
@@ -664,11 +662,10 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1RegOpDeclare.subst(iop)
         exec_output += NeonXUnequalRegOpExecute.subst(iop)
@@ -707,11 +704,10 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataXImmOnlyOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataXImmOnlyOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1RegImmOnlyOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -737,11 +733,10 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1RegOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1RegOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -770,11 +765,10 @@ let {{
                 eWalkCode += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX2RegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX2RegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX2RegImmOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -799,11 +793,10 @@ let {{
             eWalkCode += '''
         AA64FpDestP%(reg)d_uw = letoh(destReg.regs[%(reg)d]);
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX1RegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1RegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX1RegImmOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -830,11 +823,10 @@ let {{
             eWalkCode += '''
         %sDest = srcReg.elements[imm];
         ''' % gprSpec
-        iop = InstObjParams(name, Name,
-                            "DataX1RegImmOp",
-                            { "code": eWalkCode,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX1RegImmOp",
+                               { "code": eWalkCode,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         header_output += NeonX1RegImmOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
         for type in types:
@@ -895,11 +887,10 @@ let {{
                 code += '''
         AA64FpDestP%(reg)d_uw = 0;
         ''' % { "reg" : reg }
-        iop = InstObjParams(name, Name,
-                            "DataX2RegOp",
-                            { "code": code,
-                              "r_count": rCount,
-                              "op_class": opClass }, [])
+        iop = ArmInstObjParams(name, Name, "DataX2RegOp",
+                               { "code": code,
+                                 "r_count": rCount,
+                                 "op_class": opClass }, [])
         iop.snippets["code"] += zeroSveVecRegUpperPartCode % "AA64FpDest"
         header_output += NeonX2RegOpDeclare.subst(iop)
         exec_output += NeonXEqualRegOpExecute.subst(iop)
@@ -978,6 +969,119 @@ let {{
                        True)
     threeEqualRegInstX("bsl", "BslQX", "SimdAluOp", ("uint64_t",), 4, bslCode,
                        True)
+
+    # FCADD
+    fcaddCode = '''
+        bool rot = bits(machInst, 12);
+        Element el1;
+        Element el3;
+        for (int i = 0; i < eCount/2; ++i) {
+            FPSCR fpscr = (FPSCR) FpscrExc;
+
+            Element srcElem1_1 = letoh(srcReg1.elements[2*i]);
+            Element srcElem1_2 = letoh(srcReg1.elements[2*i+1]);
+            Element srcElem2_1 = letoh(srcReg2.elements[2*i]);
+            Element srcElem2_2 = letoh(srcReg2.elements[2*i+1]);
+            Element destElem_1;
+            Element destElem_2;
+            if (rot) {
+                el1 = srcElem2_2;
+                el3 = fplibNeg<Element>(srcElem2_1);
+            } else {
+                el1 = fplibNeg<Element>(srcElem2_2);
+                el3 = srcElem2_1;
+            }
+
+            destElem_1 = fplibAdd<Element>(srcElem1_1, el1, fpscr);
+            destElem_2 = fplibAdd<Element>(srcElem1_2, el3, fpscr);
+
+            FpscrExc = fpscr;
+
+            destReg.elements[2*i] = htole(destElem_1);
+            destReg.elements[2*i+1] = htole(destElem_2);
+         }
+         '''
+
+    threeEqualRegInstX("fcadd", "FcaddDX", "SimdFloatAddOp",
+                            ("uint16_t", "uint32_t"), 2,
+                            fcaddCode, complex=True)
+    threeEqualRegInstX("fcadd", "FcaddQX", "SimdFloatAddOp", floatTypes, 4,
+                       fcaddCode, complex=True)
+
+    fcmlaCode = '''
+        uint8_t rot = bits(machInst, %(rot)s);
+        Element el1;
+        Element el2;
+        Element el3;
+        Element el4;
+        for (int i = 0; i < eCount/2; ++i) {
+            FPSCR fpscr = (FPSCR) FpscrExc;
+
+            Element srcElem1_1 = letoh(srcReg1.elements[2*i]);
+            Element srcElem1_2 = letoh(srcReg1.elements[2*i+1]);
+            Element srcElem2_1 = letoh(srcReg2.elements[2* %(index)s]);
+            Element srcElem2_2 = letoh(srcReg2.elements[2* %(index)s +1]);
+            Element destElem_1 = letoh(destReg.elements[2*i]);
+            Element destElem_2 = letoh(destReg.elements[2*i+1]);
+
+            switch (rot) {
+              case 0x0:
+                {
+                  el1 = srcElem2_1;
+                  el2 = srcElem1_1;
+                  el3 = srcElem2_2;
+                  el4 = srcElem1_1;
+                  break;
+                }
+              case 0x1:
+                {
+                  el1 = fplibNeg<Element>(srcElem2_2);
+                  el2 = srcElem1_2;
+                  el3 = srcElem2_1;
+                  el4 = srcElem1_2;
+                  break;
+                }
+              case 0x2:
+                {
+                  el1 = fplibNeg<Element>(srcElem2_1);
+                  el2 = srcElem1_1;
+                  el3 = fplibNeg<Element>(srcElem2_2);
+                  el4 = srcElem1_1;
+                  break;
+                }
+              case 0x3:
+                {
+                  el1 = srcElem2_2;
+                  el2 = srcElem1_2;
+                  el3 = fplibNeg<Element>(srcElem2_1);
+                  el4 = srcElem1_2;
+                  break;
+                }
+            }
+            destElem_1 = fplibMulAdd<Element>(destElem_1, el2, el1, fpscr);
+            destElem_2 = fplibMulAdd<Element>(destElem_2, el4, el3, fpscr);
+
+            FpscrExc = fpscr;
+
+            destReg.elements[2*i] = htole(destElem_1);
+            destReg.elements[2*i+1] = htole(destElem_2);
+         }
+         '''
+    # FCMLA (by element)
+    fcmla_imm = fcmlaCode % {'rot': '14, 13', 'index': 'imm'}
+    threeEqualRegInstX("fcmla", "FcmlaElemDX", "SimdFloatMultAccOp",
+                        ("uint16_t", "uint32_t"), 2, fcmla_imm, True,
+                        byElem=True, complex=True)
+    threeEqualRegInstX("fcmla", "FcmlaElemQX", "SimdFloatMultAccOp",
+                       floatTypes, 4, fcmla_imm, True, byElem=True,
+                       complex=True)
+    # FCMLA (vector)
+    fcmla_vec = fcmlaCode % {'rot': '12, 11', 'index': 'i'}
+    threeEqualRegInstX("fcmla", "FcmlaDX", "SimdFloatMultAccOp",
+                       ("uint16_t", "uint32_t"), 2, fcmla_vec, True,
+                       complex=True)
+    threeEqualRegInstX("fcmla", "FcmlaQX", "SimdFloatMultAccOp",
+                       floatTypes, 4, fcmla_vec, True, complex=True)
     # CLS
     clsCode = '''
             unsigned count = 0;
@@ -2223,7 +2327,81 @@ let {{
                      sqnegCode)
     twoEqualRegInstX("sqneg", "SqnegScX", "SimdAluOp", signedTypes, 4,
                      sqnegCode, scalar=True)
-    # SQRDMULH (by element)
+    sqrdmCode = '''
+
+          FPSCR fpscr = (FPSCR) FpscrQc;
+          int nbits = sizeof(Element)*8;
+
+          auto val_max = std::numeric_limits<Element>::max();
+          auto val_min = std::numeric_limits<Element>::min();
+          BigElement unsat_value = ((BigElement)destElem << nbits) %(code)s
+                ((BigElement)srcElem1 * (BigElement)srcElem2 * 2) +
+                ((BigElement)1 << (nbits - 1));
+          unsat_value >>= nbits;
+
+          if (unsat_value > val_max) {
+              fpscr.qc = 1;
+              destElem = val_max;
+          } else if (unsat_value < val_min) {
+              fpscr.qc = 1;
+              destElem = val_min;
+          } else {
+              destElem = unsat_value;
+          }
+          FpscrQc = fpscr;
+    '''
+    code_add = "+"
+    sqrdmlahCode = sqrdmCode % {'code': code_add}
+    rdm_check = '''
+      int sz = bits(machInst, 23, 22);
+      AA64ISAR0 isar0 = xc->tcBase()->readMiscReg( MISCREG_ID_AA64ISAR0_EL1);
+      if (!isar0.rdm || sz == 3 || sz == 0)
+          return std::make_shared<UndefinedInstruction>(machInst, true);
+      typedef __int128_t BigElement;
+    '''
+    threeEqualRegInstX("sqrdmlah", "SqrdmlahElemDX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 2, sqrdmlahCode, byElem=True,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlah", "SqrdmlahElemQX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlahCode, byElem=True,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlah", "SqrdmlahElemScX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlahCode, byElem=True,
+                       readDest=True, scalar=True, extra=rdm_check)
+    # SQRDMLAH (vector)
+    threeEqualRegInstX("sqrdmlah", "SqrdmlahDX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 2, sqrdmlahCode,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlah", "SqrdmlahQX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlahCode,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlah", "SqrdmlahScX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlahCode, scalar=True,
+                       readDest=True, extra=rdm_check)
+    # SQRDMLSH (by element)
+    code_sub = "-"
+    sqrdmlshCode = sqrdmCode % {'code': code_sub}
+
+    threeEqualRegInstX("sqrdmlsh", "SqrdmlshElemDX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 2, sqrdmlshCode, byElem=True,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlsh", "SqrdmlshElemQX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlshCode, byElem=True,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlsh", "SqrdmlshElemScX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlshCode, byElem=True,
+                       readDest=True, scalar=True, extra=rdm_check)
+    # SQRDMLSH (vector)
+    threeEqualRegInstX("sqrdmlsh", "SqrdmlshDX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 2, sqrdmlshCode,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlsh", "SqrdmlshQX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlshCode,
+                       readDest=True, extra=rdm_check)
+    threeEqualRegInstX("sqrdmlsh", "SqrdmlshScX", "SimdMultOp",
+                       ("int16_t", "int32_t"), 4, sqrdmlshCode, scalar=True,
+                       readDest=True, extra=rdm_check)
+    # SQRDMULby element)
     sqrdmulhCode = '''
             FPSCR fpscr = (FPSCR) FpscrQc;
             destElem = (2 * (int64_t)srcElem1 * (int64_t)srcElem2 +
@@ -3388,12 +3566,13 @@ let {{
     threeRegScrambleInstX("zip2", "Zip2QX", "SimdAluOp", unsignedTypes, 4,
                           zipCode % "eCount / 2")
 
-    for decoderFlavour, type_dict in decoders.iteritems():
+    for decoderFlavor, type_dict in decoders.items():
         header_output += '''
-        class %(decoder_flavour)sDecoder {
-        public:
-        ''' % { "decoder_flavour" : decoderFlavour }
-        for type,name in type_dict.iteritems():
+        class %(decoder_flavor)sDecoder
+        {
+          public:
+        ''' % { "decoder_flavor" : decoderFlavor }
+        for type,name in type_dict.items():
             header_output += '''
             template<typename Elem> using %(type)s = %(new_name)s<Elem>;''' % {
                "type" : type, "new_name" : name

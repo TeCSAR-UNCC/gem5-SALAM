@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ivan Pizarro
  */
 
 /** Implementation of the 'Proactive Instruction Fetch' prefetcher
@@ -42,12 +40,20 @@
 #include <deque>
 #include <vector>
 
+#include "base/circular_queue.hh"
 #include "mem/cache/prefetch/associative_set.hh"
 #include "mem/cache/prefetch/queued.hh"
 
+namespace gem5
+{
+
 struct PIFPrefetcherParams;
 
-class PIFPrefetcher : public QueuedPrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class PIF : public Queued
 {
     private:
         /** Number of preceding and subsequent spatial addresses to compact */
@@ -55,8 +61,6 @@ class PIFPrefetcher : public QueuedPrefetcher
         const unsigned int succSize;
         /** Number of entries used for the temporal compactor */
         const unsigned int maxCompactorEntries;
-        /** Max number of entries to be used in the Stream Address Buffer */
-        const unsigned int maxStreamAddressBufferEntries;
 
         /**
          * The compactor tracks retired instructions addresses, leveraging the
@@ -72,7 +76,8 @@ class PIFPrefetcher : public QueuedPrefetcher
          * The temporal compactor tracks a small number of the
          * most-recently-observed spatial region records.
          */
-        struct CompactorEntry {
+        struct CompactorEntry
+        {
             Addr trigger;
             std::vector<bool> prec;
             std::vector<bool> succ;
@@ -127,12 +132,12 @@ class PIFPrefetcher : public QueuedPrefetcher
          * History buffer is a circular buffer that stores the sequence of
          * retired instructions in FIFO order.
          */
-        std::vector<CompactorEntry> historyBuffer;
-        unsigned int historyBufferTail;
+        using HistoryBuffer = CircularQueue<CompactorEntry>;
+        HistoryBuffer historyBuffer;
 
         struct IndexEntry : public TaggedEntry
         {
-            unsigned int historyIndex;
+            HistoryBuffer::iterator historyIt;
         };
         /**
          * The index table is a small cache-like structure that facilitates
@@ -146,7 +151,7 @@ class PIFPrefetcher : public QueuedPrefetcher
          * history buffer, initiallly set to the pointer taken from the index
          * table
          */
-        std::deque<CompactorEntry*> streamAddressBuffer;
+        CircularQueue<HistoryBuffer::iterator> streamAddressBuffer;
 
         /**
          * Updates the prefetcher structures upon an instruction retired
@@ -160,13 +165,13 @@ class PIFPrefetcher : public QueuedPrefetcher
         class PrefetchListenerPC : public ProbeListenerArgBase<Addr>
         {
           public:
-            PrefetchListenerPC(PIFPrefetcher &_parent, ProbeManager *pm,
+            PrefetchListenerPC(PIF &_parent, ProbeManager *pm,
                              const std::string &name)
                 : ProbeListenerArgBase(pm, name),
                   parent(_parent) {}
             void notify(const Addr& pc) override;
           protected:
-            PIFPrefetcher &parent;
+            PIF &parent;
         };
 
         /** Array of probe listeners */
@@ -174,8 +179,8 @@ class PIFPrefetcher : public QueuedPrefetcher
 
 
     public:
-        PIFPrefetcher(const PIFPrefetcherParams *p);
-        ~PIFPrefetcher() {}
+        PIF(const PIFPrefetcherParams &p);
+        ~PIF() = default;
 
         void calculatePrefetch(const PrefetchInfo &pfi,
                                std::vector<AddrPriority> &addresses);
@@ -187,5 +192,8 @@ class PIFPrefetcher : public QueuedPrefetcher
          */
         void addEventProbeRetiredInsts(SimObject *obj, const char *name);
 };
+
+} // namespace prefetch
+} // namespace gem5
 
 #endif // __MEM_CACHE_PREFETCH_PIF_HH__

@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #include "cpu/pc_event.hh"
@@ -38,10 +35,11 @@
 #include "base/debug.hh"
 #include "base/trace.hh"
 #include "debug/PCEvent.hh"
-#include "sim/core.hh"
+#include "sim/cur_tick.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
 
 PCEventQueue::PCEventQueue()
 {}
@@ -73,7 +71,7 @@ bool
 PCEventQueue::schedule(PCEvent *event)
 {
     pcMap.push_back(event);
-    sort(pcMap.begin(), pcMap.end(), MapCompare());
+    std::sort(pcMap.begin(), pcMap.end(), MapCompare());
 
     DPRINTF(PCEvent, "PC based event scheduled for %#x: %s\n",
             event->pc(), event->descr());
@@ -127,7 +125,7 @@ BreakPCEvent::process(ThreadContext *tc)
 {
     StringWrap name("break_event");
     DPRINTFN("break event %s triggered\n", descr());
-    Debug::breakpoint();
+    debug::breakpoint();
     if (remove)
         delete this;
 }
@@ -143,3 +141,5 @@ PanicPCEvent::process(ThreadContext *tc)
     StringWrap name("panic_event");
     panic(descr());
 }
+
+} // namespace gem5

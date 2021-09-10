@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __CPU_NATIVETRACE_HH__
@@ -40,6 +38,9 @@
 #include "base/types.hh"
 #include "cpu/exetrace.hh"
 #include "cpu/static_inst.hh"
+
+namespace gem5
+{
 
 class ThreadContext;
 
@@ -74,7 +75,7 @@ class NativeTrace : public ExeTracer
 
   public:
 
-    NativeTrace(const Params *p);
+    NativeTrace(const Params &p);
     virtual ~NativeTrace() {}
 
     NativeTraceRecord *
@@ -117,5 +118,6 @@ class NativeTrace : public ExeTracer
 };
 
 } // namespace Trace
+} // namespace gem5
 
 #endif // __CPU_NATIVETRACE_HH__

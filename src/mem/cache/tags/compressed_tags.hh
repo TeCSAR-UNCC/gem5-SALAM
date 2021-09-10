@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /**
@@ -40,6 +38,9 @@
 
 #include "mem/cache/tags/sector_tags.hh"
 #include "mem/cache/tags/super_blk.hh"
+
+namespace gem5
+{
 
 class BaseCache;
 class CacheBlk;
@@ -62,10 +63,6 @@ struct CompressedTagsParams;
  * tag, to virtually implement compression without increasing the complexity
  * of the simulator.
  *
- * This is a simple implementation of cache compression, where superblocks
- * can only have at most numBlocksPerSector compressed blocks, each compressed
- * to at least (100/numBlocksPerSector)% of its size.
- *
  * numBlocksPerSector holds the maximum number of blocks a superblock with
  * the best possible compression factor would hold. It is equivalent to CR
  * from the previous definition.
@@ -85,7 +82,7 @@ class CompressedTags : public SectorTags
     /**
      * Construct and initialize this tag store.
      */
-    CompressedTags(const Params *p);
+    CompressedTags(const Params &p);
 
     /**
      * Destructor.
@@ -109,15 +106,7 @@ class CompressedTags : public SectorTags
      */
     CacheBlk* findVictim(Addr addr, const bool is_secure,
                          const std::size_t compressed_size,
-                         std::vector<CacheBlk*>& evict_blks) const override;
-
-    /**
-     * Insert the new block into the cache and update replacement data.
-     *
-     * @param pkt Packet holding the address to update
-     * @param blk The block to update.
-     */
-    void insertBlock(const PacketPtr pkt, CacheBlk *blk) override;
+                         std::vector<CacheBlk*>& evict_blks) override;
 
     /**
      * Visit each sub-block in the tags and apply a visitor.
@@ -140,5 +129,7 @@ class CompressedTags : public SectorTags
      */
     bool anyBlk(std::function<bool(CacheBlk &)> visitor) override;
 };
+
+} // namespace gem5
 
 #endif //__MEM_CACHE_TAGS_COMPRESSED_TAGS_HH__

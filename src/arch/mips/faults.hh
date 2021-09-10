@@ -25,29 +25,29 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Korey Sewell
- *          Jaidev Patwardhan
- *          Zhengxing Li
- *          Deyuan Guo
  */
 
 #ifndef __MIPS_FAULTS_HH__
 #define __MIPS_FAULTS_HH__
 
 #include "arch/mips/pra_constants.hh"
+#include "arch/mips/regs/misc.hh"
+#include "cpu/null_static_inst.hh"
 #include "cpu/thread_context.hh"
 #include "debug/MipsPRA.hh"
 #include "sim/faults.hh"
 #include "sim/full_system.hh"
+
+namespace gem5
+{
 
 namespace MipsISA
 {
 
 typedef Addr FaultVect;
 
-enum ExcCode {
+enum ExcCode
+{
     // A dummy value to use when the code isn't defined or doesn't matter.
     ExcCodeDummy = 0,
 
@@ -103,7 +103,7 @@ class MipsFaultBase : public FaultBase
     }
 
     void invoke(ThreadContext * tc, const StaticInstPtr &inst =
-                StaticInst::nullStaticInstPtr);
+                nullStaticInstPtr);
 };
 
 template <typename T>
@@ -135,7 +135,7 @@ class ResetFault : public MipsFault<ResetFault>
 {
   public:
     void invoke(ThreadContext * tc, const StaticInstPtr &inst =
-                StaticInst::nullStaticInstPtr);
+                nullStaticInstPtr);
 
 };
 
@@ -143,14 +143,14 @@ class SoftResetFault : public MipsFault<SoftResetFault>
 {
   public:
     void invoke(ThreadContext * tc, const StaticInstPtr &inst =
-                StaticInst::nullStaticInstPtr);
+                nullStaticInstPtr);
 };
 
 class NonMaskableInterrupt : public MipsFault<NonMaskableInterrupt>
 {
   public:
     void invoke(ThreadContext * tc, const StaticInstPtr &inst =
-                StaticInst::nullStaticInstPtr);
+                nullStaticInstPtr);
 };
 
 class CoprocessorUnusableFault : public MipsFault<CoprocessorUnusableFault>
@@ -163,7 +163,7 @@ class CoprocessorUnusableFault : public MipsFault<CoprocessorUnusableFault>
 
     void
     invoke(ThreadContext * tc, const StaticInstPtr &inst =
-           StaticInst::nullStaticInstPtr)
+           nullStaticInstPtr)
     {
         MipsFault<CoprocessorUnusableFault>::invoke(tc, inst);
         if (FullSystem) {
@@ -198,7 +198,7 @@ class AddressFault : public MipsFault<T>
 
     void
     invoke(ThreadContext * tc, const StaticInstPtr &inst =
-           StaticInst::nullStaticInstPtr)
+           nullStaticInstPtr)
     {
         MipsFault<T>::invoke(tc, inst);
         if (FullSystem)
@@ -251,7 +251,7 @@ class TlbFault : public AddressFault<T>
 
     void
     invoke(ThreadContext * tc, const StaticInstPtr &inst =
-           StaticInst::nullStaticInstPtr)
+           nullStaticInstPtr)
     {
         if (FullSystem) {
             DPRINTF(MipsPRA, "Fault %s encountered.\n", this->name());
@@ -328,5 +328,6 @@ template<> MipsFaultBase::FaultVals MipsFault<TlbModifiedFault>::vals;
 
 
 } // namespace MipsISA
+} // namespace gem5
 
 #endif // __MIPS_FAULTS_HH__

@@ -32,8 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 categories = ["convert_integer_to_floating_point",
               "convert_mmx_integer_to_floating_point",
@@ -43,5 +41,5 @@ microcode = '''
 # 128 bit multimedia and scientific conversion instructions
 '''
 for category in categories:
-    exec "import %s as cat" % category
+    exec("from . import %s as cat" % category)
     microcode += cat.microcode

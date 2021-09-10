@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2013 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -59,13 +71,13 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   // STATES
   state_declaration(State, desc="Cache states", default="L1Cache_State_I") {
     // Base states
-    I, AccessPermission:Invalid, desc="a L1 cache entry Idle";
-    S, AccessPermission:Read_Only, desc="a L1 cache entry Shared";
-    SS, AccessPermission:Read_Only, desc="a L1 cache entry Shared";
-    E, AccessPermission:Read_Only, desc="a L1 cache entry Exclusive";
-    EE, AccessPermission:Read_Write, desc="a L1 cache entry Exclusive";
-    M, AccessPermission:Maybe_Stale, desc="a L1 cache entry Modified", format="!b";
-    MM, AccessPermission:Read_Write, desc="a L1 cache entry Modified", format="!b";
+    I, AccessPermission:Invalid, desc="L1 cache entry Idle";
+    S, AccessPermission:Read_Only, desc="Line is present in shared state in L1 and L0";
+    SS, AccessPermission:Read_Only, desc="Line is present in shared state in L1 but not L0";
+    E, AccessPermission:Read_Only, desc="Line is present in exclusive state in L1 and L0";
+    EE, AccessPermission:Read_Write, desc="Line is present in exclusive state in L1 but not L0";
+    M, AccessPermission:Maybe_Stale, desc="Line is present in modified state in L1 and present in L0", format="!b";
+    MM, AccessPermission:Read_Write, desc="Line is present in modified state in L1 but not present in L0", format="!b";
 
     // Transient States
     IS, AccessPermission:Busy, desc="L1 idle, issued GETS, have not seen response yet";
@@ -78,11 +90,11 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     // For all of the following states, invalidate
     // message has been sent to L0 cache. The response
     // from the L0 cache has not been seen yet.
-    S_IL0, AccessPermission:Busy;
-    E_IL0, AccessPermission:Busy;
-    M_IL0, AccessPermission:Busy;
-    MM_IL0, AccessPermission:Read_Write;
-    SM_IL0, AccessPermission:Busy;
+    S_IL0, AccessPermission:Busy, desc="Shared in L1, invalidation sent to L0, have not seen response yet";
+    E_IL0, AccessPermission:Busy, desc="Exclusive in L1, invalidation sent to L0, have not seen response yet";
+    M_IL0, AccessPermission:Busy, desc="Modified in L1, invalidation sent to L0, have not seen response yet";
+    MM_IL0, AccessPermission:Read_Write, desc="Invalidation sent to L0, have not seen response yet";
+    SM_IL0, AccessPermission:Busy, desc="Invalidation sent to L0, have not seen response yet";
   }
 
   // EVENTS
@@ -95,17 +107,14 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     // Responses from the L0 Cache
     // L0 cache received the invalidation message
     // and has sent the data.
-    L0_DataAck;
+    L0_DataAck,      desc="L0 received INV message";
 
     Inv,           desc="Invalidate request from L2 bank";
 
-    // internal generated request
-    // Invalidate the line in L0 due to own requirements
-    L0_Invalidate_Own;
-    // Invalidate the line in L0 due to some other cache's requirements
-    L0_Invalidate_Else;
-    // Invalidate the line in the cache due to some one else / space needs.
-    L1_Replacement;
+    // internally generated requests:
+    L0_Invalidate_Own,  desc="Invalidate line in L0, due to this cache's (L1) requirements";
+    L0_Invalidate_Else, desc="Invalidate line in L0, due to another cache's requirements";
+    L1_Replacement,     desc="Invalidate line in this cache (L1), due to another cache's requirements";
 
     // other requests
     Fwd_GETX,   desc="GETX from other processor";
@@ -121,6 +130,14 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     Ack_all,      desc="Last ack for processor";
 
     WB_Ack,        desc="Ack for replacement";
+
+    // hardware transactional memory
+    L0_DataCopy,     desc="Data Block from L0. Should remain in M state.";
+
+    // L0 cache received the invalidation message and has
+    // sent a NAK (because of htm abort) saying that the data
+    // in L1 is the latest value.
+    L0_DataNak,      desc="L0 received INV message, specifies its data is also stale";
   }
 
   // TYPES
@@ -253,7 +270,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   bool inL0Cache(State state) {
-    if (state == State:S || state == State:E || state == State:M ||
+    if (state == State:S || state == State:E ||
+        state == State:M || state == State:SM ||
         state == State:S_IL0 || state == State:E_IL0 ||
         state == State:M_IL0 || state == State:SM_IL0) {
         return true;
@@ -268,7 +286,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   out_port(bufferToL0_out, CoherenceMsg, bufferToL0);
 
   // Response From the L2 Cache to this L1 cache
-  in_port(responseNetwork_in, ResponseMsg, responseFromL2, rank = 3) {
+  in_port(responseNetwork_in, ResponseMsg, responseFromL2, rank = 2) {
     if (responseNetwork_in.isReady(clockEdge())) {
       peek(responseNetwork_in, ResponseMsg) {
         assert(in_msg.Destination.isElement(machineID));
@@ -306,7 +324,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   // Request to this L1 cache from the shared L2
-  in_port(requestNetwork_in, RequestMsg, requestFromL2, rank = 2) {
+  in_port(requestNetwork_in, RequestMsg, requestFromL2, rank = 1) {
     if(requestNetwork_in.isReady(clockEdge())) {
       peek(requestNetwork_in, RequestMsg) {
         assert(in_msg.Destination.isElement(machineID));
@@ -351,6 +369,10 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
 
         if(in_msg.Class == CoherenceClass:INV_DATA) {
             trigger(Event:L0_DataAck, in_msg.addr, cache_entry, tbe);
+        }  else if (in_msg.Class == CoherenceClass:NAK) {
+              trigger(Event:L0_DataNak, in_msg.addr, cache_entry, tbe);
+        }  else if (in_msg.Class == CoherenceClass:PUTX_COPY) {
+              trigger(Event:L0_DataCopy, in_msg.addr, cache_entry, tbe);
         }  else if (in_msg.Class == CoherenceClass:INV_ACK) {
             trigger(Event:L0_Ack, in_msg.addr, cache_entry, tbe);
         }  else {
@@ -396,6 +418,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
                 address, out_msg.Destination);
         out_msg.MessageSize := MessageSizeType:Control;
         out_msg.AccessMode := in_msg.AccessMode;
+        out_msg.Prefetch := in_msg.Prefetch;
       }
     }
   }
@@ -413,6 +436,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
                 address, out_msg.Destination);
         out_msg.MessageSize := MessageSizeType:Control;
         out_msg.AccessMode := in_msg.AccessMode;
+        out_msg.Prefetch := in_msg.Prefetch;
       }
     }
   }
@@ -429,6 +453,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
                 address, out_msg.Destination);
         out_msg.MessageSize := MessageSizeType:Control;
         out_msg.AccessMode := in_msg.AccessMode;
+        out_msg.Prefetch := in_msg.Prefetch;
       }
     }
   }
@@ -544,10 +569,20 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     }
   }
 
-  action(forward_eviction_to_L0, "\cc", desc="sends eviction information to the processor") {
+  action(forward_eviction_to_L0_own, "\cc", desc="sends (own) eviction information to the processor") {
       enqueue(bufferToL0_out, CoherenceMsg, l1_request_latency) {
           out_msg.addr := address;
-          out_msg.Class := CoherenceClass:INV;
+          out_msg.Class := CoherenceClass:INV_OWN;
+          out_msg.Sender := machineID;
+          out_msg.Dest := createMachineID(MachineType:L0Cache, version);
+          out_msg.MessageSize := MessageSizeType:Control;
+      }
+  }
+
+  action(forward_eviction_to_L0_else, "\cce", desc="sends (else) eviction information to the processor") {
+      enqueue(bufferToL0_out, CoherenceMsg, l1_request_latency) {
+          out_msg.addr := address;
+          out_msg.Class := CoherenceClass:INV_ELSE;
           out_msg.Sender := machineID;
           out_msg.Dest := createMachineID(MachineType:L0Cache, version);
           out_msg.MessageSize := MessageSizeType:Control;
@@ -608,6 +643,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
           out_msg.DataBlk := cache_entry.DataBlk;
           out_msg.MessageSize := MessageSizeType:Response_Data;
       }
+
+      cache.setMRU(address);
   }
 
   action(hh_xdata_to_l0, "\h", desc="If not prefetch, notify sequencer that store completed.") {
@@ -624,6 +661,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
 
           //cache_entry.Dirty := true;
       }
+
+      cache.setMRU(address);
   }
 
   action(h_stale_data_to_l0, "hs", desc="If not prefetch, send data to the L0 cache.") {
@@ -684,6 +723,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     peek(responseNetwork_in, ResponseMsg) {
       assert(is_valid(cache_entry));
       cache_entry.DataBlk := in_msg.DataBlk;
+      cache_entry.Dirty := in_msg.Dirty;
     }
   }
 
@@ -734,11 +774,11 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   action(uu_profileMiss, "\um", desc="Profile the demand miss") {
-      ++cache.demand_misses;
+    cache.profileDemandMiss();
   }
 
   action(uu_profileHit, "\uh", desc="Profile the demand hit") {
-      ++cache.demand_hits;
+    cache.profileDemandHit();
   }
 
 
@@ -780,18 +820,6 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     k_popL0RequestQueue;
   }
 
-  transition(EE, Load, E) {
-    hh_xdata_to_l0;
-    uu_profileHit;
-    k_popL0RequestQueue;
-  }
-
-  transition(MM, Load, M) {
-    hh_xdata_to_l0;
-    uu_profileHit;
-    k_popL0RequestQueue;
-  }
-
   transition({S,SS}, Store, SM) {
     i_allocateTBE;
     c_issueUPGRADE;
@@ -803,8 +831,12 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     ff_deallocateCacheBlock;
   }
 
-  transition(S, {L0_Invalidate_Own, L0_Invalidate_Else}, S_IL0) {
-    forward_eviction_to_L0;
+  transition(S, L0_Invalidate_Own, S_IL0) {
+    forward_eviction_to_L0_own;
+  }
+
+  transition(S, L0_Invalidate_Else, S_IL0) {
+    forward_eviction_to_L0_else;
   }
 
   transition(SS, Inv, I) {
@@ -847,8 +879,12 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     l_popL2RequestQueue;
   }
 
-  transition(E, {L0_Invalidate_Own, L0_Invalidate_Else}, E_IL0) {
-    forward_eviction_to_L0;
+  transition(E, L0_Invalidate_Own, E_IL0) {
+    forward_eviction_to_L0_own;
+  }
+
+  transition(E, L0_Invalidate_Else, E_IL0) {
+    forward_eviction_to_L0_else;
   }
 
   // Transitions from Modified
@@ -893,8 +929,12 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     l_popL2RequestQueue;
   }
 
-  transition(M, {L0_Invalidate_Own, L0_Invalidate_Else}, M_IL0) {
-    forward_eviction_to_L0;
+  transition(M, L0_Invalidate_Own, M_IL0) {
+    forward_eviction_to_L0_own;
+  }
+
+  transition(M, L0_Invalidate_Else, M_IL0) {
+    forward_eviction_to_L0_else;
   }
 
   transition(M_I, Fwd_GETX, SINK_WB_ACK) {
@@ -961,7 +1001,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   // Transitions from IM
-  transition({IM,SM}, Inv, IM) {
+  transition(IM, Inv, IM) {
     fi_sendInvAck;
     l_popL2RequestQueue;
   }
@@ -994,8 +1034,8 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     kd_wakeUpDependents;
   }
 
-  transition(SM, L0_Invalidate_Else, SM_IL0) {
-    forward_eviction_to_L0;
+  transition(SM, {Inv,L0_Invalidate_Else}, SM_IL0) {
+    forward_eviction_to_L0_else;
   }
 
   transition(SINK_WB_ACK, Inv){
@@ -1052,5 +1092,56 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
 
   transition({S_IL0, M_IL0, E_IL0, MM_IL0}, {Inv, Fwd_GETX, Fwd_GETS}) {
     z2_stallAndWaitL2Queue;
+  }
+
+  // hardware transactional memory
+
+  // If a transaction has aborted, the L0 could re-request
+  // data which is in E or EE state in L1.
+  transition({EE,E}, Load, E) {
+    hh_xdata_to_l0;
+    uu_profileHit;
+    k_popL0RequestQueue;
+  }
+
+  // If a transaction has aborted, the L0 could re-request
+  // data which is in M or MM state in L1.
+  transition({MM,M}, Load, M) {
+    hh_xdata_to_l0;
+    uu_profileHit;
+    k_popL0RequestQueue;
+  }
+
+  // If a transaction has aborted, the L0 could re-request
+  // data which is in M state in L1.
+  transition({E,M}, Store, M) {
+    hh_xdata_to_l0;
+    uu_profileHit;
+    k_popL0RequestQueue;
+  }
+
+  // A transaction may have tried to modify a cache block in M state with
+  // non-speculative (pre-transactional) data. This needs to be copied
+  // to the L1 before any further modifications occur at the L0.
+  transition({M,E}, L0_DataCopy, M) {
+    u_writeDataFromL0Request;
+    k_popL0RequestQueue;
+  }
+
+  transition({M_IL0, E_IL0}, L0_DataCopy, M_IL0) {
+    u_writeDataFromL0Request;
+    k_popL0RequestQueue;
+  }
+
+  // A NAK from the L0 means that the L0 invalidated its
+  // modified line (due to an abort) so it is therefore necessary
+  // to use the L1's correct version instead
+  transition({M_IL0, E_IL0}, L0_DataNak, MM) {
+    k_popL0RequestQueue;
+    kd_wakeUpDependents;
+  }
+
+  transition(I, L1_Replacement) {
+    ff_deallocateCacheBlock;
   }
 }

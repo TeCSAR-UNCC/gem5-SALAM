@@ -22,8 +22,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.objects.SystemC import SystemC_ScModule
 from m5.params import *
@@ -39,7 +37,7 @@ class Gem5ToTlmBridgeBase(SystemC_ScModule):
 
     system = Param.System(Parent.any, "system")
 
-    gem5 = SlavePort('gem5 slave port')
+    gem5 = ResponsePort('gem5 response port')
     addr_ranges = VectorParam.AddrRange([],
             'Addresses served by this port\'s TLM side')
 
@@ -51,7 +49,7 @@ class TlmToGem5BridgeBase(SystemC_ScModule):
 
     system = Param.System(Parent.any, "system")
 
-    gem5 = MasterPort('gem5 master port')
+    gem5 = RequestPort('gem5 request port')
 
 
 class Gem5ToTlmBridge32(Gem5ToTlmBridgeBase):
@@ -70,6 +68,30 @@ class Gem5ToTlmBridge64(Gem5ToTlmBridgeBase):
 
     tlm = TlmInitiatorSocket(64, 'TLM initiator socket')
 
+class Gem5ToTlmBridge128(Gem5ToTlmBridgeBase):
+    type = 'Gem5ToTlmBridge128'
+    cxx_template_params = [ 'unsigned int BITWIDTH' ]
+    cxx_class = 'sc_gem5::Gem5ToTlmBridge<128>'
+    cxx_header = 'systemc/tlm_bridge/gem5_to_tlm.hh'
+
+    tlm = TlmInitiatorSocket(128, 'TLM initiator socket')
+
+class Gem5ToTlmBridge256(Gem5ToTlmBridgeBase):
+    type = 'Gem5ToTlmBridge256'
+    cxx_template_params = [ 'unsigned int BITWIDTH' ]
+    cxx_class = 'sc_gem5::Gem5ToTlmBridge<256>'
+    cxx_header = 'systemc/tlm_bridge/gem5_to_tlm.hh'
+
+    tlm = TlmInitiatorSocket(256, 'TLM initiator socket')
+
+class Gem5ToTlmBridge512(Gem5ToTlmBridgeBase):
+    type = 'Gem5ToTlmBridge512'
+    cxx_template_params = [ 'unsigned int BITWIDTH' ]
+    cxx_class = 'sc_gem5::Gem5ToTlmBridge<512>'
+    cxx_header = 'systemc/tlm_bridge/gem5_to_tlm.hh'
+
+    tlm = TlmInitiatorSocket(512, 'TLM initiator socket')
+
 
 class TlmToGem5Bridge32(TlmToGem5BridgeBase):
     type = 'TlmToGem5Bridge32'
@@ -86,3 +108,27 @@ class TlmToGem5Bridge64(TlmToGem5BridgeBase):
     cxx_header = 'systemc/tlm_bridge/tlm_to_gem5.hh'
 
     tlm = TlmTargetSocket(64, 'TLM target socket')
+
+class TlmToGem5Bridge128(TlmToGem5BridgeBase):
+    type = 'TlmToGem5Bridge128'
+    cxx_template_params = [ 'unsigned int BITWIDTH' ]
+    cxx_class = 'sc_gem5::TlmToGem5Bridge<128>'
+    cxx_header = 'systemc/tlm_bridge/tlm_to_gem5.hh'
+
+    tlm = TlmTargetSocket(128, 'TLM target socket')
+
+class TlmToGem5Bridge256(TlmToGem5BridgeBase):
+    type = 'TlmToGem5Bridge256'
+    cxx_template_params = [ 'unsigned int BITWIDTH' ]
+    cxx_class = 'sc_gem5::TlmToGem5Bridge<256>'
+    cxx_header = 'systemc/tlm_bridge/tlm_to_gem5.hh'
+
+    tlm = TlmTargetSocket(256, 'TLM target socket')
+
+class TlmToGem5Bridge512(TlmToGem5BridgeBase):
+    type = 'TlmToGem5Bridge512'
+    cxx_template_params = [ 'unsigned int BITWIDTH' ]
+    cxx_class = 'sc_gem5::TlmToGem5Bridge<512>'
+    cxx_header = 'systemc/tlm_bridge/tlm_to_gem5.hh'
+
+    tlm = TlmTargetSocket(512, 'TLM target socket')

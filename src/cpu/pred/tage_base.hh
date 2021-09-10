@@ -29,9 +29,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vignyan Reddy, Dibakar Gope and Arthur Perais,
- * from André Seznec's code.
  */
 
 /* @file
@@ -48,21 +45,27 @@
  * one that predicted when the prediction is incorrect.
  */
 
-#ifndef __CPU_PRED_TAGE_BASE
-#define __CPU_PRED_TAGE_BASE
+#ifndef __CPU_PRED_TAGE_BASE_HH__
+#define __CPU_PRED_TAGE_BASE_HH__
 
 #include <vector>
 
 #include "base/statistics.hh"
+#include "cpu/null_static_inst.hh"
 #include "cpu/static_inst.hh"
 #include "params/TAGEBase.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
 class TAGEBase : public SimObject
 {
   public:
-    TAGEBase(const TAGEBaseParams *p);
-    void regStats() override;
+    TAGEBase(const TAGEBaseParams &p);
     void init() override;
 
   protected:
@@ -105,14 +108,15 @@ class TAGEBase : public SimObject
             comp = (comp << 1) | h[0];
             comp ^= h[origLength] << outpoint;
             comp ^= (comp >> compLength);
-            comp &= (ULL(1) << compLength) - 1;
+            comp &= (1ULL << compLength) - 1;
         }
     };
 
   public:
 
     // provider type
-    enum {
+    enum
+    {
         BIMODAL_ONLY = 0,
         TAGE_LONGEST_MATCH,
         BIMODAL_ALT_MATCH,
@@ -290,7 +294,7 @@ class TAGEBase : public SimObject
     virtual void updateHistories(
         ThreadID tid, Addr branch_pc, bool taken, BranchInfo* b,
         bool speculative,
-        const StaticInstPtr & inst = StaticInst::nullStaticInstPtr,
+        const StaticInstPtr & inst = nullStaticInstPtr,
         Addr target = MaxAddr);
 
     /**
@@ -435,7 +439,8 @@ class TAGEBase : public SimObject
 
     // Keep per-thread histories to
     // support SMT.
-    struct ThreadHistory {
+    struct ThreadHistory
+    {
         // Speculative path history
         // (LSB of branch address)
         int pathHist;
@@ -486,20 +491,27 @@ class TAGEBase : public SimObject
 
     bool initialized;
 
-    // stats
-    Stats::Scalar tageLongestMatchProviderCorrect;
-    Stats::Scalar tageAltMatchProviderCorrect;
-    Stats::Scalar bimodalAltMatchProviderCorrect;
-    Stats::Scalar tageBimodalProviderCorrect;
-    Stats::Scalar tageLongestMatchProviderWrong;
-    Stats::Scalar tageAltMatchProviderWrong;
-    Stats::Scalar bimodalAltMatchProviderWrong;
-    Stats::Scalar tageBimodalProviderWrong;
-    Stats::Scalar tageAltMatchProviderWouldHaveHit;
-    Stats::Scalar tageLongestMatchProviderWouldHaveHit;
+    struct TAGEBaseStats : public statistics::Group
+    {
+        TAGEBaseStats(statistics::Group *parent, unsigned nHistoryTables);
+        // stats
+        statistics::Scalar longestMatchProviderCorrect;
+        statistics::Scalar altMatchProviderCorrect;
+        statistics::Scalar bimodalAltMatchProviderCorrect;
+        statistics::Scalar bimodalProviderCorrect;
+        statistics::Scalar longestMatchProviderWrong;
+        statistics::Scalar altMatchProviderWrong;
+        statistics::Scalar bimodalAltMatchProviderWrong;
+        statistics::Scalar bimodalProviderWrong;
+        statistics::Scalar altMatchProviderWouldHaveHit;
+        statistics::Scalar longestMatchProviderWouldHaveHit;
 
-    Stats::Vector tageLongestMatchProvider;
-    Stats::Vector tageAltMatchProvider;
+        statistics::Vector longestMatchProvider;
+        statistics::Vector altMatchProvider;
+    } stats;
 };
 
-#endif // __CPU_PRED_TAGE_BASE
+} // namespace branch_prediction
+} // namespace gem5
+
+#endif // __CPU_PRED_TAGE_BASE_HH__

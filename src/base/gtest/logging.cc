@@ -25,58 +25,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gtest/gtest.h>
+#include "base/gtest/logging.hh"
 
-#include <array>
-#include <string>
-
-#include "base/cprintf.hh"
-#include "base/logging.hh"
-
-namespace {
-
-// This custom exception type will help prevent fatal exceptions from being
-// caught by other code in gem5 and let them escape to the gtest framework.
-// Unfortunately that results in a somewhat confusing message about an unknown
-// exception being thrown after the panic/fatal message has been printed, but
-// there will at least be some indication what went wrong.
-struct GTestException
-{};
-
-class GTestLogger : public Logger
+namespace gem5
 {
-  public:
-    using Logger::Logger;
 
-  protected:
-    void log(const Loc &loc, std::string s) override { SUCCEED() << s; }
-};
+thread_local GTestLogOutput gtestLogOutput;
 
-class GTestExitLogger : public Logger
+GTestLogOutput::EventHook::EventHook(GTestLogOutput &_stream) : stream(_stream)
 {
-  public:
-    using Logger::Logger;
+    ::testing::UnitTest::GetInstance()->listeners().Append(this);
+}
 
-  protected:
-    void
-    log(const Loc &loc, std::string s) override
-    {
-        ADD_FAILURE_AT(loc.file, loc.line) << s;
-    }
-    // Throw an exception to escape down to the gtest framework.
-    void exit() override { throw GTestException(); }
-};
+GTestLogOutput::EventHook::~EventHook()
+{
+    ::testing::UnitTest::GetInstance()->listeners().Release(this);
+}
 
-GTestExitLogger panicLogger("panic: ");
-GTestExitLogger fatalLogger("fatal: ");
-GTestLogger warnLogger("warn: ");
-GTestLogger infoLogger("info: ");
-GTestLogger hackLogger("hack: ");
+void
+GTestLogOutput::EventHook::OnTestStart(const ::testing::TestInfo &test_info)
+{
+    // Clear out the stream at the start of each test.
+    stream.str("");
+}
 
-} // anonymous namespace
-
-Logger &Logger::getPanic() { return panicLogger; }
-Logger &Logger::getFatal() { return fatalLogger; }
-Logger &Logger::getWarn() { return warnLogger; }
-Logger &Logger::getInfo() { return infoLogger; }
-Logger &Logger::getHack() { return hackLogger; }
+} // namespace gem5

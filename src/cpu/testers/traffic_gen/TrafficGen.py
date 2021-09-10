@@ -32,10 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Thomas Grass
-#          Andreas Hansson
-#          Sascha Bischoff
 
 from m5.params import *
 from m5.objects.BaseTrafficGen import *
@@ -51,6 +47,7 @@ from m5.objects.BaseTrafficGen import *
 class TrafficGen(BaseTrafficGen):
     type = 'TrafficGen'
     cxx_header = "cpu/testers/traffic_gen/traffic_gen.hh"
+    cxx_class = 'gem5::TrafficGen'
 
     # Config file to parse for the state descriptions
     config_file = Param.String("Configuration file describing the behaviour")

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
  #include "mem/cache/prefetch/indirect_memory.hh"
@@ -34,31 +32,31 @@
  #include "mem/cache/prefetch/associative_set_impl.hh"
  #include "params/IndirectMemoryPrefetcher.hh"
 
-IndirectMemoryPrefetcher::IndirectMemoryPrefetcher(
-    const IndirectMemoryPrefetcherParams *p) : QueuedPrefetcher(p),
-    maxPrefetchDistance(p->max_prefetch_distance),
-    shiftValues(p->shift_values), prefetchThreshold(p->prefetch_threshold),
-    streamCounterThreshold(p->stream_counter_threshold),
-    streamingDistance(p->streaming_distance),
-    prefetchTable(p->pt_table_assoc, p->pt_table_entries,
-                  p->pt_table_indexing_policy, p->pt_table_replacement_policy,
-                  PrefetchTableEntry(p->num_indirect_counter_bits)),
-    ipd(p->ipd_table_assoc, p->ipd_table_entries, p->ipd_table_indexing_policy,
-        p->ipd_table_replacement_policy,
-        IndirectPatternDetectorEntry(p->addr_array_len, shiftValues.size())),
-    ipdEntryTrackingMisses(nullptr),
-#if THE_ISA != NULL_ISA
-    byteOrder(TheISA::GuestByteOrder)
-#else
-    byteOrder((ByteOrder) -1)
-#endif
+namespace gem5
 {
-    fatal_if(byteOrder == static_cast<ByteOrder>(-1),
-            "This prefetcher requires a defined ISA\n");
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+IndirectMemory::IndirectMemory(const IndirectMemoryPrefetcherParams &p)
+  : Queued(p),
+    maxPrefetchDistance(p.max_prefetch_distance),
+    shiftValues(p.shift_values), prefetchThreshold(p.prefetch_threshold),
+    streamCounterThreshold(p.stream_counter_threshold),
+    streamingDistance(p.streaming_distance),
+    prefetchTable(p.pt_table_assoc, p.pt_table_entries,
+                  p.pt_table_indexing_policy, p.pt_table_replacement_policy,
+                  PrefetchTableEntry(p.num_indirect_counter_bits)),
+    ipd(p.ipd_table_assoc, p.ipd_table_entries, p.ipd_table_indexing_policy,
+        p.ipd_table_replacement_policy,
+        IndirectPatternDetectorEntry(p.addr_array_len, shiftValues.size())),
+    ipdEntryTrackingMisses(nullptr), byteOrder(p.sys->getGuestByteOrder())
+{
 }
 
 void
-IndirectMemoryPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
+IndirectMemory::calculatePrefetch(const PrefetchInfo &pfi,
     std::vector<AddrPriority> &addresses)
 {
     // This prefetcher requires a PC
@@ -166,7 +164,7 @@ IndirectMemoryPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
 }
 
 void
-IndirectMemoryPrefetcher::allocateOrUpdateIPDEntry(
+IndirectMemory::allocateOrUpdateIPDEntry(
     const PrefetchTableEntry *pt_entry, int64_t index)
 {
     // The address of the pt_entry is used to index the IPD
@@ -183,7 +181,7 @@ IndirectMemoryPrefetcher::allocateOrUpdateIPDEntry(
         } else {
             // Third access! no pattern has been found so far,
             // release the IPD entry
-            ipd_entry->reset();
+            ipd.invalidate(ipd_entry);
             ipdEntryTrackingMisses = nullptr;
         }
     } else {
@@ -196,7 +194,7 @@ IndirectMemoryPrefetcher::allocateOrUpdateIPDEntry(
 }
 
 void
-IndirectMemoryPrefetcher::trackMissIndex1(Addr miss_addr)
+IndirectMemory::trackMissIndex1(Addr miss_addr)
 {
     IndirectPatternDetectorEntry *entry = ipdEntryTrackingMisses;
     // If the second index is not set, we are just filling the baseAddr
@@ -215,7 +213,7 @@ IndirectMemoryPrefetcher::trackMissIndex1(Addr miss_addr)
     }
 }
 void
-IndirectMemoryPrefetcher::trackMissIndex2(Addr miss_addr)
+IndirectMemory::trackMissIndex2(Addr miss_addr)
 {
     IndirectPatternDetectorEntry *entry = ipdEntryTrackingMisses;
     // Second index is filled, compare the addresses generated during
@@ -237,7 +235,7 @@ IndirectMemoryPrefetcher::trackMissIndex2(Addr miss_addr)
                 pt_entry->enabled = true;
                 pt_entry->indirectCounter.reset();
                 // Release the current IPD Entry
-                entry->reset();
+                ipd.invalidate(entry);
                 // Do not track more misses
                 ipdEntryTrackingMisses = nullptr;
                 return;
@@ -248,7 +246,7 @@ IndirectMemoryPrefetcher::trackMissIndex2(Addr miss_addr)
 }
 
 void
-IndirectMemoryPrefetcher::checkAccessMatchOnActiveEntries(Addr addr)
+IndirectMemory::checkAccessMatchOnActiveEntries(Addr addr)
 {
     for (auto &pt_entry : prefetchTable) {
         if (pt_entry.enabled) {
@@ -261,8 +259,5 @@ IndirectMemoryPrefetcher::checkAccessMatchOnActiveEntries(Addr addr)
     }
 }
 
-IndirectMemoryPrefetcher*
-IndirectMemoryPrefetcherParams::create()
-{
-    return new IndirectMemoryPrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5

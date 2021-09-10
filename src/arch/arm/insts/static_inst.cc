@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014, 2016-2019 ARM Limited
+ * Copyright (c) 2010-2014, 2016-2020 ARM Limited
  * Copyright (c) 2013 Advanced Micro Devices, Inc.
  * All rights reserved
  *
@@ -37,18 +37,21 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Stephen Hines
  */
 
 #include "arch/arm/insts/static_inst.hh"
 
 #include "arch/arm/faults.hh"
 #include "arch/arm/isa.hh"
+#include "arch/arm/self_debug.hh"
+#include "arch/arm/utility.hh"
 #include "base/condcodes.hh"
 #include "base/cprintf.hh"
 #include "base/loader/symtab.hh"
 #include "cpu/reg_class.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
@@ -393,20 +396,21 @@ ArmStaticInst::printMnemonic(std::ostream &os,
 
 void
 ArmStaticInst::printTarget(std::ostream &os, Addr target,
-                           const SymbolTable *symtab) const
+                           const loader::SymbolTable *symtab) const
 {
-    Addr symbolAddr;
-    std::string symbol;
-
-    if (symtab && symtab->findNearestSymbol(target, symbol, symbolAddr)) {
-        ccprintf(os, "<%s", symbol);
-        if (symbolAddr != target)
-            ccprintf(os, "+%d>", target - symbolAddr);
-        else
-            ccprintf(os, ">");
-    } else {
-        ccprintf(os, "%#x", target);
+    if (symtab) {
+        auto it = symtab->findNearest(target);
+        if (it != symtab->end()) {
+            ccprintf(os, "<%s", it->name);
+            Addr delta = target - it->address;
+            if (delta)
+                ccprintf(os, "+%d>", delta);
+            else
+                ccprintf(os, ">");
+            return;
+        }
     }
+    ccprintf(os, "%#x", target);
 }
 
 void
@@ -474,18 +478,19 @@ ArmStaticInst::printCondition(std::ostream &os,
 
 void
 ArmStaticInst::printMemSymbol(std::ostream &os,
-                              const SymbolTable *symtab,
+                              const loader::SymbolTable *symtab,
                               const std::string &prefix,
                               const Addr addr,
                               const std::string &suffix) const
 {
-    Addr symbolAddr;
-    std::string symbol;
-    if (symtab && symtab->findNearestSymbol(addr, symbol, symbolAddr)) {
-        ccprintf(os, "%s%s", prefix, symbol);
-        if (symbolAddr != addr)
-            ccprintf(os, "+%d", addr - symbolAddr);
-        ccprintf(os, suffix);
+    if (symtab) {
+        auto it = symtab->findNearest(addr);
+        if (it != symtab->end()) {
+            ccprintf(os, "%s%s", prefix, it->name);
+            if (it->address != addr)
+                ccprintf(os, "+%d", addr - it->address);
+            ccprintf(os, suffix);
+        }
     }
 }
 
@@ -619,7 +624,7 @@ ArmStaticInst::printDataInst(std::ostream &os, bool withImm,
 
 std::string
 ArmStaticInst::generateDisassembly(Addr pc,
-                                   const SymbolTable *symtab) const
+                                   const loader::SymbolTable *symtab) const
 {
     std::stringstream ss;
     printMnemonic(ss);
@@ -632,15 +637,17 @@ ArmStaticInst::softwareBreakpoint32(ExecContext *xc, uint16_t imm) const
     const auto tc = xc->tcBase();
     const HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
     const HDCR mdcr = tc->readMiscRegNoEffect(MISCREG_MDCR_EL2);
-    if ((ArmSystem::haveEL(tc, EL2) && !inSecureState(tc) &&
-         !ELIs32(tc, EL2) && (hcr.tge == 1 || mdcr.tde == 1)) ||
-         !ELIs32(tc, EL1)) {
+    if ((EL2Enabled(tc) && !ELIs32(tc, EL2) &&
+         (hcr.tge || mdcr.tde)) || !ELIs32(tc, EL1)) {
         // Route to AArch64 Software Breakpoint
         return std::make_shared<SoftwareBreakpoint>(machInst, imm);
     } else {
         // Execute AArch32 Software Breakpoint
         return std::make_shared<PrefetchAbort>(readPC(xc),
-                                               ArmFault::DebugEvent);
+                                               ArmFault::DebugEvent,
+                                               false,
+                                               ArmFault::UnknownTran,
+                                               ArmFault::BRKPOINT);
     }
 }
 
@@ -667,16 +674,37 @@ ArmStaticInst::advSIMDFPAccessTrap64(ExceptionLevel el) const
 Fault
 ArmStaticInst::checkFPAdvSIMDTrap64(ThreadContext *tc, CPSR cpsr) const
 {
-    if (ArmSystem::haveVirtualization(tc) && !inSecureState(tc)) {
-        HCPTR cptrEnCheck = tc->readMiscReg(MISCREG_CPTR_EL2);
-        if (cptrEnCheck.tfp)
+    if (currEL(tc) <= EL2 && EL2Enabled(tc)) {
+        bool trap_el2 = false;
+        CPTR cptr_en_check = tc->readMiscReg(MISCREG_CPTR_EL2);
+        HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+        if (HaveVirtHostExt(tc) && hcr.e2h == 0x1) {
+            switch (cptr_en_check.fpen) {
+              case 0:
+              case 2:
+                trap_el2 = !(currEL(tc) == EL1 && hcr.tge == 1);
+                break;
+              case 1:
+                trap_el2 = (currEL(tc) == EL0 && hcr.tge == 1);
+                break;
+              default:
+                trap_el2 = false;
+                break;
+            }
+        } else if (cptr_en_check.tfp) {
+            trap_el2 = true;
+        }
+
+        if (trap_el2) {
             return advSIMDFPAccessTrap64(EL2);
+        }
     }
 
     if (ArmSystem::haveSecurity(tc)) {
-        HCPTR cptrEnCheck = tc->readMiscReg(MISCREG_CPTR_EL3);
-        if (cptrEnCheck.tfp)
+        CPTR cptr_en_check = tc->readMiscReg(MISCREG_CPTR_EL3);
+        if (cptr_en_check.tfp) {
             return advSIMDFPAccessTrap64(EL3);
+        }
     }
 
     return NoFault;
@@ -702,7 +730,7 @@ ArmStaticInst::checkAdvSIMDOrFPEnabled32(ThreadContext *tc,
 {
     const bool have_virtualization = ArmSystem::haveVirtualization(tc);
     const bool have_security = ArmSystem::haveSecurity(tc);
-    const bool is_secure = inSecureState(tc);
+    const bool is_secure = isSecure(tc);
     const ExceptionLevel cur_el = currEL(tc);
 
     if (cur_el == EL0 && ELIs64(tc, EL1))
@@ -763,8 +791,8 @@ ArmStaticInst::checkAdvSIMDOrFPEnabled32(ThreadContext *tc,
     }
 
     if (have_security && ELIs64(tc, EL3)) {
-        HCPTR cptrEnCheck = tc->readMiscReg(MISCREG_CPTR_EL3);
-        if (cptrEnCheck.tfp)
+        HCPTR cptr_en_check = tc->readMiscReg(MISCREG_CPTR_EL3);
+        if (cptr_en_check.tfp)
             return advSIMDFPAccessTrap64(EL3);
     }
 
@@ -882,8 +910,7 @@ ArmStaticInst::trapWFx(ThreadContext *tc,
         fault = checkForWFxTrap32(tc, EL1, isWfe);
     }
 
-    if ((fault == NoFault) &&
-        ArmSystem::haveEL(tc, EL2) && !inSecureState(scr, cpsr) &&
+    if ((fault == NoFault) && EL2Enabled(tc) &&
         ((curr_el == EL0) || (curr_el == EL1))) {
 
         fault = checkForWFxTrap32(tc, EL2, isWfe);
@@ -919,7 +946,7 @@ ArmStaticInst::checkSETENDEnabled(ThreadContext *tc, CPSR cpsr) const
         // Get the index of the banked version of SCTLR:
         // SCTLR_s or SCTLR_ns.
         auto banked_sctlr = snsBankedIndex(
-            MISCREG_SCTLR, tc, !inSecureState(tc));
+            MISCREG_SCTLR, tc, !isSecure(tc));
 
         // SCTLR.SED bit is enabling/disabling the ue of SETEND instruction.
         setend_disabled = ((SCTLR)tc->readMiscRegNoEffect(banked_sctlr)).sed;
@@ -986,36 +1013,54 @@ ArmStaticInst::sveAccessTrap(ExceptionLevel el) const
 }
 
 Fault
-ArmStaticInst::checkSveTrap(ThreadContext *tc, CPSR cpsr) const
+ArmStaticInst::checkSveEnabled(ThreadContext *tc, CPSR cpsr, CPACR cpacr) const
 {
     const ExceptionLevel el = (ExceptionLevel) (uint8_t) cpsr.el;
+    // Check if access disabled in CPACR_EL1
+    if (el <= EL1 && !ELIsInHost(tc, el)) {
+        if ((el == EL0 && cpacr.zen == 0x1) ||
+            (!(cpacr.zen & 0x1)))
+            return sveAccessTrap(EL1);
 
-    if (ArmSystem::haveVirtualization(tc) && el <= EL2) {
-        CPTR cptrEnCheck = tc->readMiscReg(MISCREG_CPTR_EL2);
-        if (cptrEnCheck.tz)
-            return sveAccessTrap(EL2);
+        if ((el == EL0 && cpacr.fpen == 0x1) ||
+            (!(cpacr.fpen & 0x1)))
+            return advSIMDFPAccessTrap64(EL1);
     }
 
+    // Check if access disabled in CPTR_EL2
+    if (el <= EL2 && EL2Enabled(tc)) {
+        CPTR cptr_en_check = tc->readMiscReg(MISCREG_CPTR_EL2);
+        HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
+        if (HaveVirtHostExt(tc) && hcr.e2h) {
+            if (((cptr_en_check.zen & 0x1) == 0x0) ||
+                (cptr_en_check.zen == 0x1 && el == EL0 &&
+                 hcr.tge == 0x1)) {
+                return sveAccessTrap(EL2);
+            }
+            if (((cptr_en_check.fpen & 0x1) == 0x0) ||
+                (cptr_en_check.fpen == 0x1 && el == EL0 &&
+                 hcr.tge == 0x1)) {
+                return advSIMDFPAccessTrap64(EL2);
+            }
+        } else {
+            if (cptr_en_check.tz == 1)
+                return sveAccessTrap(EL2);
+            if (cptr_en_check.tfp == 1)
+                return advSIMDFPAccessTrap64(EL2);
+        }
+    }
+
+    // Check if access disabled in CPTR_EL3
     if (ArmSystem::haveSecurity(tc)) {
-        CPTR cptrEnCheck = tc->readMiscReg(MISCREG_CPTR_EL3);
-        if (!cptrEnCheck.ez)
+        CPTR cptr_en_check = tc->readMiscReg(MISCREG_CPTR_EL3);
+        if (!cptr_en_check.ez)
             return sveAccessTrap(EL3);
+        if (cptr_en_check.tfp)
+            return advSIMDFPAccessTrap64(EL3);
     }
 
     return NoFault;
 }
-
-Fault
-ArmStaticInst::checkSveEnabled(ThreadContext *tc, CPSR cpsr, CPACR cpacr) const
-{
-    const ExceptionLevel el = (ExceptionLevel) (uint8_t) cpsr.el;
-    if ((el == EL0 && cpacr.zen != 0x3) ||
-        (el == EL1 && !(cpacr.zen & 0x1)))
-        return sveAccessTrap(EL1);
-
-    return checkSveTrap(tc, cpsr);
-}
-
 
 static uint8_t
 getRestoredITBits(ThreadContext *tc, CPSR spsr)
@@ -1053,22 +1098,34 @@ illegalExceptionReturn(ThreadContext *tc, CPSR cpsr, CPSR spsr)
     if (unknownMode(mode))
         return true;
 
-    const OperatingMode cur_mode = (OperatingMode) (uint8_t)cpsr.mode;
-    const ExceptionLevel target_el = opModeToEL(mode);
+    SCR scr = tc->readMiscReg(MISCREG_SCR_EL3);
+    HCR hcr = tc->readMiscReg(MISCREG_HCR_EL2);
 
-    HCR hcr = ((HCR)tc->readMiscReg(MISCREG_HCR_EL2));
-    SCR scr = ((SCR)tc->readMiscReg(MISCREG_SCR_EL3));
-
-    if (target_el > opModeToEL(cur_mode))
+    //ELFromSPSR
+    bool valid;
+    ExceptionLevel target_el = opModeToEL(mode);
+    if (!spsr.width) {
+        if (!ArmSystem::highestELIs64(tc)) {
+            valid = false;
+        } else if (!ArmSystem::haveEL(tc, target_el)) {
+            valid = false;
+        } else if (spsr & 0x2) {
+            valid = false;
+        } else if (target_el == EL0 && spsr.sp) {
+            valid = false;
+        } else if (target_el == EL2 && ArmSystem::haveEL(tc, EL3) &&
+                   !scr.ns && !IsSecureEL2Enabled(tc)) {
+            valid = false;
+        } else {
+            valid = true;
+        }
+    } else {
+        valid = !unknownMode32(mode);
+    }
+    if (!valid)
         return true;
 
-    if (!ArmSystem::haveEL(tc, target_el))
-        return true;
-
-    if (target_el == EL1 && ArmSystem::haveEL(tc, EL2) && scr.ns && hcr.tge)
-        return true;
-
-    if (target_el == EL2 && ArmSystem::haveEL(tc, EL3) && !scr.ns)
+    if (target_el > currEL(tc))
         return true;
 
     bool spsr_mode_is_aarch32 = (spsr.width == 1);
@@ -1079,17 +1136,9 @@ illegalExceptionReturn(ThreadContext *tc, CPSR cpsr, CPSR spsr)
     if (known && (spsr_mode_is_aarch32 != target_el_is_aarch32))
         return true;
 
-    if (!spsr.width) {
-        // aarch64
-        if (!ArmSystem::highestELIs64(tc))
-            return true;
-        if (spsr & 0x2)
-            return true;
-        if (target_el == EL0 && spsr.sp)
-            return true;
-    } else {
-        // aarch32
-        return unknownMode32(mode);
+    if (target_el == EL1 && ArmSystem::haveEL(tc, EL2) && hcr.tge &&
+            (IsSecureEL2Enabled(tc) || !isSecureBelowEL3(tc))) {
+        return true;
     }
 
     return false;
@@ -1099,10 +1148,7 @@ CPSR
 ArmStaticInst::getPSTATEFromPSR(ThreadContext *tc, CPSR cpsr, CPSR spsr) const
 {
     CPSR new_cpsr = 0;
-
-    // gem5 doesn't implement single-stepping, so force the SS bit to
-    // 0.
-    new_cpsr.ss = 0;
+    ExceptionLevel dest;
 
     if (illegalExceptionReturn(tc, cpsr, spsr)) {
         // If the SPSR specifies an illegal exception return,
@@ -1116,6 +1162,7 @@ ArmStaticInst::getPSTATEFromPSR(ThreadContext *tc, CPSR cpsr, CPSR spsr) const
             new_cpsr.el = cpsr.el;
             new_cpsr.sp = cpsr.sp;
         }
+        dest = currEL(tc);
     } else {
         new_cpsr.il = spsr.il;
         if (spsr.width && unknownMode32((OperatingMode)(uint8_t)spsr.mode)) {
@@ -1126,6 +1173,7 @@ ArmStaticInst::getPSTATEFromPSR(ThreadContext *tc, CPSR cpsr, CPSR spsr) const
             new_cpsr.el = spsr.el;
             new_cpsr.sp = spsr.sp;
         }
+        dest = (ExceptionLevel)(uint8_t) spsr.el;
     }
 
     new_cpsr.nz = spsr.nz;
@@ -1147,6 +1195,10 @@ ArmStaticInst::getPSTATEFromPSR(ThreadContext *tc, CPSR cpsr, CPSR spsr) const
         new_cpsr.daif = spsr.daif;
     }
 
+    SelfDebug *sd = ArmISA::ISA::getSelfDebug(tc);
+    SoftwareStep *ss = sd->getSstep();
+    new_cpsr.ss = ss->debugExceptionReturnSS(tc, spsr, dest);
+
     return new_cpsr;
 }
 
@@ -1159,14 +1211,16 @@ ArmStaticInst::generalExceptionsToAArch64(ThreadContext *tc,
     // AArch64 or TGE is in force and EL2 is using AArch64.
     HCR hcr = ((HCR)tc->readMiscReg(MISCREG_HCR_EL2));
     return (pstateEL == EL0 && !ELIs32(tc, EL1)) ||
-           (ArmSystem::haveEL(tc, EL2) && !inSecureState(tc) &&
+           (ArmSystem::haveEL(tc, EL2) && !isSecure(tc) &&
                !ELIs32(tc, EL2) && hcr.tge);
 }
 
 unsigned
 ArmStaticInst::getCurSveVecLenInBits(ThreadContext *tc)
 {
-    return tc->getIsaPtr()->getCurSveVecLenInBits(tc);
+    auto *isa = static_cast<ArmISA::ISA *>(tc->getIsaPtr());
+    return isa->getCurSveVecLenInBits();
 }
 
-}
+} // namespace ArmISA
+} // namespace gem5

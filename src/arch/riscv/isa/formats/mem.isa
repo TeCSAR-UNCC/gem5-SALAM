@@ -26,8 +26,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Alec Roelke
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -39,6 +37,9 @@ def template LoadStoreDeclare {{
      */
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         /// Constructor.
         %(class_name)s(ExtMachInst machInst);
@@ -55,6 +56,7 @@ def template LoadStoreConstructor {{
     %(class_name)s::%(class_name)s(ExtMachInst machInst):
         %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
         %(offset_code)s;
     }
@@ -75,7 +77,7 @@ def LoadStoreBase(name, Name, offset_code, ea_code, memacc_code, mem_flags,
 
     if mem_flags:
         mem_flags = [ 'Request::%s' % flag for flag in mem_flags ]
-        s = '\n\tmemAccessFlags = ' + string.join(mem_flags, '|') + ';'
+        s = '\n\tmemAccessFlags = ' + '|'.join(mem_flags) + ';'
         iop.constructor += s
 
     # select templates
@@ -99,22 +101,23 @@ def template LoadExecute {{
         ExecContext *xc, Trace::InstRecord *traceData) const
     {
         Addr EA;
-        Fault fault = NoFault;
 
         %(op_decl)s;
         %(op_rd)s;
         %(ea_code)s;
 
-        if (fault == NoFault) {
-            fault = readMemAtomicLE(xc, traceData, EA, Mem, memAccessFlags);
-            %(memacc_code)s;
+        {
+            Fault fault =
+                readMemAtomicLE(xc, traceData, EA, Mem, memAccessFlags);
+            if (fault != NoFault)
+                return fault;
         }
 
-        if (fault == NoFault) {
-            %(op_wb)s;
-        }
+        %(memacc_code)s;
 
-        return fault;
+        %(op_wb)s;
+
+        return NoFault;
     }
 }};
 
@@ -124,17 +127,12 @@ def template LoadInitiateAcc {{
         Trace::InstRecord *traceData) const
     {
         Addr EA;
-        Fault fault = NoFault;
 
         %(op_src_decl)s;
         %(op_rd)s;
         %(ea_code)s;
 
-        if (fault == NoFault) {
-            fault = initiateMemRead(xc, traceData, EA, Mem, memAccessFlags);
-        }
-
-        return fault;
+        return initiateMemRead(xc, traceData, EA, Mem, memAccessFlags);
     }
 }};
 
@@ -143,22 +141,15 @@ def template LoadCompleteAcc {{
     %(class_name)s::completeAcc(PacketPtr pkt, ExecContext *xc,
         Trace::InstRecord *traceData) const
     {
-        Fault fault = NoFault;
-
         %(op_decl)s;
         %(op_rd)s;
 
         getMemLE(pkt, Mem, traceData);
 
-        if (fault == NoFault) {
-            %(memacc_code)s;
-        }
+        %(memacc_code)s;
+        %(op_wb)s;
 
-        if (fault == NoFault) {
-            %(op_wb)s;
-        }
-
-        return fault;
+        return NoFault;
     }
 }};
 
@@ -168,30 +159,25 @@ def template StoreExecute {{
         Trace::InstRecord *traceData) const
     {
         Addr EA;
-        Fault fault = NoFault;
 
         %(op_decl)s;
         %(op_rd)s;
         %(ea_code)s;
 
-        if (fault == NoFault) {
-            %(memacc_code)s;
+        %(memacc_code)s;
+
+        {
+            Fault fault =
+                writeMemAtomicLE(xc, traceData, Mem, EA, memAccessFlags,
+                        nullptr);
+            if (fault != NoFault)
+                return fault;
         }
 
-        if (fault == NoFault) {
-            fault = writeMemAtomicLE(xc, traceData, Mem, EA, memAccessFlags,
-                nullptr);
-        }
+        %(postacc_code)s;
+        %(op_wb)s;
 
-        if (fault == NoFault) {
-            %(postacc_code)s;
-        }
-
-        if (fault == NoFault) {
-            %(op_wb)s;
-        }
-
-        return fault;
+        return NoFault;
     }
 }};
 
@@ -201,26 +187,23 @@ def template StoreInitiateAcc {{
         Trace::InstRecord *traceData) const
     {
         Addr EA;
-        Fault fault = NoFault;
 
         %(op_decl)s;
         %(op_rd)s;
         %(ea_code)s;
 
-        if (fault == NoFault) {
-            %(memacc_code)s;
-        }
+        %(memacc_code)s;
 
-        if (fault == NoFault) {
-            fault = writeMemTimingLE(xc, traceData, Mem, EA,
+        {
+            Fault fault = writeMemTimingLE(xc, traceData, Mem, EA,
                 memAccessFlags, nullptr);
+            if (fault != NoFault)
+                return fault;
         }
 
-        if (fault == NoFault) {
-            %(op_wb)s;
-        }
+        %(op_wb)s;
 
-        return fault;
+        return NoFault;
     }
 }};
 

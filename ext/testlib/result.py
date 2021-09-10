@@ -1,3 +1,15 @@
+# Copyright (c) 2020 ARM Limited
+# All rights reserved
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 2017 Mark D. Hill and David A. Wood
 # All rights reserved.
 #
@@ -30,10 +42,9 @@ import os
 import pickle
 import xml.sax.saxutils
 
-from config import config
-import helper
-import state
-import log
+from testlib.configuration import config
+import testlib.helper as helper
+import testlib.state as state
 
 def _create_uid_index(iterable):
     index = {}
@@ -61,8 +72,12 @@ class _CommonMetadataMixin:
     def unsuccessful(self):
         return self._metadata.result.value != state.Result.Passed
 
+    @property
+    def time(self):
+        return self._metadata.time
 
-class InternalTestResult(object, _CommonMetadataMixin):
+
+class InternalTestResult(_CommonMetadataMixin):
     def __init__(self, obj, suite, directory):
         self._metadata = obj.metadata
         self.suite = suite
@@ -77,7 +92,7 @@ class InternalTestResult(object, _CommonMetadataMixin):
         )
 
 
-class InternalSuiteResult(object, _CommonMetadataMixin):
+class InternalSuiteResult(_CommonMetadataMixin):
     def __init__(self, obj, directory):
         self._metadata = obj.metadata
         self.directory = directory
@@ -104,7 +119,7 @@ class InternalSuiteResult(object, _CommonMetadataMixin):
         return results
 
 
-class InternalLibraryResults(object, _CommonMetadataMixin):
+class InternalLibraryResults(_CommonMetadataMixin):
     def __init__(self, obj, directory):
         self.directory = directory
         self._metadata = obj.metadata
@@ -159,12 +174,12 @@ class InternalSavedResults:
                if exc.errno != errno.EEXIST:
                    raise
 
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             pickle.dump(results, f, protocol)
 
     @staticmethod
     def load(path):
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             return pickle.load(f)
 
 
@@ -259,6 +274,7 @@ class JUnitTestCase(XMLElement):
              # TODO JUnit expects class of test.. add as test metadata.
             XMLAttribute('classname', str(test_result.uid)),
             XMLAttribute('status', str(test_result.result)),
+            XMLAttribute('time', str(test_result.time["user_time"])),
         ]
 
         # TODO JUnit expects a message for the reason a test was
@@ -268,6 +284,20 @@ class JUnitTestCase(XMLElement):
             LargeFileElement('system-err', test_result.stderr),
             LargeFileElement('system-out', test_result.stdout),
         ]
+
+        if str(test_result.result) == 'Failed':
+            self.elements.append(JUnitFailure('Test failed', 'ERROR'))
+
+
+class JUnitFailure(XMLElement):
+    name = 'failure'
+    def __init__(self, message, fail_type):
+        self.attributes = [
+            XMLAttribute('message', message),
+            XMLAttribute('type', fail_type),
+        ]
+        self.elements = []
+
 
 class LargeFileElement(XMLElement):
     def __init__(self, name, filename):

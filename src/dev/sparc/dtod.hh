@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /** @file
@@ -41,6 +39,9 @@
 #include "dev/io_device.hh"
 #include "params/DumbTOD.hh"
 
+namespace gem5
+{
+
 /**
  * DumbTOD simply returns some idea of time when read.  Until we finish with
  * legion it starts with the start time and increments itself by 1000 each time.
@@ -51,14 +52,8 @@ class DumbTOD : public BasicPioDevice
     uint64_t todTime;
 
   public:
-    typedef DumbTODParams Params;
-    DumbTOD(const Params *p);
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    using Params = DumbTODParams;
+    DumbTOD(const Params &p);
 
     Tick read(PacketPtr pkt) override;
     Tick write(PacketPtr pkt) override;
@@ -66,5 +61,7 @@ class DumbTOD : public BasicPioDevice
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 };
+
+} // namespace gem5
 
 #endif // __DEV_BADDEV_HH__

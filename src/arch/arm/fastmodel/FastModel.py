@@ -22,8 +22,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 from m5.params import *
 from m5.proxy import *
@@ -37,11 +35,11 @@ def AMBA_TARGET_ROLE(width):
 def AMBA_INITIATOR_ROLE(width):
     return 'AMBA INITIATOR %d' % width
 
-def SC_MASTER_PORT_ROLE(port_type):
-    return 'SC MASTER PORT for %s' % port_type
+def SC_REQUEST_PORT_ROLE(port_type):
+    return 'SC REQUEST PORT for %s' % port_type
 
-def SC_SLAVE_PORT_ROLE(port_type):
-    return 'SC SLAVE PORT for %s' % port_type
+def SC_RESPONSE_PORT_ROLE(port_type):
+    return 'SC RESPONSE PORT for %s' % port_type
 
 class AmbaTargetSocket(Port):
     def __init__(self, width, desc):
@@ -77,25 +75,25 @@ class VectorAmbaInitiatorSocket(VectorPort):
         super(VectorAmbaInitiatorSocket, self).__init__(
                 my_role, desc, is_source=True)
 
-class ScMasterPort(Port):
+class ScRequestPort(Port):
     def __init__(self, desc, port_type):
-        my_role = SC_MASTER_PORT_ROLE(port_type)
-        peer_role = SC_SLAVE_PORT_ROLE(port_type)
+        my_role = SC_REQUEST_PORT_ROLE(port_type)
+        peer_role = SC_RESPONSE_PORT_ROLE(port_type)
         Port.compat(my_role, peer_role)
 
-        super(ScMasterPort, self).__init__(my_role, desc)
+        super(ScRequestPort, self).__init__(my_role, desc)
 
-class ScSlavePort(Port):
+class ScResponsePort(Port):
     def __init__(self, desc, port_type):
-        my_role = SC_SLAVE_PORT_ROLE(port_type)
-        peer_role = SC_MASTER_PORT_ROLE(port_type)
+        my_role = SC_RESPONSE_PORT_ROLE(port_type)
+        peer_role = SC_REQUEST_PORT_ROLE(port_type)
         Port.compat(my_role, peer_role)
 
-        super(ScSlavePort, self).__init__(my_role, desc)
+        super(ScResponsePort, self).__init__(my_role, desc)
 
 class AmbaToTlmBridge64(SystemC_ScModule):
     type = 'AmbaToTlmBridge64'
-    cxx_class = 'FastModel::AmbaToTlmBridge64'
+    cxx_class = 'gem5::fastmodel::AmbaToTlmBridge64'
     cxx_header = 'arch/arm/fastmodel/amba_to_tlm_bridge.hh'
 
     amba = AmbaTargetSocket(64, 'AMBA PV target socket')
@@ -103,7 +101,7 @@ class AmbaToTlmBridge64(SystemC_ScModule):
 
 class AmbaFromTlmBridge64(SystemC_ScModule):
     type = 'AmbaFromTlmBridge64'
-    cxx_class = 'FastModel::AmbaFromTlmBridge64'
+    cxx_class = 'gem5::fastmodel::AmbaFromTlmBridge64'
     cxx_header = 'arch/arm/fastmodel/amba_from_tlm_bridge.hh'
 
     tlm = TlmTargetSocket(64, 'TLM target socket')

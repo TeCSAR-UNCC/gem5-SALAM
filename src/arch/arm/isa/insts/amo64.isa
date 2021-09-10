@@ -1,5 +1,6 @@
 // -*- mode:c++ -*-
 
+// Copyright (c) 2021 ARM Limited
 // Copyright (c) 2018 Metempsy Technology Consulting
 // All rights reserved
 //
@@ -34,8 +35,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Authors: Jordi Vaquero
 
 let {{
 
@@ -77,7 +76,7 @@ let {{
             self.top = top
             self.paired = paired
 
-            self.memFlags = ["ArmISA::TLB::MustBeOne"]
+            self.memFlags = []
             self.instFlags = ["IsAtomic"]
             self.codeBlobs = { "postacc_code" : "" }
             self.codeBlobs['usrDecl'] = ""
@@ -93,7 +92,7 @@ let {{
                 self.instFlags.append("IsMicroop")
 
             if self.flavor in ("release", "acquire_release", "acquire"):
-                self.instFlags.append("IsMemBarrier")
+                self.instFlags.extend(["IsReadBarrier", "IsWriteBarrier"])
             if self.flavor in ("release", "acquire_release"):
                 self.instFlags.append("IsWriteBarrier")
             if self.flavor in ("acquire_release", "acquire"):
@@ -126,11 +125,11 @@ let {{
 
 
             fa_code = '''
-               fault->annotate(ArmFault::SAS, %s);
-               fault->annotate(ArmFault::SSE, %s);
-               fault->annotate(ArmFault::SRT, dest);
-               fault->annotate(ArmFault::SF, %s);
-               fault->annotate(ArmFault::AR, %s);
+               fault->annotate(ArmISA::ArmFault::SAS, %s);
+               fault->annotate(ArmISA::ArmFault::SSE, %s);
+               fault->annotate(ArmISA::ArmFault::SRT, dest);
+               fault->annotate(ArmISA::ArmFault::SF, %s);
+               fault->annotate(ArmISA::ArmFault::AR, %s);
                ''' % (sas_code,
                      "true" if not self.unsign else "false",
                      "true" if self.size == 8 else "false",
@@ -261,8 +260,8 @@ let {{
                    flavor="release").emit(OP_DICT['CAS'])
 
     class CasPair64(AtomicInst64):
-        decConstBase = 'AmoPairOp'
-        base = 'ArmISA::MemoryEx64'
+        decConstBase = 'AmoOp'
+        base = 'ArmISA::MemoryAtomicPair64'
         writeback = True
         post = False
         execBase = 'AmoOp'
@@ -281,8 +280,8 @@ let {{
                                           isBigEndian64(xc->tcBase()));
                             uint64_t result2 = cSwap(Mem%(suffix)s[1],
                                            isBigEndian64(xc->tcBase()));
-                            xc->setIntRegOperand(this, r2_dst, (result2)
-                                                    & mask(aarch64 ? 64 : 32));
+
+                            XResult2 = result2;
                             '''
             elif self.size == 4:
                 self.res = 'Result_uw'
@@ -298,8 +297,8 @@ let {{
                     uint32_t result2 = isBigEndian64(xc->tcBase())
                                    ? (uint32_t)data
                                    : (data >> 32);
-                    xc->setIntRegOperand(this, r2_dst, (result2) &
-                                                mask(aarch64 ? 64 : 32));
+
+                    XResult2 = result2;
                             '''
 
             store_res = store_res % {"result":self.res, "suffix":self.suffix}
@@ -314,18 +313,13 @@ let {{
             # Code that actually handles the access
 
             if self.size == 4:
-                accCode = \
-                  "uint32_t result2 = ((xc->readIntRegOperand(this, r2_src))"\
-                  " & mask(aarch64 ? 64 : 32)) ;\n"\
-                  " uint32_t dest2 = ((xc->readIntRegOperand(this, d2_src)) "\
-                  " & mask(aarch64 ? 64 : 32)) ;"
-                accCode += '''
-                     uint64_t data = dest2;
+                accCode = '''
+                     uint64_t data = XDest2;
                      data = isBigEndian64(xc->tcBase())
                           ? ((uint64_t(WDest_uw) << 32) | data)
                                  : ((data << 32) | WDest_uw);
                      valRs = cSwap(data, isBigEndian64(xc->tcBase()));
-                     uint64_t data2 = result2 ;
+                     uint64_t data2 = XResult2 ;
                      data2 = isBigEndian64(xc->tcBase())
                           ? ((uint64_t(Result_uw) << 32) | data2)
                                  : ((data2 << 32) | Result_uw);
@@ -338,21 +332,16 @@ let {{
                       " %(type)s c){ %(op)s });\n"
 
             elif self.size == 8:
-                accCode = ""\
-                  "uint64_t result2 = ((xc->readIntRegOperand(this, r2_src))"\
-                  " & mask(aarch64 ? 64 : 32)) ;\n"\
-                  " uint64_t dest2 = ((xc->readIntRegOperand(this, d2_src)) "\
-                  " & mask(aarch64 ? 64 : 32)) ;"
-                accCode += '''
+                accCode = '''
                    // This temporary needs to be here so that the parser
                    // will correctly identify this instruction as a store.
                    std::array<uint64_t, 2> temp;
                    temp[0] = cSwap(XDest_ud,isBigEndian64(xc->tcBase()));
-                   temp[1] = cSwap(dest2,isBigEndian64(xc->tcBase()));
+                   temp[1] = cSwap(XDest2,isBigEndian64(xc->tcBase()));
                    valRs = temp;
                    std::array<uint64_t, 2> temp2;
                    temp2[0] = cSwap(XResult_ud,isBigEndian64(xc->tcBase()));
-                   temp2[1] = cSwap(result2,isBigEndian64(xc->tcBase()));
+                   temp2[1] = cSwap(XResult2,isBigEndian64(xc->tcBase()));
                    Mem_tud = temp2;
                      '''
 

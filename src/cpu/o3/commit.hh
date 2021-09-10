@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012, 2014 ARM Limited
+ * Copyright (c) 2010-2012, 2014, 2019 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
- *          Korey Sewell
  */
 
 #ifndef __CPU_O3_COMMIT_HH__
@@ -49,17 +46,28 @@
 #include "base/statistics.hh"
 #include "cpu/exetrace.hh"
 #include "cpu/inst_seq.hh"
+#include "cpu/o3/comm.hh"
+#include "cpu/o3/dyn_inst_ptr.hh"
+#include "cpu/o3/iew.hh"
+#include "cpu/o3/limits.hh"
+#include "cpu/o3/rename_map.hh"
+#include "cpu/o3/rob.hh"
 #include "cpu/timebuf.hh"
 #include "enums/CommitPolicy.hh"
 #include "sim/probe/probe.hh"
 
-struct DerivO3CPUParams;
+namespace gem5
+{
 
-template <class>
-struct O3ThreadState;
+struct O3CPUParams;
+
+namespace o3
+{
+
+class ThreadState;
 
 /**
- * DefaultCommit handles single threaded and SMT commit. Its width is
+ * Commit handles single threaded and SMT commit. Its width is
  * specified by the parameters; each cycle it tries to commit that
  * many instructions. The SMT policy decides which thread it tries to
  * commit instructions from. Non- speculative instructions must reach
@@ -80,38 +88,21 @@ struct O3ThreadState;
  * supports multiple cycle squashing, to model a ROB that can only
  * remove a certain number of instructions per cycle.
  */
-template<class Impl>
-class DefaultCommit
+class Commit
 {
   public:
-    // Typedefs from the Impl.
-    typedef typename Impl::O3CPU O3CPU;
-    typedef typename Impl::DynInstPtr DynInstPtr;
-    typedef typename Impl::CPUPol CPUPol;
-
-    typedef typename CPUPol::RenameMap RenameMap;
-    typedef typename CPUPol::ROB ROB;
-
-    typedef typename CPUPol::TimeStruct TimeStruct;
-    typedef typename CPUPol::FetchStruct FetchStruct;
-    typedef typename CPUPol::IEWStruct IEWStruct;
-    typedef typename CPUPol::RenameStruct RenameStruct;
-
-    typedef typename CPUPol::Fetch Fetch;
-    typedef typename CPUPol::IEW IEW;
-
-    typedef O3ThreadState<Impl> Thread;
-
     /** Overall commit status. Used to determine if the CPU can deschedule
      * itself due to a lack of activity.
      */
-    enum CommitStatus{
+    enum CommitStatus
+    {
         Active,
         Inactive
     };
 
     /** Individual thread status. */
-    enum ThreadStatus {
+    enum ThreadStatus
+    {
         Running,
         Idle,
         ROBSquashing,
@@ -126,7 +117,7 @@ class DefaultCommit
     /** Next commit status, to be set at the end of the cycle. */
     CommitStatus _nextStatus;
     /** Per-thread status. */
-    ThreadStatus commitStatus[Impl::MaxThreads];
+    ThreadStatus commitStatus[MaxThreads];
     /** Commit policy used in SMT mode. */
     CommitPolicy commitPolicy;
 
@@ -140,20 +131,17 @@ class DefaultCommit
     void processTrapEvent(ThreadID tid);
 
   public:
-    /** Construct a DefaultCommit with the given parameters. */
-    DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params);
+    /** Construct a Commit with the given parameters. */
+    Commit(CPU *_cpu, const O3CPUParams &params);
 
-    /** Returns the name of the DefaultCommit. */
+    /** Returns the name of the Commit. */
     std::string name() const;
-
-    /** Registers statistics. */
-    void regStats();
 
     /** Registers probes. */
     void regProbePoints();
 
     /** Sets the list of threads. */
-    void setThreads(std::vector<Thread *> &threads);
+    void setThreads(std::vector<ThreadState *> &threads);
 
     /** Sets the main time buffer pointer, used for backwards communication. */
     void setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr);
@@ -179,7 +167,7 @@ class DefaultCommit
     void setActiveThreads(std::list<ThreadID> *at_ptr);
 
     /** Sets pointer to the commited state rename map. */
-    void setRenameMap(RenameMap rm_ptr[Impl::MaxThreads]);
+    void setRenameMap(UnifiedRenameMap rm_ptr[MaxThreads]);
 
     /** Sets pointer to the ROB. */
     void setROB(ROB *rob_ptr);
@@ -207,6 +195,12 @@ class DefaultCommit
 
     /** Deschedules a thread from scheduling */
     void deactivateThread(ThreadID tid);
+
+    /** Is the CPU currently processing a HTM transaction? */
+    bool executingHtmTransaction(ThreadID) const;
+
+    /* Reset HTM tracking, e.g. after an abort */
+    void resetHtmStartsStops(ThreadID);
 
     /** Ticks the commit stage, which tries to commit instructions. */
     void tick();
@@ -332,26 +326,26 @@ class DefaultCommit
     TimeBuffer<TimeStruct> *timeBuffer;
 
     /** Wire to write information heading to previous stages. */
-    typename TimeBuffer<TimeStruct>::wire toIEW;
+    TimeBuffer<TimeStruct>::wire toIEW;
 
     /** Wire to read information from IEW (for ROB). */
-    typename TimeBuffer<TimeStruct>::wire robInfoFromIEW;
+    TimeBuffer<TimeStruct>::wire robInfoFromIEW;
 
     TimeBuffer<FetchStruct> *fetchQueue;
 
-    typename TimeBuffer<FetchStruct>::wire fromFetch;
+    TimeBuffer<FetchStruct>::wire fromFetch;
 
     /** IEW instruction queue interface. */
     TimeBuffer<IEWStruct> *iewQueue;
 
     /** Wire to read information from IEW queue. */
-    typename TimeBuffer<IEWStruct>::wire fromIEW;
+    TimeBuffer<IEWStruct>::wire fromIEW;
 
     /** Rename instruction queue interface, for ROB. */
     TimeBuffer<RenameStruct> *renameQueue;
 
     /** Wire to read information from rename queue. */
-    typename TimeBuffer<RenameStruct>::wire fromRename;
+    TimeBuffer<RenameStruct>::wire fromRename;
 
   public:
     /** ROB interface. */
@@ -359,10 +353,10 @@ class DefaultCommit
 
   private:
     /** Pointer to O3CPU. */
-    O3CPU *cpu;
+    CPU *cpu;
 
     /** Vector of all of the threads. */
-    std::vector<Thread *> thread;
+    std::vector<ThreadState *> thread;
 
     /** Records that commit has written to the time buffer this cycle. Used for
      * the CPU to determine if it can deschedule itself if there is no activity.
@@ -372,13 +366,13 @@ class DefaultCommit
     /** Records if the number of ROB entries has changed this cycle. If it has,
      * then the number of free entries must be re-broadcast.
      */
-    bool changedROBNumEntries[Impl::MaxThreads];
+    bool changedROBNumEntries[MaxThreads];
 
     /** Records if a thread has to squash this cycle due to a trap. */
-    bool trapSquash[Impl::MaxThreads];
+    bool trapSquash[MaxThreads];
 
     /** Records if a thread has to squash this cycle due to an XC write. */
-    bool tcSquash[Impl::MaxThreads];
+    bool tcSquash[MaxThreads];
 
     /**
      * Instruction passed to squashAfter().
@@ -387,7 +381,7 @@ class DefaultCommit
      * that caused a squash since this needs to be passed to the fetch
      * stage once squashing starts.
      */
-    DynInstPtr squashAfterInst[Impl::MaxThreads];
+    DynInstPtr squashAfterInst[MaxThreads];
 
     /** Priority List used for Commit Policy */
     std::list<ThreadID> priority_list;
@@ -410,9 +404,6 @@ class DefaultCommit
 
     /** Commit width, in instructions. */
     const unsigned commitWidth;
-
-    /** Number of Reorder Buffers */
-    unsigned numRobs;
 
     /** Number of Active Threads */
     const ThreadID numThreads;
@@ -440,29 +431,29 @@ class DefaultCommit
     /** The commit PC state of each thread.  Refers to the instruction that
      * is currently being processed/committed.
      */
-    TheISA::PCState pc[Impl::MaxThreads];
+    TheISA::PCState pc[MaxThreads];
 
     /** The sequence number of the youngest valid instruction in the ROB. */
-    InstSeqNum youngestSeqNum[Impl::MaxThreads];
+    InstSeqNum youngestSeqNum[MaxThreads];
 
     /** The sequence number of the last commited instruction. */
-    InstSeqNum lastCommitedSeqNum[Impl::MaxThreads];
+    InstSeqNum lastCommitedSeqNum[MaxThreads];
 
     /** Records if there is a trap currently in flight. */
-    bool trapInFlight[Impl::MaxThreads];
+    bool trapInFlight[MaxThreads];
 
     /** Records if there were any stores committed this cycle. */
-    bool committedStores[Impl::MaxThreads];
+    bool committedStores[MaxThreads];
 
     /** Records if commit should check if the ROB is truly empty (see
         commit_impl.hh). */
-    bool checkEmptyROB[Impl::MaxThreads];
+    bool checkEmptyROB[MaxThreads];
 
     /** Pointer to the list of active threads. */
     std::list<ThreadID> *activeThreads;
 
     /** Rename map interface. */
-    RenameMap *renameMap[Impl::MaxThreads];
+    UnifiedRenameMap *renameMap[MaxThreads];
 
     /** True if last committed microop can be followed by an interrupt */
     bool canHandleInterrupts;
@@ -476,47 +467,59 @@ class DefaultCommit
     /** Updates commit stats based on this instruction. */
     void updateComInstStats(const DynInstPtr &inst);
 
-    /** Stat for the total number of squashed instructions discarded by commit.
-     */
-    Stats::Scalar commitSquashedInsts;
-    /** Stat for the total number of times commit has had to stall due to a non-
-     * speculative instruction reaching the head of the ROB.
-     */
-    Stats::Scalar commitNonSpecStalls;
-    /** Stat for the total number of branch mispredicts that caused a squash. */
-    Stats::Scalar branchMispredicts;
-    /** Distribution of the number of committed instructions each cycle. */
-    Stats::Distribution numCommittedDist;
+    // HTM
+    int htmStarts[MaxThreads];
+    int htmStops[MaxThreads];
 
-    /** Total number of instructions committed. */
-    Stats::Vector instsCommitted;
-    /** Total number of ops (including micro ops) committed. */
-    Stats::Vector opsCommitted;
-    /** Total number of software prefetches committed. */
-    Stats::Vector statComSwp;
-    /** Stat for the total number of committed memory references. */
-    Stats::Vector statComRefs;
-    /** Stat for the total number of committed loads. */
-    Stats::Vector statComLoads;
-    /** Stat for the total number of committed atomics. */
-    Stats::Vector statComAmos;
-    /** Total number of committed memory barriers. */
-    Stats::Vector statComMembars;
-    /** Total number of committed branches. */
-    Stats::Vector statComBranches;
-    /** Total number of vector instructions */
-    Stats::Vector statComVector;
-    /** Total number of floating point instructions */
-    Stats::Vector statComFloating;
-    /** Total number of integer instructions */
-    Stats::Vector statComInteger;
-    /** Total number of function calls */
-    Stats::Vector statComFunctionCalls;
-    /** Committed instructions by instruction type (OpClass) */
-    Stats::Vector2d statCommittedInstType;
+    struct CommitStats : public statistics::Group
+    {
+        CommitStats(CPU *cpu, Commit *commit);
+        /** Stat for the total number of squashed instructions discarded by
+         * commit.
+         */
+        statistics::Scalar commitSquashedInsts;
+        /** Stat for the total number of times commit has had to stall due
+         * to a non-speculative instruction reaching the head of the ROB.
+         */
+        statistics::Scalar commitNonSpecStalls;
+        /** Stat for the total number of branch mispredicts that caused a
+         * squash.
+         */
+        statistics::Scalar branchMispredicts;
+        /** Distribution of the number of committed instructions each cycle. */
+        statistics::Distribution numCommittedDist;
 
-    /** Number of cycles where the commit bandwidth limit is reached. */
-    Stats::Scalar commitEligibleSamples;
+        /** Total number of instructions committed. */
+        statistics::Vector instsCommitted;
+        /** Total number of ops (including micro ops) committed. */
+        statistics::Vector opsCommitted;
+        /** Stat for the total number of committed memory references. */
+        statistics::Vector memRefs;
+        /** Stat for the total number of committed loads. */
+        statistics::Vector loads;
+        /** Stat for the total number of committed atomics. */
+        statistics::Vector amos;
+        /** Total number of committed memory barriers. */
+        statistics::Vector membars;
+        /** Total number of committed branches. */
+        statistics::Vector branches;
+        /** Total number of vector instructions */
+        statistics::Vector vectorInstructions;
+        /** Total number of floating point instructions */
+        statistics::Vector floating;
+        /** Total number of integer instructions */
+        statistics::Vector integer;
+        /** Total number of function calls */
+        statistics::Vector functionCalls;
+        /** Committed instructions by instruction type (OpClass) */
+        statistics::Vector2d committedInstType;
+
+        /** Number of cycles where the commit bandwidth limit is reached. */
+        statistics::Scalar commitEligibleSamples;
+    } stats;
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif // __CPU_O3_COMMIT_HH__

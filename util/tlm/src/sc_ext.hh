@@ -29,10 +29,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors:
- *    Matthias Jung
- *    Christian Menard
  */
 
 #ifndef __SC_EXT_HH__
@@ -51,7 +47,7 @@ namespace Gem5SystemC
 class Gem5Extension: public tlm::tlm_extension<Gem5Extension>
 {
   public:
-    Gem5Extension(PacketPtr packet);
+    Gem5Extension(gem5::PacketPtr packet);
 
     virtual tlm_extension_base* clone() const;
     virtual void copy_from(const tlm_extension_base& ext);
@@ -60,14 +56,10 @@ class Gem5Extension: public tlm::tlm_extension<Gem5Extension>
         getExtension(const tlm::tlm_generic_payload *payload);
     static Gem5Extension&
         getExtension(const tlm::tlm_generic_payload &payload);
-    PacketPtr getPacket();
-
-    bool isPipeThrough() const { return pipeThrough; }
-    void setPipeThrough() { pipeThrough = true; }
+    gem5::PacketPtr getPacket();
 
   private:
-    PacketPtr Packet;
-    bool pipeThrough;
+    gem5::PacketPtr Packet;
 };
 
 }

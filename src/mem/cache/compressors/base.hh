@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Inria
+ * Copyright (c) 2018-2020 Inria
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /** @file
@@ -40,35 +38,63 @@
 
 #include <cstdint>
 
+#include "base/compiler.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "sim/sim_object.hh"
 
+namespace gem5
+{
+
+class BaseCache;
 class CacheBlk;
 struct BaseCacheCompressorParams;
+
+GEM5_DEPRECATED_NAMESPACE(Compressor, compression);
+namespace compression
+{
 
 /**
  * Base cache compressor interface. Every cache compressor must implement a
  * compression and a decompression method.
+ *
+ * Compressors usually cannot parse all data input at once. Therefore, they
+ * typically divide the input into multiple *chunks*, and parse them one at
+ * a cycle.
  */
-class BaseCacheCompressor : public SimObject {
-  protected:
-    /**
-     * This compressor must be able to access the protected functions of
-     * its sub-compressors.
-     */
-    friend class MultiCompressor;
-
+class Base : public SimObject
+{
+  public:
     /**
      * Forward declaration of compression data. Every new compressor must
      * create a new compression data based on it.
      */
     class CompressionData;
 
+  protected:
+    /**
+     * A chunk is a basic lexical unit. The data being compressed is received
+     * by the compressor as a raw pointer. In order to parse this data, the
+     * compressor must divide it into smaller units. Typically, state-of-the-
+     * art compressors interpret cache lines as sequential 32-bit chunks
+     * (chunks), but any size is valid.
+     * @sa chunkSizeBits
+     */
+    typedef uint64_t Chunk;
+
+    /**
+     * This compressor must be able to access the protected functions of
+     * its sub-compressors.
+     */
+    friend class Multi;
+
     /**
      * Uncompressed cache line size (in bytes).
      */
     const std::size_t blkSize;
+
+    /** Chunk size, in number of bits. */
+    const unsigned chunkSizeBits;
 
     /**
      * Size in bytes at which a compression is classified as bad and therefore
@@ -77,16 +103,75 @@ class BaseCacheCompressor : public SimObject {
     const std::size_t sizeThreshold;
 
     /**
-     * @defgroup CompressionStats Compression specific statistics.
-     * @{
+     * Degree of parallelization of the compression process. It is the
+     * number of chunks that can be processed in a cycle.
      */
-
-    /** Number of blocks that were compressed to this power of two size. */
-    Stats::Vector compressionSize;
+    const Cycles compChunksPerCycle;
 
     /**
-     * @}
+     * Extra latency added to compression due to packaging, shifting or
+     * other operations.
      */
+    const Cycles compExtraLatency;
+
+    /**
+     * Degree of parallelization of the decompression process. It is the
+     * number of chunks that can be processed in a cycle.
+     */
+    const Cycles decompChunksPerCycle;
+
+    /**
+     * Extra latency added to decompression due to packaging, shifting or
+     * other operations.
+     */
+    const Cycles decompExtraLatency;
+
+    /** Pointer to the parent cache. */
+    BaseCache* cache;
+
+    struct BaseStats : public statistics::Group
+    {
+        const Base& compressor;
+
+        BaseStats(Base& compressor);
+
+        void regStats() override;
+
+        /** Number of compressions performed. */
+        statistics::Scalar compressions;
+
+        /** Number of failed compressions. */
+        statistics::Scalar failedCompressions;
+
+        /** Number of blocks that were compressed to this power of two size. */
+        statistics::Vector compressionSize;
+
+        /** Total compressed data size, in number of bits. */
+        statistics::Scalar compressionSizeBits;
+
+        /** Average data size after compression, in number of bits. */
+        statistics::Formula avgCompressionSizeBits;
+
+        /** Number of decompressions performed. */
+        statistics::Scalar decompressions;
+    } stats;
+
+    /**
+     * This function splits the raw data into chunks, so that it can be
+     * parsed by the compressor.
+     *
+     * @param data The raw pointer to the data being compressed.
+     * @return The raw data divided into a vector of sequential chunks.
+     */
+    std::vector<Chunk> toChunks(const uint64_t* data) const;
+
+    /**
+     * This function re-joins the chunks to recreate the original data.
+     *
+     * @param chunks The raw data divided into a vector of sequential chunks.
+     * @param data The raw pointer to the data.
+     */
+    void fromChunks(const std::vector<Chunk>& chunks, uint64_t* data) const;
 
     /**
      * Apply the compression process to the cache line.
@@ -95,13 +180,14 @@ class BaseCacheCompressor : public SimObject {
      * The decompression latency is also returned, in order to avoid
      * increasing simulation time and memory consumption.
      *
-     * @param cache_line The cache line to be compressed.
+     * @param chunks The cache line to be compressed, divided into chunks.
      * @param comp_lat Compression latency in number of cycles.
      * @param decomp_lat Decompression latency in number of cycles.
      * @return Cache line after compression.
      */
     virtual std::unique_ptr<CompressionData> compress(
-        const uint64_t* cache_line, Cycles& comp_lat, Cycles& decomp_lat) = 0;
+        const std::vector<Chunk>& chunks, Cycles& comp_lat,
+        Cycles& decomp_lat) = 0;
 
     /**
      * Apply the decompression process to the compressed data.
@@ -113,18 +199,12 @@ class BaseCacheCompressor : public SimObject {
                               uint64_t* cache_line) = 0;
 
   public:
-    /** Convenience typedef. */
-     typedef BaseCacheCompressorParams Params;
+    typedef BaseCacheCompressorParams Params;
+    Base(const Params &p);
+    virtual ~Base() = default;
 
-    /**
-     * Default constructor.
-     */
-    BaseCacheCompressor(const Params *p);
-
-    /**
-     * Default destructor.
-     */
-    virtual ~BaseCacheCompressor() {};
+    /** The cache can only be set once. */
+    virtual void setCache(BaseCache *_cache);
 
     /**
      * Apply the compression process to the cache line. Ignores compression
@@ -133,10 +213,10 @@ class BaseCacheCompressor : public SimObject {
      * @param data The cache line to be compressed.
      * @param comp_lat Compression latency in number of cycles.
      * @param decomp_lat Decompression latency in number of cycles.
-     * @param comp_size_bits Compressed data size (in bits).
+     * @return Cache line after compression.
      */
-    void compress(const uint64_t* data, Cycles& comp_lat,
-                  Cycles& decomp_lat, std::size_t& comp_size_bits);
+    std::unique_ptr<CompressionData>
+    compress(const uint64_t* data, Cycles& comp_lat, Cycles& decomp_lat);
 
     /**
      * Get the decompression latency if the block is compressed. Latency is 0
@@ -144,7 +224,7 @@ class BaseCacheCompressor : public SimObject {
      *
      * @param blk The compressed block.
      */
-    Cycles getDecompressionLatency(const CacheBlk* blk) const;
+    Cycles getDecompressionLatency(const CacheBlk* blk);
 
     /**
      * Set the decompression latency of compressed block.
@@ -161,14 +241,10 @@ class BaseCacheCompressor : public SimObject {
      * @param size_bits The block size.
      */
     static void setSizeBits(CacheBlk* blk, const std::size_t size_bits);
-
-    /**
-     * Register local statistics.
-     */
-    void regStats() override;
 };
 
-class BaseCacheCompressor::CompressionData {
+class Base::CompressionData
+{
   private:
     /**
      * Compressed cache line size (in bits).
@@ -207,5 +283,8 @@ class BaseCacheCompressor::CompressionData {
      */
     std::size_t getSize() const;
 };
+
+} // namespace compression
+} // namespace gem5
 
 #endif //__MEM_CACHE_COMPRESSORS_BASE_HH__

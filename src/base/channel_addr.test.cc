@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 ARM Limited
+ * Copyright (c) 2019, 2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,13 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include <gtest/gtest.h>
 
 #include "base/channel_addr.hh"
+
+using namespace gem5;
 
 /* Default range should be invalid */
 TEST(ChannelAddrRange, DefaultInvalid)
@@ -52,7 +52,7 @@ TEST(ChannelAddrRange, DefaultInvalid)
 /* Ensure that range bounds are inclusive */
 TEST(ChannelAddrRange, Range)
 {
-    ChannelAddrRange range(ChannelAddr(1), ChannelAddr(3));
+    ChannelAddrRange range(ChannelAddr(1), ChannelAddr(4));
 
     EXPECT_FALSE(range.contains(ChannelAddr(0)));
     EXPECT_TRUE(range.contains(ChannelAddr(1)));
@@ -61,6 +61,6 @@ TEST(ChannelAddrRange, Range)
     EXPECT_FALSE(range.contains(ChannelAddr(4)));
 
     EXPECT_EQ(range.start(), ChannelAddr(1));
-    EXPECT_EQ(range.end(), ChannelAddr(3));
+    EXPECT_EQ(range.end(), ChannelAddr(4));
     EXPECT_EQ(range.size(), ChannelAddr(3));
 }

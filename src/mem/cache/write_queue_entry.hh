@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Erik Hallnor
- *          Andreas Hansson
  */
 
 /**
@@ -58,7 +55,9 @@
 #include "base/types.hh"
 #include "mem/cache/queue_entry.hh"
 #include "mem/packet.hh"
-#include "sim/core.hh"
+
+namespace gem5
+{
 
 class BaseCache;
 
@@ -76,7 +75,8 @@ class WriteQueueEntry : public QueueEntry, public Printable
     friend class WriteQueue;
 
   public:
-    class TargetList : public std::list<Target> {
+    class TargetList : public std::list<Target>
+    {
 
       public:
 
@@ -114,7 +114,9 @@ class WriteQueueEntry : public QueueEntry, public Printable
   public:
 
     /** A simple constructor. */
-    WriteQueueEntry() {}
+    WriteQueueEntry(const std::string &name)
+        :   QueueEntry(name)
+    {}
 
     /**
      * Allocate a miss to this entry.
@@ -184,5 +186,7 @@ class WriteQueueEntry : public QueueEntry, public Printable
     bool matchBlockAddr(const PacketPtr pkt) const override;
     bool conflictAddr(const QueueEntry* entry) const override;
 };
+
+} // namespace gem5
 
 #endif // __MEM_CACHE_WRITE_QUEUE_ENTRY_HH__

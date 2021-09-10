@@ -40,11 +40,14 @@
 #include "mem/ruby/protocol/InvalidateGeneratorStatus.hh"
 #include "params/InvalidateGenerator.hh"
 
+namespace gem5
+{
+
 class InvalidateGenerator : public DirectedGenerator
 {
   public:
     typedef InvalidateGeneratorParams Params;
-    InvalidateGenerator(const Params *p);
+    InvalidateGenerator(const Params &p);
 
     ~InvalidateGenerator();
 
@@ -52,12 +55,13 @@ class InvalidateGenerator : public DirectedGenerator
     void performCallback(uint32_t proc, Addr address);
 
   private:
-    InvalidateGeneratorStatus m_status;
+    ruby::InvalidateGeneratorStatus m_status;
     Addr m_address;
     uint32_t m_active_read_node;
     uint32_t m_active_inv_node;
     uint32_t m_addr_increment_size;
 };
 
-#endif //__CPU_DIRECTEDTEST_INVALIDATEGENERATOR_HH__
+} // namespace gem5
 
+#endif //__CPU_DIRECTEDTEST_INVALIDATEGENERATOR_HH__

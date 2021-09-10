@@ -23,19 +23,26 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Nathan Binkert
 
 from m5.params import *
 
 from m5.objects.BaseCPU import BaseCPU
+from m5.SimObject import SimObject
 
 class CheckerCPU(BaseCPU):
     type = 'CheckerCPU'
     abstract = True
     cxx_header = "cpu/checker/cpu.hh"
+    cxx_class = 'gem5::CheckerCPU'
+
     exitOnError = Param.Bool(False, "Exit on an error")
     updateOnError = Param.Bool(False,
         "Update the checker with the main CPU's state on an error")
     warnOnlyOnLoadError = Param.Bool(True,
         "If a load result is incorrect, only print a warning and do not exit")
+
+    def generateDeviceTree(self, state):
+        # The CheckerCPU is not a real CPU and shouldn't generate a DTB
+        # node. This is why we are skipping the BaseCPU implementation
+        # and we are calling the base SimObject one.
+        return SimObject.generateDeviceTree(self, state)

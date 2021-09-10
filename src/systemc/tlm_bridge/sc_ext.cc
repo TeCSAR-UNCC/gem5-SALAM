@@ -29,15 +29,13 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors:
- *    Matthias Jung
- *    Christian Menard
  */
 
 #include "systemc/tlm_bridge/sc_ext.hh"
 
 #include "systemc/ext/utils/sc_report_handler.hh"
+
+using namespace gem5;
 
 namespace Gem5SystemC
 {
@@ -45,7 +43,6 @@ namespace Gem5SystemC
 Gem5Extension::Gem5Extension(PacketPtr _packet)
 {
     packet = _packet;
-    pipeThrough = false;
 }
 
 Gem5Extension &
@@ -80,6 +77,52 @@ Gem5Extension::copy_from(const tlm::tlm_extension_base &ext)
 {
     const Gem5Extension &cpyFrom = static_cast<const Gem5Extension &>(ext);
     packet = cpyFrom.packet;
+}
+
+AtomicExtension::AtomicExtension(
+    std::shared_ptr<gem5::AtomicOpFunctor> amo_op, bool need_return)
+  : _op(amo_op), _needReturn(need_return)
+{
+}
+
+tlm::tlm_extension_base *
+AtomicExtension::clone() const
+{
+    return new AtomicExtension(*this);
+}
+
+void
+AtomicExtension::copy_from(const tlm::tlm_extension_base &ext)
+{
+    const AtomicExtension &from = static_cast<const AtomicExtension &>(ext);
+    *this = from;
+}
+
+AtomicExtension &
+AtomicExtension::getExtension(const tlm::tlm_generic_payload &payload)
+{
+    return AtomicExtension::getExtension(&payload);
+}
+
+AtomicExtension &
+AtomicExtension::getExtension(const tlm::tlm_generic_payload *payload)
+{
+    AtomicExtension *result = nullptr;
+    payload->get_extension(result);
+    sc_assert(result);
+    return *result;
+}
+
+bool
+AtomicExtension::needReturn() const
+{
+    return _needReturn;
+}
+
+gem5::AtomicOpFunctor*
+AtomicExtension::getAtomicOpFunctor() const
+{
+    return _op.get();
 }
 
 } // namespace Gem5SystemC

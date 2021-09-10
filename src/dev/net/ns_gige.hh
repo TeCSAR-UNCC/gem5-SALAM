@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Lisa Hsu
  */
 
 /** @file
@@ -47,6 +44,9 @@
 #include "params/NSGigE.hh"
 #include "sim/eventq.hh"
 
+namespace gem5
+{
+
 // Hash filtering constants
 const uint16_t FHASH_ADDR  = 0x100;
 const uint16_t FHASH_SIZE  = 0x100;
@@ -61,7 +61,8 @@ const uint8_t  EEPROM_PMATCH0_ADDR = 0xC; // EEPROM Address of PMATCH word 0
 /**
  * Ethernet device registers
  */
-struct dp_regs {
+struct dp_regs
+{
     uint32_t    command;
     uint32_t    config;
     uint32_t    mear;
@@ -98,7 +99,8 @@ struct dp_regs {
     uint32_t    tesr;
 };
 
-struct dp_rom {
+struct dp_rom
+{
     /**
      * for perfect match memory.
      * the linux driver doesn't use any other ROM
@@ -329,12 +331,9 @@ class NSGigE : public EtherDevBase
     NSGigEInt *interface;
 
   public:
-    typedef NSGigEParams Params;
-    const Params *params() const {
-        return dynamic_cast<const Params *>(_params);
-    }
+    PARAMS(NSGigE);
 
-    NSGigE(Params *params);
+    NSGigE(const Params &params);
     ~NSGigE();
 
     Port &getPort(const std::string &if_name,
@@ -373,5 +372,7 @@ class NSGigEInt : public EtherInt
     virtual bool recvPacket(EthPacketPtr pkt) { return dev->recvPacket(pkt); }
     virtual void sendDone() { dev->transferDone(); }
 };
+
+} // namespace gem5
 
 #endif // __DEV_NET_NS_GIGE_HH__

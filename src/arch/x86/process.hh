@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_X86_PROCESS_HH__
@@ -48,14 +46,23 @@
 #include "sim/aux_vector.hh"
 #include "sim/process.hh"
 
+namespace gem5
+{
+
 class SyscallDesc;
 
 namespace X86ISA
 {
-    enum X86AuxiliaryVectorTypes {
-        M5_AT_SYSINFO = 32,
-        M5_AT_SYSINFO_EHDR = 33
+    namespace auxv
+    {
+
+    enum X86AuxiliaryVectorTypes
+    {
+        Sysinfo = 32,
+        SysinfoEhdr = 33
     };
+
+    } // namespace auxv
 
     class X86Process : public Process
     {
@@ -63,27 +70,16 @@ namespace X86ISA
         Addr _gdtStart;
         Addr _gdtSize;
 
-        SyscallDesc *syscallDescs;
-        const int numSyscallDescs;
-
-        X86Process(ProcessParams * params, ObjectFile *objFile,
-                   SyscallDesc *_syscallDescs, int _numSyscallDescs);
+        X86Process(const ProcessParams &params, loader::ObjectFile *objFile);
 
         template<class IntType>
         void argsInit(int pageSize,
-                      std::vector<AuxVector<IntType> > extraAuxvs);
+                      std::vector<gem5::auxv::AuxVector<IntType>> extraAuxvs);
 
       public:
-        Addr gdtStart()
-        { return _gdtStart; }
+        Addr gdtStart() const { return _gdtStart; }
+        Addr gdtSize() const { return _gdtSize; }
 
-        Addr gdtSize()
-        { return _gdtSize; }
-
-        SyscallDesc* getDesc(int callnum) override;
-
-        void setSyscallReturn(ThreadContext *tc,
-                              SyscallReturn return_value) override;
         void clone(ThreadContext *old_tc, ThreadContext *new_tc,
                    Process *process, RegVal flags) override;
 
@@ -95,7 +91,6 @@ namespace X86ISA
 
             _gdtStart = in._gdtStart;
             _gdtSize = in._gdtSize;
-            syscallDescs = in.syscallDescs;
 
             return *this;
         }
@@ -104,9 +99,6 @@ namespace X86ISA
     class X86_64Process : public X86Process
     {
       protected:
-        X86_64Process(ProcessParams *params, ObjectFile *objFile,
-                      SyscallDesc *_syscallDescs, int _numSyscallDescs);
-
         class VSyscallPage
         {
           public:
@@ -132,12 +124,12 @@ namespace X86ISA
         VSyscallPage vsyscallPage;
 
       public:
+        X86_64Process(const ProcessParams &params,
+                      loader::ObjectFile *objFile);
+
         void argsInit(int pageSize);
         void initState() override;
 
-        RegVal getSyscallArg(ThreadContext *tc, int &i) override;
-        /// Explicitly import the otherwise hidden getSyscallArg
-        using Process::getSyscallArg;
         void clone(ThreadContext *old_tc, ThreadContext *new_tc,
                    Process *process, RegVal flags) override;
     };
@@ -145,9 +137,6 @@ namespace X86ISA
     class I386Process : public X86Process
     {
       protected:
-        I386Process(ProcessParams *params, ObjectFile *objFile,
-                    SyscallDesc *_syscallDescs, int _numSyscallDescs);
-
         class VSyscallPage
         {
           public:
@@ -173,15 +162,19 @@ namespace X86ISA
         VSyscallPage vsyscallPage;
 
       public:
+        I386Process(const ProcessParams &params,
+                    loader::ObjectFile *objFile);
+
+        const VSyscallPage &getVSyscallPage() const { return vsyscallPage; }
+
         void argsInit(int pageSize);
         void initState() override;
 
-        RegVal getSyscallArg(ThreadContext *tc, int &i) override;
-        RegVal getSyscallArg(ThreadContext *tc, int &i, int width) override;
         void clone(ThreadContext *old_tc, ThreadContext *new_tc,
                    Process *process, RegVal flags) override;
     };
 
-}
+} // namespace X86ISA
+} // namespace gem5
 
 #endif // __ARCH_X86_PROCESS_HH__

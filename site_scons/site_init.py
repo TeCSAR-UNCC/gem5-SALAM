@@ -39,35 +39,51 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
-from gem5_python_paths import extra_python_paths
 
 # Check for recent-enough Python and SCons versions.
 try:
-    # Really old versions of scons only take two options for the
-    # function, so check once without the revision and once with the
-    # revision, the first instance will fail for stuff other than
-    # 0.98, and the second will fail for 0.98.0
-    EnsureSConsVersion(0, 98)
-    EnsureSConsVersion(0, 98, 1)
+    EnsureSConsVersion(3, 0, 0)
 except SystemExit as e:
     print("""
 For more details, see:
-    http://gem5.org/Dependencies
+    http://gem5.org/documentation/general_docs/building
 """)
     raise
 
-# pybind11 requires python 2.7
+
+# Check for the python version. Python 2 is no longer supported.
 try:
-    EnsurePythonVersion(2, 7)
+    EnsurePythonVersion(3, 0)
 except SystemExit as e:
-    print ("""
-You can use a non-default installation of the Python interpreter by
-rearranging your PATH so that scons finds the non-default 'python' and
-'python-config' first.
+    print("""\033[93m
+Python 3 is now required.
 
-For more details, see:
-    http://gem5.org/wiki/index.php/Using_a_non-default_Python_installation
+The following are steps to compile gem5 in Python 3 environment,
+
+*Step 1*: ensure Python 3 is installed. On Ubuntu like systems, you can try \
+this command:
+
+    sudo apt-get install python3 python3-six python-is-python3 python3-pydot
+
+To run Python 3 from a container, you can try the Docker files in \
+util/dockerfiles folder.
+
+*Step 2*: ensure that scons is run in the Python 3 environment. If scons \
+isn't run automatically with Python 3, you can force it by replacing `scons` \
+by the following phrase,
+
+    /usr/bin/env python3 $(which scons)
+
+For example, the following command will let scons compile gem5/X86 in the \
+Python 3 environment,
+
+   /usr/bin/env python3 $(which scons) build/X86/gem5.opt
+
+(Optional) For convenience reasons, you can set up an alias for the Python3 \
+scons phrase in your environment. \033[0m
 """)
     raise
+
+from gem5_python_paths import extra_python_paths
 
 sys.path[1:1] = extra_python_paths

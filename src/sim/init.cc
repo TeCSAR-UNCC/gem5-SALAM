@@ -37,8 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 #include <Python.h>
@@ -53,21 +51,23 @@
 #include <string>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/cprintf.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
 #include "config/have_protobuf.hh"
 #include "python/pybind11/pybind.hh"
 #include "sim/async.hh"
-#include "sim/core.hh"
 
 #if HAVE_PROTOBUF
 #include <google/protobuf/stubs/common.h>
 
 #endif
 
-using namespace std;
 namespace py = pybind11;
+
+namespace gem5
+{
 
 // The python library is totally messed up with respect to constness,
 // so make a simple macro to make life a little easier
@@ -82,16 +82,16 @@ EmbeddedPython::EmbeddedPython(const char *filename, const char *abspath,
 {
     // if we've added the importer keep track of it because we need it
     // to bootstrap.
-    if (string(modpath) == string("importer"))
+    if (std::string(modpath) == std::string("importer"))
         importer = this;
     else
         getList().push_back(this);
 }
 
-list<EmbeddedPython *> &
+std::list<EmbeddedPython *> &
 EmbeddedPython::getList()
 {
-    static list<EmbeddedPython *> the_list;
+    static std::list<EmbeddedPython *> the_list;
     return the_list;
 }
 
@@ -143,8 +143,8 @@ EmbeddedPython::initAll()
 
     // Load the rest of the embedded python files into the embedded
     // python importer
-    list<EmbeddedPython *>::iterator i = getList().begin();
-    list<EmbeddedPython *>::iterator end = getList().end();
+    std::list<EmbeddedPython *>::iterator i = getList().begin();
+    std::list<EmbeddedPython *>::iterator end = getList().end();
     for (; i != end; ++i)
         if (!(*i)->addModule())
             return 1;
@@ -153,7 +153,7 @@ EmbeddedPython::initAll()
 }
 
 EmbeddedPyBind::EmbeddedPyBind(const char *_name,
-                               void (*init_func)(py::module &),
+                               void (*init_func)(py::module_ &),
                                const char *_base)
     : initFunc(init_func), registered(false), name(_name), base(_base)
 {
@@ -161,14 +161,14 @@ EmbeddedPyBind::EmbeddedPyBind(const char *_name,
 }
 
 EmbeddedPyBind::EmbeddedPyBind(const char *_name,
-                               void (*init_func)(py::module &))
+                               void (*init_func)(py::module_ &))
     : initFunc(init_func), registered(false), name(_name), base("")
 {
     getMap()[_name] = this;
 }
 
 void
-EmbeddedPyBind::init(py::module &m)
+EmbeddedPyBind::init(py::module_ &m)
 {
     if (!registered) {
         initFunc(m);
@@ -200,7 +200,7 @@ EmbeddedPyBind::initAll()
 {
     std::list<EmbeddedPyBind *> pending;
 
-    py::module m_m5 = py::module("_m5");
+    py::module_ m_m5 = py::module_("_m5");
     m_m5.attr("__package__") = py::cast("_m5");
 
     pybind_init_core(m_m5);
@@ -247,7 +247,7 @@ registerNativeModules()
  * Make the commands array weak so that they can be overridden (used
  * by unit tests to specify a different python main function.
  */
-const char * __attribute__((weak)) m5MainCommands[] = {
+GEM5_WEAK const char *m5MainCommands[] = {
     "import m5",
     "m5.main()",
     0 // sentinel is required
@@ -315,3 +315,5 @@ m5Main(int argc, char **_argv)
 
     return 0;
 }
+
+} // namespace gem5

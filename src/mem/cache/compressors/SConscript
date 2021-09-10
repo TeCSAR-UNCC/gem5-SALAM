@@ -25,8 +25,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Daniel Carvalho
 
 Import('*')
 
@@ -36,7 +34,9 @@ Source('base.cc')
 Source('base_dictionary_compressor.cc')
 Source('base_delta.cc')
 Source('cpack.cc')
+Source('fpc.cc')
 Source('fpcd.cc')
+Source('frequent_values.cc')
 Source('multi.cc')
 Source('perfect.cc')
 Source('repeated_qwords.cc')

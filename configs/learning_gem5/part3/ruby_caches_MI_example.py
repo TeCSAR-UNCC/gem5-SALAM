@@ -24,12 +24,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Jason Power
 
 """ This file creates a set of Ruby caches, the Ruby network, and a simple
 point-to-point topology.
-See Part 3 in the Learning gem5 book: learning.gem5.org/book/part3
+See Part 3 in the Learning gem5 book:
+http://gem5.org/Documentation/learning_gem5/part3/MSIintro
 You can change simple_ruby to import from this file instead of from msi_caches
 to use the MI_example protocol instead of MSI.
 
@@ -37,9 +36,6 @@ IMPORTANT: If you modify this file, it's likely that the Learning gem5 book
            also needs to be updated. For now, email Jason <jason@lowepower.com>
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
 
 import math
 
@@ -83,7 +79,6 @@ class MyCacheSystem(RubySystem):
         # and other controllers, too.
         self.sequencers = [RubySequencer(version = i,
                                 # I/D cache is combined and grab from ctrl
-                                icache = self.controllers[i].cacheMemory,
                                 dcache = self.controllers[i].cacheMemory,
                                 clk_domain = self.controllers[i].clk_domain,
                                 ) for i in range(len(cpus))]
@@ -105,16 +100,7 @@ class MyCacheSystem(RubySystem):
 
         # Connect the cpu's cache, interrupt, and TLB ports to Ruby
         for i,cpu in enumerate(cpus):
-            cpu.icache_port = self.sequencers[i].slave
-            cpu.dcache_port = self.sequencers[i].slave
-            isa = buildEnv['TARGET_ISA']
-            if isa == 'x86':
-                cpu.interrupts[0].pio = self.sequencers[i].master
-                cpu.interrupts[0].int_master = self.sequencers[i].slave
-                cpu.interrupts[0].int_slave = self.sequencers[i].master
-            if isa == 'x86' or isa == 'arm':
-                cpu.itb.walker.port = self.sequencers[i].slave
-                cpu.dtb.walker.port = self.sequencers[i].slave
+            self.sequencers[i].connectCpuPorts(cpu)
 
 class L1Cache(L1Cache_Controller):
 
@@ -205,6 +191,7 @@ class DirController(Directory_Controller):
         self.dmaResponseFromDir.master = ruby_system.network.slave
         self.forwardFromDir = MessageBuffer()
         self.forwardFromDir.master = ruby_system.network.slave
+        self.requestToMemory = MessageBuffer()
         self.responseFromMemory = MessageBuffer()
 
 class MyNetwork(SimpleNetwork):

@@ -24,14 +24,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Bobby R. Bruce
  */
 
 #ifndef __SMALL_IMAGE_FILE_HH__
 #define __SMALL_IMAGE_FILE_HH__
 
 #include <cstdint>
+
+namespace gem5
+{
 
 /**
  * This image file contains the text "This is a test image.\n" 31 times.
@@ -137,5 +138,7 @@ const uint8_t image_file_gzipped[] = {
     0x51, 0xd1, 0x51, 0xd1, 0x41, 0x26, 0x0a, 0x00,
     0xc9, 0x58, 0x6c, 0x4e, 0xaa, 0x02, 0x00, 0x00
 };
+
+} // namespace gem5
 
 #endif // __SMALL_IMAGE_FILE_HH__

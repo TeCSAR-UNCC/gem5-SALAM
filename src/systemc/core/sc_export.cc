@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "base/cprintf.hh"
@@ -46,9 +44,9 @@ reportError(const char *id, const char *add_msg,
 {
     std::string msg;
     if (add_msg)
-        msg = csprintf("%s: export '%s' (%s)", add_msg, name, kind);
+        msg = gem5::csprintf("%s: export '%s' (%s)", add_msg, name, kind);
     else
-        msg = csprintf("export '%s' (%s)", name, kind);
+        msg = gem5::csprintf("export '%s' (%s)", name, kind);
 
     SC_REPORT_ERROR(id, msg.c_str());
 }

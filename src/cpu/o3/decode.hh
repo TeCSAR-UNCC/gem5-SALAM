@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Kevin Lim
  */
 
 #ifndef __CPU_O3_DECODE_HH__
@@ -46,42 +44,43 @@
 #include <queue>
 
 #include "base/statistics.hh"
+#include "cpu/o3/comm.hh"
+#include "cpu/o3/dyn_inst_ptr.hh"
+#include "cpu/o3/limits.hh"
 #include "cpu/timebuf.hh"
 
-struct DerivO3CPUParams;
+namespace gem5
+{
+
+struct O3CPUParams;
+
+namespace o3
+{
+
+class CPU;
 
 /**
- * DefaultDecode class handles both single threaded and SMT
+ * Decode class handles both single threaded and SMT
  * decode. Its width is specified by the parameters; each cycles it
  * tries to decode that many instructions. Because instructions are
  * actually decoded when the StaticInst is created, this stage does
  * not do much other than check any PC-relative branches.
  */
-template<class Impl>
-class DefaultDecode
+class Decode
 {
-  private:
-    // Typedefs from the Impl.
-    typedef typename Impl::O3CPU O3CPU;
-    typedef typename Impl::DynInstPtr DynInstPtr;
-    typedef typename Impl::CPUPol CPUPol;
-
-    // Typedefs from the CPU policy.
-    typedef typename CPUPol::FetchStruct FetchStruct;
-    typedef typename CPUPol::DecodeStruct DecodeStruct;
-    typedef typename CPUPol::TimeStruct TimeStruct;
-
   public:
     /** Overall decode stage status. Used to determine if the CPU can
      * deschedule itself due to a lack of activity.
      */
-    enum DecodeStatus {
+    enum DecodeStatus
+    {
         Active,
         Inactive
     };
 
     /** Individual thread status. */
-    enum ThreadStatus {
+    enum ThreadStatus
+    {
         Running,
         Idle,
         StartSquash,
@@ -95,11 +94,11 @@ class DefaultDecode
     DecodeStatus _status;
 
     /** Per-thread status. */
-    ThreadStatus decodeStatus[Impl::MaxThreads];
+    ThreadStatus decodeStatus[MaxThreads];
 
   public:
-    /** DefaultDecode constructor. */
-    DefaultDecode(O3CPU *_cpu, DerivO3CPUParams *params);
+    /** Decode constructor. */
+    Decode(CPU *_cpu, const O3CPUParams &params);
 
     void startupStage();
 
@@ -110,9 +109,6 @@ class DefaultDecode
 
     /** Returns the name of decode. */
     std::string name() const;
-
-    /** Registers statistics. */
-    void regStats();
 
     /** Sets the main backwards communication time buffer pointer. */
     void setTimeBuffer(TimeBuffer<TimeStruct> *tb_ptr);
@@ -181,7 +177,7 @@ class DefaultDecode
     bool checkStall(ThreadID tid) const;
 
     /** Returns if there any instructions from fetch on this cycle. */
-    inline bool fetchInstsValid();
+    bool fetchInstsValid();
 
     /** Switches decode to blocking, and signals back that decode has
      * become blocked.
@@ -209,41 +205,41 @@ class DefaultDecode
   private:
     // Interfaces to objects outside of decode.
     /** CPU interface. */
-    O3CPU *cpu;
+    CPU *cpu;
 
     /** Time buffer interface. */
     TimeBuffer<TimeStruct> *timeBuffer;
 
     /** Wire to get rename's output from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromRename;
+    TimeBuffer<TimeStruct>::wire fromRename;
 
     /** Wire to get iew's information from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromIEW;
+    TimeBuffer<TimeStruct>::wire fromIEW;
 
     /** Wire to get commit's information from backwards time buffer. */
-    typename TimeBuffer<TimeStruct>::wire fromCommit;
+    TimeBuffer<TimeStruct>::wire fromCommit;
 
     /** Wire to write information heading to previous stages. */
     // Might not be the best name as not only fetch will read it.
-    typename TimeBuffer<TimeStruct>::wire toFetch;
+    TimeBuffer<TimeStruct>::wire toFetch;
 
     /** Decode instruction queue. */
     TimeBuffer<DecodeStruct> *decodeQueue;
 
     /** Wire used to write any information heading to rename. */
-    typename TimeBuffer<DecodeStruct>::wire toRename;
+    TimeBuffer<DecodeStruct>::wire toRename;
 
     /** Fetch instruction queue interface. */
     TimeBuffer<FetchStruct> *fetchQueue;
 
     /** Wire to get fetch's output from fetch queue. */
-    typename TimeBuffer<FetchStruct>::wire fromFetch;
+    TimeBuffer<FetchStruct>::wire fromFetch;
 
     /** Queue of all instructions coming from fetch this cycle. */
-    std::queue<DynInstPtr> insts[Impl::MaxThreads];
+    std::queue<DynInstPtr> insts[MaxThreads];
 
     /** Skid buffer between fetch and decode. */
-    std::queue<DynInstPtr> skidBuffer[Impl::MaxThreads];
+    std::queue<DynInstPtr> skidBuffer[MaxThreads];
 
     /** Variable that tracks if decode has written to the time buffer this
      * cycle. Used to tell CPU if there is activity this cycle.
@@ -251,12 +247,13 @@ class DefaultDecode
     bool wroteToTimeBuffer;
 
     /** Source of possible stalls. */
-    struct Stalls {
+    struct Stalls
+    {
         bool rename;
     };
 
     /** Tracks which stages are telling decode to stall. */
-    Stalls stalls[Impl::MaxThreads];
+    Stalls stalls[MaxThreads];
 
     /** Rename to decode delay. */
     Cycles renameToDecodeDelay;
@@ -286,40 +283,47 @@ class DefaultDecode
     unsigned skidBufferMax;
 
     /** SeqNum of Squashing Branch Delay Instruction (used for MIPS)*/
-    Addr bdelayDoneSeqNum[Impl::MaxThreads];
+    Addr bdelayDoneSeqNum[MaxThreads];
 
     /** Instruction used for squashing branch (used for MIPS)*/
-    DynInstPtr squashInst[Impl::MaxThreads];
+    DynInstPtr squashInst[MaxThreads];
 
     /** Tells when their is a pending delay slot inst. to send
      *  to rename. If there is, then wait squash after the next
      *  instruction (used for MIPS).
      */
-    bool squashAfterDelaySlot[Impl::MaxThreads];
+    bool squashAfterDelaySlot[MaxThreads];
 
+    struct DecodeStats : public statistics::Group
+    {
+        DecodeStats(CPU *cpu);
 
-    /** Stat for total number of idle cycles. */
-    Stats::Scalar decodeIdleCycles;
-    /** Stat for total number of blocked cycles. */
-    Stats::Scalar decodeBlockedCycles;
-    /** Stat for total number of normal running cycles. */
-    Stats::Scalar decodeRunCycles;
-    /** Stat for total number of unblocking cycles. */
-    Stats::Scalar decodeUnblockCycles;
-    /** Stat for total number of squashing cycles. */
-    Stats::Scalar decodeSquashCycles;
-    /** Stat for number of times a branch is resolved at decode. */
-    Stats::Scalar decodeBranchResolved;
-    /** Stat for number of times a branch mispredict is detected. */
-    Stats::Scalar decodeBranchMispred;
-    /** Stat for number of times decode detected a non-control instruction
-     * incorrectly predicted as a branch.
-     */
-    Stats::Scalar decodeControlMispred;
-    /** Stat for total number of decoded instructions. */
-    Stats::Scalar decodeDecodedInsts;
-    /** Stat for total number of squashed instructions. */
-    Stats::Scalar decodeSquashedInsts;
+        /** Stat for total number of idle cycles. */
+        statistics::Scalar idleCycles;
+        /** Stat for total number of blocked cycles. */
+        statistics::Scalar blockedCycles;
+        /** Stat for total number of normal running cycles. */
+        statistics::Scalar runCycles;
+        /** Stat for total number of unblocking cycles. */
+        statistics::Scalar unblockCycles;
+        /** Stat for total number of squashing cycles. */
+        statistics::Scalar squashCycles;
+        /** Stat for number of times a branch is resolved at decode. */
+        statistics::Scalar branchResolved;
+        /** Stat for number of times a branch mispredict is detected. */
+        statistics::Scalar branchMispred;
+        /** Stat for number of times decode detected a non-control instruction
+         * incorrectly predicted as a branch.
+         */
+        statistics::Scalar controlMispred;
+        /** Stat for total number of decoded instructions. */
+        statistics::Scalar decodedInsts;
+        /** Stat for total number of squashed instructions. */
+        statistics::Scalar squashedInsts;
+    } stats;
 };
+
+} // namespace o3
+} // namespace gem5
 
 #endif // __CPU_O3_DECODE_HH__

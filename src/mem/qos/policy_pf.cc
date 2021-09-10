@@ -33,18 +33,27 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Giacomo Travaglini
  */
 
 #include "mem/qos/policy_pf.hh"
 
-#include "mem/request.hh"
+#include <algorithm>
 
-namespace QoS {
+#include "base/logging.hh"
+#include "params/QoSPropFairPolicy.hh"
 
-PropFairPolicy::PropFairPolicy(const Params* p)
-  : Policy(p), weight(p->weight)
+namespace gem5
+{
+
+namespace memory
+{
+
+GEM5_DEPRECATED_NAMESPACE(QoS, qos);
+namespace qos
+{
+
+PropFairPolicy::PropFairPolicy(const Params &p)
+  : Policy(p), weight(p.weight)
 {
     fatal_if(weight < 0 || weight > 1,
         "weight must be a value between 0 and 1");
@@ -53,32 +62,32 @@ PropFairPolicy::PropFairPolicy(const Params* p)
 PropFairPolicy::~PropFairPolicy()
 {}
 
-template <typename Master>
+template <typename Requestor>
 void
-PropFairPolicy::initMaster(const Master master, const double score)
+PropFairPolicy::initRequestor(const Requestor requestor, const double score)
 {
-    MasterID m_id = memCtrl->system()->lookupMasterId(master);
+    RequestorID id = memCtrl->system()->lookupRequestorId(requestor);
 
-    assert(m_id != Request::invldMasterId);
+    assert(id != Request::invldRequestorId);
 
-    // Setting the Initial score for the selected master.
-    history.push_back(std::make_pair(m_id, score));
+    // Setting the Initial score for the selected requestor.
+    history.push_back(std::make_pair(id, score));
 
     fatal_if(history.size() > memCtrl->numPriorities(),
-        "Policy's maximum number of masters is currently dictated "
+        "Policy's maximum number of requestors is currently dictated "
         "by the maximum number of priorities\n");
 }
 
 void
-PropFairPolicy::initMasterName(const std::string master, const double score)
+PropFairPolicy::initRequestorName(const std::string requestor, const double score)
 {
-    initMaster(master, score);
+    initRequestor(requestor, score);
 }
 
 void
-PropFairPolicy::initMasterObj(const SimObject* master, const double score)
+PropFairPolicy::initRequestorObj(const SimObject* requestor, const double score)
 {
-    initMaster(master, score);
+    initRequestor(requestor, score);
 }
 
 double
@@ -89,10 +98,10 @@ PropFairPolicy::updateScore(
 }
 
 uint8_t
-PropFairPolicy::schedule(const MasterID pkt_mid, const uint64_t pkt_size)
+PropFairPolicy::schedule(const RequestorID pkt_id, const uint64_t pkt_size)
 {
     auto sort_pred =
-    [] (const MasterHistory& lhs, const MasterHistory& rhs)
+    [] (const RequestorHistory& lhs, const RequestorHistory& rhs)
     { return lhs.second > rhs.second; };
 
     // Sorting in reverse in base of personal history:
@@ -105,10 +114,10 @@ PropFairPolicy::schedule(const MasterID pkt_mid, const uint64_t pkt_size)
     uint8_t pkt_priority = 0;
     for (auto m_hist = history.begin(); m_hist != history.end(); m_hist++) {
 
-        MasterID curr_mid = m_hist->first;
+        RequestorID curr_id = m_hist->first;
         double& curr_score = m_hist->second;
 
-        if (curr_mid == pkt_mid) {
+        if (curr_id == pkt_id) {
             // The qos priority is the position in the sorted vector.
             pkt_priority = std::distance(history.begin(), m_hist);
 
@@ -121,10 +130,6 @@ PropFairPolicy::schedule(const MasterID pkt_mid, const uint64_t pkt_size)
     return pkt_priority;
 }
 
-} // namespace QoS
-
-QoS::PropFairPolicy *
-QoSPropFairPolicyParams::create()
-{
-    return new QoS::PropFairPolicy(this);
-}
+} // namespace qos
+} // namespace memory
+} // namespace gem5

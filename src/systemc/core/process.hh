@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_CORE_PROCESS_HH__
@@ -120,7 +118,7 @@ class Process : public ::sc_core::sc_process_b, public ListNode
 
     void ready();
 
-    virtual Fiber *fiber() { return Fiber::primaryFiber(); }
+    virtual gem5::Fiber *fiber() { return gem5::Fiber::primaryFiber(); }
 
     static Process *newest() { return _newest; }
 

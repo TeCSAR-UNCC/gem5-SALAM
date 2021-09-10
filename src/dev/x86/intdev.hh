@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __DEV_X86_INTDEV_HH__
@@ -47,19 +45,23 @@
 #include <functional>
 #include <string>
 
+#include "base/cast.hh"
 #include "mem/tport.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 namespace X86ISA
 {
 
 template <class Device>
-class IntSlavePort : public SimpleTimingPort
+class IntResponsePort : public SimpleTimingPort
 {
     Device * device;
 
   public:
-    IntSlavePort(const std::string& _name, SimObject* _parent,
+    IntResponsePort(const std::string& _name, SimObject* _parent,
                  Device* dev) :
         SimpleTimingPort(_name, _parent), device(dev)
     {
@@ -87,7 +89,7 @@ PacketPtr
 buildIntPacket(Addr addr, T payload)
 {
     RequestPtr req = std::make_shared<Request>(
-        addr, sizeof(T), Request::UNCACHEABLE, Request::intMasterId);
+        addr, sizeof(T), Request::UNCACHEABLE, Request::intRequestorId);
     PacketPtr pkt = new Packet(req, MemCmd::WriteReq);
     pkt->allocate();
     pkt->setRaw<T>(payload);
@@ -95,7 +97,7 @@ buildIntPacket(Addr addr, T payload)
 }
 
 template <class Device>
-class IntMasterPort : public QueuedMasterPort
+class IntRequestPort : public QueuedRequestPort
 {
   private:
     ReqPacketQueue reqQueue;
@@ -105,14 +107,18 @@ class IntMasterPort : public QueuedMasterPort
     Tick latency;
 
     typedef std::function<void(PacketPtr)> OnCompletionFunc;
-    OnCompletionFunc onCompletion = nullptr;
+    struct OnCompletion : public Packet::SenderState
+    {
+        OnCompletionFunc func;
+        OnCompletion(OnCompletionFunc _func) : func(_func) {}
+    };
     // If nothing extra needs to happen, just clean up the packet.
     static void defaultOnCompletion(PacketPtr pkt) { delete pkt; }
 
   public:
-    IntMasterPort(const std::string& _name, SimObject* _parent,
+    IntRequestPort(const std::string& _name, SimObject* _parent,
                   Device* dev, Tick _latency) :
-        QueuedMasterPort(_name, _parent, reqQueue, snoopRespQueue),
+        QueuedRequestPort(_name, _parent, reqQueue, snoopRespQueue),
         reqQueue(*_parent, *this), snoopRespQueue(*_parent, *this),
         device(dev), latency(_latency)
     {
@@ -122,8 +128,9 @@ class IntMasterPort : public QueuedMasterPort
     recvTimingResp(PacketPtr pkt) override
     {
         assert(pkt->isResponse());
-        onCompletion(pkt);
-        onCompletion = nullptr;
+        auto *oc = safe_cast<OnCompletion *>(pkt->popSenderState());
+        oc->func(pkt);
+        delete oc;
         return true;
     }
 
@@ -132,7 +139,7 @@ class IntMasterPort : public QueuedMasterPort
             OnCompletionFunc func=defaultOnCompletion)
     {
         if (timing) {
-            onCompletion = func;
+            pkt->pushSenderState(new OnCompletion(func));
             schedTimingReq(pkt, curTick() + latency);
             // The target handles cleaning up the packet in timing mode.
         } else {
@@ -144,5 +151,6 @@ class IntMasterPort : public QueuedMasterPort
 };
 
 } // namespace X86ISA
+} // namespace gem5
 
 #endif //__DEV_X86_INTDEV_HH__

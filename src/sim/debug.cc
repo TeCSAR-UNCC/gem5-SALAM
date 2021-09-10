@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #include "sim/debug.hh"
@@ -36,13 +33,15 @@
 
 #include "base/debug.hh"
 #include "cpu/pc_event.hh"
-#include "sim/eventq_impl.hh"
+#include "sim/eventq.hh"
 #include "sim/global_event.hh"
+#include "sim/kernel_workload.hh"
 #include "sim/sim_events.hh"
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
 
 //
 // Debug event: place a breakpoint on the process function and
@@ -69,7 +68,7 @@ DebugBreakEvent::DebugBreakEvent(Tick when)
 void
 DebugBreakEvent::process()
 {
-    Debug::breakpoint();
+    debug::breakpoint();
 }
 
 
@@ -94,14 +93,6 @@ void
 schedRelBreak(Tick delta)
 {
     schedBreak(curTick() + delta);
-}
-
-void
-breakAtKernelFunction(const char* funcName)
-{
-    System* curSystem = System::systemList[0];
-    curSystem->addKernelFuncEvent<BreakPCEvent>(funcName,
-                                                "GDB scheduled break", true);
 }
 
 ///
@@ -139,3 +130,4 @@ setRemoteGDBPort(int port)
     remote_gdb_base_port = port;
 }
 
+} // namespace gem5

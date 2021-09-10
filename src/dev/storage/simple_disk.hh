@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
  */
 
 /* @file
@@ -37,6 +35,9 @@
 
 #include "params/SimpleDisk.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class DiskImage;
 class System;
@@ -55,11 +56,13 @@ class SimpleDisk : public SimObject
 
   public:
     typedef SimpleDiskParams Params;
-    SimpleDisk(const Params *p);
+    SimpleDisk(const Params &p);
     ~SimpleDisk();
 
     void read(Addr addr, baddr_t block, int count) const;
     void write(Addr addr, baddr_t block, int count);
 };
+
+} // namespace gem5
 
 #endif // __DEV_STORAGE_SIMPLE_DISK_HH__

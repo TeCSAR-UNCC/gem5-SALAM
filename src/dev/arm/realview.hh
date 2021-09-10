@@ -36,8 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 /**
@@ -52,32 +50,21 @@
 #include "dev/platform.hh"
 #include "params/RealView.hh"
 
+namespace gem5
+{
+
 class BaseGic;
 class IdeController;
-class System;
 
 class RealView : public Platform
 {
   public:
-    /** Pointer to the system */
-    System *system;
-
     BaseGic *gic;
 
   public:
-    typedef RealViewParams Params;
-    const Params *
-    params() const {
-        return dynamic_cast<const Params *>(_params);
-    }
+    using Params = RealViewParams;
 
-    /**
-     * Constructor for the Tsunami Class.
-     * @param name name of the object
-     * @param s system the object belongs to
-     * @param intctrl pointer to the interrupt controller
-     */
-    RealView(const Params *p);
+    RealView(const Params &p);
 
     /** Give platform a pointer to interrupt controller */
     void setGic(BaseGic *_gic) { gic = _gic; }
@@ -89,5 +76,7 @@ class RealView : public Platform
     void postPciInt(int line) override;
     void clearPciInt(int line) override;
 };
+
+} // namespace gem5
 
 #endif // __DEV_ARM_RealView_HH__

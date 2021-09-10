@@ -33,23 +33,24 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Giacomo Travaglini
  */
 
 #include "stream_gen.hh"
 
 #include "base/random.hh"
 
-StreamGen*
-StreamGen::create(const BaseTrafficGenParams *p)
+namespace gem5
 {
-    switch (p->stream_gen) {
-      case Enums::fixed:
+
+StreamGen*
+StreamGen::create(const BaseTrafficGenParams &p)
+{
+    switch (p.stream_gen) {
+      case StreamGenType::fixed:
         return new FixedStreamGen(p);
-      case Enums::random:
+      case StreamGenType::random:
         return new RandomStreamGen(p);
-      case Enums::none:
+      case StreamGenType::none:
       default:
         return nullptr;
     }
@@ -61,3 +62,5 @@ RandomStreamGen::randomPick(const std::vector<uint32_t> &svec)
     // Pick a random entry in the vector of IDs
     return svec[random_mt.random<size_t>(0, svec.size()-1)];
 }
+
+} // namespace gem5

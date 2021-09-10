@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013,2017 ARM Limited
+ * Copyright (c) 2012-2013,2017, 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -37,10 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Steve Reinhardt
- *          Stephen Hines
  */
 
 #ifndef __ARCH_ARM_LOCKED_MEM_HH__
@@ -52,11 +48,14 @@
  * ISA-specific helper functions for locked memory accesses.
  */
 
-#include "arch/arm/miscregs.hh"
-#include "arch/arm/isa_traits.hh"
+#include "arch/arm/regs/misc.hh"
+#include "arch/arm/utility.hh"
 #include "debug/LLSC.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
@@ -84,8 +83,8 @@ handleLockedSnoop(XC *xc, PacketPtr pkt, Addr cacheBlockMask)
                 xc->getCpuPtr()->name());
         xc->setMiscReg(MISCREG_LOCKFLAG, false);
         // Implement ARMv8 WFE/SEV semantics
+        sendEvent(xc);
         xc->setMiscReg(MISCREG_SEV_MAILBOX, true);
-        xc->getCpuPtr()->wakeup(xc->threadId());
     }
 }
 
@@ -159,10 +158,11 @@ globalClearExclusive(XC *xc)
     DPRINTF(LLSC,"Clearing lock and signaling sev\n");
     xc->setMiscReg(MISCREG_LOCKFLAG, false);
     // Implement ARMv8 WFE/SEV semantics
+    sendEvent(xc);
     xc->setMiscReg(MISCREG_SEV_MAILBOX, true);
-    xc->getCpuPtr()->wakeup(xc->threadId());
 }
 
 } // namespace ArmISA
+} // namespace gem5
 
 #endif

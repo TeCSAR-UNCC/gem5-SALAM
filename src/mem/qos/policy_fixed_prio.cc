@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Matteo Andreozzi
  */
 
 #include "mem/qos/policy_fixed_prio.hh"
@@ -42,12 +40,23 @@
 #include <algorithm>
 #include <functional>
 
+#include "base/trace.hh"
+#include "debug/QOS.hh"
 #include "mem/request.hh"
+#include "params/QoSFixedPriorityPolicy.hh"
 
-namespace QoS {
+namespace gem5
+{
 
-FixedPriorityPolicy::FixedPriorityPolicy(const Params* p)
-  : Policy(p), defaultPriority(p->qos_fixed_prio_default_prio)
+namespace memory
+{
+
+GEM5_DEPRECATED_NAMESPACE(QoS, qos);
+namespace qos
+{
+
+FixedPriorityPolicy::FixedPriorityPolicy(const Params &p)
+  : Policy(p), defaultPriority(p.qos_fixed_prio_default_prio)
 {}
 
 FixedPriorityPolicy::~FixedPriorityPolicy()
@@ -59,43 +68,40 @@ FixedPriorityPolicy::init()
 }
 
 void
-FixedPriorityPolicy::initMasterName(std::string master, uint8_t priority)
+FixedPriorityPolicy::initRequestorName(std::string requestor, uint8_t priority)
 {
     priorityMap.insert(
-        this->pair<std::string, uint8_t>(master, priority));
+        this->pair<std::string, uint8_t>(requestor, priority));
 }
 
 void
-FixedPriorityPolicy::initMasterObj(const SimObject* master, uint8_t priority)
+FixedPriorityPolicy::initRequestorObj(const SimObject* requestor,
+                                   uint8_t priority)
 {
     priorityMap.insert(
-        this->pair<const SimObject*, uint8_t>(master, priority));
+        this->pair<const SimObject*, uint8_t>(requestor, priority));
 }
 
 uint8_t
-FixedPriorityPolicy::schedule(const MasterID mId, const uint64_t data)
+FixedPriorityPolicy::schedule(const RequestorID id, const uint64_t data)
 {
-    // Reads a packet's MasterID contained in its encapsulated request
+    // Reads a packet's RequestorID contained in its encapsulated request
     // if a match is found in the configured priority map, returns the
     // matching priority, else returns zero
 
-    auto ret = priorityMap.find(mId);
+    auto ret = priorityMap.find(id);
 
     if (ret != priorityMap.end()) {
         return ret->second;
     } else {
-        DPRINTF(QOS, "Master %s (MasterID %d) not present in priorityMap, "
-                     "assigning default priority %d\n",
-                      memCtrl->system()->getMasterName(mId),
-                      mId, defaultPriority);
+        DPRINTF(QOS, "Requestor %s (RequestorID %d) not present in "
+                     "priorityMap, assigning default priority %d\n",
+                      memCtrl->system()->getRequestorName(id),
+                      id, defaultPriority);
         return defaultPriority;
     }
 }
 
-} // namespace QoS
-
-QoS::FixedPriorityPolicy *
-QoSFixedPriorityPolicyParams::create()
-{
-    return new QoS::FixedPriorityPolicy(this);
-}
+} // namespace qos
+} // namespace memory
+} // namespace gem5

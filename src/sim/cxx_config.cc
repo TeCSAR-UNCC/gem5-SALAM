@@ -33,13 +33,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andrew Bardsley
  */
 
 #include "sim/cxx_config.hh"
+
+namespace gem5
+{
 
 const std::string CxxConfigParams::invalidName = "<invalid>";
 
 /** Directory of all SimObject classes config details */
 std::map<std::string, CxxConfigDirectoryEntry *> cxx_config_directory;
+
+} // namespace gem5

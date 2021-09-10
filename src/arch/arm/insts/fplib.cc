@@ -1,5 +1,6 @@
 /*
-* Copyright (c) 2012-2013, 2017-2018 ARM Limited
+* Copyright (c) 2012-2013, 2017-2018, 2020 ARM Limited
+* Copyright (c) 2020 Metempsy Technology Consulting
 * All rights reserved
 *
 * The license below extends only to copyright in the software and shall
@@ -33,17 +34,18 @@
 * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-* Authors: Edmund Grimley Evans
-*          Thomas Grocutt
 */
 
 #include <stdint.h>
 
 #include <cassert>
+#include <cmath>
 
 #include "base/logging.hh"
 #include "fplib.hh"
+
+namespace gem5
+{
 
 namespace ArmISA
 {
@@ -394,14 +396,18 @@ fp16_unpack(int *sgn, int *exp, uint16_t *mnt, uint16_t x, int mode,
     *exp = FP16_EXP(x);
     *mnt = FP16_MANT(x);
 
-    // Handle subnormals:
     if (*exp) {
         *mnt |= 1ULL << FP16_MANT_BITS;
     } else {
-        ++*exp;
+        // Handle subnormals:
         // IDC (Input Denormal) is not set in this case.
-        if (mode & FPLIB_FZ16)
-            *mnt = 0;
+        if (*mnt) {
+            if (mode & FPLIB_FZ16) {
+                *mnt = 0;
+            } else {
+                ++*exp;
+            }
+        }
     }
 }
 
@@ -413,14 +419,17 @@ fp32_unpack(int *sgn, int *exp, uint32_t *mnt, uint32_t x, int mode,
     *exp = FP32_EXP(x);
     *mnt = FP32_MANT(x);
 
-    // Handle subnormals:
     if (*exp) {
         *mnt |= 1ULL << FP32_MANT_BITS;
     } else {
-        ++*exp;
-        if ((mode & FPLIB_FZ) && *mnt) {
-            *flags |= FPLIB_IDC;
-            *mnt = 0;
+        // Handle subnormals:
+        if (*mnt) {
+            if (mode & FPLIB_FZ) {
+                *flags |= FPLIB_IDC;
+                *mnt = 0;
+            } else {
+                ++*exp;
+            }
         }
     }
 }
@@ -429,18 +438,23 @@ static inline void
 fp64_unpack(int *sgn, int *exp, uint64_t *mnt, uint64_t x, int mode,
             int *flags)
 {
+
+
     *sgn = x >> (FP64_BITS - 1);
     *exp = FP64_EXP(x);
     *mnt = FP64_MANT(x);
 
-    // Handle subnormals:
     if (*exp) {
         *mnt |= 1ULL << FP64_MANT_BITS;
     } else {
-        ++*exp;
-        if ((mode & FPLIB_FZ) && *mnt) {
-            *flags |= FPLIB_IDC;
-            *mnt = 0;
+        // Handle subnormals:
+        if (*mnt) {
+            if (mode & FPLIB_FZ) {
+                *flags |= FPLIB_IDC;
+                *mnt = 0;
+            } else {
+                ++*exp;
+            }
         }
     }
 }
@@ -4737,6 +4751,71 @@ fplibFPToFixed(uint64_t op, int fbits, bool u, FPRounding rounding, FPSCR &fpscr
     return result;
 }
 
+uint32_t
+fplibFPToFixedJS(uint64_t op, FPSCR &fpscr, bool is64, uint8_t& nz)
+{
+    int flags = 0;
+    uint32_t result;
+    bool Z = true;
+
+    uint32_t sgn = bits(op, 63);
+    int32_t exp  = bits(op, 62, 52);
+    uint64_t mnt = bits(op, 51, 0);
+
+    if (exp == 0) {
+        if (mnt != 0) {
+           if (fpscr.fz) {
+                flags |= FPLIB_IDC;
+            } else {
+                flags |= FPLIB_IXC;
+                Z = 0;
+            }
+        }
+        result = 0;
+    } else if (exp == 0x7ff) {
+        flags |= FPLIB_IOC;
+        result = 0;
+        Z = 0;
+    } else {
+        mnt |= 1ULL << FP64_MANT_BITS;
+        int mnt_shft = exp - FP64_EXP_BIAS - 52;
+        bool err = true;
+
+        if (abs(mnt_shft) >= FP64_BITS) {
+            result = 0;
+            Z = 0;
+        } else if (mnt_shft >= 0) {
+            result = lsl64(mnt, mnt_shft);
+        } else if (mnt_shft < 0) {
+            err = lsl64(mnt, mnt_shft+FP64_BITS) != 0;
+            result = lsr64(mnt, abs(mnt_shft));
+        }
+        uint64_t max_result = (1UL << (FP32_BITS - 1)) -!sgn;
+        if ((exp - FP64_EXP_BIAS) > 31 || result > max_result) {
+                flags |= FPLIB_IOC;
+                Z = false;
+        } else if (err) {
+                flags |= FPLIB_IXC;
+                Z = false;
+        }
+        result =  sgn ? -result : result;
+    }
+    if (sgn == 1 && result == 0)
+        Z = false;
+
+    if (is64) {
+        nz = Z? 0x1: 0x0;
+    } else {
+        fpscr.n = 0;
+        fpscr.z = (int)Z;
+        fpscr.c = 0;
+        fpscr.v = 0;
+    }
+
+    set_fpscr0(fpscr, flags);
+    return result;
+}
+
 template <>
 uint64_t
 fplibFPToFixed(uint16_t op, int fbits, bool u, FPRounding rounding,
@@ -4961,4 +5040,5 @@ fplibDefaultNaN()
     return fp64_defaultNaN();
 }
 
-}
+} // namespace ArmISA
+} // namespace gem5

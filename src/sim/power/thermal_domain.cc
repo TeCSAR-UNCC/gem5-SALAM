@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 ARM Limited
+ * Copyright (c) 2015, 2021 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #include "sim/power/thermal_domain.hh"
@@ -50,13 +48,19 @@
 #include "sim/probe/probe.hh"
 #include "sim/sub_system.hh"
 
-ThermalDomain::ThermalDomain(const Params *p)
-    : SimObject(p), _initTemperature(p->initial_temperature),
-    node(NULL), subsystem(NULL)
+namespace gem5
 {
+
+ThermalDomain::ThermalDomain(const Params &p)
+    : SimObject(p), _initTemperature(p.initial_temperature),
+    node(NULL), subsystem(NULL),
+    ADD_STAT(currentTemp, statistics::units::DegreeCelsius::get(), "Temperature")
+{
+    currentTemp
+        .functor([this]() { return currentTemperature().toCelsius(); });
 }
 
-double
+Temperature
 ThermalDomain::currentTemperature() const
 {
     return node->temp;
@@ -68,44 +72,14 @@ ThermalDomain::setSubSystem(SubSystem * ss)
     assert(!this->subsystem);
     this->subsystem = ss;
 
-    ppThermalUpdate = new ProbePointArg<double>(subsystem->getProbeManager(),
-                                                "thermalUpdate");
-}
-
-void
-ThermalDomain::regStats()
-{
-    SimObject::regStats();
-
-    currentTemp
-        .method(this, &ThermalDomain::currentTemperature)
-        .name(params()->name + ".temp")
-        .desc("Temperature in centigrate degrees")
-        ;
+    ppThermalUpdate = new ProbePointArg<Temperature>(
+        subsystem->getProbeManager(), "thermalUpdate");
 }
 
 void
 ThermalDomain::emitUpdate()
 {
     ppThermalUpdate->notify(node->temp);
-}
-
-ThermalDomain *
-ThermalDomainParams::create()
-{
-    return new ThermalDomain(this);
-}
-
-void
-ThermalDomain::serialize(CheckpointOut &cp) const
-{
-    SERIALIZE_SCALAR(_initTemperature);
-}
-
-void
-ThermalDomain::unserialize(CheckpointIn &cp)
-{
-    UNSERIALIZE_SCALAR(_initTemperature);
 }
 
 
@@ -118,3 +92,5 @@ ThermalDomain::getEquation(ThermalNode * tn, unsigned n, double step) const
         eq[eq.cnt()] = power;
     return eq;
 }
+
+} // namespace gem5

@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Javier Bueno
  */
 
 #ifndef __MEM_CACHE_PREFETCH_SLIM_AMPM_HH__
@@ -45,20 +43,30 @@
  * This prefetcher uses two other prefetchers, the AMPM and the DCPT.
  */
 
+namespace gem5
+{
+
 struct SlimAMPMPrefetcherParams;
 
-class SlimAMPMPrefetcher : public QueuedPrefetcher
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+class SlimAMPM : public Queued
 {
    /** AMPM prefetcher object */
    AccessMapPatternMatching &ampm;
    /** DCPT prefetcher object */
    DeltaCorrelatingPredictionTables &dcpt;
  public:
-   SlimAMPMPrefetcher(const SlimAMPMPrefetcherParams *p);
-   ~SlimAMPMPrefetcher()
-   {}
+   SlimAMPM(const SlimAMPMPrefetcherParams &p);
+   ~SlimAMPM() = default;
 
    void calculatePrefetch(const PrefetchInfo &pfi,
                           std::vector<AddrPriority> &addresses) override;
 };
+
+} // namespace prefetch
+} // namespace gem5
+
 #endif//__MEM_CACHE_PREFETCH_SLIM_AMPM_HH__

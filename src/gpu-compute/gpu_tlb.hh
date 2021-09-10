@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Lisa Hsu
  */
 
 #ifndef __GPU_TLB_HH__
@@ -49,12 +47,16 @@
 #include "base/callback.hh"
 #include "base/logging.hh"
 #include "base/statistics.hh"
+#include "base/stats/group.hh"
 #include "gpu-compute/compute_unit.hh"
 #include "mem/port.hh"
 #include "mem/request.hh"
 #include "params/X86GPUTLB.hh"
 #include "sim/clocked_object.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 class BaseTLB;
 class Packet;
@@ -71,31 +73,12 @@ namespace X86ISA
 
         uint32_t configAddress;
 
-        // TLB clock: will inherit clock from shader's clock period in terms
-        // of nuber of ticks of curTime (aka global simulation clock)
-        // The assignment of TLB clock from shader clock is done in the python
-        // config files.
-        int clock;
-
       public:
-        // clock related functions ; maps to-and-from Simulation ticks and
-        // object clocks.
-        Tick frequency() const { return SimClock::Frequency / clock; }
-
-        Tick
-        ticks(int numCycles) const
-        {
-            return (Tick)clock * numCycles;
-        }
-
-        Tick curCycle() const { return curTick() / clock; }
-        Tick tickToCycles(Tick val) const { return val / clock;}
-
         typedef X86GPUTLBParams Params;
-        GpuTLB(const Params *p);
+        GpuTLB(const Params &p);
         ~GpuTLB();
 
-        typedef enum BaseTLB::Mode Mode;
+        typedef enum BaseMMU::Mode Mode;
 
         class Translation
         {
@@ -177,7 +160,8 @@ namespace X86ISA
          */
         std::vector<EntryList> entryList;
 
-        Fault translateInt(const RequestPtr &req, ThreadContext *tc);
+        Fault translateInt(bool read, const RequestPtr &req,
+                           ThreadContext *tc);
 
         Fault translate(const RequestPtr &req, ThreadContext *tc,
                 Translation *translation, Mode mode, bool &delayedResponse,
@@ -189,35 +173,6 @@ namespace X86ISA
         int missLatency1;
         int missLatency2;
 
-        // local_stats are as seen from the TLB
-        // without taking into account coalescing
-        Stats::Scalar localNumTLBAccesses;
-        Stats::Scalar localNumTLBHits;
-        Stats::Scalar localNumTLBMisses;
-        Stats::Formula localTLBMissRate;
-
-        // global_stats are as seen from the
-        // CU's perspective taking into account
-        // all coalesced requests.
-        Stats::Scalar globalNumTLBAccesses;
-        Stats::Scalar globalNumTLBHits;
-        Stats::Scalar globalNumTLBMisses;
-        Stats::Formula globalTLBMissRate;
-
-        // from the CU perspective (global)
-        Stats::Scalar accessCycles;
-        // from the CU perspective (global)
-        Stats::Scalar pageTableCycles;
-        Stats::Scalar numUniquePages;
-        // from the perspective of this TLB
-        Stats::Scalar localCycles;
-        // from the perspective of this TLB
-        Stats::Formula localLatency;
-        // I take the avg. per page and then
-        // the avg. over all pages.
-        Stats::Scalar avgReuseDistance;
-
-        void regStats() override;
         void updatePageFootprint(Addr virt_page_addr);
         void printAccessPattern();
 
@@ -256,12 +211,12 @@ namespace X86ISA
         void issueTLBLookup(PacketPtr pkt);
 
         // CpuSidePort is the TLB Port closer to the CPU/CU side
-        class CpuSidePort : public SlavePort
+        class CpuSidePort : public ResponsePort
         {
           public:
             CpuSidePort(const std::string &_name, GpuTLB * gpu_TLB,
                         PortID _index)
-                : SlavePort(_name, gpu_TLB), tlb(gpu_TLB), index(_index) { }
+                : ResponsePort(_name, gpu_TLB), tlb(gpu_TLB), index(_index) { }
 
           protected:
             GpuTLB *tlb;
@@ -283,12 +238,12 @@ namespace X86ISA
          * Future action item: if we ever do real page walks, then this port
          * should be connected to a RubyPort.
          */
-        class MemSidePort : public MasterPort
+        class MemSidePort : public RequestPort
         {
           public:
             MemSidePort(const std::string &_name, GpuTLB * gpu_TLB,
                         PortID _index)
-                : MasterPort(_name, gpu_TLB), tlb(gpu_TLB), index(_index) { }
+                : RequestPort(_name, gpu_TLB), tlb(gpu_TLB), index(_index) { }
 
             std::deque<PacketPtr> retries;
 
@@ -341,11 +296,11 @@ namespace X86ISA
             */
             TlbEntry *tlbEntry;
             // Is this a TLB prefetch request?
-            bool prefetch;
+            bool isPrefetch;
             // When was the req for this translation issued
             uint64_t issueTime;
             // Remember where this came from
-            std::vector<SlavePort*>ports;
+            std::vector<ResponsePort*>ports;
 
             // keep track of #uncoalesced reqs per packet per TLB level;
             // reqCnt per level >= reqCnt higher level
@@ -355,10 +310,10 @@ namespace X86ISA
             Packet::SenderState *saved;
 
             TranslationState(Mode tlb_mode, ThreadContext *_tc,
-                             bool _prefetch=false,
+                             bool is_prefetch=false,
                              Packet::SenderState *_saved=nullptr)
                 : tlbMode(tlb_mode), tc(_tc), tlbEntry(nullptr),
-                  prefetch(_prefetch), issueTime(0),
+                  isPrefetch(is_prefetch), issueTime(0),
                   hitLevel(0),saved(_saved) { }
         };
 
@@ -446,7 +401,43 @@ namespace X86ISA
         void exitCallback();
 
         EventFunctionWrapper exitEvent;
+
+      protected:
+        struct GpuTLBStats : public statistics::Group
+        {
+            GpuTLBStats(statistics::Group *parent);
+
+            // local_stats are as seen from the TLB
+            // without taking into account coalescing
+            statistics::Scalar localNumTLBAccesses;
+            statistics::Scalar localNumTLBHits;
+            statistics::Scalar localNumTLBMisses;
+            statistics::Formula localTLBMissRate;
+
+            // global_stats are as seen from the
+            // CU's perspective taking into account
+            // all coalesced requests.
+            statistics::Scalar globalNumTLBAccesses;
+            statistics::Scalar globalNumTLBHits;
+            statistics::Scalar globalNumTLBMisses;
+            statistics::Formula globalTLBMissRate;
+
+            // from the CU perspective (global)
+            statistics::Scalar accessCycles;
+            // from the CU perspective (global)
+            statistics::Scalar pageTableCycles;
+            statistics::Scalar numUniquePages;
+            // from the perspective of this TLB
+            statistics::Scalar localCycles;
+            // from the perspective of this TLB
+            statistics::Formula localLatency;
+            // I take the avg. per page and then
+            // the avg. over all pages.
+            statistics::Scalar avgReuseDistance;
+        } stats;
     };
 }
+
+} // namespace gem5
 
 #endif // __GPU_TLB_HH__

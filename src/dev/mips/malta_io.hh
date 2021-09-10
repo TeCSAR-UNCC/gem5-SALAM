@@ -24,10 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
- *          Andrew Schultz
- *          Miguel Serrano
  */
 
 /** @file
@@ -45,6 +41,9 @@
 #include "params/MaltaIO.hh"
 #include "sim/eventq.hh"
 
+namespace gem5
+{
+
 /**
  * Malta I/O device is a catch all for all the south bridge stuff we care
  * to implement.
@@ -57,7 +56,7 @@ class MaltaIO : public BasicPioDevice
     {
       public:
         Malta *malta;
-        RTC(const std::string &name, const MaltaIOParams *p);
+        RTC(const std::string &name, const MaltaIOParams &p);
 
       protected:
         void handleEvent()
@@ -106,19 +105,13 @@ class MaltaIO : public BasicPioDevice
      */
     Tick frequency() const;
 
-    typedef MaltaIOParams Params;
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
+    PARAMS(MaltaIO);
 
     /**
      * Initialize all the data for devices supported by Malta I/O.
      * @param p pointer to Params struct
      */
-    MaltaIO(const Params *p);
+    MaltaIO(const Params &p);
 
     Tick read(PacketPtr pkt) override;
     Tick write(PacketPtr pkt) override;
@@ -139,5 +132,7 @@ class MaltaIO : public BasicPioDevice
     void startup() override;
 
 };
+
+} // namespace gem5
 
 #endif // __DEV_MALTA_IO_HH__

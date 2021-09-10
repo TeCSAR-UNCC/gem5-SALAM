@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Daniel Carvalho
  */
 
 /**
@@ -43,7 +41,10 @@
 #include "mem/packet.hh"
 #include "params/CompressedTags.hh"
 
-CompressedTags::CompressedTags(const Params *p)
+namespace gem5
+{
+
+CompressedTags::CompressedTags(const Params &p)
     : SectorTags(p)
 {
 }
@@ -103,7 +104,7 @@ CompressedTags::tagsInit()
 CacheBlk*
 CompressedTags::findVictim(Addr addr, const bool is_secure,
                            const std::size_t compressed_size,
-                           std::vector<CacheBlk*>& evict_blks) const
+                           std::vector<CacheBlk*>& evict_blks)
 {
     // Get all possible locations of this superblock
     const std::vector<ReplaceableEntry*> superblock_entries =
@@ -117,8 +118,7 @@ CompressedTags::findVictim(Addr addr, const bool is_secure,
     const uint64_t offset = extractSectorOffset(addr);
     for (const auto& entry : superblock_entries){
         SuperBlk* superblock = static_cast<SuperBlk*>(entry);
-        if ((tag == superblock->getTag()) && superblock->isValid() &&
-            (is_secure == superblock->isSecure()) &&
+        if (superblock->matchTag(tag, is_secure) &&
             !superblock->blks[offset]->isValid() &&
             superblock->isCompressed() &&
             superblock->canCoAllocate(compressed_size))
@@ -138,7 +138,9 @@ CompressedTags::findVictim(Addr addr, const bool is_secure,
 
         // The whole superblock must be evicted to make room for the new one
         for (const auto& blk : victim_superblock->blks){
-            evict_blks.push_back(blk);
+            if (blk->isValid()) {
+                evict_blks.push_back(blk);
+            }
         }
     }
 
@@ -151,37 +153,14 @@ CompressedTags::findVictim(Addr addr, const bool is_secure,
         assert(!victim->isValid());
 
         // Print all co-allocated blocks
-        DPRINTF(CacheComp, "Co-Allocation: offset %d with blocks\n", offset);
-        for (const auto& blk : victim_superblock->blks){
-            if (blk->isValid()) {
-                DPRINTFR(CacheComp, "\t[%s]\n", blk->print());
-            }
-        }
+        DPRINTF(CacheComp, "Co-Allocation: offset %d of %s\n", offset,
+                victim_superblock->print());
     }
+
+    // Update number of sub-blocks evicted due to a replacement
+    sectorStats.evictionsReplacement[evict_blks.size()]++;
 
     return victim;
-}
-
-void
-CompressedTags::insertBlock(const PacketPtr pkt, CacheBlk *blk)
-{
-    // We check if block can co-allocate before inserting, because this check
-    // assumes the block is still invalid
-    CompressionBlk* compression_blk = static_cast<CompressionBlk*>(blk);
-    const SuperBlk* superblock = static_cast<const SuperBlk*>(
-        compression_blk->getSectorBlock());
-    const bool is_co_allocatable = superblock->isCompressed() &&
-        superblock->canCoAllocate(compression_blk->getSizeBits());
-
-    // Insert block
-    SectorTags::insertBlock(pkt, blk);
-
-    // We always store compressed blocks when possible
-    if (is_co_allocatable) {
-        compression_blk->setCompressed();
-    } else {
-        compression_blk->setUncompressed();
-    }
 }
 
 void
@@ -203,8 +182,4 @@ CompressedTags::anyBlk(std::function<bool(CacheBlk &)> visitor)
     return false;
 }
 
-CompressedTags *
-CompressedTagsParams::create()
-{
-    return new CompressedTags(this);
-}
+} // namespace gem5

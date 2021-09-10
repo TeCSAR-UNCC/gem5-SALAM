@@ -24,9 +24,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from six import string_types
-
 import os
 import sys
 
@@ -50,12 +47,12 @@ class PairContainer(object):
 
 class Location(object):
     def __init__(self, filename, lineno, no_warning=False):
-        if not isinstance(filename, string_types):
-            raise AttributeError, \
-                "filename must be a string, found '%s'" % (type(filename), )
-        if not isinstance(lineno, (int, long)):
-            raise AttributeError, \
-                "filename must be an integer, found '%s'" % (type(lineno), )
+        if not isinstance(filename, str):
+            raise AttributeError(
+                "filename must be a string, found {}".format(type(filename)))
+        if not isinstance(lineno, int):
+            raise AttributeError(
+                "filename must be an integer, found {}".format(type(lineno)))
         self.filename = filename
         self.lineno = lineno
         self.no_warning = no_warning
@@ -74,7 +71,7 @@ class Location(object):
     def error(self, message, *args):
         if args:
             message = message % args
-        raise Exception, "%s: Error: %s" % (self, message)
+        raise Exception("{}: Error: {}".format(self, message))
         sys.exit("\n%s: Error: %s" % (self, message))
 
 __all__ = [ 'PairContainer', 'Location' ]

@@ -24,9 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #ifndef __BASE_LOADER_MEMORY_IMAGE_HH__
@@ -39,11 +36,19 @@
 #include <string>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/loader/image_file_data.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
 
+namespace gem5
+{
+
 class PortProxy;
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 class MemoryImage
 {
@@ -165,5 +170,7 @@ operator << (std::ostream &os, const MemoryImage::Segment &seg)
     return os;
 }
 
+} // namespace loader
+} // namespace gem5
 
 #endif // __BASE_LOADER_MEMORY_IMAGE_HH__

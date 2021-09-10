@@ -23,21 +23,31 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/arm/fastmodel/CortexA76/cortex_a76.hh"
 
-#include "arch/arm/fastmodel/arm/cpu.hh"
 #include "arch/arm/fastmodel/iris/cpu.hh"
+#include "arch/arm/regs/misc.hh"
 #include "base/logging.hh"
 #include "dev/arm/base_gic.hh"
-#include "sim/core.hh"
 #include "systemc/tlm_bridge/gem5_to_tlm.hh"
 
-namespace FastModel
+namespace gem5
 {
+
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
+{
+
+void
+CortexA76::initState()
+{
+    for (auto *tc : threadContexts)
+        tc->setMiscRegNoEffect(ArmISA::MISCREG_CNTFRQ_EL0, params().cntfrq);
+
+    evs_base_cpu->setSysCounterFrq(params().cntfrq);
+}
 
 void
 CortexA76::setCluster(CortexA76Cluster *_cluster, int _num)
@@ -91,25 +101,18 @@ CortexA76::getPort(const std::string &if_name, PortID idx)
     if (if_name == "redistributor")
         return cluster->getEvs()->gem5_getPort(if_name, num);
     else
-        return ArmCPU::getPort(if_name, idx);
+        return Base::getPort(if_name, idx);
 }
 
-CortexA76Cluster::CortexA76Cluster(Params &p) :
-    SimObject(&p), _params(p), cores(p.cores), evs(p.evs)
+CortexA76Cluster::CortexA76Cluster(const Params &p) :
+    SimObject(p), cores(p.cores), evs(p.evs)
 {
     for (int i = 0; i < p.cores.size(); i++)
         p.cores[i]->setCluster(this, i);
 
-    sc_core::sc_attr_base *base;
-
-    base = evs->get_attribute(Iris::Gem5CpuClusterAttributeName);
-    auto *gem5_cluster_attr =
-        dynamic_cast<sc_core::sc_attribute<CortexA76Cluster *> *>(base);
-    panic_if(base && !gem5_cluster_attr,
-             "The EVS gem5 CPU cluster attribute was not of type "
-             "sc_attribute<FastModel::CortexA76Cluster *>.");
-    if (gem5_cluster_attr)
-        gem5_cluster_attr->value = this;
+    Iris::BaseCpuEvs *e = dynamic_cast<Iris::BaseCpuEvs *>(evs);
+    panic_if(!e, "EVS should be of type Iris::BaseCpuEvs");
+    e->setCluster(this);
 
     set_evs_param("core.BROADCASTATOMIC", p.BROADCASTATOMIC);
     set_evs_param("core.BROADCASTCACHEMAINT", p.BROADCASTCACHEMAINT);
@@ -197,16 +200,5 @@ CortexA76Cluster::getPort(const std::string &if_name, PortID idx)
     }
 }
 
-} // namespace FastModel
-
-FastModel::CortexA76 *
-FastModelCortexA76Params::create()
-{
-    return new FastModel::CortexA76(*this);
-}
-
-FastModel::CortexA76Cluster *
-FastModelCortexA76ClusterParams::create()
-{
-    return new FastModel::CortexA76Cluster(*this);
-}
+} // namespace fastmodel
+} // namespace gem5

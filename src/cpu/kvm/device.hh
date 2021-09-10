@@ -33,14 +33,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __CPU_KVM_DEVICE_HH__
 #define __CPU_KVM_DEVICE_HH__
 
 #include <cstdint>
+
+namespace gem5
+{
 
 /**
  * KVM device wrapper
@@ -122,5 +123,7 @@ class KvmDevice
   private:
     int fd;
 };
+
+} // namespace gem5
 
 #endif // __CPU_KVM_DEVICE_HH__

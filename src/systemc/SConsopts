@@ -22,22 +22,21 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Gabe Black
 
 Import('*')
-
-from m5.util import compareVersions
 
 from gem5_scons import warning
 
 def use_systemc_check(env, warn=False):
-    if ('GCC_VERSION' in env and
-            compareVersions(env['GCC_VERSION'], '5.0') < 0):
+    import platform
+    host_isa = platform.machine()
+    # Disallow compiling systemc if the host ISA is RISC-V.
+    # The error is described here: https://gem5.atlassian.net/browse/GEM5-1027
+    if host_isa.startswith("riscv"):
         if warn:
-            warning('Systemc may not work on gcc versions less than 5.0.')
+            warning('Warning: Systemc may not work on RISC-V.')
         return False
-    elif env['PLATFORM'] == 'darwin':
+    if env['PLATFORM'] == 'darwin':
         if warn:
             warning('Warning: Systemc may not work on Mac OS.')
         return False
@@ -45,9 +44,7 @@ def use_systemc_check(env, warn=False):
 
 main.AddMethod(use_systemc_check, 'UseSystemcCheck')
 
-sticky_vars.AddVariables(
-    BoolVariable('USE_SYSTEMC', 'Enable SystemC API support',
-                 main.UseSystemcCheck())
-    )
+sticky_vars.Add(BoolVariable('USE_SYSTEMC', 'Enable SystemC API support',
+                             main.UseSystemcCheck()))
 
 export_vars.append('USE_SYSTEMC')

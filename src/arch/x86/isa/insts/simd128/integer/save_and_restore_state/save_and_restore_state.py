@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andreas Sandberg
 
 # Register usage:
 #  t1, t2 == temporaries
@@ -45,16 +43,16 @@ storeX87RegTemplate = '''
 '''
 
 loadXMMRegTemplate =  '''
-    ldfp "InstRegIndex(FLOATREG_XMM_LOW(%(idx)i))", seg, %(mode)s, \
+    ldfp fpRegIdx("FLOATREG_XMM_LOW(%(idx)i)"), seg, %(mode)s, \
          "DISPLACEMENT + 160 + 16 * %(idx)i", dataSize=8
-    ldfp "InstRegIndex(FLOATREG_XMM_HIGH(%(idx)i))", seg, %(mode)s, \
+    ldfp fpRegIdx("FLOATREG_XMM_HIGH(%(idx)i)"), seg, %(mode)s, \
          "DISPLACEMENT + 160 + 16 * %(idx)i + 8", dataSize=8
 '''
 
 storeXMMRegTemplate =  '''
-    stfp "InstRegIndex(FLOATREG_XMM_LOW(%(idx)i))", seg, %(mode)s, \
+    stfp fpRegIdx("FLOATREG_XMM_LOW(%(idx)i)"), seg, %(mode)s, \
          "DISPLACEMENT + 160 + 16 * %(idx)i", dataSize=8
-    stfp "InstRegIndex(FLOATREG_XMM_HIGH(%(idx)i))", seg, %(mode)s, \
+    stfp fpRegIdx("FLOATREG_XMM_HIGH(%(idx)i)"), seg, %(mode)s, \
          "DISPLACEMENT + 160 + 16 * %(idx)i + 8", dataSize=8
 '''
 
@@ -82,10 +80,10 @@ fxsaveCommonTemplate = """
     rdxftw t1
     st t1, seg, %(mode)s, "DISPLACEMENT + 4", dataSize=1
 
-    rdval t1, "InstRegIndex(MISCREG_FOP)"
+    rdval t1, ctrlRegIdx("MISCREG_FOP")
     st t1, seg, %(mode)s, "DISPLACEMENT + 6", dataSize=2
 
-    rdval t1, "InstRegIndex(MISCREG_MXCSR)"
+    rdval t1, ctrlRegIdx("MISCREG_MXCSR")
     st t1, seg, %(mode)s, "DISPLACEMENT + 16 + 8", dataSize=4
 
     # MXCSR_MASK, software assumes the default (0xFFBF) if 0.
@@ -94,24 +92,24 @@ fxsaveCommonTemplate = """
 """ + storeAllDataRegs
 
 fxsave32Template = """
-    rdval t1, "InstRegIndex(MISCREG_FIOFF)"
+    rdval t1, ctrlRegIdx("MISCREG_FIOFF")
     st t1, seg, %(mode)s, "DISPLACEMENT + 8", dataSize=4
 
-    rdval t1, "InstRegIndex(MISCREG_FISEG)"
+    rdval t1, ctrlRegIdx("MISCREG_FISEG")
     st t1, seg, %(mode)s, "DISPLACEMENT + 12", dataSize=2
 
-    rdval t1, "InstRegIndex(MISCREG_FOOFF)"
+    rdval t1, ctrlRegIdx("MISCREG_FOOFF")
     st t1, seg, %(mode)s, "DISPLACEMENT + 16 + 0", dataSize=4
 
-    rdval t1, "InstRegIndex(MISCREG_FOSEG)"
+    rdval t1, ctrlRegIdx("MISCREG_FOSEG")
     st t1, seg, %(mode)s, "DISPLACEMENT + 16 + 4", dataSize=2
 """ + fxsaveCommonTemplate
 
 fxsave64Template = """
-    rdval t1, "InstRegIndex(MISCREG_FIOFF)"
+    rdval t1, ctrlRegIdx("MISCREG_FIOFF")
     st t1, seg, %(mode)s, "DISPLACEMENT + 8", dataSize=8
 
-    rdval t1, "InstRegIndex(MISCREG_FOOFF)"
+    rdval t1, ctrlRegIdx("MISCREG_FOOFF")
     st t1, seg, %(mode)s, "DISPLACEMENT + 16 + 0", dataSize=8
 """ + fxsaveCommonTemplate
 
@@ -128,36 +126,36 @@ fxrstorCommonTemplate = """
     wrxftw t1
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 6", dataSize=2
-    wrval "InstRegIndex(MISCREG_FOP)", t1
+    wrval ctrlRegIdx("MISCREG_FOP"), t1
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 16 + 8", dataSize=4
-    wrval "InstRegIndex(MISCREG_MXCSR)", t1
+    wrval ctrlRegIdx("MISCREG_MXCSR"), t1
 """ + loadAllDataRegs
 
 fxrstor32Template = """
     ld t1, seg, %(mode)s, "DISPLACEMENT + 8", dataSize=4
-    wrval "InstRegIndex(MISCREG_FIOFF)", t1
+    wrval ctrlRegIdx("MISCREG_FIOFF"), t1
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 12", dataSize=2
-    wrval "InstRegIndex(MISCREG_FISEG)", t1
+    wrval ctrlRegIdx("MISCREG_FISEG"), t1
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 16 + 0", dataSize=4
-    wrval "InstRegIndex(MISCREG_FOOFF)", t1
+    wrval ctrlRegIdx("MISCREG_FOOFF"), t1
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 16 + 4", dataSize=2
-    wrval "InstRegIndex(MISCREG_FOSEG)", t1
+    wrval ctrlRegIdx("MISCREG_FOSEG"), t1
 """ + fxrstorCommonTemplate
 
 fxrstor64Template = """
     limm t2, 0, dataSize=8
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 8", dataSize=8
-    wrval "InstRegIndex(MISCREG_FIOFF)", t1
-    wrval "InstRegIndex(MISCREG_FISEG)", t2
+    wrval ctrlRegIdx("MISCREG_FIOFF"), t1
+    wrval ctrlRegIdx("MISCREG_FISEG"), t2
 
     ld t1, seg, %(mode)s, "DISPLACEMENT + 16 + 0", dataSize=8
-    wrval "InstRegIndex(MISCREG_FOOFF)", t1
-    wrval "InstRegIndex(MISCREG_FOSEG)", t2
+    wrval ctrlRegIdx("MISCREG_FOOFF"), t1
+    wrval ctrlRegIdx("MISCREG_FOSEG"), t2
 """ + fxrstorCommonTemplate
 
 microcode = '''

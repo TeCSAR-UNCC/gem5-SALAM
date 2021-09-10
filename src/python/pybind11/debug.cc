@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ARM Limited
+ * Copyright (c) 2017, 2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Andreas Sandberg
  */
 
 #include "pybind11/pybind11.h"
@@ -48,6 +45,7 @@
 #include <map>
 #include <vector>
 
+#include "base/compiler.hh"
 #include "base/debug.hh"
 #include "base/output.hh"
 #include "base/trace.hh"
@@ -55,9 +53,14 @@
 
 namespace py = pybind11;
 
-namespace Debug {
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Debug, debug);
+namespace debug
+{
 extern int allFlagsVersion;
-}
+} // namespace debug
 
 static void
 output(const char *filename)
@@ -79,37 +82,49 @@ ignore(const char *expr)
 }
 
 void
-pybind_init_debug(py::module &m_native)
+pybind_init_debug(py::module_ &m_native)
 {
-    py::module m_debug = m_native.def_submodule("debug");
+    py::module_ m_debug = m_native.def_submodule("debug");
 
     m_debug
-        .def("getAllFlagsVersion", []() { return Debug::allFlagsVersion; })
-        .def("allFlags", &Debug::allFlags, py::return_value_policy::reference)
-        .def("findFlag", &Debug::findFlag)
-        .def("setDebugFlag", &setDebugFlag)
-        .def("clearDebugFlag", &clearDebugFlag)
-        .def("dumpDebugFlags", &dumpDebugFlags)
+        .def("getAllFlagsVersion", []() { return debug::allFlagsVersion; })
+        .def("allFlags", &debug::allFlags, py::return_value_policy::reference)
 
         .def("schedBreak", &schedBreak)
         .def("setRemoteGDBPort", &setRemoteGDBPort)
         ;
 
-    py::class_<Debug::Flag> c_flag(m_debug, "Flag");
+    py::class_<debug::Flag> c_flag(m_debug, "Flag");
     c_flag
-        .def("name", &Debug::Flag::name)
-        .def("desc", &Debug::Flag::desc)
-        .def("kids", &Debug::Flag::kids)
-        .def("enable", &Debug::Flag::enable)
-        .def("disable", &Debug::Flag::disable)
-        .def("sync", &Debug::Flag::sync)
+        .def_property_readonly("name", &debug::Flag::name)
+        .def_property_readonly("desc", &debug::Flag::desc)
+        .def("enable", &debug::Flag::enable)
+        .def("disable", &debug::Flag::disable)
+        .def_property("tracing",
+                      [](const debug::Flag *flag) {
+                          return flag->tracing();
+                      },
+                      [](debug::Flag *flag, bool state) {
+                          if (state) {
+                              flag->enable();
+                          } else {
+                              flag->disable();
+                          }
+                      })
+        .def("__bool__", [](const debug::Flag *flag) {
+                return (bool)*flag;
+            })
         ;
 
-    py::class_<Debug::SimpleFlag>(m_debug, "SimpleFlag", c_flag);
-    py::class_<Debug::CompoundFlag>(m_debug, "CompoundFlag", c_flag);
+    py::class_<debug::SimpleFlag>(m_debug, "SimpleFlag", c_flag)
+        .def_property_readonly("isFormat", &debug::SimpleFlag::isFormat)
+        ;
+    py::class_<debug::CompoundFlag>(m_debug, "CompoundFlag", c_flag)
+        .def("kids", &debug::CompoundFlag::kids)
+        ;
 
 
-    py::module m_trace = m_native.def_submodule("trace");
+    py::module_ m_trace = m_native.def_submodule("trace");
     m_trace
         .def("output", &output)
         .def("ignore", &ignore)
@@ -117,3 +132,5 @@ pybind_init_debug(py::module &m_native)
         .def("disable", &Trace::disable)
         ;
 }
+
+} // namespace gem5

@@ -29,9 +29,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Vignyan Reddy, Dibakar Gope and Arthur Perais,
- * from André Seznec's code.
  */
 
 /* @file
@@ -47,8 +44,14 @@
 #include "debug/Fetch.hh"
 #include "debug/LTage.hh"
 
-LTAGE::LTAGE(const LTAGEParams *params)
-  : TAGE(params), loopPredictor(params->loop_predictor)
+namespace gem5
+{
+
+namespace branch_prediction
+{
+
+LTAGE::LTAGE(const LTAGEParams &params)
+  : TAGE(params), loopPredictor(params.loop_predictor)
 {
 }
 
@@ -98,8 +101,6 @@ LTAGE::update(ThreadID tid, Addr branch_pc, bool taken, void* bp_history,
 
     LTageBranchInfo* bi = static_cast<LTageBranchInfo*>(bp_history);
 
-    assert(corrTarget != MaxAddr);
-
     if (squashed) {
         if (tage->isSpeculativeUpdateEnabled()) {
             // This restores the global history, then update it
@@ -146,14 +147,5 @@ LTAGE::squash(ThreadID tid, void *bp_history)
     TAGE::squash(tid, bp_history);
 }
 
-void
-LTAGE::regStats()
-{
-    TAGE::regStats();
-}
-
-LTAGE*
-LTAGEParams::create()
-{
-    return new LTAGE(this);
-}
+} // namespace branch_prediction
+} // namespace gem5

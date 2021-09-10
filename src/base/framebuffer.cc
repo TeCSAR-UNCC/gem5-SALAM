@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #include "base/framebuffer.hh"
@@ -42,6 +40,9 @@
 #include <zlib.h>
 
 #include "base/bitfield.hh"
+
+namespace gem5
+{
 
 const FrameBuffer FrameBuffer::dummy(320, 240);
 
@@ -127,3 +128,5 @@ FrameBuffer::getHash() const
                    reinterpret_cast<const Bytef *>(pixels.data()),
                    area() * sizeof(Pixel));
 }
+
+} // namespace gem5

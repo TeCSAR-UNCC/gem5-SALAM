@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 ARM Limited
+ * Copyright (c) 2015, 2021 Arm Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -33,14 +33,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: David Guillen Fandos
  */
 
 #ifndef __SIM_THERMAL_NODE_HH__
 #define __SIM_THERMAL_NODE_HH__
 
+#include "base/temperature.hh"
 #include "sim/sim_object.hh"
+
+namespace gem5
+{
 
 struct ThermalNodeParams;
 
@@ -52,11 +54,13 @@ struct ThermalNodeParams;
 class ThermalNode : public SimObject
 {
   public:
-    ThermalNode(const ThermalNodeParams *p);
+    ThermalNode(const ThermalNodeParams &p);
 
     int id;
     bool isref;
-    double temp;
+    Temperature temp;
 };
+
+} // namespace gem5
 
 #endif

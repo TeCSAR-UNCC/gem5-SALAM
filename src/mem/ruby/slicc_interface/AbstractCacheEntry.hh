@@ -1,4 +1,16 @@
 /*
+ * Copyright (c) 2020 ARM Limited
+ * All rights reserved
+ *
+ * The license below extends only to copyright in the software and shall
+ * not be construed as granting a license to any other intellectual
+ * property including but not limited to intellectual property relating
+ * to a hardware implementation of the functionality of the software
+ * licensed hereunder.  You may use the software subject to the license
+ * terms below provided that you ensure that this notice is replicated
+ * unmodified and in its entirety in all distributions of the software,
+ * modified or unmodified, in source code or in binary form.
+ *
  * Copyright (c) 1999-2008 Mark D. Hill and David A. Wood
  * All rights reserved.
  *
@@ -38,9 +50,14 @@
 #include "base/logging.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 #include "mem/ruby/common/Address.hh"
+#include "mem/ruby/common/DataBlock.hh"
 #include "mem/ruby/protocol/AccessPermission.hh"
 
-class DataBlock;
+namespace gem5
+{
+
+namespace ruby
+{
 
 class AbstractCacheEntry : public ReplaceableEntry
 {
@@ -56,12 +73,20 @@ class AbstractCacheEntry : public ReplaceableEntry
     AccessPermission getPermission() const;
     void changePermission(AccessPermission new_perm);
 
+    using ReplaceableEntry::print;
     virtual void print(std::ostream& out) const = 0;
 
     // The methods below are those called by ruby runtime, add when it
     // is absolutely necessary and should all be virtual function.
-    virtual DataBlock& getDataBlk()
-    { panic("getDataBlk() not implemented!"); }
+    virtual DataBlock&
+    getDataBlk()
+    {
+        panic("getDataBlk() not implemented!");
+
+        // Dummy return to appease the compiler
+        static DataBlock b;
+        return b;
+    }
 
     int validBlocks;
     virtual int& getNumValidBlocks()
@@ -89,6 +114,18 @@ class AbstractCacheEntry : public ReplaceableEntry
 
     // Set the last access Tick.
     void setLastAccess(Tick tick) { m_last_touch_tick = tick; }
+
+    // hardware transactional memory
+    void setInHtmReadSet(bool val);
+    void setInHtmWriteSet(bool val);
+    bool getInHtmReadSet() const;
+    bool getInHtmWriteSet() const;
+    virtual void invalidateEntry() {}
+
+  private:
+    // hardware transactional memory
+    bool m_htmInReadSet;
+    bool m_htmInWriteSet;
 };
 
 inline std::ostream&
@@ -98,5 +135,8 @@ operator<<(std::ostream& out, const AbstractCacheEntry& obj)
     out << std::flush;
     return out;
 }
+
+} // namespace ruby
+} // namespace gem5
 
 #endif // __MEM_RUBY_SLICC_INTERFACE_ABSTRACTCACHEENTRY_HH__

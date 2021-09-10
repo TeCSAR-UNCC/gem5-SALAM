@@ -23,24 +23,27 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_ARM_FASTMODEL_CORTEXA76_CORETEX_A76_HH__
 #define __ARCH_ARM_FASTMODEL_CORTEXA76_CORETEX_A76_HH__
 
+#include "arch/arm/fastmodel/CortexA76/thread_context.hh"
 #include "arch/arm/fastmodel/amba_ports.hh"
-#include "arch/arm/fastmodel/arm/cpu.hh"
+#include "arch/arm/fastmodel/iris/cpu.hh"
 #include "params/FastModelCortexA76.hh"
 #include "params/FastModelCortexA76Cluster.hh"
 #include "scx/scx.h"
 #include "sim/port.hh"
 #include "systemc/ext/core/sc_module.hh"
 
+namespace gem5
+{
+
 class BaseCPU;
 
-namespace FastModel
+GEM5_DEPRECATED_NAMESPACE(FastModel, fastmodel);
+namespace fastmodel
 {
 
 // The fast model exports a class called scx_evs_CortexA76x1 which represents
@@ -50,19 +53,21 @@ namespace FastModel
 // the work.
 class CortexA76Cluster;
 
-class CortexA76 : public ArmCPU
+class CortexA76 : public Iris::CPU<CortexA76TC>
 {
   protected:
-    typedef FastModelCortexA76Params Params;
-    const Params &_params;
+    typedef Iris::CPU<CortexA76TC> Base;
 
     CortexA76Cluster *cluster = nullptr;
     int num = 0;
 
-    const Params &params() { return _params; }
-
   public:
-    CortexA76(Params &p) : ArmCPU(&p), _params(p) {}
+    PARAMS(FastModelCortexA76);
+    CortexA76(const Params &p) :
+        Base(p, scx::scx_get_iris_connection_interface())
+    {}
+
+    void initState() override;
 
     template <class T>
     void set_evs_param(const std::string &n, T val);
@@ -76,13 +81,11 @@ class CortexA76 : public ArmCPU
 class CortexA76Cluster : public SimObject
 {
   private:
-    typedef FastModelCortexA76ClusterParams Params;
-    const Params &_params;
-
     std::vector<CortexA76 *> cores;
     sc_core::sc_module *evs;
 
   public:
+    PARAMS(FastModelCortexA76Cluster);
     template <class T>
     void
     set_evs_param(const std::string &n, T val)
@@ -90,11 +93,10 @@ class CortexA76Cluster : public SimObject
         scx::scx_set_parameter(evs->name() + std::string(".") + n, val);
     }
 
-    CortexA76 *getCore(int num) { return cores.at(num); }
-    sc_core::sc_module *getEvs() { return evs; }
+    CortexA76 *getCore(int num) const { return cores.at(num); }
+    sc_core::sc_module *getEvs() const { return evs; }
 
-    CortexA76Cluster(Params &p);
-    const Params &params() { return _params; }
+    CortexA76Cluster(const Params &p);
 
     Port &getPort(const std::string &if_name,
             PortID idx=InvalidPortID) override;
@@ -108,6 +110,7 @@ CortexA76::set_evs_param(const std::string &n, T val)
         cluster->set_evs_param(path + "." + n, val);
 }
 
-} // namespace FastModel
+} // namespace fastmodel
+} // namespace gem5
 
 #endif // __ARCH_ARM_FASTMODEL_CORTEXA76_CORETEX_A76_HH__

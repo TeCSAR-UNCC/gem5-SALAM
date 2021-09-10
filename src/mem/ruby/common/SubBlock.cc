@@ -30,7 +30,13 @@
 
 #include "base/stl_helpers.hh"
 
-using m5::stl_helpers::operator<<;
+namespace gem5
+{
+
+namespace ruby
+{
+
+using stl_helpers::operator<<;
 
 SubBlock::SubBlock(Addr addr, int size)
 {
@@ -70,5 +76,5 @@ SubBlock::print(std::ostream& out) const
     out << "[" << m_address << ", " << getSize() << ", " << m_data << "]";
 }
 
-
-
+} // namespace ruby
+} // namespace gem5

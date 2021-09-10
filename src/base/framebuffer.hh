@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __BASE_FRAMEBUFFER_HH__
@@ -52,6 +50,9 @@
 #include "base/str.hh"
 #include "base/types.hh"
 #include "sim/serialize.hh"
+
+namespace gem5
+{
 
 /**
  * Internal gem5 representation of a frame buffer
@@ -199,5 +200,7 @@ class FrameBuffer : public Serializable
     /** Height in pixels */
     unsigned _height;
 };
+
+} // namespace gem5
 
 #endif // __BASE_FRAMEBUFFER_HH__

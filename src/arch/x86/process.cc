@@ -37,9 +37,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
- *          Ali Saidi
  */
 
 #include "arch/x86/process.hh"
@@ -47,10 +44,11 @@
 #include <string>
 #include <vector>
 
-#include "arch/x86/isa_traits.hh"
+#include "arch/x86/fs_workload.hh"
+#include "arch/x86/page_size.hh"
 #include "arch/x86/regs/misc.hh"
 #include "arch/x86/regs/segment.hh"
-#include "arch/x86/system.hh"
+#include "arch/x86/se_workload.hh"
 #include "arch/x86/types.hh"
 #include "base/loader/elf_object.hh"
 #include "base/loader/object_file.hh"
@@ -62,39 +60,16 @@
 #include "mem/page_table.hh"
 #include "params/Process.hh"
 #include "sim/aux_vector.hh"
+#include "sim/byteswap.hh"
 #include "sim/process_impl.hh"
 #include "sim/syscall_desc.hh"
 #include "sim/syscall_return.hh"
 #include "sim/system.hh"
 
-using namespace std;
+namespace gem5
+{
+
 using namespace X86ISA;
-
-static const int ArgumentReg[] = {
-    INTREG_RDI,
-    INTREG_RSI,
-    INTREG_RDX,
-    // This argument register is r10 for syscalls and rcx for C.
-    INTREG_R10W,
-    // INTREG_RCX,
-    INTREG_R8W,
-    INTREG_R9W
-};
-
-static const int NumArgumentRegs M5_VAR_USED =
-    sizeof(ArgumentReg) / sizeof(const int);
-
-static const int ArgumentReg32[] = {
-    INTREG_EBX,
-    INTREG_ECX,
-    INTREG_EDX,
-    INTREG_ESI,
-    INTREG_EDI,
-    INTREG_EBP
-};
-
-static const int NumArgumentRegs32 M5_VAR_USED =
-    sizeof(ArgumentReg) / sizeof(const int);
 
 template class MultiLevelPageTable<LongModePTE<47, 39>,
                                    LongModePTE<38, 30>,
@@ -105,16 +80,15 @@ typedef MultiLevelPageTable<LongModePTE<47, 39>,
                             LongModePTE<29, 21>,
                             LongModePTE<20, 12> > ArchPageTable;
 
-X86Process::X86Process(ProcessParams *params, ObjectFile *objFile,
-                       SyscallDesc *_syscallDescs, int _numSyscallDescs)
-    : Process(params, params->useArchPT ?
-                      static_cast<EmulationPageTable *>(
-                              new ArchPageTable(params->name, params->pid,
-                                                params->system, PageBytes)) :
-                      new EmulationPageTable(params->name, params->pid,
-                                             PageBytes),
-              objFile),
-      syscallDescs(_syscallDescs), numSyscallDescs(_numSyscallDescs)
+X86Process::X86Process(const ProcessParams &params,
+                       loader::ObjectFile *objFile) :
+    Process(params, params.useArchPT ?
+                    static_cast<EmulationPageTable *>(
+                            new ArchPageTable(params.name, params.pid,
+                                              params.system, PageBytes)) :
+                    new EmulationPageTable(params.name, params.pid,
+                                           PageBytes),
+            objFile)
 {
 }
 
@@ -126,11 +100,10 @@ void X86Process::clone(ThreadContext *old_tc, ThreadContext *new_tc,
     *process = *this;
 }
 
-X86_64Process::X86_64Process(ProcessParams *params, ObjectFile *objFile,
-                             SyscallDesc *_syscallDescs, int _numSyscallDescs)
-    : X86Process(params, objFile, _syscallDescs, _numSyscallDescs)
+X86_64Process::X86_64Process(const ProcessParams &params,
+                             loader::ObjectFile *objFile) :
+    X86Process(params, objFile)
 {
-
     vsyscallPage.base = 0xffffffffff600000ULL;
     vsyscallPage.size = PageBytes;
     vsyscallPage.vtimeOffset = 0x400;
@@ -142,19 +115,20 @@ X86_64Process::X86_64Process(ProcessParams *params, ObjectFile *objFile,
     Addr next_thread_stack_base = stack_base - max_stack_size;
     Addr mmap_end = 0x7FFFF7FFF000ULL;
 
-    memState = make_shared<MemState>(brk_point, stack_base, max_stack_size,
-                                     next_thread_stack_base, mmap_end);
+    memState = std::make_shared<MemState>(
+            this, brk_point, stack_base, max_stack_size,
+            next_thread_stack_base, mmap_end);
 }
 
 
-I386Process::I386Process(ProcessParams *params, ObjectFile *objFile,
-                         SyscallDesc *_syscallDescs, int _numSyscallDescs)
-    : X86Process(params, objFile, _syscallDescs, _numSyscallDescs)
+I386Process::I386Process(const ProcessParams &params,
+                         loader::ObjectFile *objFile) :
+    X86Process(params, objFile)
 {
     if (kvmInSE)
         panic("KVM CPU model does not support 32 bit processes");
 
-    _gdtStart = ULL(0xffffd000);
+    _gdtStart = 0xffffd000ULL;
     _gdtSize = PageBytes;
 
     vsyscallPage.base = 0xffffe000ULL;
@@ -168,16 +142,9 @@ I386Process::I386Process(ProcessParams *params, ObjectFile *objFile,
     Addr next_thread_stack_base = stack_base - max_stack_size;
     Addr mmap_end = 0xB7FFF000ULL;
 
-    memState = make_shared<MemState>(brk_point, stack_base, max_stack_size,
-                                     next_thread_stack_base, mmap_end);
-}
-
-SyscallDesc*
-X86Process::getDesc(int callnum)
-{
-    if (callnum < 0 || callnum >= numSyscallDescs)
-        return NULL;
-    return &syscallDescs[callnum];
+    memState = std::make_shared<MemState>(
+            this, brk_point, stack_base, max_stack_size,
+            next_thread_stack_base, mmap_end);
 }
 
 void
@@ -191,13 +158,13 @@ X86_64Process::initState()
     argsInit(PageBytes);
 
     // Set up the vsyscall page for this process.
-    allocateMem(vsyscallPage.base, vsyscallPage.size);
+    memState->mapRegion(vsyscallPage.base, vsyscallPage.size, "vsyscall");
     uint8_t vtimeBlob[] = {
         0x48,0xc7,0xc0,0xc9,0x00,0x00,0x00,    // mov    $0xc9,%rax
         0x0f,0x05,                             // syscall
         0xc3                                   // retq
     };
-    initVirtMem.writeBlob(vsyscallPage.base + vsyscallPage.vtimeOffset,
+    initVirtMem->writeBlob(vsyscallPage.base + vsyscallPage.vtimeOffset,
             vtimeBlob, sizeof(vtimeBlob));
 
     uint8_t vgettimeofdayBlob[] = {
@@ -205,7 +172,8 @@ X86_64Process::initState()
         0x0f,0x05,                             // syscall
         0xc3                                   // retq
     };
-    initVirtMem.writeBlob(vsyscallPage.base + vsyscallPage.vgettimeofdayOffset,
+    initVirtMem->writeBlob(
+            vsyscallPage.base + vsyscallPage.vgettimeofdayOffset,
             vgettimeofdayBlob, sizeof(vgettimeofdayBlob));
 
     if (kvmInSE) {
@@ -235,6 +203,7 @@ X86_64Process::initState()
         initDesc.p = 1;               // present
         initDesc.l = 1;               // longmode - 64 bit
         initDesc.d = 0;               // operand size
+        initDesc.g = 1;
         initDesc.s = 1;               // system segment
         initDesc.limit = 0xFFFFFFFF;
         initDesc.base = 0;
@@ -314,7 +283,8 @@ X86_64Process::initState()
         TSShigh TSSDescHigh = 0;
         TSSDescHigh.base = bits(TSSVirtAddr, 63, 32);
 
-        struct TSSDesc {
+        struct TSSDesc
+        {
             uint64_t low;
             uint64_t high;
         } tssDescVal = {TSSDescLow, TSSDescHigh};
@@ -339,7 +309,7 @@ X86_64Process::initState()
         tss_attr.unusable = 0;
 
         for (int i = 0; i < contextIds.size(); i++) {
-            ThreadContext * tc = system->getThreadContext(contextIds[i]);
+            ThreadContext *tc = system->threads[contextIds[i]];
 
             tc->setMiscReg(MISCREG_CS, cs);
             tc->setMiscReg(MISCREG_DS, ds);
@@ -360,7 +330,7 @@ X86_64Process::initState()
 
             tc->setMiscReg(MISCREG_TR, tssSel);
             tc->setMiscReg(MISCREG_TR_BASE, tss_base_addr);
-            tc->setMiscReg(MISCREG_TR_EFF_BASE, 0);
+            tc->setMiscReg(MISCREG_TR_EFF_BASE, tss_base_addr);
             tc->setMiscReg(MISCREG_TR_LIMIT, tss_limit);
             tc->setMiscReg(MISCREG_TR_ATTR, tss_attr);
 
@@ -376,9 +346,9 @@ X86_64Process::initState()
             efer.sce = 1; // Enable system call extensions.
             efer.lme = 1; // Enable long mode.
             efer.lma = 1; // Activate long mode.
-            efer.nxe = 0; // Enable nx support.
-            efer.svme = 1; // Enable svm support for now.
-            efer.ffxsr = 0; // Turn on fast fxsave and fxrstor.
+            efer.nxe = 1; // Enable nx support.
+            efer.svme = 0; // Disable svm support for now.
+            efer.ffxsr = 0; // Disable fast fxsave and fxrstor.
             tc->setMiscReg(MISCREG_EFER, efer);
 
             //Set up the registers that describe the operating mode.
@@ -386,8 +356,8 @@ X86_64Process::initState()
             cr0.pg = 1; // Turn on paging.
             cr0.cd = 0; // Don't disable caching.
             cr0.nw = 0; // This is bit is defined to be ignored.
-            cr0.am = 1; // No alignment checking
-            cr0.wp = 1; // Supervisor mode can write read only pages
+            cr0.am = 0; // No alignment checking
+            cr0.wp = 0; // Supervisor mode can write read only pages
             cr0.ne = 1;
             cr0.et = 1; // This should always be 1
             cr0.ts = 0; // We don't do task switching, so causing fp exceptions
@@ -406,8 +376,8 @@ X86_64Process::initState()
 
             CR4 cr4 = 0;
             //Turn on pae.
-            cr4.osxsave = 1; // Enable XSAVE and Proc Extended States
-            cr4.osxmmexcpt = 1; // Operating System Unmasked Exception
+            cr4.osxsave = 0; // Disable XSAVE and Proc Extended States
+            cr4.osxmmexcpt = 0; // Operating System Unmasked Exception
             cr4.osfxsr = 1; // Operating System FXSave/FSRSTOR Support
             cr4.pce = 0; // Performance-Monitoring Counter Enable
             cr4.pge = 0; // Page-Global Enable
@@ -421,7 +391,7 @@ X86_64Process::initState()
 
             tc->setMiscReg(MISCREG_CR4, cr4);
 
-            CR4 cr8 = 0;
+            CR8 cr8 = 0;
             tc->setMiscReg(MISCREG_CR8, cr8);
 
             tc->setMiscReg(MISCREG_MXCSR, 0x1f80);
@@ -445,7 +415,8 @@ X86_64Process::initState()
 
         /* Set up the content of the TSS and write it to physical memory. */
 
-        struct {
+        struct
+        {
             uint32_t reserved0;        // +00h
             uint32_t RSP0_low;         // +04h
             uint32_t RSP0_high;        // +08h
@@ -500,7 +471,8 @@ X86_64Process::initState()
         GateDescriptorHigh PFGateHigh = 0;
         PFGateHigh.offset = bits(PFHandlerVirtAddr, 63, 32);
 
-        struct {
+        struct
+        {
             uint64_t low;
             uint64_t high;
         } PFGate = {PFGateLow, PFGateHigh};
@@ -509,8 +481,8 @@ X86_64Process::initState()
 
         /* System call handler */
         uint8_t syscallBlob[] = {
-            // mov    %rax, (0xffffc90000005600)
-            0x48, 0xa3, 0x00, 0x60, 0x00,
+            // mov    %rax, (0xffffc90000007000)
+            0x48, 0xa3, 0x00, 0x70, 0x00,
             0x00, 0x00, 0xc9, 0xff, 0xff,
             // sysret
             0x48, 0x0f, 0x07
@@ -521,8 +493,8 @@ X86_64Process::initState()
 
         /** Page fault handler */
         uint8_t faultBlob[] = {
-            // mov    %rax, (0xffffc90000005700)
-            0x48, 0xa3, 0x00, 0x61, 0x00,
+            // mov    %rax, (0xffffc90000007000)
+            0x48, 0xa3, 0x00, 0x70, 0x00,
             0x00, 0x00, 0xc9, 0xff, 0xff,
             // add    $0x8, %rsp # skip error
             0x48, 0x83, 0xc4, 0x08,
@@ -550,7 +522,7 @@ X86_64Process::initState()
                     16 * PageBytes, false);
     } else {
         for (int i = 0; i < contextIds.size(); i++) {
-            ThreadContext * tc = system->getThreadContext(contextIds[i]);
+            ThreadContext * tc = system->threads[contextIds[i]];
 
             SegAttr dataAttr = 0;
             dataAttr.dpl = 3;
@@ -636,11 +608,11 @@ I386Process::initState()
     assert(_gdtSize % sizeof(zero) == 0);
     for (Addr gdtCurrent = _gdtStart;
             gdtCurrent < _gdtStart + _gdtSize; gdtCurrent += sizeof(zero)) {
-        initVirtMem.write(gdtCurrent, zero);
+        initVirtMem->write(gdtCurrent, zero);
     }
 
     // Set up the vsyscall page for this process.
-    allocateMem(vsyscallPage.base, vsyscallPage.size);
+    memState->mapRegion(vsyscallPage.base, vsyscallPage.size, "vsyscall");
     uint8_t vsyscallBlob[] = {
         0x51,       // push %ecx
         0x52,       // push %edp
@@ -648,7 +620,7 @@ I386Process::initState()
         0x89, 0xe5, // mov %esp, %ebp
         0x0f, 0x34  // sysenter
     };
-    initVirtMem.writeBlob(vsyscallPage.base + vsyscallPage.vsyscallOffset,
+    initVirtMem->writeBlob(vsyscallPage.base + vsyscallPage.vsyscallOffset,
             vsyscallBlob, sizeof(vsyscallBlob));
 
     uint8_t vsysexitBlob[] = {
@@ -657,11 +629,11 @@ I386Process::initState()
         0x59,       // pop %ecx
         0xc3        // ret
     };
-    initVirtMem.writeBlob(vsyscallPage.base + vsyscallPage.vsysexitOffset,
+    initVirtMem->writeBlob(vsyscallPage.base + vsyscallPage.vsysexitOffset,
             vsysexitBlob, sizeof(vsysexitBlob));
 
     for (int i = 0; i < contextIds.size(); i++) {
-        ThreadContext * tc = system->getThreadContext(contextIds[i]);
+        ThreadContext * tc = system->threads[contextIds[i]];
 
         SegAttr dataAttr = 0;
         dataAttr.dpl = 3;
@@ -742,13 +714,13 @@ I386Process::initState()
 template<class IntType>
 void
 X86Process::argsInit(int pageSize,
-                     std::vector<AuxVector<IntType> > extraAuxvs)
+                     std::vector<gem5::auxv::AuxVector<IntType>> extraAuxvs)
 {
     int intSize = sizeof(IntType);
 
-    std::vector<AuxVector<IntType>> auxv = extraAuxvs;
+    std::vector<gem5::auxv::AuxVector<IntType>> auxv = extraAuxvs;
 
-    string filename;
+    std::string filename;
     if (argv.size() < 1)
         filename = "";
     else
@@ -757,7 +729,8 @@ X86Process::argsInit(int pageSize,
     // We want 16 byte alignment
     uint64_t align = 16;
 
-    enum X86CpuFeature {
+    enum X86CpuFeature
+    {
         X86_OnboardFPU = 1 << 0,
         X86_VirtualModeExtensions = 1 << 1,
         X86_DebuggingExtensions = 1 << 2,
@@ -800,7 +773,7 @@ X86Process::argsInit(int pageSize,
     // conversion. Auxiliary vectors are loaded only for elf formatted
     // executables; the auxv is responsible for passing information from
     // the OS to the interpreter.
-    ElfObject * elfObject = dynamic_cast<ElfObject *>(objFile);
+    auto *elfObject = dynamic_cast<loader::ElfObject *>(objFile);
     if (elfObject) {
         uint64_t features =
             X86_OnboardFPU |
@@ -836,40 +809,40 @@ X86Process::argsInit(int pageSize,
 
         // Bits which describe the system hardware capabilities
         // XXX Figure out what these should be
-        auxv.emplace_back(M5_AT_HWCAP, features);
+        auxv.emplace_back(gem5::auxv::Hwcap, features);
         // The system page size
-        auxv.emplace_back(M5_AT_PAGESZ, X86ISA::PageBytes);
+        auxv.emplace_back(gem5::auxv::Pagesz, X86ISA::PageBytes);
         // Frequency at which times() increments
         // Defined to be 100 in the kernel source.
-        auxv.emplace_back(M5_AT_CLKTCK, 100);
+        auxv.emplace_back(gem5::auxv::Clktck, 100);
         // This is the virtual address of the program header tables if they
         // appear in the executable image.
-        auxv.emplace_back(M5_AT_PHDR, elfObject->programHeaderTable());
+        auxv.emplace_back(gem5::auxv::Phdr, elfObject->programHeaderTable());
         // This is the size of a program header entry from the elf file.
-        auxv.emplace_back(M5_AT_PHENT, elfObject->programHeaderSize());
+        auxv.emplace_back(gem5::auxv::Phent, elfObject->programHeaderSize());
         // This is the number of program headers from the original elf file.
-        auxv.emplace_back(M5_AT_PHNUM, elfObject->programHeaderCount());
+        auxv.emplace_back(gem5::auxv::Phnum, elfObject->programHeaderCount());
         // This is the base address of the ELF interpreter; it should be
         // zero for static executables or contain the base address for
         // dynamic executables.
-        auxv.emplace_back(M5_AT_BASE, getBias());
+        auxv.emplace_back(gem5::auxv::Base, getBias());
         // XXX Figure out what this should be.
-        auxv.emplace_back(M5_AT_FLAGS, 0);
+        auxv.emplace_back(gem5::auxv::Flags, 0);
         // The entry point to the program
-        auxv.emplace_back(M5_AT_ENTRY, objFile->entryPoint());
+        auxv.emplace_back(gem5::auxv::Entry, objFile->entryPoint());
         // Different user and group IDs
-        auxv.emplace_back(M5_AT_UID, uid());
-        auxv.emplace_back(M5_AT_EUID, euid());
-        auxv.emplace_back(M5_AT_GID, gid());
-        auxv.emplace_back(M5_AT_EGID, egid());
+        auxv.emplace_back(gem5::auxv::Uid, uid());
+        auxv.emplace_back(gem5::auxv::Euid, euid());
+        auxv.emplace_back(gem5::auxv::Gid, gid());
+        auxv.emplace_back(gem5::auxv::Egid, egid());
         // Whether to enable "secure mode" in the executable
-        auxv.emplace_back(M5_AT_SECURE, 0);
+        auxv.emplace_back(gem5::auxv::Secure, 0);
         // The address of 16 "random" bytes.
-        auxv.emplace_back(M5_AT_RANDOM, 0);
+        auxv.emplace_back(gem5::auxv::Random, 0);
         // The name of the program
-        auxv.emplace_back(M5_AT_EXECFN, 0);
+        auxv.emplace_back(gem5::auxv::Execfn, 0);
         // The platform string
-        auxv.emplace_back(M5_AT_PLATFORM, 0);
+        auxv.emplace_back(gem5::auxv::Platform, 0);
     }
 
     // Figure out how big the initial stack needs to be
@@ -884,7 +857,7 @@ X86Process::argsInit(int pageSize,
     const int numRandomBytes = 16;
     int aux_data_size = numRandomBytes;
 
-    string platform = "x86_64";
+    std::string platform = "x86_64";
     aux_data_size += platform.size() + 1;
 
     int env_data_size = 0;
@@ -945,7 +918,7 @@ X86Process::argsInit(int pageSize,
     Addr stack_end = roundDown(stack_base - stack_size, pageSize);
 
     DPRINTF(Stack, "Mapping the stack: 0x%x %dB\n", stack_end, stack_size);
-    allocateMem(stack_end, stack_size);
+    memState->mapRegion(stack_end, stack_size, "stack");
 
     // map out initial stack contents
     IntType sentry_base = stack_base - sentry_size;
@@ -977,43 +950,43 @@ X86Process::argsInit(int pageSize,
 
     // Write out the sentry void *
     IntType sentry_NULL = 0;
-    initVirtMem.writeBlob(sentry_base, &sentry_NULL, sentry_size);
+    initVirtMem->writeBlob(sentry_base, &sentry_NULL, sentry_size);
 
     // Write the file name
-    initVirtMem.writeString(file_name_base, filename.c_str());
+    initVirtMem->writeString(file_name_base, filename.c_str());
 
     // Fix up the aux vectors which point to data
-    assert(auxv[auxv.size() - 3].type == M5_AT_RANDOM);
+    assert(auxv[auxv.size() - 3].type == gem5::auxv::Random);
     auxv[auxv.size() - 3].val = aux_data_base;
-    assert(auxv[auxv.size() - 2].type == M5_AT_EXECFN);
+    assert(auxv[auxv.size() - 2].type == gem5::auxv::Execfn);
     auxv[auxv.size() - 2].val = argv_array_base;
-    assert(auxv[auxv.size() - 1].type == M5_AT_PLATFORM);
+    assert(auxv[auxv.size() - 1].type == gem5::auxv::Platform);
     auxv[auxv.size() - 1].val = aux_data_base + numRandomBytes;
 
 
     // Copy the aux stuff
     Addr auxv_array_end = auxv_array_base;
     for (const auto &aux: auxv) {
-        initVirtMem.write(auxv_array_end, aux, GuestByteOrder);
+        initVirtMem->write(auxv_array_end, aux, ByteOrder::little);
         auxv_array_end += sizeof(aux);
     }
     // Write out the terminating zeroed auxiliary vector
-    const AuxVector<uint64_t> zero(0, 0);
-    initVirtMem.write(auxv_array_end, zero);
+    const gem5::auxv::AuxVector<uint64_t> zero(0, 0);
+    initVirtMem->write(auxv_array_end, zero);
     auxv_array_end += sizeof(zero);
 
-    initVirtMem.writeString(aux_data_base, platform.c_str());
+    initVirtMem->writeString(aux_data_base, platform.c_str());
 
     copyStringArray(envp, envp_array_base, env_data_base,
-                    LittleEndianByteOrder, initVirtMem);
+                    ByteOrder::little, *initVirtMem);
     copyStringArray(argv, argv_array_base, arg_data_base,
-                    LittleEndianByteOrder, initVirtMem);
+                    ByteOrder::little, *initVirtMem);
 
-    initVirtMem.writeBlob(argc_base, &guestArgc, intSize);
+    initVirtMem->writeBlob(argc_base, &guestArgc, intSize);
 
-    ThreadContext *tc = system->getThreadContext(contextIds[0]);
+    ThreadContext *tc = system->threads[contextIds[0]];
     // Set the stack pointer register
-    tc->setIntReg(StackPointerReg, stack_min);
+    tc->setIntReg(INTREG_RSP, stack_min);
 
     // There doesn't need to be any segment base added in since we're dealing
     // with the flat segmentation model.
@@ -1026,33 +999,20 @@ X86Process::argsInit(int pageSize,
 void
 X86_64Process::argsInit(int pageSize)
 {
-    std::vector<AuxVector<uint64_t> > extraAuxvs;
-    extraAuxvs.emplace_back(M5_AT_SYSINFO_EHDR, vsyscallPage.base);
+    std::vector<gem5::auxv::AuxVector<uint64_t> > extraAuxvs;
+    extraAuxvs.emplace_back(auxv::SysinfoEhdr, vsyscallPage.base);
     X86Process::argsInit<uint64_t>(pageSize, extraAuxvs);
 }
 
 void
 I386Process::argsInit(int pageSize)
 {
-    std::vector<AuxVector<uint32_t> > extraAuxvs;
+    std::vector<gem5::auxv::AuxVector<uint32_t> > extraAuxvs;
     //Tell the binary where the vsyscall part of the vsyscall page is.
-    extraAuxvs.emplace_back(M5_AT_SYSINFO,
+    extraAuxvs.emplace_back(auxv::Sysinfo,
             vsyscallPage.base + vsyscallPage.vsyscallOffset);
-    extraAuxvs.emplace_back(M5_AT_SYSINFO_EHDR, vsyscallPage.base);
+    extraAuxvs.emplace_back(auxv::SysinfoEhdr, vsyscallPage.base);
     X86Process::argsInit<uint32_t>(pageSize, extraAuxvs);
-}
-
-void
-X86Process::setSyscallReturn(ThreadContext *tc, SyscallReturn retval)
-{
-    tc->setIntReg(INTREG_RAX, retval.encodedValue());
-}
-
-RegVal
-X86_64Process::getSyscallArg(ThreadContext *tc, int &i)
-{
-    assert(i < NumArgumentRegs);
-    return tc->readIntReg(ArgumentReg[i++]);
 }
 
 void
@@ -1063,24 +1023,6 @@ X86_64Process::clone(ThreadContext *old_tc, ThreadContext *new_tc,
     ((X86_64Process*)p)->vsyscallPage = vsyscallPage;
 }
 
-RegVal
-I386Process::getSyscallArg(ThreadContext *tc, int &i)
-{
-    assert(i < NumArgumentRegs32);
-    return tc->readIntReg(ArgumentReg32[i++]);
-}
-
-RegVal
-I386Process::getSyscallArg(ThreadContext *tc, int &i, int width)
-{
-    assert(width == 32 || width == 64);
-    assert(i < NumArgumentRegs);
-    uint64_t retVal = tc->readIntReg(ArgumentReg32[i++]) & mask(32);
-    if (width == 64)
-        retVal |= ((uint64_t)tc->readIntReg(ArgumentReg[i++]) << 32);
-    return retVal;
-}
-
 void
 I386Process::clone(ThreadContext *old_tc, ThreadContext *new_tc,
                    Process *p, RegVal flags)
@@ -1088,3 +1030,5 @@ I386Process::clone(ThreadContext *old_tc, ThreadContext *new_tc,
     X86Process::clone(old_tc, new_tc, p, flags);
     ((I386Process*)p)->vsyscallPage = vsyscallPage;
 }
+
+} // namespace gem5

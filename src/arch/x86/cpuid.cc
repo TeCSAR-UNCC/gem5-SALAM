@@ -24,17 +24,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #include "arch/x86/cpuid.hh"
 
+#include "arch/x86/isa.hh"
 #include "base/bitfield.hh"
 #include "cpu/thread_context.hh"
 
+namespace gem5
+{
+
 namespace X86ISA {
-    enum StandardCpuidFunction {
+    enum StandardCpuidFunction
+    {
         VendorAndLargestStdFunc,
         FamilyModelStepping,
         CacheAndTLB,
@@ -46,7 +49,8 @@ namespace X86ISA {
         NumStandardCpuidFuncs
     };
 
-    enum ExtendedCpuidFunctions {
+    enum ExtendedCpuidFunctions
+    {
         VendorAndLargestExtFunc,
         FamilyModelSteppingBrandFeatures,
         NameString1,
@@ -69,8 +73,6 @@ namespace X86ISA {
         NumExtendedCpuidFuncs
     };
 
-    static const int vendorStringSize = 13;
-    static const char vendorString[vendorStringSize] = "M5 Simulator";
     static const int nameStringSize = 48;
     static const char nameString[nameStringSize] = "Fake M5 x86_64 CPU";
 
@@ -95,16 +97,19 @@ namespace X86ISA {
             // The extended functions
             switch (funcNum) {
               case VendorAndLargestExtFunc:
-                assert(vendorStringSize >= 12);
-                result = CpuidResult(
-                        0x80000000 + NumExtendedCpuidFuncs - 1,
-                        stringToRegister(vendorString),
-                        stringToRegister(vendorString + 4),
-                        stringToRegister(vendorString + 8));
+                {
+                  ISA *isa = dynamic_cast<ISA *>(tc->getIsaPtr());
+                  auto vendor_string = isa->getVendorString();
+                  result = CpuidResult(
+                          0x80000000 + NumExtendedCpuidFuncs - 1,
+                          stringToRegister(vendor_string.c_str()),
+                          stringToRegister(vendor_string.c_str() + 4),
+                          stringToRegister(vendor_string.c_str() + 8));
+                }
                 break;
               case FamilyModelSteppingBrandFeatures:
                 result = CpuidResult(0x00020f51, 0x00000405,
-                                     0xe3d3fbff, 0x00000001);
+                                     0xebd3fbff, 0x00000001);
                 break;
               case NameString1:
               case NameString2:
@@ -153,16 +158,19 @@ namespace X86ISA {
             // The standard functions
             switch (funcNum) {
               case VendorAndLargestStdFunc:
-                assert(vendorStringSize >= 12);
-                result = CpuidResult(
-                        NumStandardCpuidFuncs - 1,
-                        stringToRegister(vendorString),
-                        stringToRegister(vendorString + 4),
-                        stringToRegister(vendorString + 8));
+                {
+                  ISA *isa = dynamic_cast<ISA *>(tc->getIsaPtr());
+                  auto vendor_string = isa->getVendorString();
+                  result = CpuidResult(
+                          NumExtendedCpuidFuncs - 1,
+                          stringToRegister(vendor_string.c_str()),
+                          stringToRegister(vendor_string.c_str() + 4),
+                          stringToRegister(vendor_string.c_str() + 8));
+                }
                 break;
               case FamilyModelStepping:
                 result = CpuidResult(0x00020f51, 0x00000805,
-                                     0xe7dbfbff, 0x00000209);
+                                     0xefdbfbff, 0x00000209);
                 break;
               case ExtendedFeatures:
                 result = CpuidResult(0x00000000, 0x01800000,
@@ -181,3 +189,4 @@ namespace X86ISA {
         return true;
     }
 } // namespace X86ISA
+} // namespace gem5

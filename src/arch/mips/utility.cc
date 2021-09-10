@@ -24,35 +24,27 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Korey Sewell
  */
 
 #include "arch/mips/utility.hh"
 
 #include <cmath>
 
-#include "arch/mips/isa_traits.hh"
-#include "arch/mips/registers.hh"
-#include "arch/mips/vtophys.hh"
+#include "arch/mips/regs/float.hh"
+#include "arch/mips/regs/int.hh"
+#include "arch/mips/regs/misc.hh"
 #include "base/bitfield.hh"
 #include "base/logging.hh"
 #include "cpu/static_inst.hh"
 #include "cpu/thread_context.hh"
-#include "mem/fs_translating_port_proxy.hh"
 #include "sim/serialize.hh"
 
+namespace gem5
+{
+
 using namespace MipsISA;
-using namespace std;
 
 namespace MipsISA {
-
-uint64_t
-getArgument(ThreadContext *tc, int &number, uint16_t size, bool fp)
-{
-    panic("getArgument() not implemented\n");
-    M5_DUMMY_RETURN
-}
 
 uint64_t
 fpConvert(ConvertType cvt_type, double fp_val)
@@ -217,61 +209,5 @@ isSnan(void *val_ptr, int size)
     }
 }
 
-template <class CPU>
-void
-zeroRegisters(CPU *cpu)
-{
-    // Insure ISA semantics
-    // (no longer very clean due to the change in setIntReg() in the
-    // cpu model.  Consider changing later.)
-    cpu->thread->setIntReg(ZeroReg, 0);
-    cpu->thread->setFloatReg(ZeroReg, 0);
-}
-
-void
-startupCPU(ThreadContext *tc, int cpuId)
-{
-    tc->activate();
-}
-
-void
-initCPU(ThreadContext *tc, int cpuId)
-{}
-
-void
-copyRegs(ThreadContext *src, ThreadContext *dest)
-{
-    // First loop through the integer registers.
-    for (int i = 0; i < NumIntRegs; i++)
-        dest->setIntRegFlat(i, src->readIntRegFlat(i));
-
-    // Then loop through the floating point registers.
-    for (int i = 0; i < NumFloatRegs; i++)
-        dest->setFloatRegFlat(i, src->readFloatRegFlat(i));
-
-    // Would need to add condition-code regs if implemented
-    assert(NumCCRegs == 0);
-
-    // Copy misc. registers
-    for (int i = 0; i < NumMiscRegs; i++)
-        dest->setMiscRegNoEffect(i, src->readMiscRegNoEffect(i));
-
-    // Copy over the PC State
-    dest->pcState(src->pcState());
-}
-
-void
-copyMiscRegs(ThreadContext *src, ThreadContext *dest)
-{
-    panic("Copy Misc. Regs Not Implemented Yet\n");
-}
-void
-skipFunction(ThreadContext *tc)
-{
-    PCState newPC = tc->pcState();
-    newPC.set(tc->readIntReg(ReturnAddressReg));
-    tc->pcState(newPC);
-}
-
-
 } // namespace MipsISA
+} // namespace gem5

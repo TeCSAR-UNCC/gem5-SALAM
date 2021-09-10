@@ -23,21 +23,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __SYSTEMC_CORE_SCHEDULER_HH__
 #define __SYSTEMC_CORE_SCHEDULER_HH__
 
+#include <atomic>
 #include <functional>
+#include <list>
 #include <map>
 #include <mutex>
 #include <set>
 #include <vector>
 
 #include "base/logging.hh"
-#include "sim/core.hh"
 #include "sim/eventq.hh"
 #include "systemc/core/channel.hh"
 #include "systemc/core/list.hh"
@@ -150,16 +149,30 @@ class Scheduler
   public:
     typedef std::list<ScEvent *> ScEvents;
 
-    class TimeSlot : public ::Event
+    class TimeSlot : public gem5::Event
     {
       public:
-        TimeSlot() : ::Event(Default_Pri, AutoDelete) {}
-
+        TimeSlot(Scheduler* scheduler) : gem5::Event(Default_Pri, AutoDelete),
+                                         parent_scheduler(scheduler) {}
+        // Event::when() is only set after it's scheduled to an event queue.
+        // However, TimeSlot won't be scheduled before init is done. We need
+        // to keep the real 'targeted_when' information before scheduled.
+        gem5::Tick targeted_when;
+        Scheduler* parent_scheduler;
         ScEvents events;
-        void process();
+        void process() override;
+
+      protected:
+        void
+        releaseImpl() override
+        {
+            if (!scheduled())
+                parent_scheduler->releaseTimeSlot(this);
+        }
+
     };
 
-    typedef std::map<Tick, TimeSlot *> TimeSlots;
+    typedef std::list<TimeSlot *> TimeSlots;
 
     Scheduler();
     ~Scheduler();
@@ -224,12 +237,12 @@ class Scheduler
     }
 
     // Set an event queue for scheduling events.
-    void setEventQueue(EventQueue *_eq) { eq = _eq; }
+    void setEventQueue(gem5::EventQueue *_eq) { eq = _eq; }
 
     // Get the current time according to gem5.
-    Tick getCurTick() { return eq ? eq->getCurTick() : 0; }
+    gem5::Tick getCurTick() { return eq ? eq->getCurTick() : 0; }
 
-    Tick
+    gem5::Tick
     delayed(const ::sc_core::sc_time &delay)
     {
         return getCurTick() + delay.value();
@@ -239,7 +252,7 @@ class Scheduler
     void
     schedule(ScEvent *event, const ::sc_core::sc_time &delay)
     {
-        Tick tick = delayed(delay);
+        gem5::Tick tick = delayed(delay);
         if (tick < getCurTick())
             tick = getCurTick();
 
@@ -252,18 +265,22 @@ class Scheduler
         }
 
         // Timed notification/timeout.
-        TimeSlot *&ts = timeSlots[tick];
-        if (!ts) {
-            ts = new TimeSlot;
-            schedule(ts, tick);
+        auto it = timeSlots.begin();
+        while (it != timeSlots.end() && (*it)->targeted_when < tick)
+            it++;
+        if (it == timeSlots.end() || (*it)->targeted_when != tick) {
+            it = timeSlots.emplace(it, acquireTimeSlot(tick));
+            schedule(*it, tick);
         }
-        event->schedule(ts->events, tick);
+        event->schedule((*it)->events, tick);
     }
 
     // For descheduling delayed/timed notifications/timeouts.
     void
     deschedule(ScEvent *event)
     {
+        using namespace gem5;
+
         ScEvents *on = event->scheduledOn();
 
         if (on == &deltas) {
@@ -272,10 +289,15 @@ class Scheduler
         }
 
         // Timed notification/timeout.
-        auto tsit = timeSlots.find(event->when());
-        panic_if(tsit == timeSlots.end(),
+        auto tsit = timeSlots.begin();
+        while (tsit != timeSlots.end() &&
+               (*tsit)->targeted_when < event->when())
+            tsit++;
+
+        panic_if(tsit == timeSlots.end() ||
+                 (*tsit)->targeted_when != event->when(),
                 "Descheduling event at time with no events.");
-        TimeSlot *ts = tsit->second;
+        TimeSlot *ts = *tsit;
         ScEvents &events = ts->events;
         assert(on == &events);
         event->deschedule();
@@ -290,7 +312,7 @@ class Scheduler
     void
     completeTimeSlot(TimeSlot *ts)
     {
-        assert(ts == timeSlots.begin()->second);
+        assert(ts == timeSlots.front());
         timeSlots.erase(timeSlots.begin());
         if (!runToTime && starved())
             scheduleStarvationEvent();
@@ -320,14 +342,14 @@ class Scheduler
     }
 
     // Return how many ticks there are until the first pending event, if any.
-    Tick
+    gem5::Tick
     timeToPending()
     {
         if (pendingCurr())
             return 0;
         if (pendingFuture())
-            return timeSlots.begin()->first - getCurTick();
-        return MaxTick - getCurTick();
+            return timeSlots.front()->targeted_when - getCurTick();
+        return gem5::MaxTick - getCurTick();
     }
 
     // Run scheduled channel updates.
@@ -336,7 +358,7 @@ class Scheduler
     // Run delta events.
     void runDelta();
 
-    void start(Tick max_tick, bool run_to_time);
+    void start(gem5::Tick max_tick, bool run_to_time);
     void oneCycle();
 
     void schedulePause();
@@ -376,22 +398,43 @@ class Scheduler
     void registerTraceFile(TraceFile *tf) { traceFiles.insert(tf); }
     void unregisterTraceFile(TraceFile *tf) { traceFiles.erase(tf); }
 
+    TimeSlot*
+    acquireTimeSlot(gem5::Tick tick)
+    {
+        TimeSlot *ts = nullptr;
+        if (!freeTimeSlots.empty()) {
+            ts = freeTimeSlots.top();
+            freeTimeSlots.pop();
+        } else {
+            ts = new TimeSlot(this);
+        }
+        ts->targeted_when = tick;
+        ts->events.clear();
+        return ts;
+    }
+
+    void
+    releaseTimeSlot(TimeSlot *ts)
+    {
+        freeTimeSlots.push(ts);
+    }
+
   private:
-    typedef const EventBase::Priority Priority;
-    static Priority DefaultPriority = EventBase::Default_Pri;
+    typedef const gem5::EventBase::Priority Priority;
+    static Priority DefaultPriority = gem5::EventBase::Default_Pri;
 
     static Priority StopPriority = DefaultPriority - 1;
     static Priority PausePriority = DefaultPriority + 1;
     static Priority MaxTickPriority = DefaultPriority + 2;
     static Priority ReadyPriority = DefaultPriority + 3;
     static Priority StarvationPriority = ReadyPriority;
-    static Priority TimeAdvancesPriority = EventBase::Maximum_Pri;
+    static Priority TimeAdvancesPriority = gem5::EventBase::Maximum_Pri;
 
-    EventQueue *eq;
+    gem5::EventQueue *eq;
 
     // For gem5 style events.
     void
-    schedule(::Event *event, Tick tick)
+    schedule(gem5::Event *event, gem5::Tick tick)
     {
         if (initDone)
             eq->schedule(event, tick);
@@ -399,10 +442,10 @@ class Scheduler
             eventsToSchedule[event] = tick;
     }
 
-    void schedule(::Event *event) { schedule(event, getCurTick()); }
+    void schedule(gem5::Event *event) { schedule(event, getCurTick()); }
 
     void
-    deschedule(::Event *event)
+    deschedule(gem5::Event *event)
     {
         if (initDone)
             eq->deschedule(event);
@@ -412,6 +455,7 @@ class Scheduler
 
     ScEvents deltas;
     TimeSlots timeSlots;
+    std::stack<TimeSlot*> freeTimeSlots;
 
     Process *
     getNextReady()
@@ -421,13 +465,13 @@ class Scheduler
     }
 
     void runReady();
-    EventWrapper<Scheduler, &Scheduler::runReady> readyEvent;
+    gem5::EventWrapper<Scheduler, &Scheduler::runReady> readyEvent;
     void scheduleReadyEvent();
 
     void pause();
     void stop();
-    EventWrapper<Scheduler, &Scheduler::pause> pauseEvent;
-    EventWrapper<Scheduler, &Scheduler::stop> stopEvent;
+    gem5::EventWrapper<Scheduler, &Scheduler::pause> pauseEvent;
+    gem5::EventWrapper<Scheduler, &Scheduler::stop> stopEvent;
 
     const ::sc_core::sc_report *_throwUp;
 
@@ -436,10 +480,11 @@ class Scheduler
     {
         return (readyListMethods.empty() && readyListThreads.empty() &&
                 updateList.empty() && deltas.empty() &&
-                (timeSlots.empty() || timeSlots.begin()->first > maxTick) &&
+                (timeSlots.empty() ||
+                 timeSlots.front()->targeted_when > maxTick) &&
                 initList.empty());
     }
-    EventWrapper<Scheduler, &Scheduler::pause> starvationEvent;
+    gem5::EventWrapper<Scheduler, &Scheduler::pause> starvationEvent;
     void scheduleStarvationEvent();
 
     bool _elaborationDone;
@@ -448,8 +493,8 @@ class Scheduler
 
     Status _status;
 
-    Tick maxTick;
-    Tick lastReadyTick;
+    gem5::Tick maxTick;
+    gem5::Tick lastReadyTick;
     void
     maxTickFunc()
     {
@@ -457,10 +502,10 @@ class Scheduler
             _changeStamp++;
         pause();
     }
-    EventWrapper<Scheduler, &Scheduler::maxTickFunc> maxTickEvent;
+    gem5::EventWrapper<Scheduler, &Scheduler::maxTickFunc> maxTickEvent;
 
     void timeAdvances() { trace(false); }
-    EventWrapper<Scheduler, &Scheduler::timeAdvances> timeAdvancesEvent;
+    gem5::EventWrapper<Scheduler, &Scheduler::timeAdvances> timeAdvancesEvent;
     void
     scheduleTimeAdvancesEvent()
     {
@@ -486,8 +531,9 @@ class Scheduler
 
     ChannelList asyncUpdateList;
     std::mutex asyncListMutex;
+    std::atomic<bool> hasAsyncUpdate;
 
-    std::map<::Event *, Tick> eventsToSchedule;
+    std::map<gem5::Event *, gem5::Tick> eventsToSchedule;
 
     std::set<TraceFile *> traceFiles;
 

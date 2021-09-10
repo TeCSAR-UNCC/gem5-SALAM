@@ -24,15 +24,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Nathan Binkert
- *          Steve Reinhardt
  */
 
 #ifndef __INIFILE_HH__
 #define __INIFILE_HH__
 
 #include <fstream>
+#include <functional>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -43,6 +41,9 @@
  * Declaration of IniFile object.
  * @todo Change comments to match documentation style.
  */
+
+namespace gem5
+{
 
 ///
 /// This class represents the contents of a ".ini" file.
@@ -135,6 +136,9 @@ class IniFile
 
         /// Print the contents of this section to cout (for debugging).
         void dump(const std::string &sectionName);
+
+        EntryTable::const_iterator begin() const;
+        EntryTable::const_iterator end() const;
     };
 
     /// SectionTable type.  Map of strings to Section object pointers.
@@ -206,6 +210,15 @@ class IniFile
 
     /// Dump contents to cout.  For debugging.
     void dump();
+
+    /// Visitor callback that receives key/value pairs.
+    using VisitSectionCallback = std::function<void(
+        const std::string&, const std::string&)>;
+
+    /// Iterate over key/value pairs of the given section.
+    void visitSection(const std::string &sectionName, VisitSectionCallback cb);
 };
+
+} // namespace gem5
 
 #endif // __INIFILE_HH__

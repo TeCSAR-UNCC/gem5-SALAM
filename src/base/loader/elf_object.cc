@@ -36,9 +36,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Steve Reinhardt
- *          Ali Saidi
  */
 
 #include "base/loader/elf_object.hh"
@@ -53,12 +50,20 @@
 #include <string>
 
 #include "base/bitfield.hh"
+#include "base/compiler.hh"
 #include "base/loader/symtab.hh"
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/Loader.hh"
 #include "gelf.h"
 #include "sim/byteswap.hh"
+
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Loader, loader);
+namespace loader
+{
 
 ObjectFile *
 ElfObjectFormat::load(ImageFileDataPtr ifd)
@@ -112,6 +117,7 @@ ElfObject::ElfObject(ImageFileDataPtr ifd) : ObjectFile(ifd)
 
     determineArch();
     determineOpSys();
+    determineByteOrder();
 
     entry = ehdr.e_entry;
     _programHeaderCount = ehdr.e_phnum;
@@ -132,6 +138,7 @@ ElfObject::ElfObject(ImageFileDataPtr ifd) : ObjectFile(ifd)
             ObjectFile *obj = createObjectFile(interp_path);
             interpreter = dynamic_cast<ElfObject *>(obj);
             assert(interpreter != nullptr);
+            _symtab.insert(obj->symtab());
         }
     }
 
@@ -140,10 +147,65 @@ ElfObject::ElfObject(ImageFileDataPtr ifd) : ObjectFile(ifd)
             "No loadable segments in '%s'. ELF file corrupted?\n",
             imageData->filename());
 
-    for (auto M5_VAR_USED &seg: image.segments())
+    for (GEM5_VAR_USED auto &seg: image.segments())
         DPRINTFR(Loader, "%s\n", seg);
 
     // We will actually read the sections when we need to load them
+
+    // check that header matches library version
+    if (elf_version(EV_CURRENT) == EV_NONE)
+        panic("wrong elf version number!");
+
+    // Get the first section
+    int sec_idx = 1; // there is a 0 but it is nothing, go figure
+    Elf_Scn *section = elf_getscn(elf, sec_idx);
+
+    // While there are no more sections
+    while (section) {
+        GElf_Shdr shdr;
+        gelf_getshdr(section, &shdr);
+
+        if (shdr.sh_type == SHT_SYMTAB) {
+            Elf_Data *data = elf_getdata(section, nullptr);
+            int count = shdr.sh_size / shdr.sh_entsize;
+            DPRINTF(Loader, "Found Symbol Table, %d symbols present.", count);
+
+            // Loop through all the symbols.
+            for (int i = 0; i < count; ++i) {
+                GElf_Sym sym;
+                gelf_getsym(data, i, &sym);
+
+                char *sym_name = elf_strptr(elf, shdr.sh_link, sym.st_name);
+                if (!sym_name || sym_name[0] == '$')
+                    continue;
+
+                loader::Symbol symbol;
+                symbol.address = sym.st_value;
+                symbol.name = sym_name;
+
+                switch (GELF_ST_BIND(sym.st_info)) {
+                  case STB_GLOBAL:
+                    symbol.binding = loader::Symbol::Binding::Global;
+                    break;
+                  case STB_LOCAL:
+                    symbol.binding = loader::Symbol::Binding::Local;
+                    break;
+                  case STB_WEAK:
+                    symbol.binding = loader::Symbol::Binding::Weak;
+                    break;
+                  default:
+                    continue;
+                }
+
+                if (_symtab.insert(symbol)) {
+                    DPRINTF(Loader, "Symbol: %-40s value %#x.\n",
+                            symbol.name, symbol.address);
+                }
+            }
+        }
+        ++sec_idx;
+        section = elf_getscn(elf, sec_idx);
+    }
 }
 
 std::string
@@ -190,20 +252,8 @@ ElfObject::determineArch()
         arch = (eclass == ELFCLASS64) ? Riscv64 : Riscv32;
     } else if (emach == EM_PPC && eclass == ELFCLASS32) {
         arch = Power;
-        if (edata != ELFDATA2MSB) {
-            fatal("The binary you're trying to load is compiled for "
-                  "little endian Power.\ngem5 only supports big "
-                  "endian Power. Please recompile your binary.\n");
-        }
-    } else if (emach == EM_PPC64) {
-        fatal("The binary you're trying to load is compiled for 64-bit "
-              "Power. M5\n only supports 32-bit Power. Please "
-              "recompile your binary.\n");
-    } else if (eclass == ELFCLASS64) {
-        // Since we don't know how to check for alpha right now, we'll
-        // just assume if it wasn't something else and it's 64 bit, that's
-        // what it must be.
-        arch = Alpha;
+    } else if (emach == EM_PPC64 && eclass == ELFCLASS64) {
+        arch = Power64;
     } else {
         warn("Unknown architecture: %d\n", emach);
     }
@@ -212,6 +262,21 @@ ElfObject::determineArch()
 void
 ElfObject::determineOpSys()
 {
+    // For 64-bit Power, EI_OSABI and EI_ABIVERSION cannot be used to
+    // determine the ABI version used by the ELF object
+    if (ehdr.e_machine == EM_PPC64) {
+        switch (ehdr.e_flags & 0x3) {
+            case 0x1: opSys = LinuxPower64ABIv1; return;
+            case 0x2: opSys = LinuxPower64ABIv2; return;
+            default:
+                if (ehdr.e_ident[EI_DATA] == ELFDATA2MSB)
+                    opSys = LinuxPower64ABIv1;
+                if (ehdr.e_ident[EI_DATA] == ELFDATA2LSB)
+                    opSys = LinuxPower64ABIv2;
+                return;
+        }
+    }
+
     // Detect the operating system
     switch (ehdr.e_ident[EI_OSABI]) {
       case ELFOSABI_LINUX:
@@ -273,9 +338,23 @@ ElfObject::determineOpSys()
 }
 
 void
+ElfObject::determineByteOrder()
+{
+    auto edata = ehdr.e_ident[EI_DATA];
+    if (edata == ELFDATANONE)
+        panic("invalid ELF data encoding");
+    byteOrder = (edata == ELFDATA2MSB) ? ByteOrder::big : ByteOrder::little;
+}
+
+void
 ElfObject::handleLoadableSegment(GElf_Phdr phdr, int seg_num)
 {
     auto name = std::to_string(seg_num);
+
+    if (phdr.p_memsz == 0) {
+        warn("Ignoring empty loadable segment %s", name);
+        return;
+    }
 
     image.addSegment({ name, phdr.p_paddr, imageData,
                        phdr.p_offset, phdr.p_filesz });
@@ -303,106 +382,6 @@ ElfObject::handleLoadableSegment(GElf_Phdr phdr, int seg_num)
 ElfObject::~ElfObject()
 {
     elf_end(elf);
-}
-
-bool
-ElfObject::loadSomeSymbols(SymbolTable *symtab, int binding, Addr mask,
-                           Addr base, Addr offset)
-{
-    if (!symtab)
-        return false;
-
-    // check that header matches library version
-    if (elf_version(EV_CURRENT) == EV_NONE)
-        panic("wrong elf version number!");
-
-    // get a pointer to elf structure
-    Elf *elf = elf_memory((char *)const_cast<uint8_t *>(
-                imageData->data()), imageData->len());
-    assert(elf != NULL);
-
-    // Get the first section
-    int sec_idx = 1; // there is a 0 but it is nothing, go figure
-    Elf_Scn *section = elf_getscn(elf, sec_idx);
-
-    // While there are no more sections
-    bool found = false;
-    while (section != NULL) {
-        GElf_Shdr shdr;
-        gelf_getshdr(section, &shdr);
-
-        if (shdr.sh_type == SHT_SYMTAB) {
-            found = true;
-            Elf_Data *data = elf_getdata(section, NULL);
-            int count = shdr.sh_size / shdr.sh_entsize;
-            DPRINTF(Loader, "Found Symbol Table, %d symbols present\n", count);
-
-            // loop through all the symbols, only loading global ones
-            for (int i = 0; i < count; ++i) {
-                GElf_Sym sym;
-                gelf_getsym(data, i, &sym);
-                if (GELF_ST_BIND(sym.st_info) == binding) {
-                    char *sym_name =
-                        elf_strptr(elf, shdr.sh_link, sym.st_name);
-                    if (sym_name && sym_name[0] != '$') {
-                        Addr value = sym.st_value - base + offset;
-                        if (symtab->insert(value & mask, sym_name)) {
-                            DPRINTF(Loader, "Symbol: %-40s value %#x\n",
-                                    sym_name, value);
-                        }
-                    }
-                }
-            }
-        }
-        ++sec_idx;
-        section = elf_getscn(elf, sec_idx);
-    }
-
-    elf_end(elf);
-
-    return found;
-}
-
-bool
-ElfObject::loadAllSymbols(SymbolTable *symtab, Addr base, Addr offset,
-                          Addr addr_mask)
-{
-    return (loadGlobalSymbols(symtab, base, offset, addr_mask) &&
-            loadLocalSymbols(symtab, base, offset, addr_mask) &&
-            loadWeakSymbols(symtab, base, offset, addr_mask));
-}
-
-bool
-ElfObject::loadGlobalSymbols(SymbolTable *symtab, Addr base, Addr offset,
-                             Addr addr_mask)
-{
-    if (interpreter) {
-        interpreter->loadSomeSymbols(symtab, STB_GLOBAL, addr_mask,
-                                     base, offset);
-    }
-    return loadSomeSymbols(symtab, STB_GLOBAL, addr_mask, base, offset);
-}
-
-bool
-ElfObject::loadLocalSymbols(SymbolTable *symtab, Addr base, Addr offset,
-                            Addr addr_mask)
-{
-    if (interpreter) {
-        interpreter->loadSomeSymbols(symtab, STB_LOCAL, addr_mask,
-                                     base, offset);
-    }
-    return loadSomeSymbols(symtab, STB_LOCAL, addr_mask, base, offset);
-}
-
-bool
-ElfObject::loadWeakSymbols(SymbolTable *symtab, Addr base, Addr offset,
-                           Addr addr_mask)
-{
-    if (interpreter) {
-        interpreter->loadSomeSymbols(symtab, STB_WEAK, addr_mask,
-                                     base, offset);
-    }
-    return loadSomeSymbols(symtab, STB_WEAK, addr_mask, base, offset);
 }
 
 void
@@ -463,3 +442,6 @@ ElfObject::updateBias(Addr bias_addr)
     // Patch segments with the bias_addr.
     image.offset(bias_addr);
 }
+
+} // namespace loader
+} // namespace gem5

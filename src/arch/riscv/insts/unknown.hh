@@ -25,8 +25,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Alec Roelke
  */
 
 #ifndef __ARCH_RISCV_UNKNOWN_INST_HH__
@@ -40,6 +38,9 @@
 #include "arch/riscv/insts/static_inst.hh"
 #include "cpu/exec_context.hh"
 #include "cpu/static_inst.hh"
+
+namespace gem5
+{
 
 namespace RiscvISA
 {
@@ -63,12 +64,14 @@ class Unknown : public RiscvStaticInst
     }
 
     std::string
-    generateDisassembly(Addr pc, const SymbolTable *symtab) const override
+    generateDisassembly(
+            Addr pc, const loader::SymbolTable *symtab) const override
     {
         return csprintf("unknown opcode %#02x", OPCODE);
     }
 };
 
-}
+} // namespace RiscvISA
+} // namespace gem5
 
 #endif // __ARCH_RISCV_UNKNOWN_INST_HH__

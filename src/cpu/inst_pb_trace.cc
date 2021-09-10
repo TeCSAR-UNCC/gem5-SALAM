@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ali Saidi
  */
 
 #include "cpu/inst_pb_trace.hh"
@@ -48,6 +46,10 @@
 #include "params/InstPBTrace.hh"
 #include "proto/inst.pb.h"
 #include "sim/core.hh"
+#include "sim/cur_tick.hh"
+
+namespace gem5
+{
 
 namespace Trace {
 
@@ -68,11 +70,11 @@ InstPBTraceRecord::dump()
         tracer.traceMem(staticInst, getAddr(), getSize(), getFlags());
 }
 
-InstPBTrace::InstPBTrace(const InstPBTraceParams *p)
+InstPBTrace::InstPBTrace(const InstPBTraceParams &p)
     : InstTracer(p), buf(nullptr), bufSize(0), curMsg(nullptr)
 {
     // Create our output file
-    createTraceFile(p->file_name);
+    createTraceFile(p.file_name);
 }
 
 void
@@ -88,14 +90,12 @@ InstPBTrace::createTraceFile(std::string filename)
     ProtoMessage::InstHeader header_msg;
     header_msg.set_obj_id("gem5 generated instruction trace");
     header_msg.set_ver(0);
-    header_msg.set_tick_freq(SimClock::Frequency);
+    header_msg.set_tick_freq(sim_clock::Frequency);
     header_msg.set_has_mem(true);
     traceStream->write(header_msg);
 
     // get a callback when we exit so we can close the file
-    Callback *cb = new MakeCallback<InstPBTrace,
-             &InstPBTrace::closeStreams>(this);
-    registerExitCallback(cb);
+    registerExitCallback([this]() { closeStreams(); });
 }
 
 void
@@ -124,7 +124,7 @@ InstPBTrace::getInstRecord(Tick when, ThreadContext *tc, const StaticInstPtr si,
                            TheISA::PCState pc, const StaticInstPtr mi)
 {
     // Only record the trace if Exec debugging is enabled
-    if (!Debug::ExecEnable)
+    if (!debug::ExecEnable)
         return NULL;
 
     return new InstPBTraceRecord(*this, when, tc, si, pc, mi);
@@ -178,11 +178,4 @@ InstPBTrace::traceMem(StaticInstPtr si, Addr a, Addr s, unsigned f)
 }
 
 } // namespace Trace
-
-
-Trace::InstPBTrace*
-InstPBTraceParams::create()
-{
-    return new Trace::InstPBTrace(this);
-}
-
+} // namespace gem5

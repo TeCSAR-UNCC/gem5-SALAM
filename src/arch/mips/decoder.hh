@@ -24,32 +24,36 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_MIPS_DECODER_HH__
 #define __ARCH_MIPS_DECODER_HH__
 
 #include "arch/generic/decode_cache.hh"
+#include "arch/generic/decoder.hh"
 #include "arch/mips/types.hh"
 #include "base/logging.hh"
 #include "base/types.hh"
 #include "cpu/static_inst.hh"
+#include "debug/Decode.hh"
+
+namespace gem5
+{
 
 namespace MipsISA
 {
 
 class ISA;
-class Decoder
+class Decoder : public InstDecoder
 {
   protected:
     //The extended machine instruction being generated
     ExtMachInst emi;
+    uint32_t machInst;
     bool instDone;
 
   public:
-    Decoder(ISA* isa = nullptr) : instDone(false)
+    Decoder(ISA* isa = nullptr) : InstDecoder(&machInst), instDone(false)
     {}
 
     void
@@ -66,9 +70,9 @@ class Decoder
     //Use this to give data to the decoder. This should be used
     //when there is control flow.
     void
-    moreBytes(const PCState &pc, Addr fetchPC, MachInst inst)
+    moreBytes(const PCState &pc, Addr fetchPC)
     {
-        emi = letoh(inst);
+        emi = letoh(machInst);
         instDone = true;
     }
 
@@ -88,9 +92,9 @@ class Decoder
 
   protected:
     /// A cache of decoded instruction objects.
-    static GenericISA::BasicDecodeCache defaultCache;
+    static GenericISA::BasicDecodeCache<Decoder, ExtMachInst> defaultCache;
+    friend class GenericISA::BasicDecodeCache<Decoder, ExtMachInst>;
 
-  public:
     StaticInstPtr decodeInst(ExtMachInst mach_inst);
 
     /// Decode a machine instruction.
@@ -99,9 +103,13 @@ class Decoder
     StaticInstPtr
     decode(ExtMachInst mach_inst, Addr addr)
     {
-        return defaultCache.decode(this, mach_inst, addr);
+        StaticInstPtr si = defaultCache.decode(this, mach_inst, addr);
+        DPRINTF(Decode, "Decode: Decoded %s instruction: %#x\n",
+                si->getName(), mach_inst);
+        return si;
     }
 
+  public:
     StaticInstPtr
     decode(MipsISA::PCState &nextPC)
     {
@@ -113,5 +121,6 @@ class Decoder
 };
 
 } // namespace MipsISA
+} // namespace gem5
 
 #endif // __ARCH_MIPS_DECODER_HH__

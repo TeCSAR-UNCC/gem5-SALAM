@@ -33,14 +33,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Geoffrey Blake
  */
 
 #ifndef __CPU_DUMMY_CHECKER_HH__
 #define __CPU_DUMMY_CHECKER_HH__
 
 #include "cpu/checker/cpu.hh"
+#include "params/DummyChecker.hh"
+
+namespace gem5
+{
 
 /**
  * Specific non-templated derived class used for SimObject configuration.
@@ -48,9 +50,17 @@
 class DummyChecker : public CheckerCPU
 {
   public:
-    DummyChecker(Params *p)
-          : CheckerCPU(p)
-    { }
+    DummyChecker(const Params &p) : CheckerCPU(p)
+    {
+        // The checker should check all instructions executed by the main
+        // cpu and therefore any parameters for early exit don't make much
+        // sense.
+        fatal_if(p.max_insts_any_thread || p.max_insts_all_threads ||
+                 p.progress_interval, "Invalid checker parameters");
+
+    }
 };
+
+} // namespace gem5
 
 #endif // __CPU_DUMMY_CHECKER_HH__

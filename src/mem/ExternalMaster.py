@@ -32,10 +32,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Andrew Bardsley
-#          Curtis Dunham
-#          Christian Menard
 
 from m5.params import *
 from m5.proxy import *
@@ -44,8 +40,9 @@ from m5.SimObject import SimObject
 class ExternalMaster(SimObject):
     type = 'ExternalMaster'
     cxx_header = "mem/external_master.hh"
+    cxx_class = 'gem5::ExternalMaster'
 
-    port = MasterPort("Master port")
+    port = RequestPort("Master port")
 
     port_type = Param.String('stub', 'Registered external port handler'
         ' to pass this port to in instantiation')

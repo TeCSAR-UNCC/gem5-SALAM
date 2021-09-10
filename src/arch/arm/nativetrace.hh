@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Gabe Black
  */
 
 #ifndef __ARCH_ARM_NATIVETRACE_HH__
@@ -35,12 +33,16 @@
 #include "cpu/nativetrace.hh"
 #include "params/ArmNativeTrace.hh"
 
+namespace gem5
+{
+
 namespace Trace {
 
 class ArmNativeTrace : public NativeTrace
 {
   public:
-    enum StateID {
+    enum StateID
+    {
         STATE_R0,
         STATE_R1,
         STATE_R2,
@@ -72,7 +74,8 @@ class ArmNativeTrace : public NativeTrace
     };
 
   protected:
-    struct ThreadState {
+    struct ThreadState
+    {
         bool changed[STATE_NUMVALS];
         uint64_t state[2][STATE_NUMVALS];
         uint64_t *newState;
@@ -98,21 +101,16 @@ class ArmNativeTrace : public NativeTrace
     bool stopOnPCError;
 
   public:
-    typedef ArmNativeTraceParams Params;
+    using Params = ArmNativeTraceParams;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    ArmNativeTrace(const Params *p) :
-        NativeTrace(p), stopOnPCError(p->stop_on_pc_error)
+    ArmNativeTrace(const Params &p) :
+        NativeTrace(p), stopOnPCError(p.stop_on_pc_error)
     {}
 
     void check(NativeTraceRecord *record);
 };
 
 } // namespace Trace
+} // namespace gem5
 
 #endif // __ARCH_ARM_NATIVETRACE_HH__

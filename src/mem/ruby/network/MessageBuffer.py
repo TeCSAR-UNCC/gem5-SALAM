@@ -1,3 +1,15 @@
+# Copyright (c) 2020 ARM Limited
+# All rights reserved.
+#
+# The license below extends only to copyright in the software and shall
+# not be construed as granting a license to any other intellectual
+# property including but not limited to intellectual property relating
+# to a hardware implementation of the functionality of the software
+# licensed hereunder.  You may use the software subject to the license
+# terms below provided that you ensure that this notice is replicated
+# unmodified and in its entirety in all distributions of the software,
+# modified or unmodified, in source code or in binary form.
+#
 # Copyright (c) 2015 Mark D. Hill and David A. Wood.
 # All rights reserved.
 #
@@ -23,24 +35,35 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Joel Hestness
 
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
 
+# A MessageBuffer inserts random delays to enqueued messages when the
+# randomization param is set to 'enabled' or when globally enabled for the
+# RubySystem and the param is set to 'ruby_system' (default). 'disabled'
+# completely prevents randomization.
+class MessageRandomization(ScopedEnum):
+    vals = ['disabled', 'enabled', 'ruby_system']
+
 class MessageBuffer(SimObject):
     type = 'MessageBuffer'
-    cxx_class = 'MessageBuffer'
+    cxx_class = 'gem5::ruby::MessageBuffer'
     cxx_header = "mem/ruby/network/MessageBuffer.hh"
+
     ordered = Param.Bool(False, "Whether the buffer is ordered")
     buffer_size = Param.Unsigned(0, "Maximum number of entries to buffer \
                                      (0 allows infinite entries)")
-    randomization = Param.Bool(False, "Insert random delays on message \
-                                       enqueue times (enforced to have \
-                                       random delays if RubySystem \
-                                       randomization flag is True)")
+    randomization = Param.MessageRandomization('ruby_system',
+                                       "Randomization parameter")
+    allow_zero_latency = Param.Bool(False, "Allows messages to be enqueued \
+                                            with zero latency. This is useful \
+                                            for internall trigger queues and \
+                                            should not be used if this msg. \
+                                            buffer connects different objects")
 
-    master = MasterPort("Master port to MessageBuffer receiver")
-    slave = SlavePort("Slave port from MessageBuffer sender")
+    out_port = RequestPort("Request port to MessageBuffer receiver")
+    master = DeprecatedParam(out_port, '`master` is now called `out_port`')
+    in_port = ResponsePort("Response port from MessageBuffer sender")
+    slave = DeprecatedParam(in_port, '`slave` is now called `in_port`')

@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Sandberg
  */
 
 #ifndef __MEM_PROBES_STACK_DIST_HH__
@@ -45,17 +43,18 @@
 #include "mem/stack_dist_calc.hh"
 #include "sim/stats.hh"
 
+namespace gem5
+{
+
 struct StackDistProbeParams;
 
 class StackDistProbe : public BaseMemProbe
 {
   public:
-    StackDistProbe(StackDistProbeParams *params);
-
-    void regStats() override;
+    StackDistProbe(const StackDistProbeParams &params);
 
   protected:
-    void handleRequest(const ProbePoints::PacketInfo &pkt_info) override;
+    void handleRequest(const probing::PacketInfo &pkt_info) override;
 
   protected:
     // Cache line size to simulate
@@ -68,24 +67,29 @@ class StackDistProbe : public BaseMemProbe
     const bool disableLogHists;
 
   protected:
-    // Reads linear histogram
-    Stats::Histogram readLinearHist;
-
-    // Reads logarithmic histogram
-    Stats::SparseHistogram readLogHist;
-
-    // Writes linear histogram
-    Stats::Histogram writeLinearHist;
-
-    // Writes logarithmic histogram
-    Stats::SparseHistogram writeLogHist;
-
-    // Writes logarithmic histogram
-    Stats::Scalar infiniteSD;
-
-  protected:
     StackDistCalc calc;
+
+    struct StackDistProbeStats : public statistics::Group
+    {
+        StackDistProbeStats(StackDistProbe* parent);
+
+        // Reads linear histogram
+        statistics::Histogram readLinearHist;
+
+        // Reads logarithmic histogram
+        statistics::SparseHistogram readLogHist;
+
+        // Writes linear histogram
+        statistics::Histogram writeLinearHist;
+
+        // Writes logarithmic histogram
+        statistics::SparseHistogram writeLogHist;
+
+        // Writes logarithmic histogram
+        statistics::Scalar infiniteSD;
+    } stats;
 };
 
+} // namespace gem5
 
 #endif //__MEM_PROBES_STACK_DIST_HH__

@@ -33,22 +33,29 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Matteo Andreozzi
  */
 
 #ifndef __MEM_QOS_Q_POLICY_HH__
 #define __MEM_QOS_Q_POLICY_HH__
 
 #include <deque>
+#include <list>
 #include <unordered_set>
 
+#include "base/compiler.hh"
 #include "mem/packet.hh"
+#include "mem/qos/mem_ctrl.hh"
 #include "params/QoSMemCtrl.hh"
 
-namespace QoS {
+namespace gem5
+{
 
-class MemCtrl;
+namespace memory
+{
+
+GEM5_DEPRECATED_NAMESPACE(QoS, qos);
+namespace qos
+{
 
 /**
  * QoS Queue Policy
@@ -67,10 +74,10 @@ class QueuePolicy
      * QueuePolicy object.  If no particular QueuePolicy has been specified in
      * the QoSMemCtrlParams, the method will default to a LIFO queue policy.
      *
-     * @param p QoS::MemCtrl parameter variable
+     * @param p qos::MemCtrl parameter variable
      * @return Pointer to the QueuePolicy
      */
-    static QueuePolicy* create(const QoSMemCtrlParams* p);
+    static QueuePolicy* create(const QoSMemCtrlParams &p);
 
     /**
      * This method is called by the memory controller after it enqueues a
@@ -102,7 +109,7 @@ class QueuePolicy
     virtual ~QueuePolicy() {};
 
   protected:
-    QueuePolicy(const QoSMemCtrlParams* p)
+    QueuePolicy(const QoSMemCtrlParams &p)
       : memCtrl(nullptr)
     {}
 
@@ -114,7 +121,7 @@ class QueuePolicy
 class LifoQueuePolicy : public QueuePolicy
 {
   public:
-    LifoQueuePolicy(const QoSMemCtrlParams* p)
+    LifoQueuePolicy(const QoSMemCtrlParams &p)
       : QueuePolicy(p)
     {}
 
@@ -135,7 +142,7 @@ class LifoQueuePolicy : public QueuePolicy
 class FifoQueuePolicy : public QueuePolicy
 {
   public:
-    FifoQueuePolicy(const QoSMemCtrlParams* p)
+    FifoQueuePolicy(const QoSMemCtrlParams &p)
       : QueuePolicy(p)
     {}
 
@@ -155,13 +162,13 @@ class FifoQueuePolicy : public QueuePolicy
 /**
  * Least Recently Granted Queue Policy
  * It selects packets from the queue with a round
- * robin-like policy: using the master id as a switching
+ * robin-like policy: using the requestor id as a switching
  * parameter rather than switching over a time quantum.
  */
 class LrgQueuePolicy : public QueuePolicy
 {
   public:
-    LrgQueuePolicy(const QoSMemCtrlParams* p)
+    LrgQueuePolicy(const QoSMemCtrlParams &p)
       : QueuePolicy(p)
     {}
 
@@ -179,12 +186,14 @@ class LrgQueuePolicy : public QueuePolicy
   protected:
     /**
      * Support structure for lrg algorithms:
-     * keeps track of serviced masters,
+     * keeps track of serviced requestors,
      * always serve the front element.
      */
-    std::list<MasterID> toServe;
+    std::list<RequestorID> toServe;
 };
 
-} // namespace QoS
+} // namespace qos
+} // namespace memory
+} // namespace gem5
 
 #endif /* __MEM_QOS_Q_POLICY_HH__ */

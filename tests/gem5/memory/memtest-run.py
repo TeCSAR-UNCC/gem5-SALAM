@@ -23,8 +23,6 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Ron Dreslinski
 
 import m5
 from m5.objects import *
@@ -34,7 +32,7 @@ from common.Caches import *
 #MAX CORES IS 8 with the fals sharing method
 nb_cores = 8
 cpus = [MemTest(max_loads = 1e5, progress_interval = 1e4)
-        for i in xrange(nb_cores) ]
+        for i in range(nb_cores) ]
 
 # system simulated
 system = System(cpu = cpus,

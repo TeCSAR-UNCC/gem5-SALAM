@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Ivan Pizarro
  */
 
 #include "mem/cache/prefetch/bop.hh"
@@ -33,14 +31,21 @@
 #include "debug/HWPrefetch.hh"
 #include "params/BOPPrefetcher.hh"
 
-BOPPrefetcher::BOPPrefetcher(const BOPPrefetcherParams *p)
-    : QueuedPrefetcher(p),
-      scoreMax(p->score_max), roundMax(p->round_max),
-      badScore(p->bad_score), rrEntries(p->rr_size),
-      tagMask((1 << p->tag_bits) - 1),
-      delayQueueEnabled(p->delay_queue_enable),
-      delayQueueSize(p->delay_queue_size),
-      delayTicks(cyclesToTicks(p->delay_queue_cycles)),
+namespace gem5
+{
+
+GEM5_DEPRECATED_NAMESPACE(Prefetcher, prefetch);
+namespace prefetch
+{
+
+BOP::BOP(const BOPPrefetcherParams &p)
+    : Queued(p),
+      scoreMax(p.score_max), roundMax(p.round_max),
+      badScore(p.bad_score), rrEntries(p.rr_size),
+      tagMask((1 << p.tag_bits) - 1),
+      delayQueueEnabled(p.delay_queue_enable),
+      delayQueueSize(p.delay_queue_size),
+      delayTicks(cyclesToTicks(p.delay_queue_cycles)),
       delayQueueEvent([this]{ delayQueueEventWrapper(); }, name()),
       issuePrefetchRequests(false), bestOffset(1), phaseBestOffset(0),
       bestScore(0), round(0)
@@ -51,7 +56,7 @@ BOPPrefetcher::BOPPrefetcher(const BOPPrefetcherParams *p)
     if (!isPowerOf2(blkSize)) {
         fatal("%s: cache line size is not power of 2\n", name());
     }
-    if (!(p->negative_offsets_enable && (p->offset_list_size % 2 == 0))) {
+    if (!(p.negative_offsets_enable && (p.offset_list_size % 2 == 0))) {
         fatal("%s: negative offsets enabled with odd offset list size\n",
               name());
     }
@@ -65,7 +70,7 @@ BOPPrefetcher::BOPPrefetcher(const BOPPrefetcherParams *p)
     unsigned int i = 0;
     int64_t offset_i = 1;
 
-    while (i < p->offset_list_size)
+    while (i < p.offset_list_size)
     {
         int64_t offset = offset_i;
 
@@ -80,7 +85,7 @@ BOPPrefetcher::BOPPrefetcher(const BOPPrefetcherParams *p)
             i++;
             // If we want to use negative offsets, add also the negative value
             // of the offset just calculated
-            if (p->negative_offsets_enable)  {
+            if (p.negative_offsets_enable)  {
                 offsetsList.push_back(OffsetListEntry(-offset_i, 0));
                 i++;
             }
@@ -93,7 +98,7 @@ BOPPrefetcher::BOPPrefetcher(const BOPPrefetcherParams *p)
 }
 
 void
-BOPPrefetcher::delayQueueEventWrapper()
+BOP::delayQueueEventWrapper()
 {
     while (!delayQueue.empty() &&
             delayQueue.front().processTick <= curTick())
@@ -110,7 +115,7 @@ BOPPrefetcher::delayQueueEventWrapper()
 }
 
 unsigned int
-BOPPrefetcher::hash(Addr addr, unsigned int way) const
+BOP::hash(Addr addr, unsigned int way) const
 {
     Addr hash1 = addr >> way;
     Addr hash2 = hash1 >> floorLog2(rrEntries);
@@ -118,7 +123,7 @@ BOPPrefetcher::hash(Addr addr, unsigned int way) const
 }
 
 void
-BOPPrefetcher::insertIntoRR(Addr addr, unsigned int way)
+BOP::insertIntoRR(Addr addr, unsigned int way)
 {
     switch (way) {
         case RRWay::Left:
@@ -131,7 +136,7 @@ BOPPrefetcher::insertIntoRR(Addr addr, unsigned int way)
 }
 
 void
-BOPPrefetcher::insertIntoDelayQueue(Addr x)
+BOP::insertIntoDelayQueue(Addr x)
 {
     if (delayQueue.size() == delayQueueSize) {
         return;
@@ -149,7 +154,7 @@ BOPPrefetcher::insertIntoDelayQueue(Addr x)
 }
 
 void
-BOPPrefetcher::resetScores()
+BOP::resetScores()
 {
     for (auto& it : offsetsList) {
         it.second = 0;
@@ -157,13 +162,13 @@ BOPPrefetcher::resetScores()
 }
 
 inline Addr
-BOPPrefetcher::tag(Addr addr) const
+BOP::tag(Addr addr) const
 {
     return (addr >> blkSize) & tagMask;
 }
 
 bool
-BOPPrefetcher::testRR(Addr addr) const
+BOP::testRR(Addr addr) const
 {
     for (auto& it : rrLeft) {
         if (it == addr) {
@@ -181,7 +186,7 @@ BOPPrefetcher::testRR(Addr addr) const
 }
 
 void
-BOPPrefetcher::bestOffsetLearning(Addr x)
+BOP::bestOffsetLearning(Addr x)
 {
     Addr offset_addr = (*offsetsListIterator).first;
     Addr lookup_addr = x - offset_addr;
@@ -215,14 +220,14 @@ BOPPrefetcher::bestOffsetLearning(Addr x)
             phaseBestOffset = 0;
             resetScores();
             issuePrefetchRequests = true;
-        } else if (phaseBestOffset <= badScore) {
+        } else if (bestScore <= badScore) {
             issuePrefetchRequests = false;
         }
     }
 }
 
 void
-BOPPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
+BOP::calculatePrefetch(const PrefetchInfo &pfi,
         std::vector<AddrPriority> &addresses)
 {
     Addr addr = pfi.getAddr();
@@ -248,7 +253,7 @@ BOPPrefetcher::calculatePrefetch(const PrefetchInfo &pfi,
 }
 
 void
-BOPPrefetcher::notifyFill(const PacketPtr& pkt)
+BOP::notifyFill(const PacketPtr& pkt)
 {
     // Only insert into the RR right way if it's the pkt is a HWP
     if (!pkt->cmd.isHWPrefetch()) return;
@@ -260,8 +265,5 @@ BOPPrefetcher::notifyFill(const PacketPtr& pkt)
     }
 }
 
-BOPPrefetcher*
-BOPPrefetcherParams::create()
-{
-   return new BOPPrefetcher(this);
-}
+} // namespace prefetch
+} // namespace gem5
