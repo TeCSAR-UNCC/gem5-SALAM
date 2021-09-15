@@ -36,7 +36,7 @@ class CommInterface : public BasicPioDevice
     bool debug() { return debugEnabled; }
 
   protected:
-    class MemSidePort : public StreamMasterPort
+    class MemSidePort : public StreamRequestPort
     {
       friend class CommInterface;
 
@@ -50,7 +50,7 @@ class CommInterface : public BasicPioDevice
 
       public:
         MemSidePort(const std::string& name, CommInterface *owner, PortID id=InvalidPortID) :
-          StreamMasterPort(name, owner, id), owner(owner) {
+          StreamRequestPort(name, owner, id), owner(owner) {
           readActive = false;
           writeActive = false;
           readReq = NULL;
@@ -79,7 +79,7 @@ class CommInterface : public BasicPioDevice
         bool debug() { return owner->debug(); }
     };
 
-    class SPMPort : public ScratchpadMasterPort
+    class SPMPort : public ScratchpadRequestPort
     {
       friend class CommInterface;
 
@@ -93,7 +93,7 @@ class CommInterface : public BasicPioDevice
 
       public:
         SPMPort(const std::string& name, CommInterface *owner, PortID id=InvalidPortID) :
-          ScratchpadMasterPort(name, owner, id), owner(owner) {
+          ScratchpadRequestPort(name, owner, id), owner(owner) {
           readActive = false;
           writeActive = false;
           readReq = NULL;
@@ -183,7 +183,7 @@ class CommInterface : public BasicPioDevice
     SPMPort * getValidSPMPort(Addr add, size_t len, bool read);
 
     CommInterface *comm;
-    MasterID masterId;
+    RequestorID masterId;
     TickEvent tickEvent;
     unsigned cacheLineSize;
 
@@ -214,14 +214,15 @@ class CommInterface : public BasicPioDevice
     ComputeUnit *cu;
 
   public:
-    typedef CommInterfaceParams Params;
-    const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
+    // typedef CommInterfaceParams Params;
+    // const Params *
+    // params() const
+    // {
+    //   return dynamic_cast<const Params *>(_params);
+    // }
+    PARAMS(CommInterface);
 
-    CommInterface(Params *p);
+    CommInterface(const CommInterfaceParams &p);
 
     void startup();
 

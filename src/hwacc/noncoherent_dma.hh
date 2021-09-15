@@ -68,15 +68,15 @@ class NoncoherentDma : public DmaDevice
     DmaReadFifo * getActiveReadFifo();
     DmaWriteFifo * getActiveWriteFifo();
   public:
-    typedef NoncoherentDmaParams Params;
+    // typedef NoncoherentDmaParams Params;
 
-    const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
-
-    NoncoherentDma(const Params *p);
+    // const Params *
+    // params() const
+    // {
+    //   return dynamic_cast<const Params *>(_params);
+    // }
+    PARAMS(NoncoherentDma);
+    NoncoherentDma(const NoncoherentDmaParams &p);
     ~NoncoherentDma() {}
 
     AddrRangeList getAddrRanges() const;

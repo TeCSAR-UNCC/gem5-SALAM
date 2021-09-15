@@ -2,26 +2,26 @@
 #include "hwacc/stream_dma.hh"
 //------------------------------------------//
 
-StreamDma::StreamDma(const Params *p)
+StreamDma::StreamDma(const StreamDmaParams &p)
     : DmaDevice(p),
-    devname(p->devicename),
+    devname(p.devicename),
     streamIn(this),
     streamOut(this),
-    pioAddr(p->pio_addr),
-    pioDelay(p->pio_delay),
-    pioSize(p->pio_size),
-    streamAddr(p->stream_addr),
-    streamSize(p->stream_size),
-    memDelay(p->mem_delay),
-    rdBufferSize(p->read_buffer_size),
-    wrBufferSize(p->write_buffer_size),
-    maxPending(p->max_pending),
-    maxReqSize(p->max_req_size),
-    gic(p->gic),
-    rdInt(p->rd_int),
-    wrInt(p->wr_int),
+    pioAddr(p.pio_addr),
+    pioDelay(p.pio_delay),
+    pioSize(p.pio_size),
+    streamAddr(p.stream_addr),
+    streamSize(p.stream_size),
+    memDelay(p.mem_delay),
+    rdBufferSize(p.read_buffer_size),
+    wrBufferSize(p.write_buffer_size),
+    maxPending(p.max_pending),
+    maxReqSize(p.max_req_size),
+    gic(p.gic),
+    rdInt(p.rd_int),
+    wrInt(p.wr_int),
     tickEvent(this),
-    bandwidth(p->bandwidth) {
+    bandwidth(p.bandwidth) {
     readFifo = new DmaReadFifo(dmaPort, rdBufferSize, maxReqSize, maxPending);
     writeFifo = new DmaWriteFifo(dmaPort, wrBufferSize, maxReqSize, maxPending);
     mmreg = new uint8_t[32];
@@ -304,7 +304,7 @@ StreamDma::getPort(const std::string &if_name, PortID idx) {
     return DmaDevice::getPort(if_name, idx);
 }
 
-StreamDma *
-StreamDmaParams::create() {
-    return new StreamDma(this);
-}
+// StreamDma *
+// StreamDmaParams::create() {
+//     return new StreamDma(this);
+// }

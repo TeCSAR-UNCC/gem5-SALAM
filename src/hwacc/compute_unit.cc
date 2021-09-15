@@ -2,13 +2,13 @@
 #include "hwacc/compute_unit.hh"
 //------------------------------------------//
 
-ComputeUnit::ComputeUnit(ComputeUnitParams *p) :
+ComputeUnit::ComputeUnit(const ComputeUnitParams &p) :
     SimObject(p),
-    comm(p->comm_int),
-    hw(p->hw_int),
+    comm(p.comm_int),
+    hw(p.hw_int),
     tickEvent(this) {}
 
-ComputeUnit*
-ComputeUnitParams::create() {
-    return new ComputeUnit(this);
-}
+// ComputeUnit*
+// ComputeUnitParams::create() {
+//     return new ComputeUnit(this);
+// }

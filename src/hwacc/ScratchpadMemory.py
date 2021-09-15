@@ -1,13 +1,13 @@
 from m5.params import *
 from m5.proxy import *
-from AbstractMemory import AbstractMemory
+from m5.objects.AbstractMemory import AbstractMemory
 
 class ScratchpadMemory(AbstractMemory):
     type = 'ScratchpadMemory'
     cxx_header = 'hwacc/scratchpad_memory.hh'
 
-    port = SlavePort("Generic slave port")
-    spm_ports = VectorSlavePort("Slave ports for private acclerator SPM accesses")
+    port = ResponsePort("Generic slave port")
+    spm_ports = VectorResponsePort("Slave ports for private acclerator SPM accesses")
     latency = Param.Latency('2ns', "Request to response latency")
     latency_var = Param.Latency('0ns', "Request to response latency variance")
     ready_mode = Param.Bool(False, "Use ready mode for scratchpad memory")

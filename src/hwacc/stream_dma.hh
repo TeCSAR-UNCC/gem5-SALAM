@@ -78,8 +78,8 @@
 class StreamDma : public DmaDevice {
   private:
     std::string devname;
-    StreamSlavePortT<StreamDma> streamIn;
-    StreamSlavePortT<StreamDma> streamOut;
+    StreamResponsePortT<StreamDma> streamIn;
+    StreamResponsePortT<StreamDma> streamOut;
     DmaReadFifo *readFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;
@@ -148,15 +148,15 @@ class StreamDma : public DmaDevice {
   protected:
 
   public:
-    typedef StreamDmaParams Params;
+    // typedef StreamDmaParams Params;
 
-    const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
-
-    StreamDma(const Params *p);
+    // const Params *
+    // params() const
+    // {
+    //   return dynamic_cast<const Params *>(_params);
+    // }
+    PARAMS(StreamDma);
+    StreamDma(const StreamDmaParams &p);
     ~StreamDma() {}
 
     AddrRangeList getAddrRanges() const;

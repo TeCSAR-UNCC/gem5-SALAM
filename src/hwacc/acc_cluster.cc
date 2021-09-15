@@ -2,8 +2,8 @@
 #include "hwacc/acc_cluster.hh"
 //------------------------------------------//
 
-AccCluster::AccCluster(const Params *p)
-    : Platform(p), system(p->system), gic(nullptr)
+AccCluster::AccCluster(const AccClusterParams &p)
+    : Platform(p), system(p.system), gic(nullptr)
 {}
 
 void
@@ -20,8 +20,8 @@ AccCluster::clearConsoleInt()
     //panic("Need implementation\n");
 }
 
-AccCluster *
-AccClusterParams::create()
-{
-    return new AccCluster(this);
-}
+// AccCluster *
+// AccClusterParams::create()
+// {
+//     return new AccCluster(this);
+// }

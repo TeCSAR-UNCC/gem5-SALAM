@@ -15,6 +15,8 @@
 #include <cstdlib>
 #include <vector>
 
+using namespace gem5;
+
 class HWInterface : public SimObject 
 {
     friend class LLVMInterface;
@@ -31,7 +33,7 @@ class HWInterface : public SimObject
 
     public:
         HWInterface();
-        HWInterface(HWInterfaceParams *params);
+        HWInterface(const HWInterfaceParams &params);
         uint32_t getTestParam() { return this->cycle_counts->add_inst; }
 
 };

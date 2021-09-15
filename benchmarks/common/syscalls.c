@@ -92,3 +92,19 @@ int _isatty_r(struct _reent *r, int fd)
     return 1;
 }
 
+int _getpid(int n)
+{
+    return 1;
+    n = n;
+}
+
+int _kill(int pid, int sig)
+{
+    asm ("swi %a0" :: "i" (11));
+    return -1;                          // Never gets here
+}
+
+void _exit(int sig)
+{
+    _kill(sig, -1);
+}

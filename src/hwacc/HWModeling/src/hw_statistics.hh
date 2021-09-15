@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <vector>
 
+using namespace gem5;
+
 class HWStatistics : public SimObject
 {
     private:
@@ -16,7 +18,7 @@ class HWStatistics : public SimObject
 
     public:
         HWStatistics();
-        HWStatistics(HWStatisticsParams *params);
+        HWStatistics(const HWStatisticsParams &params);
     
 };
 

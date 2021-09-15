@@ -8,6 +8,8 @@
 #include <cstdint>
 //------------------------------------------//
 
+using namespace gem5;
+
 class CycleCounts : public SimObject
 {
     public:
@@ -71,7 +73,7 @@ class CycleCounts : public SimObject
     uint32_t fdiv_inst;
     uint32_t frem_inst;
     CycleCounts();
-    CycleCounts(CycleCountsParams *p);
+    CycleCounts(const CycleCountsParams &p);
 };
 
 #endif //__HWMODEL_CYCLE_COUNTS_HH__

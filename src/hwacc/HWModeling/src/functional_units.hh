@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <vector>
 
+using namespace gem5;
 
 class FunctionalUnits : public SimObject
 {
@@ -26,7 +27,7 @@ class FunctionalUnits : public SimObject
 
     public:
         FunctionalUnits();
-        FunctionalUnits(FunctionalUnitsParams *params);
+        FunctionalUnits(const FunctionalUnitsParams &params);
         // constructor
         // deconstructor
 

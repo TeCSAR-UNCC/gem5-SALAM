@@ -2,21 +2,21 @@
 #include "hwacc/llvm_interface.hh"
 //------------------------------------------//
 
-LLVMInterface::LLVMInterface(LLVMInterfaceParams *p):
+LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p):
     ComputeUnit(p),
-    filename(p->in_file),
-    topName(p->top_name),
-    scheduling_threshold(p->sched_threshold),
-    clock_period(p->clock_period),
-    lockstep(p->lockstep_mode) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    filename(p.in_file),
+    topName(p.top_name),
+    scheduling_threshold(p.sched_threshold),
+    clock_period(p.clock_period),
+    lockstep(p.lockstep_mode) {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     typeList = NULL;
     clock_period = clock_period * 1000;
 }
 
 std::shared_ptr<SALAM::Value> createClone(const std::shared_ptr<SALAM::Value>& b)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     std::shared_ptr<SALAM::Value> clone = b->clone();
     return clone;
 }
@@ -25,8 +25,7 @@ void
 LLVMInterface::ActiveFunction::scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb)
 {
     auto schedulingStart = std::chrono::high_resolution_clock::now();
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else DPRINTFR(Runtime,"|---[Schedule BB - UID:%i ]\n", bb->getUID());
+    DPRINTFR(Runtime,"|---[Schedule BB - UID:%i ]\n", bb->getUID());
     bool needToScheduleBranch = false;
     std::shared_ptr<SALAM::BasicBlock> nextBB;
     auto instruction_list = *(bb->Instructions());
@@ -65,8 +64,7 @@ void
 LLVMInterface::ActiveFunction::processQueues()
 {
     auto queueStart = std::chrono::high_resolution_clock::now();
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
+    DPRINTFR(Runtime,"\t\t  |-[Process Queues]--------\n");
     DPRINTFR(RuntimeQueues, "\t\t[Runtime Queue Status] Reservation:%d, Compute:%d, Read:%d, Write:%d\n",
              reservation.size(), computeQueue.size(), readQueue.size(), writeQueue.size());
 
@@ -206,18 +204,9 @@ LLVMInterface::ActiveFunction::processQueues()
 void
 LLVMInterface::tick()
 {
-    if (DTRACE(Step)) {
-        char response;
-        do
-        {
-            std::cout << '\n' << "Press enter key to continue, or q then enter key to exit...";
-            response = std::cin.get();
-            if (response == 'q') panic("Exit Program");
-        } while (response != '\n');
-    }
     auto tickStart = std::chrono::high_resolution_clock::now();
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (debug()) DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
+
+    if(debug()) DPRINTF(LLVMInterface, "\n%s\n%s %d\n%s\n",
         "********************************************************************************",
         "   Cycle", cycle,
         "********************************************************************************");
@@ -256,7 +245,7 @@ LLVMInterface::tick()
 void // Add third argument, previous BB
 LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instruction> inst)
 {
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTFR(Runtime, "Linking Dynamic Dependencies [%s]\n", llvm::Instruction::getOpcodeName(inst->getOpode()));
     // The list of UIDs for any dependencies we want to find
     //std::deque<uint64_t> dep_uids = inst->runtimeInitialize();
@@ -382,7 +371,7 @@ LLVMInterface::ActiveFunction::findDynamicDeps(std::shared_ptr<SALAM::Instructio
 
 void
 LLVMInterface::dumpModule(llvm::Module *M) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     M->print(llvm::outs(), nullptr);
     for (const llvm::Function &F : *M) {
         for (const llvm::BasicBlock &BB : F) {
@@ -405,7 +394,7 @@ LLVMInterface::constructStaticGraph() {
     auto parseStart = std::chrono::high_resolution_clock::now();
     bool dbg = debug();
 
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
     typeList = new TypeList(); // Create New User Defined Types List
 
@@ -533,7 +522,7 @@ LLVMInterface::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Read Request
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto queue_iter = globalReadQueue.find(req);
     if (queue_iter != globalReadQueue.end()) {
         queue_iter->second->readCommit(req);
@@ -550,7 +539,7 @@ LLVMInterface::ActiveFunction::readCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Read Request
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto map_iter = readQueueMap.find(req);
     if (map_iter != readQueueMap.end()) {
         auto queue_iter = readQueue.find(map_iter->second);
@@ -576,7 +565,7 @@ LLVMInterface::writeCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Write Request
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto queue_iter = globalWriteQueue.find(req);
     if (queue_iter != globalWriteQueue.end()) {
         queue_iter->second->writeCommit(req);
@@ -592,7 +581,7 @@ LLVMInterface::ActiveFunction::writeCommit(MemoryRequest * req) {
 /*********************************************************************************************
  Commit Memory Write Request
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     auto map_iter = writeQueueMap.find(req);
     if (map_iter != writeQueueMap.end()) {
         auto queue_iter = writeQueue.find(map_iter->second);
@@ -618,7 +607,7 @@ LLVMInterface::initialize() {
  Calls function that constructs the basic block list, initializes the reservation table and
  read, write, and compute queues. Set all data collection variables to zero.
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "Initializing LLVM Runtime Engine!\n");
     setupTime = std::chrono::seconds(0);
     simTime = std::chrono::seconds(0);
@@ -648,7 +637,7 @@ LLVMInterface::initialize() {
 
 void
 LLVMInterface::debug(uint64_t flags) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Dump
     for (auto func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
         // Function Level
@@ -672,22 +661,22 @@ LLVMInterface::startup() {
 /*********************************************************************************************
  Initialize communications between gem5 interface and simulator
 *********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     comm->registerCompUnit(this);
 }
 
-LLVMInterface*
-LLVMInterfaceParams::create() {
-/*********************************************************************************************
- Create new interface between the llvm IR and our simulation engine
-*********************************************************************************************/
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return new LLVMInterface(this);
-}
+// LLVMInterface*
+// LLVMInterfaceParams::create() {
+// /*********************************************************************************************
+//  Create new interface between the llvm IR and our simulation engine
+// *********************************************************************************************/
+//     // if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+//     return new LLVMInterface(this);
+// }
 
 void
 LLVMInterface::finalize() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Simulation Times
     printPerformanceResults();
     functions.clear();
@@ -697,7 +686,7 @@ LLVMInterface::finalize() {
 
 void
 LLVMInterface::printPerformanceResults() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     Tick cycle_time = clock_period/1000;
 
     auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
@@ -761,7 +750,7 @@ LLVMInterface::printPerformanceResults() {
 
 void
 LLVMInterface::dumpQueues() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // std::cout << "*********************************************************\n"
     //           << "Compute Queue\n"
     //           << "*********************************************************\n";
@@ -794,7 +783,7 @@ LLVMInterface::dumpQueues() {
 void
 LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
                               std::shared_ptr<SALAM::Instruction> caller) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Add the callee to our list of active functions
     activeFunctions.push_back(ActiveFunction(this, callee, caller));
     activeFunctions.back().launch();
@@ -802,7 +791,7 @@ LLVMInterface::launchFunction(std::shared_ptr<SALAM::Function> callee,
 
 void
 LLVMInterface::launchTopFunction() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     for (auto it = functions.begin(); it != functions.end(); it++) {
         if ((*it)->isTop()) {
             // Launch the top level function
@@ -815,7 +804,7 @@ LLVMInterface::launchTopFunction() {
 }
 
 void LLVMInterface::ActiveFunction::launch() {
-    if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTFR(LLVMInterface, "Launching Function: %s\n", func->getIRStub());
     // func->value_dump();
     // Fetch the arguments
@@ -850,9 +839,9 @@ void LLVMInterface::ActiveFunction::launch() {
 
 std::shared_ptr<SALAM::Instruction>
 LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     uint64_t OpCode = inst->Instruction::getOpcode();
-    if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
+    // if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
     switch(OpCode) {
         case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst); break;
         case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, hw->cycle_counts->br_inst); break;

@@ -1,8 +1,8 @@
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
-from CommInterface import CommInterface
-from HWInterface import HWInterface
+from m5.objects.CommInterface import CommInterface
+from m5.objects.HWInterface import HWInterface
 
 class ComputeUnit(SimObject):
     type = 'ComputeUnit'

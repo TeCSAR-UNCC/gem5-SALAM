@@ -4,16 +4,18 @@
 #include "mem/port.hh"
 #include "mem/tport.hh"
 
+using namespace gem5;
+
 /** Forward declaration **/
-class StreamMasterPort;
+class StreamRequestPort;
 
 /**
- * A StreamSlavePort is a specialization of a SimpleTimingPort meant to enable
+ * A StreamResponsePort is a specialization of a SimpleTimingPort meant to enable
  * functionality similar to the master port in the AXI-Stream specification.
  * This serves only as a base class.
  */
-class StreamSlavePort : public SimpleTimingPort {
-	friend class StreamMasterPort;
+class StreamResponsePort : public SimpleTimingPort {
+	friend class StreamRequestPort;
   private:
   protected:
   	virtual bool tvalid(PacketPtr pkt) = 0;
@@ -27,17 +29,17 @@ class StreamSlavePort : public SimpleTimingPort {
   		return range;
   	}
   public:
-  	StreamSlavePort(const std::string& name, SimObject* owner) :
+  	StreamResponsePort(const std::string& name, SimObject* owner) :
   		SimpleTimingPort(name, owner) {}
 };
 
 /**
- * Templated StreamSlavePort that functions similarly to the pio port on PioDevices.
+ * Templated StreamResponsePort that functions similarly to the pio port on PioDevices.
  */
 template <class Device>
-class StreamSlavePortT : public StreamSlavePort
+class StreamResponsePortT : public StreamResponsePort
 {
-  friend class StreamMasterPort;
+  friend class StreamRequestPort;
 
   private:
     bool isBusy;
@@ -122,32 +124,32 @@ class StreamSlavePortT : public StreamSlavePort
   	}
 
   public:
-  	StreamSlavePortT(Device *dev) :
-      StreamSlavePort(dev->name() + ".stream", dev),
+  	StreamResponsePortT(Device *dev) :
+      StreamResponsePort(dev->name() + ".stream", dev),
       isBusy(false),
       retryReq(false),
       releaseEvent([this]{ release(); }, dev->name()),
       device(dev) {}
-      virtual ~StreamSlavePortT() {}
+      virtual ~StreamResponsePortT() {}
 };
 
 /**
- * A StreamMasterPort is a specialization of a MasterPort, meant to enable
+ * A StreamRequestPort is a specialization of a RequestPort, meant to enable
  * functionality similar to the master port in the AXI-Stream specification.
- * A StreamMasterPort is able to check the valid signal on a corresponding
- * StreamSlavePort before initiating a transfer. Otherwise it functions like
- * a standard MasterPort.
+ * A StreamRequestPort is able to check the valid signal on a corresponding
+ * StreamResponsePort before initiating a transfer. Otherwise it functions like
+ * a standard RequestPort.
  */
-class StreamMasterPort : public MasterPort {
+class StreamRequestPort : public RequestPort {
   private:
-  	StreamSlavePort *_stream_slave;
+  	StreamResponsePort *_stream_slave;
 
   protected:
   	//
   public:
-  	StreamMasterPort(const std::string& name, SimObject* _owner,
+  	StreamRequestPort(const std::string& name, SimObject* _owner,
             		 PortID id=InvalidPortID);
-  	virtual ~StreamMasterPort();
+  	virtual ~StreamRequestPort();
 
   	/**
      * Bind this master port to a slave port. This also does the

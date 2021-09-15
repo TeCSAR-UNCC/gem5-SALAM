@@ -19,17 +19,17 @@ using namespace std;
  **************************************************************************************/
 #include "debug/MemoryAccess.hh"
 
-ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams *p) :
+ScratchpadMemory::ScratchpadMemory(const ScratchpadMemoryParams &p) :
     AbstractMemory(p),
-    readyMode(p->ready_mode),
-    readOnInvalid(p->read_on_invalid),
-    writeOnValid(p->write_on_valid),
-    resetOnScratchpadRead(p->reset_on_scratchpad_read),
+    readyMode(p.ready_mode),
+    readOnInvalid(p.read_on_invalid),
+    writeOnValid(p.write_on_valid),
+    resetOnScratchpadRead(p.reset_on_scratchpad_read),
     initial(true),
     port(name() + ".port", *this),
-    latency(p->latency),
-    latency_var(p->latency_var),
-    bandwidth(p->bandwidth),
+    latency(p.latency),
+    latency_var(p.latency_var),
+    bandwidth(p.bandwidth),
     dequeueEvent([this]{ dequeue(); }, name()) {
     ready = new bool[range.size()];
     if (readyMode) {
@@ -91,14 +91,14 @@ tracePacket(System *sys, const char *label, PacketPtr pkt)
 #if THE_ISA != NULL_ISA
     if (size == 1 || size == 2 || size == 4 || size == 8) {
         DPRINTF(MemoryAccess,"%s from %s of size %i on address %#x data "
-                "%#x %c\n", label, sys->getMasterName(pkt->req->masterId()),
-                size, pkt->getAddr(), pkt->getUintX(TheISA::GuestByteOrder),
+                "%#x %c\n", label, sys->getRequestorName(pkt->req->requestorId()),
+                size, pkt->getAddr(), pkt->getUintX(ByteOrder::little),
                 pkt->req->isUncacheable() ? 'U' : 'C');
         return;
     }
 #endif
     DPRINTF(MemoryAccess, "%s from %s of size %i on address %#x %c\n",
-            label, sys->getMasterName(pkt->req->masterId()),
+            label, sys->getRequestorName(pkt->req->requestorId()),
             size, pkt->getAddr(), pkt->req->isUncacheable() ? 'U' : 'C');
     DDUMP(MemoryAccess, pkt->getConstPtr<uint8_t>(), pkt->getSize());
 }
@@ -168,7 +168,7 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
 
             assert(!pkt->req->isInstFetch());
             TRACE_PACKET("Read/Write");
-            stats.numOther[pkt->req->masterId()]++;
+            stats.numOther[pkt->req->requestorId()]++;
         }
     } else if (pkt->isRead()) {
         assert(!pkt->isWrite());
@@ -194,10 +194,10 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
             pkt->setData(hostAddr);
         }
         TRACE_PACKET(pkt->req->isInstFetch() ? "IFetch" : "Read");
-        stats.numReads[pkt->req->masterId()]++;
-        stats.bytesRead[pkt->req->masterId()] += pkt->getSize();
+        stats.numReads[pkt->req->requestorId()]++;
+        stats.bytesRead[pkt->req->requestorId()] += pkt->getSize();
         if (pkt->req->isInstFetch())
-            stats.bytesInstRead[pkt->req->masterId()] += pkt->getSize();
+            stats.bytesInstRead[pkt->req->requestorId()] += pkt->getSize();
     } else if (pkt->isInvalidate() || pkt->isClean()) {
         assert(!pkt->isWrite());
         // in a fastmem system invalidating and/or cleaning packets
@@ -213,8 +213,8 @@ ScratchpadMemory::scratchpadAccess(PacketPtr pkt, bool validateAccess)
             }
             assert(!pkt->req->isInstFetch());
             TRACE_PACKET("Write");
-            stats.numWrites[pkt->req->masterId()]++;
-            stats.bytesWritten[pkt->req->masterId()] += pkt->getSize();
+            stats.numWrites[pkt->req->requestorId()]++;
+            stats.bytesWritten[pkt->req->requestorId()] += pkt->getSize();
         }
         if (validateAccess) {
             if (!isReady(pkt->getAddr(),pkt->getSize(), false)) {
@@ -477,7 +477,7 @@ ScratchpadMemory::drain()
 
 ScratchpadMemory::MemoryPort::MemoryPort(const std::string& _name,
                                      ScratchpadMemory& _memory)
-    : SlavePort(_name, &_memory), memory(_memory)
+    : ResponsePort(_name, &_memory), memory(_memory)
 { }
 
 AddrRangeList
@@ -519,8 +519,8 @@ ScratchpadMemory::MemoryPort::recvRespRetry()
     memory.recvRespRetry(id);
 }
 
-ScratchpadMemory*
-ScratchpadMemoryParams::create()
-{
-    return new ScratchpadMemory(this);
-}
+// ScratchpadMemory*
+// ScratchpadMemoryParams::create()
+// {
+//     return new ScratchpadMemory(this);
+// }

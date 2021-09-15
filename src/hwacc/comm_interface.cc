@@ -15,23 +15,23 @@ using namespace std;
  * provides a set of memory-mapped registers, as well as master ports for accessing
  * both local busses/SPMs and system memory.
  **************************************************************************************/
-CommInterface::CommInterface(Params *p) :
-    BasicPioDevice(p, p->pio_size),
-    io_addr(p->pio_addr),
-    io_size(p->pio_size),
-    flag_size(p->flags_size),
-    config_size(p->config_size),
-    devname(p->devicename),
-    gic(p->gic),
-    int_num(p->int_num),
-    use_premap_data(p->premap_data),
-    endian(p->system->getGuestByteOrder()),
-    debugEnabled(p->enable_debug_msgs),
-    masterId(p->system->getMasterId(this,name())),
+CommInterface::CommInterface(const CommInterfaceParams &p) :
+    BasicPioDevice(p, p.pio_size),
+    io_addr(p.pio_addr),
+    io_size(p.pio_size),
+    flag_size(p.flags_size),
+    config_size(p.config_size),
+    devname(p.devicename),
+    gic(p.gic),
+    int_num(p.int_num),
+    use_premap_data(p.premap_data),
+    endian(p.system->getGuestByteOrder()),
+    debugEnabled(p.enable_debug_msgs),
+    masterId(p.system->getRequestorId(this,name())),
     tickEvent(this),
-    cacheLineSize(p->cache_line_size),
-    clock_period(p->clock_period),
-    reset_spm(p->reset_spm) {
+    cacheLineSize(p.cache_line_size),
+    clock_period(p.clock_period),
+    reset_spm(p.reset_spm) {
     processDelay = 1000 * clock_period;
     FLAG_OFFSET = 0;
     CONFIG_OFFSET = flag_size;
@@ -47,8 +47,8 @@ CommInterface::CommInterface(Params *p) :
     cu = nullptr;
 
     if (use_premap_data) {
-        for (auto i = 0; i < p->data_bases.size(); i++) {
-            data_base_ptrs.push_back(p->data_bases[i]);
+        for (auto i = 0; i < p.data_bases.size(); i++) {
+            data_base_ptrs.push_back(p.data_bases[i]);
         }
     }
 }
@@ -119,7 +119,7 @@ void
 CommInterface::recvPacket(PacketPtr pkt) {
 	if (pkt->isRead()) {
         MemoryRequest * readReq = findMemRequest(pkt, true);
-        MasterPort * carrier = readReq->getCarrierPort();
+        RequestPort * carrier = readReq->getCarrierPort();
         if (MemSidePort * port = dynamic_cast<MemSidePort *>(carrier)) port->readReq = nullptr;
         if (SPMPort * port = dynamic_cast<SPMPort *>(carrier)) port->readReq = nullptr;
         if (debug()) DPRINTF(CommInterface, "Done with a read. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
@@ -150,7 +150,7 @@ CommInterface::recvPacket(PacketPtr pkt) {
         }
     } else if (pkt->isWrite()) {
         MemoryRequest * writeReq = findMemRequest(pkt, false);
-        MasterPort * carrier = writeReq->getCarrierPort();
+        RequestPort * carrier = writeReq->getCarrierPort();
         if (MemSidePort * port = dynamic_cast<MemSidePort *>(carrier)) port->writeReq = nullptr;
         if (SPMPort * port = dynamic_cast<SPMPort *>(carrier)) port->writeReq = nullptr;
         if (debug()) DPRINTF(CommInterface, "Done with a write. addr: 0x%x, size: %d\n", pkt->req->getPaddr(), pkt->getSize());
@@ -315,7 +315,7 @@ CommInterface::processMemoryRequests() {
         for (auto it=readQueue.begin(); it!=readQueue.end(); ) {
             Addr address = (*it)->currentReadAddr;
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
-            MasterPort * mport;
+            RequestPort * mport;
             if (inStreamRange(address)) {
                 mport = getValidStreamPort(address, (*it)->readLeft, true);
             } else if (inSPMRange(address)) {
@@ -360,7 +360,7 @@ CommInterface::processMemoryRequests() {
         for (auto it=writeQueue.begin(); it!=writeQueue.end(); ) {
             Addr address = (*it)->currentWriteAddr;
             if (debug()) DPRINTF(CommInterfaceQueues, "Request Address: %lx\n", address);
-            MasterPort * mport;
+            RequestPort * mport;
             if (inStreamRange(address)) {
                 mport = getValidStreamPort(address, (*it)->writeLeft, false);
             } else if (inSPMRange(address)) {
@@ -753,10 +753,10 @@ CommInterface::getGlobalVar(unsigned offset, unsigned size) {
     }
 }
 
-CommInterface *
-CommInterfaceParams::create() {
-    return new CommInterface(this);
-}
+// CommInterface *
+// CommInterfaceParams::create() const {
+//     return new CommInterface(this);
+// }
 
 Port&
 CommInterface::getPort(const std::string& if_name, PortID idx) {

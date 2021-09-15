@@ -1,7 +1,7 @@
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
-from ComputeUnit import ComputeUnit
+from m5.objects.ComputeUnit import ComputeUnit
 
 class LLVMInterface(ComputeUnit):
     type = 'LLVMInterface'

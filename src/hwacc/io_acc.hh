@@ -24,7 +24,7 @@ class IOAcc : public BasicPioDevice
     BaseGic *gic;
     uint32_t int_num;
 
-    class MemSidePort : public MasterPort
+    class MemSidePort : public RequestPort
     {
       friend class IOAcc;
 
@@ -34,7 +34,7 @@ class IOAcc : public BasicPioDevice
 
       public:
         MemSidePort(const std::string& name, IOAcc *owner) :
-          MasterPort(name, owner), owner(owner)
+          RequestPort(name, owner), owner(owner)
         { }
 
       protected:

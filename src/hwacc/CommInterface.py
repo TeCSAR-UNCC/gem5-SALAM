@@ -1,7 +1,6 @@
 from m5.params import *
 from m5.proxy import *
-from Device import BasicPioDevice
-from AbstractMemory import AbstractMemory
+from m5.objects.Device import BasicPioDevice
 
 class CommInterface(BasicPioDevice):
     type = 'CommInterface'
@@ -11,10 +10,10 @@ class CommInterface(BasicPioDevice):
     config_size = Param.Addr(0x0, "Size of the addess range dedicated to device configuration")
     pio_size = Param.Addr(0x8, "Size of MMRs. Should be large enough to support flags, config, and global var addresses")
     devicename = Param.String("comm_interface", "Name of comm_interface device")
-    local = VectorMasterPort("Master points connected to the local cluster xbar")
-    acp = VectorMasterPort("Master ports connected to the cluster coherency xbar")
-    stream = VectorMasterPort("Master ports connected to streaming devices")
-    spm = VectorMasterPort("Master ports connected to private scratchpad memory")
+    local = VectorRequestPort("Master points connected to the local cluster xbar")
+    acp = VectorRequestPort("Master ports connected to the cluster coherency xbar")
+    stream = VectorRequestPort("Master ports connected to streaming devices")
+    spm = VectorRequestPort("Master ports connected to private scratchpad memory")
     system = Param.System(Parent.any, "Parent system of the device")
     cache_line_size = Param.Unsigned(Parent.cache_line_size, "Cache line size in bytes")
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")

@@ -9,8 +9,8 @@
 
 class StreamBuffer : public ClockedObject {
   private:
-  	StreamSlavePortT<StreamBuffer> streamIn;
-    StreamSlavePortT<StreamBuffer> streamOut;
+  	StreamResponsePortT<StreamBuffer> streamIn;
+    StreamResponsePortT<StreamBuffer> streamOut;
   	Fifo<uint8_t> buffer;
   	size_t const fifoSize;
   	ByteOrder endian;
@@ -20,14 +20,14 @@ class StreamBuffer : public ClockedObject {
     const double bandwidth;
 
   public:
-  	typedef StreamBufferParams Params;
-  	const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
-
-    StreamBuffer(Params *p);
+  	// typedef StreamBufferParams Params;
+  	// const Params *
+    // params() const
+    // {
+    //   return dynamic_cast<const Params *>(_params);
+    // }
+	PARAMS(StreamBuffer);
+    StreamBuffer(const StreamBufferParams &p);
 
   	size_t size() const { return buffer.size(); }
   	void flush() { buffer.flush(); }

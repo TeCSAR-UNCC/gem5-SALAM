@@ -2,20 +2,20 @@
 #include "hwacc/noncoherent_dma.hh"
 //------------------------------------------//
 
-NoncoherentDma::NoncoherentDma(const Params *p)
+NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     : DmaDevice(p),
-    devname(p->devicename),
-    pioAddr(p->pio_addr),
-    pioDelay(p->pio_delay),
-    pioSize(p->pio_size),
-    bufferSize(p->buffer_size),
-    maxPending(p->max_pending),
-    maxReqSize(p->max_req_size),
-    gic(p->gic),
-    intNum(p->int_num),
-    clock_period(p->clock_period),
+    devname(p.devicename),
+    pioAddr(p.pio_addr),
+    pioDelay(p.pio_delay),
+    pioSize(p.pio_size),
+    bufferSize(p.buffer_size),
+    maxPending(p.max_pending),
+    maxReqSize(p.max_req_size),
+    gic(p.gic),
+    intNum(p.int_num),
+    clock_period(p.clock_period),
     tickEvent(this),
-    accPort(this, sys, p->sid, p->ssid) {
+    accPort(this, sys, p.sid, p.ssid) {
     memSideReadFifo = new DmaReadFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
     memSideWriteFifo = new DmaWriteFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
     accSideReadFifo = new DmaReadFifo(accPort, size_t(bufferSize/2), maxReqSize, maxPending);
@@ -171,7 +171,7 @@ NoncoherentDma::getPort(const std::string &if_name, PortID idx)
     return DmaDevice::getPort(if_name, idx);
 }
 
-NoncoherentDma *
-NoncoherentDmaParams::create() {
-    return new NoncoherentDma(this);
-}
+// NoncoherentDma *
+// NoncoherentDmaParams::create() {
+//     return new NoncoherentDma(this);
+// }

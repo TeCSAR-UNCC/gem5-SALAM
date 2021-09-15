@@ -41,4 +41,4 @@ boot.o: Makefile
 	$(CPP) boot.s $(CFLAGS) | $(AS) $(ASFLAGS) -o boot.o
 
 clean:
-	rm -f *.o *.elf
+	rm -f ../../../common/syscalls.o *.o *.elf

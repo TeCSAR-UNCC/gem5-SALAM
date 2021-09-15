@@ -15,72 +15,72 @@ namespace SALAM
 SALAM::Instruction::Instruction(uint64_t id) :
                          Value(id)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->inst_dbg = new Instruction_Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->inst_dbg = new Instruction_Debugger();
+    // }
     currentCycle = 0;
 }
 
-Instruction::Instruction(uint64_t id,
+SALAM::Instruction::Instruction(uint64_t id,
                          uint64_t OpCode) :
                          Value(id),
                          llvmOpCode(OpCode)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->inst_dbg = new Instruction_Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->inst_dbg = new Instruction_Debugger();
+    // }
     currentCycle = 0;
 }
 
-Instruction::Instruction(uint64_t id,
+SALAM::Instruction::Instruction(uint64_t id,
                          uint64_t OpCode,
                          uint64_t cycles) :
                          Value(id),
                          llvmOpCode(OpCode),
                          cycleCount(cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->inst_dbg = new Instruction_Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->inst_dbg = new Instruction_Debugger();
+    // }
     currentCycle = 0;
 }
 
-Instruction::~Instruction()
+SALAM::Instruction::~Instruction()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
-    //if (DTRACE(SALAM_Debug)) delete inst_dbg;
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
+    //// if (DTRACE(SALAM_Debug)) delete inst_dbg;
 }
 
-Instruction::Instruction_Debugger::Instruction_Debugger()
+SALAM::Instruction::Instruction_Debugger::Instruction_Debugger()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-}
-
-void
-Instruction::Instruction_Debugger::dumper(Instruction *inst)
-{
-    if (DTRACE(SALAM_Debug)) {
-        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "%s \n\t\t %s%d \n",
-            "|-(Instruction Base) ",
-            " | UID: ", inst->getUID()
-        );
-        inst->value_dump();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
-Instruction::initialize(llvm::Value *irval,
+SALAM::Instruction::Instruction_Debugger::dumper(Instruction *inst)
+{
+    // if (DTRACE(SALAM_Debug)) {
+        // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    //     DPRINTF(SALAM_Debug, "%s \n\t\t %s%d \n",
+    //         "|-(Instruction Base) ",
+    //         " | UID: ", inst->getUID()
+    //     );
+    //     inst->value_dump();
+    // }
+}
+
+void
+SALAM::Instruction::initialize(llvm::Value *irval,
                          irvmap *irmap,
                          SALAM::valueListTy *valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     DPRINTF(LLVMInterface, "Initialize Value - Instruction::initialize\n");
     SALAM::Value::initialize(irval, irmap);
     // Fetch the operands of the instruction
@@ -127,10 +127,10 @@ Instruction::initialize(llvm::Value *irval,
 }
 
 void
-Instruction::signalUsers()
+SALAM::Instruction::signalUsers()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++signalUsers()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++signalUsers()\n");
     uint64_t count = 0;
     for (auto user : dynamicUsers) {
         DPRINTF(Runtime, "|| User[%i] =============\n", count);
@@ -146,10 +146,10 @@ Instruction::signalUsers()
 }
 
 bool
-Instruction::ready()
+SALAM::Instruction::ready()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++ready()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++ready()\n");
     DPRINTF(Runtime, "|| Remaining Dependencies: %i \n", getDependencyCount());
     if (getDependencyCount() == 0) {
         isready = true;
@@ -157,13 +157,13 @@ Instruction::ready()
         DPRINTF(Runtime, "||==ready=================\n");
         return true;
     } else {
-        if(DTRACE(SALAM_Debug)) {
-            uint64_t count = 0;
-            for (auto deps : getDynamicDependencies()) {
-                DPRINTF(Runtime, "|| -Dep[%i] = UID[%i]\n", count, getDynamicDependencies(count)->getUID());
-                count++;
-            }
-        }
+        // if(DTRACE(SALAM_Debug)) {
+        //     uint64_t count = 0;
+        //     for (auto deps : getDynamicDependencies()) {
+        //         DPRINTF(Runtime, "|| -Dep[%i] = UID[%i]\n", count, getDynamicDependencies(count)->getUID());
+        //         count++;
+        //     }
+        // }
     }
     DPRINTF(Runtime, "||==Return: %s\n", isready ? "true" : "false");
     DPRINTF(Runtime, "||==ready=================\n");
@@ -171,10 +171,10 @@ Instruction::ready()
 }
 
 bool
-Instruction::launch()
+SALAM::Instruction::launch()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
     launched = true;
     if (getCycleCount() == 0) { // Instruction ready to be committed
         DPRINTF(Runtime, "||  0 Cycle Instruction\n");
@@ -190,10 +190,10 @@ Instruction::launch()
 }
 
 bool
-Instruction::commit()
+SALAM::Instruction::commit()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++commit()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++commit()\n");
     DPRINTF(Runtime, "||  Current Cycle: %i\n", getCurrentCycle());
     if (getCurrentCycle() == getCycleCount()) { // Instruction ready to be committed
         signalUsers();
@@ -211,10 +211,10 @@ Instruction::commit()
 }
 
 void
-Instruction::setOperandValue(uint64_t uid)
+SALAM::Instruction::setOperandValue(uint64_t uid)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--setOperandValue()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--setOperandValue()\n");
     uint64_t count = 0;
     for (auto it = operands.begin(); it != operands.end(); ++it) {
         auto op = *it;
@@ -227,9 +227,9 @@ Instruction::setOperandValue(uint64_t uid)
 }
 
 void
-Instruction::reset() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--reset()\n");
+SALAM::Instruction::reset() {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--reset()\n");
     isready = false;
     launched = false;
     committed = false;
@@ -238,16 +238,16 @@ Instruction::reset() {
 }
 
 void
-Instruction::linkOperands(const SALAM::Operand &newOp)
+SALAM::Instruction::linkOperands(const SALAM::Operand &newOp)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Operand op_copy = newOp;
     operands.push_back(op_copy);
 }
 
 //std::deque<uint64_t>
 std::vector<uint64_t>
-Instruction::runtimeInitialize() {
+SALAM::Instruction::runtimeInitialize() {
     assert(getDependencyCount() == 0);
     //std::deque<uint64_t> dep_uids;
     std::vector<uint64_t> dep_uids;
@@ -273,7 +273,7 @@ createBadInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::BadInstruction>(id, OpCode, cycles);
 }
 
@@ -282,10 +282,10 @@ BadInstruction::BadInstruction(uint64_t id,
               uint64_t cycles) :
                                Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -298,22 +298,22 @@ BadInstruction::initialize(llvm::Value * irval,
                            irvmap * irmap,
                            SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
 // SALAM-Ret // -------------------------------------------------------------//
 void // Debugging Interface
 Ret::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
@@ -321,7 +321,7 @@ createRetInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Ret>(id, OpCode, cycles);
 }
 
@@ -330,10 +330,10 @@ Ret::Ret(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -346,27 +346,27 @@ Ret::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
 void
 Ret::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Ret never calls compute. Special handling occurs in the scheduler.
 }
 
 // SALAM-Br // --------------------------------------------------------------//
 void // Debugging Interface
 Br::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
@@ -374,7 +374,7 @@ createBrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Br>(id, OpCode, cycles);
 }
 
@@ -383,10 +383,10 @@ Br::Br(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -396,8 +396,8 @@ Br::Br(uint64_t id,
 
 std::shared_ptr<SALAM::BasicBlock>
 Br::getTarget() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++getTarget()\n");
     DPRINTF(RuntimeCompute, "|| Launching Branch: %s\n", ir_string);
     if(conditional) {
     #if USE_LLVM_AP_VALUES
@@ -431,7 +431,7 @@ Br::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // SALAM::Instruction::initialize(irval, irmap, valueList); // We don't use the normal init fxn
     SALAM::Value::initialize(irval, irmap);
     llvm::BranchInst * br = llvm::dyn_cast<llvm::BranchInst>(irval);
@@ -471,23 +471,23 @@ Br::initialize(llvm::Value * irval,
 void
 Br::compute()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     // Br does not use compute. Special handling occurs in the scheduler.
 }
 
 // SALAM-Switch // ----------------------------------------------------------//
 void // Debugging Interface
 Switch::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
@@ -495,7 +495,7 @@ createSwitchInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Switch>(id, OpCode, cycles);
 }
 
@@ -504,10 +504,10 @@ Switch::Switch(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -544,7 +544,7 @@ Switch::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // SALAM::Instruction::initialize(irval, irmap, valueList);
     SALAM::Value::initialize(irval, irmap);
 
@@ -590,7 +590,7 @@ Switch::initialize(llvm::Value * irval,
 // std::shared_ptr<SALAM::Value>
 // Switch::destination(int switchVar)
 // {
-//     if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+//     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 //     for (int i = 2; i < this->arguments.size(); ++i) {
 //     #if USE_LLVM_AP_VALUES
 //         if (this->arguments.at(i).first->getReg()->getIntData()->getSExtValue() == switchVar) return this->arguments.at(i).second;
@@ -611,14 +611,14 @@ Switch::compute() {
 // SALAM-Add // -------------------------------------------------------------//
 void // Debugging Interface
 Add::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
@@ -626,7 +626,7 @@ createAddInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Add>(id, OpCode, cycles);
 }
 
@@ -635,10 +635,10 @@ Add::Add(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -651,14 +651,14 @@ Add::initialize(llvm::Value *irval,
                 SALAM::irvmap *irmap,
                 SALAM::valueListTy *valueList)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
 void
 Add::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -683,22 +683,22 @@ Add::compute() {
 // SALAM-FAdd // ------------------------------------------------------------//
 void // Debugging Interface
 FAdd::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFAddInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FAdd>(id, OpCode, cycles);
 }
 
@@ -707,10 +707,10 @@ FAdd::FAdd(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -722,7 +722,7 @@ void
 FAdd::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
 }
 
@@ -730,8 +730,8 @@ void
 FAdd::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
@@ -788,22 +788,22 @@ FAdd::compute() {
 // SALAM-Sub // -------------------------------------------------------------//
 void // Debugging Interface
 Sub::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createSubInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Sub>(id, OpCode, cycles);
 }
 
@@ -812,10 +812,10 @@ Sub::Sub(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -827,7 +827,7 @@ void
 Sub::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -836,8 +836,8 @@ void
 Sub::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -862,22 +862,22 @@ Sub::compute() {
 // SALAM-FSub // -------------------------------------------------------------//
 void // Debugging Interface
 FSub::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFSubInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FSub>(id, OpCode, cycles);
 }
 
@@ -886,10 +886,10 @@ FSub::FSub(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -901,7 +901,7 @@ void
 FSub::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -910,8 +910,8 @@ void
 FSub::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
@@ -968,21 +968,21 @@ FSub::compute() {
 // SALAM-Mul // -------------------------------------------------------------//
 void // Debugging Interface
 Mul::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createMulInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Mul>(id, OpCode, cycles);
 }
 
@@ -991,10 +991,10 @@ Mul::Mul(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1006,15 +1006,15 @@ void
 Mul::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
 
 void
 Mul::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1039,22 +1039,22 @@ Mul::compute() {
 // SALAM-FMul // ------------------------------------------------------------//
 void // Debugging Interface
 FMul::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFMulInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FMul>(id, OpCode, cycles);
 }
 
@@ -1063,10 +1063,10 @@ FMul::FMul(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1078,7 +1078,7 @@ void
 FMul::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1087,8 +1087,8 @@ void
 FMul::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
@@ -1145,22 +1145,22 @@ FMul::compute() {
 // SALAM-UDiv // ------------------------------------------------------------//
 void // Debugging Interface
 UDiv::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createUDivInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::UDiv>(id, OpCode, cycles);
 }
 
@@ -1169,10 +1169,10 @@ UDiv::UDiv(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1184,7 +1184,7 @@ void
 UDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1193,8 +1193,8 @@ void
 UDiv::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1219,22 +1219,22 @@ UDiv::compute() {
 // SALAM-SDiv // ------------------------------------------------------------//
 void // Debugging Interface
 SDiv::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createSDivInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SDiv>(id, OpCode, cycles);
 }
 
@@ -1243,10 +1243,10 @@ SDiv::SDiv(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1258,7 +1258,7 @@ void
 SDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1267,8 +1267,8 @@ void
 SDiv::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1294,22 +1294,22 @@ SDiv::compute() {
 // SALAM-FDiv // ------------------------------------------------------------//
 void // Debugging Interface
 FDiv::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFDivInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FDiv>(id, OpCode, cycles);
 }
 
@@ -1318,10 +1318,10 @@ FDiv::FDiv(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1333,7 +1333,7 @@ void
 FDiv::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1342,8 +1342,8 @@ void
 FDiv::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
@@ -1400,22 +1400,22 @@ FDiv::compute() {
 // SALAM-URem // ------------------------------------------------------------//
 void // Debugging Interface
 URem::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createURemInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::URem>(id, OpCode, cycles);
 }
 
@@ -1424,10 +1424,10 @@ URem::URem(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1439,7 +1439,7 @@ void
 URem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1448,8 +1448,8 @@ void
 URem::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1474,22 +1474,22 @@ URem::compute() {
 // SALAM-SRem // ------------------------------------------------------------//
 void // Debugging Interface
 SRem::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createSRemInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SRem>(id, OpCode, cycles);
 }
 
@@ -1498,10 +1498,10 @@ SRem::SRem(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1513,7 +1513,7 @@ void
 SRem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1522,8 +1522,8 @@ void
 SRem::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1549,22 +1549,22 @@ SRem::compute() {
 // SALAM-FRem // ------------------------------------------------------------//
 void // Debugging Interface
 FRem::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFRemInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FRem>(id, OpCode, cycles);
 }
 
@@ -1573,10 +1573,10 @@ FRem::FRem(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1588,7 +1588,7 @@ void
 FRem::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1597,8 +1597,8 @@ void
 FRem::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APFloat op1 = (operands.at(0).getFloatRegValue());
@@ -1657,22 +1657,22 @@ FRem::compute() {
 // SALAM-Shl // -------------------------------------------------------------//
 void // Debugging Interface
 Shl::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createShlInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Shl>(id, OpCode, cycles);
 }
 
@@ -1681,10 +1681,10 @@ Shl::Shl(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1696,7 +1696,7 @@ void
 Shl::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1705,8 +1705,8 @@ void
 Shl::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1731,22 +1731,22 @@ Shl::compute() {
 // SALAM-LShr // ------------------------------------------------------------//
 void // Debugging Interface
 LShr::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createLShrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::LShr>(id, OpCode, cycles);
 }
 
@@ -1755,10 +1755,10 @@ LShr::LShr(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1770,7 +1770,7 @@ void
 LShr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1779,8 +1779,8 @@ void
 LShr::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1805,22 +1805,22 @@ LShr::compute() {
 // SALAM-AShr // ------------------------------------------------------------//
 void // Debugging Interface
 AShr::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createAShrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::AShr>(id, OpCode, cycles);
 }
 
@@ -1829,10 +1829,10 @@ AShr::AShr(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1844,7 +1844,7 @@ void
 AShr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1853,8 +1853,8 @@ void
 AShr::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1880,22 +1880,22 @@ AShr::compute() {
 // SALAM-And // -------------------------------------------------------------//
 void // Debugging Interface
 And::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createAndInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::And>(id, OpCode, cycles);
 }
 
@@ -1904,10 +1904,10 @@ And::And(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1919,7 +1919,7 @@ void
 And::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -1928,8 +1928,8 @@ void
 And::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -1954,22 +1954,22 @@ And::compute() {
 // SALAM-Or // --------------------------------------------------------------//
 void // Debugging Interface
 Or::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createOrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Or>(id, OpCode, cycles);
 }
 
@@ -1978,10 +1978,10 @@ Or::Or(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -1993,7 +1993,7 @@ void
 Or::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2002,8 +2002,8 @@ void
 Or::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -2028,22 +2028,22 @@ Or::compute() {
 // SALAM-Xor // -------------------------------------------------------------//
 void // Debugging Interface
 Xor::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createXorInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Xor>(id, OpCode, cycles);
 }
 
@@ -2052,10 +2052,10 @@ Xor::Xor(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2067,7 +2067,7 @@ void
 Xor::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2076,8 +2076,8 @@ void
 Xor::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
@@ -2102,21 +2102,21 @@ Xor::compute() {
 // SALAM-Load // ------------------------------------------------------------//
 void // Debugging Interface
 Load::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createLoadInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Load>(id, OpCode, cycles);
 }
 
@@ -2125,10 +2125,10 @@ Load::Load(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2140,7 +2140,7 @@ void
 Load::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::LoadInst * inst = llvm::dyn_cast<llvm::LoadInst>(irval);
@@ -2150,8 +2150,8 @@ Load::initialize(llvm::Value * irval,
 
 void
 Load::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     // Load does not use compute normally. Special handling is used in the scheduler.
     // We instead use compute just for debug printout
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
@@ -2169,8 +2169,8 @@ Load::loadInternal() {
 
 MemoryRequest *
 Load::createMemoryRequest() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++createMemoryRequest()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++createMemoryRequest()\n");
     Addr memAddr = (operands.front().getPtrRegValue());
     size_t reqLen = getSizeInBytes();
     DPRINTF(RuntimeCompute, "|| Launching %s\n", ir_string);
@@ -2181,21 +2181,21 @@ Load::createMemoryRequest() {
 // SALAM-Store // -----------------------------------------------------------//
 void // Debugging Interface
 Store::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createStoreInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Store>(id, OpCode, cycles);
 }
 
@@ -2204,10 +2204,10 @@ Store::Store(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2219,7 +2219,7 @@ void
 Store::initialize(llvm::Value * irval,
                         irvmap * irmap,
                         SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::StoreInst * inst = llvm::dyn_cast<llvm::StoreInst>(irval);
@@ -2228,8 +2228,8 @@ Store::initialize(llvm::Value * irval,
 
 void
 Store::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     // Store does not use compute. Special handling is used in the scheduler.
 }
 
@@ -2273,21 +2273,21 @@ Store::createMemoryRequest() {
 // SALAM-GEP // -------------------------------------------------------------//
 void // Debugging Interface
 GetElementPtr::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createGetElementPtrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::GetElementPtr>(id, OpCode, cycles);
 }
 
@@ -2296,10 +2296,10 @@ GetElementPtr::GetElementPtr(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2311,7 +2311,7 @@ void
 GetElementPtr::initialize(llvm::Value * irval,
                             irvmap * irmap,
                             SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::User * iruser = llvm::dyn_cast<llvm::User>(irval);
@@ -2358,8 +2358,8 @@ GetElementPtr::initialize(llvm::Value * irval,
 
 void
 GetElementPtr::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     uint64_t ptr = (operands.front().getPtrRegValue());
     int64_t offset = 0;
@@ -2387,22 +2387,22 @@ GetElementPtr::compute() {
 // SALAM-Trunc // -----------------------------------------------------------//
 void // Debugging Interface
 Trunc::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createTruncInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Trunc>(id, OpCode, cycles);
 }
 
@@ -2411,10 +2411,10 @@ Trunc::Trunc(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2426,7 +2426,7 @@ void
 Trunc::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2435,8 +2435,8 @@ void
 Trunc::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue().trunc(size);
@@ -2452,22 +2452,22 @@ Trunc::compute() {
 // SALAM-ZExt // ------------------------------------------------------------//
 void // Debugging Interface
 ZExt::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createZExtInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::ZExt>(id, OpCode, cycles);
 }
 
@@ -2476,10 +2476,10 @@ ZExt::ZExt(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2491,7 +2491,7 @@ void
 ZExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2500,8 +2500,8 @@ void
 ZExt::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue().zext(size);
@@ -2517,22 +2517,22 @@ ZExt::compute() {
 // SALAM-SExt // ------------------------------------------------------------//
 void // Debugging Interface
 SExt::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createSExtInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SExt>(id, OpCode, cycles);
 }
 
@@ -2541,10 +2541,10 @@ SExt::SExt(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2556,7 +2556,7 @@ void
 SExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2565,8 +2565,8 @@ void
 SExt::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue().sext(size);
@@ -2582,22 +2582,22 @@ SExt::compute() {
 // SALAM-FPToUI // ----------------------------------------------------------//
 void // Debugging Interface
 FPToUI::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFPToUIInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPToUI>(id, OpCode, cycles);
 }
 
@@ -2606,10 +2606,10 @@ FPToUI::FPToUI(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2621,7 +2621,7 @@ void
 FPToUI::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2667,22 +2667,22 @@ FPToUI::compute() {
 // SALAM-FPToSI // ----------------------------------------------------------//
 void // Debugging Interface
 FPToSI::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFPToSIInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPToSI>(id, OpCode, cycles);
 }
 
@@ -2691,10 +2691,10 @@ FPToSI::FPToSI(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2706,7 +2706,7 @@ void
 FPToSI::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2754,22 +2754,22 @@ FPToSI::compute() {
 // SALAM-UIToFP // ----------------------------------------------------------//
 void // Debugging Interface
 UIToFP::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createUIToFPInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::UIToFP>(id, OpCode, cycles);
 }
 
@@ -2778,10 +2778,10 @@ UIToFP::UIToFP(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2793,7 +2793,7 @@ void
 UIToFP::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2834,22 +2834,22 @@ UIToFP::compute() {
 // SALAM-SIToFP // ----------------------------------------------------------//
 void // Debugging Interface
 SIToFP::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createSIToFPInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::SIToFP>(id, OpCode, cycles);
 }
 
@@ -2858,10 +2858,10 @@ SIToFP::SIToFP(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2873,7 +2873,7 @@ void
 SIToFP::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2914,22 +2914,22 @@ SIToFP::compute() {
 // SALAM-FPTrunc // ---------------------------------------------------------//
 void // Debugging Interface
 FPTrunc::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFPTruncInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPTrunc>(id, OpCode, cycles);
 }
 
@@ -2938,10 +2938,10 @@ FPTrunc::FPTrunc(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -2953,7 +2953,7 @@ void
 FPTrunc::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -2988,22 +2988,22 @@ FPTrunc::compute() {
 // SALAM-FPExt // -----------------------------------------------------------//
 void // Debugging Interface
 FPExt::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFPExtInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FPExt>(id, OpCode, cycles);
 }
 
@@ -3012,10 +3012,10 @@ FPExt::FPExt(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3027,7 +3027,7 @@ void
 FPExt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -3062,22 +3062,22 @@ FPExt::compute() {
 // SALAM-PtrToInt // --------------------------------------------------------//
 void // Debugging Interface
 PtrToInt::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createPtrToIntInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::PtrToInt>(id, OpCode, cycles);
 }
 
@@ -3086,10 +3086,10 @@ PtrToInt::PtrToInt(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3101,7 +3101,7 @@ void
 PtrToInt::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -3119,22 +3119,22 @@ PtrToInt::compute() {
 // SALAM-IntToPtr // --------------------------------------------------------//
 void // Debugging Interface
 IntToPtr::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createIntToPtrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::IntToPtr>(id, OpCode, cycles);
 }
 
@@ -3143,10 +3143,10 @@ IntToPtr::IntToPtr(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3158,7 +3158,7 @@ void
 IntToPtr::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
 }
@@ -3179,21 +3179,21 @@ IntToPtr::compute() {
 // SALAM-ICmp // ------------------------------------------------------------//
 void // Debugging Interface
 ICmp::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createICmpInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::ICmp>(id, OpCode, cycles);
 }
 
@@ -3202,10 +3202,10 @@ ICmp::ICmp(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3217,7 +3217,7 @@ void
 ICmp::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::CmpInst * inst = llvm::dyn_cast<llvm::CmpInst>(irval);
@@ -3228,8 +3228,8 @@ ICmp::initialize(llvm::Value * irval,
 
 void
 ICmp::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     bool result = false;
 #if USE_LLVM_AP_VALUES
@@ -3303,22 +3303,22 @@ ICmp::compute() {
 // SALAM-FCmp // ------------------------------------------------------------//
 void // Debugging Interface
 FCmp::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createFCmpInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::FCmp>(id, OpCode, cycles);
 }
 
@@ -3327,10 +3327,10 @@ FCmp::FCmp(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3342,7 +3342,7 @@ void
 FCmp::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     // ****** //
     llvm::CmpInst * inst = llvm::dyn_cast<llvm::CmpInst>(irval);
@@ -3355,8 +3355,8 @@ void
 FCmp::compute() {
     // Perform computations
     // Store results in temp location
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     bool result = false;
 #if USE_LLVM_AP_VALUES
@@ -3536,21 +3536,21 @@ FCmp::compute() {
 // SALAM-Phi // -------------------------------------------------------------//
 void // Debugging Interface
 Phi::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
-            "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
-            " | Opcode: ", conditions.at(0).at(1),
-            " | Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "%s%s%s\n\t\t %s%d\n\t\t %s%d%s\n",
+    //         "|-(", llvm::Instruction::getOpcodeName(conditions.at(0).at(1)), " Instruction)",
+    //         " | Opcode: ", conditions.at(0).at(1),
+    //         " | Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createPHIInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Phi>(id, OpCode, cycles);
 }
 
@@ -3559,10 +3559,10 @@ Phi::Phi(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3574,7 +3574,7 @@ void
 Phi::initialize(llvm::Value * irval,
                     irvmap * irmap,
                     SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     llvm::PHINode * phi = llvm::dyn_cast<llvm::PHINode>(irval);
     assert(phi);
@@ -3611,8 +3611,8 @@ Phi::runtimeInitialize() {
 
 void
 Phi::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     DPRINTF(RuntimeCompute, "|| PHI entered from %s, using value: %s\n",
         previousBB->getIRStub(), operands.front().getIRString());
@@ -3643,22 +3643,22 @@ Phi::getStaticDependencies() const {
 // SALAM-Call // ------------------------------------------------------------//
 void // Debugging Interface
 Call::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createCallInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Call>(id, OpCode, cycles);
 }
 
@@ -3667,10 +3667,10 @@ Call::Call(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3682,7 +3682,7 @@ void
 Call::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     callee = staticDependencies.back();
     staticDependencies.pop_back();
@@ -3697,22 +3697,22 @@ Call::compute() {
 // SALAM-Select // ----------------------------------------------------------//
 void // Debugging Interface
 Select::dumper() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
-            "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
-            "    UID: ", conditions.at(0).at(0),
-            " Opcode: ", conditions.at(0).at(1),
-            "Latency: ", conditions.at(0).at(2), " Cycles"
-        );
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
 }
 
 std::shared_ptr<SALAM::Instruction>
 createSelectInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     return std::make_shared<SALAM::Select>(id, OpCode, cycles);
 }
 
@@ -3721,10 +3721,10 @@ Select::Select(uint64_t id,
               uint64_t cycles) :
          Instruction(id, OpCode, cycles)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbgr = new Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
     std::vector<uint64_t> base_params;
     base_params.push_back(id);
     base_params.push_back(OpCode);
@@ -3736,7 +3736,7 @@ void
 Select::initialize(llvm::Value * irval,
                 irvmap * irmap,
                 SALAM::valueListTy * valueList) {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     SALAM::Instruction::initialize(irval, irmap, valueList);
     this->condition = getStaticDependencies(0);
     this->trueValue = getStaticDependencies(1);
@@ -3757,8 +3757,8 @@ Select::initialize(llvm::Value * irval,
 
 void
 Select::compute() {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++compute()\n");
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 
     auto cond = operands.at(0);

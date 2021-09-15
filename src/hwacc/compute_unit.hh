@@ -33,7 +33,7 @@ class ComputeUnit : public SimObject {
 
   public:
     virtual void tick() {}
-    ComputeUnit(ComputeUnitParams *p);
+    ComputeUnit(const ComputeUnitParams &p);
     virtual void initialize() {}
     virtual void readCommit(MemoryRequest * req) {}
     virtual void writeCommit(MemoryRequest * req) {}

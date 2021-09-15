@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <vector>
 
+using namespace gem5;
+
 class SALAMPowerModel : public SimObject
 {
     private:
@@ -31,7 +33,7 @@ class SALAMPowerModel : public SimObject
 
     public:
         SALAMPowerModel();
-        SALAMPowerModel(SALAMPowerModelParams *params);
+        SALAMPowerModel(const SALAMPowerModelParams &params);
         // create constructor
         // getters/setters
     

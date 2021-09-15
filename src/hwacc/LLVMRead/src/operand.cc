@@ -4,13 +4,13 @@
 SALAM::Constant::Constant(uint64_t id) :
 						  Value(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 /*
 SALAM::Constant::Constant(const Constant&)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 */
 
@@ -19,7 +19,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
 							SALAM::irvmap * irmap,
 							SALAM::valueListTy * values)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
 	// Parse the constant value
@@ -299,7 +299,7 @@ SALAM::Constant::initialize(llvm::Value * irval,
 SALAM::GlobalConstant::GlobalConstant(uint64_t id) :
 									  Constant(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
@@ -307,7 +307,7 @@ SALAM::GlobalConstant::initialize(llvm::Value * irval,
 								  SALAM::irvmap * irmap,
 								  SALAM::valueListTy * values)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	// Parse the initializer of the value
 	auto glb = llvm::dyn_cast<llvm::GlobalVariable>(irval);
 	assert(glb);
@@ -321,13 +321,13 @@ SALAM::GlobalConstant::initialize(llvm::Value * irval,
 SALAM::Argument::Argument(uint64_t id) :
 						  Value(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	//Initialize SALAM::Value
 	SALAM::Value::initialize(irval, irmap);
 	addRegister();
@@ -337,7 +337,7 @@ SALAM::Argument::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 SALAM::Operand::Operand(uint64_t id) :
 						Value(id)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 */
 
@@ -352,38 +352,38 @@ SALAM::Operand::Operand(const Value &copy_val)
 
 SALAM::Operand::Operand_Debugger::Operand_Debugger()
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SALAM::Operand::Operand_Debugger::dumper(Operand * op)
  {
-    if (DTRACE(SALAM_Debug)) {
-        if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-        DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n",
-            "************** Instruction Dump **************",
-            "    UID: ", op->getUID()
-        );
-        // op->value_dump();
-        DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n",
-            "|-(Value Base) ",
-            " | LLVM IR: ", op->getIRString(),
-            " | UID: ", op->getUID(),
-            " | Size: ", op->getSize(), " bits [", op->getSizeInBytes(), " bytes]"
-        );
-		if(op->getReg()) op->getReg()->dump();
-    }
+    // if (DTRACE(SALAM_Debug)) {
+        // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    //     DPRINTF(SALAM_Debug, "| %s | \n\t\t %s %d  \n",
+    //         "************** Instruction Dump **************",
+    //         "    UID: ", op->getUID()
+    //     );
+    //     // op->value_dump();
+    //     DPRINTF(SALAM_Debug, "%s\n\t\t %s%s\n\t\t %s%d\n\t\t %s%d%s%d%s \n",
+    //         "|-(Value Base) ",
+    //         " | LLVM IR: ", op->getIRString(),
+    //         " | UID: ", op->getUID(),
+    //         " | Size: ", op->getSize(), " bits [", op->getSizeInBytes(), " bytes]"
+    //     );
+	// 	if(op->getReg()) op->getReg()->dump();
+    // }
  }
 
 // copy constructor
 SALAM::Operand::Operand(const SALAM::Operand &copy_val):
 		   SALAM::Value(copy_val)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->op_dbg = new Operand_Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->op_dbg = new Operand_Debugger();
+    // }
     lockedValue = copy_val.lockedValue;
     set = copy_val.set;
 }
@@ -392,22 +392,22 @@ SALAM::Operand::Operand(const SALAM::Operand &copy_val):
 SALAM::Operand::Operand(const SALAM::Value &copy_val):
 		   SALAM::Value(copy_val)
 { // Update here for values in the copied value base class
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->op_dbg = new Operand_Debugger();
-    }
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->op_dbg = new Operand_Debugger();
+    // }
     initOperandReg();
 }
 
 SALAM::Operand::Operand(std::shared_ptr<SALAM::Value> copy_val):
 			SALAM::Value(copy_val)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
-    if (DTRACE(SALAM_Debug)) {
-        this->dbg = true;
-        this->op_dbg = new Operand_Debugger();
-    }
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [Copy Const]%s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->op_dbg = new Operand_Debugger();
+    // }
     initOperandReg();
 }
 
@@ -415,7 +415,7 @@ SALAM::Operand::Operand(std::shared_ptr<SALAM::Value> copy_val):
 SALAM::Operand&
 SALAM::Operand::operator = (SALAM::Operand &copy_val)
 {
-    if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: [= Overload] %s \n", __PRETTY_FUNCTION__);
     uid = copy_val.uid;
   	returnReg = copy_val.returnReg;
 	irtype = copy_val.irtype;
@@ -428,7 +428,7 @@ SALAM::Operand::operator = (SALAM::Operand &copy_val)
 void
 SALAM::Operand::initOperandReg()
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	bool istracked = false;
 	if (returnReg->isPtr()) {
         DPRINTF(Runtime, "Operand Ptr Register Initialized\n");
@@ -449,7 +449,7 @@ SALAM::Operand::initOperandReg()
 void
 SALAM::Operand::initialize(llvm::Value * irval, SALAM::irvmap * irmap)
 {
-	if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+	// if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 	SALAM::Value::initialize(irval, irmap);
 }
 

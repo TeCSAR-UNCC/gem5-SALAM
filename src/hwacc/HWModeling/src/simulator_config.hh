@@ -4,6 +4,8 @@
 #include "params/SimulatorConfig.hh"
 #include "sim/sim_object.hh"
 
+using namespace gem5;
+
 class SimulatorConfig : public SimObject
 {
     private:
@@ -12,7 +14,7 @@ class SimulatorConfig : public SimObject
 
     public:
         SimulatorConfig();
-        SimulatorConfig(SimulatorConfigParams *params);
+        SimulatorConfig(const SimulatorConfigParams &params);
 };
 
 #endif //__HWMODEL_SIMULATOR_CONFIG_HH__

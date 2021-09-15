@@ -1,11 +1,11 @@
 import m5
 from m5.objects import *
 from m5.util import *
-import ConfigParser
+from configparser import ConfigParser
 
 def AccConfig(acc, config_file, bench_file):
     # Setup config file parser
-    Config = ConfigParser.ConfigParser()
+    Config = ConfigParser()
     Config.read((config_file))
     Config.sections()
     def ConfigSectionMap(section):

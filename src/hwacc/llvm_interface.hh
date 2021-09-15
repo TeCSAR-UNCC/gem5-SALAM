@@ -158,11 +158,12 @@ class LLVMInterface : public ComputeUnit {
     std::vector<std::shared_ptr<SALAM::Value>> values;
     TypeList *typeList;
   protected:
-    const std::string name() const { return comm->getName() + ".compute"; }
+    // const std::string name() const { return comm->getName() + ".compute"; }
     virtual bool debug() { return comm->debug(); }
     // virtual bool debug() { return true; }
   public:
-    LLVMInterface(LLVMInterfaceParams *p);
+    PARAMS(LLVMInterface);
+    LLVMInterface(const LLVMInterfaceParams &p);
     void tick();
     void constructStaticGraph();
     void startup();

@@ -1,10 +1,10 @@
 #include "instruction_config.hh"
 
-InstConfig::InstConfig(InstConfigParams *params) :
+InstConfig::InstConfig(const InstConfigParams &params) :
     SimObject(params) { }
 
-InstConfig*
-InstConfigParams::create() {
-    //if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return new InstConfig(this);
-}
+// InstConfig*
+// InstConfigParams::create() {
+//     //// if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+//     return new InstConfig(this);
+// }

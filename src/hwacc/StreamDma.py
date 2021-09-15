@@ -1,6 +1,6 @@
 from m5.params import *
 from m5.proxy import *
-from Device import DmaDevice
+from m5.objects.Device import DmaDevice
 
 class StreamDma(DmaDevice) :
     type = 'StreamDma'
@@ -9,8 +9,8 @@ class StreamDma(DmaDevice) :
     pio_addr = Param.Addr("Device Address")
     pio_delay = Param.Latency('100ns', "PIO Latency")
     pio_size = Param.Addr(32, "MMR Size")
-    stream_in = SlavePort("Stream buffer access port")
-    stream_out = SlavePort("Stream buffer access port")
+    stream_in = ResponsePort("Stream buffer access port")
+    stream_out = ResponsePort("Stream buffer access port")
     stream_addr = Param.Addr("Stream interface address")
     stream_size = Param.Addr(8, "Stream width")
     mem_delay = Param.Latency('1ns', "Buffer read time")

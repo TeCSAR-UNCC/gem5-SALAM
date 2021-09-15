@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <vector>
 
+using namespace gem5;
+
 class InstConfig : public SimObject
 {
     private:
@@ -19,7 +21,7 @@ class InstConfig : public SimObject
 
     public:
         InstConfig();
-        InstConfig(InstConfigParams *params);
+        InstConfig(const InstConfigParams &params);
 };
 
 #endif //__HWMODEL_INSTRUCTION_CONFIG_HH__

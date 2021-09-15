@@ -15,17 +15,17 @@ using namespace std;
 // 	//
 // }
 
-StreamBuffer::StreamBuffer(Params *p) :
+StreamBuffer::StreamBuffer(const StreamBufferParams &p) :
 	ClockedObject(p),
 	streamIn(this),
 	streamOut(this),
-	buffer(p->buffer_size),
-	fifoSize(p->buffer_size),
-	endian(p->system->getGuestByteOrder()),
-	streamAddr(p->stream_address),
-	streamSize(p->stream_size),
-	streamDelay(p->stream_latency),
-	bandwidth(p->bandwidth) {}
+	buffer(p.buffer_size),
+	fifoSize(p.buffer_size),
+	endian(p.system->getGuestByteOrder()),
+	streamAddr(p.stream_address),
+	streamSize(p.stream_size),
+	streamDelay(p.stream_latency),
+	bandwidth(p.bandwidth) {}
 
 bool
 StreamBuffer::canReadStream(size_t len) {
@@ -157,7 +157,7 @@ StreamBuffer::unserialize(CheckpointIn &cp) {
 	UNSERIALIZE_CONTAINER(buffer);
 }
 
-StreamBuffer *
-StreamBufferParams::create() {
-	return new StreamBuffer(this);
-}
+// StreamBuffer *
+// StreamBufferParams::create() {
+// 	return new StreamBuffer(this);
+// }

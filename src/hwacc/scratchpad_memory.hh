@@ -6,15 +6,18 @@
 
 #include <vector>
 
-class ScratchpadMasterPort;
+using namespace gem5;
+using namespace memory;
 
-class ScratchpadSlavePort : public SlavePort
+class ScratchpadRequestPort;
+
+class ScratchpadResponsePort : public ResponsePort
 {
-  friend class ScratchpadMasterPort;
+  friend class ScratchpadRequestPort;
   private:
   public:
-    ScratchpadSlavePort(const std::string& _name, SimObject* _owner,
-        PortID id=InvalidPortID) : SlavePort (_name, _owner, id) {}
+    ScratchpadResponsePort(const std::string& _name, SimObject* _owner,
+        PortID id=InvalidPortID) : ResponsePort (_name, _owner, id) {}
   protected:
     virtual bool canAccess(Addr add, size_t len, bool read) { return true; }
     Tick recvAtomic(PacketPtr pkt) override { return 0; }
@@ -30,27 +33,27 @@ class ScratchpadSlavePort : public SlavePort
     virtual void setReadyStatus(bool r) { }
 };
 
-class ScratchpadMasterPort : public MasterPort
+class ScratchpadRequestPort : public RequestPort
 {
   private:
-    ScratchpadSlavePort *_spmslave;
+    ScratchpadResponsePort *_spmslave;
   protected:
     //
   public:
-    ScratchpadMasterPort(const std::string& _name, SimObject* _owner,
-        PortID id=InvalidPortID) : MasterPort(_name, _owner, id) {}
+    ScratchpadRequestPort(const std::string& _name, SimObject* _owner,
+        PortID id=InvalidPortID) : RequestPort(_name, _owner, id) {}
     void setReadyStatus(bool r) { _spmslave->setReadyStatus(r); }
     bool canAccess(Addr add, size_t len, bool read) { return _spmslave->canAccess(add, len, read); }
     void bind(Port &peer) override {
-        auto *spmslave = dynamic_cast<ScratchpadSlavePort *>(&peer);
+        auto *spmslave = dynamic_cast<ScratchpadResponsePort *>(&peer);
         if (spmslave) {
             _spmslave = spmslave;
         }
-        MasterPort::bind(peer);
+        RequestPort::bind(peer);
     }
     void unbind() override {
         _spmslave = nullptr;
-        MasterPort::unbind();
+        RequestPort::unbind();
     }
 };
 
@@ -66,13 +69,14 @@ class ScratchpadMemory : public AbstractMemory
     bool initial;
     bool *ready;
   public:
-    typedef ScratchpadMemoryParams Params;
-    const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
-    ScratchpadMemory(const ScratchpadMemoryParams *p);
+    // typedef ScratchpadMemoryParams Params;
+    // const Params *
+    // params() const
+    // {
+    //   return dynamic_cast<const Params *>(_params);
+    // }
+    PARAMS(ScratchpadMemory);
+    ScratchpadMemory(const ScratchpadMemoryParams &p);
     bool isReady(Addr ad, size_t size, bool read);
     void scratchpadAccess(PacketPtr pkt, bool validateAccess=false);
     void setAllReady(bool r);
@@ -96,7 +100,7 @@ class ScratchpadMemory : public AbstractMemory
         { }
     };
 
-    class MemoryPort : public SlavePort
+    class MemoryPort : public ResponsePort
     {
       private:
         ScratchpadMemory& memory;
@@ -116,13 +120,13 @@ class ScratchpadMemory : public AbstractMemory
 
     MemoryPort port;
 
-    class SPMPort : public ScratchpadSlavePort
+    class SPMPort : public ScratchpadResponsePort
     {
       private:
         ScratchpadMemory * memory;
       public:
         SPMPort(const std::string& _name, ScratchpadMemory * _memory, PortID id=InvalidPortID) :
-            ScratchpadSlavePort(_name, _memory, id), memory(_memory) {}
+            ScratchpadResponsePort(_name, _memory, id), memory(_memory) {}
       protected:
         bool canAccess(Addr add, size_t len, bool read) override { return memory->isReady(add, len, read); }
         Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt, true); };

@@ -60,7 +60,7 @@ int __attribute__ ((optimize("0"))) main(void) {
     for (int i = 0; i < FFT_SIZE; i++) {
         creal = real[i] - real_check[i];
         cimg = img[i] - img_check[i];
-		printf("[%i] = Real: %.12f, Img: %.12f \n", i, creal, cimg);
+		// printf("[%i] = Real: %.12f, Img: %.12f \n", i, creal, cimg);
 		
         if((creal > EPSILON) || (creal < -EPSILON)) {
             fail = true;

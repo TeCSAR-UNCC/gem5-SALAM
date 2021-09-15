@@ -119,7 +119,7 @@ class AccCluster:
 		lines.append("	local_high = " + hex(self.clusterTopAddress))
 		lines.append("	local_range = AddrRange(local_low, local_high)")
 		lines.append("	external_range = [AddrRange(0x00000000, local_low-1), AddrRange(local_high+1, 0xFFFFFFFF)]")
-		lines.append("	system.iobus.master = clstr.local_bus.slave")
+		lines.append("	system.iobus.mem_side_ports = clstr.local_bus.cpu_side_ports")
 		# Need to define l2coherency in the YAML file?
 		lines.append("	clstr._connect_caches(system, options, l2coherent=False)")
 		lines.append("	gic = system.realview.gic")
@@ -174,14 +174,14 @@ class Accelerator:
 
 		for i in self.localConnections:
 				if "LocalBus" in i:
-					lines.append("clstr." + self.name + ".local = clstr.local_bus.slave")
+					lines.append("clstr." + self.name + ".local = clstr.local_bus.cpu_side_ports")
 				else:
 					lines.append("clstr." + self.name + ".local = clstr." + i.lower() + ".pio")
 
 		# Assign PIO Masters
 		for i in self.pioMasters:
 			if "LocalBus" in i:
-				lines.append("clstr." + self.name + ".pio = clstr.local_bus.master")
+				lines.append("clstr." + self.name + ".pio = clstr.local_bus.mem_side_ports")
 			else:
 				lines.append("clstr." + self.name + ".pio " +
 					"=" " clstr." + i + ".local")
@@ -233,10 +233,10 @@ class StreamDma:
 		lines.append(dmaPath + "pio_delay = '1ns'")
 		lines.append(dmaPath + "rd_int = " + str(self.rd_int))
 		lines.append(dmaPath + "wr_int = " + str(self.wr_int))
-		lines.append("clstr." + self.name + ".dma = clstr.coherency_bus.slave")
+		lines.append("clstr." + self.name + ".dma = clstr.coherency_bus.cpu_side_ports")
 		if self.pioMasters is not None:
 			for i in self.pioMasters:
-				lines.append("clstr." + i.lower() + ".master = clstr." + self.name + ".pio" )
+				lines.append("clstr." + i.lower() + ".mem_side_ports = clstr." + self.name + ".pio" )
 		lines.append("")
 
 		return lines
@@ -266,13 +266,13 @@ class Dma:
 		lines.append("clstr." + self.name + " = NoncoherentDma(pio_addr="
 			+ hex(self.address) + ", pio_size = " + str(self.pio)
 			+ ", gic=gic, int_num=" + str(self.int_num) +")")
-		lines.append(dmaPath + "cluster_dma = " + systemPath + "local_bus.slave")
+		lines.append(dmaPath + "cluster_dma = " + systemPath + "local_bus.cpu_side_ports")
 		lines.append(dmaPath + "max_req_size = " + str(self.maxReq))
 		lines.append(dmaPath + "buffer_size = " + str(self.size))
-		lines.append("clstr." + self.name + ".dma = clstr.coherency_bus.slave")
+		lines.append("clstr." + self.name + ".dma = clstr.coherency_bus.cpu_side_ports")
 		if self.pioMasters is not None:
 			for i in self.pioMasters:
-				lines.append("clstr." + i.lower() + ".master = clstr." + self.name + ".pio" )
+				lines.append("clstr." + i.lower() + ".mem_side_ports = clstr." + self.name + ".pio" )
 		lines.append("")
 
 		return lines
@@ -351,7 +351,7 @@ class Variable:
 			lines.append("clstr." + self.name.lower() + "." + "reset_on_scratchpad_read = " + str(self.resetOnRead))
 			lines.append("clstr." + self.name.lower() + "." + "read_on_invalid = " + str(self.readOnInvalid))
 			lines.append("clstr." + self.name.lower() + "." + "write_on_valid = " + str(self.writeOnValid))
-			lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.master")
+			lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.mem_side_ports")
 			for i in self.connections:
 				lines.append("")
 				lines.append("# Connecting " + self.name + " to " + i.conName)
@@ -361,7 +361,7 @@ class Variable:
 		elif self.type == 'Cache':
 			lines.append("# " + self.name + " (Cache)")
 			lines.append("clstr." + self.name + " = L1Cache(size = '" + str(self.size) + "B')")
-			lines.append("clstr." + self.name + ".mem_side = clstr.coherency_bus.slave")
+			lines.append("clstr." + self.name + ".mem_side = clstr.coherency_bus.cpu_side_ports")
 			lines.append("clstr." + self.name + ".cpu_side = clstr." + self.accName + ".local")
 		else:
 			# Should never get here... but just in case throw an exception

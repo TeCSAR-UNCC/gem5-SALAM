@@ -8,6 +8,8 @@
 #include <cstdint>
 //------------------------------------------//
 
+using namespace gem5;
+
 class OpCodes : public SimObject
 {
     public:
@@ -71,7 +73,7 @@ class OpCodes : public SimObject
     uint32_t fdiv_inst;
     uint32_t frem_inst;
     OpCodes();
-    OpCodes(OpCodesParams *p);
+    OpCodes(const OpCodesParams &p);
 };
 
 #endif //__HWMODEL_OPCODES_HH__

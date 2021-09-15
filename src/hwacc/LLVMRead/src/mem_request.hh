@@ -6,6 +6,8 @@
 #include "debug_flags.hh"
 //------------------------------------------//
 
+using namespace gem5;
+
 class MemoryRequest {
   friend class CommInterface;
   // friend class LLVMInterface;
@@ -27,7 +29,7 @@ class MemoryRequest {
     bool *readsDone;
 
     PacketPtr pkt;
-    MasterPort * port;
+    RequestPort * port;
   public:
     MemoryRequest(Addr add, size_t len);
     MemoryRequest(Addr add, const void *data, size_t len);
@@ -36,8 +38,8 @@ class MemoryRequest {
         delete[] buffer;
         // if (pkt) delete pkt;
     }
-    void setCarrierPort(MasterPort * _port) { port = _port; }
-    MasterPort * getCarrierPort() { return port; }
+    void setCarrierPort(RequestPort * _port) { port = _port; }
+    RequestPort * getCarrierPort() { return port; }
     uint8_t * getBuffer() { return buffer; }
     Addr getAddress() { return address; }
     std::string printBuffer();

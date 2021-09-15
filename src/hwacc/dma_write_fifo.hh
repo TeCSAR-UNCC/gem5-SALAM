@@ -5,6 +5,8 @@
 #include "dev/dma_device.hh"
 //------------------------------------------//
 
+using namespace gem5;
+
 class DmaWriteFifo : public Drainable, public Serializable
 {
   public:

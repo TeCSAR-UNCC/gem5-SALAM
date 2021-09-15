@@ -12,7 +12,7 @@ from parser import *
 M5_Path = os.getenv('M5_PATH')
 
 # Define the imports of the gem5 script
-imports = """import m5\nfrom m5.objects import *\nfrom m5.util import *\nimport ConfigParser\nfrom HWAccConfig import *\n\n"""
+imports = """import m5\nfrom m5.objects import *\nfrom m5.util import *\nfrom configparser import ConfigParser\nfrom HWAccConfig import *\n\n"""
 l1Cache = """class L1Cache(Cache):
 \tassoc = 2
 \ttag_latency = 2
@@ -87,10 +87,10 @@ with open(CONFIG_Path + fileName + ".py", 'w') as f:
 		for j in i.accs:
 			for k in j.genConfig():
 				f.write("	" + k + "\n")
-	f.write("def makeHWAcc(options, system):\n\n")
+	f.write("def makeHWAcc(args, system):\n\n")
 	for i in clusters:
 		f.write("	system." + i.name.lower() + " = AccCluster()" + "\n")
-		f.write("	build" + i.name + "(options, system, system." + i.name.lower() + ")\n\n")
+		f.write("	build" + i.name + "(args, system, system." + i.name.lower() + ")\n\n")
 begin = None
 end = None
 # Read in existing header
@@ -152,8 +152,8 @@ shutil.copyfile(M5_Path + "/SALAM-Configurator/fs_template.py", CONFIG_Path + "f
 # Generate full system
 f = open(CONFIG_Path + "fs_" + fileName + ".py", "r")
 fullSystem = f.readlines()
-fullSystem[70] = "import " + fileName
-fullSystem[240] = "		" + fileName + ".makeHWAcc(options, test_sys)"
+fullSystem[65] = "import " + fileName
+fullSystem[229] = "        " + fileName + ".makeHWAcc(args, test_sys)\n"
 f = open(CONFIG_Path + "fs_" + fileName + ".py", "w")
 f.writelines(fullSystem)
 # Warn if the size is greater than allowed

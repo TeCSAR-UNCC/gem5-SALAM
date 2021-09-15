@@ -1,15 +1,15 @@
 from m5.params import *
 from m5.proxy import *
-from Device import BasicPioDevice, PioDevice, IsaFake, BadAddr, DmaDevice
-from Platform import Platform
-from SimpleMemory import SimpleMemory
-from SubSystem import SubSystem
-from XBar import *
-from Bridge import Bridge
-from Cache import Cache
-from CommInterface import CommInterface
-from NoncoherentDma import NoncoherentDma
-from StreamDma import StreamDma
+from m5.objects.Device import BasicPioDevice, PioDevice, IsaFake, BadAddr, DmaDevice
+from m5.objects.Platform import Platform
+from m5.objects.SimpleMemory import SimpleMemory
+from m5.objects.SubSystem import SubSystem
+from m5.objects.XBar import *
+from m5.objects.Bridge import Bridge
+from m5.objects.Cache import Cache
+from m5.objects.CommInterface import CommInterface
+from m5.objects.NoncoherentDma import NoncoherentDma
+from m5.objects.StreamDma import StreamDma
 
 class ClusterCache(Cache):
     assoc = 8

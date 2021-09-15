@@ -1,13 +1,13 @@
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
-from CycleCounts import CycleCounts
-from FunctionalUnits import FunctionalUnits
-from HWStatistics import HWStatistics
-from InstConfig import InstConfig
-from SALAMPowerModel import SALAMPowerModel
-from SimulatorConfig import SimulatorConfig
-from OpCodes import OpCodes
+from m5.objects.CycleCounts import CycleCounts
+from m5.objects.FunctionalUnits import FunctionalUnits
+from m5.objects.HWStatistics import HWStatistics
+from m5.objects.InstConfig import InstConfig
+from m5.objects.SALAMPowerModel import SALAMPowerModel
+from m5.objects.SimulatorConfig import SimulatorConfig
+from m5.objects.OpCodes import OpCodes
 
 #Cycle Counts
 class HWInterface(SimObject):
