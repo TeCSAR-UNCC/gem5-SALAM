@@ -664,10 +664,16 @@ Add::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 + op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s + (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -843,10 +849,16 @@ Sub::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 - op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s - (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -1020,10 +1032,16 @@ Mul::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 * op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s * (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -1200,10 +1218,16 @@ UDiv::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.udiv(op2);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -1274,10 +1298,16 @@ SDiv::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.sdiv(op2);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringSigned(op1str);
+    op2.toStringSigned(op2str);
+    result.toStringSigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s / (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     int64_t op1 = operands.at(0).getSIntRegValue();
@@ -1455,10 +1485,16 @@ URem::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.urem(op2);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -1529,10 +1565,16 @@ SRem::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.srem(op2);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringSigned(op1str);
+    op2.toStringSigned(op2str);
+    result.toStringSigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s % (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     int64_t op1 = operands.at(0).getSIntRegValue();
@@ -1712,10 +1754,16 @@ Shl::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 << op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s << (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -1786,10 +1834,16 @@ LShr::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.lshr(op2);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s >> (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -1860,10 +1914,16 @@ AShr::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1.ashr(op2);
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringSigned(op1str);
+    op2.toStringSigned(op2str);
+    result.toStringSigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s >> (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     int64_t op1 = operands.at(0).getSIntRegValue();
@@ -1935,10 +1995,16 @@ And::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 & op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s & (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -2009,10 +2075,16 @@ Or::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 | op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s | (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -2083,10 +2155,16 @@ Xor::compute() {
     llvm::APInt op1 = (operands.at(0).getIntRegValue());
     llvm::APInt op2 = (operands.at(1).getIntRegValue());
     llvm::APInt result = op1 ^ op2;
+    llvm::SmallString<8> op1str;
+    llvm::SmallString<8> op2str;
+    llvm::SmallString<8> resstr;
+    op1.toStringUnsigned(op1str);
+    op2.toStringUnsigned(op2str);
+    result.toStringUnsigned(resstr);
     DPRINTF(RuntimeCompute, "|| (%s) %s ^ (%s) %s \n",
-        operands.at(0).getIRStub(), op1.toString(10, true),
-        operands.at(1).getIRStub(), op2.toString(10, true));
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+        operands.at(0).getIRStub(), op1str.c_str(),
+        operands.at(1).getIRStub(), op2str.c_str());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     uint64_t op1 = operands.at(0).getUIntRegValue();
     uint64_t op2 = operands.at(1).getUIntRegValue();
@@ -2440,7 +2518,9 @@ Trunc::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue().trunc(size);
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+    llvm::SmallString<8> resstr;
+    result.toStringUnsigned(resstr);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     // The trunc is handled automatically when we set the return register
     uint64_t result = operands.at(0).getUIntRegValue();
@@ -2505,7 +2585,9 @@ ZExt::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue().zext(size);
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+    llvm::SmallString<8> resstr;
+    result.toStringUnsigned(resstr);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
 #else
     // Unsigned data doesn't need any modification when ZExtending
     uint64_t result = operands.at(0).getUIntRegValue();
@@ -2570,7 +2652,9 @@ SExt::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
 #if USE_LLVM_AP_VALUES
     llvm::APInt result = operands.at(0).getIntRegValue().sext(size);
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result.toString(10, true));
+    llvm::SmallString<8> resstr;
+    result.toStringSigned(resstr);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, resstr.c_str());
     setRegisterValue(result);
 #else
     int64_t result = operands.at(0).getSIntRegValue();
@@ -2629,7 +2713,11 @@ FPToUI::initialize(llvm::Value * irval,
 void
 FPToUI::compute() {
 #if USE_LLVM_AP_VALUES
-    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #if (LLVM_VERSION_MAJOR <= 9)
+        auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #else
+        auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+    #endif
     llvm::APSInt tmp(size, true);
     bool exact;
     auto opdata = operands.front().getFloatRegValue();
@@ -2638,7 +2726,9 @@ FPToUI::compute() {
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, tmp.toString(10, true));
+    llvm::SmallString<8> tmpstr;
+    tmp.toString(tmpstr);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, tmpstr.c_str());
 #else
     switch (operands.front().getSize()) {
         case 32:
@@ -2714,7 +2804,11 @@ FPToSI::initialize(llvm::Value * irval,
 void
 FPToSI::compute() {
 #if USE_LLVM_AP_VALUES
-    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #if (LLVM_VERSION_MAJOR <= 9)
+        auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #else
+        auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+    #endif
     llvm::APSInt tmp(size, false);
     bool exact;
     auto opdata = operands.front().getFloatRegValue();
@@ -2723,7 +2817,9 @@ FPToSI::compute() {
                                       &exact);
     assert(err == llvm::APFloatBase::opStatus::opOK);
     setRegisterValue(tmp);
-    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, tmp.toString(10, true));
+    llvm::SmallString<8> tmpstr;
+    tmp.toString(tmpstr);
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, tmpstr.c_str());
 #else
     switch (operands.front().getSize()) {
         case 32:
@@ -2801,7 +2897,11 @@ UIToFP::initialize(llvm::Value * irval,
 void
 UIToFP::compute() {
 #if USE_LLVM_AP_VALUES
-    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #if (LLVM_VERSION_MAJOR <= 9)
+        auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #else
+        auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+    #endif
     auto opdata = operands.front().getIntRegValue();
     llvm::APFloat tmp(irtype->getFltSemantics());
     auto err = tmp.convertFromAPInt(opdata, false, rounding);
@@ -2881,7 +2981,11 @@ SIToFP::initialize(llvm::Value * irval,
 void
 SIToFP::compute() {
 #if USE_LLVM_AP_VALUES
-    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #if (LLVM_VERSION_MAJOR <= 9)
+        auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #else
+        auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+    #endif
     auto opdata = operands.front().getIntRegValue();
     llvm::APFloat tmp(irtype->getFltSemantics());
     auto err = tmp.convertFromAPInt(opdata, false, rounding);
@@ -2961,7 +3065,11 @@ FPTrunc::initialize(llvm::Value * irval,
 void
 FPTrunc::compute() {
 #if USE_LLVM_AP_VALUES
-    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #if (LLVM_VERSION_MAJOR <= 9)
+        auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #else
+        auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+    #endif
     auto opdata = operands.front().getFloatRegValue();
     llvm::APFloat tmp(opdata);
     bool losesInfo;
@@ -3035,7 +3143,11 @@ FPExt::initialize(llvm::Value * irval,
 void
 FPExt::compute() {
 #if USE_LLVM_AP_VALUES
-    auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #if (LLVM_VERSION_MAJOR <= 9)
+        auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+    #else
+        auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+    #endif
     auto opdata = operands.front().getFloatRegValue();
     llvm::APFloat tmp(opdata);
     bool losesInfo;

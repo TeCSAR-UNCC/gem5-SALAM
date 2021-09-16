@@ -68,9 +68,13 @@ SALAM::Constant::initialize(llvm::Value * irval,
 
 		// After LLVM 9.0 rounding mode was moved to "llvm/ADT/FloatingPointMode.h"
 		// We are using LLVM 9.0 so it is instead found in "llvm/ADT/APFloat.h"
-	#if USE_LLVM_AP_VALUES
-		auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
-	#endif
+    #if USE_LLVM_AP_VALUES
+        #if (LLVM_VERSION_MAJOR <= 9)
+            auto rounding = llvm::APFloat::roundingMode::rmNearestTiesToEven;
+        #else
+            auto rounding = llvm::APFloat::roundingMode::NearestTiesToEven;
+        #endif
+    #endif
 
 		switch(ce->getOpcode()) {
 			case llvm::Instruction::Trunc:
