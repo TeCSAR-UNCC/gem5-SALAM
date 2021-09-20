@@ -1,41 +1,41 @@
 #ifndef __HWACC_LLVM_INTERFACE_HH__
 #define __HWACC_LLVM_INTERFACE_HH__
-//------------------------------------------//
-#include "params/LLVMInterface.hh"
-#include "hwacc/compute_unit.hh"
-#include "hwacc/LLVMRead/src/operand.hh"
-#include "hwacc/LLVMRead/src/basic_block.hh"
-#include "hwacc/LLVMRead/src/function.hh"
-#include "hwacc/LLVMRead/src/llvm_types.hh"
-#include "hwacc/LLVMRead/src/debug_flags.hh"
-//------------------------------------------//
-#include "hwacc/HWModeling/src/hw_interface.hh"
-//------------------------------------------//
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Instruction.h>
-#include <llvm/IRReader/IRReader.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/Support/SourceMgr.h>
-#include <llvm/Transforms/Utils/Cloning.h>
-#include <llvm-c/Core.h>
-//------------------------------------------//
+
+// C++ Includes
+#include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <deque>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <list>
 #include <map>
-#include <typeinfo>
-#include <type_traits>
-#include <queue>
-#include <deque>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <ctime>
-#include <chrono>
-#include <ratio>
 #include <memory>
-#include <algorithm>
-//------------------------------------------//
+#include <queue>
+#include <ratio>
+#include <type_traits>
+#include <typeinfo>
+
+// LLVM Includes
+#include <llvm-c/Core.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/Transforms/Utils/Cloning.h>
+
+// SALAM Includes
+#include "hwacc/HWModeling/src/hw_interface.hh"
+#include "hwacc/LLVMRead/src/basic_block.hh"
+#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/src/function.hh"
+#include "hwacc/LLVMRead/src/operand.hh"
+#include "hwacc/compute_unit.hh"
+#include "params/LLVMInterface.hh"
 
 class LLVMInterface : public ComputeUnit {
   private:
@@ -156,7 +156,6 @@ class LLVMInterface : public ComputeUnit {
 
     std::vector<std::shared_ptr<SALAM::Function>> functions;
     std::vector<std::shared_ptr<SALAM::Value>> values;
-    TypeList *typeList;
   protected:
     // const std::string name() const { return comm->getName() + ".compute"; }
     virtual bool debug() { return comm->debug(); }

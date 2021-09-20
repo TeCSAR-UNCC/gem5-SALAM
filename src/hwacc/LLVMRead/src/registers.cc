@@ -7,39 +7,19 @@ SALAM::Register::Register(bool trk,
                           tracked(trk),
                           isNULL(nul)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    // if (DTRACE(SALAM_Debug)) {
-    //     this->dbg = true;
-    //     // this->reg_dbg = new Register_Debugger();
-    // }
 }
 
 SALAM::Register::~Register()
 {
-        // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);
-        // // if (DTRACE(SALAM_Debug)) delete reg_dbg;
 }
 
 SALAM::Register::Register_Debugger::Register_Debugger()
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 void
 SALAM::Register::Register_Debugger::dumper(SALAM::Register *reg)
 {
-    // if (DTRACE(SALAM_Debug)) {
-        // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s\n", __PRETTY_FUNCTION__);
-    //     std::string type = "N/A";
-    //     if (reg->isInt()) type = "Int";
-    //     else if (reg->isFP()) type = "FP";
-    //     else if (reg->isPtr()) type = "Ptr";
-
-    //     DPRINTF(SALAM_Debug, "| %s |\n\t\t %s %s  \n\n", 
-    //         "************** Register Dump **************",
-    //         "   Type: ", type
-    //     );
-    // }
 }
 
 
@@ -47,7 +27,6 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
                                         bool tracked) :
                                         Register(tracked)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     #if USE_LLVM_AP_VALUES
     switch (T->getTypeID()) {
         case llvm::Type::FloatTyID:
@@ -101,10 +80,66 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
     #endif
 }
 
+SALAM::APFloatRegister::APFloatRegister(llvm::Type::TypeID T,
+                                        bool tracked) :
+                                        Register(tracked)
+{
+    #if USE_LLVM_AP_VALUES
+    switch (T) {
+        case llvm::Type::FloatTyID:
+        {
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEsingle());
+            break;
+        }
+        case llvm::Type::DoubleTyID:
+        {
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEdouble());
+            break;
+        }
+        case llvm::Type::HalfTyID:
+        {
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEhalf());
+            break;
+        }
+        case llvm::Type::X86_FP80TyID:
+        {
+            data = llvm::APFloat::getZero(llvm::APFloat::x87DoubleExtended());
+            break;
+        }
+        case llvm::Type::FP128TyID:
+        {
+            data = llvm::APFloat::getZero(llvm::APFloat::IEEEquad());
+            break;
+        }
+        case llvm::Type::PPC_FP128TyID:
+        {
+            data = llvm::APFloat::getZero(llvm::APFloat::PPCDoubleDouble());
+            break;
+        }
+        default:
+            assert(0 && "Specified Floating Point type is not supported");
+    }
+    #else
+    switch (T) {
+        case llvm::Type::FloatTyID:
+        {
+            data = 0;
+            break;
+        }
+        case llvm::Type::DoubleTyID:
+        {
+            data = 0;
+            break;
+        }
+        default:
+            assert(0 && "Specified Floating Point type is not supported");
+    }
+    #endif
+}
+
 SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
                                         Register(false)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     #if USE_LLVM_AP_VALUES
         data = (RHS);
     #else
@@ -117,7 +152,6 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
                                     bool tracked) :
                                     Register(tracked)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     #if USE_LLVM_AP_VALUES
         llvm::IntegerType * it = llvm::dyn_cast<llvm::IntegerType>(T);
         assert(it);
@@ -127,10 +161,20 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
     #endif
 }
 
+SALAM::APIntRegister::APIntRegister(uint64_t bitwidth,
+                                    bool tracked) :
+                                    Register(tracked)
+{
+    #if USE_LLVM_AP_VALUES
+        data = llvm::APSInt::getMinValue(bitwidth), true);
+    #else
+        data = 0;
+    #endif
+}
+
 SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
                                     Register(false)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     #if USE_LLVM_AP_VALUES
         data = RHS;
     #else
@@ -144,7 +188,6 @@ SALAM::PointerRegister::PointerRegister(bool tracked,
                                         isNull),
                                         pointer(0)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 SALAM::PointerRegister::PointerRegister(uint64_t val,
@@ -154,7 +197,6 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
                                         isNull),
                                         pointer(val)
 {
-    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
 }
 
 #if USE_LLVM_AP_VALUES

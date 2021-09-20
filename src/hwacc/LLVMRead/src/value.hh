@@ -20,7 +20,6 @@ class Value;
 typedef std::pair<llvm::Value *, std::shared_ptr<Value>> irvmaptype;
 typedef std::map<llvm::Value *, std::shared_ptr<Value>> irvmap;
 typedef std::vector<std::shared_ptr<Value>> valueListTy;
-//typedef std::vector<std::shared_ptr<SALAM::Register>> Ops;
 
 class Value
 {
@@ -31,12 +30,11 @@ class Value
         uint64_t size = 0;
         std::string ir_string;
         std::string ir_stub;
-        llvm::Type *irtype;
+        llvm::Type::TypeID valueTy;
         std::shared_ptr<SALAM::Register> returnReg;
-        //Ops opReg;
         bool dbg = false;
 
-        void addRegister(bool isTracked=true);
+        void addRegister(llvm::Type *irtype, bool isTracked=true);
     #if USE_LLVM_AP_VALUES
         void addAPIntRegister(const llvm::APInt & val);
         void addAPIntRegister(const llvm::APSInt & val);
@@ -82,7 +80,7 @@ class Value
         }
         uint64_t getUID() const { return uid; }
         std::shared_ptr<SALAM::Register> getReg() { return returnReg; }
-        llvm::Type *getType() { return irtype; }
+        llvm::Type::TypeID getType() { return valueTy; }
         std::string getIRString() { return ir_string; }
         std::string getIRStub() { return ir_stub; }
 
