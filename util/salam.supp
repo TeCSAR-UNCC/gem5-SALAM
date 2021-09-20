@@ -1,0 +1,44 @@
+{
+   mismatch free
+   Memcheck:Free
+   fun:free
+   ...
+   fun:*
+}
+{
+   python
+   Memcheck:Cond
+   obj:/usr/lib/x86_64-linux-gnu/libpython3.8.so.1.0
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libpython3.8.so.1.0
+}
+{
+   python
+   Memcheck:Addr4
+   obj:/usr/lib/x86_64-linux-gnu/libpython3.8.so.1.0
+   ...
+   fun:*
+}
+{
+   python
+   Memcheck:Value8
+   obj:/usr/lib/x86_64-linux-gnu/libpython3.8.so.1.0
+   ...
+   obj:*
+}
+{
+   python
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:*
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libpython3.8.so.1.0
+}
+{
+   python
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:_Py*
+}
