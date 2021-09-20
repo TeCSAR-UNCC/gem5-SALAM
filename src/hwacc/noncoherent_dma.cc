@@ -93,6 +93,7 @@ NoncoherentDma::tick() {
                     writeFifo->fill(data, toWrite);
                     writesLeft -= toWrite;
                 }
+                delete[] data;
             }
         } else {
             if (!writeFifo->isActive()) {
