@@ -14,7 +14,7 @@ NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     gic(p.gic),
     intNum(p.int_num),
     clock_period(p.clock_period),
-    tickEvent(this),
+    tickEvent([this]{tick();}, name()),
     accPort(this, sys, p.sid, p.ssid) {
     memSideReadFifo = new DmaReadFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
     memSideWriteFifo = new DmaWriteFifo(dmaPort, size_t(bufferSize/2), maxReqSize, maxPending);
@@ -26,6 +26,7 @@ NoncoherentDma::NoncoherentDma(const NoncoherentDmaParams &p)
     for (int i=0; i<pioSize; i++)
         mmreg[i]=0;
     FLAGS = mmreg;
+    last_flag = 0;
     SRC = (uint64_t *)(mmreg+1);
     DST = (uint64_t *)(mmreg+9);
     LEN = (int *)(mmreg+17);
