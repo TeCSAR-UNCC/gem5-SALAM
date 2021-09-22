@@ -10,6 +10,8 @@
 
 using namespace gem5;
 
+// Outputs should all be generated from here
+
 class HWStatistics : public SimObject
 {
     private:

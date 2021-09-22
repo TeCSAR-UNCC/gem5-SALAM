@@ -47,14 +47,15 @@ def AccConfig(acc, config_file, bench_file):
 
 	# Initialize HWInterface Objects
     acc.hw_interface = HWInterface()
-    acc.cycle_counts = CycleCounts()
-    acc.functional_units = FunctionalUnits()
-    acc.inst_config = InstConfig()
-    acc.salam_power_model = SALAMPowerModel()
-    acc.hw_statistics = HWStatistics()
-    acc.simulator_config = SimulatorConfig()
-    acc.opcodes = OpCodes()
-
+    acc.hw_interface.cycle_counts = CycleCounts()
+    acc.hw_interface.functional_units = FunctionalUnits()
+    acc.hw_interface.functional_units.int_adder = Adder()
+    acc.hw_interface.inst_config = InstConfig()
+    acc.hw_interface.inst_config.add_config = Add()
+    acc.hw_interface.salam_power_model = SALAMPowerModel()
+    acc.hw_interface.hw_statistics = HWStatistics()
+    acc.hw_interface.simulator_config = SimulatorConfig()
+    acc.hw_interface.opcodes = InstOpCodes()
 
 def AccSPMConfig(acc, spm, config_file):
     # Setup config file parser

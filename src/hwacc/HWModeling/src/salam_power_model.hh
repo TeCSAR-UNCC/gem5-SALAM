@@ -16,7 +16,6 @@ class SALAMPowerModel : public SimObject
         struct units {
             std::string name;
             double exponent;
-            // automate matching units with exponent
         } power_unit, energy_unit, time_unit, area_unit;
         
         double internal_power;
@@ -34,8 +33,6 @@ class SALAMPowerModel : public SimObject
     public:
         SALAMPowerModel();
         SALAMPowerModel(const SALAMPowerModelParams &params);
-        // create constructor
-        // getters/setters
     
 };
 

@@ -1,10 +1,7 @@
 #include "functional_units.hh"
 
+// GENERATED CONSTRUCTOR - DO NOT MODIFY
 FunctionalUnits::FunctionalUnits(const FunctionalUnitsParams &params) :
-    SimObject(params) { }
-
-// FunctionalUnits*
-// FunctionalUnitsParams::create() {
-//     //// if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-//     return new FunctionalUnits(this);
-// }
+    SimObject(params),
+    int_adder(params.int_adder) { }
+// END OF GENERATED CONSTRUCTOR

@@ -35,6 +35,7 @@ class Value
         std::shared_ptr<SALAM::Register> returnReg;
         //Ops opReg;
         bool dbg = false;
+        bool inst = false;
 
         void addRegister(bool isTracked=true);
     #if USE_LLVM_AP_VALUES

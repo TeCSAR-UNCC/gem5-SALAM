@@ -4,6 +4,8 @@
 #include "params/HWInterface.hh"
 #include "sim/sim_object.hh"
 
+#include "../../common/src/macros.hh"
+
 #include "cycle_counts.hh"
 #include "functional_units.hh"
 #include "instruction_config.hh"
@@ -11,6 +13,7 @@
 //#include "cacti_wrapper.hh"
 #include "hw_statistics.hh"
 #include "simulator_config.hh"
+#include "opcodes.hh"
 #include <iostream>
 #include <cstdlib>
 #include <vector>
@@ -25,7 +28,7 @@ class HWInterface : public SimObject
         FunctionalUnits *functional_units;
         HWStatistics *hw_statistics;
         InstConfig *inst_config;
-        OpCodes *opcodes;
+        InstOpCodes *opcodes;
         SALAMPowerModel *salam_power_model;
         SimulatorConfig *simulator_config;
 
@@ -34,7 +37,7 @@ class HWInterface : public SimObject
     public:
         HWInterface();
         HWInterface(const HWInterfaceParams &params);
-        uint32_t getTestParam() { return this->cycle_counts->add_inst; }
+        bool availableFunctionalUnit(uint64_t functional_unit);
 
 };
 

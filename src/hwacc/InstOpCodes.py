@@ -2,9 +2,9 @@ from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
 
-class OpCodes(SimObject):
+class InstOpCodes(SimObject):
     # SimObject type
-    type = "OpCodes"
+    type = "InstOpCodes"
     # gem5-SALAM attached header
     cxx_header = "hwacc/HWModeling/src/opcodes.hh"
     # Default Values Below are LLVM Instruction Enumerations from llvm/IR/Instructions.def 

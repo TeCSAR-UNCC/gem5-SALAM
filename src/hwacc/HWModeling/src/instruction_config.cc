@@ -1,10 +1,7 @@
 #include "instruction_config.hh"
 
+// GENERATED CONSTRUCTOR - DO NOT MODIFY
 InstConfig::InstConfig(const InstConfigParams &params) :
-    SimObject(params) { }
-
-// InstConfig*
-// InstConfigParams::create() {
-//     //// if (DTRACE(Trace)) DPRINTFR(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-//     return new InstConfig(this);
-// }
+    SimObject(params),
+    add_inst(params.add_config) { }
+// END OF GENERATED CONSTRUCTOR

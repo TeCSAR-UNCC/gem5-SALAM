@@ -175,6 +175,9 @@ SALAM::Instruction::launch()
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
+    if (hasFunctionalUnit()) {
+        if(!hw_interface->availableFunctionalUnit(getFunctionalUnit())) return false;
+    }
     launched = true;
     if (getCycleCount() == 0) { // Instruction ready to be committed
         DPRINTF(Runtime, "||  0 Cycle Instruction\n");

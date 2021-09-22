@@ -10,8 +10,29 @@ HWInterface::HWInterface(const HWInterfaceParams &params) :
     salam_power_model(params.salam_power_model),
     simulator_config(params.simulator_config) { }
 
-
-// HWInterface*
-// HWInterfaceParams::create() {
-//     return new HWInterface(this);
-// }
+bool 
+HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
+    switch(functional_unit) {
+        case INTADDER : { }
+        case INTMULTI : { }
+        case INTSHIFTER : { }
+        case INTBITWISE : { }
+        case FPSPADDER : { }
+        case FPDPADDER : { }
+        case FPSPMULTI : { }
+        case FPSPDIVID : { }
+        case FPDPMULTI : { }
+        case FPDPDIVID : { }
+        case COMPARE : { }
+        case GETELEMENTPTR : { }
+        case CONVERSION : { }
+        case OTHERINST : { }
+        case REGISTER : { }
+        case COUNTER : { }
+        default: { 
+            // asser() 
+            return false;
+        }
+    }
+    return false;
+}

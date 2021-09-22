@@ -11,6 +11,7 @@
 #include "debug_flags.hh"
 #include "value.hh"
 #include "mem_request.hh"
+#include "../../HWModeling/src/hw_interface.hh"
 
 namespace SALAM {
 
@@ -30,6 +31,8 @@ class Instruction : public Value
         uint64_t cycleCount;
         uint64_t currentCycle;
         bool dbg = false;
+        uint64_t functional_unit = 0;
+        HWInterface* hw_interface;
 
     protected:
         valueListTy staticDependencies;
@@ -71,9 +74,11 @@ class Instruction : public Value
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
         bool isCommitted() { return committed; }
+        bool hasFunctionalUnit() { return (functional_unit != 0); }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
         std::vector<SALAM::Operand> * getOperands() { return &operands; }
+        virtual uint64_t getFunctionalUnit() { }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }

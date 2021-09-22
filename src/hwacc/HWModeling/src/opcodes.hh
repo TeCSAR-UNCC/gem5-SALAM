@@ -1,16 +1,17 @@
-#ifndef __HWMODEL_OPCODES_HH__
-#define __HWMODEL_OPCODES_HH__
+#ifndef __HWMODEL_INSTOPCODES_HH__
+#define __HWMODEL_INSTOPCODES_HH__
 //------------------------------------------//
 //#include "debug_flags.hh"
-#include "params/OpCodes.hh"
+#include "params/InstOpCodes.hh"
 #include "sim/sim_object.hh"
 //------------------------------------------//
 #include <cstdint>
+#include <map>
 //------------------------------------------//
 
 using namespace gem5;
 
-class OpCodes : public SimObject
+class InstOpCodes : public SimObject
 {
     public:
     uint32_t counter_inst;
@@ -72,8 +73,13 @@ class OpCodes : public SimObject
     uint32_t fmul_inst;
     uint32_t fdiv_inst;
     uint32_t frem_inst;
-    OpCodes();
-    OpCodes(const OpCodesParams &p);
+
+    std::map<int, int> usage;
+
+    InstOpCodes();
+    InstOpCodes(const InstOpCodesParams &p);
+    void update_usage(uint64_t OpCode) { usage[OpCode]++; };
+
 };
 
-#endif //__HWMODEL_OPCODES_HH__
+#endif //__HWMODEL_INSTOPCODES_HH__

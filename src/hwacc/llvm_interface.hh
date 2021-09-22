@@ -55,6 +55,7 @@ class LLVMInterface : public ComputeUnit {
     bool compOpScheduled;
     bool lockstep;
     bool dbg;
+    bool hardwareEnabled = false;
     std::chrono::duration<float> setupTime;
     std::chrono::duration<float> simTime;
     std::chrono::duration<float> schedulingTime;

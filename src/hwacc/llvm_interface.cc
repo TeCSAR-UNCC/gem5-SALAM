@@ -619,6 +619,11 @@ LLVMInterface::initialize() {
     //debug(1);
     launchTopFunction();
 
+    // HW
+    for(const auto& count : hw->opcodes->usage) {
+        std::cout << "OpCode[" << count.first << "] - Usage: " << count.second << "\n";
+    }
+
 
     // panic("Kill Simulation");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
@@ -815,6 +820,7 @@ void LLVMInterface::ActiveFunction::launch() {
         CommInterface * comm = owner->getCommInterface();
         DPRINTFR(LLVMInterface, "Connecting HWInterface\n");
         hw = owner->getHWInterface();
+
         unsigned argOffset = 0;
         for (auto arg : funcArgs) {
             uint64_t argSizeInBytes = arg->getSizeInBytes();
@@ -842,6 +848,9 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     uint64_t OpCode = inst->Instruction::getOpcode();
     // if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
+    // HW
+    hw->opcodes->update_usage(OpCode);
+
     switch(OpCode) {
         case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst); break;
         case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, hw->cycle_counts->br_inst); break;

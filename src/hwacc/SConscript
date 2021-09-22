@@ -23,9 +23,12 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('HWInterface.py')
     SimObject('HWStatistics.py')
     SimObject('InstConfig.py')
-    SimObject('OpCodes.py')
+    SimObject('InstOpCodes.py')
     SimObject('SALAMPowerModel.py')
     SimObject('SimulatorConfig.py')
+
+    #Functional Units
+    #SimObject('Adder.py')
 
     # 
     Source('comm_interface.cc')
@@ -53,8 +56,11 @@ if env['TARGET_ISA'] == 'arm':
     #Source('LLVMRead/src/cycle_counts.cc')
     Source('LLVMRead/src/operand.cc')
 
-    #
-    #Source('HWModeling/src/cacti_wrapper.cc')
+    # GENERATED FILES
+    Source('HWModeling/generated/functionalunits/adder.cc')
+    Source('HWModeling/generated/instructions/add.cc')
+    # END OF GENERATED FILES
+
     Source('HWModeling/src/cycle_counts.cc')
     Source('HWModeling/src/functional_units.cc')
     Source('HWModeling/src/hw_interface.cc')
