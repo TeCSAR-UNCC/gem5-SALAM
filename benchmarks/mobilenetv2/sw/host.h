@@ -7,7 +7,8 @@
 #define body_top    0x10021681
 #define tail_top    0x100780c2
 #define class_top   0x100ccf83
-#define stage       *(uint8_t *)0x8effffff
+
+volatile uint8_t stage;
 
 void runHead(uint64_t img_rd_addr, uint64_t feat_wr_addr,
              uint64_t conv_weights, uint64_t conv_quant,
