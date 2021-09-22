@@ -399,6 +399,8 @@ LLVMInterface::constructStaticGraph() {
     std::unique_ptr<llvm::LLVMContext> context(new llvm::LLVMContext());
     std::unique_ptr<llvm::SMDiagnostic> error(new llvm::SMDiagnostic());
     std::unique_ptr<llvm::Module> m;
+    std::unique_ptr<llvm::DominatorTree> dt(new llvm::DominatorTree());
+    std::unique_ptr<llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>> loopInfo(new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>());
 
     m = llvm::parseIRFile(file, *error, *context);
     if(!m) panic("Error reading Module");
@@ -473,6 +475,14 @@ LLVMInterface::constructStaticGraph() {
         std::shared_ptr<SALAM::Function> sfunc = std::dynamic_pointer_cast<SALAM::Function>(funcval);
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values, topName);
+    }
+
+    // Detect Loop Latches
+    for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
+        llvm::Function &func = *func_iter;
+        dt->recalculate(func);
+        loopInfo->releaseMemory();
+        loopInfo->analyze(*dt);
     }
     auto parseStop = std::chrono::high_resolution_clock::now();
     setupTime = parseStop - parseStart;
