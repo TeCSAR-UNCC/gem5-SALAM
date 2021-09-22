@@ -4,7 +4,7 @@
 #include "host.h"
 #include "../../../common/m5ops.h"
 
-int __attribute__ ((optimize("0"))) main(void) {
+int main(void) {
 	m5_reset_stats();
         uint8_t  * MMR  = (uint8_t  *)(TOP + 0x00);
         uint64_t * ARGS = (uint64_t *)(TOP + 0x01);
