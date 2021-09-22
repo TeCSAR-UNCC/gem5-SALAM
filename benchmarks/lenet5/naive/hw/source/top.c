@@ -1,7 +1,6 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
 void top(uint64_t feats, uint64_t weights) {
-
 	// Define ACC MMRs
 	volatile uint8_t  * CONV0Flags  = (uint8_t *)CONV0;
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;

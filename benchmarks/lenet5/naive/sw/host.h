@@ -2,4 +2,4 @@
 
 #define feats       0x8f000000
 #define weights     0x91000000
-#define stage       *(uint8_t *)0x8effffff
+volatile uint8_t stage;

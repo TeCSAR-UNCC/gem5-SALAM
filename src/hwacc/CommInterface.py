@@ -6,7 +6,7 @@ class CommInterface(BasicPioDevice):
     type = 'CommInterface'
     cxx_header = 'hwacc/comm_interface.hh'
 
-    flags_size = Param.Addr(0x4, "Size of the address range dedicated to device flags")
+    flags_size = Param.Addr(0x1, "Size of the address range dedicated to device flags")
     config_size = Param.Addr(0x0, "Size of the addess range dedicated to device configuration")
     pio_size = Param.Addr(0x8, "Size of MMRs. Should be large enough to support flags, config, and global var addresses")
     devicename = Param.String("comm_interface", "Name of comm_interface device")
