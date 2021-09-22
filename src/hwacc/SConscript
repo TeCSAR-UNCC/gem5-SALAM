@@ -48,7 +48,6 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/function.cc')
     Source('LLVMRead/src/basic_block.cc')
     Source('LLVMRead/src/debug_flags.cc')
-    Source('LLVMRead/src/llvm_types.cc')
     Source('LLVMRead/src/mem_request.cc')
     Source('LLVMRead/src/instruction.cc')
     Source('LLVMRead/src/registers.cc')

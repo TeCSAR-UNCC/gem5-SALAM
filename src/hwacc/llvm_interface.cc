@@ -1,6 +1,5 @@
-//------------------------------------------//
+// LLVMInterface Includes
 #include "hwacc/llvm_interface.hh"
-//------------------------------------------//
 
 LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p):
     ComputeUnit(p),
@@ -10,7 +9,6 @@ LLVMInterface::LLVMInterface(const LLVMInterfaceParams &p):
     clock_period(p.clock_period),
     lockstep(p.lockstep_mode) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    typeList = NULL;
     clock_period = clock_period * 1000;
 }
 
@@ -396,7 +394,6 @@ LLVMInterface::constructStaticGraph() {
 
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     if (dbg) DPRINTF(LLVMInterface, "Constructing Static Dependency Graph\n");
-    typeList = new TypeList(); // Create New User Defined Types List
 
     llvm::StringRef file = filename;
     std::unique_ptr<llvm::LLVMContext> context(new llvm::LLVMContext());

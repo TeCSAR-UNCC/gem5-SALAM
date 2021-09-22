@@ -1,14 +1,15 @@
 #ifndef __HWACC_NONCOHERENT_DMA_HH__
 #define __HWACC_NONCOHERENT_DMA_HH__
 //------------------------------------------//
-#include "hwacc/LLVMRead/src/debug_flags.hh"
-#include "params/NoncoherentDma.hh"
-#include "dev/dma_device.hh"
-#include "hwacc/dma_write_fifo.hh"
 #include "dev/arm/base_gic.hh"
+#include "dev/dma_device.hh"
+#include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/dma_write_fifo.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
-//------------------------------------------ 
+#include "params/NoncoherentDma.hh"
+
+//------------------------------------------
 //    Memory Map
 //    |  Length  | Dst Addr | Src Addr | Flags  |
 //    |----------|----------|----------|--------|
@@ -41,7 +42,7 @@ class NoncoherentDma : public DmaDevice
     uint64_t * DST;
     int * LEN;
 
-	uint8_t last_flag;
+    uint8_t last_flag;
 
     Addr activeSrc;
     Addr activeDst;
@@ -50,31 +51,13 @@ class NoncoherentDma : public DmaDevice
 
     Tick start_time;
 
-    class TickEvent : public Event
-    {
-      private:
-        NoncoherentDma *dma;
-
-      public:
-        TickEvent(NoncoherentDma *_dma) : Event(CPU_Tick_Pri), dma(_dma) {}
-        void process() { dma->tick(); }
-        virtual const char *description() const { return "NoncoherentDma tick"; }
-    };
-
-    TickEvent tickEvent;
+    EventFunctionWrapper tickEvent;
 
   protected:
     DmaPort accPort;
     DmaReadFifo * getActiveReadFifo();
     DmaWriteFifo * getActiveWriteFifo();
   public:
-    // typedef NoncoherentDmaParams Params;
-
-    // const Params *
-    // params() const
-    // {
-    //   return dynamic_cast<const Params *>(_params);
-    // }
     PARAMS(NoncoherentDma);
     NoncoherentDma(const NoncoherentDmaParams &p);
     ~NoncoherentDma() {}

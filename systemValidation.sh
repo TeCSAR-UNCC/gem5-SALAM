@@ -41,10 +41,22 @@ if [ "${BENCH}" == "" ]; then
 	exit 2
 fi
 
+OUTDIR=$M5_PATH/BM_ARM_OUT/sys_validation/$BENCH
+
 if [ "${DEBUG}" == "true" ]; then
 	BINARY="ddd --gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ "${VALGRIND}" == "true" ]; then
-	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=all --show-reachable=no ${M5_PATH}/build/ARM/gem5.debug"
+	BINARY="valgrind \
+	--leak-check=yes \
+	--suppressions=util/valgrind-suppressions \
+	--suppressions=util/salam.supp \
+	--track-origins=yes \
+	--error-limit=no \
+	--leak-check=full \
+	--show-leak-kinds=definite,possible \
+	--show-reachable=no \
+	--log-file=${OUTDIR}/valgrind.log \
+	${M5_PATH}/build/ARM/gem5.debug"
 else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
@@ -60,11 +72,9 @@ SYS_OPTS="--mem-size=4GB \
           --cpu-type=DerivO3CPU"
 CACHE_OPTS="--caches --l2cache"
 
-OUTDIR=BM_ARM_OUT/sys_validation/$BENCH
-
 DEBUG_FLAGS=""
 
-if [ ${FLAGS}  != "" ]; then
+if [ "${FLAGS}" != "" ]; then
 	DEBUG_FLAGS+="--debug-flags="
 	DEBUG_FLAGS+=$FLAGS
 fi

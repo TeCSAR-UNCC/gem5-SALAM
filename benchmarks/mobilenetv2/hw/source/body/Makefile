@@ -4,12 +4,8 @@ LL = top.ll Residual.ll PWConv0.ll DWConv.ll PWConv1.ll
 
 # .PHONY clean build
 
-%.o : %.c
-	clang -emit-llvm -c -o $@ $<
-%.bc : %.o
-	opt -O1 -inline -mem2reg -simplifycfg -loops -loop-unroll -o $@ $<
-%.ll : %.bc
-	llvm-dis -o $@ $<
+%.ll : %.c
+	clang -O1 -S -target armv7-pc-none-eabi -emit-llvm -o $@ $<
 build: $(LL)
 	mkdir -p ../../ir/$(CLUSTER)
 	mv $^ ../../ir/$(CLUSTER)/

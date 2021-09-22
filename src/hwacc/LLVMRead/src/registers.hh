@@ -121,6 +121,8 @@ class APFloatRegister : public Register
         uint64_t data = 0;
     #endif
     public:
+        APFloatRegister(llvm::Type::TypeID T,
+                        bool isTracked);
         APFloatRegister(llvm::Type *T,
                         bool isTracked=true);
         // This constructor is only used for constants.
@@ -150,6 +152,8 @@ class APIntRegister : public Register
         uint64_t data = 0;
     #endif
     public:
+        APIntRegister(uint64_t bitwidth,
+                      bool isTracked);
         APIntRegister(llvm::Type * T,
                       bool isTracked=true);
         // This constructor is only used for constants.
