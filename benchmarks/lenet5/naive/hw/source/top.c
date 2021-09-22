@@ -1,6 +1,6 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-void top(uint64_t mainMem) {
+void top(uint64_t feats, uint64_t weights) {
 
 	// Define ACC MMRs
 	volatile uint8_t  * CONV0Flags  = (uint8_t *)CONV0;
@@ -16,7 +16,7 @@ void top(uint64_t mainMem) {
 	volatile uint32_t * DmaCopyLen = (uint32_t *)(DMA_CopyLen);
 
 	//Transfer Input Features
-	*DmaRdAddr  = 0x90000000;
+	*DmaRdAddr  = feats;
 	*DmaWrAddr  = Conv0Input;
 	*DmaCopyLen = conv0InSize;
 	*DmaFlags   = DEV_INIT;
@@ -24,7 +24,7 @@ void top(uint64_t mainMem) {
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 
 	//Transfer Input Weights
-	*DmaRdAddr  = 0x90000000;
+	*DmaRdAddr  = weights;
 	*DmaWrAddr  = Conv0Weights;
 	*DmaCopyLen = conv0WeightSize;
 	*DmaFlags   = DEV_INIT;
@@ -36,7 +36,7 @@ void top(uint64_t mainMem) {
 	while ((*CONV0Flags & DEV_INTR) != DEV_INTR);
 	//Transfer Results Back to Main Memory
 	*DmaRdAddr  = Conv0Output;
-	*DmaWrAddr  = 0x90000000;
+	*DmaWrAddr  = weights;
 	*DmaCopyLen = conv0OutputSize;
 	*DmaFlags   = DEV_INIT;
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);

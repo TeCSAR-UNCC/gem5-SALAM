@@ -617,9 +617,9 @@ LLVMInterface::initialize() {
     launchTopFunction();
 
     // HW
-    for(const auto& count : hw->opcodes->usage) {
-        std::cout << "OpCode[" << count.first << "] - Usage: " << count.second << "\n";
-    }
+    // for(const auto& count : hw->opcodes->usage) {
+    //     std::cout << "OpCode[" << count.first << "] - Usage: " << count.second << "\n";
+    // }
 
 
     // panic("Kill Simulation");
