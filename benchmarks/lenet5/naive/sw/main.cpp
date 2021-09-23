@@ -3,9 +3,10 @@
 #include <cstring>
 #include "host.h"
 #include "../../../common/m5ops.h"
-
 int main(void) {
-	m5_reset_stats();
+        // Set stage to 0
+        stage = 0;
+        m5_reset_stats();
         volatile uint8_t  * MMR  = (uint8_t  *)(TOP + 0x0);
         volatile uint64_t * ARGS = (uint64_t *)(TOP + 0x1);
         // Run Head
@@ -15,7 +16,6 @@ int main(void) {
         printf("Running acc\n");
         MMR[0]  = 0x01;
         while(stage == 0);
-
         m5_dump_stats();
 	m5_exit();
 

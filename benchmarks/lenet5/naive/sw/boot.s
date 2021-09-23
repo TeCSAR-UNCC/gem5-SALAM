@@ -64,10 +64,7 @@ _Reset:
 .equ kmio_irq_id,     44
 .equ uart0_irq_id,    37
 .equ rtc_irq_id,      36
-.equ mn_head,         68
-.equ mn_body,         69
-.equ mn_tail,         70
-.equ mn_class,        71
+.equ top_dev_id,      68
 
 //GIC_CPU_INTERFACE
 //.equ GIC_CPU_BASE,                  0x1f000100
@@ -122,7 +119,7 @@ config_gic_dist:
      */
 
     ldr r1, =GIC_Dist_Base + set_enable2    // r1 = Set-enable1 Reg Address
-    mov r2, #0x0f
+    mov r2, #1
     //IRQ ID - 32 => 5th bit = 1
     lsl r2, r2, #4
 
@@ -164,32 +161,13 @@ irq_handler:
     ldr r1, =GIC_CPU_BASE + GIC_CPU_Int_Ack_reg_offset
     ldr r2, [r1]
 
-irq_mn_head:
-    cmp r2, #mn_head
-    bne irq_mn_body
-    BL head_isr
-    ldr r2, = mn_head
-    b irq_end
+irq_top:
+    cmp r2, #top_dev_id
+    bne irq_end  // if irq is not from top_dev
 
-irq_mn_body:
-    cmp r2, #mn_body
-    bne irq_mn_tail
-    BL body_isr
-    ldr r2, = mn_body
-    b irq_end
-
-irq_mn_tail:
-    cmp r2, #mn_tail
-    bne irq_mn_class
-    BL tail_isr
-    ldr r2, = mn_tail
-    b irq_end
-
-irq_mn_class:
-    cmp r2, #mn_class
-    bne irq_end
-    BL class_isr
-    ldr r2, = mn_class
+    // Jump to C - must clear the timer interrupt!
+    BL isr
+    ldr r2, = top_dev_id
 
 irq_end:
     // write the IRQ ID to the END_OF_INTERRUPT Register of GIC_CPU_INTERFACE

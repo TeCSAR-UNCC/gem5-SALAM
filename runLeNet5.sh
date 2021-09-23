@@ -70,7 +70,7 @@ if [ ${FLAGS}  != "" ]; then
 fi
 
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
-			configs/SALAM/generated/fs_$BENCH.py $SYS_OPTS \
+			configs/SALAM/generated/fs_lenet5_$BENCH.py $SYS_OPTS \
 			--accpath=$M5_PATH/benchmarks/lenet5 \
 			--accbench=$BENCH $CACHE_OPTS"
 
