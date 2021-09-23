@@ -1,0 +1,56 @@
+---
+acc_cluster:
+  - Name: mdknn_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: Top
+      IrPath: benchmarks/sys_validation/md_knn/hw/top.ll
+      ConfigPath: benchmarks/sys_validation/md_knn/hw/top.ini
+      PIOSize: 57
+      InterruptNum: 68
+      PIOMaster: LocalBus
+      # Local to PIO
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: md_knn
+      IrPath: benchmarks/sys_validation/md_knn/hw/md_knn.ll
+      ConfigPath: benchmarks/sys_validation/md_knn/hw/md_knn.ini
+      Debug: True
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: FORCEXADDR
+        Type: SPM
+        Size: 2048
+        Ports: 1
+      - Name: FORCEYADDR
+        Type: SPM
+        Size: 2048
+        Ports: 1
+      - Name: FORCEZADDR
+        Type: SPM
+        Size: 2048
+        Ports: 1
+      - Name: POSITIONXADDR
+        Type: SPM
+        Size: 2048
+        Ports: 1
+      - Name: POSITIONYADDR
+        Type: SPM
+        Size: 2048
+        Ports: 1
+      - Name: POSITIONZADDR
+        Type: SPM
+        Size: 2048
+        Ports: 1
+      - Name: NLADDR
+        Type: SPM
+        Size: 16384
+        Ports: 1

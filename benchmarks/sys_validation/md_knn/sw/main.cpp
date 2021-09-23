@@ -19,14 +19,14 @@
 
 md_struct mds;
 
-volatile uint8_t  * top            = (uint8_t  *)0x2f000000;
-volatile uint32_t * loc_force_x    = (uint32_t *)0x2f000001;
-volatile uint32_t * loc_force_y    = (uint32_t *)0x2f000009;
-volatile uint32_t * loc_force_z    = (uint32_t *)0x2f000011;
-volatile uint32_t * loc_position_x = (uint32_t *)0x2f000019;
-volatile uint32_t * loc_position_y = (uint32_t *)0x2f000021;
-volatile uint32_t * loc_position_z = (uint32_t *)0x2f000029;
-volatile uint32_t * loc_NL         = (uint32_t *)0x2f000031;
+volatile uint8_t  * top            = (uint8_t  *) (TOP + 0);
+volatile uint32_t * loc_force_x    = (uint32_t *) (TOP + 1);
+volatile uint32_t * loc_force_y    = (uint32_t *) (TOP + 9);
+volatile uint32_t * loc_force_z    = (uint32_t *) (TOP + 17);
+volatile uint32_t * loc_position_x = (uint32_t *) (TOP + 25);
+volatile uint32_t * loc_position_y = (uint32_t *) (TOP + 33);
+volatile uint32_t * loc_position_z = (uint32_t *) (TOP + 41);
+volatile uint32_t * loc_NL         = (uint32_t *) (TOP + 49);
 
 int main(void) {
 	TYPE *force_x       = (TYPE     *)(BASE+FRCX_OFFSET);

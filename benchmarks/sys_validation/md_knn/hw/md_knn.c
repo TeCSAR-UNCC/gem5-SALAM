@@ -5,7 +5,7 @@ The scalable heterogeneous computing (shoc) benchmark suite.
 In Proceedings of the 3rd Workshop on General-Purpose Computation on Graphics Processing Units, 2010.
 */
 
-#include "hw_defines.h"
+#include "../defines.h"
 
 void md_kernel() {
 

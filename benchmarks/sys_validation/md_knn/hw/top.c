@@ -1,4 +1,4 @@
-#include "hw_defines.h"
+#include "../defines.h"
 
 void top(uint64_t force_x_addr,
 		 uint64_t force_y_addr,
@@ -9,11 +9,11 @@ void top(uint64_t force_x_addr,
 		 uint64_t nl_addr) {
 
 	//Define Device MMRs
-	volatile uint8_t  * MDFlags    = (uint8_t *)MD;
-	volatile uint8_t  * DmaFlags   = (uint8_t  *)(DMA);
-	volatile uint64_t * DmaRdAddr  = (uint64_t *)(DMA+1);
-	volatile uint64_t * DmaWrAddr  = (uint64_t *)(DMA+9);
-	volatile uint32_t * DmaCopyLen = (uint32_t *)(DMA+17);
+	volatile uint8_t  * MDFlags    = (uint8_t *)MD_KNN;
+	volatile uint8_t  * DmaFlags   = (uint8_t  *)(DMA_Flags);
+	volatile uint64_t * DmaRdAddr  = (uint64_t *)(DMA_RdAddr);
+	volatile uint64_t * DmaWrAddr  = (uint64_t *)(DMA_WrAddr);
+	volatile uint32_t * DmaCopyLen = (uint32_t *)(DMA_CopyLen);
 
 	//Transfer Input Matrices
 	//Transfer Position X
