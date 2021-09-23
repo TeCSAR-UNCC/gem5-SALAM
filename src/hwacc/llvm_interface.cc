@@ -97,6 +97,8 @@ LLVMInterface::ActiveFunction::processQueues()
     } else if (lockstepReady()) {
         // TODO: Look into for_each here
         for (auto queue_iter = reservation.begin(); queue_iter != reservation.end();) {
+            if (owner->debug())
+                DPRINTFR(Runtime, "Debug Breakpoint");
             auto inst = *queue_iter;
             DPRINTFR(Runtime, "\n\t\t %s \n\t\t %s%s%s%d%s \n",
                 " |-[Reserve Queue]--------------",
@@ -113,16 +115,16 @@ LLVMInterface::ActiveFunction::processQueues()
                             launchRead(inst);
                             DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
-                        } else if (!writeActive(inst->getPtrOperandValue(0))) {
+                        } else {//if (!writeActive(inst->getPtrOperandValue(0))) {
                             launchRead(inst);
                             DPRINTFR(Runtime, "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
-                        } else {
-                            auto activeWrite = getActiveWrite(inst->getPtrOperandValue(0));
-                            inst->addRuntimeDependency(activeWrite);
-                            activeWrite->addRuntimeUser(inst);
-                            ++queue_iter;
-                        }
+                        } //else {
+                        //     auto activeWrite = getActiveWrite(inst->getPtrOperandValue(0));
+                        //     inst->addRuntimeDependency(activeWrite);
+                        //     activeWrite->addRuntimeUser(inst);
+                        //     ++queue_iter;
+                        // }
                     } else if ((inst)->isStore()) {
                         // WAR Protection to insure reading finishes before a write
                         // if (!readActive(inst->getPtrOperandValue(1))) {
@@ -135,6 +137,8 @@ LLVMInterface::ActiveFunction::processQueues()
                         //     activeRead->addRuntimeUser(inst);
                         //     ++queue_iter;
                         // }
+                    } else if ((inst)->isLatchingBrExiting() && ((reservation.size() > 1) || !queuesClear())) {
+                        ++queue_iter;
                     } else if ((inst)->isTerminator()) {
                         (inst)->launch();
                         auto nextBB = inst->getTarget();
@@ -483,6 +487,19 @@ LLVMInterface::constructStaticGraph() {
         dt->recalculate(func);
         loopInfo->releaseMemory();
         loopInfo->analyze(*dt);
+        for (auto loop=loopInfo->begin(); loop!=loopInfo->end(); ++loop) {
+            if (llvm::BasicBlock *exBB = (*loop)->getExitingBlock()) {
+                auto latchingBr = exBB->getTerminator();
+                auto mapIt = vmap.find(latchingBr);
+                if (mapIt != vmap.end()) {
+                    auto salamValue = mapIt->second;
+                    if (std::shared_ptr<SALAM::Br> sBr =
+                        std::dynamic_pointer_cast<SALAM::Br>(salamValue)) {
+                            sBr->setLatching(true);
+                        }
+                }
+            }
+        }
     }
     auto parseStop = std::chrono::high_resolution_clock::now();
     setupTime = parseStop - parseStart;

@@ -96,6 +96,7 @@ class Instruction : public Value
         virtual void dump() { if (dbg) inst_dbg->dumper(this); }
         virtual bool isInstruction() { return true; }
         virtual bool isLoadingInternal() { return false; }
+        virtual bool isLatchingBrExiting() { return false; }
         // virtual void linkFunctionalUnit(HWInterface * hw_interface);
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
@@ -186,6 +187,7 @@ class Br : public Instruction {
         SALAM::Debugger *dbgr;
         uint64_t currentCycle;
         bool conditional = false;
+        bool isLatching = false;
 
     protected:
     public:
@@ -204,6 +206,8 @@ class Br : public Instruction {
         bool isBr() override { return true; }
         uint64_t getCycleCount() { return conditions.at(0).at(2); }
         void compute();
+        void setLatching(bool latch) { isLatching = latch; }
+        virtual bool isLatchingBrExiting() override { return isLatching && (getTarget()==trueDestination); }
         void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
         void dumper();
         std::shared_ptr<SALAM::Br> clone() const { return std::static_pointer_cast<SALAM::Br>(createClone()); }

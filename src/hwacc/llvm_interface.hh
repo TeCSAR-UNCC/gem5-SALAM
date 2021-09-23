@@ -142,11 +142,14 @@ class LLVMInterface : public ComputeUnit {
         void scheduleBB(std::shared_ptr<SALAM::BasicBlock> bb);
         void processQueues();
         void launch();
+        inline bool queuesClear() {
+          return readQueue.empty() && writeQueue.empty() && computeQueue.empty();
+        }
         inline bool lockstepReady() {
-          return !lockstep || (readQueue.empty() && writeQueue.empty() && computeQueue.empty());
+          return !lockstep || queuesClear();
         }
         inline bool canReturn() {
-            return readQueue.empty() && writeQueue.empty() && computeQueue.empty() && reservation.front()->isReturn();
+            return queuesClear() && reservation.front()->isReturn();
         }
         void launchRead(std::shared_ptr<SALAM::Instruction> readInst);
         void launchWrite(std::shared_ptr<SALAM::Instruction> writeInst);

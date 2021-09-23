@@ -406,21 +406,21 @@ Br::getTarget() {
     #if USE_LLVM_AP_VALUES
         if (condition->getIntRegValue().isOneValue()) {
             DPRINTF(RuntimeCompute, "|| Condition: TRUE, Fetching target %s\n",
-                defaultDestination->getIRStub());
+                trueDestination->getIRStub());
             return trueDestination;
         } else {
             DPRINTF(RuntimeCompute, "|| Condition: FALSE, Fetching target %s\n",
-                defaultDestination->getIRStub());
+                falseDestination->getIRStub());
             return falseDestination;
         }
     #else
         if(condition->getUIntRegValue() == 1) {
             DPRINTF(RuntimeCompute, "|| Condition: TRUE, Fetching target %s\n",
-                defaultDestination->getIRStub());
+                trueDestination->getIRStub());
             return trueDestination;
         } else {
             DPRINTF(RuntimeCompute, "|| Condition: FALSE, Fetching target %s\n",
-                defaultDestination->getIRStub());
+                falseDestination->getIRStub());
             return falseDestination;
         }
     #endif
@@ -3884,6 +3884,8 @@ Select::compute() {
     auto resultReg = (cond.getIntRegValue().isOneValue()) ? trueVal.getOpRegister() : falseVal.getOpRegister();
 #else
     auto resultReg = (cond.getUIntRegValue() == 1) ? trueVal.getOpRegister() : falseVal.getOpRegister();
+    DPRINTF(RuntimeCompute, "|| Selecting %s condition\n", (cond.getUIntRegValue() == 1) ? "TRUE" : "FALSE");
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, (cond.getUIntRegValue() == 1) ? trueVal.getIRStub() : falseVal.getIRStub());
 #endif
     setRegisterValue(resultReg);
 }
