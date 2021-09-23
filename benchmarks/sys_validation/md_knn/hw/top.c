@@ -23,6 +23,7 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 	//Transfer Position Y
 	*DmaRdAddr  = position_y_addr;
 	*DmaWrAddr  = POSITIONYADDR;
@@ -30,6 +31,7 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 	//Transfer Position Z
 	*DmaRdAddr  = position_z_addr;
 	*DmaWrAddr  = POSITIONZADDR;
@@ -37,6 +39,7 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 	//Transfer NL
 	*DmaRdAddr  = nl_addr;
 	*DmaWrAddr  = NLADDR;
@@ -44,6 +47,7 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 
 	//Start the accelerated function
 	*MDFlags = DEV_INIT;
@@ -57,6 +61,7 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 	//Transfer Force Y
 	*DmaRdAddr  = FORCEYADDR;
 	*DmaWrAddr  = force_y_addr;
@@ -64,6 +69,7 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 	//Transfer Force Z
 	*DmaRdAddr  = FORCEZADDR;
 	*DmaWrAddr  = force_z_addr;
@@ -71,5 +77,6 @@ void top(uint64_t force_x_addr,
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	*DmaFlags = 0x00;
 	return;
 }
