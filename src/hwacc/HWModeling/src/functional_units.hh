@@ -5,7 +5,7 @@
 #include "sim/sim_object.hh"
 
 // GENERATED HEADERS - DO NOT MODIFY
-#include "../generated/functionalunits/adder.hh"
+// #include "../generated/functionalunits/adder.hh"
 // END OF GENERATED HEADERS
 
 #include <iostream>
@@ -18,7 +18,7 @@ class FunctionalUnits : public SimObject
 {
     private:
         // GENERATED CLASS MEMBERS - DO NOT MODIFY
-        Adder* int_adder;
+        // Adder* int_adder;
         // END OF GENERATED CLASS MEMBERS
 
     protected:

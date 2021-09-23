@@ -5,7 +5,7 @@
 #include "sim/sim_object.hh"
 
 // GENERATED HEADERS - DO NOT MODIFY
-#include "../generated/instructions/add.hh"
+// #include "../generated/instructions/add.hh"
 // END OF GENERATED HEADERS
 
 #include <iostream>
@@ -18,7 +18,7 @@ class InstConfig : public SimObject
 {
     private:
         // GENERATED CLASS MEMBERS - DO NOT MODIFY
-        Add* add_inst;
+        // Add* add_inst;
         // END OF GENERATED CLASS MEMBERS
 
     protected:

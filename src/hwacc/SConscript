@@ -55,8 +55,8 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/operand.cc')
 
     # GENERATED FILES
-    Source('HWModeling/generated/functionalunits/adder.cc')
-    Source('HWModeling/generated/instructions/add.cc')
+    # Source('HWModeling/generated/functionalunits/adder.cc')
+    # Source('HWModeling/generated/instructions/add.cc')
     # END OF GENERATED FILES
 
     Source('HWModeling/src/cycle_counts.cc')
