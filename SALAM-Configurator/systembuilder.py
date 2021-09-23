@@ -69,7 +69,9 @@ for section in config:
 			if "Accelerator" in i:
 				accs.append(i)
 	clusters.append(AccCluster(clusterName, dmas, accs, baseAddress, M5_Path))
-	baseAddress = clusters[-1].clusterTopAddress + 1
+	baseAddress = clusters[-1].clusterTopAddress + (64 - (int(clusters[-1].clusterTopAddress) % 64))
+	if (int(baseAddress) % 64) != 0:
+		print("Address Alignment Error: " + hex(baseAddress))
 # Write out config file
 with open(CONFIG_Path + fileName + ".py", 'w') as f:
 	f.write(imports)

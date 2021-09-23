@@ -7,8 +7,8 @@ int main(void) {
         // Set stage to 0
         stage = 0;
         m5_reset_stats();
-        volatile uint8_t  * MMR  = (uint8_t  *)(TOP + 0x0);
-        volatile uint64_t * ARGS = (uint64_t *)(TOP + 0x1);
+        volatile uint8_t  * MMR  = (uint8_t  *)(TOP + 0x00);
+        volatile uint64_t * ARGS = (uint64_t *)(TOP + 0x01);
         // Run Head
         printf("Setting args\n");
         ARGS[0] = feats;

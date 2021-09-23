@@ -1,32 +1,32 @@
 //BEGIN GENERATED CODE
 //Cluster: PWCONV1
 //NonCoherentDMA
-#define DMA_Flags 0x10078042
-#define DMA_RdAddr 0x10078043
-#define DMA_WrAddr 0x1007804b
-#define DMA_CopyLen 0x10078053
+#define DMA_Flags 0x100780c0
+#define DMA_RdAddr 0x100780c1
+#define DMA_WrAddr 0x100780c9
+#define DMA_CopyLen 0x100780d1
 //StreamDMA
-#define STREAM_DMA0_Flags 0x10078082
-#define STREAM_DMA0_RdAddr 0x10078086
-#define STREAM_DMA0_WrAddr 0x1007808e
-#define STREAM_DMA0_RdFrameSize 0x10078096
-#define STREAM_DMA0_NumRdFrames 0x1007809a
-#define STREAM_DMA0_RdFrameBufSize 0x1007809b
-#define STREAM_DMA0_WrFrameSize 0x1007809c
-#define STREAM_DMA0_NumWrFrames 0x100780a0
-#define STREAM_DMA0_WrFrameBufSize 0x100780a1
-#define STREAM_DMA0_Stream 0x100780a2
+#define STREAM_DMA0_Flags 0x10078100
+#define STREAM_DMA0_RdAddr 0x10078104
+#define STREAM_DMA0_WrAddr 0x1007810c
+#define STREAM_DMA0_RdFrameSize 0x10078114
+#define STREAM_DMA0_NumRdFrames 0x10078118
+#define STREAM_DMA0_RdFrameBufSize 0x10078119
+#define STREAM_DMA0_WrFrameSize 0x1007811a
+#define STREAM_DMA0_NumWrFrames 0x1007811e
+#define STREAM_DMA0_WrFrameBufSize 0x1007811f
+#define STREAM_DMA0_Stream 0x10078120
 //Accelerator: TOP
-#define TOP 0x100780c2
+#define TOP 0x10078140
 //Accelerator: PWCONV
-#define PWCONV 0x10078142
-#define PWConvLocalFeatSize 0x10078182
-#define PWConvWeights 0x10078282
-#define PWConvQParams 0x100c32c2
-#define PWConvOut 0x100c5102
+#define PWCONV 0x100781c0
+#define PWConvLocalFeatSize 0x10078200
+#define PWConvWeights 0x10078300
+#define PWConvQParams 0x100c3340
+#define PWConvOut 0x100c5180
 //Accelerator: RESHAPE
-#define RESHAPE 0x100c5142
-#define ReshapeOut 0x100c5182
+#define RESHAPE 0x100c51c0
+#define ReshapeOut 0x100c5200
 //Accelerator: AVGPOOL
-#define AVGPOOL 0x100ccec2
+#define AVGPOOL 0x100ccf40
 //END GENERATED CODE

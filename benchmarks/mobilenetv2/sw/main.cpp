@@ -335,30 +335,3 @@ void runClassifier(uint64_t feat_rd_addr, uint64_t feat_wr_addr,
     printf("Running CLASSIFIER\n");
     MMR[0]  = 0x01;
 }
-
-// void runBody(uint8_t phase, uint64_t feat_rd_addr,
-//              uint64_t res_rd_addr, uint64_t feat_wr_addr,
-//              uint64_t pw0_weights, uint64_t pw0_quant,
-//              uint64_t dw0_weights, uint64_t dw0_quant,
-//              uint64_t pw1_weights, uint64_t pw1_quant) {
-    
-//     volatile uint8_t  * MMR  = (uint8_t  *)(body_top);
-//     volatile uint64_t * ARGS = (uint64_t *)(body_top+1);
-//     volatile uint64_t count;
-
-//     ARGS[0] = feat_rd_addr;
-//     ARGS[1] = res_rd_addr;
-//     ARGS[2] = feat_wr_addr;
-//     ARGS[3] = pw0_weights;
-//     ARGS[4] = pw0_quant;
-//     ARGS[5] = dw0_weights;
-//     ARGS[6] = dw0_quant;
-//     ARGS[7] = pw1_weights;
-//     ARGS[8] = pw1_quant;
-//     ARGS[9]  = phase;
-
-//     MMR[0]  = 0x01;
-//     while(MMR[0] & 0x01) count++;
-//     while(MMR[0] & 0x02) count++;
-//     count = 0;
-// }

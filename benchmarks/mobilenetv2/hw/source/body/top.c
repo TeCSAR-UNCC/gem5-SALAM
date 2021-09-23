@@ -45,6 +45,33 @@ void top(uint64_t feat_rd_addr,
 	volatile uint64_t	* PW1InputZP 	= (uint64_t	*)(PW1_MMR+41);
 	volatile uint64_t	* PW1OutputZP 	= (uint64_t	*)(PW1_MMR+49);
 
+	//Initialize DMAs
+	//StreamDma0
+	volatile uint8_t  * StrDma0Flags			= (uint8_t  *)(STREAM_DMA0_MMR);
+	volatile uint64_t * StrDma0RdAddr			= (uint64_t *)(STREAM_DMA0_MMR+4);
+	volatile uint64_t * StrDma0WrAddr			= (uint64_t *)(STREAM_DMA0_MMR+12);
+	volatile uint32_t * StrDma0RdFrameSize		= (uint32_t *)(STREAM_DMA0_MMR+20);
+	volatile uint8_t  * StrDma0NumRdFrames		= (uint8_t  *)(STREAM_DMA0_MMR+24);
+	volatile uint8_t  * StrDma0RdFrameBuffSize	= (uint8_t  *)(STREAM_DMA0_MMR+25);
+	volatile uint32_t * StrDma0WrFrameSize		= (uint32_t *)(STREAM_DMA0_MMR+26);
+	volatile uint8_t  * StrDma0NumWrFrames		= (uint8_t  *)(STREAM_DMA0_MMR+30);
+	volatile uint8_t  * StrDma0WrFrameBuffSize	= (uint8_t  *)(STREAM_DMA0_MMR+31);
+	//StreamDma1
+	volatile uint8_t  * StrDma1Flags			= (uint8_t  *)(STREAM_DMA1_MMR);
+	volatile uint64_t * StrDma1RdAddr			= (uint64_t *)(STREAM_DMA1_MMR+4);
+	volatile uint64_t * StrDma1WrAddr			= (uint64_t *)(STREAM_DMA1_MMR+12);
+	volatile uint32_t * StrDma1RdFrameSize		= (uint32_t *)(STREAM_DMA1_MMR+20);
+	volatile uint8_t  * StrDma1NumRdFrames		= (uint8_t  *)(STREAM_DMA1_MMR+24);
+	volatile uint8_t  * StrDma1RdFrameBuffSize	= (uint8_t  *)(STREAM_DMA1_MMR+25);
+	volatile uint32_t * StrDma1WrFrameSize		= (uint32_t *)(STREAM_DMA1_MMR+26);
+	volatile uint8_t  * StrDma1NumWrFrames		= (uint8_t  *)(STREAM_DMA1_MMR+30);
+	volatile uint8_t  * StrDma1WrFrameBuffSize	= (uint8_t  *)(STREAM_DMA1_MMR+31);
+	//MemDma
+	volatile uint8_t  * MemDmaFlags				= (uint8_t  *)(CLUSTER_DMA_MMR);
+	volatile uint64_t * MemDmaRdAddr			= (uint64_t *)(CLUSTER_DMA_MMR+1);
+	volatile uint64_t * MemDmaWrAddr			= (uint64_t *)(CLUSTER_DMA_MMR+9);
+	volatile uint32_t * MemDmaCopyLen			= (uint32_t *)(CLUSTER_DMA_MMR+17);
+
 switch(stage) {
 		case 0:
 			InputSize    = PW0_0_I_SIZE * PW0_0_I_SIZE * PW0_0_IC_SIZE;
@@ -525,32 +552,6 @@ switch(stage) {
 			return;
 	}
 
-	//Initialize DMAs
-	//StreamDma0
-	volatile uint8_t  * StrDma0Flags			= (uint8_t  *)(STREAM_DMA0_MMR);
-	volatile uint64_t * StrDma0RdAddr			= (uint64_t *)(STREAM_DMA0_MMR+4);
-	volatile uint64_t * StrDma0WrAddr			= (uint64_t *)(STREAM_DMA0_MMR+12);
-	volatile uint32_t * StrDma0RdFrameSize		= (uint32_t *)(STREAM_DMA0_MMR+20);
-	volatile uint8_t  * StrDma0NumRdFrames		= (uint8_t  *)(STREAM_DMA0_MMR+24);
-	volatile uint8_t  * StrDma0RdFrameBuffSize	= (uint8_t  *)(STREAM_DMA0_MMR+25);
-	volatile uint32_t * StrDma0WrFrameSize		= (uint32_t *)(STREAM_DMA0_MMR+26);
-	volatile uint8_t  * StrDma0NumWrFrames		= (uint8_t  *)(STREAM_DMA0_MMR+30);
-	volatile uint8_t  * StrDma0WrFrameBuffSize	= (uint8_t  *)(STREAM_DMA0_MMR+31);
-	//StreamDma1
-	volatile uint8_t  * StrDma1Flags			= (uint8_t  *)(STREAM_DMA1_MMR);
-	volatile uint64_t * StrDma1RdAddr			= (uint64_t *)(STREAM_DMA1_MMR+4);
-	volatile uint64_t * StrDma1WrAddr			= (uint64_t *)(STREAM_DMA1_MMR+12);
-	volatile uint32_t * StrDma1RdFrameSize		= (uint32_t *)(STREAM_DMA1_MMR+20);
-	volatile uint8_t  * StrDma1NumRdFrames		= (uint8_t  *)(STREAM_DMA1_MMR+24);
-	volatile uint8_t  * StrDma1RdFrameBuffSize	= (uint8_t  *)(STREAM_DMA1_MMR+25);
-	volatile uint32_t * StrDma1WrFrameSize		= (uint32_t *)(STREAM_DMA1_MMR+26);
-	volatile uint8_t  * StrDma1NumWrFrames		= (uint8_t  *)(STREAM_DMA1_MMR+30);
-	volatile uint8_t  * StrDma1WrFrameBuffSize	= (uint8_t  *)(STREAM_DMA1_MMR+31);
-	//MemDma
-	volatile uint8_t  * MemDmaFlags				= (uint8_t  *)(CLUSTER_DMA_MMR);
-	volatile uint64_t * MemDmaRdAddr			= (uint64_t *)(CLUSTER_DMA_MMR+1);
-	volatile uint64_t * MemDmaWrAddr			= (uint64_t *)(CLUSTER_DMA_MMR+9);
-	volatile uint32_t * MemDmaCopyLen			= (uint32_t *)(CLUSTER_DMA_MMR+17);
 	//Initialize DRAM-Stream DMA
 	*StrDma0RdAddr = feat_rd_addr;
 	*StrDma0RdFrameSize = InputSize;
@@ -626,8 +627,24 @@ switch(stage) {
 	
 	// Wait for all accelerators to finish before sending interrupt to CPU
 	while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
-	//Clear DMA Flags
-	*StrDma0Flags = 0x00;
-	*StrDma1Flags = 0x00;
+	//Clear DMA MMRs
+	*StrDma0Flags = 0;
+	*StrDma0RdAddr = 0;	
+	*StrDma0WrAddr = 0;		
+	*StrDma0RdFrameSize = 0;	
+	*StrDma0NumRdFrames = 0;	
+	*StrDma0RdFrameBuffSize = 0;
+	*StrDma0WrFrameSize = 0;	
+	*StrDma0NumWrFrames = 0;	
+	*StrDma0WrFrameBuffSize = 0;
+	*StrDma1Flags = 0;
+	*StrDma1RdAddr = 0;	
+	*StrDma1WrAddr = 0;		
+	*StrDma1RdFrameSize = 0;	
+	*StrDma1NumRdFrames = 0;	
+	*StrDma1RdFrameBuffSize = 0;
+	*StrDma1WrFrameSize = 0;	
+	*StrDma1NumWrFrames = 0;	
+	*StrDma1WrFrameBuffSize = 0;
 	return;
 }

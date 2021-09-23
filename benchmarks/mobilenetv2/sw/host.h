@@ -4,9 +4,9 @@
 #define weights     0x91000000
 #define qparams     0x93000000
 #define head_top    0x10020080
-#define body_top    0x10021681
-#define tail_top    0x100780c2
-#define class_top   0x100ccf83
+#define body_top    0x100216c0
+#define tail_top    0x10078140
+#define class_top   0x100cd040
 
 volatile uint8_t stage;
 

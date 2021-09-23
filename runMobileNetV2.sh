@@ -34,7 +34,7 @@ done
 if [ "${DEBUG}" == "true" ]; then
 	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ "${VALGRIND}" == "true" ]; then
-	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --suppressions=salam.supp --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=definite,possible --show-reachable=no --log-file=mobilenetv2.log  ${M5_PATH}/build/ARM/gem5.debug" #--gen-suppressions=all
+	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --suppressions=util/salam.supp --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=definite,possible --show-reachable=no --log-file=mobilenetv2.log  ${M5_PATH}/build/ARM/gem5.debug" #--gen-suppressions=all
 else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi

@@ -60,9 +60,10 @@ class AccCluster:
 			for i in acc['Accelerator']:
 				if 'PIOSize' in i:
 					pioAddress = topAddress
-					pioSize = i['PIOSize']
-					aligned_inc = i['PIOSize'] + (64 - (i['PIOSize'] % 64))
-					topAddress = topAddress + aligned_inc
+					pioSize = i['PIOSize'] + (64 - (i['PIOSize'] % 64))
+					topAddress = topAddress + pioSize
+					if ((topAddress + pioSize) % 64) != 0:
+						print("Acc Error: " + hex(pioAddress))
 				if 'IrPath' in i:
 					IrPath = i['IrPath']
 				if 'ConfigPath' in i:
