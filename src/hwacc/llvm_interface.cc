@@ -706,6 +706,7 @@ LLVMInterface::finalize() {
     _Cache.dyn_write = pwrUtil->getCactiResults(dma_stores*(read_bus_width/8), (read_bus_width/8), cache_ports, 1);
     
     */
+    reservation.clear();
     printPerformanceResults();
     // comm->printResults() 
     // hardware->printResults();
