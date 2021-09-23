@@ -626,25 +626,9 @@ switch(stage) {
 	*PW1Flags = 0x01;
 	
 	// Wait for all accelerators to finish before sending interrupt to CPU
-	while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
-	//Clear DMA MMRs
-	*StrDma0Flags = 0;
-	*StrDma0RdAddr = 0;	
-	*StrDma0WrAddr = 0;		
-	*StrDma0RdFrameSize = 0;	
-	*StrDma0NumRdFrames = 0;	
-	*StrDma0RdFrameBuffSize = 0;
-	*StrDma0WrFrameSize = 0;	
-	*StrDma0NumWrFrames = 0;	
-	*StrDma0WrFrameBuffSize = 0;
-	*StrDma1Flags = 0;
-	*StrDma1RdAddr = 0;	
-	*StrDma1WrAddr = 0;		
-	*StrDma1RdFrameSize = 0;	
-	*StrDma1NumRdFrames = 0;	
-	*StrDma1RdFrameBuffSize = 0;
-	*StrDma1WrFrameSize = 0;	
-	*StrDma1NumWrFrames = 0;	
-	*StrDma1WrFrameBuffSize = 0;
+	// while ((*StrDma0Flags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
+	while (*PW0Flags != 0x4);
+	while (*DW0Flags != 0x4);
+	while (*PW1Flags != 0x4);
 	return;
 }
