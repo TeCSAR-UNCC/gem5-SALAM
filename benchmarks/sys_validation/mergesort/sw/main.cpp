@@ -27,9 +27,9 @@ int __attribute__ ((optimize("0"))) main(void) {
     //     printf("Original Array: Index: %d Value: %d\n", i, originalArr[i]);
     // }
     // Prints out what should be the empty sorted array
-    for(int i = 0; i < SIZE; i++){
-        printf("Empty Array: Index: %d Value: %d\n", i, sortedArr[i]);
-    }
+    // for(int i = 0; i < SIZE; i++){
+    //     printf("Empty Array: Index: %d Value: %d\n", i, sortedArr[i]);
+    // }
     volatile int count = 0;
 	stage = 0;
 

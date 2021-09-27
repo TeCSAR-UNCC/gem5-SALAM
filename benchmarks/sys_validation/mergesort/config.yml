@@ -35,5 +35,5 @@ acc_cluster:
         Type: SPM
         Size: 8192
         Ports: 1
-        ReadyMode: True
+        ReadyMode: False
         ResetOnRead: True
