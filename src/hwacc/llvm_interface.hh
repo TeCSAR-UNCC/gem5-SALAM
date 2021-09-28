@@ -85,6 +85,7 @@ class LLVMInterface : public ComputeUnit {
         uint32_t scheduling_threshold;
         bool returned = false;
         bool lockstep;
+        bool dbg;
 
         inline bool uidActive(uint64_t id) {
           return computeUIDActive(id) || readUIDActive(id) || writeUIDActive(id);
@@ -135,6 +136,7 @@ class LLVMInterface : public ComputeUnit {
                        previousBB(nullptr) {
                           scheduling_threshold = owner->getSchedulingThreshold();
                           lockstep = (owner->getLockstepStatus());
+                          dbg = owner->debug();
                        }
         void readCommit(MemoryRequest *req);
         void writeCommit(MemoryRequest *req);

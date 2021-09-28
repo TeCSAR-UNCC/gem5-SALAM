@@ -139,10 +139,17 @@ SALAM::Instruction::signalUsers()
             user->value_dump();
         }
         user->setOperandValue(uid);
-        user->removeDynamicDependency(count);
         count++;
     }
     DPRINTF(Runtime, "||==signalUsers==========\n");
+}
+
+void
+SALAM::Instruction::removeDynamicDependency(uint64_t opuid)
+{
+    auto end = dynamicDependencies.end();
+    auto it = dynamicDependencies.find(opuid);
+    if (it != end) dynamicDependencies.erase(it);
 }
 
 bool
@@ -214,19 +221,20 @@ SALAM::Instruction::commit()
 }
 
 void
-SALAM::Instruction::setOperandValue(uint64_t uid)
+SALAM::Instruction::setOperandValue(uint64_t opuid)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||--setOperandValue()\n");
     uint64_t count = 0;
     for (auto it = operands.begin(); it != operands.end(); ++it) {
         auto op = *it;
-        if (op.getUID() == uid) {
+        if (op.getUID() == opuid) {
             DPRINTF(Runtime, "|| Storing Value in Op[%i]\n", count++);
             op.updateOperandRegister();
             //break;
         } else count++;
     }
+    removeDynamicDependency(opuid);
 }
 
 void
@@ -265,6 +273,7 @@ SALAM::Instruction::runtimeInitialize() {
             dep_uids.push_back(dep_uid);
         }
     }
+    dep_uids.push_back(uid);
 
     return dep_uids;
 }
@@ -2321,7 +2330,7 @@ Store::createMemoryRequest() {
 
     MemoryRequest * req;
 
-    auto dataRegister = operands.at(0).getReg();
+    auto dataRegister = operands.at(0).getOpRegister();
     // Copy data from the register
     if (dataRegister->isPtr()) {
         uint64_t regData = dataRegister->getPtrData();
@@ -3732,7 +3741,7 @@ Phi::compute() {
     DPRINTF(RuntimeCompute, "|| PHI entered from %s, using value: %s\n",
         previousBB->getIRStub(), operands.front().getIRString());
 
-    setRegisterValue(operands.front().getReg());
+    setRegisterValue(operands.front().getOpRegister());
 }
 
 void

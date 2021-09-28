@@ -27,6 +27,7 @@ class Register
         bool dbg = false;
         unsigned reads = 0;
         unsigned writes = 0;
+        uint64_t regdata;
 
         class Register_Debugger: public Debugger
         {
@@ -133,7 +134,10 @@ class APFloatRegister : public Register
         virtual void writeFloatData(llvm::APFloat apf, bool incWrites=true) override;
     #else
         // This constructor is only used for constants.
-        APFloatRegister(const uint64_t RHS) : Register(false) { data = RHS; }
+        APFloatRegister(const uint64_t RHS) : Register(false) {
+            data = RHS;
+            regdata = data;    
+        }
         virtual uint64_t getFloatData(bool incReads=true) override;
         virtual float getFloat(bool incReads=true) override;
         virtual double getDouble(bool incReads=true) override;
@@ -164,7 +168,10 @@ class APIntRegister : public Register
         virtual void writeIntData(llvm::APInt api, bool incWrites=true) override;
     #else
         // This constructor is only used for constants.
-        APIntRegister(const uint64_t RHS) : Register(false) { data = RHS; }
+        APIntRegister(const uint64_t RHS) : Register(false) {
+            data = RHS;
+            regdata = data;
+        }
         virtual uint64_t getIntData(bool incReads=true) override;
         virtual uint64_t getUnsignedInt(bool incReads=true) override;
         virtual int64_t getSignedInt(size_t sizeInBits, bool incReads=true) override;

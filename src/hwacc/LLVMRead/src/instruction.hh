@@ -25,7 +25,7 @@ class BasicBlock; // Required Declaration
 class Instruction : public Value
 {
     private:
-        std::vector<std::shared_ptr<SALAM::Instruction>> dynamicDependencies;
+        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> dynamicDependencies;
         std::vector<std::shared_ptr<SALAM::Instruction>> dynamicUsers;
         uint64_t llvmOpCode;
         uint64_t cycleCount;
@@ -65,12 +65,14 @@ class Instruction : public Value
         uint64_t getOpode() { return llvmOpCode; }
         uint64_t getCurrentCycle() { return currentCycle; }
         virtual valueListTy getStaticDependencies() const { return staticDependencies; }
-        std::vector<std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
+        std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
         std::shared_ptr<SALAM::Value> getStaticDependencies(int i) const { return staticDependencies.at(i); }
         std::shared_ptr<SALAM::Value> getDynamicDependencies(int i) const { return dynamicDependencies.at(i); }
         virtual std::vector<uint64_t> runtimeInitialize();
-        void removeDynamicDependency(int i) { dynamicDependencies.erase(dynamicDependencies.begin()+i); }
-        void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) { dynamicDependencies.push_back(dep); }
+        void removeDynamicDependency(uint64_t opuid);
+        void addRuntimeDependency(std::shared_ptr<SALAM::Instruction> dep) {
+            dynamicDependencies.insert({dep->getUID(),dep});
+        }
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
         bool isCommitted() { return committed; }

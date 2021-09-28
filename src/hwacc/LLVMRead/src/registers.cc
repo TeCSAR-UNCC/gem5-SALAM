@@ -145,6 +145,7 @@ SALAM::APFloatRegister::APFloatRegister(const llvm::APFloat &RHS) :
     #else
         auto bitcast = RHS.bitcastToAPInt();
         data = (uint64_t)(bitcast.getLimitedValue());
+        regdata = data;
     #endif
 }
 
@@ -179,6 +180,7 @@ SALAM::APIntRegister::APIntRegister(const llvm::APInt &RHS) :
         data = RHS;
     #else
         data = (uint64_t)(RHS.getLimitedValue());
+        regdata = data;
     #endif
 }
 
@@ -238,6 +240,7 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     {
         if (incWrites && tracked) writes++;
         std::memcpy(&data, &apf, len);
+        regdata = data;
     }
 #endif
 
@@ -308,6 +311,7 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
     {
         if (incWrites && tracked) writes++;
         std::memcpy(&data, &api, len);
+        regdata = data;
     }
 #endif
 uint64_t
@@ -322,6 +326,7 @@ SALAM::PointerRegister::writePtrData(uint64_t ptr, size_t len, bool incWrites)
 {
     if (incWrites && tracked) writes++;
     std::memcpy(&pointer, &ptr, len);
+    regdata = pointer;
 }
 
 #include <sstream>
