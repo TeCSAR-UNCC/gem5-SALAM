@@ -7,8 +7,8 @@
 void Avg_Pooling() {
 	dType_8u   iMult_avg  = POOL_IMULT;
 	dType_8t   nShift_avg = POOL_NSHIFT;
-	volatile dType_8u * inBuffer   = (dType_8u *)PoolIn;
-	volatile dType_8u * outFifo    = (dType_8u *)PoolOut;
+	volatile dType_8u * inBuffer   = (dType_8u *)tail_ReshapeOut;
+	volatile dType_8u * outFifo    = (dType_8u *)TAIL_STREAM_DMA0_Stream;
 
 	AVG_LOOP_OVER_I_CHAN:
     #pragma clang loop unroll(disable)

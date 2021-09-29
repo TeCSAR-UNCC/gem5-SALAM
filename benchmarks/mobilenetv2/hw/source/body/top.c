@@ -13,64 +13,64 @@ void top(uint64_t feat_rd_addr,
 
 	//Initialize Accelerators
 	// Residual Parameters
-	volatile uint8_t	* ResFlags		= (uint8_t	*)(RES_MMR);
-	volatile uint64_t	* ResEnable		= (uint64_t	*)(RES_MMR+1);
-	volatile uint64_t	* ResLength		= (uint64_t *)(RES_MMR+9);
+	volatile uint8_t	* ResFlags		= (uint8_t	*)(BODY_RESIDUAL);
+	volatile uint64_t	* ResEnable		= (uint64_t	*)(BODY_RESIDUAL+1);
+	volatile uint64_t	* ResLength		= (uint64_t *)(BODY_RESIDUAL+9);
 	// Pointwise 0 Parameters
-	volatile uint8_t	* PW0Flags 		= (uint8_t	*)(PW0_MMR);
-	volatile uint64_t	* PW0OSize 		= (uint64_t *)(PW0_MMR+1);
-	volatile uint64_t	* PW0ISize 		= (uint64_t	*)(PW0_MMR+9);
-	volatile uint64_t	* PW0OCSize 	= (uint64_t	*)(PW0_MMR+17);
-	volatile uint64_t	* PW0ICSize 	= (uint64_t	*)(PW0_MMR+25);
-	volatile uint64_t	* PW0BiasZP 	= (uint64_t	*)(PW0_MMR+33);
-	volatile uint64_t	* PW0InputZP 	= (uint64_t	*)(PW0_MMR+41);
-	volatile uint64_t	* PW0OutputZP 	= (uint64_t	*)(PW0_MMR+49);
+	volatile uint8_t	* PW0Flags 		= (uint8_t	*)(BODY_PWCONV0);
+	volatile uint64_t	* PW0OSize 		= (uint64_t *)(BODY_PWCONV0+1);
+	volatile uint64_t	* PW0ISize 		= (uint64_t	*)(BODY_PWCONV0+9);
+	volatile uint64_t	* PW0OCSize 	= (uint64_t	*)(BODY_PWCONV0+17);
+	volatile uint64_t	* PW0ICSize 	= (uint64_t	*)(BODY_PWCONV0+25);
+	volatile uint64_t	* PW0BiasZP 	= (uint64_t	*)(BODY_PWCONV0+33);
+	volatile uint64_t	* PW0InputZP 	= (uint64_t	*)(BODY_PWCONV0+41);
+	volatile uint64_t	* PW0OutputZP 	= (uint64_t	*)(BODY_PWCONV0+49);
 	// Depthwise Parameters
-	volatile uint8_t	* DW0Flags 		= (uint8_t	*)(DW0_MMR);
-	volatile uint64_t	* DW0OSize 		= (uint64_t	*)(DW0_MMR+1);
-	volatile uint64_t	* DW0ISize 		= (uint64_t	*)(DW0_MMR+9);
-	volatile uint64_t	* DW0OCSize 	= (uint64_t	*)(DW0_MMR+17);
-	volatile uint64_t	* DW0ICSize 	= (uint64_t	*)(DW0_MMR+25);
-	volatile uint64_t	* DW0Stride 	= (uint64_t	*)(DW0_MMR+33);
-	volatile uint64_t	* DW0BiasZP 	= (uint64_t	*)(DW0_MMR+41);
-	volatile uint64_t	* DW0InputZP 	= (uint64_t	*)(DW0_MMR+49);
-	volatile uint64_t	* DW0OutputZP 	= (uint64_t	*)(DW0_MMR+57);
+	volatile uint8_t	* DW0Flags 		= (uint8_t	*)(BODY_DWCONV);
+	volatile uint64_t	* DW0OSize 		= (uint64_t	*)(BODY_DWCONV+1);
+	volatile uint64_t	* DW0ISize 		= (uint64_t	*)(BODY_DWCONV+9);
+	volatile uint64_t	* DW0OCSize 	= (uint64_t	*)(BODY_DWCONV+17);
+	volatile uint64_t	* DW0ICSize 	= (uint64_t	*)(BODY_DWCONV+25);
+	volatile uint64_t	* DW0Stride 	= (uint64_t	*)(BODY_DWCONV+33);
+	volatile uint64_t	* DW0BiasZP 	= (uint64_t	*)(BODY_DWCONV+41);
+	volatile uint64_t	* DW0InputZP 	= (uint64_t	*)(BODY_DWCONV+49);
+	volatile uint64_t	* DW0OutputZP 	= (uint64_t	*)(BODY_DWCONV+57);
 	// Pointwise 1 Parameters
-	volatile uint8_t	* PW1Flags 		= (uint8_t	*)(PW1_MMR);
-	volatile uint64_t	* PW1OSize 		= (uint64_t	*)(PW1_MMR+1);
-	volatile uint64_t	* PW1ISize 		= (uint64_t	*)(PW1_MMR+9);
-	volatile uint64_t	* PW1OCSize 	= (uint64_t	*)(PW1_MMR+17);
-	volatile uint64_t	* PW1ICSize 	= (uint64_t	*)(PW1_MMR+25);	
-	volatile uint64_t	* PW1BiasZP 	= (uint64_t	*)(PW1_MMR+33);
-	volatile uint64_t	* PW1InputZP 	= (uint64_t	*)(PW1_MMR+41);
-	volatile uint64_t	* PW1OutputZP 	= (uint64_t	*)(PW1_MMR+49);
+	volatile uint8_t	* PW1Flags 		= (uint8_t	*)(BODY_PWCONV1);
+	volatile uint64_t	* PW1OSize 		= (uint64_t	*)(BODY_PWCONV1+1);
+	volatile uint64_t	* PW1ISize 		= (uint64_t	*)(BODY_PWCONV1+9);
+	volatile uint64_t	* PW1OCSize 	= (uint64_t	*)(BODY_PWCONV1+17);
+	volatile uint64_t	* PW1ICSize 	= (uint64_t	*)(BODY_PWCONV1+25);	
+	volatile uint64_t	* PW1BiasZP 	= (uint64_t	*)(BODY_PWCONV1+33);
+	volatile uint64_t	* PW1InputZP 	= (uint64_t	*)(BODY_PWCONV1+41);
+	volatile uint64_t	* PW1OutputZP 	= (uint64_t	*)(BODY_PWCONV1+49);
 
 	//Initialize DMAs
 	//StreamDma0
-	volatile uint8_t  * StrDma0Flags			= (uint8_t  *)(STREAM_DMA0_MMR);
-	volatile uint64_t * StrDma0RdAddr			= (uint64_t *)(STREAM_DMA0_MMR+4);
-	volatile uint64_t * StrDma0WrAddr			= (uint64_t *)(STREAM_DMA0_MMR+12);
-	volatile uint32_t * StrDma0RdFrameSize		= (uint32_t *)(STREAM_DMA0_MMR+20);
-	volatile uint8_t  * StrDma0NumRdFrames		= (uint8_t  *)(STREAM_DMA0_MMR+24);
-	volatile uint8_t  * StrDma0RdFrameBuffSize	= (uint8_t  *)(STREAM_DMA0_MMR+25);
-	volatile uint32_t * StrDma0WrFrameSize		= (uint32_t *)(STREAM_DMA0_MMR+26);
-	volatile uint8_t  * StrDma0NumWrFrames		= (uint8_t  *)(STREAM_DMA0_MMR+30);
-	volatile uint8_t  * StrDma0WrFrameBuffSize	= (uint8_t  *)(STREAM_DMA0_MMR+31);
+	volatile uint8_t  * StrDma0Flags			= (uint8_t  *)(BODY_STREAM_DMA0_Flags);
+	volatile uint64_t * StrDma0RdAddr			= (uint64_t *)(BODY_STREAM_DMA0_RdAddr);
+	volatile uint64_t * StrDma0WrAddr			= (uint64_t *)(BODY_STREAM_DMA0_WrAddr);
+	volatile uint32_t * StrDma0RdFrameSize		= (uint32_t *)(BODY_STREAM_DMA0_RdFrameSize);
+	volatile uint8_t  * StrDma0NumRdFrames		= (uint8_t  *)(BODY_STREAM_DMA0_NumRdFrames);
+	volatile uint8_t  * StrDma0RdFrameBuffSize	= (uint8_t  *)(BODY_STREAM_DMA0_RdFrameBufSize);
+	volatile uint32_t * StrDma0WrFrameSize		= (uint32_t *)(BODY_STREAM_DMA0_WrFrameSize);
+	volatile uint8_t  * StrDma0NumWrFrames		= (uint8_t  *)(BODY_STREAM_DMA0_NumWrFrames);
+	volatile uint8_t  * StrDma0WrFrameBuffSize	= (uint8_t  *)(BODY_STREAM_DMA0_WrFrameBufSize);
 	//StreamDma1
-	volatile uint8_t  * StrDma1Flags			= (uint8_t  *)(STREAM_DMA1_MMR);
-	volatile uint64_t * StrDma1RdAddr			= (uint64_t *)(STREAM_DMA1_MMR+4);
-	volatile uint64_t * StrDma1WrAddr			= (uint64_t *)(STREAM_DMA1_MMR+12);
-	volatile uint32_t * StrDma1RdFrameSize		= (uint32_t *)(STREAM_DMA1_MMR+20);
-	volatile uint8_t  * StrDma1NumRdFrames		= (uint8_t  *)(STREAM_DMA1_MMR+24);
-	volatile uint8_t  * StrDma1RdFrameBuffSize	= (uint8_t  *)(STREAM_DMA1_MMR+25);
-	volatile uint32_t * StrDma1WrFrameSize		= (uint32_t *)(STREAM_DMA1_MMR+26);
-	volatile uint8_t  * StrDma1NumWrFrames		= (uint8_t  *)(STREAM_DMA1_MMR+30);
-	volatile uint8_t  * StrDma1WrFrameBuffSize	= (uint8_t  *)(STREAM_DMA1_MMR+31);
+	volatile uint8_t  * StrDma1Flags			= (uint8_t  *)(BODY_STREAM_DMA1_Flags);
+	volatile uint64_t * StrDma1RdAddr			= (uint64_t *)(BODY_STREAM_DMA1_RdAddr);
+	volatile uint64_t * StrDma1WrAddr			= (uint64_t *)(BODY_STREAM_DMA1_WrAddr);
+	volatile uint32_t * StrDma1RdFrameSize		= (uint32_t *)(BODY_STREAM_DMA1_RdFrameSize);
+	volatile uint8_t  * StrDma1NumRdFrames		= (uint8_t  *)(BODY_STREAM_DMA1_NumRdFrames);
+	volatile uint8_t  * StrDma1RdFrameBuffSize	= (uint8_t  *)(BODY_STREAM_DMA1_RdFrameBufSize);
+	volatile uint32_t * StrDma1WrFrameSize		= (uint32_t *)(BODY_STREAM_DMA1_WrFrameSize);
+	volatile uint8_t  * StrDma1NumWrFrames		= (uint8_t  *)(BODY_STREAM_DMA1_NumWrFrames);
+	volatile uint8_t  * StrDma1WrFrameBuffSize	= (uint8_t  *)(BODY_STREAM_DMA1_WrFrameBufSize);
 	//MemDma
-	volatile uint8_t  * MemDmaFlags				= (uint8_t  *)(CLUSTER_DMA_MMR);
-	volatile uint64_t * MemDmaRdAddr			= (uint64_t *)(CLUSTER_DMA_MMR+1);
-	volatile uint64_t * MemDmaWrAddr			= (uint64_t *)(CLUSTER_DMA_MMR+9);
-	volatile uint32_t * MemDmaCopyLen			= (uint32_t *)(CLUSTER_DMA_MMR+17);
+	volatile uint8_t  * MemDmaFlags				= (uint8_t  *)(BODY_DMA_Flags);
+	volatile uint64_t * MemDmaRdAddr			= (uint64_t *)(BODY_DMA_RdAddr);
+	volatile uint64_t * MemDmaWrAddr			= (uint64_t *)(BODY_DMA_WrAddr);
+	volatile uint32_t * MemDmaCopyLen			= (uint32_t *)(BODY_DMA_CopyLen);
 
 switch(stage) {
 		case 0:
@@ -573,47 +573,160 @@ switch(stage) {
 	if (resEnable == 1) *StrDma1Flags = STR_DMA_INIT_RD;
 
 	//Transfer Weights and Quantization Params from DRAM to SPMs
+	
 	//Start PW0 Conv Weight Xfer
 	*MemDmaRdAddr  = pw0_weights;
-	*MemDmaWrAddr  = PW0Weights;
+	*MemDmaWrAddr  = body_PWConv0Weights;
 	*MemDmaCopyLen = PW0WeightSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
+	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start PW0 Conv QParams Xfer
-	*MemDmaRdAddr  = pw0_quant;
-	*MemDmaWrAddr  = PW0Bias;
+	
+	// Start PW0 Conv QParams Xfer
+	*MemDmaRdAddr  = pw0_quant + PW0QParamSize*0;
+	*MemDmaWrAddr  = body_PW0Bias;
 	*MemDmaCopyLen = PW0QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw0_quant + PW0QParamSize*1;
+	*MemDmaWrAddr  = body_PW0IMultBias;
+	*MemDmaCopyLen = PW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw0_quant + PW0QParamSize*2;
+	*MemDmaWrAddr  = body_PW0NShiftBias;
+	*MemDmaCopyLen = PW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw0_quant + PW0QParamSize*3;
+	*MemDmaWrAddr  = body_PW0IMultOut;
+	*MemDmaCopyLen = PW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw0_quant + PW0QParamSize*4;
+	*MemDmaWrAddr  = body_PW0NShiftOut;
+	*MemDmaCopyLen = PW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	
+	*MemDmaRdAddr  = pw0_quant + PW0QParamSize*5;
+	*MemDmaWrAddr  = body_PW0WeightZP;
+	*MemDmaCopyLen = PW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	
 	//Start DW0 Conv Weight Xfer
 	*MemDmaRdAddr  = dw0_weights;
-	*MemDmaWrAddr  = DW0Weights;
+	*MemDmaWrAddr  = body_DWConvWeights;
 	*MemDmaCopyLen = DW0WeightSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
-	//Start DW0 Conv QParams Xfer
-	*MemDmaRdAddr  = dw0_quant;
-	*MemDmaWrAddr  = DW0Bias;
+	
+	// Start DW0 Conv QParams Xfer
+	*MemDmaRdAddr  = dw0_quant + DW0QParamSize*0;
+	*MemDmaWrAddr  = body_DWBias;
 	*MemDmaCopyLen = DW0QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = dw0_quant + DW0QParamSize*1;
+	*MemDmaWrAddr  = body_DWIMultBias;
+	*MemDmaCopyLen = DW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = dw0_quant + DW0QParamSize*2;
+	*MemDmaWrAddr  = body_DWNShiftBias;
+	*MemDmaCopyLen = DW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = dw0_quant + DW0QParamSize*3;
+	*MemDmaWrAddr  = body_DWIMultOut;
+	*MemDmaCopyLen = DW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = dw0_quant + DW0QParamSize*4;
+	*MemDmaWrAddr  = body_DWNShiftOut;
+	*MemDmaCopyLen = DW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	
+	*MemDmaRdAddr  = dw0_quant + DW0QParamSize*5;
+	*MemDmaWrAddr  = body_DWWeightZP;
+	*MemDmaCopyLen = DW0QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
 	//Start PW1 Conv Weight Xfer
 	*MemDmaRdAddr  = pw1_weights;
-	*MemDmaWrAddr  = PW1Weights;
+	*MemDmaWrAddr  = body_PWConv1Weights;
 	*MemDmaCopyLen = PW1WeightSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
 	//Poll DMA for finish
 	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+	
 	// Start PW1 Conv QParams Xfer
-
-	*MemDmaRdAddr  = pw1_quant;
-	*MemDmaWrAddr  = PW1Bias;
+	*MemDmaRdAddr  = pw1_quant + PW1QParamSize*0;
+	*MemDmaWrAddr  = body_PW1Bias;
 	*MemDmaCopyLen = PW1QParamSize;
 	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw1_quant + PW1QParamSize*1;
+	*MemDmaWrAddr  = body_PW1IMultBias;
+	*MemDmaCopyLen = PW1QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw1_quant + PW1QParamSize*2;
+	*MemDmaWrAddr  = body_PW1NShiftBias;
+	*MemDmaCopyLen = PW1QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw1_quant + PW1QParamSize*3;
+	*MemDmaWrAddr  = body_PW1IMultOut;
+	*MemDmaCopyLen = PW1QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw1_quant + PW1QParamSize*4;
+	*MemDmaWrAddr  = body_PW1NShiftOut;
+	*MemDmaCopyLen = PW1QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
+
+	*MemDmaRdAddr  = pw1_quant + PW1QParamSize*5;
+	*MemDmaWrAddr  = body_PW1WeightZP;
+	*MemDmaCopyLen = PW1QParamSize;
+	*MemDmaFlags   = MEM_DMA_INIT;
+	//Poll DMA for finish
+	while ((*MemDmaFlags & MEM_DMA_INTR) != MEM_DMA_INTR);
 
 	//Start Res
 	*ResEnable = resEnable;

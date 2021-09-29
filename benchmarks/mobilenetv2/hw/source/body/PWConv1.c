@@ -10,16 +10,16 @@ void PWConv1(uint64_t o_size, uint64_t i_size,
              uint64_t o_c_size, uint64_t i_c_size,
              uint64_t bias_zp, uint64_t input_zp, uint64_t output_zp) {
                  
-	volatile dType_8u * 	inFifo 			= (dType_8u *)(PW1In);
-    volatile dType_8u * 	outFifo 		= (dType_8u *)(PW1Out);
-    volatile dType_8u * 	weights 		= (dType_8u *)(PW1Weights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
-    volatile dType_8u * 	iMult_bias_acc 	= (dType_8u *)(PW1IMultBias);
-    volatile dType_8t * 	nShift_bias_acc = (dType_8t *)(PW1NShiftBias);
-    volatile dType_8u * 	iMult_output 	= (dType_8u *)(PW1IMultOut);
-    volatile dType_8u * 	nShift_output 	= (dType_8u *)(PW1NShiftOut);
-    volatile dType_8u * 	weight_zp 		= (dType_8u *)(PW1WeightZP);
-    volatile dType_8u * 	biases_local 	= (dType_8u *)(PW1Bias);
-    volatile dType_8u * 	localFeature 	= (dType_8u *)(PW1LocalFeat);
+	volatile dType_8u * 	inFifo 			= (dType_8u *)(body_DWConvOut);
+    volatile dType_8u * 	outFifo 		= (dType_8u *)(BODY_STREAM_DMA0_Stream);
+    volatile dType_8u * 	weights 		= (dType_8u *)(body_PWConv1Weights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
+    volatile dType_8u * 	iMult_bias_acc 	= (dType_8u *)(body_PW1IMultBias);
+    volatile dType_8t * 	nShift_bias_acc = (dType_8t *)(body_PW1NShiftBias);
+    volatile dType_8u * 	iMult_output 	= (dType_8u *)(body_PW1IMultOut);
+    volatile dType_8u * 	nShift_output 	= (dType_8u *)(body_PW1NShiftOut);
+    volatile dType_8u * 	weight_zp 		= (dType_8u *)(body_PW1WeightZP);
+    volatile dType_8u * 	biases_local 	= (dType_8u *)(body_PW1Bias);
+    volatile dType_8u * 	localFeature 	= (dType_8u *)(body_PWConv1LocalFeats);
 
     // Checks that Sam hates™
 	// if(o_size != PW1_0_O_SIZE) return;

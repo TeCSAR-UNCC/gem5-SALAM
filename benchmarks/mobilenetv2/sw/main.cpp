@@ -40,46 +40,46 @@
 #include "../../common/m5ops.h"
 
 int main(void) {
-        stage = 0;
+        stage = 3;
 	m5_reset_stats();
         unsigned phase, rs_offset, rd_offset, wr_offset;
         // Run Head
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
-        runHead(phase,
-                feats+rd_offset,
-                feats+rs_offset,
-                feats+wr_offset,
-                weights, qparams,
-                weights, qparams);
-        while(stage == 0);
-        printf("Current Stage: %d\n", stage);
-        phase = 1;
-        rs_offset = (phase + 0) * 0x00100000;
-        rd_offset = (phase + 1) * 0x00100000;
-        wr_offset = (phase + 2) * 0x00100000;
-        runBody(phase,
-                feats+rd_offset,
-                feats+rs_offset,
-                feats+wr_offset,
-                weights, qparams,
-                weights, qparams,
-                weights, qparams);
-        while(stage == 1);
-        printf("Current Stage: %d\n", stage);
-        phase = 2;
-        rs_offset = (phase + 0) * 0x00100000;
-        rd_offset = (phase + 1) * 0x00100000;
-        wr_offset = (phase + 2) * 0x00100000;
-        runBody(phase,
-                feats+rd_offset,
-                feats+rs_offset,
-                feats+wr_offset,
-                weights, qparams,
-                weights, qparams,
-                weights, qparams);
-        while(stage == 2);
+        // runHead(phase,
+        //         feats+rd_offset,
+        //         feats+rs_offset,
+        //         feats+wr_offset,
+        //         weights, qparams,
+        //         weights, qparams);
+        // while(stage == 0);
+        // printf("Current Stage: %d\n", stage);
+        // phase = 1;
+        // rs_offset = (phase + 0) * 0x00100000;
+        // rd_offset = (phase + 1) * 0x00100000;
+        // wr_offset = (phase + 2) * 0x00100000;
+        // runBody(phase,
+        //         feats+rd_offset,
+        //         feats+rs_offset,
+        //         feats+wr_offset,
+        //         weights, qparams,
+        //         weights, qparams,
+        //         weights, qparams);
+        // while(stage == 1);
+        // printf("Current Stage: %d\n", stage);
+        // phase = 2;
+        // rs_offset = (phase + 0) * 0x00100000;
+        // rd_offset = (phase + 1) * 0x00100000;
+        // wr_offset = (phase + 2) * 0x00100000;
+        // runBody(phase,
+        //         feats+rd_offset,
+        //         feats+rs_offset,
+        //         feats+wr_offset,
+        //         weights, qparams,
+        //         weights, qparams,
+        //         weights, qparams);
+        // while(stage == 2);
         printf("Current Stage: %d\n", stage);
         phase = 3;
         rs_offset = (phase + 0) * 0x00100000;

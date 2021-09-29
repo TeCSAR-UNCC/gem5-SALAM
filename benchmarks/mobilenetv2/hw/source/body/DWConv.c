@@ -9,18 +9,18 @@
 void DWConv(uint64_t o_size, uint64_t i_size,
             uint64_t o_c_size, uint64_t i_c_size, uint64_t t_STRIDE,
             uint64_t bias_zp, uint64_t input_zp, uint64_t output_zp) {
-	volatile dType_8u * STR_IN  	= (dType_8u *)(DW0In);
-	volatile dType_8u * BUFFER 		= (dType_8u *)(DW0Buffer); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE-1][t_MAX_INPUT_SIZE]
-	volatile dType_8u * WINDOW 		= (dType_8u *)(DW0Window); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE][t_KSIZE]
-	volatile dType_8u * WEIGHT		= (dType_8u *)(DW0Weights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_OUTPUT_CHANNEL*(t_KSIZE*t_KSIZE+1)]
-	volatile dType_8u * BIAS		= (dType_8u *)(DW0Bias);
-	volatile dType_8u * IMULTBIAS	= (dType_8u *)(DW0IMultBias);
-	volatile dType_8t * NSHIFTBIAS	= (dType_8t *)(DW0NShiftBias);
-	volatile dType_8u * IMULTOUT	= (dType_8u *)(DW0IMultOut);
-	volatile dType_8u * NSHIFTOUT	= (dType_8u *)(DW0NShiftOut);
-	volatile dType_8u * WEIGHTZP 	= (dType_8u *)(DW0WeightZP);
-	volatile dType_8u * OUT_8BIT 	= (dType_8u *)(DW0OutBuffer); // dType_8u[t_MAX_OUTPUT_CHANNEL]
-	volatile dType_8u * STR_OUT		= (dType_8u *)(DW0Out);
+	volatile dType_8u * STR_IN  	= (dType_8u *)(body_PWConv0Out);
+	volatile dType_8u * BUFFER 		= (dType_8u *)(body_DWConvBuffer); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE-1][t_MAX_INPUT_SIZE]
+	volatile dType_8u * WINDOW 		= (dType_8u *)(body_DWConvWindow); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE][t_KSIZE]
+	volatile dType_8u * WEIGHT		= (dType_8u *)(body_DWConvWeights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_OUTPUT_CHANNEL*(t_KSIZE*t_KSIZE+1)]
+	volatile dType_8u * BIAS		= (dType_8u *)(body_DWBias);
+	volatile dType_8u * IMULTBIAS	= (dType_8u *)(body_DWIMultBias);
+	volatile dType_8t * NSHIFTBIAS	= (dType_8t *)(body_DWNShiftBias);
+	volatile dType_8u * IMULTOUT	= (dType_8u *)(body_DWIMultOut);
+	volatile dType_8u * NSHIFTOUT	= (dType_8u *)(body_DWNShiftOut);
+	volatile dType_8u * WEIGHTZP 	= (dType_8u *)(body_DWWeightZP);
+	volatile dType_8u * OUT_8BIT 	= (dType_8u *)(body_DWConvOutBuffer); // dType_8u[t_MAX_OUTPUT_CHANNEL]
+	volatile dType_8u * STR_OUT		= (dType_8u *)(body_DWConvOut);
 
 	dType_8u	weight_zp	= 0;
 	dType_8u	bias 		= 0;

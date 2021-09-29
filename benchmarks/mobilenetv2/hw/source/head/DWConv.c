@@ -15,18 +15,18 @@
 #define t_KSIZE                 KERNEL_SIZE
 
 void DWConv() {
-	volatile dType_8u * STR_IN  	= (dType_8u *)(DWIn);
-	volatile dType_8u * BUFFER 		= (dType_8u *)(DWBuffer); // dType_8u[IN_CH][KERNEL_SIZE-1][IN_SIZE]
-	volatile dType_8u * WINDOW 		= (dType_8u *)(DWWindow); // dType_8u[IN_CH][KERNEL_SIZE][KERNEL_SIZE]
-	volatile dType_8u * WEIGHT		= (dType_8u *)(DWWeights); // dType_8u[OUT_CH][OUT_CH*(KERNEL_SIZE*KERNEL_SIZE+1)]
-	volatile dType_8u * BIAS		= (dType_8u *)(DWBias);
-	volatile dType_8u * IMULTBIAS	= (dType_8u *)(DWIMultBias);
-	volatile dType_8t * NSHIFTBIAS	= (dType_8t *)(DWNShiftBias);
-	volatile dType_8u * IMULTOUT	= (dType_8u *)(DWIMultOut);
-	volatile dType_8u * NSHIFTOUT	= (dType_8u *)(DWNShiftOut);
-	volatile dType_8u * WEIGHTZP 	= (dType_8u *)(DWWeightZP);
-	volatile dType_8u * OUT_8BIT 	= (dType_8u *)(DWOutBuffer); // dType_8u[OUT_CH]
-	volatile dType_8u * STR_OUT		= (dType_8u *)(DWOut);
+	volatile dType_8u * STR_IN  	= (dType_8u *)(head_NormalConvOut);
+	volatile dType_8u * BUFFER 		= (dType_8u *)(head_DWConvQBuffer);
+	volatile dType_8u * WINDOW 		= (dType_8u *)(head_DWConvWindow);
+	volatile dType_8u * WEIGHT		= (dType_8u *)(head_DWConvWeights);
+	volatile dType_8u * BIAS		= (dType_8u *)(head_DWConvBias);
+	volatile dType_8u * IMULTBIAS	= (dType_8u *)(head_DWConvIMultBias);
+	volatile dType_8t * NSHIFTBIAS	= (dType_8t *)(head_DWConvNShiftBias);
+	volatile dType_8u * IMULTOUT	= (dType_8u *)(head_DWConvIMultOut);
+	volatile dType_8u * NSHIFTOUT	= (dType_8u *)(head_DWConvNShiftOut);
+	volatile dType_8u * WEIGHTZP 	= (dType_8u *)(head_DWConvWeightZP);
+	volatile dType_8u * OUT_8BIT 	= (dType_8u *)(head_DWConvOutBuffer);
+	volatile dType_8u * STR_OUT		= (dType_8u *)(head_DWConvOut);
 
 	dType_Reg	o_size 		= OUT_SIZE;
     dType_Reg	i_size 		= IN_SIZE;

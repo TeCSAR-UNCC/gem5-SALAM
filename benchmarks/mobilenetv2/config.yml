@@ -2,14 +2,14 @@
 acc_cluster:
   - Name: head
   - DMA:
-    - Name: dma
+    - Name: head_dma
       MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
   - DMA:
-    - Name: stream_dma0
+    - Name: head_stream_dma0
       PIOMaster: LocalBus
       StreamSize: 8
       BufferSize: 64
@@ -17,7 +17,7 @@ acc_cluster:
       ReadInt: 210
       WriteInt: 211
   - Accelerator:
-    - Name: Top
+    - Name: head_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/head/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/top.ini
       PIOSize: 65
@@ -27,114 +27,189 @@ acc_cluster:
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
-    - Name: NormalConv
+    - Name: head_NormalConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/NormalConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/NormalConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamOut: stream_dma0
+      StreamOut: head_stream_dma0
     - Var:
-      - Name: NormalConvWindow
+      - Name: head_NormalConvWindow
         Type: SPM
         Size: 27
         Ports: 27
     - Var:
-      - Name: NormalConvWeights
+      - Name: head_NormalConvWeights
         Type: SPM
         Size: 648
         Ports: 27
     - Var:
-      - Name: NormalConvQParams
+      - Name: head_NormalConvBias
         Type: SPM
-        Size: 144
+        Size: 24
         Ports: 1
     - Var:
-      - Name: NormalConvQBuffer
+      - Name: head_NormalConvIMultBias
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_NormalConvNShiftBias
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_NormalConvIMultOut
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_NormalConvNShiftOut
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_NormalConvWeightZP
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_NormalConvQBuffer
         Type: SPM
         Size: 576
         Ports: 2
     - Var:
-      - Name: NormalConvOut
+      - Name: head_NormalConvOut
         Type: Stream
         StreamSize: 8
         BufferSize: 64
-        InCon: NormalConv
-        OutCon: DWConv
+        InCon: head_NormalConv
+        OutCon: head_DWConv
   - Accelerator:
-    - Name: DWConv
+    - Name: head_DWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/DWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/DWConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: DWConvWindow
+      - Name: head_DWConvWindow
         Type: SPM
         Size: 216
         Ports: 9
     - Var:
-      - Name: DWConvWeights
+      - Name: head_DWConvWeights
         Type: SPM
         Size: 240
         Ports: 9
     - Var:
-      - Name: DWConvQParams
-        Type: SPM
-        Size: 144
-        Ports: 1
-    - Var:
-      - Name: DWConvQBuffer
-        Type: SPM
-        Size: 1920
-        Ports: 2
-    - Var:
-      - Name: DWConvOutBuffer
+      - Name: head_DWConvBias
         Type: SPM
         Size: 24
         Ports: 1
     - Var:
-      - Name: DWConvOut
+      - Name: head_DWConvIMultBias
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_DWConvNShiftBias
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_DWConvIMultOut
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_DWConvNShiftOut
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_DWConvWeightZP
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_DWConvQBuffer
+        Type: SPM
+        Size: 1920
+        Ports: 2
+    - Var:
+      - Name: head_DWConvOutBuffer
+        Type: SPM
+        Size: 24
+        Ports: 1
+    - Var:
+      - Name: head_DWConvOut
         Type: Stream
         StreamSize: 8
         BufferSize: 64
-        InCon: DWConv
-        OutCon: PWConv
+        InCon: head_DWConv
+        OutCon: head_PWConv
   - Accelerator:
-    - Name: PWConv
+    - Name: head_PWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/PWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/PWConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamIn: stream_dma0
+      StreamIn: head_stream_dma0
     - Var:
-      - Name: PWConvLocalFeatSize
+      - Name: head_PWConvLocalFeats
         Type: SPM
         Size: 24
         Ports: 24
     - Var:
-      - Name: PWConvWeights
+      - Name: head_PWConvWeights
         Type: SPM
         Size: 384
         Ports: 24
     - Var:
-      - Name: PWConvQParams
+      - Name: head_PWConvBias
         Type: SPM
-        Size: 96
+        Size: 16
+        Ports: 1
+    - Var:
+      - Name: head_PWConvIMultBias
+        Type: SPM
+        Size: 16
+        Ports: 1
+    - Var:
+      - Name: head_PWConvNShiftBias
+        Type: SPM
+        Size: 16
+        Ports: 1
+    - Var:
+      - Name: head_PWConvIMultOut
+        Type: SPM
+        Size: 16
+        Ports: 1
+    - Var:
+      - Name: head_PWConvNShiftOut
+        Type: SPM
+        Size: 16
+        Ports: 1
+    - Var:
+      - Name: head_PWConvWeightZP
+        Type: SPM
+        Size: 16
         Ports: 1
 ---
 acc_cluster:
   - Name: body
   - DMA:
-    - Name: dma
+    - Name: body_dma
       MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 96
   - DMA:
-    - Name: stream_dma0
+    - Name: body_stream_dma0
       PIOMaster: LocalBus
       StreamSize: 8
       BufferSize: 64
@@ -142,7 +217,7 @@ acc_cluster:
       ReadInt: 212
       WriteInt: 213
   - DMA:
-    - Name: stream_dma1
+    - Name: body_stream_dma1
       PIOMaster: LocalBus
       StreamSize: 8
       BufferSize: 64
@@ -150,7 +225,7 @@ acc_cluster:
       ReadInt: 214
       WriteInt: 215
   - Accelerator:
-    - Name: top
+    - Name: body_top
       IrPath: benchmarks/mobilenetv2/hw/ir/body/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/top.ini
       Debug: False
@@ -159,123 +234,198 @@ acc_cluster:
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
   - Accelerator:
-    - Name: residual
+    - Name: body_residual
       IrPath: benchmarks/mobilenetv2/hw/ir/body/Residual.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/Residual.ini
       Debug: False
       PIOSize: 17
       PIOMaster: LocalBus
-      StreamOut: stream_dma0,stream_dma1
+      StreamOut: body_stream_dma0,body_stream_dma1
     - Var:
-      - Name: ResidualOut
+      - Name: body_ResidualOut
         Type: Stream
         StreamSize: 8
         BufferSize: 64
-        InCon: residual
-        OutCon: PWConv0
+        InCon: body_residual
+        OutCon: body_PWConv0
   - Accelerator:
-    - Name: PWConv0
+    - Name: body_PWConv0
       IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv0.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv0.ini
       Debug: False
       PIOSize: 57
       PIOMaster: LocalBus
     - Var:
-      - Name: PWConv0LocalFeatSize
+      - Name: body_PWConv0LocalFeats
         Type: SPM
         Size: 120
         Ports: 120
     - Var:
-      - Name: PWConv0Weights
+      - Name: body_PWConv0Weights
         Type: SPM
         Size: 86400
         Ports: 120
     - Var:
-      - Name: PWConv0QParams
+      - Name: body_PW0Bias
         Type: SPM
-        Size: 4320
+        Size: 720
         Ports: 1
     - Var:
-      - Name: PWConv0Out
+      - Name: body_PW0IMultBias
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_PW0NShiftBias
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_PW0IMultOut
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_PW0NShiftOut
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_PW0WeightZP
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_PWConv0Out
         Type: Stream
         StreamSize: 8
         BufferSize: 64
-        InCon: PWConv0
-        OutCon: DWConv
+        InCon: body_PWConv0
+        OutCon: body_DWConv
   - Accelerator:
-    - Name: DWConv
+    - Name: body_DWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/body/DWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/DWConv.ini
       Debug: False
       PIOSize: 65
       PIOMaster: LocalBus
     - Var:
-      - Name: DWConvWindow
+      - Name: body_DWConvWindow
         Type: SPM
         Size: 6480
         Ports: 9
     - Var:
-      - Name: DWConvWeights
+      - Name: body_DWConvWeights
         Type: SPM
         Size: 7200
         Ports: 9
     - Var:
-      - Name: DWConvQParams
-        Type: SPM
-        Size: 4320
-        Ports: 1
-    - Var:
-      - Name: DWConvBuffer
-        Type: SPM
-        Size: 69120
-        Ports: 2
-    - Var:
-      - Name: DWConvOutBuffer
+      - Name: body_DWBias
         Type: SPM
         Size: 720
         Ports: 1
     - Var:
-      - Name: DWConvOut
+      - Name: body_DWIMultBias
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_DWNShiftBias
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_DWIMultOut
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_DWNShiftOut
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_DWWeightZP
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_DWConvBuffer
+        Type: SPM
+        Size: 69120
+        Ports: 2
+    - Var:
+      - Name: body_DWConvOutBuffer
+        Type: SPM
+        Size: 720
+        Ports: 1
+    - Var:
+      - Name: body_DWConvOut
         Type: Stream
         StreamSize: 8
         BufferSize: 64
-        InCon: DWConv
-        OutCon: PWConv1
+        InCon: body_DWConv
+        OutCon: body_PWConv1
   - Accelerator:
-    - Name: PWConv1
+    - Name: body_PWConv1
       IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv1.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv1.ini
       Debug: False
       PIOSize: 57
       PIOMaster: LocalBus
-      StreamIn: stream_dma0
+      StreamIn: body_stream_dma0
     - Var:
-      - Name: PWConv1LocalFeatSize
+      - Name: body_PWConv1LocalFeats
         Type: SPM
         Size: 720
         Ports: 120
     - Var:
-      - Name: PWConv1Weights
+      - Name: body_PWConv1Weights
         Type: SPM
         Size: 172800
         Ports: 120
     - Var:
-      - Name: PWConv1QParams
+      - Name: body_PW1Bias
         Type: SPM
-        Size: 1440
+        Size: 240
+        Ports: 1
+    - Var:
+      - Name: body_PW1IMultBias
+        Type: SPM
+        Size: 240
+        Ports: 1
+    - Var:
+      - Name: body_PW1NShiftBias
+        Type: SPM
+        Size: 240
+        Ports: 1
+    - Var:
+      - Name: body_PW1IMultOut
+        Type: SPM
+        Size: 240
+        Ports: 1
+    - Var:
+      - Name: body_PW1NShiftOut
+        Type: SPM
+        Size: 240
+        Ports: 1
+    - Var:
+      - Name: body_PW1WeightZP
+        Type: SPM
+        Size: 240
         Ports: 1
 ---
 acc_cluster:
   - Name: tail
   - DMA:
-    - Name: dma
+    - Name: tail_dma
       MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
   - DMA:
-    - Name: stream_dma0
+    - Name: tail_stream_dma0
       PIOMaster: LocalBus
       StreamSize: 8
       BufferSize: 64
@@ -283,7 +433,7 @@ acc_cluster:
       ReadInt: 210
       WriteInt: 211
   - Accelerator:
-    - Name: Top
+    - Name: tail_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/top.ini
       PIOSize: 65
@@ -292,68 +442,93 @@ acc_cluster:
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
-    - Name: PWConv
+    - Name: tail_PWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/PWConv.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/PWConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamOut: stream_dma0
+      StreamOut: tail_stream_dma0
     - Var:
-      - Name: PWConvLocalFeatSize
+      - Name: tail_PWConvLocalFeats
         Type: SPM
         Size: 240
         Ports: 24
     - Var:
-      - Name: PWConvWeights
+      - Name: tail_PWConvWeights
         Type: SPM
         Size: 307200
         Ports: 24
     - Var:
-      - Name: PWConvQParams
+      - Name: tail_PWBias
         Type: SPM
-        Size: 7680
+        Size: 1280
         Ports: 1
     - Var:
-      - Name: PWConvOut
+      - Name: tail_PWIMultBias
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWNShiftBias
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWIMultOut
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWNShiftOut
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWWeightZP
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWConvOut
         Type: Stream
         StreamSize: 8
         BufferSize: 64
-        InCon: PWConv
-        OutCon: Reshape
+        InCon: tail_PWConv
+        OutCon: tail_Reshape
   - Accelerator:
-    - Name: Reshape
+    - Name: tail_Reshape
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/Reshape.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/Reshape.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: ReshapeOut
+      - Name: tail_ReshapeOut
         Type: SPM
         Size: 32000
         Ports: 1
-        Connections: AvgPool:1
+        Connections: tail_AvgPool:1
   - Accelerator:
-    - Name: AvgPool
+    - Name: tail_AvgPool
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/AvgPool.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamIn: stream_dma0
+      StreamIn: tail_stream_dma0
 ---
 acc_cluster:
   - Name: classifier
   - DMA:
-    - Name: dma
+    - Name: classifier_dma
       MaxReqSize: 64
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
   - DMA:
-    - Name: stream_dma0
+    - Name: classifier_stream_dma0
       PIOMaster: LocalBus
       StreamSize: 8
       BufferSize: 64
@@ -361,7 +536,7 @@ acc_cluster:
       ReadInt: 210
       WriteInt: 211
   - Accelerator:
-    - Name: Top
+    - Name: classifier_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/classifier/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/top.ini
       PIOSize: 65
@@ -370,31 +545,56 @@ acc_cluster:
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
-    - Name: Linear
+    - Name: classifier_Linear
       IrPath: benchmarks/mobilenetv2/hw/ir/classifier/Linear.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/Linear.ini
       PIOSize: 1
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
-      StreamIn: stream_dma0
+      StreamIn: classifier_stream_dma0
     - Var:
-      - Name: LinearFeats
+      - Name: classifier_LinearFeats
         Type: SPM
         Size: 1280
         Ports: 320
     - Var:
-      - Name: LinearWeights
+      - Name: classifier_LinearWeights
         Type: SPM
         Size: 1280000
         Ports: 320
     - Var:
-      - Name: LinearQParams
+      - Name: classifier_PWBias
         Type: SPM
-        Size: 6000
-        Ports: 320
+        Size: 1000
+        Ports: 54
     - Var:
-      - Name: LinearSum
+      - Name: classifier_PWIMultBias
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWNShiftBias
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWIMultOut
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWNShiftOut
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWWeightZP
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_LinearSum
         Type: SPM
         Size: 1000
         Ports: 320

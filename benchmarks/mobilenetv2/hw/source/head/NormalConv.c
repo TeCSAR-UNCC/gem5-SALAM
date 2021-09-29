@@ -16,17 +16,17 @@
 #define t_KSIZE                 KERNEL_SIZE
 
 void NormalConv() {
-	volatile dType_8u * STR_IN  	= (dType_8u *)(ConvIn);
-	volatile dType_8u * BUFFER 		= (dType_8u *)(ConvBuffer); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE - 1][t_MAX_INPUT_SIZE]
-	volatile dType_8u * WINDOW 		= (dType_8u *)(ConvWindow); // dType_8u[t_MAX_INPUT_CHANNEL][t_KSIZE][t_KSIZE]
-	volatile dType_8u * WEIGHT		= (dType_8u *)(ConvWeights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL * t_KSIZE * t_KSIZE]
-	volatile dType_8u * BIAS		= (dType_8u *)(ConvBias);
-	volatile dType_8u * IMULTBIAS	= (dType_8u *)(ConvIMultBias);
-	volatile dType_8t * NSHIFTBIAS	= (dType_8t *)(ConvNShiftBias);
-	volatile dType_8u * IMULTOUT	= (dType_8u *)(ConvIMultOut);
-	volatile dType_8u * NSHIFTOUT	= (dType_8u *)(ConvNShiftOut);
-	volatile dType_8u * WEIGHTZP 	= (dType_8u *)(ConvWeightZP);
-	volatile dType_8u * STR_OUT		= (dType_8u *)(ConvOut);
+	volatile dType_8u * STR_IN  	= (dType_8u *)(HEAD_STREAM_DMA0_Stream);
+	volatile dType_8u * BUFFER 		= (dType_8u *)(head_NormalConvQBuffer);
+	volatile dType_8u * WINDOW 		= (dType_8u *)(head_NormalConvWindow);
+	volatile dType_8u * WEIGHT		= (dType_8u *)(head_NormalConvWeights);
+	volatile dType_8u * BIAS		= (dType_8u *)(head_NormalConvBias);
+	volatile dType_8u * IMULTBIAS	= (dType_8u *)(head_NormalConvIMultBias);
+	volatile dType_8t * NSHIFTBIAS	= (dType_8t *)(head_NormalConvNShiftBias);
+	volatile dType_8u * IMULTOUT	= (dType_8u *)(head_NormalConvIMultOut);
+	volatile dType_8u * NSHIFTOUT	= (dType_8u *)(head_NormalConvNShiftOut);
+	volatile dType_8u * WEIGHTZP 	= (dType_8u *)(head_NormalConvWeightZP);
+	volatile dType_8u * STR_OUT		= (dType_8u *)(head_NormalConvOut);
 
 	dType_Reg	o_size 		= OUT_SIZE;
     dType_Reg	i_size 		= IN_SIZE;

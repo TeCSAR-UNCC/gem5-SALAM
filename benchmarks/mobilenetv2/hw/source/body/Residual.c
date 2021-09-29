@@ -1,9 +1,9 @@
 #include "body_defines.h"
 
 void Residual(uint64_t enable, uint64_t length) {
-	volatile dType_8u * streamIn0 = (dType_8u *)ResIn0;
-	volatile dType_8u * streamIn1 = (dType_8u *)ResIn1;
-	volatile dType_8u * streamOut = (dType_8u *)ResOut;
+	volatile dType_8u * streamIn0 = (dType_8u *)BODY_STREAM_DMA0_Stream;
+	volatile dType_8u * streamIn1 = (dType_8u *)BODY_STREAM_DMA1_Stream;
+	volatile dType_8u * streamOut = (dType_8u *)body_ResidualOut;
 	
 	// Checks that Sam hates™
 	// if(enable != RES_0_ENABLE) return;

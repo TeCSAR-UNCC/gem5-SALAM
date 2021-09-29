@@ -15,16 +15,16 @@
 #define t_OUTPUT_TYPE			dType_8u
 
 void PWConv() {
-	volatile dType_8u * 	inFifo 			= (dType_8u *)(PWIn);
-    volatile dType_8u * 	outFifo 		= (dType_8u *)(PWOut);
-    volatile dType_8u * 	weights 		= (dType_8u *)(PWWeights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
-    volatile dType_8u * 	iMult_bias_acc 	= (dType_8u *)(PWIMultBias);
-    volatile dType_8t * 	nShift_bias_acc = (dType_8t *)(PWNShiftBias);
-    volatile dType_8u * 	iMult_output 	= (dType_8u *)(PWIMultOut);
-    volatile dType_8u * 	nShift_output 	= (dType_8u *)(PWNShiftOut);
-    volatile dType_8u * 	weight_zp 		= (dType_8u *)(PWWeightZP);
-    volatile dType_8u * 	biases_local 	= (dType_8u *)(PWBias);
-    volatile dType_8u * 	localFeature 	= (dType_8u *)(PWLocalFeat);
+	volatile dType_8u * 	inFifo 			= (dType_8u *)(TAIL_STREAM_DMA0_Stream);
+    volatile dType_8u * 	outFifo 		= (dType_8u *)(tail_PWConvOut);
+    volatile dType_8u * 	weights 		= (dType_8u *)(tail_PWConvWeights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
+    volatile dType_8u * 	iMult_bias_acc 	= (dType_8u *)(tail_PWIMultBias);
+    volatile dType_8t * 	nShift_bias_acc = (dType_8t *)(tail_PWNShiftBias);
+    volatile dType_8u * 	iMult_output 	= (dType_8u *)(tail_PWIMultOut);
+    volatile dType_8u * 	nShift_output 	= (dType_8u *)(tail_PWNShiftOut);
+    volatile dType_8u * 	weight_zp 		= (dType_8u *)(tail_PWWeightZP);
+    volatile dType_8u * 	biases_local 	= (dType_8u *)(tail_PWBias);
+    volatile dType_8u * 	localFeature 	= (dType_8u *)(tail_PWConvLocalFeats);
     dType_8u 	bias_zp 		= 0;
     dType_8u 	input_zp 		= 0;
     dType_8u 	output_zp 		= 0;

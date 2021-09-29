@@ -9,16 +9,16 @@
 void PWConv0(uint64_t o_size, uint64_t i_size,
              uint64_t o_c_size, uint64_t i_c_size,
              uint64_t bias_zp, uint64_t input_zp, uint64_t output_z) {
-	volatile dType_8u * 	inFifo 			= (dType_8u *)(PW0In);
-    volatile dType_8u * 	outFifo 		= (dType_8u *)(PW0Out);
-    volatile dType_8u * 	weights 		= (dType_8u *)(PW0Weights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
-    volatile dType_8u * 	iMult_bias_acc 	= (dType_8u *)(PW0IMultBias);
-    volatile dType_8t * 	nShift_bias_acc = (dType_8t *)(PW0NShiftBias);
-    volatile dType_8u * 	iMult_output 	= (dType_8u *)(PW0IMultOut);
-    volatile dType_8u * 	nShift_output 	= (dType_8u *)(PW0NShiftOut);
-    volatile dType_8u * 	weight_zp 		= (dType_8u *)(PW0WeightZP);
-    volatile dType_8u * 	biases_local 	= (dType_8u *)(PW0Bias);
-    volatile dType_8u * 	localFeature 	= (dType_8u *)(PW0LocalFeat); // dType_8u[t_MAX_INPUT_CHANNEL]
+	volatile dType_8u * 	inFifo 			= (dType_8u *)(body_ResidualOut);
+    volatile dType_8u * 	outFifo 		= (dType_8u *)(body_PWConv0Out);
+    volatile dType_8u * 	weights 		= (dType_8u *)(body_PWConv0Weights); // dType_8u[t_MAX_OUTPUT_CHANNEL][t_MAX_INPUT_CHANNEL]
+    volatile dType_8u * 	iMult_bias_acc 	= (dType_8u *)(body_PW0IMultBias);
+    volatile dType_8t * 	nShift_bias_acc = (dType_8t *)(body_PW0NShiftBias);
+    volatile dType_8u * 	iMult_output 	= (dType_8u *)(body_PW0IMultOut);
+    volatile dType_8u * 	nShift_output 	= (dType_8u *)(body_PW0NShiftOut);
+    volatile dType_8u * 	weight_zp 		= (dType_8u *)(body_PW0WeightZP);
+    volatile dType_8u * 	biases_local 	= (dType_8u *)(body_PW0Bias);
+    volatile dType_8u * 	localFeature 	= (dType_8u *)(body_PWConv0LocalFeats); // dType_8u[t_MAX_INPUT_CHANNEL]
 
 pw_convYaxis:
     #pragma clang loop unroll(disable)

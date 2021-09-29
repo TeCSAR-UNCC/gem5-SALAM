@@ -13,7 +13,7 @@
 #define PW0_OUT_CH_MAX	__EXPND_PW_CONV_RES_MAX_OUTPUT_CHANNEL__
 #define PW0_CORE_SIZE	120
 #define PW0WeightSize	PW0_OUT_CH_MAX*PW0_IN_CH_MAX
-#define PW0QParamSize	PW0_OUT_CH_MAX*6
+#define PW0QParamSize	PW0_OUT_CH_MAX
 
 // DW Conv
 #define DW0_IN_SIZE_MAX	__IRB_DW_CONV_STD_2_MAX_INPUT_SIZE__
@@ -22,81 +22,18 @@
 #define DW0BuffSize		DW0_IN_SIZE_MAX*(KERNEL_SIZE-1)*DW0_IN_CH_MAX
 #define DW0WindowSize	KERNEL_SIZE*KERNEL_SIZE*DW0_IN_CH_MAX
 #define DW0WeightSize	DW0_OUT_CH_MAX*((KERNEL_SIZE*KERNEL_SIZE)+1)
-#define DW0QParamSize	DW0_OUT_CH_MAX*6
+#define DW0QParamSize	DW0_OUT_CH_MAX
 
 // PW Conv 1
 #define PW1_IN_CH_MAX	__PRJC_PW_CONV_STR1_MAX_INPUT_CHAN__
 #define PW1_OUT_CH_MAX	__PRJC_PW_CONV_STR1_MAX_OUTPUT_CHANNEL__
 #define PW1_CORE_SIZE	120
 #define PW1WeightSize	PW1_OUT_CH_MAX*PW1_IN_CH_MAX
-#define PW1QParamSize	PW1_OUT_CH_MAX*6
-
-/***********************************************************
- * Cluster Base Address
- ***********************************************************/
-// #define BASE			0x2F002000
-/***********************************************************
- * MMR Addresses
- ***********************************************************/
-#define TOP_MMR			TOP
-#define STREAM_DMA0_MMR	STREAM_DMA0_Flags
-#define STREAM_DMA1_MMR	STREAM_DMA1_Flags
-#define CLUSTER_DMA_MMR	DMA_Flags
-#define RES_MMR			RESIDUAL
-#define PW0_MMR			PWCONV0
-#define DW0_MMR			DWCONV
-#define PW1_MMR			PWCONV1
-
-/***********************************************************
- * Memory Buffer and SPM Addresses
- ***********************************************************/
-#define StreamIn0		STREAM_DMA0_Stream
-#define StreamOut		STREAM_DMA0_Stream
-#define StreamIn1		STREAM_DMA1_Stream
-
-#define ResIn0			StreamIn0
-#define ResIn1			StreamIn1
-#define ResOut			ResidualOut
-
-#define PW0In 			ResOut
-#define PW0LocalFeat	PWConv0LocalFeatSize
-#define PW0Weights		PWConv0Weights
-#define PW0Bias			PWConv0QParams
-#define PW0IMultBias	PWConv0QParams
-#define PW0NShiftBias  	PWConv0QParams
-#define PW0IMultOut		PWConv0QParams
-#define PW0NShiftOut	PWConv0QParams
-#define PW0WeightZP		PWConv0QParams
-#define PW0Out			PWConv0Out
-
-#define DW0In 			PW0Out
-#define DW0Buffer		DWConvBuffer
-#define DW0Window		DWConvWindow
-#define DW0OutBuffer	DWConvOutBuffer
-#define DW0Weights		DWConvWeights
-#define DW0Bias			DWConvQParams
-#define DW0IMultBias	DWConvQParams
-#define DW0NShiftBias  	DWConvQParams
-#define DW0IMultOut		DWConvQParams
-#define DW0NShiftOut	DWConvQParams
-#define DW0WeightZP		DWConvQParams
-#define DW0Out			DWConvOut
-
-#define PW1In 			DW0Out
-#define PW1LocalFeat	PWConv1LocalFeatSize
-#define PW1Weights		PWConv1Weights
-#define PW1Bias			PWConv1QParams
-#define PW1IMultBias	PWConv1QParams
-#define PW1NShiftBias  	PWConv1QParams
-#define PW1IMultOut		PWConv1QParams
-#define PW1NShiftOut	PWConv1QParams
-#define PW1WeightZP		PWConv1QParams
-#define PW1Out			StreamOut
+#define PW1QParamSize	PW1_OUT_CH_MAX
 
 /***********************************************************
  * Per-Layer Computation Defines
  ***********************************************************/
-
 // Iteration 0
 #define RES_0_ENABLE	0
 

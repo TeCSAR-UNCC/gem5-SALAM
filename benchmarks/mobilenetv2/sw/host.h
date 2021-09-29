@@ -1,12 +1,16 @@
 #include "../hw/source/common/support.h"
+#include "../head_hw_defines.h"
+#include "../body_hw_defines.h"
+#include "../tail_hw_defines.h"
+#include "../classifier_hw_defines.h"
 
 #define feats       0x8f000000
 #define weights     0x91000000
 #define qparams     0x93000000
-#define head_top    0x10020080
-#define body_top    0x100216c0
-#define tail_top    0x10078140
-#define class_top   0x100cd040
+#define head_top    HEAD_TOP
+#define body_top    BODY_TOP
+#define tail_top    TAIL_TOP
+#define class_top   CLASSIFIER_TOP
 
 volatile uint8_t stage;
 

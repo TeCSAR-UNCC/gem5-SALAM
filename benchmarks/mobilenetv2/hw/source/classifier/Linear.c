@@ -4,16 +4,16 @@
 #define t_DEPTH_SIZE	INPUT_SIZE
 
 void linear() {
-	volatile dType_8u * input           = (dType_8u *)FeatSPM;
-	volatile dType_8u * weight          = (dType_8u *)WeightSPM; //dType_8u[t_ROW_SIZE][t_DEPTH_SIZE]
-	volatile dType_8u * weight_zp       = (dType_8u *)WeightZP;
-	volatile dType_8u * biases          = (dType_8u *)Bias;
-	volatile dType_8u * iMult_bias_acc  = (dType_8u *)iMultBias;
-    volatile dType_8t * nShift_bias_acc = (dType_8t *)nShiftBias;
-    volatile dType_8u * iMult_output    = (dType_8u *)iMultOut;
-    volatile dType_8u * nShift_output   = (dType_8u *)nShiftOut;
-    volatile dType_8u * res             = (dType_8u *)OutputBuff;
-    volatile dType_8u * sum             = (dType_8u *)SumSPM;
+	volatile dType_8u * input           = (dType_8u *)classifier_LinearFeats;
+	volatile dType_8u * weight          = (dType_8u *)classifier_LinearWeights; //dType_8u[t_ROW_SIZE][t_DEPTH_SIZE]
+	volatile dType_8u * weight_zp       = (dType_8u *)classifier_PWWeightZP;
+	volatile dType_8u * biases          = (dType_8u *)classifier_PWBias;
+	volatile dType_8u * iMult_bias_acc  = (dType_8u *)classifier_PWIMultBias;
+    volatile dType_8t * nShift_bias_acc = (dType_8t *)classifier_PWNShiftBias;
+    volatile dType_8u * iMult_output    = (dType_8u *)classifier_PWIMultOut;
+    volatile dType_8u * nShift_output   = (dType_8u *)classifier_PWNShiftOut;
+    volatile dType_8u * res             = (dType_8u *)CLASSIFIER_STREAM_DMA0_Stream;
+    volatile dType_8u * sum             = (dType_8u *)classifier_LinearSum;
 
 	dType_8u   bias_zp   = BIAS_ZP;
 	dType_8u   input_zp  = INPUT_ZP;
