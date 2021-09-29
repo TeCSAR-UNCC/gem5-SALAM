@@ -273,7 +273,7 @@ SALAM::Instruction::runtimeInitialize() {
             dep_uids.push_back(dep_uid);
         }
     }
-    dep_uids.push_back(uid);
+    // dep_uids.push_back(uid);
 
     return dep_uids;
 }
