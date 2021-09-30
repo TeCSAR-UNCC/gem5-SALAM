@@ -86,6 +86,12 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 
 ${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName $BENCH --benchDir "benchmarks/sys_validation/${BENCH}"
 
+
+
+python ${M5_PATH}/HWProfileGenerator.py -b $BENCH
+
+exit
+
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR
 	$RUN_SCRIPT > ${OUTDIR}/debug-trace.txt
