@@ -20,12 +20,12 @@ void linear() {
 	dType_8u   output_zp = OUTPUT_ZP;
 
 LINEAR_CORE_COMP_ROW_LOOP_SUM:
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for (int i = 0; i < t_ROW_SIZE; i++) {
         sum[i] = 0;
         dType_8u w_zp = weight_zp[i];
     LINEAR_CORE_COMP_DEPTH_LOOP:
-    	#pragma clang loop unroll_count(320)
+    	#pragma unroll 320
         for (int j = 0; j < t_DEPTH_SIZE; j++) {
             dType_Reg k_weight = weight[i*t_DEPTH_SIZE + j] - w_zp;
             dType_Reg input_recalib = input[j] - input_zp;
@@ -34,7 +34,7 @@ LINEAR_CORE_COMP_ROW_LOOP_SUM:
         }
     }
 LINEAR_CORE_COMP_ROW_LOOP:
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for (int i = 0; i < t_ROW_SIZE; i++) {
         dType_8u out_8bit;
         dType_32t out_i32;
