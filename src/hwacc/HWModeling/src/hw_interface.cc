@@ -30,7 +30,7 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
         case REGISTER : { }
         case COUNTER : { }
         default: { 
-            // asser() 
+            // assert() 
             return false;
         }
     }

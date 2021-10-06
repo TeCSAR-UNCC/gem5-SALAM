@@ -19,6 +19,7 @@ namespace SALAM {
     #define    OTHERINST        14
     #define    REGISTER         15
     #define    COUNTER          16
+    #define    TRIG_SINE        17
 }
 
 #endif

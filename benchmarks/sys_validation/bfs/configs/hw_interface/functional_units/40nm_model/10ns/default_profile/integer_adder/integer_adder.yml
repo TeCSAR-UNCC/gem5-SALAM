@@ -10,8 +10,16 @@ functional_unit:
         size: any
         sign: any
         APMode: True
+      floating_point:
+        size: none
+        sign: none
+        APMode: False
+      pointer:
+        size: none
+        sign: none
+        APMode: False
     instructions: # LLVM OpCode: Runtime Cycles
-      - add # These are added to the generated C++ files and python Class
+      - add
       - sub
     limit: 0 # Max Concurrent Functional Unit Scheduling (0 = Max IR Instances)
   power_model:
