@@ -33,6 +33,7 @@ class Instruction : public Value
         bool dbg = false;
         uint64_t functional_unit = 0;
         HWInterface* hw_interface;
+        uint64_t functional_unit;
 
     protected:
         valueListTy staticDependencies;
@@ -55,6 +56,7 @@ class Instruction : public Value
         Instruction(uint64_t id); //
         Instruction(uint64_t id, uint64_t OpCode); //
         Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles); //
+        Instruction(uint64_t id, uint64_t OpCode, uint64_t cycles, uint64_t functional_unit); //
         ~Instruction(); //
         bool operator == (const std::shared_ptr<SALAM::Instruction> inst) const { return this->getUID() == inst->getUID(); }
         bool operator != (const std::shared_ptr<SALAM::Instruction> inst) const { return !operator==(inst); }
@@ -80,7 +82,7 @@ class Instruction : public Value
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
         std::vector<SALAM::Operand> * getOperands() { return &operands; }
-        virtual uint64_t getFunctionalUnit() { }
+        uint64_t getFunctionalUnit() { return functional_unit; }
         virtual bool isReturn() { return false; }
         virtual bool isTerminator() { return false; }
         virtual bool isPhi() { return false; }

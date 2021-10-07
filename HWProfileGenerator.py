@@ -15,13 +15,23 @@ class HWModel():
         self.yaml_dir = benchfolder + '/' + benchname + '/configs/hw_interface/functional_units/' + model + '/' + latency + '/' + profile 
         self.inst_list_yaml = benchfolder + '/' + benchname + '/configs/hw_interface/instructions/inst_list.yml'
         self.fu_list = os.listdir(self.yaml_dir)
+        self.inst_list = []
 
     def get_fu_list(self):
         return self.fu_list
 
+    def get_instruction_list(self):
+        self.fu_yaml = open(self.inst_list_yaml, 'r')
+        self.data = yaml.load(self.fu_yaml, Loader=yaml.FullLoader)
+        self.buffer = dict()
+        with open(self.inst_list_yaml) as yaml_inst_list:
+            buffer = yaml.safe_load(yaml_inst_list)
+            inst_list = buffer['instructions'].keys()
+        return buffer
+
     def generate_hw(self, fu):
         self.fu_yaml_path = self.yaml_dir + '/' + fu + '/' + fu + '.yml'
-        self.fu_yaml = file(self.fu_yaml_path, 'r')
+        self.fu_yaml = open(self.fu_yaml_path, 'r')
         self.data = yaml.load(self.fu_yaml, Loader=yaml.FullLoader)
         self.alias = self.data['functional_unit']['parameters']['alias']
         self.stages = self.data['functional_unit']['parameters']['stages']
@@ -37,18 +47,18 @@ class HWModel():
         self.ptr_sign = self.data['functional_unit']['parameters']['datatypes']['pointer']['sign']
         self.ptr_apmode= self.data['functional_unit']['parameters']['datatypes']['pointer']['APMode']
         self.instructions_list = self.data['functional_unit']['parameters']['instructions']
-        with open(self.inst_list_yaml) as inst_list:
-            buffer = yaml.safe_load(inst_list)
+        with open(self.inst_list_yaml) as yaml_inst_list:
+            buffer = yaml.safe_load(yaml_inst_list)
             for instruction in self.instructions_list:
                 if (instruction != 'any') and (instruction != 'none'):
                     buffer['instructions'][instruction]['functional_unit'] = self.enum_value
-        with open(self.inst_list_yaml, 'w') as inst_list:
-            yaml.safe_dump(buffer, inst_list, default_flow_style=False)
+        with open(self.inst_list_yaml, 'w') as yaml_inst_list:
+            yaml.safe_dump(buffer, yaml_inst_list, default_flow_style=False)
         self.limit = self.data['functional_unit']['parameters']['limit']
         
     def generate_power_model(self, fu):
         self.fu_yaml_path = self.yaml_dir + '/' + fu + '/' + fu + '.yml'
-        self.fu_yaml = file(self.fu_yaml_path, 'r')
+        self.fu_yaml = open(self.fu_yaml_path, 'r')
         self.data = yaml.load(self.fu_yaml, Loader=yaml.FullLoader)
         self.units_dict = self.data['functional_unit']['power_model']['units']
         self.power_units = self.units_dict['power']
@@ -78,3 +88,5 @@ for functional_unit in generate_hw_models.get_fu_list():
     fu_file_generator.set_fu(functional_unit)
     fu_file_generator.header_generator(generate_hw_models)
     fu_file_generator.simobject_generator(generate_hw_models)
+
+fu_file_generator.instruction_class_generator(generate_hw_models)

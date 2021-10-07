@@ -51,6 +51,23 @@ SALAM::Instruction::Instruction(uint64_t id,
     currentCycle = 0;
 }
 
+SALAM::Instruction::Instruction(uint64_t id,
+                         uint64_t OpCode,
+                         uint64_t cycles,
+                         uint64_t fu) :
+                         Value(id),
+                         llvmOpCode(OpCode),
+                         cycleCount(cycles),
+                         functional_unit(fu)
+{
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbg = true;
+    //     this->inst_dbg = new Instruction_Debugger();
+    // }
+    currentCycle = 0;
+}
+
 SALAM::Instruction::~Instruction()
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace Deleted: %s \n", __PRETTY_FUNCTION__);

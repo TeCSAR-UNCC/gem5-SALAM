@@ -373,3 +373,21 @@ class FunctionalUnitGenerator():
             self.simobject_file.write("\tleakage_power = Param.UInt32(" + str(self.hwmodel.leakage_power) + ", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tarea = Param.UInt32(" + str(self.hwmodel.area) + ", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tpath_delay = Param.UInt32(" + str(self.hwmodel.path_delay) + ", \"Default values set from " + self.alias + ".yml\")\n\n")
+
+    def instruction_class_generator(self, hwmodel):
+        self.hwmodel = hwmodel
+        self.inst_dict = hwmodel.get_instruction_list()
+        with open("src/hwacc/InstConfig.py", 'w+') as self.simobject_file:
+            # Warning 
+            self.simobject_file.write("# AUTO-GENERATED FILE\n\n")
+            # imports
+            self.simobject_file.write("from m5.params import *\n")
+            self.simobject_file.write("from m5.proxy import *\n")
+            self.simobject_file.write("from m5.SimObject import SimObject\n\n")
+            # define the class
+            self.simobject_file.write("class InstConfig(SimObject):\n")
+            self.simobject_file.write("\t# SimObject type\n")
+            self.simobject_file.write("\ttype = 'InstConfig'\n")
+            self.simobject_file.write("\t# gem5-SALAM attached header\n")
+            self.simobject_file.write("\tcxx_header = \"hwacc/HWModeling/src/instruction_config.hh\"\n\n")
+
