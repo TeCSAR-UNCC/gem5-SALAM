@@ -15,7 +15,6 @@
 #include "../generated/functionalunits/double_divider.hh"
 #include "../generated/functionalunits/float_adder.hh"
 #include "../generated/functionalunits/float_multiplier.hh"
-#include "../generated/functionalunits/float_trig_sine.hh"
 #include <iostream>
 #include <cstdlib>
 #include <vector>
@@ -37,7 +36,6 @@ class FunctionalUnits : public SimObject
 		DoubleDivider* _double_divider;
 		FloatAdder* _float_adder;
 		FloatMultiplier* _float_multiplier;
-		FloatTrigSine* _float_trig_sine;
 	protected:
 
 	public:

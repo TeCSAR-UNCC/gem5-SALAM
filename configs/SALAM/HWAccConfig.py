@@ -44,7 +44,21 @@ def AccConfig(acc, config_file, bench_file):
     acc.hw_interface = HWInterface()
     acc.hw_interface.cycle_counts = CycleCounts()
     acc.hw_interface.functional_units = FunctionalUnits()
-    #acc.hw_interface.functional_units.int_adder = Adder()
+
+    # Generate Functional Unit List:
+
+    acc.hw_interface.functional_units.double_multiplier = DoubleMultiplier() 
+    acc.hw_interface.functional_units.bit_register = BitRegister()
+    acc.hw_interface.functional_units.bitwise_operations = BitwiseOperations()
+    acc.hw_interface.functional_units.double_adder = DoubleAdder()
+    acc.hw_interface.functional_units.float_divider = FloatDivider()
+    acc.hw_interface.functional_units.bit_shifter = BitShifter()
+    acc.hw_interface.functional_units.integer_multiplier = IntegerMultiplier()
+    acc.hw_interface.functional_units.integer_adder = IntegerAdder()
+    acc.hw_interface.functional_units.double_divider = DoubleDivider()
+    acc.hw_interface.functional_units.float_adder = FloatAdder()
+    acc.hw_interface.functional_units.float_multiplier = FloatMultiplier()
+
     acc.hw_interface.inst_config = InstConfig()
     #acc.hw_interface.inst_config.add_config = Add()
     acc.hw_interface.salam_power_model = SALAMPowerModel()

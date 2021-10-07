@@ -67,9 +67,9 @@ class HWModel():
 benchmark_args = HWArgs()
 generate_hw_models = HWModel(benchname=benchmark_args.bench, latency='5ns')
 fu_file_generator = FunctionalUnitGenerator(fu_directory="src/hwacc/FunctionalUnits.py")
-fu_file_generator.initialize_simobject_file(generate_hw_models.get_fu_list())
 fu_file_generator.initialize_base_header_file()
 fu_file_generator.initalize_fu_list_header(generate_hw_models.get_fu_list())
+fu_file_generator.initialize_simobject_file(generate_hw_models.get_fu_list())
 fu_file_generator.generate_sconscript(generate_hw_models.get_fu_list())
 
 for functional_unit in generate_hw_models.get_fu_list():

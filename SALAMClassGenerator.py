@@ -365,7 +365,7 @@ class FunctionalUnitGenerator():
             self.simobject_file.write("\tenergy_units = Param.String(\"" + str(self.hwmodel.energy_units) + "\", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\ttime_units = Param.String(\"" + str(self.hwmodel.time_units) + "\", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tarea_units = Param.String(\"" + str(self.hwmodel.area_units) + "\", \"Default values set from " + self.alias + ".yml\")\n")
-            self.simobject_file.write("\tfu_latency = Param.String(\"" + str(self.hwmodel.fu_latency) + "\", \"Default values set from " + self.alias + ".yml\")\n")
+            self.simobject_file.write("\tfu_latency = Param.UInt32(" + str(self.hwmodel.fu_latency) + ", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tinternal_power = Param.UInt32(" + str(self.hwmodel.internal_power) + ", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tswitch_power = Param.UInt32(" + str(self.hwmodel.switch_power) + ", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tdynamic_power = Param.UInt32(" + str(self.hwmodel.dynamic_power) + ", \"Default values set from " + self.alias + ".yml\")\n")
