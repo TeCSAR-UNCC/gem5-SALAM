@@ -24,6 +24,9 @@ using namespace gem5;
 class FunctionalUnits : public SimObject
 {
 	private:
+	protected:
+
+	public:
 		// GENERATED CLASS MEMBERS - DO NOT MODIFY
 		FloatDivider* _float_divider;
 		FloatMultiplier* _float_multiplier;
@@ -36,9 +39,6 @@ class FunctionalUnits : public SimObject
 		IntegerMultiplier* _integer_multiplier;
 		DoubleDivider* _double_divider;
 		DoubleAdder* _double_adder;
-	protected:
-
-	public:
 		FunctionalUnits();
 		// DEFAULT CONSTRUCTOR - DO NOT MODIFY
 		FunctionalUnits(const FunctionalUnitsParams &params);

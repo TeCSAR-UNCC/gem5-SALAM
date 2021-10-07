@@ -875,6 +875,63 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     // HW
     hw->opcodes->update_usage(OpCode);
 
+    /*
+    uint64_t functional_unit = 0;
+    for (auto hw_inst : hw->inst_configs->getInstList()) {
+        if(Opcode == hw_inst->getOpCode()) {
+            functional_unit = hw_inst->getFunctionalUnit();
+            break;
+        } 
+    }
+
+        switch(OpCode) {
+        case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst, functional_unit); break;
+        case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, hw->cycle_counts->br_inst, functional_unit); break;
+        case llvm::Instruction::Switch: return SALAM::createSwitchInst(id, OpCode, hw->cycle_counts->switch_inst, functional_unit); break;
+        case llvm::Instruction::Add: return SALAM::createAddInst(id, OpCode, hw->cycle_counts->add_inst, functional_unit); break;
+        case llvm::Instruction::FAdd: return SALAM::createFAddInst(id, OpCode, hw->cycle_counts->fadd_inst, functional_unit); break;
+        case llvm::Instruction::Sub: return SALAM::createSubInst(id, OpCode, hw->cycle_counts->sub_inst, functional_unit); break;
+        case llvm::Instruction::FSub: return SALAM::createFSubInst(id, OpCode, hw->cycle_counts->fsub_inst, functional_unit); break;
+        case llvm::Instruction::Mul: return SALAM::createMulInst(id, OpCode, hw->cycle_counts->mul_inst, functional_unit); break;
+        case llvm::Instruction::FMul: return SALAM::createFMulInst(id, OpCode, hw->cycle_counts->fmul_inst, functional_unit); break;
+        case llvm::Instruction::UDiv: return SALAM::createUDivInst(id, OpCode, hw->cycle_counts->udiv_inst, functional_unit); break;
+        case llvm::Instruction::SDiv: return SALAM::createSDivInst(id, OpCode, hw->cycle_counts->sdiv_inst, functional_unit); break;
+        case llvm::Instruction::FDiv: return SALAM::createFDivInst(id, OpCode, hw->cycle_counts->fdiv_inst, functional_unit); break;
+        case llvm::Instruction::URem: return SALAM::createURemInst(id, OpCode, hw->cycle_counts->urem_inst, functional_unit); break;
+        case llvm::Instruction::SRem: return SALAM::createSRemInst(id, OpCode, hw->cycle_counts->srem_inst, functional_unit); break;
+        case llvm::Instruction::FRem: return SALAM::createFRemInst(id, OpCode, hw->cycle_counts->frem_inst, functional_unit); break;
+        case llvm::Instruction::Shl: return SALAM::createShlInst(id, OpCode, hw->cycle_counts->shl_inst, functional_unit); break;
+        case llvm::Instruction::LShr: return SALAM::createLShrInst(id, OpCode, hw->cycle_counts->lshr_inst, functional_unit); break;
+        case llvm::Instruction::AShr: return SALAM::createAShrInst(id, OpCode, hw->cycle_counts->ashr_inst, functional_unit); break;
+        case llvm::Instruction::And: return SALAM::createAndInst(id, OpCode, hw->cycle_counts->and_inst, functional_unit); break;
+        case llvm::Instruction::Or: return SALAM::createOrInst(id, OpCode, hw->cycle_counts->or_inst, functional_unit); break;
+        case llvm::Instruction::Xor: return SALAM::createXorInst(id, OpCode, hw->cycle_counts->xor_inst, functional_unit); break;
+        case llvm::Instruction::Load: return SALAM::createLoadInst(id, OpCode, hw->cycle_counts->load_inst, functional_unit); break;
+        case llvm::Instruction::Store: return SALAM::createStoreInst(id, OpCode, hw->cycle_counts->store_inst, functional_unit); break;
+        case llvm::Instruction::GetElementPtr : return SALAM::createGetElementPtrInst(id, OpCode, hw->cycle_counts->gep_inst, functional_unit); break;
+        case llvm::Instruction::Trunc: return SALAM::createTruncInst(id, OpCode, hw->cycle_counts->trunc_inst, functional_unit); break;
+        case llvm::Instruction::ZExt: return SALAM::createZExtInst(id, OpCode, hw->cycle_counts->zext_inst, functional_unit); break;
+        case llvm::Instruction::SExt: return SALAM::createSExtInst(id, OpCode, hw->cycle_counts->sext_inst, functional_unit); break;
+        case llvm::Instruction::FPToUI: return SALAM::createFPToUIInst(id, OpCode, hw->cycle_counts->fptoui_inst, functional_unit); break;
+        case llvm::Instruction::FPToSI: return SALAM::createFPToSIInst(id, OpCode, hw->cycle_counts->fptosi_inst, functional_unit); break;
+        case llvm::Instruction::UIToFP: return SALAM::createUIToFPInst(id, OpCode, hw->cycle_counts->uitofp_inst, functional_unit); break;
+        case llvm::Instruction::SIToFP: return SALAM::createSIToFPInst(id, OpCode, hw->cycle_counts->sitofp_inst, functional_unit); break; 
+        case llvm::Instruction::FPTrunc: return SALAM::createFPTruncInst(id, OpCode, hw->cycle_counts->fptrunc_inst, functional_unit); break;
+        case llvm::Instruction::FPExt: return SALAM::createFPExtInst(id, OpCode, hw->cycle_counts->fpext_inst, functional_unit); break;
+        case llvm::Instruction::PtrToInt: return SALAM::createPtrToIntInst(id, OpCode, hw->cycle_counts->ptrtoint_inst, functional_unit); break;
+        case llvm::Instruction::IntToPtr: return SALAM::createIntToPtrInst(id, OpCode, hw->cycle_counts->inttoptr_inst, functional_unit); break;
+        case llvm::Instruction::ICmp: return SALAM::createICmpInst(id, OpCode, hw->cycle_counts->icmp_inst, functional_unit); break;
+        case llvm::Instruction::FCmp: return SALAM::createFCmpInst(id, OpCode, hw->cycle_counts->fcmp_inst, functional_unit); break;
+        case llvm::Instruction::PHI: return SALAM::createPHIInst(id, OpCode, hw->cycle_counts->phi_inst, functional_unit); break;
+        case llvm::Instruction::Call: return SALAM::createCallInst(id, OpCode, hw->cycle_counts->call_inst, functional_unit); break;
+        case llvm::Instruction::Select: return SALAM::createSelectInst(id, OpCode, hw->cycle_counts->select_inst, functional_unit); break;
+        default: {
+            warn("Tried to create instance of undefined instruction type!"); 
+            return SALAM::createBadInst(id, OpCode, 0, 0); break;
+        }
+    }
+    */
+
     switch(OpCode) {
         case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst); break;
         case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, hw->cycle_counts->br_inst); break;

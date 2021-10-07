@@ -24,6 +24,8 @@ class HWInterface : public SimObject
 {
     friend class LLVMInterface;
     private:
+    protected:
+    public:
         CycleCounts *cycle_counts;
         FunctionalUnits *functional_units;
         HWStatistics *hw_statistics;
@@ -32,12 +34,10 @@ class HWInterface : public SimObject
         SALAMPowerModel *salam_power_model;
         SimulatorConfig *simulator_config;
 
-    protected:
-
-    public:
         HWInterface();
         HWInterface(const HWInterfaceParams &params);
         bool availableFunctionalUnit(uint64_t functional_unit);
+        void clearFunctionalUnit(uint64_t functional_unit);
 
 };
 

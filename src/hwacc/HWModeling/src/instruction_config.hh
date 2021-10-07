@@ -18,7 +18,6 @@ class InstConfig : public SimObject
 {
     private:
         // GENERATED CLASS MEMBERS - DO NOT MODIFY
-        // Add* add_inst;
         // END OF GENERATED CLASS MEMBERS
 
     protected:

@@ -33,7 +33,6 @@ class Instruction : public Value
         bool dbg = false;
         uint64_t functional_unit = 0;
         HWInterface* hw_interface;
-        uint64_t functional_unit;
 
     protected:
         valueListTy staticDependencies;

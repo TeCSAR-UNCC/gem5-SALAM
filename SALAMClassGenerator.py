@@ -145,15 +145,14 @@ class FunctionalUnitGenerator():
             self.fu_list_header_file.write("class FunctionalUnits : public SimObject\n")
             self.fu_list_header_file.write("{\n")
             self.fu_list_header_file.write("\tprivate:\n")
+            self.fu_list_header_file.write("\tprotected:\n\n")
+            self.fu_list_header_file.write("\tpublic:\n")
             self.fu_list_header_file.write("\t\t// GENERATED CLASS MEMBERS - DO NOT MODIFY\n")
             
             for unit in self.fu_list:
                 self.fu_list_header_file.write("\t\t" + ''.join(words.capitalize() for words in unit.split('_')) + "* _" + unit + ";\n")
             #// END OF GENERATED CLASS MEMBERS
 
-            self.fu_list_header_file.write("\tprotected:\n\n")
-
-            self.fu_list_header_file.write("\tpublic:\n")
             self.fu_list_header_file.write("\t\tFunctionalUnits();\n")
             self.fu_list_header_file.write("\t\t// DEFAULT CONSTRUCTOR - DO NOT MODIFY\n")
             self.fu_list_header_file.write("\t\tFunctionalUnits(const FunctionalUnitsParams &params);\n")
@@ -182,6 +181,12 @@ class FunctionalUnitGenerator():
             # define private members and methods
             self.base_header_file.write("\tprivate:\n")
             # members
+
+            # methods
+            
+            # define protected members and methods
+            self.base_header_file.write("\tprotected:\n")
+            # members
             self.base_header_file.write("\t\tstd::string _alias;\n")
             self.base_header_file.write("\t\tuint32_t _stages;\n")
             self.base_header_file.write("\t\tuint32_t _cycles;\n")
@@ -208,12 +213,8 @@ class FunctionalUnitGenerator():
             self.base_header_file.write("\t\tdouble _leakage_power;\n")
             self.base_header_file.write("\t\tdouble _area;\n")
             self.base_header_file.write("\t\tdouble _path_delay;\n\n")
-            # methods
-            
-            # define protected members and methods
-            self.base_header_file.write("\tprotected:\n")
-            # members
-
+            self.base_header_file.write("\t\tuint64_t _available;\n\n")
+            self.base_header_file.write("\t\tuint64_t _in_use;\n\n")
             # methods
 
             # define public members and methods
@@ -304,6 +305,12 @@ class FunctionalUnitGenerator():
             self.base_header_file.write("\t\tdouble get_leakage_power() { return _leakage_power; }\n")
             self.base_header_file.write("\t\tdouble get_area() { return _area; }\n")
             self.base_header_file.write("\t\tdouble get_path_delay() { return _path_delay; }\n")
+            self.base_header_file.write("\t\tbool is_available() { return (_in_use >= _available); }\n")
+            self.base_header_file.write("\t\tvoid use_functional_unit() { _in_use++; }\n")
+            self.base_header_file.write("\t\tvoid clear_functional_unit() { _in_use--; }\n")
+            self.base_header_file.write("\t\tvoid set_functional_unit_limit(uint64_t available) { _available = available; }\n")
+            self.base_header_file.write("\t\tuint64_t get_functional_unit_limit() { return _available; }\n\n")
+
 
             # end class body
             self.base_header_file.write("};\n")

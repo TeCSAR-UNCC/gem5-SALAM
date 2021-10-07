@@ -4,5 +4,3 @@ class InstructionGenerator():
         self.functional_unit = functional_unit
         self.opcode_num = opcode_num
         self.runtime_cycles = runtime_cycles
-
-    def 

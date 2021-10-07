@@ -200,7 +200,11 @@ SALAM::Instruction::launch()
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // else if(DTRACE(SALAM_Debug)) DPRINTF(Runtime, "||++launch()\n");
     if (hasFunctionalUnit()) {
-        if(!hw_interface->availableFunctionalUnit(getFunctionalUnit())) return false;
+        if(!hw_interface->availableFunctionalUnit(getFunctionalUnit())) {
+            return false;
+        } else {
+            // 
+        }
     }
     launched = true;
     if (getCycleCount() == 0) { // Instruction ready to be committed
@@ -227,6 +231,11 @@ SALAM::Instruction::commit()
         committed = true;
         DPRINTF(Runtime, "||==Return: %s\n", committed ? "true" : "false");
         DPRINTF(Runtime, "||==commit================\n");
+        if (hasFunctionalUnit()) {
+            hw_interface->clearFunctionalUnit(getFunctionalUnit());
+        } else {
+            // 
+        }
         return true;
     } else {
         DPRINTF(Runtime, "||  Remaining Cycles: %i\n", getCycleCount() - getCurrentCycle());
