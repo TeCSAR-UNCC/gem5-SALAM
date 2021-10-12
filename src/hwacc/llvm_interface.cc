@@ -639,6 +639,7 @@ LLVMInterface::initialize() {
     queueProcessTime = std::chrono::seconds(0);
     computeTime = std::chrono::seconds(0);
     constructStaticGraph();
+    timeStart = std::chrono::high_resolution_clock::now();
     DPRINTF(LLVMInterface, "================================================================\n");
     //debug(1);
     launchTopFunction();
@@ -707,6 +708,8 @@ void
 LLVMInterface::finalize() {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // Simulation Times
+    simStop = std::chrono::high_resolution_clock::now();
+    simTotal = simStop - timeStart;
     printPerformanceResults();
     functions.clear();
     values.clear();
@@ -726,6 +729,14 @@ LLVMInterface::printPerformanceResults() {
     auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupMS);
     setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
 
+    auto totalMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTotal);
+    auto totalHours = std::chrono::duration_cast<std::chrono::hours>(totalMS);
+    totalMS -= std::chrono::duration_cast<std::chrono::seconds>(totalHours);
+    auto totalMins = std::chrono::duration_cast<std::chrono::minutes>(totalMS);
+    totalMS -= std::chrono::duration_cast<std::chrono::seconds>(totalMins);
+    auto totalSecs = std::chrono::duration_cast<std::chrono::seconds>(totalMS);
+    totalMS -= std::chrono::duration_cast<std::chrono::seconds>(totalSecs);
+    
     auto simMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTime);
     auto simHours = std::chrono::duration_cast<std::chrono::hours>(simMS);
     simMS -= std::chrono::duration_cast<std::chrono::seconds>(simHours);
@@ -765,7 +776,8 @@ LLVMInterface::printPerformanceResults() {
     std::cout << name() << std::endl;
     std::cout << "   ========= Performance Analysis =============" << std::endl;
     std::cout << "   Setup Time:                      " << setupHours.count() << "h " << setupMins.count() << "m " << setupSecs.count() << "s " << setupMS.count() << "ms" << std::endl;
-    std::cout << "   Simulation Time:                 " << simHours.count() << "h " << simMins.count() << "m " << simSecs.count() << "s " << simMS.count() << "ms" << std::endl;
+    std::cout << "   Simulation Time (Total):         " << totalHours.count() << "h " << totalMins.count() << "m " << totalSecs.count() << "s " << totalMS.count() << "ms" << std::endl;
+    std::cout << "   Simulation Time (Active):        " << simHours.count() << "h " << simMins.count() << "m " << simSecs.count() << "s " << simMS.count() << "ms" << std::endl;
     std::cout << "        Queue Processing Time:      " << queueHours.count() << "h " << queueMins.count() << "m " << queueSecs.count() << "s " << queueMS.count() << "ms" << std::endl;
     std::cout << "             Scheduling Time:       " << schedHours.count() << "h " << schedMins.count() << "m " << schedSecs.count() << "s " << schedMS.count() << "ms" << std::endl;
     std::cout << "             Computation Time:      " << computeHours.count() << "h " << computeMins.count() << "m " << computeSecs.count() << "s " << computeMS.count() << "ms" << std::endl;
