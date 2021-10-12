@@ -1,7 +1,7 @@
 #include <stdint.h>
 #define DEV_INIT	0x01
 #define DEV_INTR	0x04
-#define TYPE float
+#define TYPE uint32_t
 
 #define STR_DMA_INIT_RD	0x01
 #define STR_DMA_INIT_WR 0x02

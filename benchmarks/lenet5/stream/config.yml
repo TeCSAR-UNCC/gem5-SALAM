@@ -24,6 +24,7 @@ acc_cluster:
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
+      InterruptNum: 68
   - Accelerator:
     - Name: conv0
       IrPath: benchmarks/lenet5/stream/hw/ir/conv0.ll
@@ -32,6 +33,7 @@ acc_cluster:
       PIOSize: 1
       PIOMaster: LocalBus
       StreamIn: StreamDma
+      StreamOut: StreamDma
     - Var:
       - Name: Conv0Window
         Type: SPM
@@ -162,7 +164,7 @@ acc_cluster:
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamOut: StreamDma
+      # StreamOut: StreamDma
     - Var:
       - Name: fc1Window
         Type: SPM

@@ -30,11 +30,11 @@ void top(uint64_t mainMem) {
 	//Initialize DRAM-Stream DMA
 	*StrDmaRdAddr = 0x90000000;
 	*StrDmaRdFrameSize = 4096;
-	*StrDmaNumRdFrames = 2;
+	*StrDmaNumRdFrames = 1;
 	*StrDmaRdFrameBuffSize = 1;
 	//Initialize Stream-DRAM DMA
 	*StrDmaWrAddr = 0x9000000F;
-	*StrDmaWrFrameSize = 336;
+	*StrDmaWrFrameSize = 18816;
 	*StrDmaNumWrFrames = 1;
 	*StrDmaWrFrameBuffSize = 1;
 	//Start Stream DMAs

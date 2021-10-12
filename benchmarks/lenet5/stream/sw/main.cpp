@@ -4,7 +4,7 @@
 #include "../../../common/m5ops.h"
 #include "bench.h"
 #include "../lenet5_clstr_hw_defines.h"
-#define TYPE uint8_t
+
 volatile uint8_t  * top   = (uint8_t  *)TOP;
 
 int main(void) {
