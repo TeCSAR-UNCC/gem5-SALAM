@@ -14,25 +14,25 @@ void conv0() {
     // HWC Implementation for Convolution
     int h,w,c,cc,x,y;
     // Input X
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for (h = 0; h < conv0InDim; h++) {
         // Input Y
-        #pragma clang loop unroll(disable)
+        #pragma nounroll
         for (w = 0; w < conv0InDim; w++) {
             // Check that the window is valid
             if(!(w+conv0KSize>conv0InDim || h+conv0KSize>conv0InDim)) {
                 // Output Channels
-                #pragma clang loop unroll_count(3)
+                #pragma unroll 3
                 for(cc = 0; cc < conv0OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
-                    #pragma clang loop unroll(full)
+                    #pragma unroll
                     for (x = 0; x < conv0KSize; x++) {
                         // Kernel Y
-                        #pragma clang loop unroll(full)
+                        #pragma unroll
                         for (y = 0; y < conv0KSize; y++) {
                             // Input Channels
-                            #pragma clang loop unroll(full)
+                            #pragma unroll
                             for(c = 0; c < conv0InChan; c++) {
                                 sum += convInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];
