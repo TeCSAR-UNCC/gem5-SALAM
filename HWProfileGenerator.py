@@ -74,6 +74,15 @@ class HWModel():
         self.area = self.data['functional_unit']['power_model']['area']
         self.path_delay = self.data['functional_unit']['power_model']['path_delay']
 
+if not os.path.exists('src/hwacc/HWModeling/generated'):
+    os.makedirs('src/hwacc/HWModeling/generated')
+
+if not os.path.exists('src/hwacc/HWModeling/generated/functionalunits'):
+    os.makedirs('src/hwacc/HWModeling/generated/functionalunits')
+
+if not os.path.exists('src/hwacc/HWModeling/generated/instructions'):
+    os.makedirs('src/hwacc/HWModeling/generated/instructions')
+
 benchmark_args = HWArgs()
 generate_hw_models = HWModel(benchname=benchmark_args.bench, latency='5ns')
 fu_file_generator = FunctionalUnitGenerator(fu_directory="src/hwacc/FunctionalUnits.py")

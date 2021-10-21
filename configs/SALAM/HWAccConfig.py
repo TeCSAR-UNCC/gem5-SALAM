@@ -2,6 +2,8 @@ import m5
 from m5.objects import *
 from m5.util import *
 from configparser import ConfigParser
+import yaml
+import os
 
 def AccConfig(acc, config_file, bench_file):
     # Setup config file parser
@@ -34,15 +36,31 @@ def AccConfig(acc, config_file, bench_file):
 
     # Benchmark path
     acc.llvm_interface.in_file = bench_file
+    M5_Path = os.getenv('M5_PATH')
+    benchname = os.path.splitext(os.path.basename(bench_file))[0]
 
     # Set scheduling constraints
     acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
     acc.llvm_interface.clock_period = ConfigSectionMap("AccConfig")['clock_period']
     acc.llvm_interface.lockstep_mode = Config.getboolean("Scheduler", 'lockstep_mode')
 
+    #TODO: Auto generate some the functional unit list
+
 	# Initialize HWInterface Objects
     acc.hw_interface = HWInterface()
+    # Define HW Counts
     acc.hw_interface.cycle_counts = CycleCounts()
+    acc.hw_interface.cycle_counts
+
+    if benchname != 'top':
+        config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
+        fu_yaml = open(config_path, 'r')
+        yaml_inst_list = yaml.safe_load(fu_yaml)
+        inst_list = yaml_inst_list['hw_config'][benchname]['instructions'].keys()
+        for instruction in inst_list:
+            setattr(acc.hw_interface.cycle_counts, instruction, yaml_inst_list['hw_config'][benchname]['instructions'][instruction]['runtime_cycles'])
+        fu_yaml.close()
+
     acc.hw_interface.functional_units = FunctionalUnits()
 
     # Generate Functional Unit List:
@@ -60,7 +78,6 @@ def AccConfig(acc, config_file, bench_file):
     acc.hw_interface.functional_units.float_multiplier = FloatMultiplier()
 
     acc.hw_interface.inst_config = InstConfig()
-    #acc.hw_interface.inst_config.add_config = Add()
     acc.hw_interface.salam_power_model = SALAMPowerModel()
     acc.hw_interface.hw_statistics = HWStatistics()
     acc.hw_interface.simulator_config = SimulatorConfig()

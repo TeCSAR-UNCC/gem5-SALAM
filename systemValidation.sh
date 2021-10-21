@@ -90,7 +90,7 @@ ${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName $BENCH --benchDir "benc
 
 #python3 ${M5_PATH}/HWProfileGenerator.py -b $BENCH
 
-exit
+#exit
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR

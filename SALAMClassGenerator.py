@@ -9,7 +9,9 @@ class FunctionalUnitGenerator():
         self.classname = ""
         self.header_name = ""
         self.cxx_header = "src/hwacc/HWModeling/src/functional_units.hh"
+        self.cxx_header_py_path = "src/hwacc/HWModeling/src/functional_units.hh"
         self.fu_base_directory = "src/hwacc/HWModeling/generated/functionalunits/"
+        self.fu_base_directory_py_path = "src/hwacc/HWModeling/generated/functionalunits/"
         self.scons_dir = "src/hwacc/HWModeling/generated/functionalunits/SConscript"
 
     # Functional unit alias from yml is passed for classname variable
@@ -19,6 +21,7 @@ class FunctionalUnitGenerator():
         self.classname = ''.join(words.capitalize() for words in self.alias.split('_'))
         # create C++ header
         self.header_name = self.fu_base_directory + self.alias + '.hh'
+        self.header_name_py_path = self.fu_base_directory_py_path + self.alias + '.hh'
         self.source_name = self.fu_base_directory + self.alias + '.cc'
         #self.header_name = self.alias + '.hh'
         #self.source_name = self.alias + '.cc'
@@ -333,7 +336,7 @@ class FunctionalUnitGenerator():
             self.simobject_file.write("\t# SimObject type\n")
             self.simobject_file.write("\ttype = 'FunctionalUnits'\n")
             self.simobject_file.write("\t# gem5-SALAM attached header\n")
-            self.simobject_file.write("\tcxx_header = \"" + self.cxx_header + "\"\n\n")
+            self.simobject_file.write("\tcxx_header = \"" + self.cxx_header_py_path + "\"\n\n")
 
             for unit in self.fu_list:
                 self.simobject_file.write("\t" + unit + " = Param." + ''.join(words.capitalize() for words in unit.split('_')))
@@ -351,7 +354,7 @@ class FunctionalUnitGenerator():
             self.simobject_file.write("\t# SimObject type\n")
             self.simobject_file.write("\ttype = '" + self.classname + "'\n")
             self.simobject_file.write("\t# gem5-SALAM attached header\n")
-            self.simobject_file.write("\tcxx_header = \"" + self.header_name + "\"\n")
+            self.simobject_file.write("\tcxx_header = \"" + self.header_name_py_path + "\"\n")
             self.simobject_file.write("\t#HW Params\n")
             self.simobject_file.write("\talias = Param.String(\"" + self.alias + "\", \"Default values set from " + self.alias + ".yml\")\n")
             self.simobject_file.write("\tstages = Param.UInt32(" + str(self.hwmodel.stages) + ", \"Default values set from " + self.alias + ".yml\")\n")
