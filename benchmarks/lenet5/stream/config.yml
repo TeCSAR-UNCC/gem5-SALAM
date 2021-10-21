@@ -1,0 +1,88 @@
+---
+acc_cluster:
+  - Name: lenet5_clstr
+  - DMA:
+    - Name: dma
+      BufferSize: 128
+      MaxReqSize: 64
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - DMA:
+    - Name: StreamDma
+      PIOMaster: LocalBus
+      Size: 8
+      Type: Stream
+      ReadInt: 210
+      WriteInt: 211
+      BufferSize: 128
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/lenet5/stream/hw/ir/top.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/top.ini
+      PIOSize: 9
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+      InterruptNum: 68
+  - Accelerator:
+    - Name: data_move_0
+      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_0.ini
+      Debug: True
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamOut: StreamDma
+    - Var:
+      - Name: Conv0Window
+        Type: SPM
+        Size: 640
+        Ports: 1
+  - Accelerator:
+    - Name: conv0
+      IrPath: benchmarks/lenet5/stream/hw/ir/conv0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/conv0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: Conv0Weights
+        Type: SPM
+        Size: 600
+        Ports: 25
+    - Var:
+      - Name: Conv0WindowBuff
+        Type: SPM
+        Size: 600
+        Ports: 1
+        ReadyMode: True
+        ResetOnRead: True
+        WriteOnValid: False
+        Connections: data_move_0:1
+    - Var:
+      - Name: Conv0Out
+        Type: Stream
+        StreamSize: 4
+        BufferSize: 16
+        InCon: conv0
+        OutCon: pool0
+  - Accelerator:
+    - Name: pool0
+      IrPath: benchmarks/lenet5/stream/hw/ir/pool0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: StreamDma
+    - Var:
+      - Name: Pool0Window
+        Type: SPM
+        Size: 1344
+        Ports: 4
+    # - Var:
+    #   - Name: Pool0Out
+    #     Type: Stream
+    #     StreamSize: 4
+    #     BufferSize: 16
+    #     InCon: pool0
+    #     OutCon: data_move_1

@@ -11,22 +11,22 @@ void pool1() {
     // HWC Implementation for Convolution
     int h,w,c,cc,x,y;
     // Input X
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
     for (h = 0; h < pool1InDim; h+=pool1KSize) {
         // Input Y
-        #pragma clang loop unroll(disable)
+        #pragma nounroll
         for (w = 0; w < pool1InDim; w+=pool1KSize) {
             // Check that the window is valid
             if(!(w+pool1KSize>pool1InDim || h+pool1KSize>pool1InDim)) {
                 int sum = 0;
                 // Kernel X
-                #pragma clang loop unroll(disable)
+                #pragma nounroll
                 for (x = 0; x < pool1KSize; x++) {
                     // Kernel Y
-                    #pragma clang loop unroll(full)
+                    #pragma unroll
                     for (y = 0; y < pool1KSize; y++) {
                         // Input Channels
-                        #pragma clang loop unroll(full)
+                        #pragma unroll
                         for(c = 0; c < pool1InChan; c++) {
                             sum += convInput[InputIdx3D(h+x, w+y, c)];
                         }

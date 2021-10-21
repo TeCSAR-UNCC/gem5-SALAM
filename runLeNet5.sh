@@ -74,7 +74,7 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			--accpath=$M5_PATH/benchmarks/lenet5 \
 			--accbench=$BENCH $CACHE_OPTS"
 
-${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName $BENCH --benchDir "benchmarks/lenet5/${BENCH}"
+${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName "lenet5_$BENCH" --benchDir "benchmarks/lenet5/${BENCH}"
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR

@@ -10,10 +10,12 @@ void Residual(uint64_t enable, uint64_t length) {
 	// if(length != PW0_0_I_SIZE * PW0_0_I_SIZE * PW0_0_IC_SIZE) return;
 	
 	if (enable == 0) {
+		#pragma nounroll
 		for(int i=0; i < length; i++) {
 			*streamOut = *streamIn0;
 		}
 	} else {
+		#pragma nounroll
 		for(int i=0; i < length; i++) {
 			*streamOut = *streamIn0 + *streamIn1;
 		}

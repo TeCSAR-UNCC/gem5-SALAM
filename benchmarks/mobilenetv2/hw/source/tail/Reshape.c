@@ -6,13 +6,13 @@
 void reshape() {
 	volatile dType_8u * cin_0 		= (dType_8u *)(tail_PWConvOut);
 	volatile dType_8u * channelwise = (dType_8u *)(tail_ReshapeOut);
-    #pragma clang loop unroll(disable)
+    #pragma nounroll
 	for (dType_Reg i = 0; i < t_OUTPUT_SIZE; i++)
     {
-        #pragma clang loop unroll(disable)
+        #pragma nounroll
         for (dType_Reg j = 0; j < t_OUTPUT_SIZE; j++)
         {
-            #pragma clang loop unroll(disable)
+            #pragma nounroll
             for (dType_Reg c = 0; c < t_OUTPUT_CHANNEL; c++)
             {
                 channelwise[(c * (t_OUTPUT_SIZE * t_OUTPUT_SIZE)) + (i * t_OUTPUT_SIZE + j)] = *cin_0;
