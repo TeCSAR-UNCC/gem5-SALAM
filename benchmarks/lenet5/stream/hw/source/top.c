@@ -3,12 +3,13 @@
 void top(uint64_t mainMem) {
 
 	// Define ACC MMRs
+	volatile uint8_t  * DATAMOVE0Flags = (uint8_t *)DATA_MOVE_0;
 	volatile uint8_t  * CONV0Flags  = (uint8_t *)CONV0;
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;
-	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
-	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
-	volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
-	volatile uint8_t  * FC1Flags  = (uint8_t *)FC1;
+	// volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
+	// volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
+	// volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
+	// volatile uint8_t  * FC1Flags  = (uint8_t *)FC1;
 
 	//StreamDma
 	volatile uint8_t  * StrDmaFlags				= (uint8_t  *)(STREAMDMA_Flags);
@@ -33,39 +34,57 @@ void top(uint64_t mainMem) {
 	*StrDmaNumRdFrames = 1;
 	*StrDmaRdFrameBuffSize = 1;
 	//Initialize Stream-DRAM DMA
-	*StrDmaWrAddr = 0x9000000F;
-	*StrDmaWrFrameSize = 18816;
+	*StrDmaWrAddr = 0x91000000;
+	*StrDmaWrFrameSize = 4704;
 	*StrDmaNumWrFrames = 1;
 	*StrDmaWrFrameBuffSize = 1;
 	//Start Stream DMAs
 	*StrDmaFlags = STR_DMA_INIT_RD | STR_DMA_INIT_WR;
 
-	// //Transfer Input Weights
-	// *DmaRdAddr  = 0x90000000;
-	// *DmaWrAddr  = Conv0Weights;
-	// *DmaCopyLen = conv0WeightSize;
+	//Transfer Conv 0 Weights
+	*DmaRdAddr  = 0x90010000;
+	*DmaWrAddr  = Conv0Weights;
+	*DmaCopyLen = conv0WeightSize;
+	*DmaFlags   = DEV_INIT;
+	//Poll DMA for finish
+	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	// //Transfer Conv 1 Weights
+	// *DmaRdAddr  = 0x90010000;
+	// *DmaWrAddr  = Conv1Weights;
+	// *DmaCopyLen = conv1WeightSize;
+	// *DmaFlags   = DEV_INIT;
+	// //Poll DMA for finish
+	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	// //Transfer FC0 Weights
+	// *DmaRdAddr  = 0x90010000;
+	// *DmaWrAddr  = fc0Weights;
+	// *DmaCopyLen = fc0WeightSize;
+	// *DmaFlags   = DEV_INIT;
+	// //Transfer FC1 Weights
+	// *DmaRdAddr  = 0x90010000;
+	// *DmaWrAddr  = fc1Weights;
+	// *DmaCopyLen = fc1WeightSize;
 	// *DmaFlags   = DEV_INIT;
 	// //Poll DMA for finish
 	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 
 	//Start conv0
+	*DATAMOVE0Flags = DEV_INIT;
 	*CONV0Flags = DEV_INIT;
-	// //Start Pool0
-	// *POOL0Flags = DEV_INIT;
+	//Start Pool0
+	*POOL0Flags = DEV_INIT;
+	// *DATAMOVE1Flags = DEV_INIT;
 	// // Start conv1
 	// *CONV1Flags = DEV_INIT;
-	// // Start pool1
+	// Start pool1
 	// *POOL1Flags = DEV_INIT;
 	// // Start fc0
 	// *FC0Flags = DEV_INIT;
 	// // Start fc1
 	// *FC1Flags = DEV_INIT;
-
-	// Wait for last ACC to finish out to avoid weird issues
-	// while ((*FC1Flags & DEV_INTR) != DEV_INTR);
+	
 	// Verify frame was written
 	while ((*StrDmaFlags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
-	// while ((*StrDmaFlags & STR_DMA_RD_RUNNING) == STR_DMA_RD_RUNNING);
 
 	return;
 }

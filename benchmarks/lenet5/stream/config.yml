@@ -26,29 +26,39 @@ acc_cluster:
       Debug: False
       InterruptNum: 68
   - Accelerator:
+    - Name: data_move_0
+      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_0.ini
+      Debug: True
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamOut: StreamDma
+    - Var:
+      - Name: Conv0Window
+        Type: SPM
+        Size: 640
+        Ports: 1
+  - Accelerator:
     - Name: conv0
       IrPath: benchmarks/lenet5/stream/hw/ir/conv0.ll
       ConfigPath: benchmarks/lenet5/stream/hw/configs/conv0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamIn: StreamDma
-      StreamOut: StreamDma
-    - Var:
-      - Name: Conv0Window
-        Type: SPM
-        Size: 100
-        Ports: 25
     - Var:
       - Name: Conv0Weights
         Type: SPM
         Size: 600
         Ports: 25
     - Var:
-      - Name: Conv0LUT
+      - Name: Conv0WindowBuff
         Type: SPM
-        Size: 4
+        Size: 600
         Ports: 1
+        ReadyMode: True
+        ResetOnRead: True
+        WriteOnValid: False
+        Connections: data_move_0:1
     - Var:
       - Name: Conv0Out
         Type: Stream
@@ -63,120 +73,16 @@ acc_cluster:
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
+      StreamIn: StreamDma
     - Var:
       - Name: Pool0Window
         Type: SPM
         Size: 1344
         Ports: 4
-    - Var:
-      - Name: Pool0Out
-        Type: Stream
-        StreamSize: 4
-        BufferSize: 16
-        InCon: pool0
-        OutCon: conv1
-  - Accelerator:
-    - Name: conv1
-      IrPath: benchmarks/lenet5/stream/hw/ir/conv1.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/conv1.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-    - Var:
-      - Name: Conv1Window
-        Type: SPM
-        Size: 1680
-        Ports: 150
-    - Var:
-      - Name: Conv1Weights
-        Type: SPM
-        Size: 9600
-        Ports: 150
-    - Var:
-      - Name: Conv1LUT
-        Type: SPM
-        Size: 4
-        Ports: 1
-    - Var:
-      - Name: Conv1Out
-        Type: Stream
-        StreamSize: 4
-        BufferSize: 16
-        InCon: conv1
-        OutCon: pool1
-  - Accelerator:
-    - Name: pool1
-      IrPath: benchmarks/lenet5/stream/hw/ir/pool1.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool1.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-    - Var:
-      - Name: Pool1Window
-        Type: SPM
-        Size: 3200
-        Ports: 4
-    - Var:
-      - Name: Pool1LUT
-        Type: SPM
-        Size: 4
-        Ports: 1
-    - Var:
-      - Name: Pool1Out
-        Type: Stream
-        StreamSize: 4
-        BufferSize: 16
-        InCon: pool1
-        OutCon: fc0
-  - Accelerator:
-    - Name: fc0
-      IrPath: benchmarks/lenet5/stream/hw/ir/fc0.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/fc0.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-    - Var:
-      - Name: fc0Window
-        Type: SPM
-        Size: 1600
-        Ports: 80
-    - Var:
-      - Name: fc0Weights
-        Type: SPM
-        Size: 192000
-        Ports: 80
-    - Var:
-      - Name: fc0LUT
-        Type: SPM
-        Size: 4
-        Ports: 1
-    - Var:
-      - Name: fc0Out
-        Type: Stream
-        StreamSize: 4
-        BufferSize: 16
-        InCon: fc0
-        OutCon: fc1
-  - Accelerator:
-    - Name: fc1
-      IrPath: benchmarks/lenet5/stream/hw/ir/fc1.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/fc1.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-      # StreamOut: StreamDma
-    - Var:
-      - Name: fc1Window
-        Type: SPM
-        Size: 480
-        Ports: 120
-    - Var:
-      - Name: fc1Weights
-        Type: SPM
-        Size: 40320
-        Ports: 120
-    - Var:
-      - Name: fc1LUT
-        Type: SPM
-        Size: 4
-        Ports: 1
+    # - Var:
+    #   - Name: Pool0Out
+    #     Type: Stream
+    #     StreamSize: 4
+    #     BufferSize: 16
+    #     InCon: pool0
+    #     OutCon: data_move_1

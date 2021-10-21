@@ -69,7 +69,7 @@
 #define fc1OutputSize fc1OutDim*fc1OutDim*fc1KernChan*sizeof(TYPE)
 
 //BEGIN GENERATED CODE
-//Cluster: FC1
+//Cluster: POOL0
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001
@@ -88,36 +88,15 @@
 #define STREAMDMA_Stream 0x10020060
 //Accelerator: TOP
 #define TOP 0x10020080
-//Accelerator: CONV0
-#define CONV0 0x100200c0
+//Accelerator: DATA_MOVE_0
+#define DATA_MOVE_0 0x100200c0
 #define Conv0Window 0x10020100
-#define Conv0Weights 0x10020180
-#define Conv0LUT 0x10020400
-#define Conv0Out 0x10020440
+//Accelerator: CONV0
+#define CONV0 0x100203c0
+#define Conv0Weights 0x10020400
+#define Conv0WindowBuff 0x10020680
+#define Conv0Out 0x10020900
 //Accelerator: POOL0
-#define POOL0 0x10020480
-#define Pool0Window 0x100204c0
-#define Pool0Out 0x10020a40
-//Accelerator: CONV1
-#define CONV1 0x10020a80
-#define Conv1Window 0x10020ac0
-#define Conv1Weights 0x10021180
-#define Conv1LUT 0x10023740
-#define Conv1Out 0x10023780
-//Accelerator: POOL1
-#define POOL1 0x100237c0
-#define Pool1Window 0x10023800
-#define Pool1LUT 0x100244c0
-#define Pool1Out 0x10024500
-//Accelerator: FC0
-#define FC0 0x10024540
-#define fc0Window 0x10024580
-#define fc0Weights 0x10024c00
-#define fc0LUT 0x10053a40
-#define fc0Out 0x10053a80
-//Accelerator: FC1
-#define FC1 0x10053ac0
-#define fc1Window 0x10053b00
-#define fc1Weights 0x10053d00
-#define fc1LUT 0x1005dac0
+#define POOL0 0x10020940
+#define Pool0Window 0x10020980
 //END GENERATED CODE
