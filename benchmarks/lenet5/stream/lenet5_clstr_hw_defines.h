@@ -69,7 +69,7 @@
 #define fc1OutputSize fc1OutDim*fc1OutDim*fc1KernChan*sizeof(TYPE)
 
 //BEGIN GENERATED CODE
-//Cluster: POOL0
+//Cluster: DATA_MOVE_1
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001
@@ -99,4 +99,8 @@
 //Accelerator: POOL0
 #define POOL0 0x10020940
 #define Pool0Window 0x10020980
+#define Pool0Out 0x10020f00
+//Accelerator: DATA_MOVE_1
+#define DATA_MOVE_1 0x10020f40
+#define Conv1Window 0x10020f80
 //END GENERATED CODE

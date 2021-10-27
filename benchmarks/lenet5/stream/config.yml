@@ -73,16 +73,28 @@ acc_cluster:
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamIn: StreamDma
     - Var:
       - Name: Pool0Window
         Type: SPM
         Size: 1344
         Ports: 4
-    # - Var:
-    #   - Name: Pool0Out
-    #     Type: Stream
-    #     StreamSize: 4
-    #     BufferSize: 16
-    #     InCon: pool0
-    #     OutCon: data_move_1
+    - Var:
+      - Name: Pool0Out
+        Type: Stream
+        StreamSize: 4
+        BufferSize: 16
+        InCon: pool0
+        OutCon: data_move_1
+  - Accelerator:
+    - Name: data_move_1
+      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_1.ini
+      Debug: True
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: StreamDma
+    - Var:
+      - Name: Conv1Window
+        Type: SPM
+        Size: 4704
+        Ports: 1
