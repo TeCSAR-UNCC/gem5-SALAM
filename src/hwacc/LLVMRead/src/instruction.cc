@@ -3300,6 +3300,64 @@ IntToPtr::compute() {
 #endif
 }
 
+// SALAM-BitCast // --------------------------------------------------------//
+void // Debugging Interface
+BitCast::dumper() {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
+}
+
+std::shared_ptr<SALAM::Instruction>
+createBitCastInst(uint64_t id,
+              uint64_t OpCode,
+              uint64_t cycles) {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    return std::make_shared<SALAM::BitCast>(id, OpCode, cycles);
+}
+
+BitCast::BitCast(uint64_t id,
+         uint64_t OpCode,
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
+{
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
+    std::vector<uint64_t> base_params;
+    base_params.push_back(id);
+    base_params.push_back(OpCode);
+    base_params.push_back(cycles);
+    conditions.push_back(base_params);
+}
+
+void
+BitCast::initialize(llvm::Value * irval,
+                irvmap * irmap,
+                SALAM::valueListTy * valueList) {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
+    // ****** //
+}
+
+void
+BitCast::compute() {
+#if USE_LLVM_AP_VALUES
+    auto opdata = operands.front().getPtrRegValue();
+    setRegisterValue(opdata);
+#else
+    auto opdata = operands.front().getPtrRegValue();
+    setRegisterValue(opdata);
+#endif
+}
+
 // SALAM-ICmp // ------------------------------------------------------------//
 void // Debugging Interface
 ICmp::dumper() {

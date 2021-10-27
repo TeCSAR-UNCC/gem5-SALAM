@@ -923,6 +923,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case llvm::Instruction::FPExt: return SALAM::createFPExtInst(id, OpCode, hw->cycle_counts->fpext_inst); break;
         case llvm::Instruction::PtrToInt: return SALAM::createPtrToIntInst(id, OpCode, hw->cycle_counts->ptrtoint_inst); break;
         case llvm::Instruction::IntToPtr: return SALAM::createIntToPtrInst(id, OpCode, hw->cycle_counts->inttoptr_inst); break;
+        case llvm::Instruction::BitCast: return SALAM::createBitCastInst(id, OpCode, hw->cycle_counts->bitcast_inst); break;
         case llvm::Instruction::ICmp: return SALAM::createICmpInst(id, OpCode, hw->cycle_counts->icmp_inst); break;
         case llvm::Instruction::FCmp: return SALAM::createFCmpInst(id, OpCode, hw->cycle_counts->fcmp_inst); break;
         case llvm::Instruction::PHI: return SALAM::createPHIInst(id, OpCode, hw->cycle_counts->phi_inst); break;
