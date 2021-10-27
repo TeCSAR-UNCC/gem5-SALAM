@@ -2458,13 +2458,14 @@ GetElementPtr::compute() {
         auto idx = operands.at(i);
         if (offsetOfStruct.at(i-1)) {
             offset += offsets.at(i-1);
+            DPRINTF(RuntimeCompute, "|| %s, struct offset = %d\n", idx.getIRStub(), offsets.at(i-1));
         } else {
         #if USE_LLVM_AP_VALUES
             int64_t arrayIdx = idx.getIntRegValue().getSExtValue();
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
-            DPRINTF(RuntimeCompute, "|| %s = %d\n", idx.getIRStub(), arrayIdx);
+            DPRINTF(RuntimeCompute, "|| %s = %d, dimension offset = %d\n", idx.getIRStub(), arrayIdx, offsets.at(i-1));
             offset += arrayIdx * offsets.at(i-1);
         }
     }
