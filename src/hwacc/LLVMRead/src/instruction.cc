@@ -2453,7 +2453,7 @@ GetElementPtr::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     uint64_t ptr = (operands.front().getPtrRegValue());
     int64_t offset = 0;
-
+    DPRINTF(RuntimeCompute, "|| Index Values\n");
     for (int i = 1; i < operands.size(); i++) {
         auto idx = operands.at(i);
         if (offsetOfStruct.at(i-1)) {
@@ -2464,6 +2464,7 @@ GetElementPtr::compute() {
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
+            DPRINTF(RuntimeCompute, "|| %s = %d\n", idx.getIRStub(), arrayIdx);
             offset += arrayIdx * offsets.at(i-1);
         }
     }
