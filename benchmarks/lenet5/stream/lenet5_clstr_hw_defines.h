@@ -69,7 +69,7 @@
 #define fc1OutputSize fc1OutDim*fc1OutDim*fc1KernChan*sizeof(TYPE)
 
 //BEGIN GENERATED CODE
-//Cluster: DATA_MOVE_1
+//Cluster: CONV1
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001
@@ -103,4 +103,8 @@
 //Accelerator: DATA_MOVE_1
 #define DATA_MOVE_1 0x10020f40
 #define Conv1Window 0x10020f80
+//Accelerator: CONV1
+#define CONV1 0x10022200
+#define Conv1Weights 0x10022240
+#define Conv1WindowBuff 0x10024800
 //END GENERATED CODE

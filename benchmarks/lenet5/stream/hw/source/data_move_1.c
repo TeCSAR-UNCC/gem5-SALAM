@@ -6,10 +6,8 @@
 
 void dataMover() {
     volatile uint32_t* strIn = (uint32_t*)Pool0Out;
-    // uint32_t* convWindowBuff = (uint32_t*)Conv1WindowBuff;
-    uint32_t* convWindowBuff = (uint32_t*)STREAMDMA_Stream;
+    uint32_t* convWindowBuff = (uint32_t*)Conv1WindowBuff;
     uint32_t* convWindow = (uint32_t*)Conv1Window;
-    // uint32_t* strOut = (uint32_t*)STREAMDMA_Stream;
 
     int h,w,c,cc,x,y;
     uint32_t sum;
@@ -46,6 +44,7 @@ void dataMover() {
                     for(y=0; y<conv1KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv1InChan; c++){
+                            // convWindowBuff[InputIdx3D(x, y, c)] = convWindow[InputIdx3D((x + h%5)%5, y, c)];
                             *convWindowBuff = convWindow[InputIdx3D((x + h%5)%5, y, c)];
                         }
                     }
