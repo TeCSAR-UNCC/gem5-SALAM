@@ -1,30 +1,30 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
 // HWC Memory Accesses
-#define WinIdx3D(h,w,c) ((h * conv0KSize*conv0InChan + w * conv0InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv0KSize*conv0KSize*conv0InChan + h *conv0KSize*conv0InChan + w * conv0InChan + c))
+#define WinIdx3D(h,w,c) ((h * conv2KSize*conv2InChan + w * conv2InChan + c))
+#define KIdx4D(h,w,c,n) ((n * conv2KSize*conv2KSize*conv2InChan + h *conv2KSize*conv2InChan + w * conv2InChan + c))
 
-void conv0() {
-    uint32_t* convWin = (uint32_t*)Conv0Window;
-    uint32_t* kernel = (uint32_t*)Conv0Weights;
-    uint32_t* strOut = (uint32_t*)Conv0Out;
+void conv2() {
+    uint32_t* convWin = (uint32_t*)Conv2Window;
+    uint32_t* kernel = (uint32_t*)Conv2Weights;
+    uint32_t* strOut = (uint32_t*)STREAMDMA_Stream;
 
     int h,w,c,cc,x,y;
     uint32_t sum;
 
     #pragma nounroll
-    for (h=0; h<conv0OutDim; h++){
+    for (h=0; h<conv2OutDim; h++){
         #pragma nounroll
-        for (w=0; w<conv0OutDim; w++){
+        for (w=0; w<conv2OutDim; w++){
             sum = 0;
             #pragma nounroll
-            for(cc=0; cc<conv0OutChan; cc++){
+            for(cc=0; cc<conv2OutChan; cc++){
                 #pragma nounroll
-                for(x=0; x<conv0KSize; x++) {
+                for(x=0; x<conv2KSize; x++) {
                     #pragma nounroll
-                    for(y=0; y<conv0KSize; y++){
+                    for(y=0; y<conv2KSize; y++){
                         #pragma nounroll
-                        for(c=0; c<conv0InChan; c++){
+                        for(c=0; c<conv2InChan; c++){
                             sum += convWin[WinIdx3D(x%5, y%5, c)] * kernel[KIdx4D(x,y,c,cc)];
                         }
                     }
