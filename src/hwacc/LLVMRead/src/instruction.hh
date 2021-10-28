@@ -1269,6 +1269,36 @@ std::shared_ptr<SALAM::Instruction>
 createIntToPtrInst(uint64_t id,
               uint64_t OpCode,
               uint64_t cycles);
+
+class BitCast : public Instruction {
+    private:
+        std::vector< std::vector<uint64_t> > conditions;
+        // conditions.at[0] == base params
+        SALAM::Debugger *dbgr;
+        uint64_t currentCycle;
+
+    protected:
+    public:
+        BitCast(uint64_t id,
+            uint64_t OpCode,
+              uint64_t cycles);
+        ~BitCast() = default;
+        void initialize (llvm::Value * irval,
+                        irvmap * irmap,
+                        SALAM::valueListTy * valueList);
+        uint64_t getCycleCount() { return conditions.at(0).at(2); }
+        void compute();
+        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dumper();
+        std::shared_ptr<SALAM::BitCast> clone() const { return std::static_pointer_cast<SALAM::BitCast>(createClone()); }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::BitCast>(new SALAM::BitCast(*this)); }
+};
+
+std::shared_ptr<SALAM::Instruction>
+createBitCastInst(uint64_t id,
+              uint64_t OpCode,
+              uint64_t cycles);
+
 //---------------------------------------------------------------------------//
 //--------- Other / Comparison Instructions ---------------------------------//
 //---------------------------------------------------------------------------//

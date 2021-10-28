@@ -2479,17 +2479,19 @@ GetElementPtr::compute() {
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
     uint64_t ptr = (operands.front().getPtrRegValue());
     int64_t offset = 0;
-
+    DPRINTF(RuntimeCompute, "|| Index Values\n");
     for (int i = 1; i < operands.size(); i++) {
         auto idx = operands.at(i);
         if (offsetOfStruct.at(i-1)) {
             offset += offsets.at(i-1);
+            DPRINTF(RuntimeCompute, "|| %s, struct offset = %d\n", idx.getIRStub(), offsets.at(i-1));
         } else {
         #if USE_LLVM_AP_VALUES
             int64_t arrayIdx = idx.getIntRegValue().getSExtValue();
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
+            DPRINTF(RuntimeCompute, "|| %s = %d, dimension offset = %d\n", idx.getIRStub(), arrayIdx, offsets.at(i-1));
             offset += arrayIdx * offsets.at(i-1);
         }
     }
@@ -3322,6 +3324,64 @@ IntToPtr::compute() {
     setRegisterValue(*(uint64_t *)&tmp);
 #else
     auto opdata = operands.front().getUIntRegValue();
+    setRegisterValue(opdata);
+#endif
+}
+
+// SALAM-BitCast // --------------------------------------------------------//
+void // Debugging Interface
+BitCast::dumper() {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     DPRINTF(SALAM_Debug, "| %s %s %s|\n\t\t %s %d \n\t\t %s %d \n\t\t %s %d %s \n",
+    //         "************** [", llvm::Instruction::getOpcodeName(conditions.at(0).at(1))  ,"] Instruction Dump **************",
+    //         "    UID: ", conditions.at(0).at(0),
+    //         " Opcode: ", conditions.at(0).at(1),
+    //         "Latency: ", conditions.at(0).at(2), " Cycles"
+    //     );
+    // }
+}
+
+std::shared_ptr<SALAM::Instruction>
+createBitCastInst(uint64_t id,
+              uint64_t OpCode,
+              uint64_t cycles) {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    return std::make_shared<SALAM::BitCast>(id, OpCode, cycles);
+}
+
+BitCast::BitCast(uint64_t id,
+         uint64_t OpCode,
+              uint64_t cycles) :
+         Instruction(id, OpCode, cycles)
+{
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    // if (DTRACE(SALAM_Debug)) {
+    //     this->dbgr = new Debugger();
+    // }
+    std::vector<uint64_t> base_params;
+    base_params.push_back(id);
+    base_params.push_back(OpCode);
+    base_params.push_back(cycles);
+    conditions.push_back(base_params);
+}
+
+void
+BitCast::initialize(llvm::Value * irval,
+                irvmap * irmap,
+                SALAM::valueListTy * valueList) {
+    // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
+    SALAM::Instruction::initialize(irval, irmap, valueList);
+    // ****** //
+}
+
+void
+BitCast::compute() {
+#if USE_LLVM_AP_VALUES
+    auto opdata = operands.front().getPtrRegValue();
+    setRegisterValue(opdata);
+#else
+    auto opdata = operands.front().getPtrRegValue();
     setRegisterValue(opdata);
 #endif
 }
