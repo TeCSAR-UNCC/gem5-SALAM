@@ -34,7 +34,7 @@ acc_cluster:
       PIOMaster: LocalBus
       StreamOut: StreamDma
     - Var:
-      - Name: Conv0Window
+      - Name: Conv0LineBuff
         Type: SPM
         Size: 640
         Ports: 1
@@ -51,9 +51,9 @@ acc_cluster:
         Size: 600
         Ports: 25
     - Var:
-      - Name: Conv0WindowBuff
+      - Name: Conv0Window
         Type: SPM
-        Size: 600
+        Size: 100
         Ports: 1
         ReadyMode: True
         ResetOnRead: True
@@ -93,7 +93,7 @@ acc_cluster:
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: Conv1Window
+      - Name: Conv1LineBuff
         Type: SPM
         Size: 4704
         Ports: 1
@@ -104,14 +104,13 @@ acc_cluster:
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamIn: StreamDma
     - Var:
       - Name: Conv1Weights
         Type: SPM
         Size: 9600
         Ports: 25
     - Var:
-      - Name: Conv1WindowBuff
+      - Name: Conv1Window
         Type: SPM
         Size: 600
         Ports: 1
@@ -119,3 +118,30 @@ acc_cluster:
         ResetOnRead: True
         WriteOnValid: False
         Connections: data_move_1:1
+    - Var:
+      - Name: Conv1Out
+        Type: Stream
+        StreamSize: 4
+        BufferSize: 16
+        InCon: conv1
+        OutCon: pool1
+  - Accelerator:
+    - Name: pool1
+      IrPath: benchmarks/lenet5/stream/hw/ir/pool1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool1.ini
+      Debug: True
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: StreamDma
+    - Var:
+      - Name: Pool1Window
+        Type: SPM
+        Size: 1280
+        Ports: 4
+    - Var:
+      - Name: Pool1Out
+        Type: Stream
+        StreamSize: 4
+        BufferSize: 16
+        InCon: pool1
+        OutCon: data_move_1

@@ -1,11 +1,11 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
 // HWC Memory Accesses
-#define InputIdx3D(h,w,c) ((h * conv0InDim*conv0InChan + w * conv0InChan + c))
+#define WinIdx3D(h,w,c) ((h * conv0KSize*conv0InChan + w * conv0InChan + c))
 #define KIdx4D(h,w,c,n) ((n * conv0KSize*conv0KSize*conv0InChan + h *conv0KSize*conv0InChan + w * conv0InChan + c))
 
 void conv0() {
-    uint32_t* convWindowBuff = (uint32_t*)Conv0WindowBuff;
+    uint32_t* convWin = (uint32_t*)Conv0Window;
     uint32_t* kernel = (uint32_t*)Conv0Weights;
     uint32_t* strOut = (uint32_t*)Conv0Out;
 
@@ -19,12 +19,13 @@ void conv0() {
             sum = 0;
             #pragma nounroll
             for(cc=0; cc<conv0OutChan; cc++){
+                #pragma nounroll
                 for(x=0; x<conv0KSize; x++) {
                     #pragma nounroll
                     for(y=0; y<conv0KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv0InChan; c++){
-                            sum += convWindowBuff[InputIdx3D(x, y, c)] * kernel[KIdx4D(x,y,c,cc)];
+                            sum += convWin[WinIdx3D(x%5, y%5, c)] * kernel[KIdx4D(x,y,c,cc)];
                         }
                     }
                 }
