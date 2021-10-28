@@ -24,18 +24,19 @@ int main(void) {
     *top = 0x01;
     while (stage < 1) count++;
 
-    for (count=0; count<255; count++) {
+    for (count=0; count<256; count++) {
         achk += a[count];
         bchk += b[count];
         cchk += c[count];
         dchk += d[count];
         echk += e[count];
     }
-    printf("A Check: %s\n", achk==32640 ? "PASSED" : "FAILED");
-    printf("B Check: %s\n", bchk==32640 ? "PASSED" : "FAILED");
-    printf("C Check: %s\n", cchk==32640 ? "PASSED" : "FAILED");
-    printf("D Check: %s\n", dchk==32640 ? "PASSED" : "FAILED");
-    printf("E Check: %s\n", echk==32640 ? "PASSED" : "FAILED");
+    printf("A Check: %d %s\n", achk, achk==32640 ? "PASSED" : "FAILED");
+    printf("B Check: %d %s\n", bchk, bchk==32640 ? "PASSED" : "FAILED");
+    printf("C Check: %d %s\n", cchk, cchk==32640 ? "PASSED" : "FAILED");
+    printf("D Check: %d %s\n", dchk, dchk==32640 ? "PASSED" : "FAILED");
+    printf("E Check: %d %s\n", echk, echk==32640 ? "PASSED" : "FAILED");
 
+    m5_dump_stats();
     m5_exit();
 }

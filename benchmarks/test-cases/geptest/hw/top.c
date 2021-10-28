@@ -9,14 +9,8 @@ typedef unsigned array1d_t[256];
 typedef unsigned array4d_t[4][4][4][4];
 typedef base_struct_t struct_array[8][4][4];
 
-void top() {
+void compute(unsigned * a, base_struct_t * b, array1d_t c, array4d_t d, struct_array e) {
 	int i,j,k,l,count;
-
-	unsigned 		* a = (unsigned *)TESTA;
-	base_struct_t 	* b = (base_struct_t *)TESTB;
-	array1d_t 		* c = (array1d_t *)TESTC;
-	array4d_t 		* d = (array4d_t *)TESTD;
-	struct_array 	* e = (struct_array *)TESTE;
 
 	for (i=0; i<256; i++) {
 		a[i] = i;
@@ -31,7 +25,7 @@ void top() {
 	}
 
 	for (i=0; i<256; i++) {
-		*c[i] = i;
+		c[i] = i;
 	}
 
 	count = 0;
@@ -39,7 +33,7 @@ void top() {
 		for (j=0; j<4; j++) {
 			for (k=0; k<4; k++) {
 				for (l=0; l<4; l++) {
-					*d[i][j][k][l] = count;
+					d[i][j][k][l] = count;
 					count++;
 				}
 			}
@@ -50,13 +44,25 @@ void top() {
 	for (i=0; i<8; i++) {
 		for (j=0; j<4; j++) {
 			for (k=0; k<4; k++) {
-				(*e[i][j][k]).first = count;
+				e[i][j][k].first = count;
 				count++;
-				(*e[i][j][k]).second = count;
+				e[i][j][k].second = count;
 				count++;
 			}
 		}
 	}
+
+	return;
+}
+
+void top() {
+	void * a = (void *)TESTA;
+	void * b = (void *)TESTB;
+	void * c = (void *)TESTC;
+	void * d = (void *)TESTD;
+	void * e = (void *)TESTE;
+
+	compute(a,b,c,d,e);
 
 	return;
 }
