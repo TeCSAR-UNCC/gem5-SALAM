@@ -1,0 +1,43 @@
+---
+acc_cluster:
+  - Name: geptest_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/test-cases/geptest/hw/top.ll
+      ConfigPath: benchmarks/test-cases/geptest/hw/top.ini
+      Debug: False
+      InterruptNum: 68
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: TESTA
+        Type: SPM
+        Size: 1024
+        Ports: 1
+    - Var:
+      - Name: TESTB
+        Type: SPM
+        Size: 1024
+        Ports: 1
+    - Var:
+      - Name: TESTC
+        Type: SPM
+        Size: 1024
+        Ports: 1
+    - Var:
+      - Name: TESTD
+        Type: SPM
+        Size: 1024
+        Ports: 1
+    - Var:
+      - Name: TESTE
+        Type: SPM
+        Size: 1024
+        Ports: 1
