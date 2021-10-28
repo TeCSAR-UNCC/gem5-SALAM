@@ -48,27 +48,23 @@ void top(uint64_t mainMem) {
 	*DmaWrAddr  = Conv0Weights;
 	*DmaCopyLen = conv0WeightSize;
 	*DmaFlags   = DEV_INIT;
+	// Poll DMA for finish
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	//Transfer Conv 1 Weights
+	*DmaRdAddr  = 0x90010000;
+	*DmaWrAddr  = Conv1Weights;
+	*DmaCopyLen = conv1WeightSize;
+	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	// //Transfer Conv 1 Weights
-	// *DmaRdAddr  = 0x90010000;
-	// *DmaWrAddr  = Conv1Weights;
-	// *DmaCopyLen = conv1WeightSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	// //Transfer FC0 Weights
-	// *DmaRdAddr  = 0x90010000;
-	// *DmaWrAddr  = fc0Weights;
-	// *DmaCopyLen = fc0WeightSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Transfer FC1 Weights
-	// *DmaRdAddr  = 0x90010000;
-	// *DmaWrAddr  = fc1Weights;
-	// *DmaCopyLen = fc1WeightSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	//Transfer Conv 2 Weights
+	*DmaRdAddr  = 0x90010000;
+	*DmaWrAddr  = Conv2Weights;
+	*DmaCopyLen = conv2WeightSize;
+	*DmaFlags   = DEV_INIT;
+	// Poll DMA for finish
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+
 
 	//Start conv0
 	*DATAMOVE0Flags = DEV_INIT;

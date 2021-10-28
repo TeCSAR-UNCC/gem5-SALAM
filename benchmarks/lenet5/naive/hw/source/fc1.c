@@ -32,7 +32,7 @@ void fc1() {
                         #pragma nounroll
                         for (y = 0; y < fc1KSize; y++) {
                             // Input Channels
-                            #pragma unroll 60
+                            #pragma nounroll
                             for(c = 0; c < fc1InChan; c++) {
                                 sum += fcInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];

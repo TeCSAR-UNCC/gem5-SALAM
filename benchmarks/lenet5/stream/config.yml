@@ -148,7 +148,7 @@ acc_cluster:
     - Name: data_move_2
       IrPath: benchmarks/lenet5/stream/hw/ir/data_move_2.ll
       ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_2.ini
-      Debug: True
+      Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
@@ -178,10 +178,10 @@ acc_cluster:
         ResetOnRead: True
         WriteOnValid: False
         Connections: data_move_2:1
-    - Var:
-      - Name: Conv2Out
-        Type: Stream
-        StreamSize: 4
-        BufferSize: 16
-        InCon: conv2
-        OutCon: pool1
+    # - Var:
+    #   - Name: Conv2Out
+    #     Type: Stream
+    #     StreamSize: 4
+    #     BufferSize: 16
+    #     InCon: conv2
+    #     OutCon: data_move_3

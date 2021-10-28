@@ -41,6 +41,7 @@ void dataMover() {
         for (w=0; w<conv0OutDim; w++){
             #pragma nounroll
             for(cc=0; cc<conv0OutChan; cc++){
+                #pragma nounroll
                 for(x=0; x<conv0KSize; x++) {
                     #pragma nounroll
                     for(y=0; y<conv0KSize; y++){

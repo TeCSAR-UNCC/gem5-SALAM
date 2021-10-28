@@ -119,5 +119,4 @@
 #define CONV2 0x10025540
 #define Conv2Weights 0x10025580
 #define Conv2Window 0x100543c0
-#define Conv2Out 0x10054a40
 //END GENERATED CODE

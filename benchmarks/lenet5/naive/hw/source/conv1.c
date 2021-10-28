@@ -29,10 +29,10 @@ void conv1() {
                     #pragma nounroll
                     for (x = 0; x < conv1KSize; x++) {
                         // Kernel Y
-                        #pragma unroll
+                        #pragma nounroll
                         for (y = 0; y < conv1KSize; y++) {
                             // Input Channels
-                            #pragma unroll
+                            #pragma nounroll
                             for(c = 0; c < conv1InChan; c++) {
                                 sum += convInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];

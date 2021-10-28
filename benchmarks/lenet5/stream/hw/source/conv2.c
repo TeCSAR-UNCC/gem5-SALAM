@@ -8,6 +8,7 @@ void conv2() {
     uint32_t* convWin = (uint32_t*)Conv2Window;
     uint32_t* kernel = (uint32_t*)Conv2Weights;
     uint32_t* strOut = (uint32_t*)STREAMDMA_Stream;
+    // uint32_t* strOut = (uint32_t*)Conv2Out;
 
     int h,w,c,cc,x,y;
     uint32_t sum;

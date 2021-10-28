@@ -23,10 +23,10 @@ void pool1() {
                 #pragma nounroll
                 for (x = 0; x < pool1KSize; x++) {
                     // Kernel Y
-                    #pragma unroll
+                    #pragma nounroll
                     for (y = 0; y < pool1KSize; y++) {
                         // Input Channels
-                        #pragma unroll
+                        #pragma nounroll
                         for(c = 0; c < pool1InChan; c++) {
                             sum += convInput[InputIdx3D(h+x, w+y, c)];
                         }
