@@ -86,16 +86,24 @@ if not os.path.exists('src/hwacc/HWModeling/generated/instructions'):
 benchmark_args = HWArgs()
 generate_hw_models = HWModel(benchname=benchmark_args.bench, latency='5ns')
 fu_file_generator = FunctionalUnitGenerator(fu_directory="src/hwacc/FunctionalUnits.py")
-fu_file_generator.initialize_base_header_file()
+fu_file_generator.initialize_functional_unit_base_header_file()
 fu_file_generator.initalize_fu_list_header(generate_hw_models.get_fu_list())
 fu_file_generator.initialize_simobject_file(generate_hw_models.get_fu_list())
-fu_file_generator.generate_sconscript(generate_hw_models.get_fu_list())
 
 for functional_unit in generate_hw_models.get_fu_list():
     generate_hw_models.generate_hw(functional_unit)
     generate_hw_models.generate_power_model(functional_unit)
     fu_file_generator.set_fu(functional_unit)
-    fu_file_generator.header_generator(generate_hw_models)
+    fu_file_generator.functional_unit_header_generator(generate_hw_models)
     fu_file_generator.simobject_generator(generate_hw_models)
 
-fu_file_generator.instruction_class_generator(generate_hw_models)
+#TODO clean up this by creating a InstConfigGenerator class, for clarity
+fu_file_generator.instruction_simobject_generator(generate_hw_models)
+fu_file_generator.initalize_inst_config_header(generate_hw_models.get_instruction_list())
+fu_file_generator.initialize_inst_config_base_header_file()
+for inst in generate_hw_models.get_instruction_list()['instructions'].keys():
+    fu_file_generator.inst_config_header_generator(inst)
+
+
+fu_file_generator.generate_functional_unit_sconscript(generate_hw_models.get_fu_list())
+fu_file_generator.generate_inst_config_sconscript(generate_hw_models.get_instruction_list()['instructions'])

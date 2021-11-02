@@ -1,7 +1,108 @@
 #include "instruction_config.hh"
 
+// TODO: Update source generator
+
 // GENERATED CONSTRUCTOR - DO NOT MODIFY
 InstConfig::InstConfig(const InstConfigParams &params) :
-    SimObject(params) { }
-    // add_inst(params.add_config) { }
+    SimObject(params),
+    _add(params.add),
+    _addrspacecast(params.addrspacecast),
+    _alloca(params.alloca),
+    _and_inst(params.and_inst),
+    _ashr(params.ashr),
+    _bitcast(params.bitcast),
+    _br(params.br),
+    _call(params.call),
+    _fadd(params.fadd),
+    _fcmp(params.fcmp),
+    _fdiv(params.fdiv),
+    _fence(params.fence),
+    _fmul(params.fmul),
+    _fpext(params.fpext),
+    _fptosi(params.fptosi),
+    _fptoui(params.fptoui),
+    _fptrunc(params.fptrunc),
+    _frem(params.frem),
+    _fsub(params.fsub),
+    _gep(params.gep),
+    _icmp(params.icmp),
+    _indirectbr(params.indirectbr),
+    _inttoptr(params.inttoptr),
+    _invoke(params.invoke),
+    _landingpad(params.landingpad),
+    _load(params.load),
+    _lshr(params.lshr),
+    _mul(params.mul),
+    _or_inst(params.or_inst),
+    _phi(params.phi),
+    _ptrtoint(params.ptrtoint),
+    _resume(params.resume),
+    _ret(params.ret),
+    _sdiv(params.sdiv),
+    _select(params.select),
+    _sext(params.sext),
+    _shl(params.shl),
+    _srem(params.srem),
+    _store(params.store),
+    _sub(params.sub),
+    _switch_inst(params.switch_inst),
+    _trunc(params.trunc),
+    _udiv(params.udiv),
+    _uitofp(params.uitofp),
+    _unreachable(params.unreachable),
+    _urem(params.urem),
+    _vaarg(params.vaarg),
+    _xor_inst(params.xor_inst),
+    _zext(params.zext) {
+        inst_list.push_back(_add);
+        inst_list.push_back(_addrspacecast);
+        inst_list.push_back(_alloca);
+        inst_list.push_back(_and_inst);
+        inst_list.push_back(_ashr);
+        inst_list.push_back(_bitcast);
+        inst_list.push_back(_br);
+        inst_list.push_back(_call);
+        inst_list.push_back(_fadd);
+        inst_list.push_back(_fcmp);
+        inst_list.push_back(_fdiv);
+        inst_list.push_back(_fence);
+        inst_list.push_back(_fmul);
+        inst_list.push_back(_fpext);
+        inst_list.push_back(_fptosi);
+        inst_list.push_back(_fptoui);
+        inst_list.push_back(_fptrunc);
+        inst_list.push_back(_frem);
+        inst_list.push_back(_fsub);
+        inst_list.push_back(_gep);
+        inst_list.push_back(_icmp);
+        inst_list.push_back(_indirectbr);
+        inst_list.push_back(_inttoptr);
+        inst_list.push_back(_invoke);
+        inst_list.push_back(_landingpad);
+        inst_list.push_back(_load);
+        inst_list.push_back(_lshr);
+        inst_list.push_back(_mul);
+        inst_list.push_back(_or_inst);
+        inst_list.push_back(_phi);
+        inst_list.push_back(_ptrtoint);
+        inst_list.push_back(_resume);
+        inst_list.push_back(_ret);
+        inst_list.push_back(_sdiv);
+        inst_list.push_back(_select);
+        inst_list.push_back(_sext);
+        inst_list.push_back(_shl);
+        inst_list.push_back(_srem);
+        inst_list.push_back(_store);
+        inst_list.push_back(_sub);
+        inst_list.push_back(_switch_inst);
+        inst_list.push_back(_trunc);
+        inst_list.push_back(_udiv);
+        inst_list.push_back(_uitofp);
+        inst_list.push_back(_unreachable);
+        inst_list.push_back(_urem);
+        inst_list.push_back(_vaarg);
+        inst_list.push_back(_xor_inst);
+        inst_list.push_back(_zext);
+    }
 // END OF GENERATED CONSTRUCTOR
+

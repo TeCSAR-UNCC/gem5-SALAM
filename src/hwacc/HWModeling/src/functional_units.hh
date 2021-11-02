@@ -4,6 +4,7 @@
 #include "params/FunctionalUnits.hh"
 #include "sim/sim_object.hh"
 // GENERATED HEADERS - DO NOT MODIFY
+#include "../generated/functionalunits/base.hh"
 #include "../generated/functionalunits/float_divider.hh"
 #include "../generated/functionalunits/float_multiplier.hh"
 #include "../generated/functionalunits/double_multiplier.hh"
@@ -21,11 +22,12 @@
 
 using namespace gem5;
 
+class FunctionalUnitBase;
+
 class FunctionalUnits : public SimObject
 {
 	private:
 	protected:
-
 	public:
 		// GENERATED CLASS MEMBERS - DO NOT MODIFY
 		FloatDivider* _float_divider;
@@ -43,5 +45,9 @@ class FunctionalUnits : public SimObject
 		// DEFAULT CONSTRUCTOR - DO NOT MODIFY
 		FunctionalUnits(const FunctionalUnitsParams &params);
 		// END DEFAULT CONSTRUCTOR
+
+		// Need to be added to generator script
+		std::vector<FunctionalUnitBase*> functional_unit_list;
+
 };
 #endif //__HWMODEL_FUNCTIONAL_UNITS_HH__

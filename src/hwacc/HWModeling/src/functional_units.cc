@@ -1,5 +1,6 @@
 #include "functional_units.hh"
 
+// TODO: Update source generator
 // GENERATED CONSTRUCTOR - DO NOT MODIFY
 FunctionalUnits::FunctionalUnits(const FunctionalUnitsParams &params) :
     SimObject(params),
@@ -13,6 +14,17 @@ FunctionalUnits::FunctionalUnits(const FunctionalUnitsParams &params) :
     _integer_adder(params.integer_adder),
     _double_divider(params.double_divider),
     _float_adder(params.float_adder),
-    _float_multiplier(params.float_multiplier) { }
-   // int_adder(params.int_adder) { }
+    _float_multiplier(params.float_multiplier) { 
+        functional_unit_list.push_back(_double_multiplier);
+        functional_unit_list.push_back(_bitwise_operations);
+        functional_unit_list.push_back(_bit_shifter);
+        functional_unit_list.push_back(_double_adder);
+        functional_unit_list.push_back(_float_divider);
+        functional_unit_list.push_back(_bit_shifter);
+        functional_unit_list.push_back(_integer_multiplier);
+        functional_unit_list.push_back(_integer_adder);
+        functional_unit_list.push_back(_double_divider);
+        functional_unit_list.push_back(_float_adder);
+        functional_unit_list.push_back(_float_multiplier);
+    }
 // END OF GENERATED CONSTRUCTOR

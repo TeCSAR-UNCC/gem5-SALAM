@@ -202,8 +202,9 @@ SALAM::Instruction::launch()
     if (hasFunctionalUnit()) {
         if(!hw_interface->availableFunctionalUnit(getFunctionalUnit())) {
             return false;
+            std::cout << "Waiting on next available FU\n"; 
         } else {
-            // 
+            
         }
     }
     launched = true;
@@ -309,16 +310,18 @@ SALAM::Instruction::runtimeInitialize() {
 std::shared_ptr<SALAM::Instruction>
 createBadInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles)
+              uint64_t cycles,
+              uint64_t fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::BadInstruction>(id, OpCode, cycles);
+    return std::make_shared<SALAM::BadInstruction>(id, OpCode, cycles, fu);
 }
 
 BadInstruction::BadInstruction(uint64_t id,
                                uint64_t OpCode,
-              uint64_t cycles) :
-                               Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+                               Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -357,16 +360,18 @@ Ret::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createRetInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles)
+              uint64_t cycles,
+              uint64_t fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Ret>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Ret>(id, OpCode, cycles, fu);
 }
 
 Ret::Ret(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -410,16 +415,18 @@ Br::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createBrInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles)
+              uint64_t cycles,
+              uint64_t fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Br>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Br>(id, OpCode, cycles, fu);
 }
 
 Br::Br(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -531,16 +538,18 @@ Switch::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSwitchInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles)
+              uint64_t cycles,
+              uint64_t fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Switch>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Switch>(id, OpCode, cycles, fu);
 }
 
 Switch::Switch(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -662,16 +671,18 @@ Add::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createAddInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles)
+              uint64_t cycles,
+              uint64_t fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Add>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Add>(id, OpCode, cycles, fu);
 }
 
 Add::Add(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -741,15 +752,17 @@ FAdd::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFAddInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FAdd>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FAdd>(id, OpCode, cycles, fu);
 }
 
 FAdd::FAdd(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -846,15 +859,17 @@ Sub::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSubInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Sub>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Sub>(id, OpCode, cycles, fu);
 }
 
 Sub::Sub(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -926,15 +941,17 @@ FSub::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFSubInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FSub>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FSub>(id, OpCode, cycles, fu);
 }
 
 FSub::FSub(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1031,15 +1048,17 @@ Mul::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createMulInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Mul>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Mul>(id, OpCode, cycles, fu);
 }
 
 Mul::Mul(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1109,15 +1128,17 @@ FMul::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFMulInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FMul>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FMul>(id, OpCode, cycles, fu);
 }
 
 FMul::FMul(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1215,15 +1236,17 @@ UDiv::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createUDivInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::UDiv>(id, OpCode, cycles);
+    return std::make_shared<SALAM::UDiv>(id, OpCode, cycles, fu);
 }
 
 UDiv::UDiv(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1295,15 +1318,17 @@ SDiv::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSDivInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::SDiv>(id, OpCode, cycles);
+    return std::make_shared<SALAM::SDiv>(id, OpCode, cycles, fu);
 }
 
 SDiv::SDiv(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1376,15 +1401,17 @@ FDiv::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFDivInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FDiv>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FDiv>(id, OpCode, cycles, fu);
 }
 
 FDiv::FDiv(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1482,15 +1509,17 @@ URem::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createURemInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::URem>(id, OpCode, cycles);
+    return std::make_shared<SALAM::URem>(id, OpCode, cycles, fu);
 }
 
 URem::URem(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1562,15 +1591,17 @@ SRem::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSRemInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::SRem>(id, OpCode, cycles);
+    return std::make_shared<SALAM::SRem>(id, OpCode, cycles, fu);
 }
 
 SRem::SRem(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1643,15 +1674,17 @@ FRem::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFRemInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FRem>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FRem>(id, OpCode, cycles, fu);
 }
 
 FRem::FRem(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1751,15 +1784,17 @@ Shl::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createShlInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Shl>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Shl>(id, OpCode, cycles, fu);
 }
 
 Shl::Shl(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1831,15 +1866,17 @@ LShr::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createLShrInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::LShr>(id, OpCode, cycles);
+    return std::make_shared<SALAM::LShr>(id, OpCode, cycles, fu);
 }
 
 LShr::LShr(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1911,15 +1948,17 @@ AShr::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createAShrInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::AShr>(id, OpCode, cycles);
+    return std::make_shared<SALAM::AShr>(id, OpCode, cycles, fu);
 }
 
 AShr::AShr(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -1992,15 +2031,17 @@ And::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createAndInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::And>(id, OpCode, cycles);
+    return std::make_shared<SALAM::And>(id, OpCode, cycles, fu);
 }
 
 And::And(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2072,15 +2113,17 @@ Or::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createOrInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Or>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Or>(id, OpCode, cycles, fu);
 }
 
 Or::Or(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2152,15 +2195,17 @@ Xor::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createXorInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Xor>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Xor>(id, OpCode, cycles, fu);
 }
 
 Xor::Xor(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2231,15 +2276,17 @@ Load::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createLoadInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Load>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Load>(id, OpCode, cycles, fu);
 }
 
 Load::Load(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2310,15 +2357,17 @@ Store::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createStoreInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Store>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Store>(id, OpCode, cycles, fu);
 }
 
 Store::Store(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2402,15 +2451,17 @@ GetElementPtr::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createGetElementPtrInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::GetElementPtr>(id, OpCode, cycles);
+    return std::make_shared<SALAM::GetElementPtr>(id, OpCode, cycles, fu);
 }
 
 GetElementPtr::GetElementPtr(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2519,15 +2570,17 @@ Trunc::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createTruncInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Trunc>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Trunc>(id, OpCode, cycles, fu);
 }
 
 Trunc::Trunc(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2586,15 +2639,17 @@ ZExt::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createZExtInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::ZExt>(id, OpCode, cycles);
+    return std::make_shared<SALAM::ZExt>(id, OpCode, cycles, fu);
 }
 
 ZExt::ZExt(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2653,15 +2708,17 @@ SExt::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSExtInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::SExt>(id, OpCode, cycles);
+    return std::make_shared<SALAM::SExt>(id, OpCode, cycles, fu);
 }
 
 SExt::SExt(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2720,15 +2777,17 @@ FPToUI::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFPToUIInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FPToUI>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FPToUI>(id, OpCode, cycles, fu);
 }
 
 FPToUI::FPToUI(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2811,15 +2870,17 @@ FPToSI::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFPToSIInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FPToSI>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FPToSI>(id, OpCode, cycles, fu);
 }
 
 FPToSI::FPToSI(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2904,15 +2965,17 @@ UIToFP::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createUIToFPInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::UIToFP>(id, OpCode, cycles);
+    return std::make_shared<SALAM::UIToFP>(id, OpCode, cycles, fu);
 }
 
 UIToFP::UIToFP(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -2988,15 +3051,17 @@ SIToFP::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSIToFPInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::SIToFP>(id, OpCode, cycles);
+    return std::make_shared<SALAM::SIToFP>(id, OpCode, cycles, fu);
 }
 
 SIToFP::SIToFP(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3072,15 +3137,17 @@ FPTrunc::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFPTruncInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FPTrunc>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FPTrunc>(id, OpCode, cycles, fu);
 }
 
 FPTrunc::FPTrunc(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3150,15 +3217,17 @@ FPExt::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFPExtInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FPExt>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FPExt>(id, OpCode, cycles, fu);
 }
 
 FPExt::FPExt(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3228,15 +3297,17 @@ PtrToInt::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createPtrToIntInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::PtrToInt>(id, OpCode, cycles);
+    return std::make_shared<SALAM::PtrToInt>(id, OpCode, cycles, fu);
 }
 
 PtrToInt::PtrToInt(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3285,15 +3356,17 @@ IntToPtr::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createIntToPtrInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::IntToPtr>(id, OpCode, cycles);
+    return std::make_shared<SALAM::IntToPtr>(id, OpCode, cycles, fu);
 }
 
 IntToPtr::IntToPtr(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3345,15 +3418,17 @@ BitCast::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createBitCastInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::BitCast>(id, OpCode, cycles);
+    return std::make_shared<SALAM::BitCast>(id, OpCode, cycles, fu);
 }
 
 BitCast::BitCast(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3402,15 +3477,17 @@ ICmp::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createICmpInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::ICmp>(id, OpCode, cycles);
+    return std::make_shared<SALAM::ICmp>(id, OpCode, cycles, fu);
 }
 
 ICmp::ICmp(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3527,15 +3604,17 @@ FCmp::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createFCmpInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::FCmp>(id, OpCode, cycles);
+    return std::make_shared<SALAM::FCmp>(id, OpCode, cycles, fu);
 }
 
 FCmp::FCmp(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3759,15 +3838,17 @@ Phi::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createPHIInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Phi>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Phi>(id, OpCode, cycles, fu);
 }
 
 Phi::Phi(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3867,15 +3948,17 @@ Call::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createCallInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Call>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Call>(id, OpCode, cycles, fu);
 }
 
 Call::Call(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {
@@ -3921,15 +4004,17 @@ Select::dumper() {
 std::shared_ptr<SALAM::Instruction>
 createSelectInst(uint64_t id,
               uint64_t OpCode,
-              uint64_t cycles) {
+              uint64_t cycles,
+              uint64_t fu) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    return std::make_shared<SALAM::Select>(id, OpCode, cycles);
+    return std::make_shared<SALAM::Select>(id, OpCode, cycles, fu);
 }
 
 Select::Select(uint64_t id,
          uint64_t OpCode,
-              uint64_t cycles) :
-         Instruction(id, OpCode, cycles)
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, OpCode, cycles,fu)
 {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     // if (DTRACE(SALAM_Debug)) {

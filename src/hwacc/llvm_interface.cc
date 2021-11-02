@@ -887,16 +887,21 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     // HW
     hw->opcodes->update_usage(OpCode);
 
-    /*
     uint64_t functional_unit = 0;
-    for (auto hw_inst : hw->inst_configs->getInstList()) {
-        if(Opcode == hw_inst->getOpCode()) {
-            functional_unit = hw_inst->getFunctionalUnit();
+    for (auto hw_inst : hw->inst_config->inst_list) {
+        if(OpCode == hw_inst->get_opcode_num()) {
+            functional_unit = hw_inst->get_functional_unit();
+            for (auto hw_fu : hw->functional_units->functional_unit_list) {
+                if(hw_fu->get_enum_value() == functional_unit) {
+                    hw_fu->inc_functional_unit_limit();
+                    break;
+                }
+            }
             break;
         } 
     }
 
-        switch(OpCode) {
+    switch(OpCode) {
         case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst, functional_unit); break;
         case llvm::Instruction::Br: return SALAM::createBrInst(id, OpCode, hw->cycle_counts->br_inst, functional_unit); break;
         case llvm::Instruction::Switch: return SALAM::createSwitchInst(id, OpCode, hw->cycle_counts->switch_inst, functional_unit); break;
@@ -942,7 +947,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
             return SALAM::createBadInst(id, OpCode, 0, 0); break;
         }
     }
-    */
+    /*
 
     switch(OpCode) {
         case llvm::Instruction::Ret : return SALAM::createRetInst(id, OpCode, hw->cycle_counts->ret_inst); break;
@@ -991,4 +996,5 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
             return SALAM::createBadInst(id, OpCode, 0); break;
         }
     }
+    */
 }
