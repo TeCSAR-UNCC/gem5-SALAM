@@ -1,23 +1,20 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define InputIdx3D(h,w,c) ((h * pool0InDim*pool0InChan + w * pool0InChan + c))
-#define OutIdx3D(h,w,c) ((h * pool0InDim*pool0InChan + w * pool0InChan + c))
+typedef uint32_t array3d_in[pool0InDim][pool0InDim][pool0InChan];
+typedef uint32_t array3d_out[pool0OutDim][pool0OutDim][pool0InChan];
 
-void pool0() {
-    uint32_t* convInput = (uint32_t*)pool0Input;
-    uint32_t* convOut = (uint32_t*)pool0Output;
-
+void compute(array3d_in poolIn, array3d_out poolOut) {
     // HWC Implementation for Convolution
-    int h,w,c,cc,x,y;
+    int h,w,c,x,y;
     // Input X
     #pragma nounroll
     for (h = 0; h < pool0InDim; h+=pool0KSize) {
         // Input Y
         #pragma nounroll
         for (w = 0; w < pool0InDim; w+=pool0KSize) {
-            // Check that the window is valid
-            if(!(w+pool0KSize>pool0InDim || h+pool0KSize>pool0InDim)) {
+            // Input Channels
+            #pragma nounroll
+            for(c = 0; c < pool0InChan; c++) {
                 int sum = 0;
                 // Kernel X
                 #pragma nounroll
@@ -25,15 +22,18 @@ void pool0() {
                     // Kernel Y
                     #pragma nounroll
                     for (y = 0; y < pool0KSize; y++) {
-                        // Input Channels
-                        #pragma nounroll
-                        for(c = 0; c < pool0InChan; c++) {
-                            sum += convInput[InputIdx3D(h+x, w+y, c)];
-                        }
+                        sum += poolIn[h+x][w+y][c];
                     }
                 }
-                convOut[OutIdx3D(h,w,cc)] = sum/(pool0KSize*pool0KSize);
+                poolOut[h/pool0KSize][w/pool0KSize][c] = sum/(pool0KSize*pool0KSize);
             }
         }
     }
+}
+
+void top(){
+    void* poolIn = (void*)pool0Input;
+    void* poolOut = (void*)pool0Output;
+
+	compute(poolIn,poolOut);
 }
