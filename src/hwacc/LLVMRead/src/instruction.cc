@@ -2507,18 +2507,25 @@ GetElementPtr::initialize(llvm::Value * irval,
         GTI = gep_type_begin(ElemTy, Indices),
         GTE = gep_type_end(ElemTy, Indices);
     for ( ; GTI != GTE; ++GTI) {
+        llvm::Value *idx = GTI.getOperand();
+        auto SALAMValue = irmap->find(idx)->second;
+        auto valueID = SALAMValue->getUID();
         if (llvm::StructType *STy = GTI.getStructTypeOrNull()) {
-            llvm::Value *idx = GTI.getOperand();
             assert(idx->getType()->isIntegerTy(32) && "Illegal struct idx");
-
             unsigned FieldNo = llvm::cast<llvm::ConstantInt>(idx)->getSExtValue();
             const llvm::StructLayout *Layout = layout.getStructLayout(STy);
-            offsets.push_back(Layout->getElementOffset(FieldNo));
-            offsetOfStruct.push_back(true);
+            // offsets.push_back(Layout->getElementOffset(FieldNo));
+            // offsetOfStruct.push_back(true);
+            auto offset = Layout->getElementOffset(FieldNo);
+            auto gOffset = GEPOffset(offset,true);
+            offsets.insert({valueID, gOffset});
         } else {
             llvm::Type * idxty = GTI.getIndexedType();
-            offsets.push_back(1 * layout.getTypeAllocSize(idxty));
-            offsetOfStruct.push_back(false);
+            // offsets.push_back(1 * layout.getTypeAllocSize(idxty));
+            // offsetOfStruct.push_back(false);
+            auto offset = 1 * layout.getTypeAllocSize(idxty);
+            auto gOffset = GEPOffset(offset,false);
+            offsets.insert({valueID, gOffset});
         }
     }
 }
@@ -2533,17 +2540,19 @@ GetElementPtr::compute() {
     DPRINTF(RuntimeCompute, "|| Index Values\n");
     for (int i = 1; i < operands.size(); i++) {
         auto idx = operands.at(i);
-        if (offsetOfStruct.at(i-1)) {
-            offset += offsets.at(i-1);
-            DPRINTF(RuntimeCompute, "|| %s, struct offset = %d\n", idx.getIRStub(), offsets.at(i-1));
+        auto opID = idx.getUID();
+        auto gOffset = offsets.find(opID)->second;
+        if (gOffset.structOff) {
+            offset += gOffset.off;
+            DPRINTF(RuntimeCompute, "|| %s, struct offset = %d\n", idx.getIRStub(), gOffset.off);
         } else {
         #if USE_LLVM_AP_VALUES
             int64_t arrayIdx = idx.getIntRegValue().getSExtValue();
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
-            DPRINTF(RuntimeCompute, "|| %s = %d, dimension offset = %d\n", idx.getIRStub(), arrayIdx, offsets.at(i-1));
-            offset += arrayIdx * offsets.at(i-1);
+            DPRINTF(RuntimeCompute, "|| %s = %d, dimension offset = %d\n", idx.getIRStub(), arrayIdx, gOffset.off);
+            offset += arrayIdx * gOffset.off;
         }
     }
 

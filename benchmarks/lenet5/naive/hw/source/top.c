@@ -119,22 +119,22 @@ void top(uint64_t feats, uint64_t weights) {
 	*DmaFlags   = DEV_INIT;
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 
-	//Transfer Input Features
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = fc1Input;
-	*DmaCopyLen = fc1InSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the fc1
-	*FC1Flags = DEV_INIT;
-	//Poll function for finish
-	while ((*FC1Flags & DEV_INTR) != DEV_INTR);
-	//Transfer Results Back to Main Memory
-	*DmaRdAddr  = fc1Output;
-	*DmaWrAddr  = 0x90000000;
-	*DmaCopyLen = fc1OutputSize;
-	*DmaFlags   = DEV_INIT;
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	// //Transfer Input Features
+	// *DmaRdAddr  = 0x90000000;
+	// *DmaWrAddr  = fc1Input;
+	// *DmaCopyLen = fc1InSize;
+	// *DmaFlags   = DEV_INIT;
+	// //Poll DMA for finish
+	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	// //Start the fc1
+	// *FC1Flags = DEV_INIT;
+	// //Poll function for finish
+	// while ((*FC1Flags & DEV_INTR) != DEV_INTR);
+	// //Transfer Results Back to Main Memory
+	// *DmaRdAddr  = fc1Output;
+	// *DmaWrAddr  = 0x90000000;
+	// *DmaCopyLen = fc1OutputSize;
+	// *DmaFlags   = DEV_INIT;
+	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 	return;
 }

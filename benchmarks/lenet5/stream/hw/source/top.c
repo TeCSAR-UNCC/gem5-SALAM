@@ -9,8 +9,9 @@ void top(uint64_t mainMem) {
 	volatile uint8_t  * DATAMOVE1Flags = (uint8_t *)DATA_MOVE_1;
 	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
+	volatile uint8_t  * DATAMOVE2Flags = (uint8_t *)DATA_MOVE_2;
+	volatile uint8_t  * Conv2Flags  = (uint8_t *)CONV2;
 	// volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
-	// volatile uint8_t  * FC1Flags  = (uint8_t *)FC1;
 
 	//StreamDma
 	volatile uint8_t  * StrDmaFlags				= (uint8_t  *)(STREAMDMA_Flags);
@@ -36,7 +37,7 @@ void top(uint64_t mainMem) {
 	*StrDmaRdFrameBuffSize = 1;
 	//Initialize Stream-DRAM DMA
 	*StrDmaWrAddr = 0x91000000;
-	*StrDmaWrFrameSize = 1600;
+	*StrDmaWrFrameSize = 480;
 	*StrDmaNumWrFrames = 1;
 	*StrDmaWrFrameBuffSize = 1;
 	//Start Stream DMAs
@@ -47,27 +48,23 @@ void top(uint64_t mainMem) {
 	*DmaWrAddr  = Conv0Weights;
 	*DmaCopyLen = conv0WeightSize;
 	*DmaFlags   = DEV_INIT;
+	// Poll DMA for finish
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	//Transfer Conv 1 Weights
+	*DmaRdAddr  = 0x90010000;
+	*DmaWrAddr  = Conv1Weights;
+	*DmaCopyLen = conv1WeightSize;
+	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	// //Transfer Conv 1 Weights
-	// *DmaRdAddr  = 0x90010000;
-	// *DmaWrAddr  = Conv1Weights;
-	// *DmaCopyLen = conv1WeightSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	// //Transfer FC0 Weights
-	// *DmaRdAddr  = 0x90010000;
-	// *DmaWrAddr  = fc0Weights;
-	// *DmaCopyLen = fc0WeightSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Transfer FC1 Weights
-	// *DmaRdAddr  = 0x90010000;
-	// *DmaWrAddr  = fc1Weights;
-	// *DmaCopyLen = fc1WeightSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+	//Transfer Conv 2 Weights
+	*DmaRdAddr  = 0x90010000;
+	*DmaWrAddr  = Conv2Weights;
+	*DmaCopyLen = conv2WeightSize;
+	*DmaFlags   = DEV_INIT;
+	// Poll DMA for finish
+	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
+
 
 	//Start conv0
 	*DATAMOVE0Flags = DEV_INIT;
@@ -79,10 +76,9 @@ void top(uint64_t mainMem) {
 	*CONV1Flags = DEV_INIT;
 	// Start pool1
 	*POOL1Flags = DEV_INIT;
-	// // Start fc0
-	// *FC0Flags = DEV_INIT;
-	// // Start fc1
-	// *FC1Flags = DEV_INIT;
+	*DATAMOVE2Flags = DEV_INIT;
+	// Start Conv2
+	*Conv2Flags = DEV_INIT;
 	
 	// Verify frame was written
 	while ((*StrDmaFlags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);

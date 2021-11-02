@@ -22,17 +22,17 @@ void conv0() {
             // Check that the window is valid
             if(!(w+conv0KSize>conv0InDim || h+conv0KSize>conv0InDim)) {
                 // Output Channels
-                #pragma unroll 3
+                #pragma nounroll
                 for(cc = 0; cc < conv0OutChan; cc++) {
                     // Kernel X
                     int sum = 0;
-                    #pragma unroll
+                    #pragma nounroll
                     for (x = 0; x < conv0KSize; x++) {
                         // Kernel Y
-                        #pragma unroll
+                        #pragma nounroll
                         for (y = 0; y < conv0KSize; y++) {
                             // Input Channels
-                            #pragma unroll
+                            #pragma nounroll
                             for(c = 0; c < conv0InChan; c++) {
                                 sum += convInput[InputIdx3D(h+x, w+y, c)]
                                 * kernel[KIdx4D(x,y,c,cc)];

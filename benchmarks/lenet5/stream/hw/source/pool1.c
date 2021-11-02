@@ -6,8 +6,7 @@
 void pool1() {
     uint32_t* strIn = (uint32_t*)Conv1Out;
     uint32_t* convInput = (uint32_t*)Pool1Window;
-    // uint32_t* strOut = (uint32_t*)Pool1Out;
-    uint32_t* strOut = (uint32_t*)STREAMDMA_Stream;
+    uint32_t* strOut = (uint32_t*)Pool1Out;
 
     int h,w,c,cc,hh,x,y;
     // Input X

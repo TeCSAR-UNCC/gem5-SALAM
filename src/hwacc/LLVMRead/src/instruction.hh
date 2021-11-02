@@ -947,13 +947,22 @@ The GEP indecies will by APSInts, so cast to int64_t for calculating offset insi
 class GetElementPtr : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        std::vector<int64_t> offsets;
-        std::vector<bool> offsetOfStruct;
+        // std::vector<int64_t> offsets;
+        // std::vector<bool> offsetOfStruct;
         SALAM::Debugger *dbgr;
         llvm::Type * resultElementType;
         uint64_t resultElementSize;
         uint64_t resultElementSizeInBytes;
 
+        struct GEPOffset {
+            int64_t off;
+            bool structOff;
+            GEPOffset(int64_t o, bool str) {
+                off = o;
+                structOff = str;
+            }
+        };
+        std::map<uint64_t, GEPOffset> offsets;
     protected:
 
     public:
