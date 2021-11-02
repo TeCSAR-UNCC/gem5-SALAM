@@ -643,6 +643,7 @@ LLVMInterface::initialize() {
     DPRINTF(LLVMInterface, "================================================================\n");
     //debug(1);
     launchTopFunction();
+    std::cout << "\n\nTop Function Finished!\n\n";
 
     // HW
     // for(const auto& count : hw->opcodes->usage) {

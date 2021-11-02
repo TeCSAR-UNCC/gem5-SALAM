@@ -39,7 +39,7 @@ def makeHWAcc(options, system):
     AccConfig(system.acctest.bench, config, ir)
     system.acctest.bench.pio = system.acctest.top.local
     system.acctest.spm = ScratchpadMemory()
-    AccSPMConfig(system.acctest.bench, system.acctest.spm, config)
+    #AccSPMConfig(system.acctest.bench, system.acctest.spm, config)
     system.acctest._connect_spm(system.acctest.spm)
     # system.acctest.bench.enable_debug_msgs = True
 

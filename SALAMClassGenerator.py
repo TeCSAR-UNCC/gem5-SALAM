@@ -136,7 +136,7 @@ class FunctionalUnitGenerator():
             self.fu_list_header_file.write("#include \"sim/sim_object.hh\"\n")
 
             self.fu_list_header_file.write("// GENERATED HEADERS - DO NOT MODIFY\n")
-            self.inst_config_header_file.write("#include \"../generated/functionalunits/base.hh\"\n")
+            self.fu_list_header_file.write("#include \"../generated/functionalunits/base.hh\"\n")
             for unit in self.fu_list:
                 # Add include headers to files
                 self.fu_list_header_file.write("#include \"../generated/functionalunits/" + unit + ".hh\"\n")

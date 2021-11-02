@@ -12,7 +12,7 @@ def makeHWAcc(options, system):
 
     # Specify the path to the config file for an accelerator
     # acc_config = <Absolute path to the config file>
-    acc_config = options.accpath + "/" + options.accbench + "/config.ini"
+    #acc_config = options.accpath + "/" + options.accbench + "/config.ini"
 
     ############################# Creating the Accelerator Cluster #################################
     # Create a new Accelerator Cluster
@@ -32,7 +32,7 @@ def makeHWAcc(options, system):
 
     # Add an SPM for the accelerator
     system.acctest.acc_spm = ScratchpadMemory()
-    AccSPMConfig(system.acctest.acc, system.acctest.acc_spm, acc_config)
+    #AccSPMConfig(system.acctest.acc, system.acctest.acc_spm, acc_config)
     system.acctest._connect_spm(system.acctest.acc_spm)
     system.acctest.acc_spm.reset_on_scratchpad_read = False
 

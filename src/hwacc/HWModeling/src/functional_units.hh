@@ -28,6 +28,7 @@ class FunctionalUnits : public SimObject
 {
 	private:
 	protected:
+
 	public:
 		// GENERATED CLASS MEMBERS - DO NOT MODIFY
 		FloatDivider* _float_divider;
@@ -45,9 +46,6 @@ class FunctionalUnits : public SimObject
 		// DEFAULT CONSTRUCTOR - DO NOT MODIFY
 		FunctionalUnits(const FunctionalUnitsParams &params);
 		// END DEFAULT CONSTRUCTOR
-
-		// Need to be added to generator script
 		std::vector<FunctionalUnitBase*> functional_unit_list;
-
 };
 #endif //__HWMODEL_FUNCTIONAL_UNITS_HH__

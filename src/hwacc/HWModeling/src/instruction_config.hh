@@ -4,6 +4,7 @@
 #include "params/InstConfig.hh"
 #include "sim/sim_object.hh"
 // GENERATED HEADERS - DO NOT MODIFY
+#include "../generated/instructions/base.hh"
 #include "../generated/instructions/add.hh"
 #include "../generated/instructions/addrspacecast.hh"
 #include "../generated/instructions/alloca.hh"
@@ -58,6 +59,8 @@
 #include <vector>
 
 using namespace gem5;
+
+class InstConfigBase;
 
 class InstConfig : public SimObject
 {
@@ -119,8 +122,5 @@ class InstConfig : public SimObject
 		// DEFAULT CONSTRUCTOR - DO NOT MODIFY
 		InstConfig(const InstConfigParams &params);
 		// END DEFAULT CONSTRUCTOR
-
-        // Needs to be added to generator script
-        std::vector<InstConfigBase*> inst_list;
-};
+		std::vector<InstConfigBase*> inst_list;};
 #endif //__INSTRUCTION_CONFIG_HH__

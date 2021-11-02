@@ -29,25 +29,25 @@ acc_cluster:
       - Name: NODES
         Type: SPM
         Size: 2048
-        Ports: 1
+        Ports: 4
         ReadyMode: False
     - Var:
       - Name: EDGES
         Type: SPM
         Size: 16384
-        Ports: 1
+        Ports: 4
         ReadyMode: False
     - Var:
       - Name: LEVELS
         Type: SPM
         Size: 256
-        Ports: 1
+        Ports: 4
         ReadyMode: False
     - Var:
       - Name: LEVELCOUNTS
         Type: SPM
         Size: 40
-        Ports: 1
+        Ports: 4
         ReadyMode: False
 hw_config:
   top:
@@ -72,7 +72,7 @@ hw_config:
         functional_unit: 4
         functional_unit_limit: 0
         opcode_num: 28
-        runtime_cycles: 1
+        runtime_cycles: 0
       ashr:
         functional_unit: 3
         functional_unit_limit: 0
@@ -197,7 +197,7 @@ hw_config:
         functional_unit: 4
         functional_unit_limit: 0
         opcode_num: 29
-        runtime_cycles: 1
+        runtime_cycles: 0
       phi:
         functional_unit: 0
         functional_unit_limit: 0
