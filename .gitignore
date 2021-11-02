@@ -37,3 +37,4 @@ llvm-c
 BM_ARM_OUT
 .gdb_history
 .vscode
+build.sh
