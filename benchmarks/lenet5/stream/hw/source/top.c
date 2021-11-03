@@ -9,6 +9,7 @@ void top(uint64_t mainMem) {
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;
 	volatile uint8_t  * DATAMOVE1Flags = (uint8_t *)DATA_MOVE_1;
 	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
+	volatile uint8_t  * POOLMOVE1Flags = (uint8_t *)POOL_MOVE_1;
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
 	volatile uint8_t  * DATAMOVE2Flags = (uint8_t *)DATA_MOVE_2;
 	volatile uint8_t  * Conv2Flags  = (uint8_t *)CONV2;
@@ -76,6 +77,7 @@ void top(uint64_t mainMem) {
 	// Start conv1
 	*CONV1Flags = DEV_INIT;
 	// Start pool1
+	*POOLMOVE1Flags = DEV_INIT;
 	*POOL1Flags = DEV_INIT;
 	*DATAMOVE2Flags = DEV_INIT;
 	// Start Conv2

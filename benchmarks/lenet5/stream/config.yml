@@ -135,7 +135,14 @@ acc_cluster:
         StreamSize: 4
         BufferSize: 16
         InCon: conv1
-        OutCon: pool1
+        OutCon: pool_move_1
+  - Accelerator:
+    - Name: pool_move_1
+      IrPath: benchmarks/lenet5/stream/hw/ir/pool_move_1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool_move_1.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
   - Accelerator:
     - Name: pool1
       IrPath: benchmarks/lenet5/stream/hw/ir/pool1.ll
@@ -148,6 +155,10 @@ acc_cluster:
         Type: SPM
         Size: 1280
         Ports: 1
+        ReadyMode: True
+        ResetOnRead: True
+        WriteOnValid: False
+        Connections: pool_move_1:1
     - Var:
       - Name: Pool1Out
         Type: Stream

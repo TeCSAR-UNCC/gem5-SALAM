@@ -2,22 +2,11 @@
 
 typedef uint32_t array3d_win[pool1KSize][pool1InDim][pool1InChan];
 
-void compute(uint32_t* strIn, array3d_win poolWin, uint32_t* strOut) {
-    int h,w,c,cc,hh,x,y;
+void compute(array3d_win poolWin, uint32_t* strOut) {
+    int h,w,c,cc,x,y;
     // Input X
     #pragma nounroll
     for (h = 0; h < pool1InDim; h+=pool1KSize) {
-        // Shift Window
-        #pragma nounroll
-        for(hh = 0; hh < pool1KSize; hh++){
-            #pragma nounroll
-            for (w = 0; w < pool1InDim; w++) {
-                #pragma nounroll
-                for(c = 0; c < pool1InChan; c++) {
-                    poolWin[hh][w][c] = *strIn;
-                }
-            }
-        }
         // Input Y
         #pragma nounroll
         for (w = 0; w < pool1InDim; w+=pool1KSize) {
@@ -41,11 +30,10 @@ void compute(uint32_t* strIn, array3d_win poolWin, uint32_t* strOut) {
 }
 
 void top() {
-    void* strIn = (void*)Conv1Out;
     void* poolWin = (void*)Pool1Window;
     void* strOut = (void*)Pool1Out;
 
-	compute(strIn,poolWin,strOut);
+	compute(poolWin,strOut);
 
 	return;
 }
