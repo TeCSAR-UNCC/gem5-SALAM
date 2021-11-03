@@ -17,6 +17,7 @@
 #define pool0UnrollFactor 1
 #define pool0InDim 28
 #define pool0InChan 6
+#define pool0OutChan 6
 #define pool0KSize 2
 #define pool0OutDim 14
 #define pool0InSize pool0InDim*pool0InDim*pool0InChan*sizeof(TYPE)
@@ -36,6 +37,7 @@
 #define pool1UnrollFactor 1
 #define pool1InDim 10
 #define pool1InChan 16
+#define pool1OutChan 16
 #define pool1KSize 2
 #define pool1OutDim 5
 #define pool1InSize pool1InDim*pool1InDim*pool1InChan*sizeof(TYPE)
@@ -103,11 +105,10 @@
 #define fc0Input 0x10032d40
 #define fc0Weights 0x100333c0
 #define fc0Output 0x10062200
-#define fc0LUT 0x10062400
 //Accelerator: FC1
-#define FC1 0x10062440
-#define fc1Input 0x10062480
-#define fc1Weights 0x10062680
-#define fc1Output 0x1006c440
-#define fc1LUT 0x1006c5c0
+#define FC1 0x10062400
+#define fc1Input 0x10062440
+#define fc1Weights 0x10062640
+#define fc1Output 0x1006c400
+#define fc1LUT 0x1006c580
 //END GENERATED CODE

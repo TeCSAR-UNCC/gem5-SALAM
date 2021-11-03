@@ -5,8 +5,11 @@ void top(uint64_t feats, uint64_t weights) {
 	volatile uint8_t  * CONV0Flags  = (uint8_t *)CONV0;
 	volatile uint8_t  * DATA_MOVER_0_Flags  = (uint8_t *)DATA_MOVER_0;
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;
+	volatile uint8_t  * DATA_MOVER_1_Flags  = (uint8_t *)DATA_MOVER_1;
 	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
+	volatile uint8_t  * DATA_MOVER_2_Flags  = (uint8_t *)DATA_MOVER_2;
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
+	volatile uint8_t  * DATA_MOVER_3_Flags  = (uint8_t *)DATA_MOVER_3;
 	volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
 	volatile uint8_t  * FC1Flags  = (uint8_t *)FC1;
 	// Define DMA MMR
@@ -30,41 +33,7 @@ void top(uint64_t feats, uint64_t weights) {
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the conv0
-	*CONV0Flags = DEV_INIT;
-	//Poll function for finish
-	// //Transfer Results Back to Main Memory
-	// *DmaRdAddr  = Conv0Output;
-	// *DmaWrAddr  = weights;
-	// *DmaCopyLen = conv0OutputSize;
-	// *DmaFlags   = DEV_INIT;
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	*DATA_MOVER_0_Flags = DEV_INIT;
-	// //Transfer POOL0 Features
-	// *DmaRdAddr  = 0x90000000;
-	// *DmaWrAddr  = pool0Input;
-	// *DmaCopyLen = pool0InSize;
-	// *DmaFlags   = DEV_INIT;
-	// //Poll DMA for finish
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the pool0
-	*POOL0Flags = DEV_INIT;
-	//Poll function for finish
-	while ((*POOL0Flags & DEV_INTR) != DEV_INTR);
-	// //Transfer Results Back to Main Memory
-	// *DmaRdAddr  = pool0Output;
-	// *DmaWrAddr  = 0x90000000;
-	// *DmaCopyLen = pool0OutputSize;
-	// *DmaFlags   = DEV_INIT;
-	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 
-	//Transfer Input Features
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = Conv1Input;
-	*DmaCopyLen = conv1InSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 	//Transfer Input Weights
 	*DmaRdAddr  = 0x90000000;
 	*DmaWrAddr  = Conv1Weights;
@@ -72,45 +41,27 @@ void top(uint64_t feats, uint64_t weights) {
 	*DmaFlags   = DEV_INIT;
 	//Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the conv1
+
+	//Start conv0
+	*CONV0Flags = DEV_INIT;
+	//Start Data Mover 0
+	*DATA_MOVER_0_Flags = DEV_INIT;
+	//Start pool0
+	*POOL0Flags = DEV_INIT;
+	//Start Data Mover 1
+	*DATA_MOVER_1_Flags = DEV_INIT;
+	//Start conv1
 	*CONV1Flags = DEV_INIT;
-	//Poll function for finish
-	while ((*CONV1Flags & DEV_INTR) != DEV_INTR);
-	//Transfer Results Back to Main Memory
-	*DmaRdAddr  = Conv1Output;
-	*DmaWrAddr  = 0x90000000;
-	*DmaCopyLen = conv1OutputSize;
-	*DmaFlags   = DEV_INIT;
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-
-	//Transfer Input Features
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = pool1Input;
-	*DmaCopyLen = pool1InSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the pool1
+	//Start Data Mover 2
+	*DATA_MOVER_2_Flags = DEV_INIT;
+	//Start pool1
 	*POOL1Flags = DEV_INIT;
-	//Poll function for finish
-	while ((*POOL1Flags & DEV_INTR) != DEV_INTR);
-	//Transfer Results Back to Main Memory
-	*DmaRdAddr  = pool1Output;
-	*DmaWrAddr  = 0x90000000;
-	*DmaCopyLen = pool1OutputSize;
-	*DmaFlags   = DEV_INIT;
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-
-	//Transfer Input Features
-	*DmaRdAddr  = 0x90000000;
-	*DmaWrAddr  = fc0Input;
-	*DmaCopyLen = fc0InSize;
-	*DmaFlags   = DEV_INIT;
-	//Poll DMA for finish
-	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	//Start the fc0
+	//Start Data Mover 3
+	*DATA_MOVER_3_Flags = DEV_INIT;
+	//Start fc0
 	*FC0Flags = DEV_INIT;
-	//Poll function for finish
+	
+	// Wait for last acc to exit
 	while ((*FC0Flags & DEV_INTR) != DEV_INTR);
 	//Transfer Results Back to Main Memory
 	*DmaRdAddr  = fc0Output;
@@ -118,7 +69,6 @@ void top(uint64_t feats, uint64_t weights) {
 	*DmaCopyLen = fc0OutputSize;
 	*DmaFlags   = DEV_INIT;
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-
 	// //Transfer Input Features
 	// *DmaRdAddr  = 0x90000000;
 	// *DmaWrAddr  = fc1Input;
@@ -126,7 +76,7 @@ void top(uint64_t feats, uint64_t weights) {
 	// *DmaFlags   = DEV_INIT;
 	// //Poll DMA for finish
 	// while ((*DmaFlags & DEV_INTR) != DEV_INTR);
-	// //Start the fc1
+	// //Start fc1
 	// *FC1Flags = DEV_INIT;
 	// //Poll function for finish
 	// while ((*FC1Flags & DEV_INTR) != DEV_INTR);

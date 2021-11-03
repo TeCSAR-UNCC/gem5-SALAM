@@ -28,7 +28,7 @@ acc_cluster:
       - Name: Conv0Input
         Type: SPM
         Size: 4096
-        Ports: 150
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
@@ -36,12 +36,12 @@ acc_cluster:
       - Name: Conv0Weights
         Type: SPM
         Size: 600
-        Ports: 150
+        Ports: 1
     - Var:
       - Name: Conv0Output
         Type: SPM
         Size: 18816
-        Ports: 6
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
@@ -50,7 +50,7 @@ acc_cluster:
       - Name: Conv0LUT
         Type: SPM
         Size: 4
-        Ports: 6
+        Ports: 1
   - Accelerator:
     - Name: data_mover_0
       IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_0.ll
@@ -69,7 +69,7 @@ acc_cluster:
       - Name: pool0Input
         Type: SPM
         Size: 18816
-        Ports: 24
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
@@ -78,7 +78,7 @@ acc_cluster:
       - Name: pool0Output
         Type: SPM
         Size: 4704
-        Ports: 24
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
@@ -101,20 +101,21 @@ acc_cluster:
       - Name: Conv1Input
         Type: SPM
         Size: 4704
-        Ports: 150
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
+        Connections: data_mover_1:1
     - Var:
       - Name: Conv1Weights
         Type: SPM
         Size: 9600
-        Ports: 150
+        Ports: 1
     - Var:
       - Name: Conv1Output
         Type: SPM
         Size: 6400
-        Ports: 16
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
@@ -123,7 +124,7 @@ acc_cluster:
       - Name: Conv1LUT
         Type: SPM
         Size: 4
-        Ports: 16
+        Ports: 1
   - Accelerator:
     - Name: data_mover_2
       IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_2.ll
@@ -142,15 +143,16 @@ acc_cluster:
       - Name: pool1Input
         Type: SPM
         Size: 6400
-        Ports: 64
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
+        Connections: data_mover_2:1
     - Var:
       - Name: pool1Output
         Type: SPM
         Size: 1600
-        Ports: 64
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
@@ -166,22 +168,23 @@ acc_cluster:
     - Name: fc0
       IrPath: benchmarks/lenet5/massive/hw/ir/fc0.ll
       ConfigPath: benchmarks/lenet5/massive/hw/configs/fc0.ini
-      Debug: False
+      Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
       - Name: fc0Input
         Type: SPM
         Size: 1600
-        Ports: 80
+        Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
+        Connections: data_mover_3:1
     - Var:
       - Name: fc0Weights
         Type: SPM
         Size: 192000
-        Ports: 80
+        Ports: 1
     - Var:
       - Name: fc0Output
         Type: SPM
@@ -190,11 +193,6 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
-    - Var:
-      - Name: fc0LUT
-        Type: SPM
-        Size: 4
-        Ports: 1
   - Accelerator:
     - Name: fc1
       IrPath: benchmarks/lenet5/massive/hw/ir/fc1.ll
@@ -206,12 +204,12 @@ acc_cluster:
       - Name: fc1Input
         Type: SPM
         Size: 480
-        Ports: 120
+        Ports: 1
     - Var:
       - Name: fc1Weights
         Type: SPM
         Size: 40320
-        Ports: 120
+        Ports: 1
     - Var:
       - Name: fc1Output
         Type: SPM

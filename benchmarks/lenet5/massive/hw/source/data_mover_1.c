@@ -22,7 +22,7 @@ void compute(array3d_t in, array3d_t out) {
 
 void top(){
     void* input = (void*)pool0Output;
-    void* output = (void*)conv1Input;
+    void* output = (void*)Conv1Input;
 
 	compute(input,output);
 }

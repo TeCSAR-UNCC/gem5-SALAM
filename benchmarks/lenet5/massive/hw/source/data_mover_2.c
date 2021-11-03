@@ -21,7 +21,7 @@ void compute(array3d_t in, array3d_t out) {
 }
 
 void top(){
-    void* input = (void*)conv1Output;
+    void* input = (void*)Conv1Output;
     void* output = (void*)pool1Input;
 
 	compute(input,output);
