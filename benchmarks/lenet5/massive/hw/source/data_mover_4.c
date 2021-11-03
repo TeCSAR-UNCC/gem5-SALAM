@@ -1,6 +1,6 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-typedef uint32_t array3d_t[pool1OutDim][pool1OutDim][pool1OutChan];
+typedef uint32_t array3d_t[conv2OutDim][conv2OutDim][conv2OutChan];
 
 void compute(array3d_t in, array3d_t out) {
 
@@ -8,12 +8,12 @@ void compute(array3d_t in, array3d_t out) {
     int h,w,c;
     // Input X
     #pragma nounroll
-    for (h = 0; h < pool1OutDim; h++) {
+    for (h = 0; h < conv2OutDim; h++) {
         // Input Y
         #pragma nounroll
-        for (w = 0; w < pool1OutDim; w++) {
+        for (w = 0; w < conv2OutDim; w++) {
             #pragma nounroll
-            for(c = 0; c < pool1OutChan; c++) {
+            for(c = 0; c < conv2OutChan; c++) {
                out[h][w][c] = in[h][w][c];
             }
         }
@@ -21,8 +21,8 @@ void compute(array3d_t in, array3d_t out) {
 }
 
 void top(){
-    void* input = (void*)pool1Output;
-    void* output = (void*)conv2Input;
+    void* input = (void*)conv2Output;
+    void* output = (void*)fc0Input;
 
 	compute(input,output);
 }

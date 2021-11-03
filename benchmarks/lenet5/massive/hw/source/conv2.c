@@ -1,31 +1,31 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-typedef uint32_t array3d_in[fc1InDim][fc1InDim][fc1InChan];
-typedef uint32_t array4d_t[fc1KSize][fc1KSize][fc1InChan][fc1OutChan];
-typedef uint32_t array3d_out[fc1OutDim][fc1OutDim][fc1OutChan];
+typedef uint32_t array3d_in[conv2InDim][conv2InDim][conv2InChan];
+typedef uint32_t array4d_t[conv2KSize][conv2KSize][conv2InChan][conv2OutChan];
+typedef uint32_t array3d_out[conv2OutDim][conv2OutDim][conv2OutChan];
 
 void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
     // HWC Implementation for Convolution
     int h,w,c,cc,x,y;
     // Input X
     #pragma nounroll
-    for (h = 0; h < fc1OutDim; h++) {
+    for (h = 0; h < conv2OutDim; h++) {
         // Input Y
         #pragma nounroll
-        for (w = 0; w < fc1OutDim; w++) {
+        for (w = 0; w < conv2OutDim; w++) {
             // Output Channels
             #pragma nounroll
-            for(cc = 0; cc < fc1OutChan; cc++) {
+            for(cc = 0; cc < conv2OutChan; cc++) {
                 // Kernel X
                 int sum = 0;
                 #pragma nounroll
-                for (x = 0; x < fc1KSize; x++) {
+                for (x = 0; x < conv2KSize; x++) {
                     // Kernel Y
                     #pragma nounroll
-                    for (y = 0; y < fc1KSize; y++) {
+                    for (y = 0; y < conv2KSize; y++) {
                         // Input Channels
                         #pragma nounroll
-                        for(c = 0; c < fc1InChan; c++) {
+                        for(c = 0; c < conv2InChan; c++) {
                             sum += convInput[h+x][w+y][c]
                             * kernel[x][y][c][cc];
                         }
@@ -57,9 +57,9 @@ void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
 }
 
 void top() {
-    void* convInput = (void*)fc1Input;
-    void* kernel = (void*)fc1Weights;
-    void* convOut = (void*)fc1Output;
+    void* convInput = (void*)conv2Input;
+    void* kernel = (void*)conv2Weights;
+    void* convOut = (void*)conv2Output;
 
 	compute(convInput,kernel,convOut);
 

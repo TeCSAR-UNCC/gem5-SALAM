@@ -43,28 +43,28 @@
 #define pool1InSize pool1InDim*pool1InDim*pool1InChan*sizeof(TYPE)
 #define pool1OutputSize pool1OutDim*pool1OutDim*pool1InChan*sizeof(TYPE)
 
-#define fc0InDim 5
-#define fc0InChan 16
-#define fc0KSize 5
-#define fc0KernChan 120
+#define conv2InDim 5
+#define conv2InChan 16
+#define conv2KSize 5
+#define conv2KernChan 120
+#define conv2OutDim 1
+#define conv2OutChan 120
+#define conv2InSize conv2InDim*conv2InDim*conv2InChan*sizeof(TYPE)
+#define conv2WeightSize conv2KSize*conv2KSize*conv2InChan*conv2KernChan*sizeof(TYPE)
+#define conv2OutputSize conv2OutDim*conv2OutDim*conv2KernChan*sizeof(TYPE)
+
+#define fc0InDim 1
+#define fc0InChan 120
+#define fc0KSize 1
+#define fc0KernChan 84
 #define fc0OutDim 1
-#define fc0OutChan 120
+#define fc0OutChan 84
 #define fc0InSize fc0InDim*fc0InDim*fc0InChan*sizeof(TYPE)
-#define fc0WeightSize fc0KSize*fc0KSize*fc0InChan*fc0KernChan*sizeof(TYPE)
+#define fc0WeightSize fc0KSize*fc0KSize*conv2InChan*fc0KernChan*sizeof(TYPE)
 #define fc0OutputSize fc0OutDim*fc0OutDim*fc0KernChan*sizeof(TYPE)
 
-#define fc1InDim 1
-#define fc1InChan 120
-#define fc1KSize 1
-#define fc1KernChan 84
-#define fc1OutDim 1
-#define fc1OutChan 84
-#define fc1InSize fc1InDim*fc1InDim*fc1InChan*sizeof(TYPE)
-#define fc1WeightSize fc1KSize*fc1KSize*fc0InChan*fc1KernChan*sizeof(TYPE)
-#define fc1OutputSize fc1OutDim*fc1OutDim*fc1KernChan*sizeof(TYPE)
-
 //BEGIN GENERATED CODE
-//Cluster: FC1
+//Cluster: FC0
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001
@@ -100,15 +100,17 @@
 #define pool1Output 0x10032640
 //Accelerator: DATA_MOVER_3
 #define DATA_MOVER_3 0x10032cc0
+//Accelerator: CONV2
+#define CONV2 0x10032d00
+#define conv2Input 0x10032d40
+#define conv2Weights 0x100333c0
+#define conv2Output 0x10062200
+//Accelerator: DATA_MOVER_4
+#define DATA_MOVER_4 0x10062400
 //Accelerator: FC0
-#define FC0 0x10032d00
-#define fc0Input 0x10032d40
-#define fc0Weights 0x100333c0
-#define fc0Output 0x10062200
-//Accelerator: FC1
-#define FC1 0x10062400
-#define fc1Input 0x10062440
-#define fc1Weights 0x10062640
-#define fc1Output 0x1006c400
-#define fc1LUT 0x1006c580
+#define FC0 0x10062440
+#define fc0Input 0x10062480
+#define fc0Weights 0x10062680
+#define fc0Output 0x1006c440
+#define fc0LUT 0x1006c5c0
 //END GENERATED CODE

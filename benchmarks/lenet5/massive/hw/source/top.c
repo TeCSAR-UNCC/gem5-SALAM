@@ -10,8 +10,10 @@ void top(uint64_t feats, uint64_t weights) {
 	volatile uint8_t  * DATA_MOVER_2_Flags  = (uint8_t *)DATA_MOVER_2;
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
 	volatile uint8_t  * DATA_MOVER_3_Flags  = (uint8_t *)DATA_MOVER_3;
+	volatile uint8_t  * CONV2Flags  = (uint8_t *)CONV2;
+	volatile uint8_t  * DATA_MOVER_4_Flags  = (uint8_t *)DATA_MOVER_4;
 	volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
-	volatile uint8_t  * FC1Flags  = (uint8_t *)FC1;
+
 	// Define DMA MMR
 	volatile uint8_t  * DmaFlags   = (uint8_t  *)(DMA_Flags);
 	volatile uint64_t * DmaRdAddr  = (uint64_t *)(DMA_RdAddr);
@@ -58,12 +60,15 @@ void top(uint64_t feats, uint64_t weights) {
 	*POOL1Flags = DEV_INIT;
 	//Start Data Mover 3
 	*DATA_MOVER_3_Flags = DEV_INIT;
+	//Start conv2
+	*CONV2Flags = DEV_INIT;
+	//Start Data Mover 4
+	*DATA_MOVER_4_Flags = DEV_INIT;
 	//Start fc0
 	*FC0Flags = DEV_INIT;
-	
 	// Wait for last acc to exit
 	while ((*FC0Flags & DEV_INTR) != DEV_INTR);
-	//Transfer Results Back to Main Memory
+	// Transfer Results Back to Main Memory
 	*DmaRdAddr  = fc0Output;
 	*DmaWrAddr  = 0x90000000;
 	*DmaCopyLen = fc0OutputSize;

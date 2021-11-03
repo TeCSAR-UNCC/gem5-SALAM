@@ -165,14 +165,14 @@ acc_cluster:
       PIOSize: 1
       PIOMaster: LocalBus
   - Accelerator:
-    - Name: fc0
-      IrPath: benchmarks/lenet5/massive/hw/ir/fc0.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/fc0.ini
+    - Name: conv2
+      IrPath: benchmarks/lenet5/massive/hw/ir/conv2.ll
+      ConfigPath: benchmarks/lenet5/massive/hw/configs/conv2.ini
       Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: fc0Input
+      - Name: conv2Input
         Type: SPM
         Size: 1600
         Ports: 1
@@ -181,42 +181,57 @@ acc_cluster:
         WriteOnValid: False
         Connections: data_mover_3:1
     - Var:
-      - Name: fc0Weights
+      - Name: conv2Weights
         Type: SPM
         Size: 192000
         Ports: 1
     - Var:
-      - Name: fc0Output
+      - Name: conv2Output
         Type: SPM
         Size: 480
         Ports: 1
         ReadyMode: True
         ResetOnRead: False
         WriteOnValid: False
+        Connections: data_mover_4:1
   - Accelerator:
-    - Name: fc1
-      IrPath: benchmarks/lenet5/massive/hw/ir/fc1.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/fc1.ini
+    - Name: data_mover_4
+      IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_4.ll
+      ConfigPath: benchmarks/lenet5/massive/hw/configs/data_mover_4.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+  - Accelerator:
+    - Name: fc0
+      IrPath: benchmarks/lenet5/massive/hw/ir/fc0.ll
+      ConfigPath: benchmarks/lenet5/massive/hw/configs/fc0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
-      - Name: fc1Input
+      - Name: fc0Input
         Type: SPM
         Size: 480
         Ports: 1
+        ReadyMode: True
+        ResetOnRead: False
+        WriteOnValid: False
+        Connections: data_mover_4:1
     - Var:
-      - Name: fc1Weights
+      - Name: fc0Weights
         Type: SPM
         Size: 40320
         Ports: 1
     - Var:
-      - Name: fc1Output
+      - Name: fc0Output
         Type: SPM
         Size: 336
         Ports: 1
+        ReadyMode: True
+        ResetOnRead: False
+        WriteOnValid: False
     - Var:
-      - Name: fc1LUT
+      - Name: fc0LUT
         Type: SPM
         Size: 4
         Ports: 1
