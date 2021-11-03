@@ -13,7 +13,8 @@ void top(uint64_t mainMem) {
 	volatile uint8_t  * POOL1Flags  = (uint8_t *)POOL1;
 	volatile uint8_t  * DATAMOVE2Flags = (uint8_t *)DATA_MOVE_2;
 	volatile uint8_t  * Conv2Flags  = (uint8_t *)CONV2;
-	// volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
+	volatile uint8_t  * DATAMOVE3Flags = (uint8_t *)DATA_MOVE_3;
+	volatile uint8_t  * FC0Flags  = (uint8_t *)FC0;
 
 	//StreamDma
 	volatile uint8_t  * StrDmaFlags				= (uint8_t  *)(STREAMDMA_Flags);
@@ -39,7 +40,7 @@ void top(uint64_t mainMem) {
 	*StrDmaRdFrameBuffSize = 1;
 	//Initialize Stream-DRAM DMA
 	*StrDmaWrAddr = 0x91000000;
-	*StrDmaWrFrameSize = 480;
+	*StrDmaWrFrameSize = 336;
 	*StrDmaNumWrFrames = 1;
 	*StrDmaWrFrameBuffSize = 1;
 	//Start Stream DMAs
@@ -82,7 +83,9 @@ void top(uint64_t mainMem) {
 	*DATAMOVE2Flags = DEV_INIT;
 	// Start Conv2
 	*Conv2Flags = DEV_INIT;
-	
+	// Start Conv2
+	*DATAMOVE3Flags = DEV_INIT;
+	*FC0Flags = DEV_INIT;
 	// Verify frame was written
 	while ((*StrDmaFlags & STR_DMA_WR_RUNNING) == STR_DMA_WR_RUNNING);
 

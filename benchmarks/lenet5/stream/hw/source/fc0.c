@@ -1,7 +1,7 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-typedef uint32_t array3d_in[conv2KSize][conv2KSize][conv2InChan];
-typedef uint32_t array4d_t[conv2KSize][conv2KSize][conv2InChan][conv2OutChan];
+typedef uint32_t array3d_in[fc0KSize][fc0KSize][fc0InChan];
+typedef uint32_t array4d_t[fc0KSize][fc0KSize][fc0InChan][fc0OutChan];
 
 void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
 
@@ -9,18 +9,18 @@ void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
     uint32_t sum;
 
     #pragma nounroll
-    for (h=0; h<conv2OutDim; h++){
+    for (h=0; h<fc0OutDim; h++){
         #pragma nounroll
-        for (w=0; w<conv2OutDim; w++){
+        for (w=0; w<fc0OutDim; w++){
             sum = 0;
             #pragma nounroll
-            for(cc=0; cc<conv2OutChan; cc++){
+            for(cc=0; cc<fc0OutChan; cc++){
                 #pragma nounroll
-                for(x=0; x<conv2KSize; x++) {
+                for(x=0; x<fc0KSize; x++) {
                     #pragma nounroll
-                    for(y=0; y<conv2KSize; y++){
+                    for(y=0; y<fc0KSize; y++){
                         #pragma nounroll
-                        for(c=0; c<conv2InChan; c++){
+                        for(c=0; c<fc0InChan; c++){
                             sum += convWin[x][y][c] * kernel[x][y][c][cc];
                         }
                     }
@@ -52,9 +52,9 @@ void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
 }
 
 void top() {
-    void* convWin = (void*)Conv2Window;
-    void* kernel = (void*)Conv2Weights;
-    void* strOut = (void*)Conv2Out;
+    void* convWin = (void*)FC0Window;
+    void* kernel = (void*)FC0Weights;
+    void* strOut = (void*)STREAMDMA_Stream;
 
 	compute(convWin,kernel,strOut);
 

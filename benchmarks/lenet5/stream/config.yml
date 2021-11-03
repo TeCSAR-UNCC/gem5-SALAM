@@ -185,7 +185,6 @@ acc_cluster:
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
-      StreamIn: StreamDma
     - Var:
       - Name: Conv2Weights
         Type: SPM
@@ -200,10 +199,44 @@ acc_cluster:
         ResetOnRead: True
         WriteOnValid: False
         Connections: data_move_2:1
-    # - Var:
-    #   - Name: Conv2Out
-    #     Type: Stream
-    #     StreamSize: 4
-    #     BufferSize: 16
-    #     InCon: conv2
-    #     OutCon: data_move_3
+    - Var:
+      - Name: Conv2Out
+        Type: Stream
+        StreamSize: 4
+        BufferSize: 16
+        InCon: conv2
+        OutCon: data_move_3
+  - Accelerator:
+    - Name: data_move_3
+      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_3.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_3.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: FC0LineBuff
+        Type: SPM
+        Size: 480
+        Ports: 1
+  - Accelerator:
+    - Name: fc0
+      IrPath: benchmarks/lenet5/stream/hw/ir/fc0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/fc0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: StreamDma
+    - Var:
+      - Name: FC0Weights
+        Type: SPM
+        Size: 40320
+        Ports: 1
+    - Var:
+      - Name: FC0Window
+        Type: SPM
+        Size: 480
+        Ports: 1
+        ReadyMode: True
+        ResetOnRead: True
+        WriteOnValid: False
+        Connections: data_move_3:1
