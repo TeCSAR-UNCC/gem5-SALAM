@@ -1,15 +1,9 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define BuffIdx3D(h,w,c) ((h * conv1InDim*conv1InChan + w * conv1InChan + c))
-#define WinIdx3D(h,w,c) ((h * conv1KSize*conv1InChan + w * conv1InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv1KSize*conv1KSize*conv1InChan + h *conv1KSize*conv1InChan + w * conv1InChan + c))
+typedef uint32_t array3d_buf[conv1KSize][conv1InDim][conv1InChan];
+typedef uint32_t array3d_win[conv1KSize][conv1KSize][conv1InChan];
 
-void dataMover() {
-    volatile uint32_t* strIn = (uint32_t*)Pool0Out;
-    uint32_t* convWindow = (uint32_t*)Conv1Window;
-    uint32_t* convLineBuff = (uint32_t*)Conv1LineBuff;
-
+void compute(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineBuff) {
     int h,w,c,cc,x,y;
     uint32_t sum;
 
@@ -20,7 +14,7 @@ void dataMover() {
         for(w=0; w<conv1InDim; w++){
             #pragma nounroll
             for(c=0; c<conv1InChan; c++){
-                convLineBuff[BuffIdx3D(h, w, c)] = *strIn;
+                convLineBuff[h][w][c] = *strIn;
             }
         }
     }
@@ -33,7 +27,7 @@ void dataMover() {
             for(w=0; w<conv1InDim; w++){
                 #pragma nounroll
                 for(c=0; c<conv1InChan; c++){
-                    convLineBuff[BuffIdx3D((h-1)%5, w, c)] = *strIn;
+                    convLineBuff[(h-1)%5][w][c] = *strIn;
                 }
             }
         }
@@ -47,11 +41,21 @@ void dataMover() {
                     for(y=0; y<conv1KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv1InChan; c++){
-                            convWindow[WinIdx3D(x%5, y%5, c)] = convLineBuff[BuffIdx3D((x + h%5)%5, y, c)];
+                            convWindow[x][y][c] = convLineBuff[(x + h%5)%5][y][c];
                         }
                     }
                 }
             }
         }
     }
+}
+
+void top() {
+    void* strIn = (void*)Pool0Out;
+    void* convWindow = (void*)Conv1Window;
+    void* convLineBuff = (void*)Conv1LineBuff;
+
+	compute(strIn,convWindow,convLineBuff);
+
+	return;
 }

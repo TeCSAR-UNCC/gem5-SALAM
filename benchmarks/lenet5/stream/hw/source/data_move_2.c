@@ -1,15 +1,9 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define BuffIdx3D(h,w,c) ((h * conv2InDim*conv2InChan + w * conv2InChan + c))
-#define WinIdx3D(h,w,c) ((h * conv2KSize*conv2InChan + w * conv2InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv2KSize*conv2KSize*conv2InChan + h *conv2KSize*conv2InChan + w * conv2InChan + c))
+typedef uint32_t array3d_buf[conv2KSize][conv2InDim][conv2InChan];
+typedef uint32_t array3d_win[conv2KSize][conv2KSize][conv2InChan];
 
-void dataMover() {
-    volatile uint32_t* strIn = (uint32_t*)Pool1Out;
-    uint32_t* convWindow = (uint32_t*)Conv2Window;
-    uint32_t* convLineBuff = (uint32_t*)Conv2LineBuff;
-
+void compute(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineBuff) {
     int h,w,c,cc,x,y;
     uint32_t sum;
 
@@ -20,13 +14,23 @@ void dataMover() {
         for(w=0; w<conv2InDim; w++){
             #pragma nounroll
             for(c=0; c<conv2InChan; c++){
-                convLineBuff[BuffIdx3D(h, w, c)] = *strIn;
+                convLineBuff[h][w][c] = *strIn;
             }
         }
     }
 
     #pragma nounroll
     for (h=0; h<conv2OutDim; h++){
+        // Once the first row is read data movement resumes
+        if (h>=1) {
+            #pragma nounroll
+            for(w=0; w<conv2InDim; w++){
+                #pragma nounroll
+                for(c=0; c<conv2InChan; c++){
+                    convLineBuff[(h-1)%5][w][c] = *strIn;
+                }
+            }
+        }
         #pragma nounroll
         for (w=0; w<conv2OutDim; w++){
             #pragma nounroll
@@ -37,11 +41,21 @@ void dataMover() {
                     for(y=0; y<conv2KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv2InChan; c++){
-                            convWindow[WinIdx3D(x%5, y%5, c)] = convLineBuff[BuffIdx3D((x + h%5)%5, y, c)];
+                            convWindow[x][y][c] = convLineBuff[(x + h%5)%5][y][c];
                         }
                     }
                 }
             }
         }
     }
+}
+
+void top() {
+    void* strIn = (void*)Pool1Out;
+    void* convWindow = (void*)Conv2Window;
+    void* convLineBuff = (void*)Conv2LineBuff;
+
+	compute(strIn,convWindow,convLineBuff);
+
+	return;
 }

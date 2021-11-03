@@ -1,15 +1,9 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define BuffIdx3D(h,w,c) ((h * conv0InDim*conv0InChan + w * conv0InChan + c))
-#define WinIdx3D(h,w,c) ((h * conv0KSize*conv0InChan + w * conv0InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv0KSize*conv0KSize*conv0InChan + h *conv0KSize*conv0InChan + w * conv0InChan + c))
+typedef uint32_t array3d_buf[conv0KSize][conv0InDim][conv0InChan];
+typedef uint32_t array3d_win[conv0KSize][conv0KSize][conv0InChan];
 
-void dataMover() {
-    volatile uint32_t* strIn = (uint32_t*)STREAMDMA_Stream;
-    uint32_t* convWindow = (uint32_t*)Conv0Window;
-    uint32_t* convLineBuff = (uint32_t*)Conv0LineBuff;
-
+void compute(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineBuff) {
     int h,w,c,cc,x,y;
     uint32_t sum;
 
@@ -20,7 +14,7 @@ void dataMover() {
         for(w=0; w<conv0InDim; w++){
             #pragma nounroll
             for(c=0; c<conv0InChan; c++){
-                convLineBuff[BuffIdx3D(h, w, c)] = *strIn;
+                convLineBuff[h][w][c] = *strIn;
             }
         }
     }
@@ -33,7 +27,7 @@ void dataMover() {
             for(w=0; w<conv0InDim; w++){
                 #pragma nounroll
                 for(c=0; c<conv0InChan; c++){
-                    convLineBuff[BuffIdx3D((h-1)%5, w, c)] = *strIn;
+                    convLineBuff[(h-1)%5][w][c] = *strIn;
                 }
             }
         }
@@ -47,11 +41,21 @@ void dataMover() {
                     for(y=0; y<conv0KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv0InChan; c++){
-                            convWindow[WinIdx3D(x%5, y%5, c)] = convLineBuff[BuffIdx3D((x + h%5)%5, y, c)];
+                            convWindow[x][y][c] = convLineBuff[(x + h%5)%5][y][c];
                         }
                     }
                 }
             }
         }
     }
+}
+
+void top() {
+    void* strIn = (void*)STREAMDMA_Stream;
+    void* convWindow = (void*)Conv0Window;
+    void* convLineBuff = (void*)Conv0LineBuff;
+
+	compute(strIn,convWindow,convLineBuff);
+
+	return;
 }

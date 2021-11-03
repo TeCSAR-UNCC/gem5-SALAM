@@ -96,27 +96,29 @@
 #define Conv0Weights 0x10020400
 #define Conv0Window 0x10020680
 #define Conv0Out 0x10020700
+//Accelerator: POOL_MOVE_0
+#define POOL_MOVE_0 0x10020740
 //Accelerator: POOL0
-#define POOL0 0x10020740
-#define Pool0Window 0x10020780
-#define Pool0Out 0x10020d00
+#define POOL0 0x10020780
+#define Pool0Window 0x100207c0
+#define Pool0Out 0x10020d40
 //Accelerator: DATA_MOVE_1
-#define DATA_MOVE_1 0x10020d40
-#define Conv1LineBuff 0x10020d80
+#define DATA_MOVE_1 0x10020d80
+#define Conv1LineBuff 0x10020dc0
 //Accelerator: CONV1
-#define CONV1 0x10022000
-#define Conv1Weights 0x10022040
-#define Conv1Window 0x10024600
-#define Conv1Out 0x10024880
+#define CONV1 0x10022040
+#define Conv1Weights 0x10022080
+#define Conv1Window 0x10024640
+#define Conv1Out 0x100248c0
 //Accelerator: POOL1
-#define POOL1 0x100248c0
-#define Pool1Window 0x10024900
-#define Pool1Out 0x10024e40
+#define POOL1 0x10024900
+#define Pool1Window 0x10024940
+#define Pool1Out 0x10024e80
 //Accelerator: DATA_MOVE_2
-#define DATA_MOVE_2 0x10024e80
-#define Conv2LineBuff 0x10024ec0
+#define DATA_MOVE_2 0x10024ec0
+#define Conv2LineBuff 0x10024f00
 //Accelerator: CONV2
-#define CONV2 0x10025540
-#define Conv2Weights 0x10025580
-#define Conv2Window 0x100543c0
+#define CONV2 0x10025580
+#define Conv2Weights 0x100255c0
+#define Conv2Window 0x10054400
 //END GENERATED CODE

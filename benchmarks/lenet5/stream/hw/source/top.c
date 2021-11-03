@@ -5,6 +5,7 @@ void top(uint64_t mainMem) {
 	// Define ACC MMRs
 	volatile uint8_t  * DATAMOVE0Flags = (uint8_t *)DATA_MOVE_0;
 	volatile uint8_t  * CONV0Flags  = (uint8_t *)CONV0;
+	volatile uint8_t  * POOLMOVE0Flags = (uint8_t *)POOL_MOVE_0;
 	volatile uint8_t  * POOL0Flags  = (uint8_t *)POOL0;
 	volatile uint8_t  * DATAMOVE1Flags = (uint8_t *)DATA_MOVE_1;
 	volatile uint8_t  * CONV1Flags  = (uint8_t *)CONV1;
@@ -65,11 +66,11 @@ void top(uint64_t mainMem) {
 	// Poll DMA for finish
 	while ((*DmaFlags & DEV_INTR) != DEV_INTR);
 
-
 	//Start conv0
 	*DATAMOVE0Flags = DEV_INIT;
 	*CONV0Flags = DEV_INIT;
 	//Start Pool0
+	*POOLMOVE0Flags = DEV_INIT;
 	*POOL0Flags = DEV_INIT;
 	*DATAMOVE1Flags = DEV_INIT;
 	// Start conv1

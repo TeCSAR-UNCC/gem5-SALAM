@@ -1,13 +1,9 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define WinIdx3D(h,w,c) ((h * conv0KSize*conv0InChan + w * conv0InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv0KSize*conv0KSize*conv0InChan + h *conv0KSize*conv0InChan + w * conv0InChan + c))
+typedef uint32_t array3d_in[conv0KSize][conv0KSize][conv0InChan];
+typedef uint32_t array4d_t[conv0KSize][conv0KSize][conv0InChan][conv0OutChan];
 
-void conv0() {
-    uint32_t* convWin = (uint32_t*)Conv0Window;
-    uint32_t* kernel = (uint32_t*)Conv0Weights;
-    uint32_t* strOut = (uint32_t*)Conv0Out;
+void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
 
     int h,w,c,cc,x,y;
     uint32_t sum;
@@ -25,7 +21,7 @@ void conv0() {
                     for(y=0; y<conv0KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv0InChan; c++){
-                            sum += convWin[WinIdx3D(x%5, y%5, c)] * kernel[KIdx4D(x,y,c,cc)];
+                            sum += convWin[x][y][c] * kernel[x][y][c][cc];
                         }
                     }
                 }
@@ -53,4 +49,14 @@ void conv0() {
             }
         }
     }
+}
+
+void top() {
+    void* convWin = (void*)Conv0Window;
+    void* kernel = (void*)Conv0Weights;
+    void* strOut = (void*)Conv0Out;
+
+	compute(convWin,kernel,strOut);
+
+	return;
 }

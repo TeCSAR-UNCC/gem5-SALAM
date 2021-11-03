@@ -1,14 +1,9 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define WinIdx3D(h,w,c) ((h * conv2KSize*conv2InChan + w * conv2InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv2KSize*conv2KSize*conv2InChan + h *conv2KSize*conv2InChan + w * conv2InChan + c))
+typedef uint32_t array3d_in[conv2KSize][conv2KSize][conv2InChan];
+typedef uint32_t array4d_t[conv2KSize][conv2KSize][conv2InChan][conv2OutChan];
 
-void conv2() {
-    uint32_t* convWin = (uint32_t*)Conv2Window;
-    uint32_t* kernel = (uint32_t*)Conv2Weights;
-    uint32_t* strOut = (uint32_t*)STREAMDMA_Stream;
-    // uint32_t* strOut = (uint32_t*)Conv2Out;
+void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
 
     int h,w,c,cc,x,y;
     uint32_t sum;
@@ -26,7 +21,7 @@ void conv2() {
                     for(y=0; y<conv2KSize; y++){
                         #pragma nounroll
                         for(c=0; c<conv2InChan; c++){
-                            sum += convWin[WinIdx3D(x%5, y%5, c)] * kernel[KIdx4D(x,y,c,cc)];
+                            sum += convWin[x][y][c] * kernel[x][y][c][cc];
                         }
                     }
                 }
@@ -54,4 +49,14 @@ void conv2() {
             }
         }
     }
+}
+
+void top() {
+    void* convWin = (void*)Conv2Window;
+    void* kernel = (void*)Conv2Weights;
+    void* strOut = (void*)STREAMDMA_Stream;
+
+	compute(convWin,kernel,strOut);
+
+	return;
 }

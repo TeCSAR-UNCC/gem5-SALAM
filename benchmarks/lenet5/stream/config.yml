@@ -49,7 +49,7 @@ acc_cluster:
       - Name: Conv0Weights
         Type: SPM
         Size: 600
-        Ports: 25
+        Ports: 1
     - Var:
       - Name: Conv0Window
         Type: SPM
@@ -65,19 +65,30 @@ acc_cluster:
         StreamSize: 4
         BufferSize: 16
         InCon: conv0
-        OutCon: pool0
+        OutCon: pool_move_0
+  - Accelerator:
+    - Name: pool_move_0
+      IrPath: benchmarks/lenet5/stream/hw/ir/pool_move_0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool_move_0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
   - Accelerator:
     - Name: pool0
       IrPath: benchmarks/lenet5/stream/hw/ir/pool0.ll
       ConfigPath: benchmarks/lenet5/stream/hw/configs/pool0.ini
-      Debug: False
+      Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
       - Name: Pool0Window
         Type: SPM
         Size: 1344
-        Ports: 4
+        Ports: 1
+        ReadyMode: True
+        ResetOnRead: True
+        WriteOnValid: False
+        Connections: pool_move_0:1
     - Var:
       - Name: Pool0Out
         Type: Stream
@@ -108,7 +119,7 @@ acc_cluster:
       - Name: Conv1Weights
         Type: SPM
         Size: 9600
-        Ports: 25
+        Ports: 1
     - Var:
       - Name: Conv1Window
         Type: SPM
@@ -136,7 +147,7 @@ acc_cluster:
       - Name: Pool1Window
         Type: SPM
         Size: 1280
-        Ports: 4
+        Ports: 1
     - Var:
       - Name: Pool1Out
         Type: Stream
@@ -168,7 +179,7 @@ acc_cluster:
       - Name: Conv2Weights
         Type: SPM
         Size: 192000
-        Ports: 25
+        Ports: 1
     - Var:
       - Name: Conv2Window
         Type: SPM
