@@ -2437,18 +2437,13 @@ GetElementPtr::initialize(llvm::Value * irval,
             assert(idx->getType()->isIntegerTy(32) && "Illegal struct idx");
             unsigned FieldNo = llvm::cast<llvm::ConstantInt>(idx)->getSExtValue();
             const llvm::StructLayout *Layout = layout.getStructLayout(STy);
-            // offsets.push_back(Layout->getElementOffset(FieldNo));
-            // offsetOfStruct.push_back(true);
-            auto offset = Layout->getElementOffset(FieldNo);
-            auto gOffset = GEPOffset(offset,true);
-            offsets.insert({valueID, gOffset});
+            offsets.push_back(Layout->getElementOffset(FieldNo));
+            offsetOfStruct.push_back(true);
+            
         } else {
             llvm::Type * idxty = GTI.getIndexedType();
-            // offsets.push_back(1 * layout.getTypeAllocSize(idxty));
-            // offsetOfStruct.push_back(false);
-            auto offset = 1 * layout.getTypeAllocSize(idxty);
-            auto gOffset = GEPOffset(offset,false);
-            offsets.insert({valueID, gOffset});
+            offsets.push_back(1 * layout.getTypeAllocSize(idxty));
+            offsetOfStruct.push_back(false);
         }
     }
 }
@@ -2463,19 +2458,17 @@ GetElementPtr::compute() {
     DPRINTF(RuntimeCompute, "|| Index Values\n");
     for (int i = 1; i < operands.size(); i++) {
         auto idx = operands.at(i);
-        auto opID = idx.getUID();
-        auto gOffset = offsets.find(opID)->second;
-        if (gOffset.structOff) {
-            offset += gOffset.off;
-            DPRINTF(RuntimeCompute, "|| %s, struct offset = %d\n", idx.getIRStub(), gOffset.off);
+        if (offsetOfStruct.at(i-1)) {
+            offset += offsets.at(i-1);
+            DPRINTF(RuntimeCompute, "|| %s, struct offset = %d\n", idx.getIRStub(), offsets.at(i-1));
         } else {
         #if USE_LLVM_AP_VALUES
             int64_t arrayIdx = idx.getIntRegValue().getSExtValue();
         #else
             int64_t arrayIdx = idx.getSIntRegValue();
         #endif
-            DPRINTF(RuntimeCompute, "|| %s = %d, dimension offset = %d\n", idx.getIRStub(), arrayIdx, gOffset.off);
-            offset += arrayIdx * gOffset.off;
+            DPRINTF(RuntimeCompute, "|| %s = %d, dimension offset = %d\n", idx.getIRStub(), arrayIdx, offsets.at(i-1));
+            offset += arrayIdx * offsets.at(i-1);
         }
     }
 
