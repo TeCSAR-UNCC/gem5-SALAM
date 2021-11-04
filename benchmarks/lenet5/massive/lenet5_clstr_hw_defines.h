@@ -77,40 +77,37 @@
 #define Conv0Input 0x100200c0
 #define Conv0Weights 0x10021100
 #define Conv0Output 0x10021380
-#define Conv0LUT 0x10025d40
 //Accelerator: DATA_MOVER_0
-#define DATA_MOVER_0 0x10025d80
+#define DATA_MOVER_0 0x10025d40
 //Accelerator: POOL0
-#define POOL0 0x10025dc0
-#define pool0Input 0x10025e00
-#define pool0Output 0x1002a7c0
+#define POOL0 0x10025d80
+#define pool0Input 0x10025dc0
+#define pool0Output 0x1002a780
 //Accelerator: DATA_MOVER_1
-#define DATA_MOVER_1 0x1002ba40
+#define DATA_MOVER_1 0x1002ba00
 //Accelerator: CONV1
-#define CONV1 0x1002ba80
-#define Conv1Input 0x1002bac0
-#define Conv1Weights 0x1002cd40
-#define Conv1Output 0x1002f300
-#define Conv1LUT 0x10030c40
+#define CONV1 0x1002ba40
+#define Conv1Input 0x1002ba80
+#define Conv1Weights 0x1002cd00
+#define Conv1Output 0x1002f2c0
 //Accelerator: DATA_MOVER_2
-#define DATA_MOVER_2 0x10030c80
+#define DATA_MOVER_2 0x10030c00
 //Accelerator: POOL1
-#define POOL1 0x10030cc0
-#define pool1Input 0x10030d00
-#define pool1Output 0x10032640
+#define POOL1 0x10030c40
+#define pool1Input 0x10030c80
+#define pool1Output 0x100325c0
 //Accelerator: DATA_MOVER_3
-#define DATA_MOVER_3 0x10032cc0
+#define DATA_MOVER_3 0x10032c40
 //Accelerator: CONV2
-#define CONV2 0x10032d00
-#define conv2Input 0x10032d40
-#define conv2Weights 0x100333c0
-#define conv2Output 0x10062200
+#define CONV2 0x10032c80
+#define conv2Input 0x10032cc0
+#define conv2Weights 0x10033340
+#define conv2Output 0x10062180
 //Accelerator: DATA_MOVER_4
-#define DATA_MOVER_4 0x10062400
+#define DATA_MOVER_4 0x10062380
 //Accelerator: FC0
-#define FC0 0x10062440
-#define fc0Input 0x10062480
-#define fc0Weights 0x10062680
-#define fc0Output 0x1006c440
-#define fc0LUT 0x1006c5c0
+#define FC0 0x100623c0
+#define fc0Input 0x10062400
+#define fc0Weights 0x10062600
+#define fc0Output 0x1006c3c0
 //END GENERATED CODE

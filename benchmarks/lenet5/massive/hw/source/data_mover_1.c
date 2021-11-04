@@ -12,7 +12,7 @@ void compute(array3d_t in, array3d_t out) {
         // Input Y
         #pragma nounroll
         for (w = 0; w < pool0OutDim; w++) {
-            #pragma nounroll
+            #pragma unroll
             for(c = 0; c < pool0OutChan; c++) {
                out[h][w][c] = in[h][w][c];
             }

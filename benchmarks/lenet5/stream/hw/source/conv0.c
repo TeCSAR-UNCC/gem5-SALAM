@@ -17,9 +17,9 @@ void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
             for(cc=0; cc<conv0OutChan; cc++){
                 #pragma nounroll
                 for(x=0; x<conv0KSize; x++) {
-                    #pragma nounroll
+                    #pragma unroll
                     for(y=0; y<conv0KSize; y++){
-                        #pragma nounroll
+                        #pragma unroll
                         for(c=0; c<conv0InChan; c++){
                             sum += convWin[x][y][c] * kernel[x][y][c][cc];
                         }

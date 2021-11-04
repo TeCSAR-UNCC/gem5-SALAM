@@ -14,10 +14,10 @@ void compute(array3d_win poolWin, uint32_t* strOut) {
             for(c = 0; c < pool1InChan; c++) {
                 int sum = 0;
                 // Kernel X
-                #pragma nounroll
+                #pragma unroll
                 for (x = 0; x < pool1KSize; x++) {
                     // Kernel Y
-                    #pragma nounroll
+                    #pragma unroll
                     for (y = 0; y < pool1KSize; y++) {
                         // Input Channels
                         sum += poolWin[x][w+y][c];

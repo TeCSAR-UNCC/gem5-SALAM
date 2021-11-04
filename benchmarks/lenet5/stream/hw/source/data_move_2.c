@@ -37,9 +37,9 @@ void compute(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineBuff) 
             for(cc=0; cc<conv2OutChan; cc++){
                 #pragma nounroll
                 for(x=0; x<conv2KSize; x++) {
-                    #pragma nounroll
+                    #pragma unroll 3
                     for(y=0; y<conv2KSize; y++){
-                        #pragma nounroll
+                        #pragma unroll
                         for(c=0; c<conv2InChan; c++){
                             convWindow[x][y][c] = convLineBuff[(x + h%5)%5][y][c];
                         }
