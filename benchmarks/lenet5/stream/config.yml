@@ -107,7 +107,7 @@ acc_cluster:
       - Name: Conv1LineBuff
         Type: SPM
         Size: 4704
-        Ports: 120
+        Ports: 150
   - Accelerator:
     - Name: conv1
       IrPath: benchmarks/lenet5/stream/hw/ir/conv1.ll
@@ -119,16 +119,16 @@ acc_cluster:
       - Name: Conv1Weights
         Type: SPM
         Size: 9600
-        Ports: 120
+        Ports: 150
     - Var:
       - Name: Conv1Window
         Type: SPM
         Size: 600
-        Ports: 120
+        Ports: 150
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_1:120
+        Connections: data_move_1:150
     - Var:
       - Name: Conv1Out
         Type: Stream
@@ -189,16 +189,16 @@ acc_cluster:
       - Name: Conv2Weights
         Type: SPM
         Size: 192000
-        Ports: 100
+        Ports: 400
     - Var:
       - Name: Conv2Window
         Type: SPM
         Size: 1600
-        Ports: 100
+        Ports: 400
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_2:100
+        Connections: data_move_2:400
     - Var:
       - Name: Conv2Out
         Type: Stream
