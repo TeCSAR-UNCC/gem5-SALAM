@@ -18,7 +18,7 @@ void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
             for(cc = 0; cc < fc1OutChan; cc++) {
                 // Kernel X
                 int sum = 0;
-                #pragma nounroll
+                #pragma unroll
                 for (x = 0; x < fc1KSize; x++) {
                     // Kernel Y
                     #pragma unroll
