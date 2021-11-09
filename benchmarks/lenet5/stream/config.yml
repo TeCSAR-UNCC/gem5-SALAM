@@ -63,7 +63,7 @@ acc_cluster:
       - Name: Conv0Out
         Type: Stream
         StreamSize: 4
-        BufferSize: 16
+        BufferSize: 64
         InCon: conv0
         OutCon: pool_move_0
   - Accelerator:
@@ -93,7 +93,7 @@ acc_cluster:
       - Name: Pool0Out
         Type: Stream
         StreamSize: 4
-        BufferSize: 16
+        BufferSize: 64
         InCon: pool0
         OutCon: data_move_1
   - Accelerator:
@@ -133,7 +133,7 @@ acc_cluster:
       - Name: Conv1Out
         Type: Stream
         StreamSize: 4
-        BufferSize: 16
+        BufferSize: 64
         InCon: conv1
         OutCon: pool_move_1
   - Accelerator:
@@ -163,7 +163,7 @@ acc_cluster:
       - Name: Pool1Out
         Type: Stream
         StreamSize: 4
-        BufferSize: 16
+        BufferSize: 64
         InCon: pool1
         OutCon: data_move_2
   - Accelerator:
@@ -203,7 +203,7 @@ acc_cluster:
       - Name: Conv2Out
         Type: Stream
         StreamSize: 4
-        BufferSize: 16
+        BufferSize: 64
         InCon: conv2
         OutCon: data_move_3
   - Accelerator:

@@ -15,9 +15,9 @@ void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
             sum = 0;
             #pragma nounroll
             for(cc=0; cc<fc0OutChan; cc++){
-                #pragma nounroll
+                #pragma unroll
                 for(x=0; x<fc0KSize; x++) {
-                    #pragma nounroll
+                    #pragma unroll
                     for(y=0; y<fc0KSize; y++){
                         #pragma unroll
                         for(c=0; c<fc0InChan; c++){
