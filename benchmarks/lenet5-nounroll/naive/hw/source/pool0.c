@@ -13,14 +13,14 @@ void compute(array3d_in poolIn, array3d_out poolOut) {
         #pragma nounroll
         for (w = 0; w < pool0InDim; w+=pool0KSize) {
             // Input Channels
-            #pragma unroll
+            #pragma nounroll
             for(c = 0; c < pool0InChan; c++) {
                 int sum = 0;
                 // Kernel X
-                #pragma unroll
+                #pragma nounroll
                 for (x = 0; x < pool0KSize; x++) {
                     // Kernel Y
-                    #pragma unroll
+                    #pragma nounroll
                     for (y = 0; y < pool0KSize; y++) {
                         sum += poolIn[h+x][w+y][c];
                     }

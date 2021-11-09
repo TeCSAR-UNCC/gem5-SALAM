@@ -18,13 +18,13 @@ void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
             for(cc = 0; cc < fc0OutChan; cc++) {
                 // Kernel X
                 int sum = 0;
-                #pragma unroll
+                #pragma nounroll
                 for (x = 0; x < fc0KSize; x++) {
                     // Kernel Y
-                    #pragma unroll
+                    #pragma nounroll
                     for (y = 0; y < fc0KSize; y++) {
                         // Input Channels
-                        #pragma unroll
+                        #pragma nounroll
                         for(c = 0; c < fc0InChan; c++) {
                             sum += convInput[h+x][w+y][c]
                             * kernel[x][y][c][cc];
