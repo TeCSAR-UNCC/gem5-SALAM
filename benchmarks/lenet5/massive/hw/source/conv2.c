@@ -14,7 +14,7 @@ void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
         #pragma nounroll
         for (w = 0; w < conv2OutDim; w++) {
             // Output Channels
-            #pragma unroll 3
+            #pragma nounroll
             for(cc = 0; cc < conv2OutChan; cc++) {
                 // Kernel X
                 int sum = 0;
