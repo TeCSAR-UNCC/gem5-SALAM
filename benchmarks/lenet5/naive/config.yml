@@ -40,11 +40,6 @@ acc_cluster:
         Type: SPM
         Size: 18816
         Ports: 6
-    - Var:
-      - Name: Conv0LUT
-        Type: SPM
-        Size: 4
-        Ports: 6
   - Accelerator:
     - Name: pool0
       IrPath: benchmarks/lenet5/naive/hw/ir/pool0.ll
@@ -74,21 +69,16 @@ acc_cluster:
       - Name: Conv1Input
         Type: SPM
         Size: 4704
-        Ports: 150
+        Ports: 2400
     - Var:
       - Name: Conv1Weights
         Type: SPM
         Size: 9600
-        Ports: 150
+        Ports: 2400
     - Var:
       - Name: Conv1Output
         Type: SPM
         Size: 6400
-        Ports: 16
-    - Var:
-      - Name: Conv1LUT
-        Type: SPM
-        Size: 4
         Ports: 16
   - Accelerator:
     - Name: pool1
@@ -119,22 +109,17 @@ acc_cluster:
       - Name: fc0Input
         Type: SPM
         Size: 1600
-        Ports: 80
+        Ports: 1200
     - Var:
       - Name: fc0Weights
         Type: SPM
         Size: 192000
-        Ports: 80
+        Ports: 1200
     - Var:
       - Name: fc0Output
         Type: SPM
         Size: 480
-        Ports: 1
-    - Var:
-      - Name: fc0LUT
-        Type: SPM
-        Size: 4
-        Ports: 1
+        Ports: 3
   - Accelerator:
     - Name: fc1
       IrPath: benchmarks/lenet5/naive/hw/ir/fc1.ll
@@ -157,9 +142,4 @@ acc_cluster:
       - Name: fc1Output
         Type: SPM
         Size: 336
-        Ports: 1
-    - Var:
-      - Name: fc1LUT
-        Type: SPM
-        Size: 4
         Ports: 1

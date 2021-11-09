@@ -75,31 +75,27 @@
 #define Conv0Input 0x100200c0
 #define Conv0Weights 0x10021100
 #define Conv0Output 0x10021380
-#define Conv0LUT 0x10025d40
 //Accelerator: POOL0
-#define POOL0 0x10025d80
-#define pool0Input 0x10025dc0
-#define pool0Output 0x1002a780
+#define POOL0 0x10025d40
+#define pool0Input 0x10025d80
+#define pool0Output 0x1002a740
 //Accelerator: CONV1
-#define CONV1 0x1002ba00
-#define Conv1Input 0x1002ba40
-#define Conv1Weights 0x1002ccc0
-#define Conv1Output 0x1002f280
-#define Conv1LUT 0x10030bc0
+#define CONV1 0x1002b9c0
+#define Conv1Input 0x1002ba00
+#define Conv1Weights 0x1002cc80
+#define Conv1Output 0x1002f240
 //Accelerator: POOL1
-#define POOL1 0x10030c00
-#define pool1Input 0x10030c40
-#define pool1Output 0x10032580
+#define POOL1 0x10030b80
+#define pool1Input 0x10030bc0
+#define pool1Output 0x10032500
 //Accelerator: FC0
-#define FC0 0x10032c00
-#define fc0Input 0x10032c40
-#define fc0Weights 0x100332c0
-#define fc0Output 0x10062100
-#define fc0LUT 0x10062300
+#define FC0 0x10032b80
+#define fc0Input 0x10032bc0
+#define fc0Weights 0x10033240
+#define fc0Output 0x10062080
 //Accelerator: FC1
-#define FC1 0x10062340
-#define fc1Input 0x10062380
-#define fc1Weights 0x10062580
-#define fc1Output 0x1006c340
-#define fc1LUT 0x1006c4c0
+#define FC1 0x10062280
+#define fc1Input 0x100622c0
+#define fc1Weights 0x100624c0
+#define fc1Output 0x1006c280
 //END GENERATED CODE

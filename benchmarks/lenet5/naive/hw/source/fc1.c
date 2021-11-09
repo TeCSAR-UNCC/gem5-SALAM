@@ -1,48 +1,67 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define InputIdx3D(h,w,c) ((h * fc1InDim*fc1InChan + w * fc1InChan + c))
-#define KIdx4D(h,w,c,n) ((n * fc1KSize*fc1KSize*fc1InChan + h *fc1KSize*fc1InChan + w * fc1InChan + c))
-#define OutIdx3D(h,w,c) ((h * fc1InDim*fc1InChan + w * fc1InChan + c))
+typedef uint32_t array3d_in[fc1InDim][fc1InDim][fc1InChan];
+typedef uint32_t array4d_t[fc1KSize][fc1KSize][fc1InChan][fc1OutChan];
+typedef uint32_t array3d_out[fc1OutDim][fc1OutDim][fc1OutChan];
 
-void fc1() {
-    uint32_t* fcInput = (uint32_t*)fc1Input;
-    uint32_t* kernel = (uint32_t*)fc1Weights;
-    uint32_t* fcOut = (uint32_t*)fc1Output;
-    uint32_t* fcLUT = (uint32_t*)fc1LUT;
-
+void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
     // HWC Implementation for Convolution
     int h,w,c,cc,x,y;
     // Input X
     #pragma nounroll
-    for (h = 0; h < fc1InDim; h++) {
+    for (h = 0; h < fc1OutDim; h++) {
         // Input Y
         #pragma nounroll
-        for (w = 0; w < fc1InDim; w++) {
-            // Check that the window is valid
-            if(!(w+fc1KSize>fc1InDim || h+fc1KSize>fc1InDim)) {
-                // Output Channels
-                #pragma nounroll
-                for(cc = 0; cc < fc1OutChan; cc++) {
-                    // Kernel X
-                    int sum = 0;
-                    #pragma nounroll
-                    for (x = 0; x < fc1KSize; x++) {
-                        // Kernel Y
-                        #pragma nounroll
-                        for (y = 0; y < fc1KSize; y++) {
-                            // Input Channels
-                            #pragma nounroll
-                            for(c = 0; c < fc1InChan; c++) {
-                                sum += fcInput[InputIdx3D(h+x, w+y, c)]
-                                * kernel[KIdx4D(x,y,c,cc)];
-                            }
+        for (w = 0; w < fc1OutDim; w++) {
+            // Output Channels
+            #pragma nounroll
+            for(cc = 0; cc < fc1OutChan; cc++) {
+                // Kernel X
+                int sum = 0;
+                #pragma unroll
+                for (x = 0; x < fc1KSize; x++) {
+                    // Kernel Y
+                    #pragma unroll
+                    for (y = 0; y < fc1KSize; y++) {
+                        // Input Channels
+                        #pragma unroll
+                        for(c = 0; c < fc1InChan; c++) {
+                            sum += convInput[h+x][w+y][c]
+                            * kernel[x][y][c][cc];
                         }
                     }
-                    sum *= fcLUT[0];
-                    fcOut[OutIdx3D(h,w,cc)] = sum;
                 }
-            }
+                if(sum >= 2){
+                    sum = sum*0.964027580076;
+                } else if (sum < 2 && sum >= 1){
+                    sum = sum*0.761594155956;
+                } else if (sum < 1 && sum >= .5){
+                    sum = sum*0.46211715726;
+                } else if (sum < .5 && sum >= .25){
+                    sum = sum*.244918662404;
+                } else if (sum < .25 && sum >= 0){
+                    sum = sum*0;
+                } else if (sum < 0 && sum >= -.25){
+                    sum = sum*-.244918662404;
+                } else if (sum < -.25 && sum >= -.5){
+                    sum = sum*-0.46211715726;
+                } else if (sum < -.5 && sum >= -1){
+                    sum = sum*-0.761594155956;
+                } else if (sum > -1){
+                    sum = sum*-0.964027580076;
+                }
+                convOut[h][w][cc] = sum;
+            } 
         }
     }
+}
+
+void top() {
+    void* convInput = (void*)fc1Input;
+    void* kernel = (void*)fc1Weights;
+    void* convOut = (void*)fc1Output;
+
+	compute(convInput,kernel,convOut);
+
+	return;
 }

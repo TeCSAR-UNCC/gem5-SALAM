@@ -1,13 +1,9 @@
 #include "../../lenet5_clstr_hw_defines.h"
 
-// HWC Memory Accesses
-#define WinIdx3D(h,w,c) ((h * conv1KSize*conv1InChan + w * conv1InChan + c))
-#define KIdx4D(h,w,c,n) ((n * conv1KSize*conv1KSize*conv1InChan + h *conv1KSize*conv1InChan + w * conv1InChan + c))
+typedef uint32_t array3d_in[conv1KSize][conv1KSize][conv1InChan];
+typedef uint32_t array4d_t[conv1KSize][conv1KSize][conv1InChan][conv1OutChan];
 
-void conv1() {
-    uint32_t* convWin = (uint32_t*)Conv1Window;
-    uint32_t* kernel = (uint32_t*)Conv1Weights;
-    uint32_t* strOut = (uint32_t*)Conv1Out;
+void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
 
     int h,w,c,cc,x,y;
     uint32_t sum;
@@ -19,13 +15,13 @@ void conv1() {
             sum = 0;
             #pragma nounroll
             for(cc=0; cc<conv1OutChan; cc++){
-                #pragma nounroll
+                #pragma unroll
                 for(x=0; x<conv1KSize; x++) {
-                    #pragma nounroll
+                    #pragma unroll
                     for(y=0; y<conv1KSize; y++){
-                        #pragma nounroll
+                        #pragma unroll
                         for(c=0; c<conv1InChan; c++){
-                            sum += convWin[WinIdx3D(x%5, y%5, c)] * kernel[KIdx4D(x,y,c,cc)];
+                            sum += convWin[x][y][c] * kernel[x][y][c][cc];
                         }
                     }
                 }
@@ -53,4 +49,14 @@ void conv1() {
             }
         }
     }
+}
+
+void top() {
+    void* convWin = (void*)Conv1Window;
+    void* kernel = (void*)Conv1Weights;
+    void* strOut = (void*)Conv1Out;
+
+	compute(convWin,kernel,strOut);
+
+	return;
 }

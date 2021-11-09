@@ -40,7 +40,7 @@ instructions:
     opcode_num: 56
     runtime_cycles: 0
   fadd:
-    functional_unit: 6
+    functional_unit: 5
     functional_unit_limit: 0
     opcode_num: 14
     runtime_cycles: 5
@@ -60,7 +60,7 @@ instructions:
     opcode_num: 35
     runtime_cycles: 0
   fmul:
-    functional_unit: 9
+    functional_unit: 7
     functional_unit_limit: 0
     opcode_num: 18
     runtime_cycles: 4
