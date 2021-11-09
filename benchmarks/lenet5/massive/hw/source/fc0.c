@@ -18,10 +18,10 @@ void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
             for(cc = 0; cc < fc0OutChan; cc++) {
                 // Kernel X
                 int sum = 0;
-                #pragma nounroll
+                #pragma unroll
                 for (x = 0; x < fc0KSize; x++) {
                     // Kernel Y
-                    #pragma nounroll
+                    #pragma unroll
                     for (y = 0; y < fc0KSize; y++) {
                         // Input Channels
                         #pragma unroll
@@ -31,25 +31,25 @@ void compute(array3d_in convInput, array4d_t kernel, array3d_out convOut) {
                         }
                     }
                 }
-                if(sum >= 2){
-                    sum = sum*0.964027580076;
-                } else if (sum < 2 && sum >= 1){
-                    sum = sum*0.761594155956;
-                } else if (sum < 1 && sum >= .5){
-                    sum = sum*0.46211715726;
-                } else if (sum < .5 && sum >= .25){
-                    sum = sum*.244918662404;
-                } else if (sum < .25 && sum >= 0){
-                    sum = sum*0;
-                } else if (sum < 0 && sum >= -.25){
-                    sum = sum*-.244918662404;
-                } else if (sum < -.25 && sum >= -.5){
-                    sum = sum*-0.46211715726;
-                } else if (sum < -.5 && sum >= -1){
-                    sum = sum*-0.761594155956;
-                } else if (sum > -1){
-                    sum = sum*-0.964027580076;
-                }
+                // if(sum >= 2){
+                //     sum = sum*0.964027580076;
+                // } else if (sum < 2 && sum >= 1){
+                //     sum = sum*0.761594155956;
+                // } else if (sum < 1 && sum >= .5){
+                //     sum = sum*0.46211715726;
+                // } else if (sum < .5 && sum >= .25){
+                //     sum = sum*.244918662404;
+                // } else if (sum < .25 && sum >= 0){
+                //     sum = sum*0;
+                // } else if (sum < 0 && sum >= -.25){
+                //     sum = sum*-.244918662404;
+                // } else if (sum < -.25 && sum >= -.5){
+                //     sum = sum*-0.46211715726;
+                // } else if (sum < -.5 && sum >= -1){
+                //     sum = sum*-0.761594155956;
+                // } else if (sum > -1){
+                //     sum = sum*-0.964027580076;
+                // }
                 convOut[h][w][cc] = sum;
             } 
         }
