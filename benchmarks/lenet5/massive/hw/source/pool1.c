@@ -13,7 +13,7 @@ void compute(array3d_in poolIn, array3d_out poolOut) {
         #pragma nounroll
         for (w = 0; w < pool1InDim; w+=pool1KSize) {
             // Input Channels
-            #pragma unroll
+            #pragma nounroll
             for(c = 0; c < pool1InChan; c++) {
                 int sum = 0;
                 // Kernel X
