@@ -88,47 +88,33 @@
 #define STREAMDMA_Stream 0x10020060
 //Accelerator: TOP
 #define TOP 0x10020080
-//Accelerator: DATA_MOVE_0
-#define DATA_MOVE_0 0x100200c0
-#define Conv0LineBuff 0x10020100
 //Accelerator: CONV0
-#define CONV0 0x100203c0
-#define Conv0Weights 0x10020400
-#define Conv0Window 0x10020680
-#define Conv0Out 0x10020700
-//Accelerator: POOL_MOVE_0
-#define POOL_MOVE_0 0x10020740
+#define CONV0 0x100200c0
+#define Conv0LineBuff 0x10020100
+#define Conv0Weights 0x100203c0
+#define Conv0Window 0x10020640
+#define Conv0Out 0x100206c0
 //Accelerator: POOL0
-#define POOL0 0x10020780
-#define Pool0Window 0x100207c0
-#define Pool0Out 0x10020d40
-//Accelerator: DATA_MOVE_1
-#define DATA_MOVE_1 0x10020d80
-#define Conv1LineBuff 0x10020dc0
+#define POOL0 0x10020700
+#define Pool0Window 0x10020740
+#define Pool0Out 0x10020cc0
 //Accelerator: CONV1
-#define CONV1 0x10022040
-#define Conv1Weights 0x10022080
-#define Conv1Window 0x10024640
-#define Conv1Out 0x100248c0
-//Accelerator: POOL_MOVE_1
-#define POOL_MOVE_1 0x10024900
+#define CONV1 0x10020d00
+#define Conv1LineBuff 0x10020d40
+#define Conv1Weights 0x10021fc0
+#define Conv1Window 0x10024580
+#define Conv1Out 0x10024800
 //Accelerator: POOL1
-#define POOL1 0x10024940
-#define Pool1Window 0x10024980
-#define Pool1Out 0x10024ec0
-//Accelerator: DATA_MOVE_2
-#define DATA_MOVE_2 0x10024f00
-#define Conv2LineBuff 0x10024f40
+#define POOL1 0x10024840
+#define Pool1Window 0x10024880
+#define Pool1Out 0x10024dc0
 //Accelerator: CONV2
-#define CONV2 0x100255c0
-#define Conv2Weights 0x10025600
-#define Conv2Window 0x10054440
-#define Conv2Out 0x10054ac0
-//Accelerator: DATA_MOVE_3
-#define DATA_MOVE_3 0x10054b00
-#define FC0LineBuff 0x10054b40
+#define CONV2 0x10024e00
+#define Conv2Weights 0x10024e40
+#define Conv2LineBuff 0x10053c80
+#define Conv2Out 0x10054300
 //Accelerator: FC0
-#define FC0 0x10054d40
-#define FC0Weights 0x10054d80
-#define FC0Window 0x1005eb40
+#define FC0 0x10054340
+#define FC0Weights 0x10054380
+#define FC0LineBuff 0x1005e140
 //END GENERATED CODE

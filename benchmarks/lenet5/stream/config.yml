@@ -26,9 +26,9 @@ acc_cluster:
       Debug: False
       InterruptNum: 68
   - Accelerator:
-    - Name: data_move_0
-      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_0.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_0.ini
+    - Name: conv0
+      IrPath: benchmarks/lenet5/stream/hw/ir/conv0.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/conv0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -38,13 +38,6 @@ acc_cluster:
         Type: SPM
         Size: 640
         Ports: 25
-  - Accelerator:
-    - Name: conv0
-      IrPath: benchmarks/lenet5/stream/hw/ir/conv0.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/conv0.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
     - Var:
       - Name: Conv0Weights
         Type: SPM
@@ -58,26 +51,18 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_0:25
     - Var:
       - Name: Conv0Out
         Type: Stream
         StreamSize: 4
         BufferSize: 64
         InCon: conv0
-        OutCon: pool_move_0
-  - Accelerator:
-    - Name: pool_move_0
-      IrPath: benchmarks/lenet5/stream/hw/ir/pool_move_0.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool_move_0.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
+        OutCon: pool0
   - Accelerator:
     - Name: pool0
       IrPath: benchmarks/lenet5/stream/hw/ir/pool0.ll
       ConfigPath: benchmarks/lenet5/stream/hw/configs/pool0.ini
-      Debug: True
+      Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
@@ -88,19 +73,18 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: pool_move_0:4
     - Var:
       - Name: Pool0Out
         Type: Stream
         StreamSize: 4
         BufferSize: 64
         InCon: pool0
-        OutCon: data_move_1
+        OutCon: conv1
   - Accelerator:
-    - Name: data_move_1
-      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_1.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_1.ini
-      Debug: False
+    - Name: conv1
+      IrPath: benchmarks/lenet5/stream/hw/ir/conv1.ll
+      ConfigPath: benchmarks/lenet5/stream/hw/configs/conv1.ini
+      Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
@@ -108,13 +92,6 @@ acc_cluster:
         Type: SPM
         Size: 4704
         Ports: 150
-  - Accelerator:
-    - Name: conv1
-      IrPath: benchmarks/lenet5/stream/hw/ir/conv1.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/conv1.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
     - Var:
       - Name: Conv1Weights
         Type: SPM
@@ -128,21 +105,13 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_1:150
     - Var:
       - Name: Conv1Out
         Type: Stream
         StreamSize: 4
         BufferSize: 64
         InCon: conv1
-        OutCon: pool_move_1
-  - Accelerator:
-    - Name: pool_move_1
-      IrPath: benchmarks/lenet5/stream/hw/ir/pool_move_1.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/pool_move_1.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
+        OutCon: pool1
   - Accelerator:
     - Name: pool1
       IrPath: benchmarks/lenet5/stream/hw/ir/pool1.ll
@@ -158,26 +127,13 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: pool_move_1:4
     - Var:
       - Name: Pool1Out
         Type: Stream
         StreamSize: 4
         BufferSize: 64
         InCon: pool1
-        OutCon: data_move_2
-  - Accelerator:
-    - Name: data_move_2
-      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_2.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_2.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-    - Var:
-      - Name: Conv2LineBuff
-        Type: SPM
-        Size: 1600
-        Ports: 400
+        OutCon: conv2
   - Accelerator:
     - Name: conv2
       IrPath: benchmarks/lenet5/stream/hw/ir/conv2.ll
@@ -191,33 +147,19 @@ acc_cluster:
         Size: 192000
         Ports: 400
     - Var:
-      - Name: Conv2Window
+      - Name: Conv2LineBuff
         Type: SPM
         Size: 1600
         Ports: 400
         ReadyMode: True
-        ResetOnRead: True
-        WriteOnValid: False
-        Connections: data_move_2:400
+        ResetOnRead: False
     - Var:
       - Name: Conv2Out
         Type: Stream
         StreamSize: 4
         BufferSize: 64
         InCon: conv2
-        OutCon: data_move_3
-  - Accelerator:
-    - Name: data_move_3
-      IrPath: benchmarks/lenet5/stream/hw/ir/data_move_3.ll
-      ConfigPath: benchmarks/lenet5/stream/hw/configs/data_move_3.ini
-      Debug: False
-      PIOSize: 1
-      PIOMaster: LocalBus
-    - Var:
-      - Name: FC0LineBuff
-        Type: SPM
-        Size: 480
-        Ports: 120
+        OutCon: fc0
   - Accelerator:
     - Name: fc0
       IrPath: benchmarks/lenet5/stream/hw/ir/fc0.ll
@@ -232,11 +174,9 @@ acc_cluster:
         Size: 40320
         Ports: 120
     - Var:
-      - Name: FC0Window
+      - Name: FC0LineBuff
         Type: SPM
         Size: 480
         Ports: 120
         ReadyMode: True
-        ResetOnRead: True
-        WriteOnValid: False
-        Connections: data_move_3:12
+        ResetOnRead: False

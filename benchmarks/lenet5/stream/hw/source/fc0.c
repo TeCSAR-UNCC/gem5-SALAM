@@ -2,61 +2,40 @@
 
 typedef uint32_t array3d_in[fc0KSize][fc0KSize][fc0InChan];
 typedef uint32_t array4d_t[fc0KSize][fc0KSize][fc0InChan][fc0OutChan];
+typedef uint32_t kern_array[fc0InChan][fc0OutChan];
 
-void compute(array3d_in convWin, array4d_t kernel, uint32_t* strOut) {
-
-    int h,w,c,cc,x,y;
-    uint32_t sum;
+void readStream(uint32_t* strIn, uint32_t* buffer) {
+    int inchan;
 
     #pragma nounroll
-    for (h=0; h<fc0OutDim; h++){
-        #pragma nounroll
-        for (w=0; w<fc0OutDim; w++){
-            sum = 0;
-            #pragma nounroll
-            for(cc=0; cc<fc0OutChan; cc++){
-                #pragma unroll
-                for(x=0; x<fc0KSize; x++) {
-                    #pragma unroll
-                    for(y=0; y<fc0KSize; y++){
-                        #pragma unroll
-                        for(c=0; c<fc0InChan; c++){
-                            sum += convWin[x][y][c] * kernel[x][y][c][cc];
-                        }
-                    }
-                }
-                
-            // if(sum >= 2){
-            //     sum = sum*0.964027580076;
-            // } else if (sum < 2 && sum >= 1){
-            //     sum = sum*0.761594155956;
-            // } else if (sum < 1 && sum >= .5){
-            //     sum = sum*0.46211715726;
-            // } else if (sum < .5 && sum >= .25){
-            //     sum = sum*.244918662404;
-            // } else if (sum < .25 && sum >= 0){
-            //     sum = sum*0;
-            // } else if (sum < 0 && sum >= -.25){
-            //     sum = sum*-.244918662404;
-            // } else if (sum < -.25 && sum >= -.5){
-            //     sum = sum*-0.46211715726;
-            // } else if (sum < -.5 && sum >= -1){
-            //     sum = sum*-0.761594155956;
-            // } else if (sum > -1){
-            //     sum = sum*-0.964027580076;
-            // }
-            *strOut = sum;
-            }
+    for (inchan=0; inchan<fc0InChan; inchan++) {
+        buffer[inchan] = *strIn;
+    }
+}
+
+void compute(uint32_t* buffer, kern_array kernel, uint32_t* strOut) {
+
+    uint32_t sum;
+
+    int inchan, outchan;
+    for (outchan=0; outchan<fc0OutChan; outchan++) {
+        sum = 0;
+        #pragma unroll
+        for (inchan=0; inchan<fc0InChan; inchan++) {
+            sum += buffer[inchan] * kernel[inchan][outchan];
         }
+        *strOut = sum;
     }
 }
 
 void top() {
-    void* convWin = (void*)FC0Window;
+    void* strIn = (void*)Conv2Out;
+    void* buffer = (void*)FC0LineBuff;
     void* kernel = (void*)FC0Weights;
     void* strOut = (void*)STREAMDMA_Stream;
 
-	compute(convWin,kernel,strOut);
+    readStream(strIn,buffer);
+	compute(buffer,kernel,strOut);
 
 	return;
 }
