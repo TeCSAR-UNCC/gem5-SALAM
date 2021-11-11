@@ -3,48 +3,35 @@
 typedef uint32_t array4d_t[conv2KSize][conv2KSize][conv2InChan][conv2OutChan];
 typedef uint32_t array3d_buf[conv2KSize][conv2InDim][conv2InChan];
 
-void readStream(uint32_t* strIn, array3d_buf convLineBuff) {
+void compute(uint32_t* strIn, array3d_buf convWin, array4d_t kernel, uint32_t* strOut) {
+
     int h,w,c,cc,x,y;
     uint32_t sum;
 
-    // Conv2 only needs the buffer since the input is just 5x5x16
     #pragma nounroll
     for(h=0; h<conv2KSize; h++){
         #pragma nounroll
         for(w=0; w<conv2InDim; w++){
             #pragma nounroll
             for(c=0; c<conv2InChan; c++){
-                convLineBuff[h][w][c] = *strIn;
+                convWin[h][w][c] = *strIn;
             }
         }
     }
-}
-
-void compute(array3d_buf convWin, array4d_t kernel, uint32_t* strOut) {
-
-    int h,w,c,cc,x,y;
-    uint32_t sum;
-
+    sum = 0;
     #pragma nounroll
-    for (h=0; h<conv2OutDim; h++){
-        #pragma nounroll
-        for (w=0; w<conv2OutDim; w++){
-            sum = 0;
-            #pragma nounroll
-            for(cc=0; cc<conv2OutChan; cc++){
+    for(cc=0; cc<conv2OutChan; cc++){
+        #pragma unroll
+        for(x=0; x<conv2KSize; x++) {
+            #pragma unroll
+            for(y=0; y<conv2KSize; y++){
                 #pragma unroll
-                for(x=0; x<conv2KSize; x++) {
-                    #pragma unroll
-                    for(y=0; y<conv2KSize; y++){
-                        #pragma unroll
-                        for(c=0; c<conv2InChan; c++){
-                            sum += convWin[x][y][c] * kernel[x][y][c][cc];
-                        }
-                    }
+                for(c=0; c<conv2InChan; c++){
+                    sum += convWin[x][y][c] * kernel[x][y][c][cc];
                 }
-            *strOut = sum;
             }
         }
+    *strOut = sum;
     }
 }
 
@@ -54,8 +41,7 @@ void top() {
     void* kernel = (void*)Conv2Weights;
     void* strOut = (void*)Conv2Out;
 
-    readStream(strIn,buffer);
-	compute(buffer,kernel,strOut);
+	compute(strIn,buffer,kernel,strOut);
 
 	return;
 }

@@ -35,6 +35,7 @@ void top(uint64_t mainMem) {
 	//Initialize Stream-DRAM DMA
 	*StrDmaWrAddr = 0x91000000;
 	*StrDmaWrFrameSize = 336;
+	// *StrDmaWrFrameSize = 18816;
 	*StrDmaNumWrFrames = 1;
 	*StrDmaWrFrameBuffSize = 1;
 	//Start Stream DMAs

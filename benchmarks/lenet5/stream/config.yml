@@ -29,7 +29,7 @@ acc_cluster:
     - Name: conv0
       IrPath: benchmarks/lenet5/stream/hw/ir/conv0.ll
       ConfigPath: benchmarks/lenet5/stream/hw/configs/conv0.ini
-      Debug: False
+      Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
       StreamOut: StreamDma
@@ -43,14 +43,14 @@ acc_cluster:
         Type: SPM
         Size: 600
         Ports: 25
-    - Var:
-      - Name: Conv0Window
-        Type: SPM
-        Size: 100
-        Ports: 25
-        ReadyMode: True
-        ResetOnRead: True
-        WriteOnValid: False
+    # - Var:
+    #   - Name: Conv0Window
+    #     Type: SPM
+    #     Size: 100
+    #     Ports: 25
+        # ReadyMode: True
+        # ResetOnRead: True
+        # WriteOnValid: False
     - Var:
       - Name: Conv0Out
         Type: Stream
@@ -84,7 +84,7 @@ acc_cluster:
     - Name: conv1
       IrPath: benchmarks/lenet5/stream/hw/ir/conv1.ll
       ConfigPath: benchmarks/lenet5/stream/hw/configs/conv1.ini
-      Debug: True
+      Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
@@ -97,14 +97,14 @@ acc_cluster:
         Type: SPM
         Size: 9600
         Ports: 150
-    - Var:
-      - Name: Conv1Window
-        Type: SPM
-        Size: 600
-        Ports: 150
-        ReadyMode: True
-        ResetOnRead: True
-        WriteOnValid: False
+    # - Var:
+    #   - Name: Conv1Window
+    #     Type: SPM
+    #     Size: 600
+    #     Ports: 150
+    #     ReadyMode: True
+    #     ResetOnRead: True
+    #     WriteOnValid: False
     - Var:
       - Name: Conv1Out
         Type: Stream

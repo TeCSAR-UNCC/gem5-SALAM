@@ -4,7 +4,8 @@ typedef uint32_t array3d_buf[conv0KSize][conv0InDim][conv0InChan];
 typedef uint32_t array3d_win[conv0KSize][conv0KSize][conv0InChan];
 typedef uint32_t array4d_t[conv0KSize][conv0KSize][conv0InChan][conv0OutChan];
 
-void manageBuffer(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineBuff) {
+void compute(uint32_t* strIn, array3d_buf convLineBuff, array4d_t kernel, uint32_t* strOut) {
+
     int h,w,c,cc,x,y;
     uint32_t sum;
 
@@ -34,32 +35,6 @@ void manageBuffer(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineB
         }
         #pragma nounroll
         for (w=0; w<conv0OutDim; w++){
-            #pragma nounroll
-            for(cc=0; cc<conv0OutChan; cc++){
-                #pragma unroll
-                for(x=0; x<conv0KSize; x++) {
-                    #pragma unroll
-                    for(y=0; y<conv0KSize; y++){
-                        #pragma unroll
-                        for(c=0; c<conv0InChan; c++){
-                            convWindow[x][y][c] = convLineBuff[(x + h%5)%5][y][c];
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void compute(array3d_win convWin, array4d_t kernel, uint32_t* strOut) {
-
-    int h,w,c,cc,x,y;
-    uint32_t sum;
-
-    #pragma nounroll
-    for (h=0; h<conv0OutDim; h++){
-        #pragma nounroll
-        for (w=0; w<conv0OutDim; w++){
             sum = 0;
             #pragma nounroll
             for(cc=0; cc<conv0OutChan; cc++){
@@ -69,7 +44,7 @@ void compute(array3d_win convWin, array4d_t kernel, uint32_t* strOut) {
                     for(y=0; y<conv0KSize; y++){
                         #pragma unroll
                         for(c=0; c<conv0InChan; c++){
-                            sum += convWin[x][y][c] * kernel[x][y][c][cc];
+                            sum += convLineBuff[(x + h%5)%5][y + w][c] * kernel[x][y][c][cc];
                         }
                     }
                 }
@@ -82,12 +57,10 @@ void compute(array3d_win convWin, array4d_t kernel, uint32_t* strOut) {
 void top() {
     void* strIn = (void*)STREAMDMA_Stream;
     void* convLineBuff = (void*)Conv0LineBuff;
-    void* convWin = (void*)Conv0Window;
     void* kernel = (void*)Conv0Weights;
     void* strOut = (void*)Conv0Out;
 
-    manageBuffer(strIn,convWin,convLineBuff);
-	compute(convWin,kernel,strOut);
+	compute(strIn,convLineBuff,kernel,strOut);
 
 	return;
 }
