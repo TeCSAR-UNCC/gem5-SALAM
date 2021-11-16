@@ -2,6 +2,7 @@ import m5
 from m5.objects import *
 from m5.util import *
 from configparser import ConfigParser
+from pathlib import Path
 import yaml
 import os
 
@@ -39,6 +40,12 @@ def AccConfig(acc, config_file, bench_file):
     M5_Path = os.getenv('M5_PATH')
     benchname = os.path.splitext(os.path.basename(bench_file))[0]
 
+
+    # lenet config launcher custom stuff
+    lenetPath = Path(bench_file).parts
+
+
+
     # Set scheduling constraints
     #acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
     #acc.llvm_interface.clock_period = ConfigSectionMap("AccConfig")['clock_period']
@@ -52,8 +59,12 @@ def AccConfig(acc, config_file, bench_file):
     acc.hw_interface.cycle_counts = CycleCounts()
     #acc.hw_interface.cycle_counts
 
+
     if benchname != 'top':
-        config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
+        if lenetPath[5] == 'lenet5':
+            config_path = 'benchmarks/lenet5/' + lenetPath[6] + '/config.yml'
+        else:
+            config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
         fu_yaml = open(config_path, 'r')
         yaml_inst_list = yaml.safe_load(fu_yaml)
         inst_list = yaml_inst_list['hw_config'][benchname]['instructions'].keys()

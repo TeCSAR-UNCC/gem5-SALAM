@@ -63,7 +63,7 @@ class Instruction : public Value
         virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  { return nullptr; }
         uint64_t getDependencyCount() { return dynamicDependencies.size(); }
         virtual uint64_t getCycleCount() { return cycleCount; }
-        uint64_t getOpode() { return llvmOpCode; }
+        virtual uint64_t getOpode() { return llvmOpCode; }
         uint64_t getCurrentCycle() { return currentCycle; }
         virtual valueListTy getStaticDependencies() const { return staticDependencies; }
         std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }

@@ -2,7 +2,7 @@
 FLAGS=""
 BENCH=""
 DEBUG="false"
-PRINT_TO_FILE="false"
+PRINT_TO_FILE="true"
 VALGRIND="false"
 
 while getopts ":b:f:vdp" opt; do

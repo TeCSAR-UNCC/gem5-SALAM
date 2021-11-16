@@ -29,17 +29,17 @@ acc_cluster:
       - Name: ORIG
         Type: SPM
         Size: 32768
-        Ports: 2
+        Ports: 64
     - Var:
       - Name: SOL
         Type: SPM
         Size: 32768
-        Ports: 2
+        Ports: 64
     - Var:
       - Name: FILTER
         Type: SPM
-        Size: 36
-        Ports: 2
+        Size: 360
+        Ports: 64
 hw_config:
   top:
   stencil2d:

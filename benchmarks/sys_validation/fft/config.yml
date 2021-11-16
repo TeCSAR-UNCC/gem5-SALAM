@@ -3,8 +3,8 @@ acc_cluster:
   - Name: fft_clstr
   - DMA:
     - Name: dma
-      MaxReqSize: 64
-      BufferSize: 128
+      MaxReqSize: 32
+      BufferSize: 64
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95
@@ -29,22 +29,22 @@ acc_cluster:
       - Name: REAL
         Type: SPM
         Size: 8192
-        Ports: 2
+        Ports: 1
     - Var:
       - Name: IMG
         Type: SPM
         Size: 8192
-        Ports: 2
+        Ports: 1
     - Var:
       - Name: REALTWID
         Type: SPM
         Size: 4096
-        Ports: 2
+        Ports: 1
     - Var:
       - Name: IMGTWID
         Type: SPM
         Size: 4096
-        Ports: 2
+        Ports: 1
 hw_config:
   top:
   fft:

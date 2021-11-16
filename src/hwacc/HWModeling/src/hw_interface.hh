@@ -41,4 +41,7 @@ class HWInterface : public SimObject
 
 };
 
+
+// TODO: Figure out a better way to link floating point instructions to the correct precision function unit, currently assuming everything is single precision since we are building for 32 bit
+
 #endif //__HWMODEL_HW_MODEL_HH__

@@ -121,6 +121,7 @@ class Value
         virtual bool isFunction() { return false; }
         virtual bool isBasicBlock() { return false; }
         virtual bool isInstruction() { return false; }
+        virtual uint64_t getOpode() { }
 
         void value_dump() { if (dbg) value_dbg->dumper(this); }
         std::string registerDataString() { return returnReg->dataString(); }
