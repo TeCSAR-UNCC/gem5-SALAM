@@ -471,7 +471,6 @@ LLVMInterface::constructStaticGraph() {
     }
     // Functions will initialize BasicBlocks, which will initialize Instructions
     DPRINTF(LLVMInterface, "Initialize SALAM::Functions\n");
-    if (functions.size() == 1) functions.front()->setTop(true);
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Value> funcval = vmap.find(&func)->second;
@@ -480,6 +479,7 @@ LLVMInterface::constructStaticGraph() {
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values, topName);
     }
+    if (functions.size() == 1) functions.front()->setTop(true);
 
     // Detect Loop Latches
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
