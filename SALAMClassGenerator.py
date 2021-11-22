@@ -9,9 +9,9 @@ class FunctionalUnitGenerator():
         self.classname = ""
         self.header_name = ""
         self.cxx_header = "src/hwacc/HWModeling/src/functional_units.hh"
-        self.cxx_header_py_path = "src/hwacc/HWModeling/src/functional_units.hh"
+        self.cxx_header_py_path = "hwacc/HWModeling/src/functional_units.hh"
         self.fu_base_directory = "src/hwacc/HWModeling/generated/functionalunits/"
-        self.fu_base_directory_py_path = "src/hwacc/HWModeling/generated/functionalunits/"
+        self.fu_base_directory_py_path = "hwacc/HWModeling/generated/functionalunits/"
         self.scons_dir_fu = "src/hwacc/HWModeling/generated/functionalunits/SConscript"
         self.scons_dir_inst = "src/hwacc/HWModeling/generated/instructions/SConscript"
 
