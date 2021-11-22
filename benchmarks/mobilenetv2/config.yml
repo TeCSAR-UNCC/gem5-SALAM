@@ -136,7 +136,7 @@ acc_cluster:
     - Var:
       - Name: head_DWConvQBuffer
         Type: SPM
-        Size: 1920
+        Size: 2304
         Ports: 2
     - Var:
       - Name: head_DWConvOutBuffer
