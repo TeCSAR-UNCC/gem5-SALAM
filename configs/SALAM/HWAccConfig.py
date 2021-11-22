@@ -6,32 +6,7 @@ from pathlib import Path
 import yaml
 import os
 
-def AccConfig(acc, config_file, bench_file):
-    # Setup config file parser
-    #Config = ConfigParser()
-    #Config.read((config_file))
-    #Config.sections()
-    #def ConfigSectionMap(section):
-    #    dict1 = {}
-    #    options = Config.options(section)
-    #    for option in options:
-    #        try:
-    #            dict1[option] = Config.get(section, option)
-    #            if dict1[option] == -1:
-    #                DebugPrint("skip: %s" % option)
-    #        except:
-    #            print("exception on %s!" % option)
-    #            dict1[option] = None
-    #    return dict1
-    # Setup comm interface
-    #acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
-    #predef = ConfigSectionMap("AccConfig")['premap_data']
-
-    #if (predef == "1" or predef == "True"):
-    #    acc.premap_data = predef
-    #    acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
-
-
+def AccConfig(acc, bench_file):
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
 

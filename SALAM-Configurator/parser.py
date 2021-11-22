@@ -48,7 +48,6 @@ class AccCluster:
 			pioSize = None
 			intNum = None
 			IrPath = None
-			configPath = None
 			debug = False
 
 			# Find the name first...
@@ -66,8 +65,6 @@ class AccCluster:
 						print("Acc Error: " + hex(pioAddress))
 				if 'IrPath' in i:
 					IrPath = i['IrPath']
-				if 'ConfigPath' in i:
-					configPath = i['ConfigPath']
 				if 'PIOMaster' in i:
 					pioMasters.extend((i['PIOMaster'].split(',')))
 				if 'StreamIn' in i:
@@ -105,7 +102,7 @@ class AccCluster:
 							raise Exception(exceptionString)
 			# Append accelerator to the cluster
 			accClass.append(Accelerator(name, pioMasters, localConnections,
-				pioAddress, pioSize, configPath , IrPath, streamIn, streamOut, intNum, M5_Path, variables, debug))
+				pioAddress, pioSize, IrPath, streamIn, streamOut, intNum, M5_Path, variables, debug))
 
 		self.accs = accClass
 		self.dmas = dmaClass
@@ -131,7 +128,7 @@ class AccCluster:
 class Accelerator:
 
 	def __init__(self, name, pioMasters, localConnections, address,
-		size, configPath, irPath, streamIn, streamOut, intNum, M5_Path, variables = None, debug = False):
+		size, irPath, streamIn, streamOut, intNum, M5_Path, variables = None, debug = False):
 
 		self.name = name.lower()
 		self.pioMasters = pioMasters
@@ -139,7 +136,6 @@ class Accelerator:
 		self.address = address
 		self.size = size
 		self.variables = variables
-		self.configPath = configPath
 		self.irPath = irPath
 		self.streamIn = streamIn
 		self.streamOut = streamOut
@@ -152,7 +148,6 @@ class Accelerator:
 		lines.append("# " + self.name + " Definition")
 		lines.append("acc = " + "\"" + self.name + "\"")
 		# Need to add a user defined path & user defined interrupts here
-		lines.append("config = " + "\"" + self.M5_Path + "/" + self.configPath + "\"")
 		lines.append("ir = "  + "\"" + self.M5_Path + "/" + self.irPath + "\"")
 
 		# Add interrupt number if it exists
@@ -163,7 +158,7 @@ class Accelerator:
 			lines.append("clstr." + self.name +" = CommInterface(devicename=acc, gic=gic, pio_addr="
 			+ str(hex(self.address)) + ", pio_size=" + str(self.size) + ")")
 
-		lines.append("AccConfig(clstr." + self.name + ", config, ir)")
+		lines.append("AccConfig(clstr." + self.name + ", ir)")
 		lines.append("")
 
 		return lines
