@@ -41,16 +41,16 @@
 #define head_DWConvNShiftOut 0x10020bc0
 #define head_DWConvWeightZP 0x10020c00
 #define head_DWConvQBuffer 0x10020c40
-#define head_DWConvOutBuffer 0x10021400
-#define head_DWConvOut 0x10021440
+#define head_DWConvOutBuffer 0x10021580
+#define head_DWConvOut 0x100215c0
 //Accelerator: HEAD_PWCONV
-#define HEAD_PWCONV 0x10021480
-#define head_PWConvLocalFeats 0x100214c0
-#define head_PWConvWeights 0x10021500
-#define head_PWConvBias 0x100216c0
-#define head_PWConvIMultBias 0x10021700
-#define head_PWConvNShiftBias 0x10021740
-#define head_PWConvIMultOut 0x10021780
-#define head_PWConvNShiftOut 0x100217c0
-#define head_PWConvWeightZP 0x10021800
+#define HEAD_PWCONV 0x10021600
+#define head_PWConvLocalFeats 0x10021640
+#define head_PWConvWeights 0x10021680
+#define head_PWConvBias 0x10021840
+#define head_PWConvIMultBias 0x10021880
+#define head_PWConvNShiftBias 0x100218c0
+#define head_PWConvIMultOut 0x10021900
+#define head_PWConvNShiftOut 0x10021940
+#define head_PWConvWeightZP 0x10021980
 //END GENERATED CODE
