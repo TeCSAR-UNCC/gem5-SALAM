@@ -3821,6 +3821,7 @@ FCmp::compute() {
     }
 #endif
     setRegisterValue(result);
+    DPRINTF(RuntimeCompute, "|| Comparing %f, %f\n", op1,op2);
     DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, result ? "TRUE" : "FALSE");
 }
 
