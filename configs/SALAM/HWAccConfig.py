@@ -17,7 +17,7 @@ def AccConfig(acc, bench_file):
 
 
     # lenet config launcher custom stuff
-    lenetPath = Path(bench_file).parts
+    benchPath = Path(bench_file).parts
 
 
 
@@ -33,11 +33,11 @@ def AccConfig(acc, bench_file):
     # Define HW Counts
     acc.hw_interface.cycle_counts = CycleCounts()
     #acc.hw_interface.cycle_counts
-
-
     if benchname != 'top':
-        if lenetPath[5] == 'lenet5':
-            config_path = 'benchmarks/lenet5/' + lenetPath[6] + '/config.yml'
+        if benchPath[5] == 'lenet5':
+            config_path = 'benchmarks/lenet5/' + benchPath[6] + '/config.yml'
+        elif benchPath[5] == 'mobilenetv2':
+            config_path = 'benchmarks/mobilenetv2/' + benchPath[6] + '/config.yml'
         else:
             config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
         fu_yaml = open(config_path, 'r')
