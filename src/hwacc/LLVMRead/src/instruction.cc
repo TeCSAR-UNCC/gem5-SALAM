@@ -2318,7 +2318,7 @@ Load::compute() {
     // Load does not use compute normally. Special handling is used in the scheduler.
     // We instead use compute just for debug printout
     DPRINTF(RuntimeCompute, "|| Computing %s\n", ir_string);
-    DPRINTF(RuntimeCompute, "|| %s = %d\n", ir_stub, registerDataString());
+    DPRINTF(RuntimeCompute, "|| %s = %s\n", ir_stub, registerDataString());
 }
 
 void
