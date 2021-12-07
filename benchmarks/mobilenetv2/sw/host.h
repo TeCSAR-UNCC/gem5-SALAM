@@ -12,8 +12,6 @@
 #define tail_top    TAIL_TOP
 #define class_top   CLASSIFIER_TOP
 
-volatile uint8_t stage;
-
 void runHead(uint64_t img_rd_addr, uint64_t feat_wr_addr,
              uint64_t conv_weights, uint64_t conv_quant,
              uint64_t dw_weights, uint64_t dw_quant,

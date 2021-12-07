@@ -7,21 +7,17 @@ acc_cluster:
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
-      InterruptNum: 95
   - DMA:
     - Name: head_stream_dma0
       PIOMaster: LocalBus
       StreamSize: 8
       BufferSize: 64
       Type: Stream
-      ReadInt: 210
-      WriteInt: 211
   - Accelerator:
     - Name: head_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/head/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/head/top.ini
       PIOSize: 65
-      InterruptNum: 68
       PIOMaster: LocalBus
       # Local to PIO
       LocalSlaves: LocalBus
@@ -705,7 +701,6 @@ acc_cluster:
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
-      InterruptNum: 96
   - DMA:
     - Name: body_stream_dma0
       PIOMaster: LocalBus
@@ -728,7 +723,6 @@ acc_cluster:
       ConfigPath: benchmarks/mobilenetv2/hw/configs/body/top.ini
       Debug: False
       PIOSize: 81
-      InterruptNum: 69
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
   - Accelerator:
@@ -3392,7 +3386,6 @@ acc_cluster:
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
-      InterruptNum: 95
   - DMA:
     - Name: tail_stream_dma0
       PIOMaster: LocalBus
@@ -3406,7 +3399,6 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/top.ini
       PIOSize: 65
-      InterruptNum: 70
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
@@ -5472,7 +5464,6 @@ acc_cluster:
       BufferSize: 128
       PIOMaster: LocalBus
       Type: NonCoherent
-      InterruptNum: 95
   - DMA:
     - Name: classifier_stream_dma0
       PIOMaster: LocalBus
@@ -5486,7 +5477,6 @@ acc_cluster:
       IrPath: benchmarks/mobilenetv2/hw/ir/classifier/top.ll
       ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/top.ini
       PIOSize: 65
-      InterruptNum: 71
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False

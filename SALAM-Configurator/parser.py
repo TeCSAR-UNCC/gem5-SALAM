@@ -21,8 +21,12 @@ class AccCluster:
 					pioMasters = []
 					if 'PIOMaster' in i:
 						pioMasters.extend((i['PIOMaster'].split(',')))
-					dmaClass.append(Dma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+					if 'InterruptNum' in i:
+						dmaClass.append(Dma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
 						i['InterruptNum'], i['BufferSize'], i['MaxReqSize']))
+					else:
+						dmaClass.append(Dma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+						i['BufferSize'], i['MaxReqSize']))
 					aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
 					topAddress = topAddress + aligned_inc
 				elif 'Stream' in i['Type']:
@@ -30,8 +34,19 @@ class AccCluster:
 					pioMasters = []
 					if 'PIOMaster' in i:
 						pioMasters.extend((i['PIOMaster'].split(',')))
-					dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
-						i['ReadInt'], i['WriteInt'], i['BufferSize']))
+					if 'ReadInt' in i:
+						if 'WriteInt' in i:
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							i['ReadInt'], i['WriteInt'], i['BufferSize']))
+						else:
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							i['ReadInt'], None, i['BufferSize']))
+					elif 'WriteInt' in i:
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							None, i['WriteInt'], i['BufferSize']))
+					else:
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							None, None, i['BufferSize']))
 					aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
 					topAddress = topAddress + aligned_inc
 		# Parse Accelerators
@@ -199,7 +214,7 @@ class Accelerator:
 		# Return finished config portion
 		return lines
 
-class StreamDma:
+class StreamDma:  
 	def __init__(self, name, pio, pioMasters, address, dmaType, rd_int = None, wr_int = None, size = 64):
 		self.name = name.lower()
 		self.pio = pio
@@ -227,8 +242,10 @@ class StreamDma:
 		lines.append(dmaPath + "stream_addr = " + hex(self.address) + " + " + str(self.pio))
 		lines.append(dmaPath + "stream_size = " + str(self.size))
 		lines.append(dmaPath + "pio_delay = '1ns'")
-		lines.append(dmaPath + "rd_int = " + str(self.rd_int))
-		lines.append(dmaPath + "wr_int = " + str(self.wr_int))
+		if self.rd_int != None:
+			lines.append(dmaPath + "rd_int = " + str(self.rd_int))
+		if self.wr_int != None:
+			lines.append(dmaPath + "wr_int = " + str(self.wr_int))
 		lines.append("clstr." + self.name + ".dma = clstr.coherency_bus.cpu_side_ports")
 		if self.pioMasters is not None:
 			for i in self.pioMasters:
