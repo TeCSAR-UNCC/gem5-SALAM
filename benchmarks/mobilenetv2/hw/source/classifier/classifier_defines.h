@@ -12,4 +12,4 @@
 #define BIAS_ZP			0
 #define INPUT_ZP		0
 #define OUTPUT_ZP		0
-#define QParamSize		__LINEAR_ROW_SIZE__
+#define QParamSize		1000
