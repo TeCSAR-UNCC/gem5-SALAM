@@ -38,37 +38,37 @@ acc_cluster:
     - Var:
       - Name: head_NormalConvWeights
         Type: SPM
-        Size: 432
+        Size: 648
         Ports: 27
     - Var:
       - Name: head_NormalConvBias
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_NormalConvIMultBias
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_NormalConvNShiftBias
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_NormalConvIMultOut
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_NormalConvNShiftOut
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_NormalConvWeightZP
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_NormalConvQBuffer
@@ -92,52 +92,52 @@ acc_cluster:
     - Var:
       - Name: head_DWConvWindow
         Type: SPM
-        Size: 144
+        Size: 216
         Ports: 9
     - Var:
       - Name: head_DWConvWeights
         Type: SPM
-        Size: 160
+        Size: 240
         Ports: 9
     - Var:
       - Name: head_DWConvBias
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvIMultBias
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvNShiftBias
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvIMultOut
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvNShiftOut
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvWeightZP
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvQBuffer
         Type: SPM
-        Size: 1536
+        Size: 2304
         Ports: 2
     - Var:
       - Name: head_DWConvOutBuffer
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 1
     - Var:
       - Name: head_DWConvOut
@@ -157,42 +157,42 @@ acc_cluster:
     - Var:
       - Name: head_PWConvLocalFeats
         Type: SPM
-        Size: 16
+        Size: 24
         Ports: 24
     - Var:
       - Name: head_PWConvWeights
         Type: SPM
-        Size: 128
+        Size: 384
         Ports: 24
     - Var:
       - Name: head_PWConvBias
         Type: SPM
-        Size: 8
+        Size: 16
         Ports: 1
     - Var:
       - Name: head_PWConvIMultBias
         Type: SPM
-        Size: 8
+        Size: 16
         Ports: 1
     - Var:
       - Name: head_PWConvNShiftBias
         Type: SPM
-        Size: 8
+        Size: 16
         Ports: 1
     - Var:
       - Name: head_PWConvIMultOut
         Type: SPM
-        Size: 8
+        Size: 16
         Ports: 1
     - Var:
       - Name: head_PWConvNShiftOut
         Type: SPM
-        Size: 8
+        Size: 16
         Ports: 1
     - Var:
       - Name: head_PWConvWeightZP
         Type: SPM
-        Size: 8
+        Size: 16
         Ports: 1
 ---
 acc_cluster:
@@ -252,42 +252,42 @@ acc_cluster:
     - Var:
       - Name: body_PWConv0LocalFeats
         Type: SPM
-        Size: 56
+        Size: 120
         Ports: 120
     - Var:
       - Name: body_PWConv0Weights
         Type: SPM
-        Size: 18816
+        Size: 86400
         Ports: 120
     - Var:
       - Name: body_PW0Bias
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_PW0IMultBias
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_PW0NShiftBias
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_PW0IMultOut
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_PW0NShiftOut
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_PW0WeightZP
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_PWConv0Out
@@ -306,52 +306,52 @@ acc_cluster:
     - Var:
       - Name: body_DWConvWindow
         Type: SPM
-        Size: 3024
+        Size: 6480
         Ports: 9
     - Var:
       - Name: body_DWConvWeights
         Type: SPM
-        Size: 3360
+        Size: 7200
         Ports: 9
     - Var:
       - Name: body_DWBias
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWIMultBias
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWNShiftBias
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWIMultOut
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWNShiftOut
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWWeightZP
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWConvBuffer
         Type: SPM
-        Size: 32256
+        Size: 69120
         Ports: 2
     - Var:
       - Name: body_DWConvOutBuffer
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 1
     - Var:
       - Name: body_DWConvOut
@@ -371,42 +371,42 @@ acc_cluster:
     - Var:
       - Name: body_PWConv1LocalFeats
         Type: SPM
-        Size: 336
+        Size: 720
         Ports: 120
     - Var:
       - Name: body_PWConv1Weights
         Type: SPM
-        Size: 37632
+        Size: 172800
         Ports: 120
     - Var:
       - Name: body_PW1Bias
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 1
     - Var:
       - Name: body_PW1IMultBias
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 1
     - Var:
       - Name: body_PW1NShiftBias
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 1
     - Var:
       - Name: body_PW1IMultOut
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 1
     - Var:
       - Name: body_PW1NShiftOut
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 1
     - Var:
       - Name: body_PW1WeightZP
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 1
 ---
 acc_cluster:
@@ -444,12 +444,12 @@ acc_cluster:
     - Var:
       - Name: tail_PWConvLocalFeats
         Type: SPM
-        Size: 112
+        Size: 240
         Ports: 24
     - Var:
       - Name: tail_PWConvWeights
         Type: SPM
-        Size: 143360
+        Size: 307200
         Ports: 24
     - Var:
       - Name: tail_PWBias
