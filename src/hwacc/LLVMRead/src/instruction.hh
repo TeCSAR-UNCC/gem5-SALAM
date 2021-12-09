@@ -63,7 +63,7 @@ class Instruction : public Value
         virtual std::shared_ptr<SALAM::BasicBlock> getTarget()  { return nullptr; }
         uint64_t getDependencyCount() { return dynamicDependencies.size(); }
         virtual uint64_t getCycleCount() { return cycleCount; }
-        uint64_t getOpode() { return llvmOpCode; }
+        virtual uint64_t getOpode() { return llvmOpCode; }
         uint64_t getCurrentCycle() { return currentCycle; }
         virtual valueListTy getStaticDependencies() const { return staticDependencies; }
         std::map<uint64_t, std::shared_ptr<SALAM::Instruction>> getDynamicDependencies() const { return dynamicDependencies; }
@@ -947,22 +947,12 @@ The GEP indecies will by APSInts, so cast to int64_t for calculating offset insi
 class GetElementPtr : public Instruction {
     private:
         std::vector< std::vector<uint64_t> > conditions;
-        // std::vector<int64_t> offsets;
-        // std::vector<bool> offsetOfStruct;
+        std::vector<int64_t> offsets;
+        std::vector<bool> offsetOfStruct;
         SALAM::Debugger *dbgr;
         llvm::Type * resultElementType;
         uint64_t resultElementSize;
         uint64_t resultElementSizeInBytes;
-
-        struct GEPOffset {
-            int64_t off;
-            bool structOff;
-            GEPOffset(int64_t o, bool str) {
-                off = o;
-                structOff = str;
-            }
-        };
-        std::map<uint64_t, GEPOffset> offsets;
     protected:
 
     public:

@@ -2,35 +2,11 @@ import m5
 from m5.objects import *
 from m5.util import *
 from configparser import ConfigParser
+from pathlib import Path
 import yaml
 import os
 
-def AccConfig(acc, config_file, bench_file):
-    # Setup config file parser
-    #Config = ConfigParser()
-    #Config.read((config_file))
-    #Config.sections()
-    #def ConfigSectionMap(section):
-    #    dict1 = {}
-    #    options = Config.options(section)
-    #    for option in options:
-    #        try:
-    #            dict1[option] = Config.get(section, option)
-    #            if dict1[option] == -1:
-    #                DebugPrint("skip: %s" % option)
-    #        except:
-    #            print("exception on %s!" % option)
-    #            dict1[option] = None
-    #    return dict1
-    # Setup comm interface
-    #acc.clock_period = ConfigSectionMap("AccConfig")['clock_period']
-    #predef = ConfigSectionMap("AccConfig")['premap_data']
-
-    #if (predef == "1" or predef == "True"):
-    #    acc.premap_data = predef
-    #    acc.data_bases = ConfigSectionMap("AccConfig")['data_bases']
-
-
+def AccConfig(acc, bench_file):
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
 
@@ -38,6 +14,12 @@ def AccConfig(acc, config_file, bench_file):
     acc.llvm_interface.in_file = bench_file
     M5_Path = os.getenv('M5_PATH')
     benchname = os.path.splitext(os.path.basename(bench_file))[0]
+
+
+    # lenet config launcher custom stuff
+    benchPath = Path(bench_file).parts
+
+
 
     # Set scheduling constraints
     #acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
@@ -51,9 +33,13 @@ def AccConfig(acc, config_file, bench_file):
     # Define HW Counts
     acc.hw_interface.cycle_counts = CycleCounts()
     #acc.hw_interface.cycle_counts
-
     if benchname != 'top':
-        config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
+        if benchPath[5] == 'lenet5':
+            config_path = 'benchmarks/lenet5/' + benchPath[6] + '/config.yml'
+        elif benchPath[5] == 'mobilenetv2':
+            config_path = 'benchmarks/mobilenetv2/' + benchPath[6] + '/config.yml'
+        else:
+            config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
         fu_yaml = open(config_path, 'r')
         yaml_inst_list = yaml.safe_load(fu_yaml)
         inst_list = yaml_inst_list['hw_config'][benchname]['instructions'].keys()

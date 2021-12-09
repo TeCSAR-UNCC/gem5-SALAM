@@ -614,9 +614,11 @@ void
 CommInterface::enqueueRead(MemoryRequest * req) {
     if (debug()) DPRINTF(CommInterface, "Read from 0x%lx of Size:%d Bytes Enqueued:\n", req->address, req->length);
     readQueue.push_back(req);
-    if (debug()) DPRINTF(CommInterfaceQueues, "Current Queue:\n");
-    for (auto it=readQueue.begin(); it!=readQueue.end(); ++it) {
-        if (debug()) DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
+    if (debug()) {
+        DPRINTF(CommInterfaceQueues, "Current Queue:\n");
+        for (auto it=readQueue.begin(); it!=readQueue.end(); ++it) {
+            DPRINTF(CommInterfaceQueues, "Read Request: %lx\n", (*it)->address);
+        }
     }
     if (!tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + processDelay);
@@ -628,9 +630,11 @@ void
 CommInterface::enqueueWrite(MemoryRequest * req) {
     if (debug()) DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", req->address, req->length);
     writeQueue.push_back(req);
-    if (debug()) DPRINTF(CommInterfaceQueues, "Current Queue:\n");
-    for (auto it=writeQueue.begin(); it!=writeQueue.end(); ++it) {
-        if (debug()) DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
+    if (debug()) {
+        DPRINTF(CommInterfaceQueues, "Current Queue:\n");
+        for (auto it=writeQueue.begin(); it!=writeQueue.end(); ++it) {
+            DPRINTF(CommInterfaceQueues, "Write Request: %lx\n", (*it)->address);
+        }
     }
     if (!tickEvent.scheduled()) {
         schedule(tickEvent, curTick() + processDelay);

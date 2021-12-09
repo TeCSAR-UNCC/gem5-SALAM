@@ -122,7 +122,7 @@ config_gic_dist:
      */
 
     ldr r1, =GIC_Dist_Base + set_enable2    // r1 = Set-enable1 Reg Address
-    mov r2, #0x0f
+    mov r2, #0x00
     //IRQ ID - 32 => 5th bit = 1
     lsl r2, r2, #4
 
@@ -163,33 +163,7 @@ irq_handler:
     // Read the interrupt acknowledge register of the GIC_CPU_INTERFACE
     ldr r1, =GIC_CPU_BASE + GIC_CPU_Int_Ack_reg_offset
     ldr r2, [r1]
-
-irq_mn_head:
-    cmp r2, #mn_head
-    bne irq_mn_body
-    BL head_isr
-    ldr r2, = mn_head
     b irq_end
-
-irq_mn_body:
-    cmp r2, #mn_body
-    bne irq_mn_tail
-    BL body_isr
-    ldr r2, = mn_body
-    b irq_end
-
-irq_mn_tail:
-    cmp r2, #mn_tail
-    bne irq_mn_class
-    BL tail_isr
-    ldr r2, = mn_tail
-    b irq_end
-
-irq_mn_class:
-    cmp r2, #mn_class
-    bne irq_end
-    BL class_isr
-    ldr r2, = mn_class
 
 irq_end:
     // write the IRQ ID to the END_OF_INTERRUPT Register of GIC_CPU_INTERFACE

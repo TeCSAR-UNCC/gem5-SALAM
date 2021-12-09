@@ -1,0 +1,3111 @@
+---
+acc_cluster:
+  - Name: lenet5_clstr
+  - DMA:
+    - Name: dma
+      BufferSize: 64
+      MaxReqSize: 8
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/lenet5/naive/hw/ir/top.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/top.ini
+      PIOSize: 17
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+      InterruptNum: 68
+  - Accelerator:
+    - Name: conv0
+      IrPath: benchmarks/lenet5/naive/hw/ir/conv0.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/conv0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      Debug: False
+    - Var:
+      - Name: Conv0Input
+        Type: SPM
+        Size: 4096
+        Ports: 150
+    - Var:
+      - Name: Conv0Weights
+        Type: SPM
+        Size: 600
+        Ports: 150
+    - Var:
+      - Name: Conv0Output
+        Type: SPM
+        Size: 18816
+        Ports: 6
+  - Accelerator:
+    - Name: pool0
+      IrPath: benchmarks/lenet5/naive/hw/ir/pool0.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/pool0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: pool0Input
+        Type: SPM
+        Size: 18816
+        Ports: 24
+    - Var:
+      - Name: pool0Output
+        Type: SPM
+        Size: 4704
+        Ports: 24
+  - Accelerator:
+    - Name: conv1
+      IrPath: benchmarks/lenet5/naive/hw/ir/conv1.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/conv1.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      Debug: False
+    - Var:
+      - Name: Conv1Input
+        Type: SPM
+        Size: 4704
+        Ports: 2400
+    - Var:
+      - Name: Conv1Weights
+        Type: SPM
+        Size: 9600
+        Ports: 2400
+    - Var:
+      - Name: Conv1Output
+        Type: SPM
+        Size: 6400
+        Ports: 16
+  - Accelerator:
+    - Name: pool1
+      IrPath: benchmarks/lenet5/naive/hw/ir/pool1.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/pool1.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: pool1Input
+        Type: SPM
+        Size: 6400
+        Ports: 64
+    - Var:
+      - Name: pool1Output
+        Type: SPM
+        Size: 1600
+        Ports: 64
+  - Accelerator:
+    - Name: fc0
+      IrPath: benchmarks/lenet5/naive/hw/ir/fc0.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/fc0.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      Debug: False
+    - Var:
+      - Name: fc0Input
+        Type: SPM
+        Size: 1600
+        Ports: 1200
+    - Var:
+      - Name: fc0Weights
+        Type: SPM
+        Size: 192000
+        Ports: 1200
+    - Var:
+      - Name: fc0Output
+        Type: SPM
+        Size: 480
+        Ports: 3
+  - Accelerator:
+    - Name: fc1
+      IrPath: benchmarks/lenet5/naive/hw/ir/fc1.ll
+      ConfigPath: benchmarks/lenet5/naive/hw/configs/fc1.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      Debug: False
+    - Var:
+      - Name: fc1Input
+        Type: SPM
+        Size: 480
+        Ports: 120
+    - Var:
+      - Name: fc1Weights
+        Type: SPM
+        Size: 40320
+        Ports: 120
+    - Var:
+      - Name: fc1Output
+        Type: SPM
+        Size: 336
+        Ports: 1
+hw_config:
+  top:
+  conv0:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  conv1:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  conv2:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  data_mover_0:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  data_mover_1:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  data_mover_2:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  data_mover_3:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  data_mover_4:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  fc0:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  fc1:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  pool0:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0
+  pool1:
+    instructions:
+      add:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 13
+        runtime_cycles: 0
+      addrspacecast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 50
+        runtime_cycles: 1
+      alloca:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 31
+        runtime_cycles: 0
+      and_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 28
+        runtime_cycles: 0
+      ashr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 27
+        runtime_cycles: 1
+      bitcast:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 49
+        runtime_cycles: 0
+      br:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 2
+        runtime_cycles: 0
+      call:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 56
+        runtime_cycles: 0
+      fadd:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 14
+        runtime_cycles: 5
+      fcmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 54
+        runtime_cycles: 1
+      fdiv:
+        functional_unit: 10
+        functional_unit_limit: 0
+        opcode_num: 21
+        runtime_cycles: 16
+      fence:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 35
+        runtime_cycles: 0
+      fmul:
+        functional_unit: 9
+        functional_unit_limit: 0
+        opcode_num: 18
+        runtime_cycles: 4
+      fpext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 46
+        runtime_cycles: 0
+      fptosi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 42
+        runtime_cycles: 0
+      fptoui:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 41
+        runtime_cycles: 0
+      fptrunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 45
+        runtime_cycles: 0
+      frem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 24
+        runtime_cycles: 16
+      fsub:
+        functional_unit: 6
+        functional_unit_limit: 0
+        opcode_num: 16
+        runtime_cycles: 5
+      gep:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 34
+        runtime_cycles: 0
+      icmp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 53
+        runtime_cycles: 0
+      indirectbr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 4
+        runtime_cycles: 0
+      inttoptr:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 48
+        runtime_cycles: 0
+      invoke:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 5
+        runtime_cycles: 0
+      landingpad:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 66
+        runtime_cycles: 0
+      load:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 32
+        runtime_cycles: 0
+      lshr:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 26
+        runtime_cycles: 1
+      mul:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 17
+        runtime_cycles: 1
+      or_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 29
+        runtime_cycles: 0
+      phi:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 55
+        runtime_cycles: 0
+      ptrtoint:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 47
+        runtime_cycles: 0
+      resume:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 6
+        runtime_cycles: 0
+      ret:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 1
+        runtime_cycles: 0
+      sdiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 20
+        runtime_cycles: 1
+      select:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 57
+        runtime_cycles: 0
+      sext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 40
+        runtime_cycles: 0
+      shl:
+        functional_unit: 3
+        functional_unit_limit: 0
+        opcode_num: 25
+        runtime_cycles: 1
+      srem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 23
+        runtime_cycles: 1
+      store:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 33
+        runtime_cycles: 0
+      sub:
+        functional_unit: 1
+        functional_unit_limit: 0
+        opcode_num: 15
+        runtime_cycles: 1
+      switch_inst:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 3
+        runtime_cycles: 0
+      trunc:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 38
+        runtime_cycles: 0
+      udiv:
+        functional_unit: 2
+        functional_unit_limit: 0
+        opcode_num: 19
+        runtime_cycles: 1
+      uitofp:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 43
+        runtime_cycles: 0
+      unreachable:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 7
+        runtime_cycles: 0
+      urem:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 22
+        runtime_cycles: 1
+      vaarg:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 60
+        runtime_cycles: 0
+      xor_inst:
+        functional_unit: 4
+        functional_unit_limit: 0
+        opcode_num: 30
+        runtime_cycles: 1
+      zext:
+        functional_unit: 0
+        functional_unit_limit: 0
+        opcode_num: 39
+        runtime_cycles: 0

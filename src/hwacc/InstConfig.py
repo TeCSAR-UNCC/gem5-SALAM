@@ -146,7 +146,7 @@ class Fadd(SimObject):
 	type = 'Fadd'	# gem5-SALAM attached header
 	cxx_header = "hwacc/HWModeling/generated/instructions/fadd.hh"
 	# Instruction params
-	functional_unit = Param.UInt32(6, "Default functional unit assignment.")
+	functional_unit = Param.UInt32(5, "Default functional unit assignment.")
 	functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
 	opcode_num = Param.UInt32(14, "Default instruction llvm enum opcode value.")
 	runtime_cycles = Param.UInt32(5, "Default instruction runtime cycles.")
@@ -186,7 +186,7 @@ class Fmul(SimObject):
 	type = 'Fmul'	# gem5-SALAM attached header
 	cxx_header = "hwacc/HWModeling/generated/instructions/fmul.hh"
 	# Instruction params
-	functional_unit = Param.UInt32(9, "Default functional unit assignment.")
+	functional_unit = Param.UInt32(7, "Default functional unit assignment.")
 	functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
 	opcode_num = Param.UInt32(18, "Default instruction llvm enum opcode value.")
 	runtime_cycles = Param.UInt32(4, "Default instruction runtime cycles.")

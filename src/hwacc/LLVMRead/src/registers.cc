@@ -338,7 +338,9 @@ SALAM::APFloatRegister::dataString() {
 #if USE_LLVM_AP_VALUES
 
 #else
-    ss << "0x" << std::hex << data;
+    float fdata = *(float*)&data;
+    double ddata = *(double*)&data;
+    ss << fdata << "f " << ddata << "d";
 #endif
     return ss.str();
 }

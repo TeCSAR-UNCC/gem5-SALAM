@@ -25,8 +25,8 @@ class Register
         bool tracked;
         bool isNULL = false;
         bool dbg = false;
-        unsigned reads = 0;
-        unsigned writes = 0;
+        uint64_t reads = 0;
+        uint64_t writes = 0;
         uint64_t regdata;
 
         class Register_Debugger: public Debugger
@@ -108,6 +108,8 @@ class Register
         void setNull(bool flag) { isNULL = flag; }
         void setTracked(bool flag) { tracked = flag; }
         void dump() { if (dbg) reg_dbg.dumper(this); }
+        uint64_t getReads() { return reads; }
+        uint64_t getWrites() { return writes; }
         virtual std::string dataString() = 0;
 };
 

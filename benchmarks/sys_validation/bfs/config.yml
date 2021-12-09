@@ -3,8 +3,8 @@ acc_cluster:
   - Name: bfs_clstr
   - DMA:
     - Name: dma
-      MaxReqSize: 64
-      BufferSize: 128
+      MaxReqSize: 128
+      BufferSize: 256
       PIOMaster: LocalBus
       Type: NonCoherent
       InterruptNum: 95

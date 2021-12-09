@@ -40,10 +40,16 @@
 #include "../../common/m5ops.h"
 
 int main(void) {
-        stage = 0;
+        volatile uint8_t  * head_MMR  = (uint8_t  *)(head_top);
+        volatile uint8_t  * body_MMR  = (uint8_t  *)(body_top);
+        volatile uint8_t  * tail_MMR  = (uint8_t  *)(tail_top);
+        volatile uint8_t  * class_MMR  = (uint8_t  *)(class_top);
+
 	m5_reset_stats();
         unsigned phase, rs_offset, rd_offset, wr_offset;
-        // Run Head
+        
+        phase = 0;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -53,9 +59,11 @@ int main(void) {
                 feats+wr_offset,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 0);
-        printf("Current Stage: %d\n", stage);
+
+        while(*head_MMR != 0x04);
+        
         phase = 1;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -66,9 +74,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 1);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 2;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -79,9 +88,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 2);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 3;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -92,9 +102,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 3);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 4;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -105,9 +116,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 4);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 5;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -118,9 +130,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 5);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 6;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -131,9 +144,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 6);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 7;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -144,9 +158,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 7);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 8;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -157,9 +172,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 8);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 9;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -170,9 +186,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 9);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 10;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -183,9 +200,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 10);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+
         phase = 11;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -196,9 +214,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 11);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+        
         phase = 12;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -209,9 +228,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 12);
-        printf("Current Stage: %d\n", stage);
+        while(*body_MMR != 0x04);
+        
         phase = 13;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -222,8 +242,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 13);
+        while(*body_MMR != 0x04);
+        
         phase = 14;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -234,8 +256,10 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 14);
+        while(*body_MMR != 0x04);
+        
         phase = 15;
+        printf("Current Stage: %d\n", phase);
         rs_offset = (phase + 0) * 0x00100000;
         rd_offset = (phase + 1) * 0x00100000;
         wr_offset = (phase + 2) * 0x00100000;
@@ -246,15 +270,22 @@ int main(void) {
                 weights, qparams,
                 weights, qparams,
                 weights, qparams);
-        while(stage == 15);
+        while(*body_MMR != 0x04);
+
+        phase = 16;
+        printf("Current Stage: %d\n", phase);
         runTail(feats+0x01100000,
                 feats+0x01200000,
                 weights, qparams);
-        while(stage == 16);
+        while(*tail_MMR != 0x04);
+
+        phase = 17;
+        printf("Current Stage: %d\n", phase);
         runClassifier(feats+0x01100000,
                 feats+0x01200000,
                 weights, qparams);
-        while(stage == 17);
+        while(*class_MMR != 0x04);
+
 
         m5_dump_stats();
 	m5_exit();
@@ -276,7 +307,7 @@ void runHead(uint64_t img_rd_addr, uint64_t feat_wr_addr,
     ARGS[5] = dw_quant;
     ARGS[6] = pw_weights;
     ARGS[7] = pw_quant;
-    printf("Running HEAD\n");
+    printf("Running HEAD\n");                                                                                                                 
     MMR[0]  = 0x01;
 }
 

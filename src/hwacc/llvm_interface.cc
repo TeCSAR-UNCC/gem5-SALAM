@@ -471,7 +471,6 @@ LLVMInterface::constructStaticGraph() {
     }
     // Functions will initialize BasicBlocks, which will initialize Instructions
     DPRINTF(LLVMInterface, "Initialize SALAM::Functions\n");
-    if (functions.size() == 1) functions.front()->setTop(true);
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
         llvm::Function &func = *func_iter;
         std::shared_ptr<SALAM::Value> funcval = vmap.find(&func)->second;
@@ -480,6 +479,7 @@ LLVMInterface::constructStaticGraph() {
         assert(sfunc);
         sfunc->initialize(&func, &vmap, &values, topName);
     }
+    if (functions.size() == 1) functions.front()->setTop(true);
 
     // Detect Loop Latches
     for (auto func_iter = m->begin(); func_iter != m->end(); func_iter++) {
@@ -643,12 +643,7 @@ LLVMInterface::initialize() {
     DPRINTF(LLVMInterface, "================================================================\n");
     //debug(1);
     launchTopFunction();
-    // HW
-    // for(const auto& count : hw->opcodes->usage) {
-    //     std::cout << "OpCode[" << count.first << "] - Usage: " << count.second << "\n";
-    // }
-
-
+ 
     // panic("Kill Simulation");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
@@ -717,6 +712,59 @@ LLVMInterface::finalize() {
 
 void
 LLVMInterface::printPerformanceResults() {
+
+    std::map<uint64_t, uint64_t> totals_reads;
+    std::map<uint64_t, uint64_t> totals_writes;
+
+    std::cout << "********************************************************************************" << std::endl;
+    std::cout << name() << std::endl;
+    
+    for (auto it : values) {
+        if (it->isInstruction()) { 
+            //std::cout << "Instruction: " << llvm::Instruction::getOpcodeName(it->getOpode()) << "\n";
+            if (it->getReg()) {
+                totals_reads[it->getOpode()] += it->getReg()->getReads();
+                totals_writes[it->getOpode()] += it->getReg()->getWrites();
+                //std::cout << "Reads: " << it->getReg()->getReads() << "\n";
+                //std::cout << "Writes: " << it->getReg()->getWrites() << "\n";
+            }
+        }
+    }
+
+
+    for(const auto& count : hw->opcodes->usage) {
+        if (count.second) std::cout << "\nInstruction: " << llvm::Instruction::getOpcodeName(count.first) << "\n\tIR Count: " << count.second << "\n\tTotal Reads: " << totals_reads[count.first] << "\n\tTotal Writes: " << totals_writes[count.first];
+    }
+    std::cout << "\n";
+
+    double adder_area = (hw->opcodes->get_usage(13) + hw->opcodes->get_usage(20) + hw->opcodes->get_usage(15)) *  1.794430e+02;
+    double adder_reads = (totals_reads[13] + totals_reads[15]);
+    double adder_writes = (totals_writes[13] + totals_writes[15]);
+    double adder_power = adder_reads*2.380803e-03 + adder_writes*(8.115300e-03+6.162853e-03);
+
+
+    double bitwise_area = (hw->opcodes->get_usage(29) + hw->opcodes->get_usage(30) + hw->opcodes->get_usage(25) + hw->opcodes->get_usage(26) + hw->opcodes->get_usage(27) + hw->opcodes->get_usage(28)) * 5.036996e+01;
+    double bitwise_reads = (totals_reads[25] + totals_reads[26] + totals_reads[27] + totals_reads[28] + totals_reads[29] + totals_reads[30]);
+    double bitwise_writes = (totals_writes[25] + totals_writes[26] + totals_writes[27] + totals_writes[28] + totals_writes[29] + totals_writes[30]);
+    double bitwise_power = bitwise_reads*6.111633e-04 + bitwise_writes*(1.680942e-03+1.322420e-03);
+
+    double multiplier_area = (hw->opcodes->get_usage(17) + hw->opcodes->get_usage(19) + hw->opcodes->get_usage(20))*4.595000e+03;
+    double multiplier_reads = totals_reads[17] + totals_reads[19] + totals_reads[20];
+    double multiplier_writes = totals_writes[17] + totals_writes[19] + totals_writes[20];
+    double multiplier_power = multiplier_reads*4.817683e-02 + multiplier_writes*(5.725752e-01+8.662890e-01);
+
+    double reg_area = hw->opcodes->get_usage(34)*32*5.981433e+00;
+    double reg_reads = totals_reads[34]*32;
+    double reg_writes = totals_writes[34]*32;
+    double register_power = reg_reads*7.395312e-05 + reg_writes*(1.322600e-03+1.792126e-04);
+
+    double total_area = adder_area + bitwise_area + multiplier_area + reg_area;
+    double total_power = adder_power + bitwise_power + multiplier_power + register_power;
+
+    std::cout << "Total Area: " << total_area;
+    std::cout << "\nTotal Power: " << total_power << "\n";
+
+
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     Tick cycle_time = clock_period/1000;
 
@@ -771,8 +819,7 @@ LLVMInterface::printPerformanceResults() {
 /*********************************************************************************************
  Prints usage statistics of how many times each instruction was accessed during runtime
 *********************************************************************************************/
-    std::cout << "********************************************************************************" << std::endl;
-    std::cout << name() << std::endl;
+
     std::cout << "   ========= Performance Analysis =============" << std::endl;
     std::cout << "   Setup Time:                      " << setupHours.count() << "h " << setupMins.count() << "m " << setupSecs.count() << "s " << setupMS.count() << "ms" << std::endl;
     std::cout << "   Simulation Time (Total):         " << totalHours.count() << "h " << totalMins.count() << "m " << totalSecs.count() << "s " << totalMS.count() << "ms" << std::endl;
