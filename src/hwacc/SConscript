@@ -12,6 +12,7 @@ if env['TARGET_ISA'] == 'arm':
     SimObject('StreamDma.py')
     SimObject('AccCluster.py')
     SimObject('StreamBuffer.py')
+    SimObject('RegisterBank.py')
 
     #LLVMInterface
     SimObject('ComputeUnit.py')
@@ -41,6 +42,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('stream_buffer.cc')
     Source('stream_port.cc')
     Source('scratchpad_memory.cc')
+    Source('register_bank.cc')
     
     #
     Source('LLVMRead/src/value.cc')

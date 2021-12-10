@@ -3,7 +3,6 @@
 
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
-#include "hwacc/scratchpad_memory.hh"
 
 #include <vector>
 
@@ -25,26 +24,25 @@ class RegisterBank : public AbstractMemory
       public:
         const Tick tick;
         const PacketPtr pkt;
-        const PortID origin;
 
-        DeferredPacket(PacketPtr _pkt, Tick _tick, PortID _origin) : tick(_tick), pkt(_pkt), origin(_origin)
+        DeferredPacket(PacketPtr _pkt, Tick _tick) : tick(_tick), pkt(_pkt)
         { }
-    }
+    };
 
-    class RegPort : public ScratchpadResponsePort
+    class RegPort : public ResponsePort
     {
       private:
         RegisterBank * memory;
       public:
         RegPort(const std::string& _name, RegisterBank * _memory, PortID id=InvalidPortID) :
-            ScratchpadResponsePort(_name, _memory, id), memory(_memory) {}
+            ResponsePort(_name, _memory, id), memory(_memory) {}
       protected:
-        Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt, true); };
+        Tick recvAtomic(PacketPtr pkt) override { return memory->recvAtomic(pkt); };
         Tick recvAtomicBackdoor(
                 PacketPtr pkt, MemBackdoorPtr &_backdoor) override { return memory->recvAtomicBackdoor(pkt,_backdoor); };
         void recvFunctional(PacketPtr pkt) override { memory->recvFunctional(pkt); };
-        bool recvTimingReq(PacketPtr pkt) override { return memory->recvTimingReq(pkt, id, true); };
-        void recvRespRetry() override { memory->recvRespRetry(id); };
+        bool recvTimingReq(PacketPtr pkt) override { return memory->recvTimingReq(pkt); };
+        void recvRespRetry() override { memory->recvRespRetry(); };
         AddrRangeList getAddrRanges() const override {
             AddrRangeList ranges;
             ranges.push_back(memory->getAddrRange());
@@ -52,7 +50,7 @@ class RegisterBank : public AbstractMemory
         }
     };
 
-    std::vector<RegPort *> reg_ports;
+    RegPort port;
 
     /**
      * Container for register deltas. Copied to pmem on delta events.
@@ -70,37 +68,17 @@ class RegisterBank : public AbstractMemory
     std::list<DeferredPacket> packetQueue;
 
     /**
-     * Track the state of the memory as either idle or busy, no need
-     * for an enum with only two states.
-     */
-    std::vector<bool> isBusy;
-
-    /**
-     * Remember if we have to retry an outstanding request that
-     * arrived while we were busy.
-     */
-    std::vector<bool> retryReq;
-
-    /**
      * Remember if we failed to send a response and are awaiting a
      * retry. This is only used as a check.
      */
-    std::vector<bool> retryResp;
-
-    /**
-     * Release the memory after being busy and send a retry if a
-     * request was rejected in the meanwhile.
-     */
-    void release();
-
-    std::vector<EventFunctionWrapper> releaseEvent;
-    std::vector<Tick> releaseTick;
+    bool retryResp;
 
     /**
      * Dequeue a packet from our internal packet queue and move it to
      * the port where it will be sent as soon as possible.
      */
     void dequeue();
+    EventFunctionWrapper dequeueEvent;
 
     /**
      * Handle the delta cycle of the registers in the bank.
@@ -108,7 +86,6 @@ class RegisterBank : public AbstractMemory
      * Calls dequeue() to send packet responses.
      */
     void delta();
-
     EventFunctionWrapper deltaEvent;
 
   public:
@@ -122,7 +99,7 @@ class RegisterBank : public AbstractMemory
     Tick recvAtomic(PacketPtr pkt);
     Tick recvAtomicBackdoor(PacketPtr pkt, MemBackdoorPtr &_backdoor);
     void recvFunctional(PacketPtr pkt);
-    bool recvTimingReq(PacketPtr pkt, PortID recvPort);
-    void recvRespRetry(PortID id);
-}
+    bool recvTimingReq(PacketPtr pkt);
+    void recvRespRetry();
+};
 #endif //__HWACC_REGISTER_BANK_HH__
