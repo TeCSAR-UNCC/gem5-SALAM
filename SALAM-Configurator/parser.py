@@ -107,6 +107,9 @@ class AccCluster:
 						elif "Stream" in j['Type']:
 							aligned_inc = int(j['StreamSize']) + (64 - (int(j['StreamSize']) % 64))
 							topAddress = topAddress + aligned_inc
+						elif "RegisterBank" in j['Type']:
+							aligned_inc = int(j['Size']) + (64 - (int(j['Size']) % 64))
+							topAddress = topAddress + aligned_inc
 						elif "Cache" in j['Type']:
 							# Don't need to change anything for cache
 							topAddress = topAddress
@@ -290,7 +293,7 @@ class Dma:
 
 		return lines
 
-class SPMConnection:
+class PortedConnection:
 	def __init__ (self, conName, numPorts):
 		self.conName = conName
 		self.numPorts = numPorts
@@ -312,12 +315,12 @@ class Variable:
 			self.readOnInvalid = kwargs.get('ReadOnInvalid', False)
 			self.writeOnValid = kwargs.get('WriteOnValid', True)
 			# Append the default connection here... probably need to be more elegant
-			self.connections.append(SPMConnection(self.accName, self.ports))
+			self.connections.append(PortedConnection(self.accName, self.ports))
 			# Append other connections to the connections list
 			if 'Connections' in kwargs:
 				for i in kwargs.get('Connections').split(','):
 					con, numPorts = i.split(':')
-					self.connections.append(SPMConnection(con,numPorts))
+					self.connections.append(PortedConnection(con,numPorts))
 		elif self.type == 'Stream':
 			# Read in Stream args
 			self.name = kwargs.get('Name')
@@ -330,6 +333,21 @@ class Variable:
 			# Convert connection definitions to lowercase
 			self.inCon = self.inCon.lower()
 			self.outCon = self.outCon.lower()
+		elif self.type == 'RegisterBank':
+			self.connections = []
+			# Read in SPM args
+			self.name = kwargs.get('Name')
+			self.accName = kwargs.get('AccName')
+			self.size = kwargs.get('Size')
+			self.ports = kwargs.get('Ports', 1)
+			self.address = kwargs.get('Address')
+			# Append the default connection here... probably need to be more elegant
+			self.connections.append(PortedConnection(self.accName, self.ports))
+			# Append other connections to the connections list
+			if 'Connections' in kwargs:
+				for i in kwargs.get('Connections').split(','):
+					con, numPorts = i.split(':')
+					self.connections.append(PortedConnection(con,numPorts))		
 		elif self.type == 'Cache':
 			self.name = kwargs.get('Name')
 			self.accName = kwargs.get('AccName')
@@ -370,6 +388,19 @@ class Variable:
 				lines.append("# Connecting " + self.name + " to " + i.conName)
 				lines.append("for i in range(" + str(i.numPorts) + "):")
 				lines.append("	clstr." + i.conName.lower() + ".spm = " + "clstr." + self.name.lower() + ".spm_ports")
+		# RegisterBank
+		elif self.type == 'RegisterBank':
+			lines.append("# " + self.name + " (Variable)")
+			lines.append("addr = " + hex(self.address))
+			lines.append("regRange = AddrRange(addr, addr + " + hex(self.size) + ")")
+			# When appending convert all connections to lowercase for standardization
+			lines.append("clstr." + self.name.lower() + " = RegisterBank(range = regRange)")
+			lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.mem_side_ports")
+			for i in self.connections:
+				lines.append("")
+				lines.append("# Connecting " + self.name + " to " + i.conName)
+				lines.append("for i in range(" + str(i.numPorts) + "):")
+				lines.append("	clstr." + i.conName.lower() + ".reg = " + "clstr." + self.name.lower() + ".reg_ports")
 		# L1 Cache, need to add L2 still...
 		elif self.type == 'Cache':
 			lines.append("# " + self.name + " (Cache)")

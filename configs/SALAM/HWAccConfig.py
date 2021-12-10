@@ -18,8 +18,7 @@ def AccConfig(acc, bench_file):
 
     # lenet config launcher custom stuff
     benchPath = Path(bench_file).parts
-
-
+    m5PathLen = len(Path(M5_Path).parts)
 
     # Set scheduling constraints
     #acc.llvm_interface.sched_threshold = ConfigSectionMap("Scheduler")['sched_threshold']
@@ -35,7 +34,7 @@ def AccConfig(acc, bench_file):
     #acc.hw_interface.cycle_counts
 
     if benchname != 'top':
-        if benchPath[5] == 'lenet5':
+        if benchPath[m5PathLen+1] == 'lenet5':
             config_path = 'benchmarks/lenet5/' + benchPath[6] + '/config.yml'
             fu_yaml = open(config_path, 'r')
             yaml_inst_list = yaml.safe_load(fu_yaml)
@@ -44,7 +43,7 @@ def AccConfig(acc, bench_file):
             for instruction in inst_list:
                 setattr(acc.hw_interface.cycle_counts, instruction, yaml_inst_list['hw_config'][benchname]['instructions'][instruction]['runtime_cycles'])
             fu_yaml.close()
-        elif benchPath[6] == 'mobilenetv2':
+        elif benchPath[m5PathLen+1] == 'mobilenetv2':
             config_path = 'benchmarks/mobilenetv2/config.yml'
             fu_yaml = open(config_path, 'r')
             for yaml_inst_list in yaml.safe_load_all(fu_yaml):

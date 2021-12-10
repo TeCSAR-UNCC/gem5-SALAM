@@ -37,7 +37,7 @@ acc_cluster:
     # Standard SPM Example, automatically connects to parent acc
     - Var:
       - Name: # Var name here (Required)
-        Type: # Var type, can be SPM, Stream or Cache (Required)
+        Type: # SPM
         Size: # Size in Bytes (Required)
         Ports: # Number of ports to connect to parent Acc
         ResetOnRead: # True/False | Reset ready bit on private scratchpad memory read
@@ -46,7 +46,7 @@ acc_cluster:
     # SPM with Multiple Accs Example
     - Var:
       - Name: # Var name here (Required)
-        Type: # Var type, can be SPM, Stream or Cache (Required)
+        Type: # SPM
         Size: # Size in Bytes
         Ports: # Number of ports to connect to parent Acc
         Connections: # Define extra connections here with porting
@@ -54,13 +54,21 @@ acc_cluster:
     # Stream Buffer Example
     - Var:
       - Name: # Var name here (Required)
-        Type: # Var type, can be SPM, Stream or Cache (Required)
+        Type: # Stream
         StreamSize: # Stream buffer width in bytes (Optional)
         BufferSize: # Stream buffer size in bytes (Optional)
         InCon: # Input connection, Acc Name (Required)
         OutCon: # Output connection, Acc Name (Required)
+    # RegisterBank Example
+    - Var:
+      - Name: # Var name here (Required)
+        Type: # RegisterBank
+        Size: # Register size in Bytes
+        Ports: # Number of ports to connect to parent Acc
+        Connections: # Define extra connections here with porting
+        # e.g. SecondAcc:1,ThirdAccAcc:1
     # L1 Cache Example
     - Var:
       - Name: # Var name here (Required)
-        Type: # Var type, can be SPM, Stream or Cache (Required)
+        Type: # Cache
         Size: # Cache size in Bytes
