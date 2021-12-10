@@ -339,7 +339,6 @@ class Variable:
 			self.name = kwargs.get('Name')
 			self.accName = kwargs.get('AccName')
 			self.size = kwargs.get('Size')
-			self.ports = kwargs.get('Ports', 1)
 			self.address = kwargs.get('Address')
 			# Append the default connection here... probably need to be more elegant
 			self.connections.append(PortedConnection(self.accName, self.ports))
@@ -399,8 +398,7 @@ class Variable:
 			for i in self.connections:
 				lines.append("")
 				lines.append("# Connecting " + self.name + " to " + i.conName)
-				lines.append("for i in range(" + str(i.numPorts) + "):")
-				lines.append("	clstr." + i.conName.lower() + ".reg = " + "clstr." + self.name.lower() + ".reg_ports")
+				lines.append("clstr." + i.conName.lower() + ".reg = " + "clstr." + self.name.lower() + ".reg_ports")
 		# L1 Cache, need to add L2 still...
 		elif self.type == 'Cache':
 			lines.append("# " + self.name + " (Cache)")

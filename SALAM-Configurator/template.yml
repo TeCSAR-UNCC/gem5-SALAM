@@ -64,7 +64,6 @@ acc_cluster:
       - Name: # Var name here (Required)
         Type: # RegisterBank
         Size: # Register size in Bytes
-        Ports: # Number of ports to connect to parent Acc
         Connections: # Define extra connections here with porting
         # e.g. SecondAcc:1,ThirdAccAcc:1
     # L1 Cache Example
