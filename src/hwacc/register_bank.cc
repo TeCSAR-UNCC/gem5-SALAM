@@ -164,7 +164,7 @@ RegisterBank::recvTimingReq(PacketPtr pkt)
     bool isRead = pkt->isRead();
 
     bool needsResponse = pkt->needsResponse();
-    Tick responseTime = recvAtomic(pkt);
+    Tick responseTime = curTick() + recvAtomic(pkt);
     if (needsResponse) {
         // recvAtomic() should already have turned packet into
         // atomic response

@@ -670,11 +670,11 @@ CommInterface::tryRead(RegPort * port) {
     PacketPtr pkt = new Packet(req, MemCmd::ReadReq);
     pkt->allocate();
     readReq->pkt = pkt;
+    readReq->currentReadAddr += size;
+    readReq->readLeft -= size;
     port->sendPacket(pkt);
 
-    readReq->currentReadAddr += size;
-
-    readReq->readLeft -= size;
+    
 
     if (!(readReq->readLeft > 0)) {
         readReq->needToRead = false;
@@ -712,12 +712,12 @@ CommInterface::tryWrite(RegPort * port) {
     uint8_t *pkt_data = (uint8_t *)req->getExtraData();
     pkt->dataDynamic(pkt_data);
     writeReq->pkt = pkt;
-    port->sendPacket(pkt);
-
     writeReq->currentWriteAddr += size;
     writeReq->writeLeft -= size;
+    port->sendPacket(pkt);
 
     if (!(writeReq->writeLeft > 0)) {
+        
         writeReq->needToWrite = false;
         if (!tickEvent.scheduled()) {
             schedule(tickEvent, curTick() + processDelay);
@@ -727,11 +727,13 @@ CommInterface::tryWrite(RegPort * port) {
 
 void
 CommInterface::enqueueRead(MemoryRequest * req) {
-    if (auto regport = getValidRegPort(req->getAddress())) {
+    if (inRegRange(req->getAddress())) {
         // We want to immediately handle register requests
         // and bypass memory queues
+        auto regport = getValidRegPort(req->getAddress());
         accRdQ.push_back(req); // Add it to active read queue
         regport->setReadReq(req);
+        req->setCarrierPort(regport);
         tryRead(regport);
     } else {
         if (debug()) DPRINTF(CommInterface, "Read from 0x%lx of Size:%d Bytes Enqueued:\n", req->address, req->length);
@@ -750,11 +752,13 @@ CommInterface::enqueueRead(MemoryRequest * req) {
 
 void
 CommInterface::enqueueWrite(MemoryRequest * req) {
-    if (auto regport = getValidRegPort(req->getAddress())) {
+    if (inRegRange(req->getAddress())) {
         // We want to immediately handle register requests
         // and bypass memory queues
+        auto regport = getValidRegPort(req->getAddress());
         accWrQ.push_back(req); // Add it to active write queue
         regport->setWriteReq(req);
+        req->setCarrierPort(regport);
         tryWrite(regport);
     } else {
         if (debug()) DPRINTF(CommInterface, "Write to 0x%lx of size:%d bytes enqueued\n", req->address, req->length);
@@ -933,6 +937,7 @@ CommInterface::getPort(const std::string& if_name, PortID idx) {
             const std::string portName = name() + ".reg[" + std::to_string(idx) + "]";
             regPorts[idx] = new RegPort(portName, this, idx);
         }
+        return *regPorts[idx];
     } else if (if_name == "pio") {
         return pioPort;
     } else {
