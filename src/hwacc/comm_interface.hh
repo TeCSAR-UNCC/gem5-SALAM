@@ -122,6 +122,29 @@ class CommInterface : public BasicPioDevice
         bool debug() { return owner->debug(); }
     };
 
+    class RegPort : public RequestPort
+    {
+      friend class CommInterface;
+
+      private:
+        CommInterface *owner;
+        MemoryRequest *readReq;
+        MemoryRequest *writeReq;
+      public:
+        RegPort(const std::string& name, CommInterface *_owner, PortID id=InvalidPortID) :
+          RequestPort(name, _owner), owner(_owner) {}
+        void setReadReq(MemoryRequest * req = nullptr) { readReq = req; }
+        void setWriteReq(MemoryRequest * req = nullptr) { writeReq = req; }
+      protected:
+        virtual bool recvTimingResp(PacketPtr pkt);
+        virtual void recvReqRetry();
+        virtual void recvRangeChange() { };
+        virtual Tick recvAtomic(PacketPtr pkt) {return 0;}
+        virtual void recvFunctional(PacketPtr pkt) { };
+        void sendPacket(PacketPtr pkt);
+        bool debug() { return owner-debug(); }
+    };
+
     class TickEvent : public Event
     {
       private:
@@ -144,7 +167,8 @@ class CommInterface : public BasicPioDevice
     std::vector<MemSidePort*> localPorts;
     std::vector<MemSidePort*> globalPorts;
     std::vector<MemSidePort*> streamPorts;
-    std::vector<SPMPort*> spmPorts;
+    std::vector<SPMPort*>     spmPorts;
+    std::vector<RegPort*>     regPorts;
 
     bool localPortsStalled() {
         for (auto it=localPorts.begin(); it!=localPorts.end(); ++it) {
@@ -175,12 +199,14 @@ class CommInterface : public BasicPioDevice
     }
     bool inStreamRange(Addr add);
     bool inSPMRange(Addr add);
+    bool inRegRange(Addr add);
     bool inLocalRange(Addr add);
     bool inGlobalRange(Addr add);
     MemSidePort * getValidLocalPort(Addr add, bool read);
     MemSidePort * getValidGlobalPort(Addr add, bool read);
     MemSidePort * getValidStreamPort(Addr add, size_t len, bool read);
-    SPMPort * getValidSPMPort(Addr add, size_t len, bool read);
+    SPMPort *     getValidSPMPort(Addr add, size_t len, bool read);
+    RegPort *     getValidRegPort(Addr add);
 
     CommInterface *comm;
     RequestorID masterId;
@@ -201,6 +227,9 @@ class CommInterface : public BasicPioDevice
     void tryRead(SPMPort * port);
     void tryWrite(SPMPort * port);
 
+    void tryRead(RegPort * port);
+    void tryWrite(RegPort * port);
+
     Addr dataAddr;
 
     uint8_t *mmreg;
@@ -214,12 +243,6 @@ class CommInterface : public BasicPioDevice
     ComputeUnit *cu;
 
   public:
-    // typedef CommInterfaceParams Params;
-    // const Params *
-    // params() const
-    // {
-    //   return dynamic_cast<const Params *>(_params);
-    // }
     PARAMS(CommInterface);
 
     CommInterface(const CommInterfaceParams &p);

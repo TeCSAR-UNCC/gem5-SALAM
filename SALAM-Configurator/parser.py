@@ -341,7 +341,7 @@ class Variable:
 			self.size = kwargs.get('Size')
 			self.address = kwargs.get('Address')
 			# Append the default connection here... probably need to be more elegant
-			self.connections.append(PortedConnection(self.accName, self.ports))
+			self.connections.append(PortedConnection(self.accName, 1))
 			# Append other connections to the connections list
 			if 'Connections' in kwargs:
 				for i in kwargs.get('Connections').split(','):
@@ -394,11 +394,11 @@ class Variable:
 			lines.append("regRange = AddrRange(addr, addr + " + hex(self.size) + ")")
 			# When appending convert all connections to lowercase for standardization
 			lines.append("clstr." + self.name.lower() + " = RegisterBank(range = regRange)")
-			lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.mem_side_ports")
+			# lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.mem_side_ports")
 			for i in self.connections:
 				lines.append("")
 				lines.append("# Connecting " + self.name + " to " + i.conName)
-				lines.append("clstr." + i.conName.lower() + ".reg = " + "clstr." + self.name.lower() + ".reg_ports")
+				lines.append("clstr." + i.conName.lower() + ".reg = " + "clstr." + self.name.lower() + ".reg_port")
 		# L1 Cache, need to add L2 still...
 		elif self.type == 'Cache':
 			lines.append("# " + self.name + " (Cache)")

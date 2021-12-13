@@ -14,6 +14,7 @@ class CommInterface(BasicPioDevice):
     acp = VectorRequestPort("Master ports connected to the cluster coherency xbar")
     stream = VectorRequestPort("Master ports connected to streaming devices")
     spm = VectorRequestPort("Master ports connected to private scratchpad memory")
+    reg = VectorRequestPort("Master ports connected to private register banks")
     system = Param.System(Parent.any, "Parent system of the device")
     cache_line_size = Param.Unsigned(Parent.cache_line_size, "Cache line size in bytes")
     gic = Param.BaseGic(Parent.any, "Gic on which to trigger interrupts")
