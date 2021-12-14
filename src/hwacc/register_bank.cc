@@ -22,7 +22,7 @@ using namespace std;
 RegisterBank::RegisterBank(const RegisterBankParams &p) :
     AbstractMemory(p),
     port(name() + ".reg_port", this),
-    deltaTime(p.delta_time*1000),
+    deltaTime(p.delta_time),
     retryResp(false),
     dequeueEvent([this]{ dequeue(); }, name()),
     deltaEvent([this]{ delta(); }, name())

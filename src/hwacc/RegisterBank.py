@@ -7,4 +7,4 @@ class RegisterBank(AbstractMemory):
     cxx_header = 'hwacc/register_bank.hh'
 
     reg_port = ResponsePort("Responder port for private acclerator accesses")
-    delta_time = Param.Latency('2ns', "Request to response latency")
+    delta_time = Param.Latency('10ns', "Request to response latency")
