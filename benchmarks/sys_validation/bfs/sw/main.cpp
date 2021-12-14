@@ -62,7 +62,7 @@ int main(void) {
     for (int i = 0; i < N_LEVELS; i++) {
         if (level_counts[i] != check[i]) {
             fail = true;
-            break;
+            printf("Mismatch: %d found, %d expected\n", level_counts[i], check[i]);
         }
     }
     if(fail)

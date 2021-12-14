@@ -39,7 +39,7 @@ acc_cluster:
         ReadyMode: False
     - Var:
       - Name: LEVELS
-        Type: SPM
+        Type: RegisterBank
         Size: 256
         Ports: 4
         ReadyMode: False
@@ -152,7 +152,7 @@ hw_config:
         functional_unit: 0
         functional_unit_limit: 0
         opcode_num: 34
-        runtime_cycles: 0
+        runtime_cycles: 1
       icmp:
         functional_unit: 0
         functional_unit_limit: 0
