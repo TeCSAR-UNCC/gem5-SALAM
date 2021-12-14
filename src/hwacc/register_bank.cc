@@ -22,6 +22,7 @@ using namespace std;
 RegisterBank::RegisterBank(const RegisterBankParams &p) :
     AbstractMemory(p),
     port(name() + ".reg_port", this),
+    load(name() + ".load_port", this),
     deltaTime(p.delta_time),
     retryResp(false),
     dequeueEvent([this]{ dequeue(); }, name()),
@@ -111,6 +112,9 @@ RegisterBank::init()
     // systems at the moment
     if (port.isConnected()) {
         port.sendRangeChange();
+    }
+    if (load.isConnected()) {
+        load.sendRangeChange();
     }
 }
 
@@ -237,6 +241,8 @@ RegisterBank::getPort(const std::string &if_name, PortID idx)
 {
     if (if_name == "reg_port") {
         return port;
+    } else if (if_name == "load_port") {
+        return load;
     }
     return AbstractMemory::getPort(if_name, idx);
 }

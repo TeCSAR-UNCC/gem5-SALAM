@@ -394,7 +394,7 @@ class Variable:
 			lines.append("regRange = AddrRange(addr, addr + " + hex(self.size) + ")")
 			# When appending convert all connections to lowercase for standardization
 			lines.append("clstr." + self.name.lower() + " = RegisterBank(range = regRange)")
-			# lines.append("clstr." + self.name.lower() + "." + "port" + " = " + "clstr.local_bus.mem_side_ports")
+			lines.append("clstr." + self.name.lower() + "." + "load_port" + " = " + "clstr.local_bus.mem_side_ports")
 			for i in self.connections:
 				lines.append("")
 				lines.append("# Connecting " + self.name + " to " + i.conName)

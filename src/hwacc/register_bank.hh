@@ -3,6 +3,7 @@
 
 #include "mem/abstract_mem.hh"
 #include "mem/port.hh"
+#include "mem/tport.hh"
 
 #include <vector>
 
@@ -52,6 +53,27 @@ class RegisterBank : public AbstractMemory
 
     RegPort port;
 
+    class LoadPort : public SimpleTimingPort
+    {
+      private:
+        RegisterBank * memory;
+      protected:
+        Tick recvAtomic(PacketPtr pkt) {
+          memory->registerAccess(pkt);
+          return memory->getDeltaTime();
+        }
+        AddrRangeList getAddrRanges() const override {
+            AddrRangeList ranges;
+            ranges.push_back(memory->getAddrRange());
+            return ranges;
+        }
+      public:
+        LoadPort(const std::string& _name, RegisterBank * _memory, PortID id=InvalidPortID) :
+          SimpleTimingPort(_name, _memory), memory(_memory) {}
+    };
+
+    LoadPort load;
+
     /**
      * Container for register deltas. Copied to pmem on delta events.
      */
@@ -94,6 +116,7 @@ class RegisterBank : public AbstractMemory
     Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID) override;
     void init() override;
+    Tick getDeltaTime() { return deltaTime; }
 
   protected:
     Tick recvAtomic(PacketPtr pkt);
