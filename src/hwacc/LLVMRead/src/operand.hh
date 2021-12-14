@@ -23,7 +23,6 @@ class Operand: public Value
 {
     private:
         std::shared_ptr<SALAM::Register> lockedValue;
-        bool dbg = false;
         bool set = false;
 
     protected:
@@ -73,7 +72,7 @@ class Constant: public Value {
     protected:
         SALAM::valueListTy operands;
     public:
-        Constant(uint64_t id);
+        Constant(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~Constant() = default;
         virtual bool isConstant() { return true; }
         //Value *clone() { return new Constant(*this); }
@@ -84,7 +83,7 @@ class GlobalConstant : public Constant {
     private:
     protected:
     public:
-        GlobalConstant(uint64_t id);
+        GlobalConstant(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~GlobalConstant() = default;
         virtual bool isGlobalConstant() { return true; }
         //Value *clone() { return new GlobalConstant(*this); }
@@ -95,7 +94,7 @@ class Argument : public Value {
     private:
     protected:
     public:
-        Argument(uint64_t id);
+        Argument(uint64_t id, gem5::SimObject * owner, bool dbg);
         ~Argument() = default;
         virtual bool isArgument() { return true; }
         //Value *clone() { return new Argument(*this); }

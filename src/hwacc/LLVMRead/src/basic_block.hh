@@ -23,7 +23,6 @@ namespace SALAM {
     private:
       std::vector<std::shared_ptr<SALAM::BasicBlock>> predecessors;
       std::vector<std::shared_ptr<SALAM::Instruction>> instructions;
-      bool dbg = false;
     protected:
       class BasicBlock_Debugger: public Debugger
         {
@@ -35,7 +34,7 @@ namespace SALAM {
 
        BasicBlock_Debugger* bb_dbg;  
     public:
-      BasicBlock(uint64_t id);
+      BasicBlock(uint64_t id, gem5::SimObject * owner, bool dbg);
       ~BasicBlock();
       virtual bool isBasicBlock() { return true; }
       void initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy *valueList);
