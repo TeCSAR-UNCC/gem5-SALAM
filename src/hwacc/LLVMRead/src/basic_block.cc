@@ -39,7 +39,7 @@ SALAM::BasicBlock::BasicBlock_Debugger::dumper(SALAM::BasicBlock *bb)
 void
 SALAM::BasicBlock::initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueListTy * valueList) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(LLVMInterface, "Initialize Values - BasicBlock::initialize\n");
+    DPRINTF(LLVMParse, "Initialize Values - BasicBlock::initialize\n");
     Value::initialize(irval, vmap);
 	//Parse irval for BasicBlock params
 	llvm::BasicBlock * bb = llvm::dyn_cast<llvm::BasicBlock>(irval);
@@ -52,7 +52,7 @@ SALAM::BasicBlock::initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueLis
         predecessors.push_back(pred);
     }
 
-    DPRINTF(LLVMInterface, "Initialize BasicBlocks\n");
+    DPRINTF(LLVMParse, "Initialize BasicBlocks\n");
 	for (auto inst_iter = bb->begin(); inst_iter != bb->end(); inst_iter++) {
         llvm::Instruction &inst = *inst_iter;
         std::shared_ptr<SALAM::Value> instval = vmap->find(&inst)->second;
@@ -61,6 +61,6 @@ SALAM::BasicBlock::initialize(llvm::Value * irval, irvmap *vmap, SALAM::valueLis
         assert(instruct);
         instructions.push_back(instruct);
         instruct->initialize(&inst, vmap, valueList);
-        DPRINTF(LLVMInterface, "Instruction (UID: %d) Initialization Complete\n", instruct->getUID());
+        DPRINTF(LLVMParse, "Instruction (UID: %d) Initialization Complete\n", instruct->getUID());
     }
 }

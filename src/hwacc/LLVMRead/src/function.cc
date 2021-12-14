@@ -12,7 +12,7 @@ SALAM::Function::initialize(llvm::Value * irval,
 						   SALAM::valueListTy *valueList,
 						   std::string topName) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
-    DPRINTF(LLVMInterface, "Initialize Values - Function::initialize\n");
+    DPRINTF(LLVMParse, "Initialize Values - Function::initialize\n");
     Value::initialize(irval, vmap);
 
 	//Parse irval for function params
@@ -21,7 +21,7 @@ SALAM::Function::initialize(llvm::Value * irval,
     if (func->getName() == topName) top = true;
     else top = false;
 	// Fill arguments
-    DPRINTF(LLVMInterface, "Initialize Function Arguments\n");
+    DPRINTF(LLVMParse, "Initialize Function Arguments\n");
 	for (auto arg_iter = func->arg_begin(); arg_iter != func->arg_end(); arg_iter++) {
         llvm::Argument &arg = *arg_iter;
         std::shared_ptr<SALAM::Value> argval = vmap->find(&arg)->second;
@@ -33,7 +33,7 @@ SALAM::Function::initialize(llvm::Value * irval,
     }
 
     // Fill bbList
-    DPRINTF(LLVMInterface, "Initialize BasicBlocks\n");
+    DPRINTF(LLVMParse, "Initialize BasicBlocks\n");
     for (auto bb_iter = func->begin(); bb_iter != func->end(); bb_iter++) {
         llvm::BasicBlock &bb = *bb_iter;
         std::shared_ptr<SALAM::Value> bbval = vmap->find(&bb)->second;

@@ -52,8 +52,6 @@ if env['TARGET_ISA'] == 'arm':
     Source('LLVMRead/src/mem_request.cc')
     Source('LLVMRead/src/instruction.cc')
     Source('LLVMRead/src/registers.cc')
-    #Source('LLVMRead/src/base_instruction.cc')
-    #Source('LLVMRead/src/cycle_counts.cc')
     Source('LLVMRead/src/operand.cc')
 
     # GENERATED FILES
@@ -76,6 +74,7 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('DeviceMMR')
     DebugFlag('LLVMInterface')
     DebugFlag('NoncoherentDma')
+    DebugFlag('LLVMParse')
     DebugFlag('Runtime')
     DebugFlag('RuntimeCompute')
     DebugFlag('RuntimeQueues')

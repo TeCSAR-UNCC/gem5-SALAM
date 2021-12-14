@@ -31,6 +31,7 @@
 #include "debug/DMA.hh"
 #include "debug/LLVMInterface.hh"
 #include "debug/NoncoherentDma.hh"
+#include "debug/LLVMParse.hh"
 #include "debug/Runtime.hh"
 #include "debug/RuntimeCompute.hh"
 #include "debug/RuntimeQueues.hh"
