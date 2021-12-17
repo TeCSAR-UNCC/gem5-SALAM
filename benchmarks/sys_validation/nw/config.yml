@@ -27,22 +27,22 @@ acc_cluster:
       PIOMaster: LocalBus
     - Var:
       - Name: SEQA
-        Type: SPM
+        Type: RegisterBank
         Size: 128
         Ports: 2
     - Var:
       - Name: SEQB
-        Type: SPM
+        Type: RegisterBank
         Size: 128
         Ports: 2
     - Var:
       - Name: ALIGNEDA
-        Type: SPM
+        Type: RegisterBank
         Size: 256
         Ports: 2
     - Var:
       - Name: ALIGNEDB
-        Type: SPM
+        Type: RegisterBank
         Size: 256
         Ports: 2
     - Var:
