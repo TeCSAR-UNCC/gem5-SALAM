@@ -769,13 +769,15 @@ LLVMInterface::printPerformanceResults() {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     Tick cycle_time = clock_period/1000;
 
-    auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
-    auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupMS);
-    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
-    auto setupMins = std::chrono::duration_cast<std::chrono::minutes>(setupMS);
-    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
-    auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupMS);
-    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
+    auto setupUS = std::chrono::duration_cast<std::chrono::microseconds>(setupTime);
+    auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupUS);
+    setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
+    auto setupMins = std::chrono::duration_cast<std::chrono::minutes>(setupUS);
+    setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
+    auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupUS);
+    setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
+    auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupUS);
+    setupUS -= std::chrono::duration_cast<std::chrono::milliseconds>(setupMS);
 
     auto totalMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTotal);
     auto totalHours = std::chrono::duration_cast<std::chrono::hours>(totalMS);
@@ -822,7 +824,7 @@ LLVMInterface::printPerformanceResults() {
 *********************************************************************************************/
 
     std::cout << "   ========= Performance Analysis =============" << std::endl;
-    std::cout << "   Setup Time:                      " << setupHours.count() << "h " << setupMins.count() << "m " << setupSecs.count() << "s " << setupMS.count() << "ms" << std::endl;
+    std::cout << "   Setup Time:                      " << setupHours.count() << "h " << setupMins.count() << "m " << setupSecs.count() << "s " << setupMS.count() << "ms " << setupUS.count() << "us" << std::endl;
     std::cout << "   Simulation Time (Total):         " << totalHours.count() << "h " << totalMins.count() << "m " << totalSecs.count() << "s " << totalMS.count() << "ms" << std::endl;
     std::cout << "   Simulation Time (Active):        " << simHours.count() << "h " << simMins.count() << "m " << simSecs.count() << "s " << simMS.count() << "ms" << std::endl;
     std::cout << "        Queue Processing Time:      " << queueHours.count() << "h " << queueMins.count() << "m " << queueSecs.count() << "s " << queueMS.count() << "ms" << std::endl;
