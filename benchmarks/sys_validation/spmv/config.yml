@@ -20,7 +20,7 @@ acc_cluster:
   - Accelerator:
     - Name: spmv
       IrPath: benchmarks/sys_validation/spmv/hw/spmv.ll
-      Debug: True
+      Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:
