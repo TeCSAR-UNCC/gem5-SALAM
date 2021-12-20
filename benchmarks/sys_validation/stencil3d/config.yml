@@ -27,7 +27,7 @@ acc_cluster:
       PIOMaster: LocalBus
     - Var:
       - Name: C_VAR
-        Type: SPM
+        Type: RegisterBank
         Size: 8
         Ports: 2
     - Var:
@@ -48,7 +48,7 @@ hw_config:
         functional_unit: 1
         functional_unit_limit: 0
         opcode_num: 13
-        runtime_cycles: 0
+        runtime_cycles: 1
       addrspacecast:
         functional_unit: 0
         functional_unit_limit: 0
