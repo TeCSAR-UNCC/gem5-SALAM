@@ -18,10 +18,11 @@ void stencil3d() {
     // Handle boundary conditions by filling with original values
     height_bound_col :
     #pragma nounroll
+    // #pragma unroll
     for(j=0; j<col_size; j++) {
         height_bound_row :
-        // #pragma clang loop unroll(disable)
-        #pragma clang loop unroll_count(2)
+        #pragma unroll 2
+        // #pragma nounroll
         for(k=0; k<row_size; k++) {
             sol[INDX(row_size, col_size, k, j, 0)] = orig[INDX(row_size, col_size, k, j, 0)];
             sol[INDX(row_size, col_size, k, j, height_size-1)] = orig[INDX(row_size, col_size, k, j, height_size-1)];
@@ -29,10 +30,11 @@ void stencil3d() {
     }
     col_bound_height :
     #pragma nounroll
+    // #pragma unroll
     for(i=1; i<height_size-1; i++) {
         col_bound_row :
-        // #pragma clang loop unroll(disable)
-        #pragma clang loop unroll_count(2)
+        #pragma unroll 2
+        // #pragma nounroll
         for(k=0; k<row_size; k++) {
             sol[INDX(row_size, col_size, k, 0, i)] = orig[INDX(row_size, col_size, k, 0, i)];
             sol[INDX(row_size, col_size, k, col_size-1, i)] = orig[INDX(row_size, col_size, k, col_size-1, i)];
@@ -40,10 +42,11 @@ void stencil3d() {
     }
     row_bound_height :
     #pragma nounroll
+    // #pragma unroll
     for(i=1; i<height_size-1; i++) {
         row_bound_col :
-        // #pragma clang loop unroll(disable)
-        #pragma clang loop unroll_count(2)
+        #pragma unroll 2
+        // #pragma nounroll
         for(j=1; j<col_size-1; j++) {
             sol[INDX(row_size, col_size, 0, j, i)] = orig[INDX(row_size, col_size, 0, j, i)];
             sol[INDX(row_size, col_size, row_size-1, j, i)] = orig[INDX(row_size, col_size, row_size-1, j, i)];
@@ -52,13 +55,16 @@ void stencil3d() {
 
     // Stencil computation
     loop_height :
-    #pragma unroll 2
+    // #pragma unroll 2
+    #pragma nounroll
     for(i = 1; i < height_size - 1; i++){
         loop_col :
-        #pragma unroll 2
+        // #pragma unroll 2
+        #pragma nounroll
         for(j = 1; j < col_size - 1; j++){
             loop_row :
-            #pragma unroll 2
+            // #pragma unroll 2
+            #pragma unroll
             for(k = 1; k < row_size - 1; k++){
                 sum0 = orig[INDX(row_size, col_size, k, j, i)];
                 sum1 = orig[INDX(row_size, col_size, k, j, i + 1)] +

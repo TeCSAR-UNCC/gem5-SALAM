@@ -27,27 +27,27 @@ acc_cluster:
       PIOMaster: LocalBus
     - Var:
       - Name: NODES
-        Type: SPM
+        Type: RegisterBank
         Size: 2048
-        Ports: 4
+        Ports: 1
         ReadyMode: False
     - Var:
       - Name: EDGES
-        Type: SPM
+        Type: RegisterBank
         Size: 16384
-        Ports: 4
+        Ports: 1
         ReadyMode: False
     - Var:
       - Name: LEVELS
         Type: RegisterBank
         Size: 256
-        Ports: 4
+        Ports: 1
         ReadyMode: False
     - Var:
       - Name: LEVELCOUNTS
-        Type: SPM
+        Type: RegisterBank
         Size: 40
-        Ports: 4
+        Ports: 1
         ReadyMode: False
 hw_config:
   top:
@@ -57,7 +57,7 @@ hw_config:
         functional_unit: 1
         functional_unit_limit: 0
         opcode_num: 13
-        runtime_cycles: 0
+        runtime_cycles: 1
       addrspacecast:
         functional_unit: 0
         functional_unit_limit: 0
@@ -152,12 +152,12 @@ hw_config:
         functional_unit: 0
         functional_unit_limit: 0
         opcode_num: 34
-        runtime_cycles: 1
+        runtime_cycles: 0
       icmp:
         functional_unit: 0
         functional_unit_limit: 0
         opcode_num: 53
-        runtime_cycles: 0
+        runtime_cycles: 1
       indirectbr:
         functional_unit: 0
         functional_unit_limit: 0
