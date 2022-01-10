@@ -826,13 +826,14 @@ LLVMInterface::printResults() {
     auto hwSecs = std::chrono::duration_cast<std::chrono::seconds>(hwTimingMS);
     hwTimingMS -= std::chrono::duration_cast<std::chrono::seconds>(hwSecs);
 
-    auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
-    auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupMS);
-    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
-    auto setupMins = std::chrono::duration_cast<std::chrono::minutes>(setupMS);
-    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
-    auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupMS);
-    setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
+    //auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
+    
+    //auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupMS);
+    //setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
+    //auto setupMins = std::chrono::duration_cast<std::chrono::minutes>(setupMS);
+    //setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
+    //auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupMS);
+    //setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
     
     auto setupUS = std::chrono::duration_cast<std::chrono::microseconds>(setupTime);
     auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupUS);
@@ -841,7 +842,9 @@ LLVMInterface::printResults() {
     setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
     auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupUS);
     setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
+    
     auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupUS);
+    
     setupUS -= std::chrono::duration_cast<std::chrono::milliseconds>(setupMS);
 
     auto totalMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTotal);
