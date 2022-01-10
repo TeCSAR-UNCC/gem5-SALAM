@@ -178,8 +178,11 @@ SALAM::Instruction::commit()
         committed = true;
         if (dbg) DPRINTFS(Runtime, owner, "||==Return: %s\n", committed ? "true" : "false");
         if (dbg) DPRINTFS(Runtime, owner, "||==commit================\n");
+        //std::cout << "\n\n\nTest 3 - FU[" << getFunctionalUnit() << "]\n\n\n";
         if (hasFunctionalUnit()) {
+            //std::cout << "\n\n\nTest 2\n\n\n";
             hw_interface->clearFunctionalUnit(getFunctionalUnit());
+           // hw_interface->functional_units->
         } else {
             // 
         }

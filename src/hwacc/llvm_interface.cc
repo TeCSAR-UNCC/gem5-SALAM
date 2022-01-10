@@ -63,6 +63,25 @@ void
 LLVMInterface::ActiveFunction::processQueues()
 {
     auto queueStart = std::chrono::high_resolution_clock::now();
+
+    if (owner->hw->hw_statistics->use_cycle_tracking()) {
+        auto hwStart = std::chrono::high_resolution_clock::now();
+        hw_cycle_stats.reset();
+        owner->hw->hw_statistics->updateHWStatsCycleStart();
+        
+        // Update Params
+        hw_cycle_stats.cycle = owner->cycle;
+        hw_cycle_stats.resInFlight = reservation.size();
+        hw_cycle_stats.loadInFlight = readQueue.size();
+        hw_cycle_stats.storeInFlight = writeQueue.size();
+        hw_cycle_stats.compInFlight = computeQueue.size();
+        
+        
+        //
+        auto hwStop = std::chrono::high_resolution_clock::now();
+        owner->addHWTime(hwStop-hwStart);
+    }
+
     if (dbg) {
         DPRINTFS(Runtime, owner, "\t\t  |-[Process Queues]--------\n");
         DPRINTFS(RuntimeQueues, owner, "\t\t[Runtime Queue Status] Reservation:%d, Compute:%d, Read:%d, Write:%d\n",
@@ -79,7 +98,11 @@ LLVMInterface::ActiveFunction::processQueues()
         if((queue_iter->second)->commit()) {
             (queue_iter->second)->reset();
             queue_iter = computeQueue.erase(queue_iter);
-        } else ++queue_iter;
+            hw_cycle_stats.compCommited++;
+        } else {
+            ++queue_iter;
+            hw_cycle_stats.compFUStall++;
+        }
     }
     if (canReturn()) {
         // Handle function return
@@ -117,15 +140,18 @@ LLVMInterface::ActiveFunction::processQueues()
                             launchRead(inst);
                             if (dbg) DPRINTFS(Runtime, owner,  "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
+                            hw_cycle_stats.loadInternal++;
                         } else if (!writeActive(inst->getPtrOperandValue(0))) {
                             launchRead(inst);
                             if (dbg) DPRINTFS(Runtime, owner,  "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                             queue_iter = reservation.erase(queue_iter);
+                            hw_cycle_stats.loadAcitve++;
                         } else {
                             auto activeWrite = getActiveWrite(inst->getPtrOperandValue(0));
                             inst->addRuntimeDependency(activeWrite);
                             activeWrite->addRuntimeUser(inst);
                             ++queue_iter;
+                            hw_cycle_stats.loadRawStall++;
                         }
                     } else if ((inst)->isStore()) {
                         // WAR Protection to insure reading finishes before a write
@@ -133,6 +159,7 @@ LLVMInterface::ActiveFunction::processQueues()
                         launchWrite(inst);
                         if (dbg) DPRINTFS(Runtime, owner,  "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         queue_iter = reservation.erase(queue_iter);
+                        hw_cycle_stats.storeActive++;
                         // } else {
                         //     auto activeRead = getActiveRead(inst->getPtrOperandValue(1));
                         //     inst->addRuntimeDependency(activeRead);
@@ -170,11 +197,13 @@ LLVMInterface::ActiveFunction::processQueues()
                         if (!(inst)->launch()) {
                             if (dbg) DPRINTFS(Runtime, owner,  "\t\t  | Added to Compute Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((inst)->getOpode()), (inst)->getUID());
                             computeQueue.insert({(inst)->getUID(), inst});
+                            hw_cycle_stats.compLaunched++;
                         }
                         auto computeStop = std::chrono::high_resolution_clock::now();
                         owner->addComputeTime(computeStop-computeStart);
                         if (dbg) DPRINTFS(Runtime, owner,  "\t\t  |-Erase From Queue: %s - UID[%i]\n", llvm::Instruction::getOpcodeName((*queue_iter)->getOpode()), (*queue_iter)->getUID());
                         queue_iter = reservation.erase(queue_iter);
+                        hw_cycle_stats.compActive++;
                     }
                 } else {
                     ++queue_iter;
@@ -183,6 +212,19 @@ LLVMInterface::ActiveFunction::processQueues()
                 ++queue_iter;
             }
         }
+    }
+
+    if (owner->hw->hw_statistics->use_cycle_tracking()) {
+        auto hwStart = std::chrono::high_resolution_clock::now();
+        for (auto fu : hw->functional_units->functional_unit_list) {
+            std::cout << fu->get_alias() << " - " << fu->get_in_use() << "\n";
+        }
+
+
+
+        owner->hw->hw_statistics->updateHWStatsCycleEnd(owner->cycle);
+        auto hwStop = std::chrono::high_resolution_clock::now();
+        owner->addHWTime(hwStop-hwStart);
     }
     auto queueStop = std::chrono::high_resolution_clock::now();
     owner->addQueueTime(queueStop-queueStart);
@@ -639,12 +681,12 @@ LLVMInterface::initialize() {
     schedulingTime = std::chrono::seconds(0);
     queueProcessTime = std::chrono::seconds(0);
     computeTime = std::chrono::seconds(0);
+    hwTime = std::chrono::seconds(0);
     constructStaticGraph();
     timeStart = std::chrono::high_resolution_clock::now();
     if (dbg) DPRINTF(LLVMInterface, "================================================================\n");
-    //debug(1);
     launchTopFunction();
- 
+    
     // panic("Kill Simulation");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
@@ -705,14 +747,15 @@ LLVMInterface::finalize() {
     // Simulation Times
     simStop = std::chrono::high_resolution_clock::now();
     simTotal = simStop - timeStart;
-    printPerformanceResults();
+    printResults();
     functions.clear();
     values.clear();
     comm->finish();
 }
 
 void
-LLVMInterface::printPerformanceResults() {
+LLVMInterface::printResults() {
+
 
     std::map<uint64_t, uint64_t> totals_reads;
     std::map<uint64_t, uint64_t> totals_writes;
@@ -726,48 +769,62 @@ LLVMInterface::printPerformanceResults() {
             if (it->getReg()) {
                 totals_reads[it->getOpode()] += it->getReg()->getReads();
                 totals_writes[it->getOpode()] += it->getReg()->getWrites();
-                //std::cout << "Reads: " << it->getReg()->getReads() << "\n";
-                //std::cout << "Writes: " << it->getReg()->getWrites() << "\n";
             }
         }
     }
 
-
+    /*
     for(const auto& count : hw->opcodes->usage) {
         if (count.second) std::cout << "\nInstruction: " << llvm::Instruction::getOpcodeName(count.first) << "\n\tIR Count: " << count.second << "\n\tTotal Reads: " << totals_reads[count.first] << "\n\tTotal Writes: " << totals_writes[count.first];
     }
     std::cout << "\n";
+    */
+
+   //hw->hw_statistics->print();
+
 
     double adder_area = (hw->opcodes->get_usage(13) + hw->opcodes->get_usage(20) + hw->opcodes->get_usage(15)) *  1.794430e+02;
     double adder_reads = (totals_reads[13] + totals_reads[15]);
     double adder_writes = (totals_writes[13] + totals_writes[15]);
-    double adder_power = adder_reads*2.380803e-03 + adder_writes*(8.115300e-03+6.162853e-03);
-
+    double adder_power_static = adder_reads*2.380803e-03; 
+    double adder_power_dynamic =  adder_writes*(8.115300e-03+6.162853e-03);
 
     double bitwise_area = (hw->opcodes->get_usage(29) + hw->opcodes->get_usage(30) + hw->opcodes->get_usage(25) + hw->opcodes->get_usage(26) + hw->opcodes->get_usage(27) + hw->opcodes->get_usage(28)) * 5.036996e+01;
     double bitwise_reads = (totals_reads[25] + totals_reads[26] + totals_reads[27] + totals_reads[28] + totals_reads[29] + totals_reads[30]);
     double bitwise_writes = (totals_writes[25] + totals_writes[26] + totals_writes[27] + totals_writes[28] + totals_writes[29] + totals_writes[30]);
-    double bitwise_power = bitwise_reads*6.111633e-04 + bitwise_writes*(1.680942e-03+1.322420e-03);
+    double bitwise_power_static = bitwise_reads*6.111633e-04;
+    double bitwise_power_dynamic = bitwise_writes*(1.680942e-03+1.322420e-03);
 
     double multiplier_area = (hw->opcodes->get_usage(17) + hw->opcodes->get_usage(19) + hw->opcodes->get_usage(20))*4.595000e+03;
     double multiplier_reads = totals_reads[17] + totals_reads[19] + totals_reads[20];
     double multiplier_writes = totals_writes[17] + totals_writes[19] + totals_writes[20];
-    double multiplier_power = multiplier_reads*4.817683e-02 + multiplier_writes*(5.725752e-01+8.662890e-01);
+    double multiplier_power_static = multiplier_reads*4.817683e-02;
+    double multiplier_power_dynamic = multiplier_writes*(5.725752e-01+8.662890e-01);
 
     double reg_area = hw->opcodes->get_usage(34)*32*5.981433e+00;
     double reg_reads = totals_reads[34]*32;
     double reg_writes = totals_writes[34]*32;
-    double register_power = reg_reads*7.395312e-05 + reg_writes*(1.322600e-03+1.792126e-04);
+    double register_power_static = reg_reads*7.395312e-05;
+    double register_power_dynamic = reg_writes*(1.322600e-03+1.792126e-04);
 
     double total_area = adder_area + bitwise_area + multiplier_area + reg_area;
-    double total_power = adder_power + bitwise_power + multiplier_power + register_power;
+    double total_power_static = adder_power_static + bitwise_power_static + multiplier_power_static + register_power_static;
+    double total_power_dynamic = adder_power_dynamic + bitwise_power_dynamic + multiplier_power_dynamic + register_power_dynamic;
 
     std::cout << "Total Area: " << total_area;
-    std::cout << "\nTotal Power: " << total_power << "\n";
-
+    std::cout << "\nTotal Power Static: " << total_power_static << "\n";
+    std::cout << "\nTotal Power Dynamic: " << total_power_dynamic << "\n";
 
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     Tick cycle_time = clock_period/1000;
+
+    auto hwTimingMS = std::chrono::duration_cast<std::chrono::milliseconds>(hwTime);
+    auto hwHours = std::chrono::duration_cast<std::chrono::hours>(hwTimingMS);
+    hwTimingMS -= std::chrono::duration_cast<std::chrono::seconds>(hwHours);
+    auto hwMins = std::chrono::duration_cast<std::chrono::minutes>(hwTimingMS);
+    hwTimingMS -= std::chrono::duration_cast<std::chrono::seconds>(hwMins);
+    auto hwSecs = std::chrono::duration_cast<std::chrono::seconds>(hwTimingMS);
+    hwTimingMS -= std::chrono::duration_cast<std::chrono::seconds>(hwSecs);
 
     auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
     auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupMS);
@@ -936,10 +993,14 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
 
     uint64_t functional_unit = 0;
     for (auto hw_inst : hw->inst_config->inst_list) {
+        //std::cout << "\n\n\nTest 7 OpCode[" << OpCode << "] | Compare: ["<< hw_inst->get_opcode_num() << "]\n\n\n";
         if(OpCode == hw_inst->get_opcode_num()) {
+            //std::cout << "\n\n\nTest 4\n\n\n";
             functional_unit = hw_inst->get_functional_unit();
             for (auto hw_fu : hw->functional_units->functional_unit_list) {
+                //std::cout << "\n\n\nTest 5\n\n\n";
                 if(hw_fu->get_enum_value() == functional_unit) {
+                    //std::cout << "\n\n\nTest 6\n\n\n";
                     hw_fu->inc_functional_unit_limit();
                     break;
                 }

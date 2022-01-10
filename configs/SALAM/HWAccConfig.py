@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 import os
 
-def AccConfig(acc, bench_file):
+def AccConfig(acc, bench_file, ir=None):
     # Initialize LLVMInterface Objects
     acc.llvm_interface = LLVMInterface()
 

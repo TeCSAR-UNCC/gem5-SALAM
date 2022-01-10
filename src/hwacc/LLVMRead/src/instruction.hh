@@ -76,7 +76,8 @@ class Instruction : public Value
         void addRuntimeUser(std::shared_ptr<SALAM::Instruction> dep) { dynamicUsers.push_back(dep); }
         void signalUsers();
         bool isCommitted() { return committed; }
-        bool hasFunctionalUnit() { return (functional_unit != 0); }
+        //bool hasFunctionalUnit() { return (functional_unit != 0); }
+        bool hasFunctionalUnit() { return false; }
         bool debug() { return dbg; }
         void linkOperands(const SALAM::Operand &newOp);
         std::vector<SALAM::Operand> * getOperands() { return &operands; }

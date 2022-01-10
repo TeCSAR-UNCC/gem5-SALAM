@@ -1,5 +1,5 @@
 #!/bin/bash
-FLAGS=""
+FLAGS="SALAM_Debug"
 BENCH=""
 DEBUG="false"
 PRINT_TO_FILE="false"

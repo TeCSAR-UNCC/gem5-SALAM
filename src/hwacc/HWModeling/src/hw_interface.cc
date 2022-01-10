@@ -12,6 +12,7 @@ HWInterface::HWInterface(const HWInterfaceParams &params) :
 
 bool 
 HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
+    //std::cout << "\n\n\nTest 1 - " <<  functional_unit << "\n\n\n";
     switch(functional_unit) {
         case INTADDER : {
             if (functional_units->_integer_adder->is_available()) {
@@ -32,8 +33,12 @@ HWInterface::availableFunctionalUnit(uint64_t functional_unit) {
             } break;
         } 
         case INTBITWISE : {
+            //std::cout << "\n\n\nTest 1 - 1 -";
+            //std::cout << functional_units->_bitwise_operations->get_alias() << "\n\n\n";
             if (functional_units->_bitwise_operations->is_available()) {
+                //std::cout << "\n\n\nTest 1 - 2\n\n\n";
                 functional_units->_bitwise_operations->use_functional_unit();
+                //std::cout << "\n\n\nTest 1 - 3\n\n\n";
                 return true;
             } break;
         }

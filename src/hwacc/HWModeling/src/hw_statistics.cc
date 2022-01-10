@@ -1,12 +1,81 @@
 #include "hw_statistics.hh"
 
 HWStatistics::HWStatistics(const HWStatisticsParams &params) :
-    SimObject(params) { }
+    SimObject(params) { 
+        
+        statBufferSize = 10000;
+        statBufferPreDefine = 2;
+        dbg = false;
+
+        for (int i=0 ; i<statBufferPreDefine; i++ ) {
+            std::vector<HW_Cycle_Stats> hw_cycle_buffer;
+            hw_cycle_buffer.reserve(statBufferSize);
+            hw_buffer_list.push_back(hw_cycle_buffer);
+        }
+        hw_buffer = hw_buffer_list.begin();
+        cycle_buffer = hw_buffer->begin();
+        clearStats();
+    }
+
+
+void
+HWStatistics::updateHWStatsCycleStart() {
+    if (dbg) DPRINTF(SALAM_Debug, "Updating Cycle Statistics Buffer\n");
+    (*hw_buffer).insert(cycle_buffer, current_cycle_stats);
+    clearStats();
+    updateBuffer();
+    
+}
+
+void
+HWStatistics::clearStats() {
+    if (dbg) DPRINTF(SALAM_Debug, "Clearing Cycle Statistics\n");
+    current_cycle_stats.reset();
+    
+}
+
+void
+HWStatistics::updateHWStatsCycleEnd(int curr_cycle) {
+    if (dbg) DPRINTF(SALAM_Debug, "Updating Cycle Statistics\n");
+    current_cycle_stats.cycle = curr_cycle;
+
+}
+
+void
+HWStatistics::updateBuffer() {
+    if (dbg) DPRINTF(SALAM_Debug, "Checking Buffer[%i][%i]\n", current_buffer_index, hw_buffer_list.at(current_buffer_index).size());
+    if (hw_buffer_list.at(current_buffer_index).size() == statBufferSize) {
+        current_buffer_index++;
+        if(current_buffer_index == statBufferPreDefine) {
+            if (dbg) DPRINTF(SALAM_Debug, "Creating New Buffer Window\n");
+            std::vector<HW_Cycle_Stats> hw_cycle_buffer;
+            hw_cycle_buffer.reserve(statBufferSize);
+            hw_buffer_list.push_back(hw_cycle_buffer);
+            hw_buffer = hw_buffer_list.end();
+            cycle_buffer = hw_buffer->begin();
+        } else {
+            if (dbg) DPRINTF(SALAM_Debug, "Next Buffer Window\n");
+            hw_buffer++;
+            cycle_buffer = hw_buffer->begin();
+        }
+    } else {
+        cycle_buffer = hw_buffer->end();
+    }
+}
 
 
 void
 HWStatistics::print() {
+    if (dbg) DPRINTF(SALAM_Debug," Buffers: %i\n", (current_buffer_index + 1));
+    for (auto buffers : hw_buffer_list) {
+        for (auto cycles : buffers) {
+            // This loops through the full runtime, starting at cycle 1 to completion
+            //std::cout << " Cycle: " << cycles.cycle;
+        }
+    }
 
+
+/*
     std::cout << "********************************************************************************" << std::endl;
     std::cout << "   ========= Performance Analysis =================" << std::endl;
     std::cout << "   Setup Time:                      " << setupTime << "ns" << std::endl;
@@ -117,13 +186,14 @@ HWStatistics::print() {
     std::cout << "   SPM Optimized Leakage Power:     " << spm_opt_leakage << " mW" << std::endl;
     std::cout << "   SPM Opt Area:                    " << spm_opt_area << " um^2" << std::endl;
     std::cout << std::endl;
-
+*/
 
 }
 
 
 void
 HWStatistics::simpleStats() {
+    /*
     std::cout << std::fixed << std::setprecision(6) << std::endl;
     std::cout << "StatsStart:";
     std::cout << "\n" << setupTime;
@@ -228,10 +298,12 @@ HWStatistics::simpleStats() {
     std::cout << ",\n" << spm_opt_leakage;
     std::cout << ",\n" << spm_opt_area;
     std::cout << "\nStatsEnd:\n";
+    */
 }
 
 void
 HWStatistics::unitCorrections() {
+    /*
     sys_clock = 1.0/(clock_period/1000);
     cache_size = cache_size/1024;
     spm_size = spm_size/1024;
@@ -244,5 +316,5 @@ HWStatistics::unitCorrections() {
     spm_opt_area = spm_opt_area/1000;
     acc_spm_total_area = total_area + spm_area;
     acc_cache_total_area = total_area + cache_area;
-
+    */
 }
