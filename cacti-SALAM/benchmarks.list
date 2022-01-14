@@ -1,0 +1,9 @@
+#comment symbol
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-nounroll/massive/config.yml no-unroll massive
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-nounroll/naive/config.yml no-unroll naive
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-nounroll/stream/config.yml no-unroll stream
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-kernelunroll/massive/config.yml input-unroll massive
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-kernelunroll/naive/config.yml input-unroll naive
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-kernelunroll/stream/config.yml input-unroll stream
+/home/jslycord/gem5-SALAM/benchmarks/lenet5-channelunroll/massive/config.yml output-unroll massive
+#/home/jslycord/gem5-SALAM/benchmarks/lenet5-channelunroll/naive/config.yml output-unroll naive

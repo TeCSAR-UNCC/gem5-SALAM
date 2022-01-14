@@ -1,0 +1,2688 @@
+Cache size                    : 4096
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 150
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 4096
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 150
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 37.4569
+    Cycle time (ns):  81.3799
+    Total dynamic read energy per access (nJ): 0.223438
+    Total dynamic write energy per access (nJ): 0.467479
+    Total leakage power of a bank (mW): 253.879
+    Total gate leakage power of a bank (mW): 27.7612
+    Cache height x width (mm): 16.2652 x 17.7311
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 37.4569
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 30.0837
+	Bitline delay (ns): 7.21119
+	Sense Amplifier delay (ns): 0.00337099
+	H-tree output delay (ns): 0.158683
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.223438
+	Total leakage read/write power of a bank (mW): 253.879
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000628628
+	Wordline (nJ): 0.00923527
+	Bitline mux & associated drivers (nJ): 0.00505084
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0114528
+	Bitlines (nJ): 0.0468993
+	Sense amplifier energy (nJ): 0.000962153
+	Sub-array output driver (nJ): 0.149209
+
+
+Area Components:
+
+  Data array: Area (mm2): 288.4
+	Height (mm): 16.2652
+	Width (mm): 17.7311
+	Area efficiency (Memory cell area/Total area) - 13.1951 %
+		MAT Height (mm): 16.2652
+		MAT Length (mm): 17.7311
+		Subarray Height (mm): 1.09382
+		Subarray Length (mm): 8.703
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+Conv0Input(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 2048
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 150
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 2048
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 150
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 34.5576
+    Cycle time (ns):  79.0478
+    Total dynamic read energy per access (nJ): 0.125879
+    Total dynamic write energy per access (nJ): 0.247769
+    Total leakage power of a bank (mW): 131.853
+    Total gate leakage power of a bank (mW): 14.7591
+    Cache height x width (mm): 15.1311 x 17.6228
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 34.5576
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 29.4636
+	Bitline delay (ns): 5.00239
+	Sense Amplifier delay (ns): 0.00337099
+	H-tree output delay (ns): 0.0882691
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.125879
+	Total leakage read/write power of a bank (mW): 131.853
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000661622
+	Wordline (nJ): 0.00923527
+	Bitline mux & associated drivers (nJ): 0.00505084
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0114528
+	Bitlines (nJ): 0.0236324
+	Sense amplifier energy (nJ): 0.000962153
+	Sub-array output driver (nJ): 0.0748839
+
+
+Area Components:
+
+  Data array: Area (mm2): 266.653
+	Height (mm): 15.1311
+	Width (mm): 17.6228
+	Area efficiency (Memory cell area/Total area) - 7.13561 %
+		MAT Height (mm): 15.1311
+		MAT Length (mm): 17.6228
+		Subarray Height (mm): 0.546912
+		Subarray Length (mm): 8.703
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+Conv0Weights(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 18816
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 6
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 18816
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 6
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 0.630992
+    Cycle time (ns):  0.889979
+    Total dynamic read energy per access (nJ): 0.0541309
+    Total dynamic write energy per access (nJ): 0.119109
+    Total leakage power of a bank (mW): 17.8257
+    Total gate leakage power of a bank (mW): 0.905038
+    Cache height x width (mm): 1.10371 x 0.864539
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 0.630992
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 0.348652
+	Bitline delay (ns): 0.22761
+	Sense Amplifier delay (ns): 0.00348431
+	H-tree output delay (ns): 0.0512456
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.0541309
+	Total leakage read/write power of a bank (mW): 17.8257
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000199384
+	Wordline (nJ): 0.000673488
+	Bitline mux & associated drivers (nJ): 0.000647894
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.00264687
+	Bitlines (nJ): 0.0128105
+	Sense amplifier energy (nJ): 0.000994497
+	Sub-array output driver (nJ): 0.0361582
+
+
+Area Components:
+
+  Data array: Area (mm2): 0.954204
+	Height (mm): 1.10371
+	Width (mm): 0.864539
+	Area efficiency (Memory cell area/Total area) - 44.2756 %
+		MAT Height (mm): 1.10371
+		MAT Length (mm): 0.864539
+		Subarray Height (mm): 0.261954
+		Subarray Length (mm): 0.4086
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+Conv0Output(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 18816
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 24
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 18816
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 24
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 2.89495
+    Cycle time (ns):  4.37307
+    Total dynamic read energy per access (nJ): 0.163203
+    Total dynamic write energy per access (nJ): 0.360298
+    Total leakage power of a bank (mW): 64.728
+    Total gate leakage power of a bank (mW): 4.11107
+    Cache height x width (mm): 4.00071 x 2.99579
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 2.89495
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 1.63181
+	Bitline delay (ns): 1.13147
+	Sense Amplifier delay (ns): 0.00339578
+	H-tree output delay (ns): 0.128277
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.163203
+	Total leakage read/write power of a bank (mW): 64.728
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000515415
+	Wordline (nJ): 0.00174493
+	Bitline mux & associated drivers (nJ): 0.00119826
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.00374761
+	Bitlines (nJ): 0.0379613
+	Sense amplifier energy (nJ): 0.000969228
+	Sub-array output driver (nJ): 0.117066
+
+
+Area Components:
+
+  Data array: Area (mm2): 11.9853
+	Height (mm): 4.00071
+	Width (mm): 2.99579
+	Area efficiency (Memory cell area/Total area) - 41.2011 %
+		MAT Height (mm): 4.00071
+		MAT Length (mm): 2.99579
+		Subarray Height (mm): 0.857304
+		Subarray Length (mm): 1.4454
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+pool0Input(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 4704
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 6
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 4704
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 6
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 0.402234
+    Cycle time (ns):  0.746786
+    Total dynamic read energy per access (nJ): 0.018071
+    Total dynamic write energy per access (nJ): 0.0342427
+    Total leakage power of a bank (mW): 4.80356
+    Total gate leakage power of a bank (mW): 0.291755
+    Cache height x width (mm): 0.705454 x 0.864125
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 0.402234
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 0.255947
+	Bitline delay (ns): 0.11775
+	Sense Amplifier delay (ns): 0.00348431
+	H-tree output delay (ns): 0.0250519
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.018071
+	Total leakage read/write power of a bank (mW): 4.80356
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 7.4883e-05
+	Wordline (nJ): 0.000673488
+	Bitline mux & associated drivers (nJ): 0.000647894
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.00264687
+	Bitlines (nJ): 0.00351409
+	Sense amplifier energy (nJ): 0.000994497
+	Sub-array output driver (nJ): 0.00951924
+
+
+Area Components:
+
+  Data array: Area (mm2): 0.6096
+	Height (mm): 0.705454
+	Width (mm): 0.864125
+	Area efficiency (Memory cell area/Total area) - 17.444 %
+		MAT Height (mm): 0.705454
+		MAT Length (mm): 0.864125
+		Subarray Height (mm): 0.065934
+		Subarray Length (mm): 0.4086
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+pool0Output(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 4704
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 2400
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 4704
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 2400
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 8224.41
+    Cycle time (ns):  17972.9
+    Total dynamic read energy per access (nJ): 3.94151
+    Total dynamic write energy per access (nJ): 8.38087
+    Total leakage power of a bank (mW): 59916.6
+    Total gate leakage power of a bank (mW): 7593.79
+    Cache height x width (mm): 265.132 x 281.791
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 8224.41
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 7425.24
+	Bitline delay (ns): 796.591
+	Sense Amplifier delay (ns): 0.00336656
+	H-tree output delay (ns): 2.57987
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 3.94151
+	Total leakage read/write power of a bank (mW): 59916.6
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.0106625
+	Wordline (nJ): 0.142991
+	Bitline mux & associated drivers (nJ): 0.0738469
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.149045
+	Bitlines (nJ): 0.846006
+	Sense amplifier energy (nJ): 0.000960889
+	Sub-array output driver (nJ): 2.718
+
+
+Area Components:
+
+  Data array: Area (mm2): 74712
+	Height (mm): 265.132
+	Width (mm): 281.791
+	Area efficiency (Memory cell area/Total area) - 14.8056 %
+		MAT Height (mm): 265.132
+		MAT Length (mm): 281.791
+		Subarray Height (mm): 19.996
+		Subarray Length (mm): 138.303
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+Conv1Input(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 9600
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 2400
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 9600
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 2400
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 30652.9
+    Cycle time (ns):  70252.4
+    Total dynamic read energy per access (nJ): 5.27194
+    Total dynamic write energy per access (nJ): 8.96262
+    Total leakage power of a bank (mW): 62304.1
+    Total gate leakage power of a bank (mW): 7798.37
+    Cache height x width (mm): 267.271 x 558.397
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 2
+    Best Ndcm : 4
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 30652.9
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 29021.3
+	Bitline delay (ns): 1628.93
+	Sense Amplifier delay (ns): 0.00335856
+	H-tree output delay (ns): 2.64908
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 5.27194
+	Total leakage read/write power of a bank (mW): 62304.1
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.0109494
+	Wordline (nJ): 0.285841
+	Bitline mux & associated drivers (nJ): 0.147262
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.297958
+	Bitlines (nJ): 1.73753
+	Sense amplifier energy (nJ): 0.000958603
+	Sub-array output driver (nJ): 2.79145
+
+
+Area Components:
+
+  Data array: Area (mm2): 149243
+	Height (mm): 267.271
+	Width (mm): 558.397
+	Area efficiency (Memory cell area/Total area) - 15.2242 %
+		MAT Height (mm): 267.271
+		MAT Length (mm): 558.397
+		Subarray Height (mm): 20.5364
+		Subarray Length (mm): 276.606
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+Conv1Weights(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 6400
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 16
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 6400
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 16
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 1.07999
+    Cycle time (ns):  2.16636
+    Total dynamic read energy per access (nJ): 0.0439247
+    Total dynamic write energy per access (nJ): 0.0908219
+    Total leakage power of a bank (mW): 14.532
+    Total gate leakage power of a bank (mW): 0.908444
+    Cache height x width (mm): 1.9164 x 2.02576
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 1.07999
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 0.645661
+	Bitline delay (ns): 0.387616
+	Sense Amplifier delay (ns): 0.00341054
+	H-tree output delay (ns): 0.0433064
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.0439247
+	Total leakage read/write power of a bank (mW): 14.532
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000155006
+	Wordline (nJ): 0.00127347
+	Bitline mux & associated drivers (nJ): 0.000953654
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.00325839
+	Bitlines (nJ): 0.00935454
+	Sense amplifier energy (nJ): 0.000973439
+	Sub-array output driver (nJ): 0.0279562
+
+
+Area Components:
+
+  Data array: Area (mm2): 3.88216
+	Height (mm): 1.9164
+	Width (mm): 2.02576
+	Area efficiency (Memory cell area/Total area) - 20.3399 %
+		MAT Height (mm): 1.9164
+		MAT Length (mm): 2.02576
+		Subarray Height (mm): 0.2016
+		Subarray Length (mm): 0.9846
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+Conv1Output(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 6400
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 64
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 6400
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 64
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 8.82883
+    Cycle time (ns):  18.107
+    Total dynamic read energy per access (nJ): 0.147661
+    Total dynamic write energy per access (nJ): 0.314399
+    Total leakage power of a bank (mW): 92.339
+    Total gate leakage power of a bank (mW): 8.44271
+    Cache height x width (mm): 7.50244 x 7.63804
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 8.82883
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 6.14026
+	Bitline delay (ns): 2.57182
+	Sense Amplifier delay (ns): 0.00337734
+	H-tree output delay (ns): 0.113383
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.147661
+	Total leakage read/write power of a bank (mW): 92.339
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000441656
+	Wordline (nJ): 0.00412281
+	Bitline mux & associated drivers (nJ): 0.0024213
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.00619369
+	Bitlines (nJ): 0.032176
+	Sense amplifier energy (nJ): 0.000963964
+	Sub-array output driver (nJ): 0.101342
+
+
+Area Components:
+
+  Data array: Area (mm2): 57.3039
+	Height (mm): 7.50244
+	Width (mm): 7.63804
+	Area efficiency (Memory cell area/Total area) - 19.3812 %
+		MAT Height (mm): 7.50244
+		MAT Length (mm): 7.63804
+		Subarray Height (mm): 0.7416
+		Subarray Length (mm): 3.7494
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+pool1Input(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 2048
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 16
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 2048
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 16
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 0.844004
+    Cycle time (ns):  1.98986
+    Total dynamic read energy per access (nJ): 0.019165
+    Total dynamic write energy per access (nJ): 0.0339986
+    Total leakage power of a bank (mW): 5.38223
+    Total gate leakage power of a bank (mW): 0.422004
+    Cache height x width (mm): 1.6362 x 2.02542
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 0.844004
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 0.582836
+	Bitline delay (ns): 0.232904
+	Sense Amplifier delay (ns): 0.00341054
+	H-tree output delay (ns): 0.0248543
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.019165
+	Total leakage read/write power of a bank (mW): 5.38223
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000132879
+	Wordline (nJ): 0.00127347
+	Bitline mux & associated drivers (nJ): 0.000953654
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.00325839
+	Bitlines (nJ): 0.00324717
+	Sense amplifier energy (nJ): 0.000973439
+	Sub-array output driver (nJ): 0.00932599
+
+
+Area Components:
+
+  Data array: Area (mm2): 3.31399
+	Height (mm): 1.6362
+	Width (mm): 2.02542
+	Area efficiency (Memory cell area/Total area) - 7.62466 %
+		MAT Height (mm): 1.6362
+		MAT Length (mm): 2.02542
+		Subarray Height (mm): 0.064512
+		Subarray Length (mm): 0.9846
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+pool1Output(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 2048
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 1200
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 2048
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 1200
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 1943.02
+    Cycle time (ns):  4447.18
+    Total dynamic read energy per access (nJ): 0.962118
+    Total dynamic write energy per access (nJ): 1.92293
+    Total leakage power of a bank (mW): 6625.77
+    Total gate leakage power of a bank (mW): 832.642
+    Cache height x width (mm): 120.875 x 140.095
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 1943.02
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 1814.72
+	Bitline delay (ns): 127.727
+	Sense Amplifier delay (ns): 0.00336686
+	H-tree output delay (ns): 0.573109
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.962118
+	Total leakage read/write power of a bank (mW): 6625.77
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.00467472
+	Wordline (nJ): 0.0716548
+	Bitline mux & associated drivers (nJ): 0.0371557
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0756624
+	Bitlines (nJ): 0.183426
+	Sense amplifier energy (nJ): 0.000960973
+	Sub-array output driver (nJ): 0.588584
+
+
+Area Components:
+
+  Data array: Area (mm2): 16933.9
+	Height (mm): 120.875
+	Width (mm): 140.095
+	Area efficiency (Memory cell area/Total area) - 7.07043 %
+		MAT Height (mm): 120.875
+		MAT Length (mm): 140.095
+		Subarray Height (mm): 4.32691
+		Subarray Length (mm): 69.183
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+conv2Input(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 192000
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 1200
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 192000
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 1200
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 41571.1
+    Cycle time (ns):  76389.3
+    Total dynamic read energy per access (nJ): 31.7898
+    Total dynamic write energy per access (nJ): 41.4426
+    Total leakage power of a bank (mW): 164990
+    Total gate leakage power of a bank (mW): 19203.5
+    Cache height x width (mm): 318.151 x 560.377
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 4
+    Best Ndcm : 8
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 41571.1
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 34615.5
+	Bitline delay (ns): 6942.52
+	Sense Amplifier delay (ns): 0.00335856
+	H-tree output delay (ns): 13.0063
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 31.7898
+	Total leakage read/write power of a bank (mW): 164990
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.107791
+	Wordline (nJ): 0.286192
+	Bitline mux & associated drivers (nJ): 0.147328
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.302253
+	Bitlines (nJ): 17.1628
+	Sense amplifier energy (nJ): 0.000958603
+	Sub-array output driver (nJ): 13.7824
+
+
+Area Components:
+
+  Data array: Area (mm2): 178285
+	Height (mm): 318.151
+	Width (mm): 560.377
+	Area efficiency (Memory cell area/Total area) - 62.9595 %
+		MAT Height (mm): 318.151
+		MAT Length (mm): 560.377
+		Subarray Height (mm): 101.412
+		Subarray Length (mm): 276.732
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+conv2Weights(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 2048
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 120
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 2048
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 120
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 22.7602
+    Cycle time (ns):  52.2248
+    Total dynamic read energy per access (nJ): 0.101987
+    Total dynamic write energy per access (nJ): 0.199908
+    Total leakage power of a bank (mW): 89.7296
+    Total gate leakage power of a bank (mW): 9.77913
+    Cache height x width (mm): 12.1099 x 14.1236
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 22.7602
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 19.0857
+	Bitline delay (ns): 3.59685
+	Sense Amplifier delay (ns): 0.00337217
+	H-tree output delay (ns): 0.0742919
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.101987
+	Total leakage read/write power of a bank (mW): 89.7296
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000546962
+	Wordline (nJ): 0.00745186
+	Bitline mux & associated drivers (nJ): 0.00413356
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0096182
+	Bitlines (nJ): 0.0190671
+	Sense amplifier energy (nJ): 0.00096249
+	Sub-array output driver (nJ): 0.0602067
+
+
+Area Components:
+
+  Data array: Area (mm2): 171.035
+	Height (mm): 12.1099
+	Width (mm): 14.1236
+	Area efficiency (Memory cell area/Total area) - 7.15419 %
+		MAT Height (mm): 12.1099
+		MAT Length (mm): 14.1236
+		Subarray Height (mm): 0.438912
+		Subarray Length (mm): 6.975
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+conv2Output(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 2048
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 120
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 2048
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 120
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 22.7602
+    Cycle time (ns):  52.2248
+    Total dynamic read energy per access (nJ): 0.101987
+    Total dynamic write energy per access (nJ): 0.199908
+    Total leakage power of a bank (mW): 89.7296
+    Total gate leakage power of a bank (mW): 9.77913
+    Cache height x width (mm): 12.1099 x 14.1236
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 22.7602
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 19.0857
+	Bitline delay (ns): 3.59685
+	Sense Amplifier delay (ns): 0.00337217
+	H-tree output delay (ns): 0.0742919
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.101987
+	Total leakage read/write power of a bank (mW): 89.7296
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000546962
+	Wordline (nJ): 0.00745186
+	Bitline mux & associated drivers (nJ): 0.00413356
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0096182
+	Bitlines (nJ): 0.0190671
+	Sense amplifier energy (nJ): 0.00096249
+	Sub-array output driver (nJ): 0.0602067
+
+
+Area Components:
+
+  Data array: Area (mm2): 171.035
+	Height (mm): 12.1099
+	Width (mm): 14.1236
+	Area efficiency (Memory cell area/Total area) - 7.15419 %
+		MAT Height (mm): 12.1099
+		MAT Length (mm): 14.1236
+		Subarray Height (mm): 0.438912
+		Subarray Length (mm): 6.975
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+fc0Input(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 40320
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 120
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 40320
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 120
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 112.834
+    Cycle time (ns):  220.026
+    Total dynamic read energy per access (nJ): 1.00449
+    Total dynamic write energy per access (nJ): 1.78893
+    Total leakage power of a bank (mW): 983.206
+    Total gate leakage power of a bank (mW): 84.46
+    Cache height x width (mm): 20.0717 x 28.4198
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 2
+    Best Ndcm : 4
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 112.834
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 86.1514
+	Bitline delay (ns): 26.1052
+	Sense Amplifier delay (ns): 0.00335856
+	H-tree output delay (ns): 0.57405
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 1.00449
+	Total leakage read/write power of a bank (mW): 983.206
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.0023611
+	Wordline (nJ): 0.0147613
+	Bitline mux & associated drivers (nJ): 0.00783492
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0191043
+	Bitlines (nJ): 0.369886
+	Sense amplifier energy (nJ): 0.000958603
+	Sub-array output driver (nJ): 0.589582
+
+
+Area Components:
+
+  Data array: Area (mm2): 570.435
+	Height (mm): 20.0717
+	Width (mm): 28.4198
+	Area efficiency (Memory cell area/Total area) - 42.3649 %
+		MAT Height (mm): 20.0717
+		MAT Length (mm): 28.4198
+		Subarray Height (mm): 4.33426
+		Subarray Length (mm): 13.95
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+fc0Weights(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
+Cache size                    : 2048
+Block size                    : 64
+Associativity                 : 1
+Read only ports               : 0
+Write only ports              : 0
+Read write ports              : 120
+Single ended read ports       : 0
+Cache banks (UCA)             : 1
+Technology                    : 0.045
+Temperature                   : 300
+Tag size                      : 42
+array type                    : Scratch RAM
+Model as memory               : 0
+Access mode                   : 2
+Data array cell type          : 0
+Data array peripheral type    : 0
+Tag array cell type           : 0
+Tag array peripheral type     : 0
+Optimization target           : 2
+Design objective (UCA wt)     : 0 0 100 0 0
+Design objective (UCA dev)    : 20 100000 100000 1000000 1000000
+Cache model                   : 0
+Nuca bank                     : 0
+Wire inside mat               : 1
+Wire outside mat              : 1
+Interconnect projection       : 1
+Wire signalling               : 1
+Print level                   : 1
+ECC overhead                  : 0
+Page size                     : 0
+Burst length                  : 8
+Internal prefetch width       : 8
+Force cache config            : 0
+
+---------- CACTI version 6.5, Uniform Cache Access SRAM Model ----------
+
+Cache Parameters:
+    Total cache size (bytes): 2048
+    Number of banks: 1
+    Associativity: direct mapped
+    Block size (bytes): 64
+    Read/write Ports: 120
+    Read ports: 0
+    Write ports: 0
+    Technology size (nm): 45
+
+    Access time (ns): 22.7602
+    Cycle time (ns):  52.2248
+    Total dynamic read energy per access (nJ): 0.101987
+    Total dynamic write energy per access (nJ): 0.199908
+    Total leakage power of a bank (mW): 89.7296
+    Total gate leakage power of a bank (mW): 9.77913
+    Cache height x width (mm): 12.1099 x 14.1236
+
+    Best Ndwl : 2
+    Best Ndbl : 2
+    Best Nspd : 1
+    Best Ndcm : 2
+    Best Ndsam L1 : 1
+    Best Ndsam L2 : 1
+
+    Data array, H-tree wire type: Delay optimized global wires
+
+Time Components:
+
+  Data side (with Output driver) (ns): 22.7602
+	H-tree input delay (ns): 0
+	Decoder + wordline delay (ns): 19.0857
+	Bitline delay (ns): 3.59685
+	Sense Amplifier delay (ns): 0.00337217
+	H-tree output delay (ns): 0.0742919
+
+
+Power Components:
+
+  Data array: Total dynamic read energy/access  (nJ): 0.101987
+	Total leakage read/write power of a bank (mW): 89.7296
+	Total energy in H-tree (that includes both address and data transfer) (nJ): 0
+	Total leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Total gate leakage power in H-tree (that includes both address and data network) ((mW)): 0
+	Output Htree inside bank Energy (nJ): 0
+	Decoder (nJ): 0.000546962
+	Wordline (nJ): 0.00745186
+	Bitline mux & associated drivers (nJ): 0.00413356
+	Sense amp mux & associated drivers (nJ): 0
+	Bitlines precharge and equalization circuit (nJ): 0.0096182
+	Bitlines (nJ): 0.0190671
+	Sense amplifier energy (nJ): 0.00096249
+	Sub-array output driver (nJ): 0.0602067
+
+
+Area Components:
+
+  Data array: Area (mm2): 171.035
+	Height (mm): 12.1099
+	Width (mm): 14.1236
+	Area efficiency (Memory cell area/Total area) - 7.15419 %
+		MAT Height (mm): 12.1099
+		MAT Length (mm): 14.1236
+		Subarray Height (mm): 0.438912
+		Subarray Length (mm): 6.975
+
+Wire Properties:
+
+  Delay Optimal
+	Repeater size - 82.1241 
+	Repeater spacing - 0.20422 (mm) 
+	Delay - 0.0824606 (ns/mm) 
+	PowerD - 0.000455721 (nJ/mm) 
+	PowerL - 0.0129586 (mW/mm) 
+	PowerLgate - 0.00166148 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  5% Overhead
+	Repeater size - 54.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0863903 (ns/mm) 
+	PowerD - 0.00032211 (nJ/mm) 
+	PowerL - 0.0057331 (mW/mm) 
+	PowerLgate - 0.000735066 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  10% Overhead
+	Repeater size - 42.1241 
+	Repeater spacing - 0.30422 (mm) 
+	Delay - 0.0905056 (ns/mm) 
+	PowerD - 0.000295166 (nJ/mm) 
+	PowerL - 0.004462 (mW/mm) 
+	PowerLgate - 0.000572092 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  20% Overhead
+	Repeater size - 39.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.0986519 (ns/mm) 
+	PowerD - 0.00027337 (nJ/mm) 
+	PowerL - 0.00311899 (mW/mm) 
+	PowerLgate - 0.000399898 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  30% Overhead
+	Repeater size - 30.1241 
+	Repeater spacing - 0.40422 (mm) 
+	Delay - 0.107191 (ns/mm) 
+	PowerD - 0.000257164 (nJ/mm) 
+	PowerL - 0.0024015 (mW/mm) 
+	PowerLgate - 0.000307907 (mW/mm)
+	Wire width - 0.09 microns
+	Wire spacing - 0.09 microns
+
+  Low-swing wire (1 mm) - Note: Unlike repeated wires, 
+	delay and power values of low-swing wires do not
+	have a linear relationship with length. 
+	delay - 0.17662 (ns) 
+	powerD - 5.91493e-06 (nJ) 
+	PowerL - 3.19977e-07 (mW) 
+	PowerLgate - 7.53631e-08 (mW)
+	Wire width - 1.8e-07 microns
+	Wire spacing - 1.8e-07 microns
+
+
+fc0Output(above) 
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ 
+
