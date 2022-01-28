@@ -9,12 +9,13 @@
 #include "dev/io_device.hh"
 #include "dev/arm/base_gic.hh"
 #include "hwacc/LLVMRead/src/debug_flags.hh"
+#include "hwacc/LLVMRead/src/mem_request.hh"
 //------------------------------------------//
 #include <stdio.h>
 #include <stdlib.h>
 #include <queue>
 //------------------------------------------//
-
+using namespace gem5;
 class IOAcc : public BasicPioDevice
 {
   private:
@@ -64,8 +65,8 @@ class IOAcc : public BasicPioDevice
 
     MemSidePort memPort;
     MemSidePort* dataPort;
-    IOAcc *acc;
-    MasterID masterId;
+
+    RequestorID masterId;
     TickEvent tickEvent;
     unsigned int cacheLineSize;
     unsigned int cacheSize;
@@ -101,14 +102,9 @@ class IOAcc : public BasicPioDevice
     int clock_period;
 
   public:
-    typedef IOAccParams Params;
-    const Params *
-    params() const
-    {
-      return dynamic_cast<const Params *>(_params);
-    }
+    PARAMS(IOAcc);
 
-    IOAcc(Params *p);
+    IOAcc(const gem5::IOAccParams &p);
 
     virtual Tick read(PacketPtr pkt);
 

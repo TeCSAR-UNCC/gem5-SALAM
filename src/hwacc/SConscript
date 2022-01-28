@@ -3,7 +3,7 @@ Import('*')
 if env['TARGET_ISA'] == 'arm':
 
     #Example
-    #SimObject('IOAcc.py')
+    SimObject('IOAcc.py')
 
     #CommInterface
     SimObject('CommInterface.py')
@@ -84,6 +84,7 @@ if env['TARGET_ISA'] == 'arm':
     DebugFlag('StreamDma')
     DebugFlag('Trace')
     DebugFlag('Step')
+    DebugFlag('IOAcc')
 
     #
     CompoundFlag('JDEV', ['LLVMInterface','CommInterface', 'Runtime', 'RuntimeCompute', 'RuntimeQueues', 'SALAM_Debug'])

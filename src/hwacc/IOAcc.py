@@ -1,6 +1,6 @@
 from m5.params import *
 from m5.proxy import *
-from Device import BasicPioDevice
+from m5.objects.Device import BasicPioDevice
 
 class IOAcc(BasicPioDevice):
     type = 'IOAcc'

@@ -3,20 +3,21 @@
 //------------------------------------------//
 
 using namespace std;
+using namespace gem5;
 
-IOAcc::IOAcc(Params *p) :
-    BasicPioDevice(p, p->pio_size),
-    io_addr(p->pio_addr),
-    io_size(p->pio_size),
-    devname(p->devicename),
-    gic(p->gic),
-    int_num(p->int_num),
-    memPort(p->name + ".mem_side", this),
-    masterId(p->system->getMasterId(this,name())),
+IOAcc::IOAcc(const gem5::IOAccParams &p) :
+    BasicPioDevice(p, p.pio_size),
+    io_addr(p.pio_addr),
+    io_size(p.pio_size),
+    devname(p.devicename),
+    gic(p.gic),
+    int_num(p.int_num),
+    memPort(p.name + ".mem_side", this),
+    masterId(p.system->getRequestorId(this,name())),
     tickEvent(this),
-    cacheLineSize(p->cache_line_size),
-    cacheSize(p->cache_size),
-    clock_period(p->clock_period) {
+    cacheLineSize(p.cache_line_size),
+    cacheSize(p.cache_size),
+    clock_period(p.clock_period) {
     processDelay = 1000 * clock_period;
     needToRead = false;
     needToWrite = false;
