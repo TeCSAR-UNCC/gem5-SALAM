@@ -3,7 +3,7 @@ Import('*')
 if env['TARGET_ISA'] == 'arm':
 
     #Example
-    SimObject('IOAcc.py')
+    # SimObject('IOAcc.py')
 
     #CommInterface
     SimObject('CommInterface.py')

@@ -1,0 +1,5 @@
+//BEGIN GENERATED CODE
+//Cluster: TOP
+//Accelerator: TOP
+#define TOP 0x10020000
+//END GENERATED CODE

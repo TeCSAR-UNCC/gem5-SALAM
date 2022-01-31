@@ -1,0 +1,11 @@
+---
+acc_cluster:
+  - Name: riscvtest_clstr
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/test-cases/geptest/hw/top.ll
+      ConfigPath: benchmarks/test-cases/geptest/hw/top.ini
+      Debug: False
+      InterruptNum: 68
+      PIOSize: 1
+      PIOMaster: LocalBus
