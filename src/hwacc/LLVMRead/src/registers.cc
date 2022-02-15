@@ -329,6 +329,14 @@ SALAM::PointerRegister::writePtrData(uint64_t ptr, size_t len, bool incWrites)
     regdata = pointer;
 }
 
+void
+SALAM::VectorRegister::writeVectorData(uint8_t* ptr, size_t len, bool incWrites)
+{
+    if (incWrites && tracked) writes++;
+    std::memcpy(pointer, ptr, len);
+    // regdata = pointer;
+}
+
 #include <sstream>
 #include <ios>
 

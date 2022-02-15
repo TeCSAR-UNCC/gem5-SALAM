@@ -34,3 +34,5 @@ int main(void) {
     m5_dump_stats();
     m5_exit();
 }
+
+

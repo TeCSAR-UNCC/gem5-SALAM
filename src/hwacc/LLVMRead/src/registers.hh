@@ -82,6 +82,10 @@ class Register
             assert(0 && "Attempted to read pointer data from non-pointer register");
             return 0;
         }
+        virtual uint8_t* getVectorData(bool incReads=true) {
+            assert(0 && "Attempted to read pointer data from non-pointer register");
+            return 0;
+        }
     #if USE_LLVM_AP_VALUES
         virtual void writeFloatData(llvm::APFloat apf, bool incWrites=true) {
             assert(0 && "Attempted to write float data on non-float register");
@@ -100,9 +104,13 @@ class Register
         virtual void writePtrData(uint64_t ptr, size_t len=8, bool incWrites=true) {
             assert(0 && "Attempted to write pointer data on non-pointer register");
         }
+        virtual void writeVectorData(uint8_t* ptr, size_t len=8, bool incWrites=true) {
+            assert(0 && "Attempted to write pointer data on non-pointer register");
+        }
         virtual bool isInt() { return false; }
         virtual bool isFP() { return false; }
         virtual bool isPtr() { return false; }
+        virtual bool isVector() { return false; }
         bool isTracked() { return tracked; }
         bool isNull() { return isNULL; }
         void setNull(bool flag) { isNULL = flag; }
@@ -199,5 +207,25 @@ class PointerRegister : public Register
         virtual void writePtrData(uint64_t ptr, size_t len=8, bool incWrites=true) override;
         virtual std::string dataString() override;
 };
+
+class VectorRegister : public Register
+{
+    private:
+        uint8_t* pointer;
+    public:
+        VectorRegister(bool isTracked=true,
+                        bool isNull=false);
+        VectorRegister(uint64_t val,
+                        bool isTracked=true,
+                        bool isNull=false);
+        // ~PointerRegister() { if (pointer) delete pointer; }
+        virtual bool isVector() override { return true; }
+        virtual uint8_t * getVectorData(bool incReads=true) override {
+            return pointer;
+        }
+        virtual void writeVectorData(uint8_t* ptr, size_t len=8, bool incWrites=true) override;
+        // virtual std::string dataString() override;
+};
+
 } // End SALAM Namespace
 #endif

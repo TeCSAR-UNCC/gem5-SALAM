@@ -253,6 +253,12 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
             break;
         }
     #endif
+        case llvm::Type::VectorTyID:
+        {
+            if (dbg) DPRINTFS(Runtime, owner, "Vector\n");
+            returnReg->writeVectorData(data);
+            break;
+        }
         case llvm::Type::PointerTyID:
         {
             if (dbg) DPRINTFS(Runtime, owner, "Pointer\n");
