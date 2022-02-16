@@ -225,6 +225,16 @@ class VectorRegister : public Register
         }
         virtual void writeVectorData(uint8_t* ptr, size_t len=8, bool incWrites=true) override;
         // virtual std::string dataString() override;
+        template <typename T>
+        inline T getVectorElement(uint64_t index) {
+            T * vec = (T *)pointer;
+            return vec[index];
+        }
+        template <typename T>
+        inline void setVectorElement(T data, uint64_t index) {
+            T * vec = (T *)pointer;
+            vec[index] = data;
+        }
 };
 
 } // End SALAM Namespace

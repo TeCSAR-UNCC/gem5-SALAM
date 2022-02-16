@@ -3381,6 +3381,113 @@ Select::compute() {
     setRegisterValue(resultReg);
 }
 
+// SALAM-VAdd // -------------------------------------------------------------//
+void // Debugging Interface
+VAdd::dumper() {
+
+}
+
+std::shared_ptr<SALAM::Instruction>
+createVAddInst(uint64_t id, gem5::SimObject * owner, bool dbg,
+              uint64_t OpCode,
+              uint64_t cycles,
+              uint64_t fu)
+{
+    return std::make_shared<SALAM::VAdd>(id, owner, dbg, OpCode, cycles, fu);
+}
+
+VAdd::VAdd(uint64_t id, gem5::SimObject * owner, bool dbg,
+         uint64_t OpCode,
+              uint64_t cycles,
+              uint64_t fu) :
+         Instruction(id, owner, dbg, OpCode, cycles,fu)
+{
+
+    std::vector<uint64_t> base_params;
+    base_params.push_back(id);
+    base_params.push_back(OpCode);
+    base_params.push_back(cycles);
+    conditions.push_back(base_params);
+}
+
+void
+VAdd::initialize(llvm::Value *irval,
+                SALAM::irvmap *irmap,
+                SALAM::valueListTy *valueList)
+{
+    SALAM::Instruction::initialize(irval, irmap, valueList);
+    setOpCode(getOpode() + 100);
+    auto dataType = irval->getType();
+    assert(dataType->isVectorTy());
+    auto vecType = llvm::dyn_cast<llvm::VectorType>(dataType);
+    // Get the size of the vector
+    vectorSize = 8;//= vecType->getElementCount().getKnownMinValue();
+    // Get the integer type information stored in the vector
+    auto elemType = vecType->getElementType();
+    assert(elemType->isIntegerTy());
+    auto intBitWidth = elemType->getIntegerBitWidth();
+    elementSize = ((intBitWidth - 1) >> 3) + 1;
+}
+
+void
+VAdd::compute() {
+    if (dbg) DPRINTFS(RuntimeCompute, owner, "|| Computing %s\n", ir_string);
+#if USE_LLVM_AP_VALUES
+#else
+    // uint64_t op1 = operands.at(0).getUIntRegValue();
+    // uint64_t op2 = operands.at(1).getUIntRegValue();
+    // uint64_t result = op1 + op2;
+    // if (dbg) DPRINTFS(RuntimeCompute, owner, "|| (%s) %d + (%s) %d\n",
+    //     operands.at(0).getIRStub(), op1,
+    //     operands.at(1).getIRStub(), op2);
+    // if (dbg) DPRINTFS(RuntimeCompute, owner, "|| %s = %d\n", ir_stub, result);
+    auto op1Reg = operands.at(0).getOpRegister();
+    auto op1VecReg = std::dynamic_pointer_cast<SALAM::VectorRegister>(op1Reg);
+    auto op2Reg = operands.at(1).getOpRegister();
+    auto op2VecReg = std::dynamic_pointer_cast<SALAM::VectorRegister>(op2Reg);
+    auto retVecReg = std::dynamic_pointer_cast<SALAM::VectorRegister>(returnReg);
+
+    for (int it = 0; it < vectorSize; it++) {
+        switch (elementSize) {
+            case 1:
+            {
+                uint8_t op1 = op1VecReg->getVectorElement<uint8_t>(it);
+                uint8_t op2 = op2VecReg->getVectorElement<uint8_t>(it);
+                uint8_t result = op1 + op2;
+                retVecReg->setVectorElement<uint8_t>(result, it);
+                break;
+            }
+            case 2:
+            {
+                uint16_t op1 = op1VecReg->getVectorElement<uint16_t>(it);
+                uint16_t op2 = op2VecReg->getVectorElement<uint16_t>(it);
+                uint16_t result = op1 + op2;
+                retVecReg->setVectorElement<uint16_t>(result, it);
+                break;
+            }
+            case 4:
+            {
+                uint32_t op1 = op1VecReg->getVectorElement<uint32_t>(it);
+                uint32_t op2 = op2VecReg->getVectorElement<uint32_t>(it);
+                uint32_t result = op1 + op2;
+                retVecReg->setVectorElement<uint32_t>(result, it);
+                break;
+            }
+            case 8:
+            {
+                uint64_t op1 = op1VecReg->getVectorElement<uint64_t>(it);
+                uint64_t op2 = op2VecReg->getVectorElement<uint64_t>(it);
+                uint64_t result = op1 + op2;
+                retVecReg->setVectorElement<uint64_t>(result, it);
+                break;
+            }
+            default:
+                assert(0 && "Unsupported integer type for vector operations");
+        }
+    }
+#endif
+}
+
 } // namespace SALAM
 
 //---------------------------------------------------------------------------//

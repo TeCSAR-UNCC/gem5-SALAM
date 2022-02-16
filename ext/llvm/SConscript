@@ -4,11 +4,11 @@ import subprocess
 Import('main')
 
 # Use llvm-config to find includes and libraries needed for the build
-llvm_include = subprocess.check_output(['llvm-config-10', '--includedir']).decode()
+llvm_include = subprocess.check_output(['llvm-config', '--includedir']).decode()
 llvm_include = Dir(llvm_include.replace("\n", ""))
-llvm_libdir = subprocess.check_output(['llvm-config-10', '--libdir']).decode()
+llvm_libdir = subprocess.check_output(['llvm-config', '--libdir']).decode()
 llvm_libdir = Dir(llvm_libdir.replace("\n", ""))
-llvm_libs = subprocess.check_output(['llvm-config-10', '--libs']).decode()
+llvm_libs = subprocess.check_output(['llvm-config', '--libs']).decode()
 llvm_libs = llvm_libs.replace("-l", "")
 llvm_libs = llvm_libs.replace("\n", "")
 llvm_libs = llvm_libs.split(' ')

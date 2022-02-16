@@ -100,6 +100,7 @@ class Instruction : public Value
         virtual bool isInstruction() { return true; }
         virtual bool isLoadingInternal() { return false; }
         virtual bool isLatchingBrExiting() { return false; }
+        void setOpCode(uint64_t newop) { llvmOpCode = newop; }
         // virtual void linkFunctionalUnit(HWInterface * hw_interface);
         std::shared_ptr<SALAM::Instruction> clone() const { return std::static_pointer_cast<SALAM::Instruction>(createClone()); }
         virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::Instruction>(new SALAM::Instruction(*this)); }
@@ -1569,6 +1570,43 @@ createSelectInst(uint64_t id, gem5::SimObject * owner, bool dbg,
 //--------- End Instruction Classes -----------------------------------------//
 //---------------------------------------------------------------------------//
 
-}
+//---------------------------------------------------------------------------//
+//--------- Special Instruction Classes -------------------------------------//
+//---------------------------------------------------------------------------//
+// SALAM-Add // -------------------------------------------------------------//
 
+class VAdd : public Instruction
+{
+    private:
+        std::vector< std::vector<uint64_t> > conditions;
+        // conditions.at[0] == base params
+        SALAM::Debugger *dbgr;
+        uint64_t currentCycle;
+        uint64_t elementSize;
+        uint64_t vectorSize;
+
+    protected:
+    public:
+        VAdd(uint64_t id, gem5::SimObject * owner, bool dbg,
+            uint64_t OpCode,
+              uint64_t cycles,
+              uint64_t fu);
+        ~VAdd() = default;
+        void initialize(llvm::Value *irval,
+                        SALAM::irvmap *irmap,
+                        SALAM::valueListTy *valueList) override;
+        uint64_t getCycleCount() { return conditions.at(0).at(2); }
+        void compute();
+        void dump() { if (dbgr->enabled()) { dumper(); inst_dbg->dumper(static_cast<SALAM::Instruction*>(this));}}
+        void dumper();
+        std::shared_ptr<SALAM::VAdd> clone() const { return std::static_pointer_cast<SALAM::VAdd>(createClone()); }
+        virtual std::shared_ptr<SALAM::Value> createClone() const override { return std::shared_ptr<SALAM::VAdd>(new SALAM::VAdd(*this)); }
+};
+
+std::shared_ptr<SALAM::Instruction>
+createVAddInst(uint64_t id, gem5::SimObject * owner, bool dbg,
+              uint64_t OpCode,
+              uint64_t cycles,
+              uint64_t fu);
+}
 #endif // __HWACC_LLVM_INSTRUCTION_HH__
