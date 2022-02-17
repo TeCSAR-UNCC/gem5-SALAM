@@ -1001,6 +1001,17 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
     // if (DTRACE(Trace)) DPRINTF(Runtime, "Trace: %s \n", __PRETTY_FUNCTION__);
     uint64_t OpCode = inst->Instruction::getOpcode();
     // if (DTRACE(Trace)) DPRINTF(LLVMInterface, "Switch OpCode [%d]\n", OpCode);
+    switch(OpCode){
+        // We want to fall through to Add case if the instruction supports
+        // vectorization. Add other supported instructions above.
+        case llvm::Instruction::Add:
+        {
+            if (inst->getType()->isVectorTy()) OpCode += VECTOR_OP_OFFSET;
+            break;
+        }
+        // Instructions that we don't want to support vectorization on.
+        default: {}
+    }
     // HW
     hw->opcodes->update_usage(OpCode);
 
@@ -1063,6 +1074,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case llvm::Instruction::PHI: return SALAM::createPHIInst(id, this, debug(), OpCode, hw->cycle_counts->phi_inst, functional_unit); break;
         case llvm::Instruction::Call: return SALAM::createCallInst(id, this, debug(), OpCode, hw->cycle_counts->call_inst, functional_unit); break;
         case llvm::Instruction::Select: return SALAM::createSelectInst(id, this, debug(), OpCode, hw->cycle_counts->select_inst, functional_unit); break;
+        case (llvm::Instruction::Add+VECTOR_OP_OFFSET): return SALAM::createVAddInst(id, this, debug(), OpCode, hw->cycle_counts->add_inst, functional_unit); break;
         default: {
             warn("Tried to create instance of undefined instruction type!"); 
             return SALAM::createBadInst(id, this, dbg, OpCode, 0, 0); break;

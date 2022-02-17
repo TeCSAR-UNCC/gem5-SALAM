@@ -3416,7 +3416,7 @@ VAdd::initialize(llvm::Value *irval,
                 SALAM::valueListTy *valueList)
 {
     SALAM::Instruction::initialize(irval, irmap, valueList);
-    setOpCode(getOpode() + 100);
+    setOpCode(getOpode() + VECTOR_OP_OFFSET);
     auto dataType = irval->getType();
     assert(dataType->isVectorTy());
     auto vecType = llvm::dyn_cast<llvm::VectorType>(dataType);

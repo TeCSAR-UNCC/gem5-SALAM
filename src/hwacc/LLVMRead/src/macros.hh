@@ -72,6 +72,8 @@
 #define LLVM_IR_Sine 102
 #define LLVM_IR_Cosine 103
 
+#define VECTOR_OP_OFFSET 200
+
 /**
  * @namespace SALAM
  */

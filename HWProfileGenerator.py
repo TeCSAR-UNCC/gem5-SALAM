@@ -6,7 +6,7 @@ from SALAMClassGenerator import FunctionalUnitGenerator
 
 
 class HWModel():
-    def __init__(self, model='40nm_model', latency='10ns', profile='default_profile', benchname=None, benchfolder = 'benchmarks/sys_validation'):
+    def __init__(self, model='40nm_model', latency='10ns', profile='default_profile', benchname=None, benchfolder=None):
         self.benchname = benchname
         self.benchfolder = benchfolder
         self.model = model
@@ -84,7 +84,7 @@ if not os.path.exists('src/hwacc/HWModeling/generated/instructions'):
     os.makedirs('src/hwacc/HWModeling/generated/instructions')
 
 benchmark_args = HWArgs()
-generate_hw_models = HWModel(benchname=benchmark_args.bench, latency='5ns')
+generate_hw_models = HWModel(benchname=benchmark_args.bench, benchfolder=benchmark_args.path, latency='10ns')
 fu_file_generator = FunctionalUnitGenerator(fu_directory="src/hwacc/FunctionalUnits.py")
 fu_file_generator.initialize_functional_unit_base_header_file()
 fu_file_generator.initalize_fu_list_header(generate_hw_models.get_fu_list())
