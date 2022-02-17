@@ -3421,7 +3421,9 @@ VAdd::initialize(llvm::Value *irval,
     assert(dataType->isVectorTy());
     auto vecType = llvm::dyn_cast<llvm::VectorType>(dataType);
     // Get the size of the vector
-    vectorSize = 8;//= vecType->getElementCount().getKnownMinValue();
+    auto vectorCount = vecType->getElementCount();
+    // vectorSize = vecType->getNumElements();//= vecType->getElementCount().getKnownMinValue();
+    vectorSize = vectorCount.Min;
     // Get the integer type information stored in the vector
     auto elemType = vecType->getElementType();
     assert(elemType->isIntegerTy());
