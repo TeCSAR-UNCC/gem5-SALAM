@@ -41,7 +41,7 @@ class FunctionalUnitBase
 
 		uint64_t _available;
 
-		uint64_t _in_use = 0;
+		uint64_t _in_use;
 
 	public:
 		FunctionalUnitBase();
@@ -100,7 +100,6 @@ class FunctionalUnitBase
 		std::string get_alias() { return _alias; }
 		uint32_t get_stages() { return _stages; }
 		uint32_t get_cycles() { return _cycles; }
-		uint64_t get_in_use() { return _in_use; }
 		uint32_t get_enum_value() { return _enum_value; }
 		std::string get_int_size() { return _int_size; }
 		std::string get_int_sign() { return _int_sign; }
@@ -125,6 +124,7 @@ class FunctionalUnitBase
 		double get_area() { return _area; }
 		double get_path_delay() { return _path_delay; }
 		bool is_available() { return (_in_use >= _available); }
+		uint64_t get_in_use() { return _in_use; }
 		void use_functional_unit() { _in_use++; }
 		void clear_functional_unit() { _in_use--; }
 		void set_functional_unit_limit(uint64_t available) { _available = available; }

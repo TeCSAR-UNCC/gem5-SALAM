@@ -52,6 +52,8 @@
 #include "../generated/instructions/unreachable.hh"
 #include "../generated/instructions/urem.hh"
 #include "../generated/instructions/vaarg.hh"
+#include "../generated/instructions/vadd.hh"
+#include "../generated/instructions/vsub.hh"
 #include "../generated/instructions/xor_inst.hh"
 #include "../generated/instructions/zext.hh"
 #include <iostream>
@@ -116,6 +118,8 @@ class InstConfig : public SimObject
 		Unreachable* _unreachable;
 		Urem* _urem;
 		Vaarg* _vaarg;
+		Vadd* _vadd;
+		Vsub* _vsub;
 		XorInst* _xor_inst;
 		Zext* _zext;
 		InstConfig();

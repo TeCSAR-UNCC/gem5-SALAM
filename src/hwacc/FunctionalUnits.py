@@ -11,6 +11,7 @@ class FunctionalUnits(SimObject):
 	cxx_header = "hwacc/HWModeling/src/functional_units.hh"
 
 	double_multiplier = Param.DoubleMultiplier(Parent.any, "double_multiplier functional unit SimObject.")
+	vector_integer_adder = Param.VectorIntegerAdder(Parent.any, "vector_integer_adder functional unit SimObject.")
 	bit_register = Param.BitRegister(Parent.any, "bit_register functional unit SimObject.")
 	bitwise_operations = Param.BitwiseOperations(Parent.any, "bitwise_operations functional unit SimObject.")
 	double_adder = Param.DoubleAdder(Parent.any, "double_adder functional unit SimObject.")
@@ -56,6 +57,40 @@ class DoubleMultiplier(SimObject):
 	leakage_power = Param.UInt32(7.395312e-05, "Default values set from double_multiplier.yml")
 	area = Param.UInt32(5.981433, "Default values set from double_multiplier.yml")
 	path_delay = Param.UInt32(1.75, "Default values set from double_multiplier.yml")
+
+class VectorIntegerAdder(SimObject):
+	# SimObject type
+	type = 'VectorIntegerAdder'
+	# gem5-SALAM attached header
+	cxx_header = "hwacc/HWModeling/generated/functionalunits/vector_integer_adder.hh"
+	#HW Params
+	alias = Param.String("vector_integer_adder", "Default values set from vector_integer_adder.yml")
+	stages = Param.UInt32(1, "Default values set from vector_integer_adder.yml")
+	cycles = Param.UInt32(1, "Default values set from vector_integer_adder.yml")
+	enum_value = Param.UInt32(1, "Default values set from vector_integer_adder.yml")
+	int_size = Param.String("any", "Default values set from vector_integer_adder.yml")
+	int_sign = Param.String("any", "Default values set from vector_integer_adder.yml")
+	int_apmode = Param.Bool(True, "Default values set from vector_integer_adder.yml")
+	fp_size = Param.String("none", "Default values set from vector_integer_adder.yml")
+	fp_sign = Param.String("none", "Default values set from vector_integer_adder.yml")
+	fp_apmode = Param.Bool(False, "Default values set from vector_integer_adder.yml")
+	ptr_size = Param.String("none", "Default values set from vector_integer_adder.yml")
+	ptr_sign = Param.String("none", "Default values set from vector_integer_adder.yml")
+	ptr_apmode = Param.Bool(False, "Default values set from vector_integer_adder.yml")
+	limit = Param.UInt32(0, "Default values set from vector_integer_adder.yml")
+	#Power Params
+	power_units = Param.String("mW", "Default values set from vector_integer_adder.yml")
+	energy_units = Param.String("pJ", "Default values set from vector_integer_adder.yml")
+	time_units = Param.String("ns", "Default values set from vector_integer_adder.yml")
+	area_units = Param.String("um^2", "Default values set from vector_integer_adder.yml")
+	fu_latency = Param.UInt32(5, "Default values set from vector_integer_adder.yml")
+	internal_power = Param.UInt32(0.009743773, "Default values set from vector_integer_adder.yml")
+	switch_power = Param.UInt32(0.007400587, "Default values set from vector_integer_adder.yml")
+	dynamic_power = Param.UInt32(0.001800732, "Default values set from vector_integer_adder.yml")
+	dynamic_energy = Param.UInt32(0.009003937, "Default values set from vector_integer_adder.yml")
+	leakage_power = Param.UInt32(7.395312e-05, "Default values set from vector_integer_adder.yml")
+	area = Param.UInt32(5.981433, "Default values set from vector_integer_adder.yml")
+	path_delay = Param.UInt32(1.75, "Default values set from vector_integer_adder.yml")
 
 class BitRegister(SimObject):
 	# SimObject type

@@ -2,6 +2,7 @@ Import('*')
 if env['TARGET_ISA'] == 'arm':
 
     Source('double_multiplier.cc')
+    Source('vector_integer_adder.cc')
     Source('bit_register.cc')
     Source('bitwise_operations.cc')
     Source('double_adder.cc')

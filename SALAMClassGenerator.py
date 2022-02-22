@@ -314,6 +314,7 @@ class FunctionalUnitGenerator():
             self.base_header_file.write("\t\tdouble get_area() { return _area; }\n")
             self.base_header_file.write("\t\tdouble get_path_delay() { return _path_delay; }\n")
             self.base_header_file.write("\t\tbool is_available() { return (_in_use >= _available); }\n")
+            self.base_header_file.write("\t\tuint64_t get_in_use() { return _in_use; }\n")
             self.base_header_file.write("\t\tvoid use_functional_unit() { _in_use++; }\n")
             self.base_header_file.write("\t\tvoid clear_functional_unit() { _in_use--; }\n")
             self.base_header_file.write("\t\tvoid set_functional_unit_limit(uint64_t available) { _available = available; }\n")

@@ -6,6 +6,7 @@
 // GENERATED HEADERS - DO NOT MODIFY
 #include "../generated/functionalunits/base.hh"
 #include "../generated/functionalunits/double_multiplier.hh"
+#include "../generated/functionalunits/vector_integer_adder.hh"
 #include "../generated/functionalunits/bit_register.hh"
 #include "../generated/functionalunits/bitwise_operations.hh"
 #include "../generated/functionalunits/double_adder.hh"
@@ -32,6 +33,7 @@ class FunctionalUnits : public SimObject
 	public:
 		// GENERATED CLASS MEMBERS - DO NOT MODIFY
 		DoubleMultiplier* _double_multiplier;
+		VectorIntegerAdder* _vector_integer_adder;
 		BitRegister* _bit_register;
 		BitwiseOperations* _bitwise_operations;
 		DoubleAdder* _double_adder;

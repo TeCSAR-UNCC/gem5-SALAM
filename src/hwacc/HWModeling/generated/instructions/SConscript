@@ -48,5 +48,7 @@ if env['TARGET_ISA'] == 'arm':
     Source('unreachable.cc')
     Source('urem.cc')
     Source('vaarg.cc')
+    Source('vadd.cc')
+    Source('vsub.cc')
     Source('xor_inst.cc')
     Source('zext.cc')

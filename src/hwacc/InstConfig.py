@@ -57,6 +57,8 @@ class InstConfig(SimObject):
 	unreachable = Param.Unreachable(Parent.any, "unreachable instruction SimObject")
 	urem = Param.Urem(Parent.any, "urem instruction SimObject")
 	vaarg = Param.Vaarg(Parent.any, "vaarg instruction SimObject")
+	vadd = Param.Vadd(Parent.any, "vadd instruction SimObject")
+	vsub = Param.Vsub(Parent.any, "vsub instruction SimObject")
 	xor_inst = Param.XorInst(Parent.any, "xor_inst instruction SimObject")
 	zext = Param.Zext(Parent.any, "zext instruction SimObject")
 
@@ -530,6 +532,26 @@ class Vaarg(SimObject):
 	functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
 	opcode_num = Param.UInt32(60, "Default instruction llvm enum opcode value.")
 	runtime_cycles = Param.UInt32(0, "Default instruction runtime cycles.")
+
+class Vadd(SimObject):
+	# SimObject type
+	type = 'Vadd'	# gem5-SALAM attached header
+	cxx_header = "hwacc/HWModeling/generated/instructions/vadd.hh"
+	# Instruction params
+	functional_unit = Param.UInt32(1, "Default functional unit assignment.")
+	functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
+	opcode_num = Param.UInt32(213, "Default instruction llvm enum opcode value.")
+	runtime_cycles = Param.UInt32(1, "Default instruction runtime cycles.")
+
+class Vsub(SimObject):
+	# SimObject type
+	type = 'Vsub'	# gem5-SALAM attached header
+	cxx_header = "hwacc/HWModeling/generated/instructions/vsub.hh"
+	# Instruction params
+	functional_unit = Param.UInt32(1, "Default functional unit assignment.")
+	functional_unit_limit = Param.UInt32(0, "Default functional unit limit.")
+	opcode_num = Param.UInt32(215, "Default instruction llvm enum opcode value.")
+	runtime_cycles = Param.UInt32(1, "Default instruction runtime cycles.")
 
 class XorInst(SimObject):
 	# SimObject type
