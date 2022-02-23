@@ -92,6 +92,8 @@ SALAM::Value::addRegister(llvm::Type *irtype, bool istracked) {
         returnReg = std::make_shared<APIntRegister>(irtype, istracked);
     } else if (irtype->isFloatingPointTy()) {
         returnReg = std::make_shared<APFloatRegister>(irtype, istracked);
+    } else if (irtype->isVectorTy()) {
+        returnReg = std::make_shared<VectorRegister>(irtype, istracked);
     } else {
         //assert(0); // Type is invalid for a register
         returnReg = nullptr;

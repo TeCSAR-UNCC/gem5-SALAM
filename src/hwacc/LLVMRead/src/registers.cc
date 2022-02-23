@@ -66,11 +66,13 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type * T,
     switch (T->getTypeID()) {
         case llvm::Type::FloatTyID:
         {
+            _sizeInBytes = 4;
             data = 0;
             break;
         }
         case llvm::Type::DoubleTyID:
         {
+            _sizeInBytes = 8;
             data = 0;
             break;
         }
@@ -123,11 +125,13 @@ SALAM::APFloatRegister::APFloatRegister(llvm::Type::TypeID T,
     switch (T) {
         case llvm::Type::FloatTyID:
         {
+            _sizeInBytes = 4;
             data = 0;
             break;
         }
         case llvm::Type::DoubleTyID:
         {
+            _sizeInBytes = 8;
             data = 0;
             break;
         }
@@ -158,6 +162,7 @@ SALAM::APIntRegister::APIntRegister(llvm::Type * T,
         assert(it);
         data = llvm::APSInt::getMinValue(it->getBitWidth(), true);
     #else
+        _sizeInBytes = ((T->getIntegerBitWidth() - 1) >> 3) + 1;
         data = 0;
     #endif
 }
@@ -169,6 +174,7 @@ SALAM::APIntRegister::APIntRegister(uint64_t bitwidth,
     #if USE_LLVM_AP_VALUES
         data = llvm::APSInt::getMinValue(bitwidth), true);
     #else
+        _sizeInBytes = ((bitwidth - 1) >> 3) + 1;
         data = 0;
     #endif
 }
@@ -190,6 +196,7 @@ SALAM::PointerRegister::PointerRegister(bool tracked,
                                         isNull),
                                         pointer(0)
 {
+    _sizeInBytes = 8;
 }
 
 SALAM::PointerRegister::PointerRegister(uint64_t val,
@@ -199,6 +206,30 @@ SALAM::PointerRegister::PointerRegister(uint64_t val,
                                         isNull),
                                         pointer(val)
 {
+    _sizeInBytes = 8;
+}
+
+SALAM::VectorRegister::VectorRegister(llvm::Type *T, bool isTracked) :
+                                        Register(isTracked)
+{
+    assert(T->isVectorTy());
+    auto vecType = llvm::dyn_cast<llvm::VectorType>(T);
+    // Get the size of the vector
+    auto vectorCount = vecType->getElementCount();
+    auto vectorSize = vectorCount.Min;
+    // Get the type information stored in the vector
+    auto elemType = vecType->getElementType();
+    auto bitWidth = elemType->getIntegerBitWidth();
+    auto elementSize = ((bitWidth - 1) >> 3) + 1;
+    _sizeInBytes = elementSize*vectorSize;
+    pointer = new uint8_t[_sizeInBytes];
+}
+
+SALAM::VectorRegister::VectorRegister(uint64_t sizeInBytes, bool isTracked) :
+                                        Register(isTracked)
+{
+    _sizeInBytes = sizeInBytes;
+    pointer = new uint8_t[_sizeInBytes];
 }
 
 #if USE_LLVM_AP_VALUES

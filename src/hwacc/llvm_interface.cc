@@ -1074,6 +1074,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case llvm::Instruction::PHI: return SALAM::createPHIInst(id, this, debug(), OpCode, hw->cycle_counts->phi_inst, functional_unit); break;
         case llvm::Instruction::Call: return SALAM::createCallInst(id, this, debug(), OpCode, hw->cycle_counts->call_inst, functional_unit); break;
         case llvm::Instruction::Select: return SALAM::createSelectInst(id, this, debug(), OpCode, hw->cycle_counts->select_inst, functional_unit); break;
+        case llvm::Instruction::BitCast: return SALAM::createBitCastInst(id, this, debug(), OpCode, hw->cycle_counts->bitcast_inst, functional_unit); break;
         case (llvm::Instruction::Add+VECTOR_OP_OFFSET): return SALAM::createVAddInst(id, this, debug(), OpCode, hw->cycle_counts->add_inst, functional_unit); break;
         default: {
             warn("Tried to create instance of undefined instruction type!"); 

@@ -392,6 +392,9 @@ SALAM::Operand::initOperandReg()
         if (dbg) DPRINTFS(Runtime, owner, "Operand FP Register Initialized\n");
         lockedValue =
             std::make_shared<APFloatRegister>(valueTy, istracked);
+    } else if (returnReg->isVector()) {
+        if (dbg) DPRINTFS(Runtime, owner, "Operand Vector Register Initialized\n");
+        lockedValue = std::make_shared<VectorRegister>(valueTy, istracked);
     } else {
         if (dbg) DPRINTFS(Runtime, owner, "Invalid register type. Dumping Operand details\n");
         dump();

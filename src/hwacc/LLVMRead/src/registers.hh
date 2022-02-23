@@ -28,6 +28,7 @@ class Register
         uint64_t reads = 0;
         uint64_t writes = 0;
         uint64_t regdata;
+        uint64_t _sizeInBytes = 0;
 
         class Register_Debugger: public Debugger
         {
@@ -116,6 +117,7 @@ class Register
         void setNull(bool flag) { isNULL = flag; }
         void setTracked(bool flag) { tracked = flag; }
         void dump() { if (dbg) reg_dbg.dumper(this); }
+        virtual uint64_t getSizeInBytes() { return _sizeInBytes; }
         uint64_t getReads() { return reads; }
         uint64_t getWrites() { return writes; }
         virtual std::string dataString() = 0;
@@ -213,18 +215,14 @@ class VectorRegister : public Register
     private:
         uint8_t* pointer;
     public:
-        VectorRegister(bool isTracked=true,
-                        bool isNull=false);
-        VectorRegister(uint64_t val,
-                        bool isTracked=true,
-                        bool isNull=false);
-        // ~PointerRegister() { if (pointer) delete pointer; }
+        VectorRegister(llvm::Type *T, bool isTracked=true);
+        VectorRegister(uint64_t sizeInBytes, bool isTracked=true);
+        ~VectorRegister() { if (pointer) delete[] pointer; }
         virtual bool isVector() override { return true; }
         virtual uint8_t * getVectorData(bool incReads=true) override {
             return pointer;
         }
         virtual void writeVectorData(uint8_t* ptr, size_t len=8, bool incWrites=true) override;
-        // virtual std::string dataString() override;
         template <typename T>
         inline T getVectorElement(uint64_t index) {
             T * vec = (T *)pointer;
@@ -235,6 +233,7 @@ class VectorRegister : public Register
             T * vec = (T *)pointer;
             vec[index] = data;
         }
+        virtual std::string dataString() override { return "Vector"; }
 };
 
 } // End SALAM Namespace

@@ -1999,10 +1999,15 @@ Store::createMemoryRequest() {
         uint64_t regData;
         if (dataRegister->isInt()) {
             regData = dataRegister->getIntData();
-        } else {
+            req = new MemoryRequest(memAddr, (uint8_t *)&regData, reqLen);
+        } else if (dataRegister->isFP()) {
             regData = dataRegister->getFloatData();
+            req = new MemoryRequest(memAddr, (uint8_t *)&regData, reqLen);
+        } else if (dataRegister->isVector()) {
+            req = new MemoryRequest(memAddr, dataRegister->getVectorData(), reqLen);
+        } else {
+            assert(0 && "Invalid register type for store operations");
         }
-        req = new MemoryRequest(memAddr, (uint8_t *)&regData, reqLen);
     #endif
         if (dbg) DPRINTFS(RuntimeCompute, owner, "|| Launching %s\n", ir_string);
         if (dbg) DPRINTFS(RuntimeCompute, owner, "|| Addr[%x] Size[%i]\n", memAddr, reqLen);
