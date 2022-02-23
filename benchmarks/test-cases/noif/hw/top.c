@@ -10,7 +10,7 @@ int searchkey=36;
 int summ=0;
 int orred=1;
 int temp = 0;
-// #pragma clang loop vectorize_width(2)
+#pragma clang loop vectorize_width(2)
 for(i=0;i<6;i++)
 {
     arrle[i]=searchkey<=arr[i];
