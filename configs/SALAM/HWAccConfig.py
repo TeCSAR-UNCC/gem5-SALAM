@@ -80,6 +80,7 @@ def AccConfig(acc, bench_file, ir=None):
     acc.hw_interface.functional_units.double_divider = DoubleDivider()
     acc.hw_interface.functional_units.float_adder = FloatAdder()
     acc.hw_interface.functional_units.float_multiplier = FloatMultiplier()
+    acc.hw_interface.functional_units.vector_integer_adder = VectorIntegerAdder()
 
     #TODO Automate the generation of the list below
     # Instructions
@@ -133,6 +134,8 @@ def AccConfig(acc, bench_file, ir=None):
     acc.hw_interface.inst_config.vaarg = Vaarg()
     acc.hw_interface.inst_config.xor_inst = XorInst()
     acc.hw_interface.inst_config.zext = Zext()
+    acc.hw_interface.inst_config.vadd = Vadd()
+    acc.hw_interface.inst_config.vsub = Vsub()
 
 
     acc.hw_interface.salam_power_model = SALAMPowerModel()
