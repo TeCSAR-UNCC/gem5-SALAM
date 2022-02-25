@@ -23,8 +23,9 @@ int main(void) {
 
     *top = 0x01;
     while (stage < 1) count++;
-
-    printf("A Check: %d %d %d \n",a[10], b[10], c[10]);
+    for(i = 0; i < 256; i++){
+        printf("A Check: %d %d %d \n",a[i], b[i], c[i]);
+    }
     // printf("A Check: %d %s\n", achk, achk==32640 ? "PASSED" : "FAILED");
     // printf("B Check: %d %s\n", bchk, bchk==32640 ? "PASSED" : "FAILED");
     // printf("C Check: %d %s\n", cchk, cchk==32640 ? "PASSED" : "FAILED");

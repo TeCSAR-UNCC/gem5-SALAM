@@ -64,12 +64,23 @@ SALAM::Value::Value_Debugger::dumper(SALAM::Value *value)
 void
 SALAM::Value::initialize(llvm::Value * irval, SALAM::irvmap * irmap) {
     llvm::Type *irtype = irval->getType();
-    if (irtype->getTypeID() == llvm::Type::PointerTyID) {
+    valueTy = irtype->getTypeID();
+
+    if (valueTy == llvm::Type::PointerTyID) {
         size = 64; //We assume a 64-bit memory address space
+    } else if (irtype->isVectorTy()) {
+        auto vecType = llvm::dyn_cast<llvm::VectorType>(irtype);
+        // Get the size of the vector
+        auto vectorCount = vecType->getElementCount();
+        auto vectorSize = vectorCount.Min;
+        // Get the type information stored in the vector
+        auto elemType = vecType->getElementType();
+        auto bitWidth = elemType->getIntegerBitWidth();
+        size = vectorSize * bitWidth;
     } else {
         size = irtype->getScalarSizeInBits();
     }
-    valueTy = irtype->getTypeID();
+
     // Link Return Register
     if (size>0) addRegister(irtype, true);
 

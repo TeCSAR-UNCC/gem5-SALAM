@@ -418,5 +418,7 @@ SALAM::Operand::updateOperandRegister() {
         lockedValue->writeIntData(returnReg->getIntData(true));
     } else if (lockedValue->isFP()) {
         lockedValue->writeFloatData(returnReg->getFloatData(true));
+    } else if (lockedValue->isVector()) {
+        lockedValue->writeVectorData(returnReg->getVectorData(true));
     }
 }
