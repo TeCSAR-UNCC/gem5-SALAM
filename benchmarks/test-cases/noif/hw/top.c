@@ -9,7 +9,8 @@ int i=0;
 int searchkey=36;
 int summ=0;
 int orred=1;
-int temp = 0;
+// __m256i temp    = _mm256_set1_epi8(0);
+int temp[6] = {0,0, 0 , 0, 0, 0};
 #pragma clang loop vectorize_width(2)
 for(i=0;i<6;i++)
 {
@@ -17,27 +18,21 @@ for(i=0;i<6;i++)
     arrge[i]=searchkey>=arr[i];
     vshn[i]=arrle[i]&&arrge[i];
     summ+=vshn[i];
-    temp|=(vshn[i]==1);
-    // orredres = orredres||orred;
-    
-        // ctr1=i;
-        // ky=1;
+    temp[i]=(vshn[i]==1);
         
-    
-}
-ky[0]=temp;
+    }
 
-ghj=0;
+for(i = 0; i < 6; i++){
+    *ky |= temp[i]
+}
+
+*ghj=0;
 i=0;
     for(i=0;i<6-1;i++)
     {
         //find the last le tag
         *ghj=i*(arrge[i]==1&&arrge[i+1]==0&&ky[0]==0&&1);
-        if(*ghj>0&&1)
-        {
-            
-        }
-            // ctr=i;
+     
             
         
     }
