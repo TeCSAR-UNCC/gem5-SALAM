@@ -23,7 +23,7 @@ for(i=0;i<6;i++)
     }
 
 for(i = 0; i < 6; i++){
-    *ky |= temp[i]
+    *ky |= temp[i];
 }
 
 *ghj=0;
