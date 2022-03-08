@@ -1,0 +1,22 @@
+---
+acc_cluster:
+  - Name: search_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/test-cases/search/hw/top.ll
+      ConfigPath: benchmarks/test-cases/search/hw/top.ini
+      Debug: False
+      InterruptNum: 68
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: TESTA
+        Type: Cache
+        Size: 1024
