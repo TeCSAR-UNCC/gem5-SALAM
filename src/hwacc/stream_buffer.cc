@@ -19,11 +19,15 @@ StreamBuffer::StreamBuffer(const StreamBufferParams &p) :
 	ClockedObject(p),
 	streamIn(this),
 	streamOut(this),
+	statusIn(this),
+	statusOut(this),
 	buffer(p.buffer_size),
 	fifoSize(p.buffer_size),
 	endian(p.system->getGuestByteOrder()),
 	streamAddr(p.stream_address),
 	streamSize(p.stream_size),
+	statusAddr(p.status_address),
+	statusSize(p.status_size),
 	streamDelay(p.stream_latency),
 	bandwidth(p.bandwidth) {}
 
@@ -92,7 +96,7 @@ StreamBuffer::streamRead(PacketPtr pkt) {
 	uint8_t *buff = new uint8_t[pkt->getSize()];
 	readStream(buff, pkt->getSize());
 	uint64_t data = *(uint64_t *)buff;
-	delete buff;
+	delete[] buff;
 
 	switch(pkt->getSize()) {
       case 1:
@@ -127,6 +131,37 @@ StreamBuffer::streamWrite(PacketPtr pkt) {
     return streamDelay;
 }
 
+Tick
+StreamBuffer::status(PacketPtr pkt) {
+	// Provide a means of reading the current buffer capacity of the stream
+	// Writes to this register do nothing
+	if (pkt->isRead()) {
+		DPRINTF(StreamBuffer, "The status of the buffer has been read. Current capacity is %d of %d bytes",
+				buffer.size(), fifoSize);
+		uint64_t data = buffer.size();
+		switch(pkt->getSize()) {
+			case 1:
+				pkt->set<uint8_t>(data, endian);
+				break;
+			case 2:
+				pkt->set<uint16_t>(data, endian);
+				break;
+			case 4:
+				pkt->set<uint32_t>(data, endian);
+				break;
+			case 8:
+				pkt->set<uint64_t>(data, endian);
+				break;
+			default:
+				panic("Read size too big?\n");
+				break;
+    	}
+	}
+	Tick duration = pkt->getSize() * bandwidth;
+    pkt->makeAtomicResponse();
+    return duration;
+}
+
 AddrRangeList
 StreamBuffer::getStreamAddrRanges() const {
 	assert(streamSize != 0);
@@ -136,6 +171,15 @@ StreamBuffer::getStreamAddrRanges() const {
     return streamRanges;
 }
 
+AddrRangeList
+StreamBuffer::getStatusAddrRanges() const {
+	assert(statusSize != 0);
+	AddrRangeList statusRanges;
+	DPRINTF(AddrRanges, "registering range: %#x-%#x\n", statusAddr, statusSize);
+    statusRanges.push_back(RangeSize(statusAddr, statusSize));
+    return statusRanges;
+}
+
 Port &
 StreamBuffer::getPort(const std::string &if_name, PortID idx)
 {
@@ -143,7 +187,11 @@ StreamBuffer::getPort(const std::string &if_name, PortID idx)
         return streamIn;
     } else if (if_name == "stream_out") {
     	return streamOut;
-    }
+    } else if (if_name == "status_in") {
+        return statusIn;
+    } else if (if_name == "status_out") {
+    	return statusOut;
+	}
     return ClockedObject::getPort(if_name, idx);
 }
 
