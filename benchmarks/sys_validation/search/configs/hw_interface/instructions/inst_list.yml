@@ -1,0 +1,11 @@
+instructions:
+  vadd:
+    functional_unit: 1
+    functional_unit_limit: 0
+    opcode_num: 213
+    runtime_cycles: 1
+  vsub:
+    functional_unit: 1
+    functional_unit_limit: 0
+    opcode_num: 215
+    runtime_cycles: 1

@@ -1,4 +1,5 @@
 #include "../search_clstr_hw_defines.h"
+#include <stdint.h>
 
 typedef struct BTree{
    int d[7];
@@ -12,8 +13,10 @@ typedef struct BTree{
 
 void top(unsigned * a, unsigned* b, unsigned *c) {
 
-	bTree * cursor = (bTree* )*c;
-	unsigned key = *a;
+	
+	bTree* cursor = (bTree*)*c;
+	uint64_t key = *a;
+	
 	while(!cursor->l){
 		for(int i = 0; i < cursor->n; i++){
 			if(key<cursor->d[i])
@@ -25,16 +28,17 @@ void top(unsigned * a, unsigned* b, unsigned *c) {
 			if(key == cursor->d[i])
 			{
 				*b=1;
-				cursor = cursor->child_ptr[i];
 				break;
 			}
 			if(i == cursor->n - 1){
 				cursor = cursor->child_ptr[i+1];
+				break;
 			}
 		}
-
 	}
+
 	for(int i = 0; i < cursor->n; i++){
+		
 		if(key == cursor->d[i])
 		{
 			*b=1;
@@ -42,10 +46,16 @@ void top(unsigned * a, unsigned* b, unsigned *c) {
 		}
 	}
 
+
+
+
+
 	return;
 
   
 }
+
+
 
 
 

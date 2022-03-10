@@ -61,7 +61,7 @@ class AccCluster(Platform):
         hwacc.pio = self.local_bus.master
 
     def _connect_caches(self, system, options, l2coherent, cache_size=0):
-        if options.acc_cache and (cache_size!=0):
+        if (cache_size!=0):
             self.cluster_cache = ClusterCache()
             self.cluster_cache.size = cache_size
 

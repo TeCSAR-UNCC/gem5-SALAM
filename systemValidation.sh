@@ -84,7 +84,7 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			--accpath=$M5_PATH/benchmarks/sys_validation \
 			--accbench=$BENCH $CACHE_OPTS"
 
-${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName $BENCH --benchDir "benchmarks/sys_validation/${BENCH}"
+# ${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName $BENCH --benchDir "benchmarks/sys_validation/${BENCH}"
 
 
 

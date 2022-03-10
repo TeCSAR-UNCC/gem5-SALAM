@@ -7,7 +7,7 @@
 // volatile uint32_t *arg4 = (uint32_t *)0x2f000019;
 
 
-static unsigned char base[1024];
+static unsigned char base[1024*1024];
 static uint offset = 0;
 
 void * my_malloc(int size){
@@ -26,10 +26,11 @@ struct BTree{
    int n;
 }*r = NULL, *np = NULL, *x = NULL;
 
-volatile uint8_t * top  = (uint8_t *)TOP;
-volatile uint32_t *arg1 = (uint32_t *)(TOP + 1);
-volatile uint32_t *arg2 = (uint32_t *)(TOP + 9);
-volatile uint32_t *arg3 = (uint32_t *)(TOP + 17);
+volatile uint8_t * top  = (uint8_t *)(TOP+0x00);
+volatile uint32_t *arg1 = (uint32_t *)(TOP + 0x01);
+volatile uint32_t *arg2 = (uint32_t *)(TOP + 0x09);
+volatile uint32_t *arg3 = (uint32_t *)(TOP + 0x11);
+
 
 struct BTree* init(){
    int i;
@@ -187,15 +188,15 @@ int main(void) {
 
    int val, ch;
    int i, n, t;
-   for(i = 1; i <= 100000; i++)
+   for(i = 1; i <= 1000; i++)
       insert(i);
 
-//    printf("traversal of constructed B tree %d, %p\n", r->n, ((char*)r + 56));
-//    printf("traversal of constructed B tree %p, %d\n", r, offset);
-//    printf("offset of d: %ld\n", offsetof(struct BTree, d));
-//    printf("offset of child_ptr: %ld\n", offsetof(struct BTree, child_ptr));
-//    printf("offset of l: %ld\n", offsetof(struct BTree, l));
-//    printf("offset of n: %ld\n", offsetof(struct BTree, n));
+   printf("traversal of constructed B tree %d, %p\n", r->n, ((char*)r + 56));
+   printf("traversal of constructed B tree %p, %d\n", r, offset);
+   printf("offset of d: %ld\n", offsetof(struct BTree, d));
+   printf("offset of child_ptr: %ld\n", offsetof(struct BTree, child_ptr));
+   printf("offset of l: %ld\n", offsetof(struct BTree, l));
+   printf("offset of n: %ld\n", offsetof(struct BTree, n));
 
     m5_reset_stats();
 
@@ -210,8 +211,12 @@ int main(void) {
     TYPE *m3 = (TYPE *)(base + 2 * sizeof(TYPE) * N);
 
 
-    *m1 = 25800;
-    *m2 = 0;
+    for(int i=0;i<3;i++)
+    {
+        m1[i]=i+999;
+        m2[i]=0;
+    }
+
     *m3 = (uint64_t)r;
 
 
@@ -219,15 +224,33 @@ int main(void) {
     *arg2 = (uint64_t)(void *)m2;
     *arg3 = (uint64_t)(void *)m3;
 
-    // printf("Job complete : %p %p\n", m1, (m1 + 1));
+    // *s_arg1 = (uint32_t)(void *)&m1[0];
+    // *s_arg2 = (uint32_t)(void *)&m2[0];
+    // *s_arg3 = (uint32_t)(void *)m3;
+
+    printf("Job complete : %p %p\n", m1, (m1 + 1));
     *top = 0x01;
     int count;
     while (*top != 0)
     count++;
+    *top=0x0;
+    printf("Done\n");
+
+    // int count=0;
+
+    // *search = 0x01;
+    // while (*search != 0)
+    // count++;
+    // *search=0x0;
 
     printf("Done\n");
 
-    printf("Job complete : %d %p %p\n",m1[0], m2[0], r->child_ptr[0]);
+    for(int i=0;i<3;i++)
+    {
+        printf("Job complete : %d %p %p\n",m1[i], m2[i], r->child_ptr[0]);
+    }
+    
+    // printf("Job complete : %d %p %p\n",m1[1], &m2[2], r->child_ptr[0]);
 
     m5_dump_stats();
     m5_exit();
