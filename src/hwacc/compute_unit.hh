@@ -35,6 +35,7 @@ class ComputeUnit : public SimObject {
     virtual void tick() {}
     ComputeUnit(const ComputeUnitParams &p);
     virtual void initialize() {}
+    virtual void finalize() {}
     virtual void readCommit(MemoryRequest * req) {}
     virtual void writeCommit(MemoryRequest * req) {}
     CommInterface * getCommInterface() { return comm; }
