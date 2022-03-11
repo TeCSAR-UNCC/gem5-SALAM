@@ -174,7 +174,7 @@ class LLVMInterface : public ComputeUnit {
     void constructStaticGraph();
     void startup();
     void initialize();
-    void finalize();
+    void finalize() override;
     void debug(uint64_t flags);
     bool getLockstepStatus() { return lockstep; }
     void readCommit(MemoryRequest *req);

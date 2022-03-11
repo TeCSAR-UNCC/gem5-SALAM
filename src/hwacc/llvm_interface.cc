@@ -748,6 +748,9 @@ LLVMInterface::finalize() {
     simStop = std::chrono::high_resolution_clock::now();
     simTotal = simStop - timeStart;
     printResults();
+    globalReadQueue.clear();
+    globalWriteQueue.clear();
+    activeFunctions.clear();
     functions.clear();
     values.clear();
     comm->finish();

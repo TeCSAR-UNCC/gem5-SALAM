@@ -210,6 +210,12 @@ CommInterface::checkMMR() {
             schedule(tickEvent, curTick() + processDelay);
             //schedule(tickEvent, nextCycle());
         }
+    } else {
+        // Adding functionality to prematurely terminate an acc's operation
+        if (!(*mmreg & 0x02)) {
+            cu->finalize();
+            finish();
+        }
     }
 }
 
