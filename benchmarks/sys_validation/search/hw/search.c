@@ -28,6 +28,7 @@ void top(unsigned * a, unsigned* b, unsigned *c) {
 			if(key == cursor->d[i])
 			{
 				*b=1;
+				cursor = cursor->child_ptr[i];
 				break;
 			}
 			if(i == cursor->n - 1){

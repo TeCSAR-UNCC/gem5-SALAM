@@ -211,9 +211,9 @@ int main(void) {
     TYPE *m3 = (TYPE *)(base + 2 * sizeof(TYPE) * N);
 
 
-    for(int i=0;i<3;i++)
+    for(int i=0;i<120;i++)
     {
-        m1[i]=i+999;
+        m1[i]=i;
         m2[i]=0;
     }
 
@@ -245,7 +245,7 @@ int main(void) {
 
     printf("Done\n");
 
-    for(int i=0;i<3;i++)
+    for(int i=0;i<120;i++)
     {
         printf("Job complete : %d %p %p\n",m1[i], m2[i], r->child_ptr[0]);
     }
