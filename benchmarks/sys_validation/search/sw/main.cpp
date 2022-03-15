@@ -31,6 +31,8 @@ volatile uint32_t *arg1 = (uint32_t *)(TOP + 0x01);
 volatile uint32_t *arg2 = (uint32_t *)(TOP + 0x09);
 volatile uint32_t *arg3 = (uint32_t *)(TOP + 0x11);
 
+volatile uint8_t * root  = (uint8_t *)(ROOTCACHE+0x00);
+
 
 struct BTree* init(){
    int i;
@@ -181,6 +183,17 @@ void insert(int a) {
 //    printf("Complete Insert\n");
 }
 
+typedef struct rootCacheNode{
+	int start;
+	int end;
+	int key;
+
+} node_t;
+
+typedef struct rootCache{
+	node_t entry[10];
+	int occupancy;
+} cache_t;
 
   
 
@@ -210,7 +223,18 @@ int main(void) {
     TYPE *m2 = (TYPE *)(base + sizeof(TYPE) * N);
     TYPE *m3 = (TYPE *)(base + 2 * sizeof(TYPE) * N);
 
+    unsigned * f    = (unsigned *)0x80c10000;
+    unsigned * g    = (unsigned *)0x80c10008;
+    cache_t * h     = (cache_t *)TESTA;
 
+
+    // *top = 0x01;
+
+
+    // *root = 0x01;
+    // while (stage < 1) count++;
+
+    // h->occupancy = 0;
     for(int i=0;i<120;i++)
     {
         m1[i]=i;
@@ -223,14 +247,14 @@ int main(void) {
     *arg1 = (uint64_t)(void *)m1;
     *arg2 = (uint64_t)(void *)m2;
     *arg3 = (uint64_t)(void *)m3;
-
+    int count;
     // *s_arg1 = (uint32_t)(void *)&m1[0];
     // *s_arg2 = (uint32_t)(void *)&m2[0];
     // *s_arg3 = (uint32_t)(void *)m3;
 
     printf("Job complete : %p %p\n", m1, (m1 + 1));
     *top = 0x01;
-    int count;
+    
     while (*top != 0)
     count++;
     *top=0x0;
@@ -247,7 +271,7 @@ int main(void) {
 
     for(int i=0;i<120;i++)
     {
-        printf("Job complete : %d %p %p\n",m1[i], m2[i], r->child_ptr[0]);
+        printf("Job complete : %d %p %p\n",m1[i], m2[i], h->occupancy);
     }
     
     // printf("Job complete : %d %p %p\n",m1[1], &m2[2], r->child_ptr[0]);

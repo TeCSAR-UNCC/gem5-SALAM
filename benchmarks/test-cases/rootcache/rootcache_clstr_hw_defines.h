@@ -1,5 +1,5 @@
 //BEGIN GENERATED CODE
-//Cluster: ROOTCACHE
+//Cluster: TOP
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001
@@ -18,14 +18,6 @@
 #define HEAD_STREAM_DMA0_Stream 0x10020060
 //Accelerator: TOP
 #define TOP 0x10020080
-//Accelerator: SEARCH
-#define SEARCH 0x100200c0
-//Accelerator: VECTOR1
-#define VECTOR1 0x10020100
-//Accelerator: VECTOR2
-#define VECTOR2 0x10020140
-//Accelerator: ROOTCACHE
-#define ROOTCACHE 0x10020180
-#define TESTA 0x100201c0
-#define head_DWConvOut 0x10020600
+#define TESTA 0x100200c0
+#define head_DWConvOut 0x10020500
 //END GENERATED CODE
