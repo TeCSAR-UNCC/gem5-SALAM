@@ -60,12 +60,19 @@ acc_cluster:
         Size: 1024
         Ports: 1
     - Var:
-      - Name: head_DWConvOut
+      - Name: cache_search_in
         Type: Stream
         StreamSize: 8
         BufferSize: 64
         InCon: rootcache
         OutCon: search
+    - Var:
+      - Name: cache_search_out
+        Type: Stream
+        StreamSize: 8
+        BufferSize: 64
+        InCon: search
+        OutCon: rootcache
 hw_config:
   top:
   search:

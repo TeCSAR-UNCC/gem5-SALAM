@@ -27,5 +27,6 @@
 //Accelerator: ROOTCACHE
 #define ROOTCACHE 0x10020180
 #define TESTA 0x100201c0
-#define head_DWConvOut 0x10020600
+#define cache_search_in 0x10020600
+#define cache_search_out 0x10020640
 //END GENERATED CODE

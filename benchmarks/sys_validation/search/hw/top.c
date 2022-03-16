@@ -32,18 +32,23 @@ void top(unsigned* a, unsigned* b, unsigned* c) {
 	m2=(uint64_t)(void*)0x80c00fa0;
 	m3=(uint64_t)(void*)0x80c01f40;
 
-	for(int i = 0; i < 80; i++){
-		*s_arg1 =m1 + i*8;
-		*s_arg2 =m2 + 1*8;
+	int i = 0;
+	int jl = 0;
+
+	while(i < 80){
+		*s_arg1 =m1 + jl;
+		*s_arg2 =m2 + jl;
 		*s_arg3 =m3;
 
-		*v_arg1 =(m1 + i*8 + 4);
-		*v_arg2 =(m2 + i*8 + 4);
+		*v_arg1 =(m1 + jl + 4);
+		*v_arg2 =(m2 + jl + 4);
 		*v_arg3 =m3;
 
-		*v2_arg1 =(m1 + i*8 + 8);
-		*v2_arg2 =(m2 + i*8 + 8);
+		*v2_arg1 =(m1 + jl + 8);
+		*v2_arg2 =(m2 + jl + 8);
 		*v2_arg3 =m3;
+
+		jl +=12;
 
 		// *b = m3;
 
@@ -78,6 +83,7 @@ void top(unsigned* a, unsigned* b, unsigned* c) {
 		}
 
 		*vector2=0;
+		i+=1;
 	}
 	
 	
