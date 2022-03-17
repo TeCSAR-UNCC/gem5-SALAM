@@ -1,0 +1,36 @@
+---
+acc_cluster:
+  - Name: rootcache_clstr
+  - DMA:
+    - Name: dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+      InterruptNum: 95
+  - DMA:
+    - Name: head_stream_dma0
+      PIOMaster: LocalBus
+      StreamSize: 8
+      BufferSize: 64
+      Type: Stream
+  - Accelerator:
+    - Name: top
+      IrPath: benchmarks/test-cases/rootcache/hw/top.ll
+      ConfigPath: benchmarks/test-cases/rootcache/hw/top.ini
+      Debug: False
+      InterruptNum: 68
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: TESTA
+        Type: SPM
+        Size: 1024
+        Ports: 1
+    - Var:
+      - Name: head_DWConvOut
+        Type: Stream
+        StreamSize: 8
+        BufferSize: 64
+        InCon: top
+        OutCon: top

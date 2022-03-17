@@ -25,6 +25,7 @@ SALAM::Value::Value(const Value &copy_val)
     ir_stub = copy_val.ir_stub;
     owner = copy_val.owner;
     dbg = copy_val.dbg;
+    ptr_size = copy_val.ptr_size;
 }
 
 SALAM::Value::Value(std::shared_ptr<SALAM::Value> copy_val)
@@ -37,6 +38,7 @@ SALAM::Value::Value(std::shared_ptr<SALAM::Value> copy_val)
     ir_stub = copy_val->getIRStub();
     owner = copy_val->getOwner();
     dbg = copy_val->debug();
+    ptr_size = copy_val->getPtrSize();
 }
 
 // operator equals
@@ -196,7 +198,7 @@ void
 SALAM::Value::setRegisterValue(const uint64_t data) {
     if (returnReg->isPtr()) {
         if (dbg) DPRINTFS(Runtime, owner, "| Ptr Register\n");
-        returnReg->writePtrData(data);
+        returnReg->writePtrData(data, ptr_size);
     } else {
     #if USE_LLVM_AP_VALUES
         if (dbg) DPRINTFS(Runtime, owner, "Unsupported type for register operation. \
@@ -275,7 +277,7 @@ SALAM::Value::setRegisterValue(uint8_t * data) {
         case llvm::Type::PointerTyID:
         {
             if (dbg) DPRINTFS(Runtime, owner, "Pointer\n");
-            returnReg->writePtrData(*(uint64_t *)data);
+            returnReg->writePtrData(*(uint64_t *)data, ptr_size);
             break;
         }
         default:

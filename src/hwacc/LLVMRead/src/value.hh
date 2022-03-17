@@ -33,6 +33,7 @@ class Value
     protected:
         uint64_t uid = 0;
         uint64_t size = 0;
+        unsigned ptr_size = 4;
         gem5::SimObject * owner;
         std::string ir_string;
         std::string ir_stub;
@@ -92,7 +93,7 @@ class Value
         std::string getIRStub() { return ir_stub; }
         gem5::SimObject * getOwner() { return owner; }
         bool debug() { return dbg; }
-
+        unsigned getPtrSize() {return ptr_size;}
         // Helper functions for setting the value of the return register directly from the value
         // Using these functions will increment the write counters on tracked registers
         // If you'd like to avoid incrementing write counters, directly pull the register and

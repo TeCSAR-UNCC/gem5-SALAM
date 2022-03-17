@@ -57,7 +57,7 @@ def AccConfig(acc, bench_file, ir=None):
                         setattr(acc.hw_interface.cycle_counts, instruction, yaml_inst_list['hw_config'][current_acc]['instructions'][instruction]['runtime_cycles'])
             fu_yaml.close()
         else:
-            config_path = 'benchmarks/sys_validation/' + benchname + '/config.yml'
+            config_path = 'benchmarks/sys_validation/search/config.yml'
             fu_yaml = open(config_path, 'r')
             yaml_inst_list = yaml.safe_load(fu_yaml)
             inst_list = yaml_inst_list['hw_config'][benchname]['instructions'].keys()
