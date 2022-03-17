@@ -187,6 +187,7 @@ typedef struct rootCacheNode{
 	int start;
 	int end;
 	int key;
+    int utility;
 
 } node_t;
 
@@ -235,10 +236,10 @@ int main(void) {
     // while (stage < 1) count++;
 
     // h->occupancy = 0;
-    for(int i=0;i<120;i++)
+    for(int i=1;i<=120;i++)
     {
-        m1[i]=i;
-        m2[i]=0;
+        m1[i-1]=i;
+        m2[i-1]=0;
     }
 
     *m3 = (uint64_t)r;

@@ -35,7 +35,7 @@ void top(unsigned* a, unsigned* b, unsigned* c) {
 	int i = 0;
 	int jl = 0;
 
-	while(i < 80){
+	while(i <= 40){
 		*s_arg1 =m1 + jl;
 		*s_arg2 =m2 + jl;
 		*s_arg3 =m3;
