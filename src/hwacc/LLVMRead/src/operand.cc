@@ -17,8 +17,84 @@ SALAM::Constant::initialize(llvm::Value * irval,
     // Parse the constant value
     llvm::ConstantData * cd = llvm::dyn_cast<llvm::ConstantData>(irval);
     llvm::ConstantExpr * ce = llvm::dyn_cast<llvm::ConstantExpr>(irval);
+    llvm::ConstantVector * cv = llvm::dyn_cast<llvm::ConstantVector>(irval);
     llvm::Type *irtype = irval->getType();
-    if (cd) {
+    if (cv) {
+        /***********************************************************************
+         * LLVM's handling of Vectors is a little complex. Vectors containing
+         * other Constants are handled with the llvm::ConstantVector class. We
+         * need to extract each element as a constant here. This is different
+         * than the llvm::ConstantDataVector, which represents a vector
+         * containing only simple constant data like ints, floats, and doubles.
+         * We handle this as a subset of ConstantData.
+         **********************************************************************/
+        addRegister(irtype);
+        auto vReg = std::dynamic_pointer_cast<SALAM::VectorRegister>(returnReg);
+        auto vecType = llvm::dyn_cast<llvm::VectorType>(irtype);
+        auto vectorCount = vecType->getElementCount();
+        auto vectorSize = vectorCount.Min;
+        for (auto it=0; it<vectorSize; it++) {
+            llvm::Constant * con = cv->getAggregateElement(it);
+            cd = llvm::dyn_cast<llvm::ConstantData>(con);
+            auto contyid = con->getType()->getTypeID();
+            switch (contyid)
+            {
+                case llvm::Type::IntegerTyID:
+                {
+                    llvm::ConstantInt * ci = llvm::dyn_cast<llvm::ConstantInt>(con);
+                    auto bitwidth = ci->getBitWidth();
+                    auto byteWidth = ((bitwidth - 1) >> 3) + 1;
+                    auto zExtValue = ci->getZExtValue();
+                    switch (byteWidth)
+                    {
+                        case 1:
+                        {
+                            vReg->setVectorElement<uint8_t>(zExtValue, it);
+                            break;
+                        }
+                        case 2:
+                        {
+                            vReg->setVectorElement<uint16_t>(zExtValue, it);
+                            break;
+                        }
+                        case 4:
+                        {
+                            vReg->setVectorElement<uint32_t>(zExtValue, it);
+                            break;
+                        }
+                        case 8:
+                        {
+                            vReg->setVectorElement<uint64_t>(zExtValue, it);
+                            break;
+                        }
+                        default:
+                        {
+                            assert(0 && "Unsupported integer size in vector");
+                        }
+                    }
+                    break;
+                }
+                case llvm::Type::FloatTyID:
+                {
+                    llvm::ConstantFP * fp = llvm::dyn_cast<llvm::ConstantFP>(con);
+                    auto apfp = fp->getValueAPF();
+                    vReg->setVectorElement<float>(apfp.convertToFloat(), it);
+                    break;
+                }
+                case llvm::Type::DoubleTyID:
+                {
+                    llvm::ConstantFP * fp = llvm::dyn_cast<llvm::ConstantFP>(con);
+                    auto apfp = fp->getValueAPF();
+                    vReg->setVectorElement<double>(apfp.convertToDouble(), it);
+                    break;
+                }
+                default:
+                {
+                    assert(0 && "Unsupported type for Vector element in SALAM\n");
+                }
+            }
+        }
+    } else if (cd) {
         // The constant is a llvm::ConstantData.
         // Get it's value and store it in constValue
         if (irtype->isFloatingPointTy()) {
@@ -41,6 +117,18 @@ SALAM::Constant::initialize(llvm::Value * irval,
         } else if (irtype->isPointerTy()) {
             assert(llvm::dyn_cast<llvm::ConstantPointerNull>(cd));
             addPointerRegister(false, true);
+        } else if (irtype->isVectorTy()) {
+            addRegister(irtype);
+            auto vecType = llvm::dyn_cast<llvm::VectorType>(irtype);
+            auto vectorCount = vecType->getElementCount();
+            auto vectorSize = vectorCount.Min;
+            auto elemType = vecType->getElementType();
+            llvm::ConstantDataSequential * cds = llvm::dyn_cast<llvm::ConstantDataSequential>(cd);
+            if (cds) {
+                auto vReg = std::dynamic_pointer_cast<SALAM::VectorRegister>(returnReg);
+            } else { 
+                // zeroinitializer case
+            }
         }
     } else if (ce) {
         // The constant is an expression. We need to parse the expression

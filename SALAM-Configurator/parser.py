@@ -105,7 +105,7 @@ class AccCluster:
 							aligned_inc = int(j['Size']) + (64 - (int(j['Size']) % 64))
 							topAddress = topAddress + aligned_inc
 						elif "Stream" in j['Type']:
-							aligned_inc = int(j['StreamSize']) + (64 - (int(j['StreamSize']) % 64))
+							aligned_inc = int(j['StreamSize']+4) + (64 - (int(j['StreamSize']+4) % 64))
 							topAddress = topAddress + aligned_inc
 						elif "RegisterBank" in j['Type']:
 							aligned_inc = int(j['Size']) + (64 - (int(j['Size']) % 64))
