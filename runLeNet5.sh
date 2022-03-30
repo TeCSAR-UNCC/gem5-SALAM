@@ -49,7 +49,7 @@ else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
-KERNEL=$M5_PATH/benchmarks/lenet5/$BENCH/sw/main.elf
+KERNEL=$M5_PATH/benchmarks/lenet5-nounroll/$BENCH/sw/main.elf
 
 SYS_OPTS="--mem-size=4GB \
 		  --mem-type=DDR4_2400_8x8 \
@@ -60,7 +60,7 @@ SYS_OPTS="--mem-size=4GB \
           --cpu-type=DerivO3CPU"
 CACHE_OPTS="--caches --l2cache"
 
-OUTDIR=BM_ARM_OUT/lenet5/$BENCH
+OUTDIR=BM_ARM_OUT/lenet5-nounroll/$BENCH
 
 DEBUG_FLAGS=""
 
@@ -71,10 +71,10 @@ fi
 
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			configs/SALAM/generated/fs_lenet5_$BENCH.py $SYS_OPTS \
-			--accpath=$M5_PATH/benchmarks/lenet5 \
+			--accpath=$M5_PATH/benchmarks/lenet5-nounroll \
 			--accbench=$BENCH $CACHE_OPTS"
 
-${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName "lenet5_$BENCH" --benchDir "benchmarks/lenet5/${BENCH}"
+${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName "lenet5_$BENCH" --benchDir "benchmarks/lenet5-nounroll/${BENCH}"
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR

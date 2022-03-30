@@ -5,6 +5,7 @@ DEBUG="false"
 PRINT_TO_FILE="false"
 VALGRIND="false"
 
+
 while getopts ":b:f:vdp" opt; do
 	case $opt in
 		b )
@@ -44,7 +45,7 @@ fi
 OUTDIR=$M5_PATH/BM_ARM_OUT/sys_validation/$BENCH
 
 if [ "${DEBUG}" == "true" ]; then
-	BINARY="ddd --gdb --args ${M5_PATH}/build/ARM/gem5.debug"
+	BINARY=" gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ "${VALGRIND}" == "true" ]; then
 	BINARY="valgrind \
 	--leak-check=yes \

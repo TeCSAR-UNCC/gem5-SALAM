@@ -196,6 +196,12 @@ typedef struct rootCache{
 	int occupancy;
 } cache_t;
 
+typedef struct rc_query{
+	unsigned start;
+	unsigned end;
+	unsigned start_address;
+	unsigned flag;
+} query_t;
   
 
 int main(void) {
@@ -204,20 +210,19 @@ int main(void) {
    int i, n, t;
    for(i = 1; i <= 1000; i++)
       insert(i);
-
-   printf("traversal of constructed B tree %d, %p\n", r->n, ((char*)r + 56));
-   printf("traversal of constructed B tree %p, %d\n", r, offset);
-   printf("offset of d: %ld\n", offsetof(struct BTree, d));
-   printf("offset of child_ptr: %ld\n", offsetof(struct BTree, child_ptr));
-   printf("offset of l: %ld\n", offsetof(struct BTree, l));
-   printf("offset of n: %ld\n", offsetof(struct BTree, n));
+    query_t* hello;
+//    printf("traversal of constructed B tree %d, %p\n", r->n, ((char*)r + 56));
+//    printf("traversal of constructed B tree %p, %d\n", r, offset);
+//    printf("offset of d: %ld\n", offsetof(struct BTree, d));
+//    printf("offset of child_ptr: %ld\n", offsetof(struct BTree, child_ptr));
+//    printf("offset of l: %ld\n", offsetof(struct BTree, l));
+//    printf("offset of n: %ld\n", offsetof(struct BTree, n));
+    printf("size of the query: %d\n", sizeof(hello));
 
     m5_reset_stats();
 
     int *flag;
     *flag = 0;
-
-
 
     uint32_t base = 0x80c00000;
     TYPE *m1 = (TYPE *)base;
@@ -226,56 +231,34 @@ int main(void) {
 
     unsigned * f    = (unsigned *)0x80c10000;
     unsigned * g    = (unsigned *)0x80c10008;
+    unsigned * m    = (unsigned *)0x80c10010;
     cache_t * h     = (cache_t *)TESTA;
 
-
-    // *top = 0x01;
-
-
-    // *root = 0x01;
-    // while (stage < 1) count++;
-
-    // h->occupancy = 0;
-    for(int i=1;i<=120;i++)
+    for(int i=1;i<=500;i++)
     {
         m1[i-1]=i;
         m2[i-1]=0;
     }
 
     *m3 = (uint64_t)r;
-
-
     *arg1 = (uint64_t)(void *)m1;
     *arg2 = (uint64_t)(void *)m2;
     *arg3 = (uint64_t)(void *)m3;
     int count;
-    // *s_arg1 = (uint32_t)(void *)&m1[0];
-    // *s_arg2 = (uint32_t)(void *)&m2[0];
-    // *s_arg3 = (uint32_t)(void *)m3;
 
-    printf("Job complete : %p %p\n", m1, (m1 + 1));
     *top = 0x01;
-    
+    *root = 1;
     while (*top != 0)
-    count++;
+        count++;
+    *root = 0;
     *top=0x0;
     printf("Done\n");
 
-    // int count=0;
-
-    // *search = 0x01;
-    // while (*search != 0)
-    // count++;
-    // *search=0x0;
-
-    printf("Done\n");
-
-    for(int i=0;i<120;i++)
+    for(int i=0;i<500;i++)
     {
-        printf("Job complete : %d %p %p\n",m1[i], m2[i], h->occupancy);
+        printf("Job complete : %d %d %p\n",m1[i], m2[i], h->occupancy);
     }
     
-    // printf("Job complete : %d %p %p\n",m1[1], &m2[2], r->child_ptr[0]);
 
     m5_dump_stats();
     m5_exit();

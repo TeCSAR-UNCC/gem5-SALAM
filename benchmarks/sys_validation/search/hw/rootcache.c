@@ -14,6 +14,13 @@ typedef struct rootCache{
 	int occupancy;
 } cache_t;
 
+typedef struct rc_query{
+	unsigned start;
+	unsigned end;
+	unsigned start_address;
+	unsigned flag;
+} query_t;
+
 void insert(unsigned* a, unsigned* b, cache_t* c) {
 	if(c->occupancy < 10){
 		c->entry[c->occupancy].start = a[1];
@@ -46,23 +53,52 @@ void search(unsigned* key, unsigned * res, cache_t* c){
 	// res[0] = c->entry[2].end;
 }
 
+void search_stream(query_t * q, unsigned* res, cache_t* c){
+	
+	int result = 90;
+	int i = 0;
+	while(i < c->occupancy){
+		if(q->start > c->entry[i].start && q->start < c->entry[i].end){
+			result = c->entry[i].start_address;
+		}
+		i++;
+	}
+	*res = result;
+	
+}
+
 void top() {
+	query_t* strIn = (query_t*)0x10020600;
+	unsigned * strOut = (unsigned *)cache_search_out;
 	unsigned* status = (unsigned *)0x100206f0;
 	void * a = (void *)0x80c10000;
 	unsigned * b = (unsigned *)0x80c10008;
+	query_t temp;
+
 	// unsigned * d = (unsigned *)0x80c10010;
 	cache_t * c = (cache_t *)TESTA;
-	if(*status != 0){
-		return;
-	}
-	if(b[0] == 2){
-		// c->occupancy = 0;
-		insert(a,b,c);
-	}
-	else{
+	int i = 0;
+	while(1);
+	// while(1){
+		// if(*status != 0){
+			// temp = *strIn;
+			// search_stream(strIn, strOut, c);
+			// *strOut = temp.start;
+			// return;
+		// }
+		
 
-		search(a, b, c);
-	}
+		// i++;
+	// }?
+	
+	// if(b[0] == 2){
+	// 	// c->occupancy = 0;
+	// 	insert(a,b,c);
+	// }
+	// else{
+
+	// 	search(a, b, c);
+	// }
 
 	return;
 }
