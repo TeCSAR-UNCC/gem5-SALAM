@@ -51,7 +51,7 @@ acc_cluster:
       IrPath: benchmarks/sys_validation/search/hw/rootcache.ll
       ConfigPath: benchmarks/sys_validation/search/hw/rootcache.ini
       Debug: False
-      InterruptNum: 68
+      InterruptNum: 0
       PIOSize: 1
       PIOMaster: LocalBus
     - Var:

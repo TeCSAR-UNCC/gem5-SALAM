@@ -782,6 +782,13 @@ CommInterface::finish() {
     *mmreg &= 0xfc;
     *mmreg |= 0x04;
     computationNeeded = false;
+    // if(*mmreg != 0x0){
+    //     *mmreg |= 0x04;
+    //     if (int_num>0) {
+    //         int_flag = true;
+    //         gic->sendInt(int_num);
+    //     }
+    // }
     if (int_num>0) {
         int_flag = true;
         gic->sendInt(int_num);

@@ -21,8 +21,7 @@ void top(unsigned* a, unsigned* b, unsigned* c) {
 	volatile uint32_t *v2_arg2 = (uint32_t*)(VECTOR2+0x09);
 	volatile uint32_t *v2_arg3 = (uint32_t*)(VECTOR2+0X11);
 
-
-// *b=1;
+	volatile uint8_t * root  = (uint8_t *)ROOTCACHE;
 
 	uint64_t m1;
 	uint64_t m2;
@@ -34,14 +33,29 @@ void top(unsigned* a, unsigned* b, unsigned* c) {
 
 	int i = 0;
 	int jl = 0;
+	int count = 0;
 
-	while(i <= 40){
+	// *s_arg1 =m1 + jl;
+	// *s_arg2 =m2 + jl;
+	// *s_arg3 =m3;
+
+	// *search = 0x1;
+	// *root = 1;
+	// while((*search & 4) != 4)
+	// {
+	// 	count++;
+	// }
+	// *root = 0;
+	// *search = 0x0;
+	// *root = 0x1;
+	while(jl <= 2000){
+
 		*s_arg1 =m1 + jl;
 		*s_arg2 =m2 + jl;
 		*s_arg3 =m3;
 
-		*v_arg1 =(m1 + jl + 4);
-		*v_arg2 =(m2 + jl + 4);
+		*v_arg1 =m1 + jl + 4;
+		*v_arg2 =m2 + jl + 4;
 		*v_arg3 =m3;
 
 		*v2_arg1 =(m1 + jl + 8);
@@ -50,45 +64,86 @@ void top(unsigned* a, unsigned* b, unsigned* c) {
 
 		jl +=12;
 
-		// *b = m3;
-
-		// b[0] = (uint64_t)(void*)c;
-		*search = 1;
-		*search = 01;
-		// // *b=*search;
-		int count=0;
+		*search = 0x1;
+		// *root = 0x1;
 		while((*search & 4) != 4)
 		{
 			count++;
 		}
+		// *root = 0x0;
+		*search = 0x0;
 
-		*search=0;
-
-		*vector1 = 1;
-		*vector1 = 01;
-		
+		*vector1 = 0x1;
 		while((*vector1 & 4) != 4)
 		{
 			count++;
 		}
+		*vector1 = 0x0;
 
-		*vector1=0;
-
-		*vector2 = 1;
-		*vector2 = 01;
-		
+		*vector2 = 0x1;
 		while((*vector2 & 4) != 4)
 		{
 			count++;
 		}
+		*vector2=0x0;
 
-		*vector2=0;
-		i+=1;
+
 	}
+
+	// *root = 0x0;
 	
-	
-	// *b=count;
-	
+
+	// while(i <= 40){
+	// 	*s_arg1 =m1 + jl;
+	// 	*s_arg2 =m2 + jl;
+	// 	*s_arg3 =m3;
+
+	// 	*v_arg1 =(m1 + jl + 4);
+	// 	*v_arg2 =(m2 + jl + 4);
+	// 	*v_arg3 =m3;
+
+	// 	*v2_arg1 =(m1 + jl + 8);
+	// 	*v2_arg2 =(m2 + jl + 8);
+	// 	*v2_arg3 =m3;
+
+	// 	jl +=12;
+
+	// 	// *b = m3;
+
+	// 	// b[0] = (uint64_t)(void*)c;
+	// 	*search = 1;
+	// 	*search = 01;
+	// 	// // *b=*search;
+	// 	int count=0;
+	// 	while((*search & 4) != 4)
+	// 	{
+	// 		count++;
+	// 	}
+
+	// 	*search=0;
+
+	// 	*vector1 = 1;
+	// 	*vector1 = 01;
+		
+	// 	while((*vector1 & 4) != 4)
+	// 	{
+	// 		count++;
+	// 	}
+
+	// 	*vector1=0;
+
+	// 	*vector2 = 1;
+	// 	*vector2 = 01;
+		
+	// 	while((*vector2 & 4) != 4)
+	// 	{
+	// 		count++;
+	// 	}
+
+	// 	*vector2=0;
+	// 	i+=1;
+	// }
+
 	return;
 
   

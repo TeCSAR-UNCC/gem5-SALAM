@@ -135,6 +135,7 @@ Tick
 StreamBuffer::status(PacketPtr pkt) {
 	// Provide a means of reading the current buffer capacity of the stream
 	// Writes to this register do nothing
+	int temp = buffer.size();
 	if (pkt->isRead()) {
 		DPRINTF(StreamBuffer, "The status of the buffer has been read. Current capacity is %d of %d bytes",
 				buffer.size(), fifoSize);
