@@ -132,11 +132,11 @@ StreamBuffer::streamWrite(PacketPtr pkt) {
 }
 
 Tick
-StreamBuffer::status(PacketPtr pkt) {
+StreamBuffer::status(PacketPtr pkt, bool readStatus) {
 	// Provide a means of reading the current buffer capacity of the stream
 	// Writes to this register do nothing
 	if (pkt->isRead()) {
-		DPRINTF(StreamBuffer, "The status of the buffer has been read. Current capacity is %d of %d bytes",
+		DPRINTF(StreamBuffer, "The status of the buffer has been read. Current capacity is %d of %d bytes\n",
 				buffer.size(), fifoSize);
 		uint64_t data = buffer.size();
 		switch(pkt->getSize()) {

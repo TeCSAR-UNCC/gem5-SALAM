@@ -7,11 +7,15 @@ StreamDma::StreamDma(const StreamDmaParams &p)
     devname(p.devicename),
     streamIn(this),
     streamOut(this),
+    statusIn(this, false),
+    statusOut(this, true),
     pioAddr(p.pio_addr),
     pioDelay(p.pio_delay),
     pioSize(p.pio_size),
     streamAddr(p.stream_addr),
     streamSize(p.stream_size),
+    statusAddr(p.status_addr),
+    statusSize(p.status_size),
     memDelay(p.mem_delay),
     rdBufferSize(p.read_buffer_size),
     wrBufferSize(p.write_buffer_size),
@@ -62,6 +66,15 @@ StreamDma::getStreamAddrRanges() const {
     DPRINTF(AddrRanges, "Valid stream range: %#x-%#x\n", streamAddr, streamAddr+streamSize);
     streamRanges.push_back(RangeSize(streamAddr, streamSize));
     return streamRanges;
+}
+
+AddrRangeList
+StreamDma::getStatusAddrRanges() const {
+	assert(statusSize != 0);
+	AddrRangeList statusRanges;
+	DPRINTF(AddrRanges, "registering range: %#x-%#x\n", statusAddr, statusSize);
+    statusRanges.push_back(RangeSize(statusAddr, statusSize));
+    return statusRanges;
 }
 
 void
@@ -281,6 +294,44 @@ StreamDma::streamWrite(PacketPtr pkt) {
     return pioDelay;
 }
 
+Tick
+StreamDma::status(PacketPtr pkt, bool readStatus) {
+	// Provide a means of reading the current buffer capacity of the stream
+	// Writes to this register do nothing
+	if (pkt->isRead()) {
+        uint64_t data;
+        if (readStatus) {
+            DPRINTF(StreamDma, "The status of the MM2S buffer has been read. Current capacity is %d of %d bytes\n",
+                    readFifo->size(), rdBufferSize);
+            data = readFifo->size();
+        } else {
+            DPRINTF(StreamDma, "The status of the S2MM buffer has been read. Current capacity is %d of %d bytes\n",
+                    writeFifo->size(), wrBufferSize);
+            data = writeFifo->size();
+        }
+		switch(pkt->getSize()) {
+			case 1:
+				pkt->set<uint8_t>(data, endian);
+				break;
+			case 2:
+				pkt->set<uint16_t>(data, endian);
+				break;
+			case 4:
+				pkt->set<uint32_t>(data, endian);
+				break;
+			case 8:
+				pkt->set<uint64_t>(data, endian);
+				break;
+			default:
+				panic("Read size too big?\n");
+				break;
+    	}
+	}
+	Tick duration = pkt->getSize() * bandwidth;
+    pkt->makeAtomicResponse();
+    return duration;
+}
+
 bool
 StreamDma::tvalid(PacketPtr pkt) {
     return tvalid(pkt->getSize(), pkt->isRead());
@@ -297,10 +348,15 @@ StreamDma::tvalid(size_t len, bool isRead) {
 
 Port &
 StreamDma::getPort(const std::string &if_name, PortID idx) {
-    if (if_name == "stream_in")
+    if (if_name == "stream_in") {
         return streamIn;
-    else if (if_name == "stream_out")
+    } else if (if_name == "stream_out") {
         return streamOut;
+    } else if (if_name == "status_in") {
+        return statusIn;
+    } else if (if_name == "status_out") {
+    	return statusOut;
+	}
     return DmaDevice::getPort(if_name, idx);
 }
 

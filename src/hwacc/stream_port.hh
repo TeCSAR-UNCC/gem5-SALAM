@@ -180,4 +180,36 @@ class StreamRequestPort : public RequestPort {
     }
 };
 
+template <class Device>
+class StatusPort : public SimpleTimingPort
+{
+  protected:
+	Device * device;
+  bool read; // Port reads from the stream
+
+	Tick
+    recvAtomic(PacketPtr pkt) override
+    {
+        // Technically the packet only reaches us after the header delay,
+        // and typically we also need to deserialise any payload.
+        Tick receive_delay = pkt->headerDelay + pkt->payloadDelay;
+        pkt->headerDelay = pkt->payloadDelay = 0;
+
+        const Tick delay = device->status(pkt, read);
+        assert(pkt->isResponse() || pkt->isError());
+        return delay + receive_delay;
+    }
+
+    AddrRangeList
+    getAddrRanges() const override
+    {
+        return device->getStatusAddrRanges();
+    }
+
+  public:
+    StatusPort(Device *dev, bool _read=true) :
+        SimpleTimingPort(dev->name() + ".status", dev), device(dev), read(_read)
+    {}
+};
+
 #endif //__HWACC_STREAM_PORT_HH__

@@ -7,8 +7,8 @@ class StreamBuffer(ClockedObject):
 	type = 'StreamBuffer'
 	cxx_header = 'hwacc/stream_buffer.hh'
 	system = Param.System(Parent.any, "System this devices is part of")
-	stream_in = ResponsePort("Stream buffer access port")
-	stream_out = ResponsePort("Stream buffer access port")
+	stream_in = ResponsePort("Stream buffer access port for pushing to stream")
+	stream_out = ResponsePort("Stream buffer access port for pulling from stream")
 	status_in = ResponsePort("Stream buffer status port")
 	status_out = ResponsePort("Stream buffer status port")
 	buffer_size = Param.UInt64(256, "Stream buffer depth in bytes")
