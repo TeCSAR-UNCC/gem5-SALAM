@@ -169,12 +169,16 @@ def genHeaderFiles(headerList, clusters):
 						currentHeader.append("#define " + dma.name.upper() + "_NumWrFrames " + hex(dma.address + 30) + "\n")
 						currentHeader.append("#define " + dma.name.upper() + "_WrFrameBufSize " + hex(dma.address + 31) + "\n")
 						currentHeader.append("#define " + dma.name.upper() + "_Stream " + hex(dma.address + 32) + "\n")
+						currentHeader.append("#define " + dma.name.upper() + "_Status " + hex(dma.statusAddress) + "\n")
 				for acc in cluster.accs:
 					currentHeader.append("//Accelerator: " + acc.name.upper() + "\n")
 					currentHeader.append("#define " + acc.name.upper() + " " + hex(acc.address) + "\n")
 					for var in acc.variables:
 						if "Cache" in var.type:
 							continue
+						elif "Stream" in var.type:
+							currentHeader.append("#define " + var.name + " " + hex(var.address) + "\n")
+							currentHeader.append("#define " + var.name + "_Status " + hex(var.statusAddress) + "\n")
 						else:
 							currentHeader.append("#define " + var.name + " " + hex(var.address) + "\n")
 				currentHeader.append("//END GENERATED CODE")
