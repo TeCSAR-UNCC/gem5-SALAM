@@ -73,7 +73,7 @@ void top(uint64_t feat_rd_addr,
 	volatile uint32_t * MemDmaCopyLen			= (uint32_t *)(BODY_DMA_CopyLen);
 
 switch(stage) {
-		case 0:
+		case 1:
 			InputSize    = PW0_0_I_SIZE * PW0_0_I_SIZE * PW0_0_IC_SIZE;
 			OutputSize   = PW1_0_O_SIZE * PW1_0_O_SIZE * PW1_0_OC_SIZE;
 			*ResLength   = InputSize;
@@ -102,7 +102,7 @@ switch(stage) {
 			*PW1OutputZP = PW1_0_OUT_ZP;
 			
 			break;
-		case 1:
+		case 2:
 			InputSize    = PW0_1_I_SIZE * PW0_1_I_SIZE * PW0_1_IC_SIZE;
 			OutputSize   = PW1_1_O_SIZE * PW1_1_O_SIZE * PW1_1_OC_SIZE;
 			*ResLength   = InputSize;
@@ -130,7 +130,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_1_IN_ZP;
 			*PW1OutputZP = PW1_1_OUT_ZP;
 			break;
-		case 2:
+		case 3:
 			InputSize    = PW0_2_I_SIZE * PW0_2_I_SIZE * PW0_2_IC_SIZE;
 			OutputSize   = PW1_2_O_SIZE * PW1_2_O_SIZE * PW1_2_OC_SIZE;
 			*ResLength   = InputSize;
@@ -158,7 +158,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_2_IN_ZP;
 			*PW1OutputZP = PW1_2_OUT_ZP;
 			break;
-		case 3:
+		case 4:
 			InputSize    = PW0_3_I_SIZE * PW0_3_I_SIZE * PW0_3_IC_SIZE;
 			OutputSize   = PW1_3_O_SIZE * PW1_3_O_SIZE * PW1_3_OC_SIZE;
 			*ResLength   = InputSize;
@@ -186,7 +186,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_3_IN_ZP;
 			*PW1OutputZP = PW1_3_OUT_ZP;
 			break;
-		case 4:
+		case 5:
 			InputSize    = PW0_4_I_SIZE * PW0_4_I_SIZE * PW0_4_IC_SIZE;
 			OutputSize   = PW1_4_O_SIZE * PW1_4_O_SIZE * PW1_4_OC_SIZE;
 			*ResLength   = InputSize;
@@ -214,7 +214,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_4_IN_ZP;
 			*PW1OutputZP = PW1_4_OUT_ZP;
 			break;
-		case 5:
+		case 6:
 			InputSize    = PW0_5_I_SIZE * PW0_5_I_SIZE * PW0_5_IC_SIZE;
 			OutputSize   = PW1_5_O_SIZE * PW1_5_O_SIZE * PW1_5_OC_SIZE;
 			*ResLength   = InputSize;
@@ -242,7 +242,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_5_IN_ZP;
 			*PW1OutputZP = PW1_5_OUT_ZP;
 			break;
-		case 6:
+		case 7:
 			InputSize    = PW0_6_I_SIZE * PW0_6_I_SIZE * PW0_6_IC_SIZE;
 			OutputSize   = PW1_6_O_SIZE * PW1_6_O_SIZE * PW1_6_OC_SIZE;
 			*ResLength   = InputSize;
@@ -270,7 +270,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_6_IN_ZP;
 			*PW1OutputZP = PW1_6_OUT_ZP;
 			break;
-		case 7:
+		case 8:
 			InputSize    = PW0_7_I_SIZE * PW0_7_I_SIZE * PW0_7_IC_SIZE;
 			OutputSize   = PW1_7_O_SIZE * PW1_7_O_SIZE * PW1_7_OC_SIZE;
 			*ResLength   = InputSize;
@@ -298,7 +298,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_7_IN_ZP;
 			*PW1OutputZP = PW1_7_OUT_ZP;
 			break;
-		case 8:
+		case 9:
 			InputSize    = PW0_8_I_SIZE * PW0_8_I_SIZE * PW0_8_IC_SIZE;
 			OutputSize   = PW1_8_O_SIZE * PW1_8_O_SIZE * PW1_8_OC_SIZE;
 			*ResLength   = InputSize;
@@ -326,7 +326,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_8_IN_ZP;
 			*PW1OutputZP = PW1_8_OUT_ZP;
 			break;
-		case 9:
+		case 10:
 			InputSize    = PW0_9_I_SIZE * PW0_9_I_SIZE * PW0_9_IC_SIZE;
 			OutputSize   = PW1_9_O_SIZE * PW1_9_O_SIZE * PW1_9_OC_SIZE;
 			*ResLength   = InputSize;
@@ -354,7 +354,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_9_IN_ZP;
 			*PW1OutputZP = PW1_9_OUT_ZP;
 			break;
-		case 10:
+		case 11:
 			InputSize    = PW0_10_I_SIZE * PW0_10_I_SIZE * PW0_10_IC_SIZE;
 			OutputSize   = PW1_10_O_SIZE * PW1_10_O_SIZE * PW1_10_OC_SIZE;
 			*ResLength   = InputSize;
@@ -382,7 +382,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_10_IN_ZP;
 			*PW1OutputZP = PW1_10_OUT_ZP;
 			break;
-		case 11:
+		case 12:
 			InputSize    = PW0_11_I_SIZE * PW0_11_I_SIZE * PW0_11_IC_SIZE;
 			OutputSize   = PW1_11_O_SIZE * PW1_11_O_SIZE * PW1_11_OC_SIZE;
 			*ResLength   = InputSize;
@@ -410,7 +410,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_11_IN_ZP;
 			*PW1OutputZP = PW1_11_OUT_ZP;
 			break;
-		case 12:
+		case 13:
 			InputSize    = PW0_12_I_SIZE * PW0_12_I_SIZE * PW0_12_IC_SIZE;
 			OutputSize   = PW1_12_O_SIZE * PW1_12_O_SIZE * PW1_12_OC_SIZE;
 			*ResLength   = InputSize;
@@ -438,7 +438,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_12_IN_ZP;
 			*PW1OutputZP = PW1_12_OUT_ZP;
 			break;
-		case 13:
+		case 14:
 			InputSize    = PW0_13_I_SIZE * PW0_13_I_SIZE * PW0_13_IC_SIZE;
 			OutputSize   = PW1_13_O_SIZE * PW1_13_O_SIZE * PW1_13_OC_SIZE;
 			*ResLength   = InputSize;
@@ -466,7 +466,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_13_IN_ZP;
 			*PW1OutputZP = PW1_13_OUT_ZP;
 			break;
-		case 14:
+		case 15:
 			InputSize    = PW0_14_I_SIZE * PW0_14_I_SIZE * PW0_14_IC_SIZE;
 			OutputSize   = PW1_14_O_SIZE * PW1_14_O_SIZE * PW1_14_OC_SIZE;
 			*ResLength   = InputSize;
@@ -494,7 +494,7 @@ switch(stage) {
 			*PW1InputZP  = PW1_14_IN_ZP;
 			*PW1OutputZP = PW1_14_OUT_ZP;
 			break;
-		case 15:
+		case 16:
 			InputSize    = PW0_15_I_SIZE * PW0_15_I_SIZE * PW0_15_IC_SIZE;
 			OutputSize   = PW1_15_O_SIZE * PW1_15_O_SIZE * PW1_15_OC_SIZE;
 			*ResLength   = InputSize;
