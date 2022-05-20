@@ -15,22 +15,22 @@ class StreamRequestPort;
  * This serves only as a base class.
  */
 class StreamResponsePort : public SimpleTimingPort {
-	friend class StreamRequestPort;
+  friend class StreamRequestPort;
   private:
   protected:
-  	virtual bool tvalid(PacketPtr pkt) = 0;
+    virtual bool tvalid(PacketPtr pkt) = 0;
     virtual bool tvalid(size_t len, bool isRead) = 0;
-  	Tick recvAtomic(PacketPtr pkt) override {
-  		Tick t = 0;
-  		return t;
-  	}
-  	AddrRangeList getAddrRanges() const override {
-  		AddrRangeList range;
-  		return range;
-  	}
+    Tick recvAtomic(PacketPtr pkt) override {
+      Tick t = 0;
+      return t;
+    }
+    AddrRangeList getAddrRanges() const override {
+      AddrRangeList range;
+      return range;
+    }
   public:
-  	StreamResponsePort(const std::string& name, SimObject* owner) :
-  		SimpleTimingPort(name, owner) {}
+    StreamResponsePort(const std::string& name, SimObject* owner) :
+      SimpleTimingPort(name, owner) {}
 };
 
 /**
@@ -60,7 +60,7 @@ class StreamResponsePortT : public StreamResponsePort
   protected:
   Device *device;
 
-  	virtual bool tvalid(PacketPtr pkt) { return device->tvalid(pkt); }
+    virtual bool tvalid(PacketPtr pkt) { return device->tvalid(pkt); }
     virtual bool tvalid(size_t len, bool isRead) { return device->tvalid(len, isRead); }
 
     bool
@@ -121,10 +121,10 @@ class StreamResponsePortT : public StreamResponsePort
 
     AddrRangeList getAddrRanges() const override {
       return device->getStreamAddrRanges();
-  	}
+    }
 
   public:
-  	StreamResponsePortT(Device *dev) :
+    StreamResponsePortT(Device *dev) :
       StreamResponsePort(dev->name() + ".stream", dev),
       isBusy(false),
       retryReq(false),
@@ -142,16 +142,16 @@ class StreamResponsePortT : public StreamResponsePort
  */
 class StreamRequestPort : public RequestPort {
   private:
-  	StreamResponsePort *_stream_slave;
+    StreamResponsePort *_stream_slave;
 
   protected:
-  	//
+    //
   public:
-  	StreamRequestPort(const std::string& name, SimObject* _owner,
-            		 PortID id=InvalidPortID);
-  	virtual ~StreamRequestPort();
+    StreamRequestPort(const std::string& name, SimObject* _owner,
+                 PortID id=InvalidPortID);
+    virtual ~StreamRequestPort();
 
-  	/**
+    /**
      * Bind this master port to a slave port. This also does the
      * mirror action and binds the slave port to the master port.
      * If the slave port is a stream slave, also binds the tvalid
@@ -165,19 +165,51 @@ class StreamRequestPort : public RequestPort {
     void unbind() override;
 
     /**
-	 * If the slave port is a stream slave port, then check if it can
-	 * service a request of size 'len'
+   * If the slave port is a stream slave port, then check if it can
+   * service a request of size 'len'
      */
     bool streamValid(PacketPtr pkt) {
-    	if (_stream_slave)
-    		return _stream_slave->tvalid(pkt);
-    	return true;
+      if (_stream_slave)
+        return _stream_slave->tvalid(pkt);
+      return true;
     }
     bool streamValid(size_t len, bool isRead) {
       if (_stream_slave)
         return _stream_slave->tvalid(len, isRead);
       return true;
     }
+};
+
+template <class Device>
+class StatusPort : public SimpleTimingPort
+{
+  protected:
+  Device * device;
+  bool read; // Port reads from the stream
+
+  Tick
+    recvAtomic(PacketPtr pkt) override
+    {
+        // Technically the packet only reaches us after the header delay,
+        // and typically we also need to deserialise any payload.
+        Tick receive_delay = pkt->headerDelay + pkt->payloadDelay;
+        pkt->headerDelay = pkt->payloadDelay = 0;
+
+        const Tick delay = device->status(pkt, read);
+        assert(pkt->isResponse() || pkt->isError());
+        return delay + receive_delay;
+    }
+
+    AddrRangeList
+    getAddrRanges() const override
+    {
+        return device->getStatusAddrRanges();
+    }
+
+  public:
+    StatusPort(Device *dev, bool _read=true) :
+        SimpleTimingPort(dev->name() + ".status", dev), device(dev), read(_read)
+    {}
 };
 
 #endif //__HWACC_STREAM_PORT_HH__

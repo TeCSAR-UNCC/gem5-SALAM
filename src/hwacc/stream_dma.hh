@@ -80,6 +80,8 @@ class StreamDma : public DmaDevice {
     std::string devname;
     StreamResponsePortT<StreamDma> streamIn;
     StreamResponsePortT<StreamDma> streamOut;
+    StatusPort<StreamDma> statusIn;
+    StatusPort<StreamDma> statusOut;
     DmaReadFifo *readFifo;
     DmaWriteFifo *writeFifo;
     Addr pioAddr;
@@ -87,6 +89,8 @@ class StreamDma : public DmaDevice {
     Addr pioSize;
     Addr streamAddr;
     Addr streamSize;
+    Addr statusAddr;
+	  Addr statusSize;
     Tick memDelay;
     size_t rdBufferSize;
     size_t wrBufferSize;
@@ -161,6 +165,7 @@ class StreamDma : public DmaDevice {
 
     AddrRangeList getAddrRanges() const;
     AddrRangeList getStreamAddrRanges() const;
+    AddrRangeList getStatusAddrRanges() const;
 
     void tick();
 
@@ -169,6 +174,7 @@ class StreamDma : public DmaDevice {
 
     Tick streamRead(PacketPtr pkt);
     Tick streamWrite(PacketPtr pkt);
+    Tick status(PacketPtr pkt, bool readStatus);
 
     bool tvalid(PacketPtr pkt);
     bool tvalid(size_t len, bool isRead);

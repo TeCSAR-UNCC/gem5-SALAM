@@ -31,24 +31,33 @@ class AccCluster:
 					topAddress = topAddress + aligned_inc
 				elif 'Stream' in i['Type']:
 					pioSize = 32
+					statusSize = 4
 					pioMasters = []
+
+					alignedStatusInc = int(statusSize) + (64 - (int(statusSize) % 64))
+					aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
+
+					statusAddress = topAddress + aligned_inc
+					
 					if 'PIOMaster' in i:
 						pioMasters.extend((i['PIOMaster'].split(',')))
+					# Can come back and get rid of this if/else tree
 					if 'ReadInt' in i:
 						if 'WriteInt' in i:
-							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, statusAddress, i['Type'],
 							i['ReadInt'], i['WriteInt'], i['BufferSize']))
 						else:
-							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, statusAddress, i['Type'],
 							i['ReadInt'], None, i['BufferSize']))
 					elif 'WriteInt' in i:
-							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, statusAddress, i['Type'],
 							None, i['WriteInt'], i['BufferSize']))
 					else:
-							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, i['Type'],
+							dmaClass.append(StreamDma(i['Name'], pioSize, pioMasters, topAddress, statusAddress, i['Type'],
 							None, None, i['BufferSize']))
-					aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
-					topAddress = topAddress + aligned_inc
+
+					# Increment Top Address
+					topAddress = topAddress + aligned_inc + alignedStatusInc
 		# Parse Accelerators
 		for acc in self.accs:
 			# To handle Accs out of order, create a flag that Accs referenced already exist.
@@ -98,6 +107,12 @@ class AccCluster:
 						varParams = dict(j)
 						varParams['Address'] = topAddress
 						varParams['AccName'] = name
+						
+						if varParams['Type'] == "Stream":
+							aligned_inc = int(j['StreamSize']+4) + (64 - (int(j['StreamSize']+4) % 64))
+							statusAddress = topAddress + aligned_inc
+							varParams['StatusAddress'] = statusAddress
+
 						# Create and append a new variable
 						variables.append(Variable(**varParams))
 						# Increment the current address based on size
@@ -105,8 +120,10 @@ class AccCluster:
 							aligned_inc = int(j['Size']) + (64 - (int(j['Size']) % 64))
 							topAddress = topAddress + aligned_inc
 						elif "Stream" in j['Type']:
-							aligned_inc = int(j['StreamSize']) + (64 - (int(j['StreamSize']) % 64))
-							topAddress = topAddress + aligned_inc
+							statusSize = 4
+							aligned_inc = int(j['StreamSize']+4) + (64 - (int(j['StreamSize']+4) % 64))
+							status_inc = int(statusSize) + (64 - (int(statusSize) % 64))
+							topAddress = topAddress + aligned_inc + status_inc
 						elif "RegisterBank" in j['Type']:
 							aligned_inc = int(j['Size']) + (64 - (int(j['Size']) % 64))
 							topAddress = topAddress + aligned_inc
@@ -218,12 +235,13 @@ class Accelerator:
 		return lines
 
 class StreamDma:  
-	def __init__(self, name, pio, pioMasters, address, dmaType, rd_int = None, wr_int = None, size = 64):
+	def __init__(self, name, pio, pioMasters, address, statusAddress, dmaType, rd_int = None, wr_int = None, size = 64):
 		self.name = name.lower()
 		self.pio = pio
 		self.pioMasters = pioMasters
 		self.size = size
 		self.address = address
+		self.statusAddress = statusAddress
 		self.dmaType = dmaType
 		self.rd_int = rd_int
 		self.wr_int = wr_int
@@ -241,7 +259,7 @@ class StreamDma:
 		# Need to fix max_pending?
 		lines.append("# Stream DMA")
 		lines.append("clstr." + self.name + " = StreamDma(pio_addr=" + hex(self.address) +
-			", pio_size = " + str(self.pio) + ", gic=gic, max_pending = " + str(self.pio) + ")")
+		", status_addr=" + hex(self.statusAddress) + ", pio_size = " + str(self.pio) + ", gic=gic, max_pending = " + str(self.pio) + ")")
 		lines.append(dmaPath + "stream_addr = " + hex(self.address) + " + " + str(self.pio))
 		lines.append(dmaPath + "stream_size = " + str(self.size))
 		lines.append(dmaPath + "pio_delay = '1ns'")
@@ -330,6 +348,7 @@ class Variable:
 			self.streamSize = kwargs.get('StreamSize')
 			self.bufferSize = kwargs.get('BufferSize')
 			self.address = kwargs.get('Address')
+			self.statusAddress = kwargs.get('StatusAddress')
 			# Convert connection definitions to lowercase
 			self.inCon = self.inCon.lower()
 			self.outCon = self.outCon.lower()
@@ -363,8 +382,8 @@ class Variable:
 		if self.type == 'Stream':
 			lines.append("# " + self.name + " (Stream Variable)")
 			lines.append("addr = " + hex(self.address))
-			lines.append("clstr." + self.name.lower() + " = StreamBuffer(stream_address = addr, stream_size = "
-			+ str(self.streamSize) + ", buffer_size = " + str(self.bufferSize) + ")")
+			lines.append("clstr." + self.name.lower() + " = StreamBuffer(stream_address = addr, status_address= " + hex(self.statusAddress) 
+			+ ", stream_size = " + str(self.streamSize) + ", buffer_size = " + str(self.bufferSize) + ")")
 			lines.append("clstr." + self.inCon + ".stream = " + "clstr." + self.name.lower() + ".stream_in")
 			lines.append("clstr." + self.outCon + ".stream = " + "clstr." + self.name.lower() + ".stream_out")
 			lines.append("")
