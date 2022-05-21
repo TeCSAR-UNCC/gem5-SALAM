@@ -4,73 +4,29 @@ gem5-SALAM (System Architecture for LLVM-based Accelerator Modeling), is a novel
 
 # Requirements
 
-**Please note that Ubuntu 20.04 is not currently supported**
-
 - gem5 dependencies
 - LLVM-9 or newer
 - Frontend LLVM compiler for preferred development language (eg. clang for C)
 
 # gem5-SALAM Setup
 
-## Dependencies for gem5-SALAM
-
-### Required
-
-#### All Required Dependencies
+## All Required Dependencies for gem5-SALAM (Ubuntu 20.04)
 
 ```bash
-sudo apt install build-essential m4 scons python-dev libprotobuf-dev python-protobuf protobuf-compiler libgoogle-perftools-dev
-```
-
-#### GCC (The Compiler used)
-
-``` bash
-sudo apt install build-essential m4
-```
-
-#### SCons (Build Environment)
-
-```bash
-sudo apt install scons
-```
-
-#### Python 2 (Required Libraries)
-
-```bash
-sudo apt install python-dev
-```
-
-#### Protobuf (Used for trace playback and generation)
-
-```bash
-sudo apt-get install libprotobuf-dev python-protobuf protobuf-compiler libgoogle-perftools-dev
-```
-
-### Recommended
-
-#### Visualization
-
-gem5 offers the ability to create a system configuration diagram. In order to be able to create these when using gem5-SALAM, the following packages are required:
-
-- python-pydot
-- python-pydot-ng
-- graphviz
-
-The following command can be run in Ubuntu to install the required dependencies:
-
-``` bash
-sudo apt install python-pydot python-pydot-ng graphviz
-```
-
-#### ARM GCC Cross Compiler
-
-```bash
-sudo apt-get install gcc-arm-none-eabi
+sudo apt install build-essential git m4 scons zlib1g zlib1g-dev \
+    libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev \
+    python3-dev python-is-python3 libboost-all-dev pkg-config
 ```
 
 ## LLVM/Clang Setup 
 
-You can install the latest version of LLVM via your system package manager or alternatively build from source found at https://github.com/llvm/llvm-project.
+For a quick start, one can simply run the following to install LLVM and Clang on Ubuntu 20.04.
+```bash
+sudo apt install llvm-9 llvm-9-tools clang-9
+```
+After installing these specific libraries, simply run the [update alternatives](https://github.com/TeCSAR-UNCC/gem5-SALAM/blob/main/docs/update-alternatives.sh) script in docs/.
+
+Alternatively, you can install the latest version of LLVM via your system package manager or build from source found at https://github.com/llvm/llvm-project.
 
 # Building gem5-SALAM
 
@@ -80,7 +36,7 @@ Once you have successfully installed all of the necessary dependencies, you can 
 git clone https://github.com/TeCSAR-UNCC/gem5-SALAM
 ```
 
-When building gem5-SALAM, there are multiple different binary types that can be created. Just like in gem5 the options are debug, opt, fast, prof, and perf. 
+When building gem5-SALAM, there are multiple different binary types that can be created. Just like in gem5 the options are debug, opt, fast, prof, and perf. We recommend that users either use the opt or debug builds, as these are the build types we develop and test on.
 
 Below are the bash commands you would use to build the opt or debug binary. 
 
