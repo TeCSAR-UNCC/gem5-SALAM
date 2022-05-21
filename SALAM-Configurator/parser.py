@@ -71,7 +71,8 @@ class AccCluster:
             pioAddress = None
             pioSize = None
             intNum = None
-            IrPath = None
+            irPath = None
+            configPath = None
             debug = False
 
             # Find the name first...
@@ -88,7 +89,9 @@ class AccCluster:
                     if ((topAddress + pioSize) % 64) != 0:
                         print("Acc Error: " + hex(pioAddress))
                 if 'IrPath' in deviceDict:
-                    IrPath = deviceDict['IrPath']
+                    irPath = deviceDict['IrPath']
+                if 'ConfigPath' in deviceDict:
+                    configPath = deviceDict['ConfigPath']
                 if 'PIOMaster' in deviceDict:
                     pioMasters.extend((deviceDict['PIOMaster'].split(',')))
                 if 'StreamIn' in deviceDict:
@@ -137,7 +140,7 @@ class AccCluster:
                             raise Exception(exceptionString)
             # Append accelerator to the cluster
             accClass.append(Accelerator(name, pioMasters, localConnections,
-                pioAddress, pioSize, IrPath, streamIn, streamOut, intNum, M5_Path, variables, debug))
+                pioAddress, pioSize, irPath, configPath, streamIn, streamOut, intNum, M5_Path, variables, debug))
 
         self.accs = accClass
         self.dmas = dmaClass
@@ -163,7 +166,7 @@ class AccCluster:
 class Accelerator:
 
     def __init__(self, name, pioMasters, localConnections, address,
-        size, irPath, streamIn, streamOut, intNum, M5_Path, variables = None, debug = False):
+        size, irPath, configPath, streamIn, streamOut, intNum, M5_Path, variables = None, debug = False):
 
         self.name = name.lower()
         self.pioMasters = pioMasters
@@ -172,6 +175,7 @@ class Accelerator:
         self.size = size
         self.variables = variables
         self.irPath = irPath
+        self.configPath = configPath
         self.streamIn = streamIn
         self.streamOut = streamOut
         self.M5_Path = M5_Path
@@ -184,6 +188,7 @@ class Accelerator:
         lines.append("acc = " + "\"" + self.name + "\"")
         # Need to add a user defined path & user defined interrupts here
         lines.append("ir = "  + "\"" + self.M5_Path + "/" + self.irPath + "\"")
+        lines.append("config = "  + "\"" + self.M5_Path + "/" + self.configPath + "\"")
 
         # Add interrupt number if it exists
         if self.intNum is not None:
@@ -193,7 +198,7 @@ class Accelerator:
             lines.append("clstr." + self.name +" = CommInterface(devicename=acc, gic=gic, pio_addr="
             + str(hex(self.address)) + ", pio_size=" + str(self.size) + ")")
 
-        lines.append("AccConfig(clstr." + self.name + ", ir)")
+        lines.append("AccConfig(clstr." + self.name + ", ir, config)")
         lines.append("")
 
         return lines
