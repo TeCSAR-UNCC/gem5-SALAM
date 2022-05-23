@@ -54,8 +54,7 @@ def main():
     baseAddress = 0x10020000
     maxAddress = 0x13ffffff
     # Load in the YAML file
-    stream = open(workingDirectory + 'config.yml', "r")
-    config = yaml.load_all(stream, Loader=yaml.FullLoader)
+    config = openYAML()
     # Parse YAML File
     baseAddress, clusters = parseYAMLFile(config, baseAddress)
     # Generate SALAM Config
@@ -79,11 +78,30 @@ def main():
 def parseYAMLFile(config, baseAddress):
     clusters = []
     # Load in each acc cluster and add it to the list
-    for clusterList in config:
+    for clusterDict in config:
+        for listType,params in clusterDict.items():
+            FOUND_PATH = False
+            FOUND_DEVICE = False
+            if listType == "acc_cluster":
+                for param in params:
+                    if "SysPath" or "ConfigPath" in param:
+                        FOUND_PATH = True
+                        config = openYAML(param["SysPath"])
+                        baseAddress, tempCluster = parseYAMLFile(config,baseAddress)
+                        clusters.extend(tempCluster)
+                    elif "HWPath" in param:
+                        FOUND_PATH = True
+                    else:
+                        FOUND_DEVICE = True
+
+        if FOUND_PATH and FOUND_DEVICE:
+            raise Exception("Found device definitions in a cluster with a path to another YAML file.")
+        elif FOUND_PATH:
+            continue
         clusterName = None
         dmas = []
         accs = []
-        for listType,devices in clusterList.items():
+        for listType,devices in clusterDict.items():
             if listType == "acc_cluster":
                 for device in devices:
                     if "Name" in device:
@@ -97,6 +115,11 @@ def parseYAMLFile(config, baseAddress):
         if (int(baseAddress) % 64) != 0:
             print("Address Alignment Error: " + hex(baseAddress))
     return baseAddress, clusters
+
+def openYAML(path='config.yml'):
+    stream = open(workingDirectory + path, "r")
+    config = yaml.load_all(stream, Loader=yaml.FullLoader)
+    return config
 
 def genConfigFile(clusters):
     # Write out config file
