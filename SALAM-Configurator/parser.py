@@ -91,8 +91,8 @@ class AccCluster:
                         print("Acc Error: " + hex(pioAddress))
                 if 'IrPath' in deviceDict:
                     irPath = deviceDict['IrPath']
-                if 'ConfigPath' in deviceDict:
-                    configPath = deviceDict['ConfigPath']
+                # if 'ConfigPath' in deviceDict:
+                #     configPath = deviceDict['ConfigPath']
                 if 'PIOMaster' in deviceDict:
                     pioMasters.extend((deviceDict['PIOMaster'].split(',')))
                 if 'StreamIn' in deviceDict:
