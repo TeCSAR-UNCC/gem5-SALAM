@@ -40,7 +40,7 @@ def AccConfig(acc, bench_file, config_file):
             current_acc = document[0]['Name'] + '_' + benchname 
             if(benchPath[9] == document[0]['Name']):
                 print(current_acc + " Profile Loaded")
-                #print(yaml_inst_list['hw_config'][benchname])
+                # print(yaml_inst_list['hw_config'][benchname])
                 inst_list = yaml_inst_list['hw_config'][current_acc]['instructions'].keys()
                 for instruction in inst_list:
                     setattr(acc.hw_interface.cycle_counts, instruction, yaml_inst_list['hw_config'][current_acc]['instructions'][instruction]['runtime_cycles'])
@@ -49,9 +49,10 @@ def AccConfig(acc, bench_file, config_file):
     else:
         fu_yaml = open(config_file, 'r')
         yaml_inst_list = yaml.safe_load(fu_yaml)
-        inst_list = yaml_inst_list['hw_config'][benchname]['instructions'].keys()
-        for instruction in inst_list:
-            setattr(acc.hw_interface.cycle_counts, instruction, yaml_inst_list['hw_config'][benchname]['instructions'][instruction]['runtime_cycles'])
+        if yaml_inst_list['hw_config'][benchname] is not None:
+            inst_list = yaml_inst_list['hw_config'][benchname]['instructions'].keys()
+            for instruction in inst_list:
+                setattr(acc.hw_interface.cycle_counts, instruction, yaml_inst_list['hw_config'][benchname]['instructions'][instruction]['runtime_cycles'])
         fu_yaml.close()
 
     #TODO Automate the generation of the list below
