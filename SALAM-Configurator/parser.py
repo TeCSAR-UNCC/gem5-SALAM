@@ -1,13 +1,14 @@
 class AccCluster:
-    def __init__(self, name, dmas, accs, baseAddress, M5_Path):
+    def __init__(self, name, dmas, accs, baseAddress, M5_Path, configFile):
         self.name = name
         self.dmas = dmas
         self.accs = accs
         self.clusterBaseAddress = baseAddress
         self.clusterTopAddress = baseAddress
-        self.processConfig(M5_Path)
+        # self.configFile = configFile
+        self.processConfig(M5_Path, configFile)
 
-    def processConfig(self, M5_Path):
+    def processConfig(self, M5_Path, configFile):
         dmaClass = []
         accClass = []
         topAddress = self.clusterBaseAddress
@@ -72,7 +73,7 @@ class AccCluster:
             pioSize = None
             intNum = None
             irPath = None
-            configPath = None
+            configPath = configFile
             debug = False
 
             # Find the name first...
@@ -188,7 +189,7 @@ class Accelerator:
         lines.append("acc = " + "\"" + self.name + "\"")
         # Need to add a user defined path & user defined interrupts here
         lines.append("ir = "  + "\"" + self.M5_Path + "/" + self.irPath + "\"")
-        lines.append("config = "  + "\"" + self.M5_Path + "/" + self.configPath + "\"")
+        lines.append("config = "  + "\"" + self.configPath + "\"")
 
         # Add interrupt number if it exists
         if self.intNum is not None:

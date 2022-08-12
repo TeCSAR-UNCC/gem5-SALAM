@@ -54,10 +54,11 @@ def main():
     baseAddress = 0x10020000
     maxAddress = 0x13ffffff
     # Load in the YAML file
-    stream = open(workingDirectory + 'config.yml', "r")
+    configPath = workingDirectory + 'config.yml'
+    stream = open(configPath, "r")
     config = yaml.load_all(stream, Loader=yaml.FullLoader)
     # Parse YAML File
-    baseAddress, clusters = parseYAMLFile(config, baseAddress)
+    baseAddress, clusters = parseYAMLFile(config, configPath, baseAddress)
     # Generate SALAM Config
     genConfigFile(clusters)
     # Parse original header for custom code
@@ -76,7 +77,7 @@ def main():
     if(clusters[-1].clusterTopAddress>maxAddress):
         print("WARNING: Address range is greater than defined for gem5")
 
-def parseYAMLFile(config, baseAddress):
+def parseYAMLFile(config, configPath, baseAddress):
     clusters = []
     # Load in each acc cluster and add it to the list
     for clusterList in config:
@@ -92,7 +93,7 @@ def parseYAMLFile(config, baseAddress):
                         dmas.append(device)
                     if "Accelerator" in device:
                         accs.append(device)
-        clusters.append(AccCluster(clusterName, dmas, accs, baseAddress, M5_Path))
+        clusters.append(AccCluster(clusterName, dmas, accs, baseAddress, M5_Path, configPath))
         baseAddress = clusters[-1].clusterTopAddress + (64 - (int(clusters[-1].clusterTopAddress) % 64))
         if (int(baseAddress) % 64) != 0:
             print("Address Alignment Error: " + hex(baseAddress))
