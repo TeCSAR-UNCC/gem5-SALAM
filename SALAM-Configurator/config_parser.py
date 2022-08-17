@@ -1,5 +1,3 @@
-from ..src.python.m5.params import Bool
-
 
 class AccCluster:
     def __init__(
@@ -8,16 +6,18 @@ class AccCluster:
         dmas,
         accs,
         base_address: int,
-        M5_Path: str
+        working_dir: str,
+        hw_path: str = None
     ):
         self.name = name
         self.dmas = dmas
         self.accs = accs
         self.base_address = base_address
         self.top_address = base_address
-        self.process_config(M5_Path)
+        self.hw_path = hw_path
+        self.process_config(working_dir)
 
-    def process_config(self, M5_Path):
+    def process_config(self, working_dir):
         dma_class = []
         acc_class = []
         top_address = self.base_address
@@ -83,7 +83,7 @@ class AccCluster:
             pioSize = None
             intNum = None
             irPath = None
-            configPath = None
+            hw_path = self.hw_path
             debug = False
 
             # Find the name first...
@@ -102,8 +102,8 @@ class AccCluster:
                         print("Acc Error: " + hex(pioAddress))
                 if 'IrPath' in device_dict:
                     irPath = device_dict['IrPath']
-                if 'ConfigPath' in device_dict:
-                    configPath = device_dict['ConfigPath']
+                if 'HWPath' in device_dict:
+                    hw_path = device_dict['hw_path']
                 if 'PIOMaster' in device_dict:
                     pioMasters.extend((device_dict['PIOMaster'].split(',')))
                 if 'StreamIn' in device_dict:
@@ -158,7 +158,7 @@ class AccCluster:
                             raise Exception(exceptionString)
             # Append accelerator to the cluster
             acc_class.append(Accelerator(name, pioMasters, localConnections,
-                                         pioAddress, pioSize, irPath, configPath, streamIn, streamOut, intNum, M5_Path, variables, debug))
+                                         pioAddress, pioSize, irPath, hw_path, streamIn, streamOut, intNum, working_dir, variables, debug))
 
         self.accs = acc_class
         self.dmas = dma_class
@@ -196,13 +196,13 @@ class Accelerator:
         address: int,
         size: int,
         irPath: str,
-        configPath: str,
+        hw_path: str,
         streamIn: str,
         streamOut: str,
         intNum: int,
-        M5_Path: str,
+        working_dir: str,
         variables=None,
-        debug: Bool = False
+        debug: bool = False
     ):
 
         self.name = name.lower()
@@ -212,10 +212,10 @@ class Accelerator:
         self.size = size
         self.variables = variables
         self.irPath = irPath
-        self.configPath = configPath
+        self.hw_path = hw_path
         self.streamIn = streamIn
         self.streamOut = streamOut
-        self.M5_Path = M5_Path
+        self.working_dir = working_dir
         self.intNum = intNum
         self.debug = debug
 
@@ -223,9 +223,10 @@ class Accelerator:
         lines = []
         lines.append("# " + self.name + " Definition")
         lines.append("acc = " + "\"" + self.name + "\"")
-        lines.append("ir = " + "\"" + self.M5_Path + "/" + self.irPath + "\"")
-        lines.append("config = " + "\"" + self.M5_Path +
-                     "/" + self.configPath + "\"")
+        lines.append("ir = " + "\"" + self.working_dir +
+                     "/" + self.irPath + "\"")
+        lines.append("config = " + "\"" + self.working_dir +
+                     "/" + self.hw_path + "\"")
 
         # Add interrupt number if it exists
         if self.intNum is not None:

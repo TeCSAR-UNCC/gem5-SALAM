@@ -15,7 +15,6 @@ acc_cluster:
   - Accelerator:
     - Name: head_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/head/top.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       PIOSize: 65
       PIOMaster: LocalBus
       # Local to PIO
@@ -24,7 +23,6 @@ acc_cluster:
   - Accelerator:
     - Name: head_NormalConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/NormalConv.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -84,7 +82,6 @@ acc_cluster:
   - Accelerator:
     - Name: head_DWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/DWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -148,7 +145,6 @@ acc_cluster:
   - Accelerator:
     - Name: head_PWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/head/PWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

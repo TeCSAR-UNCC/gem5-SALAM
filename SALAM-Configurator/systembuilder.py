@@ -2,8 +2,10 @@
 
 # Import needed packages
 import argparse
+from http.client import FOUND
 import os
 import shutil
+from unittest import expectedFailure
 import config_parser
 
 import yaml
@@ -51,7 +53,7 @@ if args.sys_name == None:
 else:
     file_name = args.sys_name
 Config_Path = M5_Path + "/configs/SALAM/generated/"
-working_directory = M5_Path + "/" + args.sys_path + "/"
+working_dir = M5_Path + "/" + args.sys_path + "/"
 
 
 def main():
@@ -78,11 +80,11 @@ def main():
     f = open(Config_Path + "fs_" + file_name + ".py", "w")
     f.writelines(fullSystem)
     # Warn if the size is greater than allowed
-    if (clusters[-1].cluster_top_address > max_address):
+    if (clusters[-1].top_address > max_address):
         print("WARNING: Address range is greater than defined for gem5")
 
 
-def parse_yaml(config, base_address, hw_config=None):
+def parse_yaml(config, base_address, hw_path=None):
     clusters = []
     # Load in each acc cluster and add it to the list
     for cluster_dict in config:
@@ -95,14 +97,19 @@ def parse_yaml(config, base_address, hw_config=None):
                     if "SysPath" in param:
                         FOUND_SYS_PATH = True
                         config = open_yaml(param["SysPath"])
-                        # Recursion Alert!
-                        base_address, temp_cluster = parse_yaml(
-                            config, base_address)
-                        clusters.extend(temp_cluster)
                     elif "HWPath" in param:
                         FOUND_HW_PATH = True
+                        hw_path = param["HWPath"]
                     else:
                         FOUND_DEVICE = True
+            if FOUND_SYS_PATH:
+                # Recursion Alert!
+                base_address, temp_cluster = parse_yaml(
+                    config, base_address, hw_path)
+                clusters.extend(temp_cluster)
+            elif FOUND_HW_PATH:
+                raise Exception(
+                    "HW Path should be defined with a System Config file")
 
         if (FOUND_HW_PATH or FOUND_SYS_PATH) and FOUND_DEVICE:
             raise Exception(
@@ -122,7 +129,7 @@ def parse_yaml(config, base_address, hw_config=None):
                     if "Accelerator" in device:
                         accs.append(device)
         clusters.append(config_parser.AccCluster(
-            cluster_name, dmas, accs, base_address, M5_Path))
+            cluster_name, dmas, accs, base_address, working_dir, hw_path))
         base_address = clusters[-1].top_address + \
             (64 - (int(clusters[-1].top_address) % 64))
         if (int(base_address) % 64) != 0:
@@ -131,7 +138,7 @@ def parse_yaml(config, base_address, hw_config=None):
 
 
 def open_yaml(path='config.yml'):
-    stream = open(working_directory + path, "r")
+    stream = open(working_dir + path, "r")
     config = yaml.load_all(stream, Loader=yaml.FullLoader)
     return config
 
@@ -168,8 +175,8 @@ def load_og_header(clusters):
     header_list = []
     for i in clusters:
         try:
-            # f = open(working_directory + i.name  + "_" + args.headerName + ".h", 'r')
-            f = open(working_directory + i.name + "_hw_defines.h", 'r')
+            # f = open(working_dir + i.name  + "_" + args.headerName + ".h", 'r')
+            f = open(working_dir + i.name + "_hw_defines.h", 'r')
             oldHeader = f.readlines()
             for i in range(0, len(oldHeader)):
                 if oldHeader[i] == "//BEGIN GENERATED CODE\n":
@@ -189,7 +196,7 @@ def gen_header(header_list, clusters):
     # Write out headers
     for current_header in header_list:
         for cluster in clusters:
-            with open(working_directory + cluster.name + "_hw_defines.h", 'w') as f:
+            with open(working_dir + cluster.name + "_hw_defines.h", 'w') as f:
                 current_header.append("//BEGIN GENERATED CODE\n")
                 current_header.append(
                     "//Cluster: " + cluster.name.upper() + "\n")

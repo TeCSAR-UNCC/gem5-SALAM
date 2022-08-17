@@ -25,7 +25,6 @@ acc_cluster:
   - Accelerator:
     - Name: body_top
       IrPath: benchmarks/mobilenetv2/hw/ir/body/top.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 81
       PIOMaster: LocalBus
@@ -33,7 +32,6 @@ acc_cluster:
   - Accelerator:
     - Name: body_residual
       IrPath: benchmarks/mobilenetv2/hw/ir/body/Residual.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 17
       PIOMaster: LocalBus
@@ -48,7 +46,6 @@ acc_cluster:
   - Accelerator:
     - Name: body_PWConv0
       IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv0.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 57
       PIOMaster: LocalBus
@@ -102,7 +99,6 @@ acc_cluster:
   - Accelerator:
     - Name: body_DWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/body/DWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 65
       PIOMaster: LocalBus
@@ -166,7 +162,6 @@ acc_cluster:
   - Accelerator:
     - Name: body_PWConv1
       IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv1.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 57
       PIOMaster: LocalBus

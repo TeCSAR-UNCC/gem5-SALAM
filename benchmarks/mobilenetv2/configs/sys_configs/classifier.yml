@@ -17,7 +17,6 @@ acc_cluster:
   - Accelerator:
     - Name: classifier_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/classifier/top.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       PIOSize: 65
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
@@ -25,7 +24,6 @@ acc_cluster:
   - Accelerator:
     - Name: classifier_Linear
       IrPath: benchmarks/mobilenetv2/hw/ir/classifier/Linear.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       PIOSize: 1
       PIOMaster: LocalBus
       LocalSlaves: LocalBus

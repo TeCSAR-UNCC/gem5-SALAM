@@ -17,7 +17,6 @@ acc_cluster:
   - Accelerator:
     - Name: tail_Top
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/top.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       PIOSize: 65
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
@@ -25,7 +24,6 @@ acc_cluster:
   - Accelerator:
     - Name: tail_PWConv
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/PWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -80,7 +78,6 @@ acc_cluster:
   - Accelerator:
     - Name: tail_Reshape
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/Reshape.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -94,7 +91,6 @@ acc_cluster:
   - Accelerator:
     - Name: tail_AvgPool
       IrPath: benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll
-      ConfigPath: benchmarks/mobilenetv2/config.yml
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
