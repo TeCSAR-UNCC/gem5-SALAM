@@ -1,5 +1,15 @@
+from ..src.python.m5.params import Bool
+
+
 class AccCluster:
-    def __init__(self, name, dmas, accs, base_address, M5_Path):
+    def __init__(
+        self,
+        name: str,
+        dmas,
+        accs,
+        base_address: int,
+        M5_Path: str
+    ):
         self.name = name
         self.dmas = dmas
         self.accs = accs
@@ -63,8 +73,6 @@ class AccCluster:
                     top_address = top_address + aligned_inc + alignedStatusInc
         # Parse Accelerators
         for acc in self.accs:
-            # To handle Accs out of order, create a flag that Accs referenced already exist.
-            # Search accs for it.
             name = None
             pioMasters = []
             streamIn = []
@@ -180,8 +188,22 @@ class AccCluster:
 
 class Accelerator:
 
-    def __init__(self, name, pioMasters, localConnections, address,
-                 size, irPath, configPath, streamIn, streamOut, intNum, M5_Path, variables=None, debug=False):
+    def __init__(
+        self,
+        name: str,
+        pioMasters: str,
+        localConnections: str,
+        address: int,
+        size: int,
+        irPath: str,
+        configPath: str,
+        streamIn: str,
+        streamOut: str,
+        intNum: int,
+        M5_Path: str,
+        variables=None,
+        debug: Bool = False
+    ):
 
         self.name = name.lower()
         self.pioMasters = pioMasters
@@ -201,7 +223,6 @@ class Accelerator:
         lines = []
         lines.append("# " + self.name + " Definition")
         lines.append("acc = " + "\"" + self.name + "\"")
-        # Need to add a user defined path & user defined interrupts here
         lines.append("ir = " + "\"" + self.M5_Path + "/" + self.irPath + "\"")
         lines.append("config = " + "\"" + self.M5_Path +
                      "/" + self.configPath + "\"")
@@ -263,7 +284,18 @@ class Accelerator:
 
 
 class StreamDma:
-    def __init__(self, name, pio, pioMasters, address, statusAddress, dmaType, rd_int=None, wr_int=None, size=64):
+    def __init__(
+        self,
+        name: str,
+        pio: int,
+        pioMasters: str,
+        address: int,
+        statusAddress: int,
+        dmaType: str,
+        rd_int: int = None,
+        wr_int: int = None,
+        size=64
+    ):
         self.name = name.lower()
         self.pio = pio
         self.pioMasters = pioMasters
@@ -308,7 +340,17 @@ class StreamDma:
 
 
 class Dma:
-    def __init__(self, name, pio, pioMasters, address, dmaType, int_num=None, size=64, maxReq=4):
+    def __init__(
+        self,
+        name: str,
+        pio: int,
+        pioMasters: str,
+        address: int,
+        dmaType: str,
+        int_num=None,
+        size: int = 64,
+        maxReq: int = 4
+    ):
         self.name = name.lower()
         self.pio = pio
         self.pioMasters = pioMasters
@@ -349,7 +391,7 @@ class Dma:
 
 
 class PortedConnection:
-    def __init__(self, conName, numPorts):
+    def __init__(self, conName: str, numPorts: int):
         self.conName = conName
         self.numPorts = numPorts
 
