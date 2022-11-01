@@ -25,9 +25,9 @@ void compute(uint32_t* strIn, array3d_win convWindow, array3d_buf convLineBuff) 
         for (w=0; w<fc0OutDim; w++){
             #pragma nounroll
             for(cc=0; cc<fc0OutChan; cc++){
-                #pragma unroll
+                #pragma nounroll
                 for(x=0; x<fc0KSize; x++) {
-                    #pragma unroll
+                    #pragma nounroll
                     for(y=0; y<fc0KSize; y++){
                         #pragma unroll
                         for(c=0; c<fc0InChan; c++){

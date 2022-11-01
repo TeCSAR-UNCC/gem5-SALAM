@@ -69,7 +69,7 @@
 #define fc0OutputSize fc0OutDim*fc0OutDim*fc0KernChan*sizeof(TYPE)
 
 //BEGIN GENERATED CODE
-//Cluster: FC0
+//Cluster: LENET5_CLSTR
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001
@@ -86,49 +86,55 @@
 #define STREAMDMA_NumWrFrames 0x1002005e
 #define STREAMDMA_WrFrameBufSize 0x1002005f
 #define STREAMDMA_Stream 0x10020060
+#define STREAMDMA_Status 0x10020080
 //Accelerator: TOP
-#define TOP 0x10020080
+#define TOP 0x100200c0
 //Accelerator: DATA_MOVE_0
-#define DATA_MOVE_0 0x100200c0
-#define Conv0LineBuff 0x10020100
+#define DATA_MOVE_0 0x10020100
+#define Conv0LineBuff 0x10020140
 //Accelerator: CONV0
-#define CONV0 0x100203c0
-#define Conv0Weights 0x10020400
-#define Conv0Window 0x10020680
-#define Conv0Out 0x10020700
+#define CONV0 0x10020400
+#define Conv0Weights 0x10020440
+#define Conv0Window 0x100206c0
+#define Conv0Out 0x10020740
+#define Conv0Out_Status 0x10020780
 //Accelerator: POOL_MOVE_0
-#define POOL_MOVE_0 0x10020740
+#define POOL_MOVE_0 0x100207c0
 //Accelerator: POOL0
-#define POOL0 0x10020780
-#define Pool0Window 0x100207c0
-#define Pool0Out 0x10020d40
+#define POOL0 0x10020800
+#define Pool0Window 0x10020840
+#define Pool0Out 0x10020dc0
+#define Pool0Out_Status 0x10020e00
 //Accelerator: DATA_MOVE_1
-#define DATA_MOVE_1 0x10020d80
-#define Conv1LineBuff 0x10020dc0
+#define DATA_MOVE_1 0x10020e40
+#define Conv1LineBuff 0x10020e80
 //Accelerator: CONV1
-#define CONV1 0x10022040
-#define Conv1Weights 0x10022080
-#define Conv1Window 0x10024640
-#define Conv1Out 0x100248c0
+#define CONV1 0x10022100
+#define Conv1Weights 0x10022140
+#define Conv1Window 0x10024700
+#define Conv1Out 0x10024980
+#define Conv1Out_Status 0x100249c0
 //Accelerator: POOL_MOVE_1
-#define POOL_MOVE_1 0x10024900
+#define POOL_MOVE_1 0x10024a00
 //Accelerator: POOL1
-#define POOL1 0x10024940
-#define Pool1Window 0x10024980
-#define Pool1Out 0x10024ec0
+#define POOL1 0x10024a40
+#define Pool1Window 0x10024a80
+#define Pool1Out 0x10024fc0
+#define Pool1Out_Status 0x10025000
 //Accelerator: DATA_MOVE_2
-#define DATA_MOVE_2 0x10024f00
-#define Conv2LineBuff 0x10024f40
+#define DATA_MOVE_2 0x10025040
+#define Conv2LineBuff 0x10025080
 //Accelerator: CONV2
-#define CONV2 0x100255c0
-#define Conv2Weights 0x10025600
-#define Conv2Window 0x10054440
-#define Conv2Out 0x10054ac0
+#define CONV2 0x10025700
+#define Conv2Weights 0x10025740
+#define Conv2Window 0x10054580
+#define Conv2Out 0x10054c00
+#define Conv2Out_Status 0x10054c40
 //Accelerator: DATA_MOVE_3
-#define DATA_MOVE_3 0x10054b00
-#define FC0LineBuff 0x10054b40
+#define DATA_MOVE_3 0x10054c80
+#define FC0LineBuff 0x10054cc0
 //Accelerator: FC0
-#define FC0 0x10054d40
-#define FC0Weights 0x10054d80
-#define FC0Window 0x1005eb40
+#define FC0 0x10054ec0
+#define FC0Weights 0x10054f00
+#define FC0Window 0x1005ecc0
 //END GENERATED CODE
