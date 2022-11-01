@@ -10,8 +10,8 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: top
-      IrPath: benchmarks/lenet5/massive/hw/ir/top.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/top.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/top.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/top.ini
       PIOSize: 17
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
@@ -19,8 +19,8 @@ acc_cluster:
       InterruptNum: 68
   - Accelerator:
     - Name: conv0
-      IrPath: benchmarks/lenet5/massive/hw/ir/conv0.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/conv0.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/conv0.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/conv0.ini
       Debug: True
       PIOSize: 1
       PIOMaster: LocalBus
@@ -49,15 +49,15 @@ acc_cluster:
  
   - Accelerator:
     - Name: data_mover_0
-      IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_0.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/data_mover_0.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/data_mover_0.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/data_mover_0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
   - Accelerator:
     - Name: pool0
-      IrPath: benchmarks/lenet5/massive/hw/ir/pool0.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/pool0.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/pool0.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/pool0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -81,15 +81,15 @@ acc_cluster:
         Connections: data_mover_1:6
   - Accelerator:
     - Name: data_mover_1
-      IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_1.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/data_mover_1.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/data_mover_1.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/data_mover_1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
   - Accelerator:
     - Name: conv1
-      IrPath: benchmarks/lenet5/massive/hw/ir/conv1.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/conv1.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/conv1.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/conv1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -119,15 +119,15 @@ acc_cluster:
  
   - Accelerator:
     - Name: data_mover_2
-      IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_2.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/data_mover_2.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/data_mover_2.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/data_mover_2.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
   - Accelerator:
     - Name: pool1
-      IrPath: benchmarks/lenet5/massive/hw/ir/pool1.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/pool1.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/pool1.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/pool1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -151,15 +151,15 @@ acc_cluster:
         Connections: data_mover_3:16
   - Accelerator:
     - Name: data_mover_3
-      IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_3.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/data_mover_3.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/data_mover_3.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/data_mover_3.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
   - Accelerator:
     - Name: conv2
-      IrPath: benchmarks/lenet5/massive/hw/ir/conv2.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/conv2.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/conv2.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/conv2.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -188,15 +188,15 @@ acc_cluster:
         Connections: data_mover_4:120
   - Accelerator:
     - Name: data_mover_4
-      IrPath: benchmarks/lenet5/massive/hw/ir/data_mover_4.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/data_mover_4.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/data_mover_4.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/data_mover_4.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
   - Accelerator:
     - Name: fc0
-      IrPath: benchmarks/lenet5/massive/hw/ir/fc0.ll
-      ConfigPath: benchmarks/lenet5/massive/hw/configs/fc0.ini
+      IrPath: benchmarks/lenet/kernel_unroll/massive/hw/ir/fc0.ll
+      ConfigPath: benchmarks/lenet/kernel_unroll/massive/hw/configs/fc0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

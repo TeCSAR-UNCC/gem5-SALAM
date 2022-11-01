@@ -62,7 +62,7 @@
 #define fc1OutputSize fc1OutDim*fc1OutDim*fc1KernChan*sizeof(TYPE)
 
 //BEGIN GENERATED CODE
-//Cluster: FC1
+//Cluster: LENET5_CLSTR
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001

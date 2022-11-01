@@ -1,14 +1,18 @@
 #!/bin/bash
 FLAGS=""
 BENCH=""
+UNROLL_TYPE=""
 DEBUG="false"
-PRINT_TO_FILE="true"
+PRINT_TO_FILE="false"
 VALGRIND="false"
 
-while getopts ":b:f:vdp" opt; do
+while getopts ":u:b:f:vdp" opt; do
 	case $opt in
 		b )
 			BENCH=${OPTARG}
+			;;
+		u )
+			UNROLL_TYPE=${OPTARG}
 			;;
 		d )
 			DEBUG="true"
@@ -37,7 +41,13 @@ done
 
 if [ "${BENCH}" == "" ]; then
 	echo "No benchmark specified."
-	echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
+	echo "Usage: $0 -u Unroll Type -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
+	exit 2
+fi
+
+if [ "${UNROLL_TYPE}" == "" ]; then
+	echo "No benchmark specified."
+	echo "Usage: $0 -u Unroll Type -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
 	exit 2
 fi
 
@@ -49,7 +59,9 @@ else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
-KERNEL=$M5_PATH/benchmarks/lenet5/$BENCH/sw/main.elf
+BENCH_DIR="/benchmarks/lenet/${UNROLL_TYPE}/${BENCH}/"
+
+KERNEL=$M5_PATH/$BENCH_DIR/sw/main.elf
 
 SYS_OPTS="--mem-size=4GB \
 		  --mem-type=DDR4_2400_8x8 \
@@ -60,7 +72,7 @@ SYS_OPTS="--mem-size=4GB \
           --cpu-type=DerivO3CPU"
 CACHE_OPTS="--caches --l2cache"
 
-OUTDIR=BM_ARM_OUT/lenet5/$BENCH
+OUTDIR=BM_ARM_OUT/lenet/$UNROLL_TYPE/$BENCH
 
 DEBUG_FLAGS=""
 
@@ -69,12 +81,14 @@ if [ ${FLAGS}  != "" ]; then
 	DEBUG_FLAGS+=$FLAGS
 fi
 
+SYS_NAME="lenet_${UNROLL_TYPE}_${BENCH}"
+
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
-			configs/SALAM/generated/fs_lenet5_$BENCH.py $SYS_OPTS \
-			--accpath=$M5_PATH/benchmarks/lenet5 \
+			configs/SALAM/generated/fs_$SYS_NAME.py $SYS_OPTS \
+			--accpath=$M5_PATH/$BENCH_DIR \
 			--accbench=$BENCH $CACHE_OPTS"
 
-${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName "lenet5_$BENCH" --benchDir "benchmarks/lenet5/${BENCH}"
+${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName "$SYS_NAME" --benchDir "$BENCH_DIR"
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR

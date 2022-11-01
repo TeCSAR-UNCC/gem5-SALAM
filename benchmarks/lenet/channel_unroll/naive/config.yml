@@ -10,8 +10,8 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: top
-      IrPath: benchmarks/lenet5/naive/hw/ir/top.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/top.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/top.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/top.ini
       PIOSize: 17
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
@@ -19,8 +19,8 @@ acc_cluster:
       InterruptNum: 68
   - Accelerator:
     - Name: conv0
-      IrPath: benchmarks/lenet5/naive/hw/ir/conv0.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/conv0.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/conv0.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/conv0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -42,8 +42,8 @@ acc_cluster:
         Ports: 6
   - Accelerator:
     - Name: pool0
-      IrPath: benchmarks/lenet5/naive/hw/ir/pool0.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/pool0.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/pool0.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/pool0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -59,8 +59,8 @@ acc_cluster:
         Ports: 24
   - Accelerator:
     - Name: conv1
-      IrPath: benchmarks/lenet5/naive/hw/ir/conv1.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/conv1.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/conv1.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/conv1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -82,8 +82,8 @@ acc_cluster:
         Ports: 16
   - Accelerator:
     - Name: pool1
-      IrPath: benchmarks/lenet5/naive/hw/ir/pool1.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/pool1.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/pool1.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/pool1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -99,8 +99,8 @@ acc_cluster:
         Ports: 64
   - Accelerator:
     - Name: fc0
-      IrPath: benchmarks/lenet5/naive/hw/ir/fc0.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/fc0.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/fc0.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/fc0.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -122,8 +122,8 @@ acc_cluster:
         Ports: 3
   - Accelerator:
     - Name: fc1
-      IrPath: benchmarks/lenet5/naive/hw/ir/fc1.ll
-      ConfigPath: benchmarks/lenet5/naive/hw/configs/fc1.ini
+      IrPath: benchmarks/lenet/channel_unroll/naive/hw/ir/fc1.ll
+      ConfigPath: benchmarks/lenet/channel_unroll/naive/hw/configs/fc1.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
