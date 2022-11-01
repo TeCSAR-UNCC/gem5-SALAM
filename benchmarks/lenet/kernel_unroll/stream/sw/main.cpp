@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "../../../common/m5ops.h"
+#include "../../../../common/m5ops.h"
 #include "bench.h"
 #include "../lenet5_clstr_hw_defines.h"
 

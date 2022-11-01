@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "host.h"
-#include "../../../common/m5ops.h"
+#include "../../../../common/m5ops.h"
 int main(void) {
         // Set stage to 0
         stage = 0;
