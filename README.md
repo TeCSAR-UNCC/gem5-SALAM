@@ -50,6 +50,14 @@ scons build/ARM/gem5.debug -j`nproc`
 
 For more information regarding the binary types, and other build information refer to the gem5 build documentation [here](http://learning.gem5.org/book/part1/building.html).
 
+# Building with docker
+You can use the Dockerfile given in the `docker/` directory to build the project and run the benchmarks. To build the project use the following command:
+```bash
+docker build . --file docker/Dockerfile --build-arg BUILD_TYPE="opt"
+```
+
+The `BUILD_TYPE` argument sets the the building option for the project and can be `opt` or `debug`.
+
 # Using gem5-SALAM
 
 To use gem5-SALAM you need to define the computation model of you accelerator in your language of choice,and compile it to LLVM IR. Any control and dataflow graph optimization (eg. loop unrolling) should be handled by the compiler. You can construct accelerators by associating their LLVM IR with an LLVMInterface and connecting it to the desired CommInterface in the gem5 memory map.
