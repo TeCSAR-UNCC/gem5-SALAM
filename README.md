@@ -20,34 +20,10 @@ Presentation: https://youtu.be/IIl5TlbbfHE
 
 ### Required
 
-#### All Required Dependencies
+#### Required Dependencies
 
 ```bash
 sudo apt install build-essential m4 scons python-dev libprotobuf-dev python-protobuf protobuf-compiler libgoogle-perftools-dev
-```
-
-#### GCC (The Compiler used)
-
-``` bash
-sudo apt install build-essential m4
-```
-
-#### SCons (Build Environment)
-
-```bash
-sudo apt install scons
-```
-
-#### Python 2 (Required Libraries)
-
-```bash
-sudo apt install python-dev
-```
-
-#### Protobuf (Used for trace playback and generation)
-
-```bash
-sudo apt-get install libprotobuf-dev python-protobuf protobuf-compiler libgoogle-perftools-dev
 ```
 
 ### Recommended
@@ -83,7 +59,7 @@ sudo apt install cmake
 First, clone the LLVM source from github.
 
 ```bash
-git clone https://github.com/llvm/llvm-project.git
+git clone --depth=1 --branch release/3.8.x https://github.com/llvm/llvm-project.git
 ```
 
 Since we are going to be using LLVM 3.8.1, we want to checkout the LLVM 3.8.x branch. 
@@ -110,14 +86,12 @@ Now that the build directory has been made, we can tell CMake to configure LLVM 
 
 Below are some recommended CMake flags: 
 
-- DCMAKE_INSTALL_PREFIX: Changes your install directory to from /usr/local to a user defined value. This makes uninstalling and changing LLVM versions significantly easier.
-
 - DLLVM_ENABLE_ASSERTIONS: Enables code assertions, which helps with debugging
 
 - BUILD_SHARED_LIBS: Builds each LLVM component as a shared library. Helps reduce disk space used.
 
 ```bash
-cmake -DCMAKE_INSTALL_PREFIX=<your_install_dir> -DBUILD_SHARED_LIBS=true - DLLVM_ENABLE_ASSERTIONS=true -G "Unix Makefiles" ../llvm
+cmake -DBUILD_SHARED_LIBS=true - DLLVM_ENABLE_ASSERTIONS=true -G "Unix Makefiles" ../llvm
 ```
 
 Now that the build environment is setup, you can go ahead and run make
@@ -132,7 +106,7 @@ After the project is finished compiling, install the binaries to your defined di
 make install
 ```
 
-Finally, update your alternatives to point to your compiled binaries. A script to do this has been provided. It currently assumes that the path to the binaries is /home/<username>/LLVM-3.8/
+Finally, update your alternatives to point to your compiled binaries. A script to do this has been provided in the docs folder. It currently assumes that the path to the binaries is $HOME/llvm-project/build
 
 ```bash
 ./update-alternatives.sh
