@@ -76,6 +76,7 @@ The system validation examples under **benchmarks/sys_validation** are good exam
 In order to use the system validation benchmarks, it is required to have the ARM GCC cross-compiler installed. If you didn't already install it when you setup the dependencies, you can install it in Ubuntu by running the below command:
 
 ```bash
+sudo apt-get install gcc-multilib
 sudo apt-get install gcc-arm-none-eabi
 ```
 
