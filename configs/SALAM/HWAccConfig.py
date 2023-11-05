@@ -37,7 +37,7 @@ def AccConfig(acc, bench_file, config_file):
         fu_yaml = open(config_file, 'r')
         for yaml_inst_list in yaml.safe_load_all(fu_yaml):
             document = yaml_inst_list['hw_config']
-            current_acc = yaml_inst_list['name'] + '_' + benchname
+            current_acc = yaml_inst_list['hw_config']['name'] + '_' + benchname
             if(benchPath[9] ==current_acc):
                 print(current_acc + " Profile Loaded")
                 # print(yaml_inst_list['hw_config'][benchname])

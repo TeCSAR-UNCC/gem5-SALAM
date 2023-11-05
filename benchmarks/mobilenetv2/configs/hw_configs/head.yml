@@ -1,5 +1,5 @@
-name: head
 hw_config:
+  name: head
   head_Top:
     instructions:
       add:

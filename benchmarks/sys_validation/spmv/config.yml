@@ -10,7 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: benchmarks/sys_validation/spmv/hw/top.ll
+      IrPath: /spmv/hw/top.ll
       PIOSize: 41
       InterruptNum: 95
       PIOMaster: LocalBus
@@ -19,7 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: spmv
-      IrPath: benchmarks/sys_validation/spmv/hw/spmv.ll
+      IrPath: /spmv/hw/spmv.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

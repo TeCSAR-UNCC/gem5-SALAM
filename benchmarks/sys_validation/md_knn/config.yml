@@ -10,8 +10,8 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: benchmarks/sys_validation/md_knn/hw/top.ll
-      ConfigPath: benchmarks/sys_validation/md_knn/hw/top.ini
+      IrPath: /md_knn/hw/top.ll
+      ConfigPath: /md_knn/hw/top.ini
       PIOSize: 57
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +20,8 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: md_knn
-      IrPath: benchmarks/sys_validation/md_knn/hw/md_knn.ll
-      ConfigPath: benchmarks/sys_validation/md_knn/hw/md_knn.ini
+      IrPath: /md_knn/hw/md_knn.ll
+      ConfigPath: /md_knn/hw/md_knn.ini
       Debug: True
       PIOSize: 1
       PIOMaster: LocalBus

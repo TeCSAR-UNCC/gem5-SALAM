@@ -1,45 +1,71 @@
 #!/bin/bash
+BENCH=""
+BENCH_PATH=""
 FLAGS=""
-DEBUG="false"
-PRINT_TO_FILE="false"
-VALGRIND="false"
+DEBUG=False
+PRINT_TO_FILE=False
+VALGRIND=False
 
-while getopts ":b:f:vdp" opt; do
-	case $opt in
-		d )
-			DEBUG="true"
-			;;
-		p )
-			PRINT_TO_FILE="true"
-			;;
-		f )
-			if [ -z "${FLAGS}" ]
-			then
-				FLAGS+="${OPTARG}"
-			else
-				FLAGS+=",${OPTARG}"
-			fi
-			;;
-		v )
-			VALGRIND="true"
-			;;
-		* )
-			echo "Invalid argument: ${OPTARG}"
-			echo "Usage: $0 -b BENCHMARK (-f DEBUGFLAG) (-p) (-d)"
-			exit 1
-			;;
-	esac
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -b|--bench)
+      BENCH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -bp|--bench-path)
+      BENCH_PATH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -f|--flags)
+      FLAGS="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -d|--debug)
+      DEBUG=True
+      shift # past argument
+      shift # past value
+      ;;
+    -p|--print)
+      PRINT_TO_FILE=True
+      shift # past argument
+      shift # past value
+      ;;
+    -v|--valgrind)
+      VALGRIND=True
+      shift # past argument
+      shift # past value
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      shift # past argument
+      ;;
+  esac
 done
 
-if [ "${DEBUG}" == "true" ]; then
+if [ "$BENCH" == "" ]; then
+	echo "Bench is not set, exiting"
+	exit 1
+fi
+
+if [ "$BENCH_PATH" == "" ]; then
+	BENCH_PATH=$BENCH 
+fi
+
+if [ ${DEBUG} == True ]; then
 	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
-elif [ "${VALGRIND}" == "true" ]; then
+elif [ ${VALGRIND} == True ]; then
 	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --suppressions=util/salam.supp --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=definite,possible --show-reachable=no --log-file=mobilenetv2.log  ${M5_PATH}/build/ARM/gem5.debug" #--gen-suppressions=all
 else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
-KERNEL=$M5_PATH/benchmarks/mobilenetv2/sw/main.elf
+KERNEL=$M5_PATH/benchmarks/"$BENCH_PATH"/sw/main.elf
 
 SYS_OPTS="--mem-size=4GB \
 		  --mem-type=DDR4_2400_8x8 \
@@ -65,12 +91,12 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			--accpath=$M5_PATH/benchmarks/mobilenetv2 \
 			--accbench=mobilenetv2 $CACHE_OPTS"
 
-if (! "${M5_PATH}"/tools/SALAM-Configurator/systembuilder.py --sys-name mobilenetv2 --sys-path "/benchmarks/mobilenetv2") then
+if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --sys-path "/benchmarks/$BENCH_PATH") then
 	echo "Configurator failed"
 	exit 1
 fi
 
-if [ "${PRINT_TO_FILE}" == "true" ]; then
+if [ ${PRINT_TO_FILE} == True ]; then
 	mkdir -p $OUTDIR
 	$RUN_SCRIPT > ${OUTDIR}/debug-trace.txt
 else

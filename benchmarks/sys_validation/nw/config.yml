@@ -10,8 +10,8 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: benchmarks/sys_validation/nw/hw/top.ll
-      ConfigPath: benchmarks/sys_validation/nw/hw/top.ini
+      IrPath: /nw/hw/top.ll
+      ConfigPath: /nw/hw/top.ini
       PIOSize: 33
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +20,8 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: nw
-      IrPath: benchmarks/sys_validation/nw/hw/nw.ll
-      ConfigPath: benchmarks/sys_validation/nw/hw/nw.ini
+      IrPath: /nw/hw/nw.ll
+      ConfigPath: /nw/hw/nw.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

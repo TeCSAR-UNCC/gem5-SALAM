@@ -1,5 +1,5 @@
-name: tail
 hw_config:
+  name: tail
   tail_Top:
     instructions:
       add:

@@ -1,5 +1,5 @@
-name: classifier
 hw_config:
+  name: classifier
   classifier_Top:
     instructions:
       add:

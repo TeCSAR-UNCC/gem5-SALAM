@@ -7,14 +7,20 @@ class AccCluster:
         accs,
         base_address: int,
         working_dir: str,
-        hw_path: str = None
+        hw_path: str = None,
+        yml_path: str = None
     ):
         self.name = name
         self.dmas = dmas
         self.accs = accs
         self.base_address = base_address
         self.top_address = base_address
-        self.hw_path = hw_path
+        # Do this to point the hardware configuration to the
+        # sys config YAML file when HWPath isn't defined
+        if(hw_path == None):
+            self.hw_path = yml_path
+        else:
+            self.hw_path = hw_path
         self.process_config(working_dir)
 
     def process_config(self, working_dir):

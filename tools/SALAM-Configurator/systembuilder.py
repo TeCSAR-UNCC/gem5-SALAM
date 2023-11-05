@@ -55,6 +55,7 @@ else:
     file_name = args.sys_name
 Config_Path = M5_Path + "/configs/SALAM/generated/"
 working_dir = M5_Path + "/" + args.sys_path + "/"
+yml_path = working_dir + "config.yml"
 
 def main():
     # Set base addresses
@@ -128,8 +129,17 @@ def parse_yaml(config, base_address, hw_path=None):
                         dmas.append(device)
                     if "Accelerator" in device:
                         accs.append(device)
-        clusters.append(config_parser.AccCluster(
-            cluster_name, dmas, accs, base_address, working_dir, hw_path))
+        clusters.append(
+            config_parser.AccCluster(
+                cluster_name,
+                dmas,
+                accs,
+                base_address,
+                working_dir,
+                hw_path,
+                yml_path
+            )
+        )
         base_address = clusters[-1].top_address + \
             (64 - (int(clusters[-1].top_address) % 64))
         if (int(base_address) % 64) != 0:
@@ -137,8 +147,8 @@ def parse_yaml(config, base_address, hw_path=None):
     return base_address, clusters
 
 
-def open_yaml(path='config.yml'):
-    stream = open(working_dir + path, "r")
+def open_yaml():
+    stream = open(yml_path, "r")
     config = yaml.load_all(stream, Loader=yaml.FullLoader)
     return config
 

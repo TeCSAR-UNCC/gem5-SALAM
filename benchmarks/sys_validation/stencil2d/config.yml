@@ -10,8 +10,8 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: benchmarks/sys_validation/stencil2d/hw/top.ll
-      ConfigPath: benchmarks/sys_validation/stencil2d/hw/top.ini
+      IrPath: /stencil2d/hw/top.ll
+      ConfigPath: /stencil2d/hw/top.ini
       PIOSize: 25
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +20,8 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: stencil2d
-      IrPath: benchmarks/sys_validation/stencil2d/hw/stencil2d.ll
-      ConfigPath: benchmarks/sys_validation/stencil2d/hw/stencil2d.ini
+      IrPath: /stencil2d/hw/stencil2d.ll
+      ConfigPath: /stencil2d/hw/stencil2d.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

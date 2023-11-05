@@ -10,8 +10,8 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: benchmarks/sys_validation/gemm/hw/top.ll
-      ConfigPath: benchmarks/sys_validation/gemm/hw/top.ini
+      IrPath: /gemm/hw/top.ll
+      ConfigPath: /gemm/hw/top.ini
       PIOSize: 25
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +20,8 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: gemm
-      IrPath: benchmarks/sys_validation/gemm/hw/gemm.ll
-      ConfigPath: benchmarks/sys_validation/gemm/hw/gemm.ini
+      IrPath: /gemm/hw/gemm.ll
+      ConfigPath: /gemm/hw/gemm.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -41,6 +41,7 @@ acc_cluster:
         Size: 32768
         Ports: 2
 hw_config:
+  name: gemm_clstr
   top:
   gemm:
     instructions:
