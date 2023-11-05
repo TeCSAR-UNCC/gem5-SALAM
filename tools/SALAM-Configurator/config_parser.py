@@ -260,8 +260,9 @@ class Accelerator:
                 lines.append("clstr." + self.name +
                              ".pio = clstr.local_bus.mem_side_ports")
             else:
-                lines.append("clstr." + self.name + ".pio " +
-                             "=" " clstr." + i + ".local")
+                assert False, "Shouldn't be here?"
+                # lines.append("clstr." + self.name + ".pio " +
+                #              "=" " clstr." + i + ".local")
         # Add StreamIn
         for inCon in self.streamIn:
             lines.append("clstr." + self.name +

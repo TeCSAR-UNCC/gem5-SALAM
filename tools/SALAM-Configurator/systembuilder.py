@@ -72,7 +72,7 @@ def main():
     # Make the header files with custom code
     gen_header(header_list, clusters)
     # Generate full system file
-    shutil.copyfile(M5_Path + "/SALAM-Configurator/fs_template.py",
+    shutil.copyfile(M5_Path + "/tools/SALAM-Configurator/fs_template.py",
                     Config_Path + "fs_" + file_name + ".py")
     f = open(Config_Path + "fs_" + file_name + ".py", "r")
     fullSystem = f.readlines()
