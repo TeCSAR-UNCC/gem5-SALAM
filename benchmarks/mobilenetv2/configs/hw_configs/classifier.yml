@@ -1,3 +1,4 @@
+name: classifier
 hw_config:
   classifier_Top:
     instructions:

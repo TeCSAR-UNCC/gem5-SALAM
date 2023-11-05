@@ -16,16 +16,16 @@ acc_cluster:
       WriteInt: 211
   - Accelerator:
     - Name: tail_Top
-      IrPath: benchmarks/mobilenetv2/hw/ir/tail/top.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/top.ini
+      IrPath: /hw/ir/tail/top.ll
+      ConfigPath: /hw/configs/tail/top.ini
       PIOSize: 65
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
     - Name: tail_PWConv
-      IrPath: benchmarks/mobilenetv2/hw/ir/tail/PWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/PWConv.ini
+      IrPath: /hw/ir/tail/PWConv.ll
+      ConfigPath: /hw/configs/tail/PWConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -79,8 +79,8 @@ acc_cluster:
         OutCon: tail_Reshape
   - Accelerator:
     - Name: tail_Reshape
-      IrPath: benchmarks/mobilenetv2/hw/ir/tail/Reshape.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/Reshape.ini
+      IrPath: /hw/ir/tail/Reshape.ll
+      ConfigPath: /hw/configs/tail/Reshape.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -93,8 +93,8 @@ acc_cluster:
         Connections: tail_AvgPool:1
   - Accelerator:
     - Name: tail_AvgPool
-      IrPath: benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/AvgPool.ini
+      IrPath: /hw/ir/tail/AvgPool.ll
+      ConfigPath: /hw/configs/tail/AvgPool.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

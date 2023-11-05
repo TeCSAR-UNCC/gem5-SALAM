@@ -24,16 +24,16 @@ acc_cluster:
       WriteInt: 215
   - Accelerator:
     - Name: body_top
-      IrPath: benchmarks/mobilenetv2/hw/ir/body/top.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/top.ini
+      IrPath: /hw/ir/body/top.ll
+      ConfigPath: /hw/configs/body/top.ini
       Debug: False
       PIOSize: 81
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
   - Accelerator:
     - Name: body_residual
-      IrPath: benchmarks/mobilenetv2/hw/ir/body/Residual.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/Residual.ini
+      IrPath: /hw/ir/body/Residual.ll
+      ConfigPath: /hw/configs/body/Residual.ini
       Debug: False
       PIOSize: 17
       PIOMaster: LocalBus
@@ -47,8 +47,8 @@ acc_cluster:
         OutCon: body_PWConv0
   - Accelerator:
     - Name: body_PWConv0
-      IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv0.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv0.ini
+      IrPath: /hw/ir/body/PWConv0.ll
+      ConfigPath: /hw/configs/body/PWConv0.ini
       Debug: False
       PIOSize: 57
       PIOMaster: LocalBus
@@ -101,8 +101,8 @@ acc_cluster:
         OutCon: body_DWConv
   - Accelerator:
     - Name: body_DWConv
-      IrPath: benchmarks/mobilenetv2/hw/ir/body/DWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/DWConv.ini
+      IrPath: /hw/ir/body/DWConv.ll
+      ConfigPath: /hw/configs/body/DWConv.ini
       Debug: False
       PIOSize: 65
       PIOMaster: LocalBus
@@ -165,8 +165,8 @@ acc_cluster:
         OutCon: body_PWConv1
   - Accelerator:
     - Name: body_PWConv1
-      IrPath: benchmarks/mobilenetv2/hw/ir/body/PWConv1.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/body/PWConv1.ini
+      IrPath: /hw/ir/body/PWConv1.ll
+      ConfigPath: /hw/configs/body/PWConv1.ini
       Debug: False
       PIOSize: 57
       PIOMaster: LocalBus

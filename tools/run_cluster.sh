@@ -3,16 +3,9 @@ FLAGS=""
 DEBUG="false"
 PRINT_TO_FILE="false"
 VALGRIND="false"
-BENCH=""
 
 while getopts ":b:f:vdp" opt; do
 	case $opt in
-		 )
-			PATH=${OPTARG}
-			;;
-		b )
-			BENCH=${OPTARG}
-			;;
 		d )
 			DEBUG="true"
 			;;
@@ -51,17 +44,18 @@ KERNEL=$M5_PATH/benchmarks/mobilenetv2/sw/main.elf
 SYS_OPTS="--mem-size=4GB \
 		  --mem-type=DDR4_2400_8x8 \
           --kernel=$KERNEL \
-          --disk-image=$M5_PATH/baremetal/common/fake.iso \
+          --disk-image=$M5_PATH/benchmarks/common/fake.iso \
           --machine-type=VExpress_GEM5_V1 \
           --dtb-file=none --bare-metal \
           --cpu-type=DerivO3CPU"
+
 CACHE_OPTS="--caches --l2cache"
 
 OUTDIR=BM_ARM_OUT/mobilenetv2/
 
 DEBUG_FLAGS=""
 
-if [ ${FLAGS}  != "" ]; then
+if [ "${FLAGS}"  != "" ]; then
 	DEBUG_FLAGS+="--debug-flags="
 	DEBUG_FLAGS+=$FLAGS
 fi
@@ -71,7 +65,10 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 			--accpath=$M5_PATH/benchmarks/mobilenetv2 \
 			--accbench=mobilenetv2 $CACHE_OPTS"
 
-${M5_PATH}/SALAM-Configurator/systembuilder.py --sysName mobilenetv2 --benchDir "benchmarks/mobilenetv2/${BENCH}"
+if (! "${M5_PATH}"/tools/SALAM-Configurator/systembuilder.py --sys-name mobilenetv2 --sys-path "/benchmarks/mobilenetv2") then
+	echo "Configurator failed"
+	exit 1
+fi
 
 if [ "${PRINT_TO_FILE}" == "true" ]; then
 	mkdir -p $OUTDIR

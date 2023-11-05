@@ -56,7 +56,6 @@ else:
 Config_Path = M5_Path + "/configs/SALAM/generated/"
 working_dir = M5_Path + "/" + args.sys_path + "/"
 
-
 def main():
     # Set base addresses
     base_address = 0x10020000

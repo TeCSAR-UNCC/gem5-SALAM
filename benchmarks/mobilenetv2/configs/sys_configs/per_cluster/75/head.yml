@@ -14,8 +14,8 @@ acc_cluster:
       Type: Stream
   - Accelerator:
     - Name: head_Top
-      IrPath: benchmarks/mobilenetv2/hw/ir/head/top.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/top.ini
+      IrPath: /hw/ir/head/top.ll
+      ConfigPath: /hw/configs/head/top.ini
       PIOSize: 65
       PIOMaster: LocalBus
       # Local to PIO
@@ -23,8 +23,8 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: head_NormalConv
-      IrPath: benchmarks/mobilenetv2/hw/ir/head/NormalConv.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/NormalConv.ini
+      IrPath: /hw/ir/head/NormalConv.ll
+      ConfigPath: /hw/configs/head/NormalConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -83,8 +83,8 @@ acc_cluster:
         OutCon: head_DWConv
   - Accelerator:
     - Name: head_DWConv
-      IrPath: benchmarks/mobilenetv2/hw/ir/head/DWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/DWConv.ini
+      IrPath: /hw/ir/head/DWConv.ll
+      ConfigPath: /hw/configs/head/DWConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -147,8 +147,8 @@ acc_cluster:
         OutCon: head_PWConv
   - Accelerator:
     - Name: head_PWConv
-      IrPath: benchmarks/mobilenetv2/hw/ir/head/PWConv.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/head/PWConv.ini
+      IrPath: /hw/ir/head/PWConv.ll
+      ConfigPath: /hw/configs/head/PWConv.ini
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -210,16 +210,16 @@ acc_cluster:
       WriteInt: 211
   - Accelerator:
     - Name: classifier_Top
-      IrPath: benchmarks/mobilenetv2/hw/ir/classifier/top.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/top.ini
+      IrPath: /hw/ir/classifier/top.ll
+      ConfigPath: /hw/configs/classifier/top.ini
       PIOSize: 65
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
     - Name: classifier_Linear
-      IrPath: benchmarks/mobilenetv2/hw/ir/classifier/Linear.ll
-      ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/Linear.ini
+      IrPath: /hw/ir/classifier/Linear.ll
+      ConfigPath: /hw/configs/classifier/Linear.ini
       PIOSize: 1
       PIOMaster: LocalBus
       LocalSlaves: LocalBus

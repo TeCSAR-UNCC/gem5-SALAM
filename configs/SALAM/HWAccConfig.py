@@ -36,9 +36,9 @@ def AccConfig(acc, bench_file, config_file):
     if benchPath[m5PathLen+1] == 'mobilenetv2':
         fu_yaml = open(config_file, 'r')
         for yaml_inst_list in yaml.safe_load_all(fu_yaml):
-            document = yaml_inst_list['acc_cluster']
-            current_acc = document[0]['Name'] + '_' + benchname 
-            if(benchPath[9] == document[0]['Name']):
+            document = yaml_inst_list['hw_config']
+            current_acc = yaml_inst_list['name'] + '_' + benchname
+            if(benchPath[9] ==current_acc):
                 print(current_acc + " Profile Loaded")
                 # print(yaml_inst_list['hw_config'][benchname])
                 inst_list = yaml_inst_list['hw_config'][current_acc]['instructions'].keys()

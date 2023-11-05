@@ -1,3 +1,4 @@
+name: tail
 hw_config:
   tail_Top:
     instructions:
