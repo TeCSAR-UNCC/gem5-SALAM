@@ -1,0 +1,101 @@
+acc_cluster:
+  - Name: tail
+  - DMA:
+    - Name: tail_dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+  - DMA:
+    - Name: tail_stream_dma0
+      PIOMaster: LocalBus
+      StreamSize: 8
+      BufferSize: 64
+      Type: Stream
+      ReadInt: 210
+      WriteInt: 211
+  - Accelerator:
+    - Name: tail_Top
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/top.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/top.ini
+      PIOSize: 65
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: tail_PWConv
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/PWConv.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/PWConv.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamOut: tail_stream_dma0
+    - Var:
+      - Name: tail_PWConvLocalFeats
+        Type: SPM
+        Size: 240
+        Ports: 24
+    - Var:
+      - Name: tail_PWConvWeights
+        Type: SPM
+        Size: 307200
+        Ports: 24
+    - Var:
+      - Name: tail_PWBias
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWIMultBias
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWNShiftBias
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWIMultOut
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWNShiftOut
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWWeightZP
+        Type: SPM
+        Size: 1280
+        Ports: 1
+    - Var:
+      - Name: tail_PWConvOut
+        Type: Stream
+        StreamSize: 8
+        BufferSize: 64
+        InCon: tail_PWConv
+        OutCon: tail_Reshape
+  - Accelerator:
+    - Name: tail_Reshape
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/Reshape.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/Reshape.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+    - Var:
+      - Name: tail_ReshapeOut
+        Type: SPM
+        Size: 11520
+        Ports: 1
+        ReadyMode: True
+        Connections: tail_AvgPool:1
+  - Accelerator:
+    - Name: tail_AvgPool
+      IrPath: benchmarks/mobilenetv2/hw/ir/tail/AvgPool.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/tail/AvgPool.ini
+      Debug: False
+      PIOSize: 1
+      PIOMaster: LocalBus
+      StreamIn: tail_stream_dma0

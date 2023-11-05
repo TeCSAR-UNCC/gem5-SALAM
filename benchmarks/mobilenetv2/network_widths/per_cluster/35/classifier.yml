@@ -1,0 +1,78 @@
+acc_cluster:
+  - Name: classifier
+  - DMA:
+    - Name: classifier_dma
+      MaxReqSize: 64
+      BufferSize: 128
+      PIOMaster: LocalBus
+      Type: NonCoherent
+  - DMA:
+    - Name: classifier_stream_dma0
+      PIOMaster: LocalBus
+      StreamSize: 8
+      BufferSize: 64
+      Type: Stream
+      ReadInt: 210
+      WriteInt: 211
+  - Accelerator:
+    - Name: classifier_Top
+      IrPath: benchmarks/mobilenetv2/hw/ir/classifier/top.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/top.ini
+      PIOSize: 65
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+  - Accelerator:
+    - Name: classifier_Linear
+      IrPath: benchmarks/mobilenetv2/hw/ir/classifier/Linear.ll
+      ConfigPath: benchmarks/mobilenetv2/hw/configs/classifier/Linear.ini
+      PIOSize: 1
+      PIOMaster: LocalBus
+      LocalSlaves: LocalBus
+      Debug: False
+      StreamIn: classifier_stream_dma0
+    - Var:
+      - Name: classifier_LinearFeats
+        Type: SPM
+        Size: 1280
+        Ports: 320
+    - Var:
+      - Name: classifier_LinearWeights
+        Type: SPM
+        Size: 1280000
+        Ports: 320
+    - Var:
+      - Name: classifier_PWBias
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWIMultBias
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWNShiftBias
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWIMultOut
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWNShiftOut
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_PWWeightZP
+        Type: SPM
+        Size: 1000
+        Ports: 54
+    - Var:
+      - Name: classifier_LinearSum
+        Type: SPM
+        Size: 1000
+        Ports: 320

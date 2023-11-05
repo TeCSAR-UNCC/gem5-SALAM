@@ -1,15 +1,15 @@
 acc_cluster:
- - SysPath: "configs/sys_configs/head.yml"
+ - SysPath: "network_widths/per_cluster/35/head.yml"
  - HWPath: "configs/hw_configs/head.yml"
 ---
 acc_cluster:
- - SysPath: "configs/sys_configs/body.yml"
+ - SysPath: "network_widths/per_cluster/35/body.yml"
  - HWPath: "configs/hw_configs/body.yml"
 ---
 acc_cluster:
- - SysPath: "configs/sys_configs/tail.yml"
+ - SysPath: "network_widths/per_cluster/35/tail.yml"
  - HWPath: "configs/hw_configs/tail.yml"
 ---
 acc_cluster:
- - SysPath: "configs/sys_configs/classifier.yml"
+ - SysPath: "network_widths/per_cluster/35/classifier.yml"
  - HWPath: "configs/hw_configs/classifier.yml"
