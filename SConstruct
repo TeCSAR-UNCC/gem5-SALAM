@@ -107,6 +107,8 @@ AddOption('--default',
 AddOption('--ignore-style', action='store_true',
           help='Disable style checking hooks')
 AddOption('--gold-linker', action='store_true', help='Use the gold linker')
+AddOption('--lld-linker', action='store_true', help='Use the lld linker')
+AddOption('--mold-linker', action='store_true', help='Use the mold linker')
 AddOption('--no-compress-debug', action='store_true',
           help="Don't compress debug info in build files")
 AddOption('--with-lto', action='store_true',
@@ -145,8 +147,8 @@ main = Environment(tools=[
         ConfigFile, AddLocalRPATH, SwitchingHeaders
     ])
 
-main.Tool(SCons.Tool.FindTool(['gcc', 'clang'], main))
-main.Tool(SCons.Tool.FindTool(['g++', 'clang++'], main))
+main.Tool(SCons.Tool.FindTool(['clang', 'gcc'], main))
+main.Tool(SCons.Tool.FindTool(['clang++', 'g++'], main))
 
 Export('main')
 
@@ -329,7 +331,10 @@ if main['GCC'] or main['CLANG']:
         conf.CheckLinkFlag('-Wl,--as-needed')
     if GetOption('gold_linker'):
         main.Append(LINKFLAGS='-fuse-ld=gold')
-
+    elif GetOption('lld_linker'):
+        main.Append(LINKFLAGS='-fuse-ld=lld')
+    elif GetOption('mold_linker'):
+        main.Append(LINKFLAGS='-fuse-ld=mold')
 else:
     error('\n'.join((
           "Don't know what compiler options to use for your compiler.",

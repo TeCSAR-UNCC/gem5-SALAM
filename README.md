@@ -18,11 +18,11 @@ sudo apt install build-essential git m4 scons zlib1g zlib1g-dev \
     python3-dev python-is-python3 libboost-all-dev pkg-config
 ```
 
-## LLVM/Clang Setup 
+## LLVM/Clang Setup
 
 For a quick start, one can simply run the following to install LLVM and Clang on Ubuntu 20.04.
 ```bash
-sudo apt install llvm-9 llvm-9-tools clang-9
+sudo apt install llvm-12 llvm-12-tools clang-12
 ```
 After installing these specific libraries, simply run the [update alternatives](https://github.com/TeCSAR-UNCC/gem5-SALAM/blob/main/docs/update-alternatives.sh) script in docs/.
 
@@ -38,7 +38,7 @@ git clone https://github.com/TeCSAR-UNCC/gem5-SALAM
 
 When building gem5-SALAM, there are multiple different binary types that can be created. Just like in gem5 the options are debug, opt, fast, prof, and perf. We recommend that users either use the opt or debug builds, as these are the build types we develop and test on.
 
-Below are the bash commands you would use to build the opt or debug binary. 
+Below are the bash commands you would use to build the opt or debug binary.
 
 ```bash
 scons build/ARM/gem5.opt -j`nproc`
@@ -57,7 +57,7 @@ To use gem5-SALAM you need to define the computation model of you accelerator in
 Below are some resources in the gem5-SALAM directory that can be used when getting started:
 
 - Examples for system-level configuration can be found in **configs/common/HWAcc.py**.
-- Accelerator benchmarks and examples can be found in the **benchmarks** directory. 
+- Accelerator benchmarks and examples can be found in the **benchmarks** directory.
 - The **benchmarks/common** directory contains basic drivers and syscalls for baremetal simulation.
 - **benchmarks/sys_validation** contains examples for configuring and using gem5-SALAM with different algorithms.
 
@@ -71,13 +71,13 @@ In order to use the system validation benchmarks, it is required to have the ARM
 sudo apt-get install gcc-arm-none-eabi
 ```
 
-**systemValidation.sh** requires an environment variable named **M5_PATH** to be set. You will want to point it to your gem5-SALAM path as shown below. 
+**systemValidation.sh** requires an environment variable named **M5_PATH** to be set. You will want to point it to your gem5-SALAM path as shown below.
 
 ```bash
 export M5_PATH=/path/to/gem5-SALAM
 ```
 
-Next, compile your desired example. 
+Next, compile your desired example.
 
 ```bash
 cd $M5_PATH/benchmarks/sys_validation/[benchmark]
@@ -90,7 +90,7 @@ Finally, you can run any of the benchmarks you have compiled by running the syst
 ./systemValidation.sh -b [benchmark]
 ```
 
-If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file. 
+If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file.
 
 # Resources
 
