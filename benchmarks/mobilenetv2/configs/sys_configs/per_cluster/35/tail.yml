@@ -16,16 +16,14 @@ acc_cluster:
       WriteInt: 211
   - Accelerator:
     - Name: tail_Top
-      IrPath: /hw/ir/tail/top.ll
-      ConfigPath: /hw/configs/tail/top.ini
+      IrPath: hw/ir/tail/top.ll
       PIOSize: 65
       PIOMaster: LocalBus
       LocalSlaves: LocalBus
       Debug: False
   - Accelerator:
     - Name: tail_PWConv
-      IrPath: /hw/ir/tail/PWConv.ll
-      ConfigPath: /hw/configs/tail/PWConv.ini
+      IrPath: hw/ir/tail/PWConv.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -79,8 +77,7 @@ acc_cluster:
         OutCon: tail_Reshape
   - Accelerator:
     - Name: tail_Reshape
-      IrPath: /hw/ir/tail/Reshape.ll
-      ConfigPath: /hw/configs/tail/Reshape.ini
+      IrPath: hw/ir/tail/Reshape.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -93,8 +90,7 @@ acc_cluster:
         Connections: tail_AvgPool:1
   - Accelerator:
     - Name: tail_AvgPool
-      IrPath: /hw/ir/tail/AvgPool.ll
-      ConfigPath: /hw/configs/tail/AvgPool.ini
+      IrPath: hw/ir/tail/AvgPool.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

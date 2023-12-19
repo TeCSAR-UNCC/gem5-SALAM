@@ -14,8 +14,7 @@ acc_cluster:
       Type: Stream
   - Accelerator:
     - Name: head_Top
-      IrPath: /hw/ir/head/top.ll
-      ConfigPath: /hw/configs/head/top.ini
+      IrPath: hw/ir/head/top.ll
       PIOSize: 65
       PIOMaster: LocalBus
       # Local to PIO
@@ -23,8 +22,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: head_NormalConv
-      IrPath: /hw/ir/head/NormalConv.ll
-      ConfigPath: /hw/configs/head/NormalConv.ini
+      IrPath: hw/ir/head/NormalConv.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -83,8 +81,7 @@ acc_cluster:
         OutCon: head_DWConv
   - Accelerator:
     - Name: head_DWConv
-      IrPath: /hw/ir/head/DWConv.ll
-      ConfigPath: /hw/configs/head/DWConv.ini
+      IrPath: hw/ir/head/DWConv.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -147,8 +144,7 @@ acc_cluster:
         OutCon: head_PWConv
   - Accelerator:
     - Name: head_PWConv
-      IrPath: /hw/ir/head/PWConv.ll
-      ConfigPath: /hw/configs/head/PWConv.ini
+      IrPath: hw/ir/head/PWConv.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
