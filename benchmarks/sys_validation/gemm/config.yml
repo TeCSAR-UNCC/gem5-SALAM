@@ -10,8 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /gemm/hw/top.ll
-      ConfigPath: /gemm/hw/top.ini
+      IrPath: /hw/top.ll
       PIOSize: 25
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: gemm
-      IrPath: /gemm/hw/gemm.ll
-      ConfigPath: /gemm/hw/gemm.ini
+      IrPath: /hw/gemm.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

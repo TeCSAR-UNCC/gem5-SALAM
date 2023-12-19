@@ -2,6 +2,7 @@
 BENCH=""
 BENCH_PATH=""
 FLAGS=""
+# FLAGS="SALAM_Debug,CommInterface,NoncoherentDma,LLVMParse"
 DEBUG=False
 PRINT_TO_FILE=False
 VALGRIND=False
@@ -26,7 +27,6 @@ while [[ $# -gt 0 ]]; do
     -d|--debug)
       DEBUG=True
       shift # past argument
-      shift # past value
       ;;
     -p|--print)
       PRINT_TO_FILE=True
@@ -38,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -*|--*)
+    -*)
       echo "Unknown option $1"
       exit 1
       ;;
@@ -49,18 +49,23 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$BENCH" == "" ]; then
-	echo "Bench is not set, exiting"
+	echo "BENCH env var is not set, exiting"
+	exit 1
+fi
+
+if [ "$M5_PATH" == "" ]; then
+	echo "M5_PATH env var is not set, exiting"
 	exit 1
 fi
 
 if [ "$BENCH_PATH" == "" ]; then
-	BENCH_PATH=$BENCH 
+	BENCH_PATH=$BENCH
 fi
 
 if [ ${DEBUG} == True ]; then
 	BINARY="gdb --args ${M5_PATH}/build/ARM/gem5.debug"
 elif [ ${VALGRIND} == True ]; then
-	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --suppressions=util/salam.supp --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=definite,possible --show-reachable=no --log-file=mobilenetv2.log  ${M5_PATH}/build/ARM/gem5.debug" #--gen-suppressions=all
+	BINARY="valgrind --leak-check=yes --suppressions=util/valgrind-suppressions --suppressions=util/salam.supp --track-origins=yes --error-limit=no --leak-check=full --show-leak-kinds=definite,possible --show-reachable=no --log-file=$BENCH.log  ${M5_PATH}/build/ARM/gem5.debug" #--gen-suppressions=all
 else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
@@ -77,7 +82,7 @@ SYS_OPTS="--mem-size=4GB \
 
 CACHE_OPTS="--caches --l2cache"
 
-OUTDIR=BM_ARM_OUT/mobilenetv2/
+OUTDIR=BM_ARM_OUT/$BENCH_PATH/
 
 DEBUG_FLAGS=""
 
@@ -87,9 +92,9 @@ if [ "${FLAGS}"  != "" ]; then
 fi
 
 RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
-			configs/SALAM/generated/fs_mobilenetv2.py $SYS_OPTS \
-			--accpath=$M5_PATH/benchmarks/mobilenetv2 \
-			--accbench=mobilenetv2 $CACHE_OPTS"
+			$M5_PATH/configs/SALAM/fs_$BENCH.py $SYS_OPTS \
+			--accpath=$M5_PATH/benchmarks/$BENCH_PATH \
+			--accbench=$BENCH $CACHE_OPTS"
 
 if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --sys-path "/benchmarks/$BENCH_PATH") then
 	echo "Configurator failed"
@@ -97,8 +102,8 @@ if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" -
 fi
 
 if [ ${PRINT_TO_FILE} == True ]; then
-	mkdir -p $OUTDIR
-	$RUN_SCRIPT > ${OUTDIR}/debug-trace.txt
+	mkdir -p "$OUTDIR"
+	$RUN_SCRIPT > "${OUTDIR}"/debug-trace.txt
 else
 	$RUN_SCRIPT
 fi

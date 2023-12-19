@@ -68,15 +68,15 @@ LLVMInterface::ActiveFunction::processQueues()
         auto hwStart = std::chrono::high_resolution_clock::now();
         hw_cycle_stats.reset();
         owner->hw->hw_statistics->updateHWStatsCycleStart();
-        
+
         // Update Params
         hw_cycle_stats.cycle = owner->cycle;
         hw_cycle_stats.resInFlight = reservation.size();
         hw_cycle_stats.loadInFlight = readQueue.size();
         hw_cycle_stats.storeInFlight = writeQueue.size();
         hw_cycle_stats.compInFlight = computeQueue.size();
-        
-        
+
+
         //
         auto hwStop = std::chrono::high_resolution_clock::now();
         owner->addHWTime(hwStop-hwStart);
@@ -686,7 +686,7 @@ LLVMInterface::initialize() {
     timeStart = std::chrono::high_resolution_clock::now();
     if (dbg) DPRINTF(LLVMInterface, "================================================================\n");
     launchTopFunction();
-    
+
     // panic("Kill Simulation");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing Reservation Table!\n");
     //if (debug()) DPRINTF(LLVMInterface, "Initializing readQueue Queue!\n");
@@ -762,9 +762,9 @@ LLVMInterface::printResults() {
 
     std::cout << "********************************************************************************" << std::endl;
     std::cout << name() << std::endl;
-    
+
     for (auto it : values) {
-        if (it->isInstruction()) { 
+        if (it->isInstruction()) {
             //std::cout << "Instruction: " << llvm::Instruction::getOpcodeName(it->getOpode()) << "\n";
             if (it->getReg()) {
                 totals_reads[it->getOpode()] += it->getReg()->getReads();
@@ -786,7 +786,7 @@ LLVMInterface::printResults() {
     double adder_area = (hw->opcodes->get_usage(13) + hw->opcodes->get_usage(20) + hw->opcodes->get_usage(15)) *  1.794430e+02;
     double adder_reads = (totals_reads[13] + totals_reads[15]);
     double adder_writes = (totals_writes[13] + totals_writes[15]);
-    double adder_power_static = adder_reads*2.380803e-03; 
+    double adder_power_static = adder_reads*2.380803e-03;
     double adder_power_dynamic =  adder_writes*(8.115300e-03+6.162853e-03);
 
     double bitwise_area = (hw->opcodes->get_usage(29) + hw->opcodes->get_usage(30) + hw->opcodes->get_usage(25) + hw->opcodes->get_usage(26) + hw->opcodes->get_usage(27) + hw->opcodes->get_usage(28)) * 5.036996e+01;
@@ -827,14 +827,14 @@ LLVMInterface::printResults() {
     hwTimingMS -= std::chrono::duration_cast<std::chrono::seconds>(hwSecs);
 
     //auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupTime);
-    
+
     //auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupMS);
     //setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
     //auto setupMins = std::chrono::duration_cast<std::chrono::minutes>(setupMS);
     //setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
     //auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupMS);
     //setupMS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
-    
+
     auto setupUS = std::chrono::duration_cast<std::chrono::microseconds>(setupTime);
     auto setupHours = std::chrono::duration_cast<std::chrono::hours>(setupUS);
     setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupHours);
@@ -842,9 +842,9 @@ LLVMInterface::printResults() {
     setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupMins);
     auto setupSecs = std::chrono::duration_cast<std::chrono::seconds>(setupUS);
     setupUS -= std::chrono::duration_cast<std::chrono::seconds>(setupSecs);
-    
+
     auto setupMS = std::chrono::duration_cast<std::chrono::milliseconds>(setupUS);
-    
+
     setupUS -= std::chrono::duration_cast<std::chrono::milliseconds>(setupMS);
 
     auto totalMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTotal);
@@ -854,7 +854,7 @@ LLVMInterface::printResults() {
     totalMS -= std::chrono::duration_cast<std::chrono::seconds>(totalMins);
     auto totalSecs = std::chrono::duration_cast<std::chrono::seconds>(totalMS);
     totalMS -= std::chrono::duration_cast<std::chrono::seconds>(totalSecs);
-    
+
     auto simMS = std::chrono::duration_cast<std::chrono::milliseconds>(simTime);
     auto simHours = std::chrono::duration_cast<std::chrono::hours>(simMS);
     simMS -= std::chrono::duration_cast<std::chrono::seconds>(simHours);
@@ -1019,7 +1019,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
                 }
             }
             break;
-        } 
+        }
     }
 
     switch(OpCode) {
@@ -1053,7 +1053,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case llvm::Instruction::FPToUI: return SALAM::createFPToUIInst(id, this, debug(), OpCode, hw->cycle_counts->fptoui_inst, functional_unit); break;
         case llvm::Instruction::FPToSI: return SALAM::createFPToSIInst(id, this, debug(), OpCode, hw->cycle_counts->fptosi_inst, functional_unit); break;
         case llvm::Instruction::UIToFP: return SALAM::createUIToFPInst(id, this, debug(), OpCode, hw->cycle_counts->uitofp_inst, functional_unit); break;
-        case llvm::Instruction::SIToFP: return SALAM::createSIToFPInst(id, this, debug(), OpCode, hw->cycle_counts->sitofp_inst, functional_unit); break; 
+        case llvm::Instruction::SIToFP: return SALAM::createSIToFPInst(id, this, debug(), OpCode, hw->cycle_counts->sitofp_inst, functional_unit); break;
         case llvm::Instruction::FPTrunc: return SALAM::createFPTruncInst(id, this, debug(), OpCode, hw->cycle_counts->fptrunc_inst, functional_unit); break;
         case llvm::Instruction::FPExt: return SALAM::createFPExtInst(id, this, debug(), OpCode, hw->cycle_counts->fpext_inst, functional_unit); break;
         case llvm::Instruction::PtrToInt: return SALAM::createPtrToIntInst(id, this, debug(), OpCode, hw->cycle_counts->ptrtoint_inst, functional_unit); break;
@@ -1064,7 +1064,7 @@ LLVMInterface::createInstruction(llvm::Instruction * inst, uint64_t id) {
         case llvm::Instruction::Call: return SALAM::createCallInst(id, this, debug(), OpCode, hw->cycle_counts->call_inst, functional_unit); break;
         case llvm::Instruction::Select: return SALAM::createSelectInst(id, this, debug(), OpCode, hw->cycle_counts->select_inst, functional_unit); break;
         default: {
-            warn("Tried to create instance of undefined instruction type!"); 
+            warn("Tried to create instance of undefined instruction type!");
             return SALAM::createBadInst(id, this, dbg, OpCode, 0, 0); break;
         }
     }

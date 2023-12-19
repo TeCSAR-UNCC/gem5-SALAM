@@ -41,7 +41,7 @@ args = argparser.parse_args()
 if M5_Path is None:
     print("Looking for Path Argument from Command Line")
     if args.m5_path is None:
-        raise Exception("Path argument required when M5_PATH not set")   
+        raise Exception("Path argument required when M5_PATH not set")
     M5_Path = args.path
     if M5_Path is None:
         raise Exception("M5_PATH Not Found")
@@ -53,9 +53,10 @@ if args.sys_name == None:
     file_name = os.path.basename(os.path.normpath(args.sys_path))
 else:
     file_name = args.sys_name
-Config_Path = M5_Path + "/configs/SALAM/generated/"
+Config_Path = M5_Path + "/configs/SALAM/"
 working_dir = M5_Path + "/" + args.sys_path + "/"
 yml_path = working_dir + "config.yml"
+
 
 def main():
     # Set base addresses

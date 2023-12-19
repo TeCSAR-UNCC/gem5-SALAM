@@ -17,7 +17,7 @@ class AccCluster:
         self.top_address = base_address
         # Do this to point the hardware configuration to the
         # sys config YAML file when HWPath isn't defined
-        if(hw_path == None):
+        if (hw_path == None):
             self.hw_path = yml_path
         else:
             self.hw_path = hw_path
@@ -231,8 +231,7 @@ class Accelerator:
         lines.append("acc = " + "\"" + self.name + "\"")
         lines.append("ir = " + "\"" + self.working_dir +
                      "/" + self.irPath + "\"")
-        lines.append("config = " + "\"" + self.working_dir +
-                     "/" + self.hw_path + "\"")
+        lines.append("config = ""\"" + self.hw_path + "\"")
 
         # Add interrupt number if it exists
         if self.intNum is not None:
