@@ -10,8 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /bfs/hw/top.ll
-      ConfigPath: /bfs/hw/top.ini
+      IrPath: hw/top.ll
       PIOSize: 37
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: bfs
-      IrPath: /bfs/hw/bfs.ll
-      ConfigPath: /bfs/hw/bfs.ini
+      IrPath: hw/bfs.ll
       Debug: False
       PIOSize: 5
       PIOMaster: LocalBus

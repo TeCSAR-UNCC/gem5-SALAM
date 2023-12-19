@@ -10,8 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /fft/hw/top.ll
-      ConfigPath: /fft/hw/top.ini
+      IrPath: hw/top.ll
       PIOSize: 33
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: fft
-      IrPath: /fft/hw/fft.ll
-      ConfigPath: /fft/hw/fft.ini
+      IrPath: hw/fft.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

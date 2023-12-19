@@ -10,8 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /md_knn/hw/top.ll
-      ConfigPath: /md_knn/hw/top.ini
+      IrPath: hw/top.ll
       PIOSize: 57
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: md_knn
-      IrPath: /md_knn/hw/md_knn.ll
-      ConfigPath: /md_knn/hw/md_knn.ini
+      IrPath: hw/md_knn.ll
       Debug: True
       PIOSize: 1
       PIOMaster: LocalBus

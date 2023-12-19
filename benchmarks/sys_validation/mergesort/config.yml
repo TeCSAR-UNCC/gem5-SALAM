@@ -10,8 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /mergesort/hw/top.ll
-      ConfigPath: /mergesort/hw/top.ini
+      IrPath: hw/top.ll
       PIOSize: 25
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: mergesort
-      IrPath: /mergesort/hw/mergesort.ll
-      ConfigPath: /mergesort/hw/mergesort.ini
+      IrPath: hw/mergesort.ll
       Debug: True
       PIOSize: 1
       PIOMaster: LocalBus

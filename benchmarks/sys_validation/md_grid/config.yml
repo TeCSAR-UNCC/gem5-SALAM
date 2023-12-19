@@ -10,7 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /md_grid/hw/top.ll
+      IrPath: hw/top.ll
       PIOSize: 25
       InterruptNum: 95
       PIOMaster: LocalBus
@@ -19,7 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: md_grid
-      IrPath: /md_grid/hw/md_grid.ll
+      IrPath: hw/md_grid.ll
       Debug: True
       PIOSize: 1
       PIOMaster: LocalBus

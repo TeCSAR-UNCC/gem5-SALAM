@@ -1,5 +1,5 @@
 //BEGIN GENERATED CODE
-//Cluster: MERGESORT
+//Cluster: MERGE_CLSTR
 //NonCoherentDMA
 #define DMA_Flags 0x10020000
 #define DMA_RdAddr 0x10020001

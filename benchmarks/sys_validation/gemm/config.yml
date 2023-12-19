@@ -10,7 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /hw/top.ll
+      IrPath: hw/top.ll
       PIOSize: 25
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -19,7 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: gemm
-      IrPath: /hw/gemm.ll
+      IrPath: hw/gemm.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus

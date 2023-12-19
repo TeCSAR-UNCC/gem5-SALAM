@@ -19,9 +19,9 @@ int __attribute__ ((optimize("0"))) main(void) {
         originalArr[j] = i;
         j++;
     }
-    printf("Top: %x\n", top);
-    printf("Top + 1: %x\n", unsorted);
-    printf("Top + 9: %x\n", sorted);
+    // printf("Top: %x\n", top);
+    // printf("Top + 1: %x\n", unsorted);
+    // printf("Top + 9: %x\n", sorted);
     // Prints out generated array
     // for(int i = 0; i < SIZE; i++){
     //     printf("Original Array: Index: %d Value: %d\n", i, originalArr[i]);
@@ -40,11 +40,18 @@ int __attribute__ ((optimize("0"))) main(void) {
     *top = 0x01;
     while (stage < 1) count++;
     #ifdef CHECK
+    bool fail = false;
     for(int i = 0; i < SIZE; i++){
-        printf("Sorted Array: Index: %d Value: %d \n", i, sortedArr[i]);
+        if(i != sortedArr[i]){
+            printf("ERROR: Index: %d Value: %d \n", i, sortedArr[i]);
+            fail = true;
+        }
     }
+    if(fail)
+        printf("Check Failed\n");
+    else
+        printf("Check Passed\n");
     #endif
-    #
     printf("Job complete\n");
 	m5_dump_stats();
 	m5_exit();

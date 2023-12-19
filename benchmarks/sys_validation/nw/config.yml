@@ -10,8 +10,7 @@ acc_cluster:
       InterruptNum: 95
   - Accelerator:
     - Name: Top
-      IrPath: /nw/hw/top.ll
-      ConfigPath: /nw/hw/top.ini
+      IrPath: hw/top.ll
       PIOSize: 33
       InterruptNum: 68
       PIOMaster: LocalBus
@@ -20,8 +19,7 @@ acc_cluster:
       Debug: False
   - Accelerator:
     - Name: nw
-      IrPath: /nw/hw/nw.ll
-      ConfigPath: /nw/hw/nw.ini
+      IrPath: hw/nw.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
