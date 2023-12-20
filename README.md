@@ -50,6 +50,14 @@ scons build/ARM/gem5.debug -j`nproc`
 
 For more information regarding the binary types, and other build information refer to the gem5 build documentation [here](http://learning.gem5.org/book/part1/building.html).
 
+# Building with docker
+You can use the Dockerfile given in the `docker/` directory to build the project and run the benchmarks. To build the project use the following command:
+```bash
+docker build . --file docker/Dockerfile --build-arg BUILD_TYPE="opt"
+```
+
+The `BUILD_TYPE` argument sets the the building option for the project and can be `opt` or `debug`.
+
 # Using gem5-SALAM
 
 To use gem5-SALAM you need to define the computation model of you accelerator in your language of choice,and compile it to LLVM IR. Any control and dataflow graph optimization (eg. loop unrolling) should be handled by the compiler. You can construct accelerators by associating their LLVM IR with an LLVMInterface and connecting it to the desired CommInterface in the gem5 memory map.
@@ -68,7 +76,7 @@ The system validation examples under **benchmarks/sys_validation** are good exam
 In order to use the system validation benchmarks, it is required to have the ARM GCC cross-compiler installed. If you didn't already install it when you setup the dependencies, you can install it in Ubuntu by running the below command:
 
 ```bash
-sudo apt-get install gcc-arm-none-eabi
+sudo apt-get install gcc-multilib gcc-arm-none-eabi
 ```
 
 **systemValidation.sh** requires an environment variable named **M5_PATH** to be set. You will want to point it to your gem5-SALAM path as shown below.
