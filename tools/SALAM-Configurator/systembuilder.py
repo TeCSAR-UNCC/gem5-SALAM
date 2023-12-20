@@ -99,7 +99,7 @@ def parse_yaml(
                     if "Accelerator" in device:
                         accs.append(device)
         if cluster_name is None:
-            return base_address, clusters
+            continue
         clusters.append(
             config_parser.AccCluster(
                 name=cluster_name,
@@ -120,7 +120,7 @@ def parse_yaml(
 
 def open_yaml(yml_path: str):
     stream = open(yml_path, "r")
-    config = yaml.load_all(stream, Loader=yaml.FullLoader)
+    config = yaml.safe_load_all(stream)
     return config
 
 
