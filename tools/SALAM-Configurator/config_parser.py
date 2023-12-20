@@ -7,21 +7,19 @@ class AccCluster:
         accs,
         base_address: int,
         working_dir: str,
-        hw_path: str = None,
-        yml_path: str = None
+        config_path: str,
+        hw_config_path: str = None
     ):
         self.name = name
         self.dmas = dmas
         self.accs = accs
         self.base_address = base_address
         self.top_address = base_address
+        self.config_path = config_path
         # Do this to point the hardware configuration to the
         # sys config YAML file when HWPath isn't defined
-        if (hw_path == None):
-            self.hw_path = yml_path
-        else:
-            self.hw_path = hw_path
-        self.process_config(working_dir)
+        self.hw_config_path = hw_config_path
+        self.process_config(working_dir=working_dir)
 
     def process_config(self, working_dir):
         dma_class = []
@@ -33,63 +31,126 @@ class AccCluster:
             for device_dict in dma['DMA']:
                 # Decide whether the DMA is NonCoherent or Stream
                 if 'NonCoherent' in device_dict['Type']:
-                    pioSize = 21
-                    pioMasters = []
+                    pio_size = 21
+                    pio_masters = []
                     if 'PIOMaster' in device_dict:
-                        pioMasters.extend(
+                        pio_masters.extend(
                             (device_dict['PIOMaster'].split(',')))
                     if 'InterruptNum' in device_dict:
-                        dma_class.append(Dma(device_dict['Name'], pioSize, pioMasters, top_address, device_dict['Type'],
-                                             device_dict['InterruptNum'], device_dict['BufferSize'], device_dict['MaxReqSize']))
+                        dma_class.append(
+                            DMA(
+                                name=device_dict['Name'],
+                                pio=pio_size,
+                                pio_masters=pio_masters,
+                                address=top_address,
+                                dmaType=device_dict['Type'],
+                                int_num=device_dict['InterruptNum'],
+                                size=device_dict['BufferSize'],
+                                maxReq=device_dict['MaxReqSize']
+                            )
+                        )
                     else:
-                        dma_class.append(Dma(device_dict['Name'], pioSize, pioMasters, top_address, device_dict['Type'],
-                                             device_dict['BufferSize'], device_dict['MaxReqSize']))
-                    aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
+                        dma_class.append(
+                            DMA(
+                                name=device_dict['Name'],
+                                pio=pio_size,
+                                pio_masters=pio_masters,
+                                address=top_address,
+                                dmaType=device_dict['Type'],
+                                int_num=device_dict['BufferSize'],
+                                size=device_dict['MaxReqSize']
+                            )
+                        )
+                    aligned_inc = int(pio_size) + (64 - (int(pio_size) % 64))
                     top_address = top_address + aligned_inc
                 elif 'Stream' in device_dict['Type']:
-                    pioSize = 32
+                    pio_size = 32
                     statusSize = 4
-                    pioMasters = []
+                    pio_masters = []
 
                     alignedStatusInc = int(statusSize) + \
                         (64 - (int(statusSize) % 64))
-                    aligned_inc = int(pioSize) + (64 - (int(pioSize) % 64))
+                    aligned_inc = int(pio_size) + (64 - (int(pio_size) % 64))
 
                     statusAddress = top_address + aligned_inc
 
                     if 'PIOMaster' in device_dict:
-                        pioMasters.extend(
+                        pio_masters.extend(
                             (device_dict['PIOMaster'].split(',')))
                     # Can come back and get rid of this if/else tree
                     if 'ReadInt' in device_dict:
                         if 'WriteInt' in device_dict:
-                            dma_class.append(StreamDma(device_dict['Name'], pioSize, pioMasters, top_address, statusAddress, device_dict['Type'],
-                                                       device_dict['ReadInt'], device_dict['WriteInt'], device_dict['BufferSize']))
+                            dma_class.append(
+                                StreamDMA(
+                                    name=device_dict['Name'],
+                                    pio=pio_size,
+                                    pio_masters=pio_masters,
+                                    address=top_address,
+                                    statusAddress=statusAddress,
+                                    dmaType=device_dict['Type'],
+                                    rd_int=device_dict['ReadInt'],
+                                    wr_int=device_dict['WriteInt'],
+                                    size=device_dict['BufferSize']
+                                )
+                            )
                         else:
-                            dma_class.append(StreamDma(device_dict['Name'], pioSize, pioMasters, top_address, statusAddress, device_dict['Type'],
-                                                       device_dict['ReadInt'], None, device_dict['BufferSize']))
+                            dma_class.append(
+                                StreamDMA(
+                                    name=device_dict['Name'],
+                                    pio=pio_size,
+                                    pio_masters=pio_masters,
+                                    address=top_address,
+                                    statusAddress=statusAddress,
+                                    dmaType=device_dict['Type'],
+                                    rd_int=device_dict['ReadInt'],
+                                    wr_int=None,
+                                    size=device_dict['BufferSize']
+                                )
+                            )
                     elif 'WriteInt' in device_dict:
-                        dma_class.append(StreamDma(device_dict['Name'], pioSize, pioMasters, top_address, statusAddress, device_dict['Type'],
-                                                   None, device_dict['WriteInt'], device_dict['BufferSize']))
+                        dma_class.append(
+                            StreamDMA(
+                                name=device_dict['Name'],
+                                pio=pio_size,
+                                pio_masters=pio_masters,
+                                address=top_address,
+                                statusAddress=statusAddress,
+                                dmaType=device_dict['Type'],
+                                rd_int=None,
+                                wr_int=device_dict['WriteInt'],
+                                size=device_dict['BufferSize']
+                            )
+                        )
                     else:
-                        dma_class.append(StreamDma(device_dict['Name'], pioSize, pioMasters, top_address, statusAddress, device_dict['Type'],
-                                                   None, None, device_dict['BufferSize']))
+                        dma_class.append(
+                            StreamDMA(
+                                name=device_dict['Name'],
+                                pio=pio_size,
+                                pio_masters=pio_masters,
+                                address=top_address,
+                                statusAddress=statusAddress,
+                                dmaType=device_dict['Type'],
+                                rd_int=None,
+                                wr_int=None,
+                                size=device_dict['BufferSize']
+                            )
+                        )
 
                     # Increment Top Address
                     top_address = top_address + aligned_inc + alignedStatusInc
         # Parse Accelerators
         for acc in self.accs:
             name = None
-            pioMasters = []
-            streamIn = []
-            streamOut = []
-            localConnections = []
+            pio_masters = []
+            stream_in = []
+            stream_out = []
+            local_connections = []
             variables = []
-            pioAddress = None
-            pioSize = None
-            intNum = None
-            irPath = None
-            hw_path = self.hw_path
+            pio_address = None
+            pio_size = None
+            int_num = None
+            ir_path = None
+            hw_config_path = self.hw_config_path
             debug = False
 
             # Find the name first...
@@ -100,27 +161,27 @@ class AccCluster:
             # Parse the rest of the parameters
             for device_dict in acc['Accelerator']:
                 if 'PIOSize' in device_dict:
-                    pioAddress = top_address
-                    pioSize = device_dict['PIOSize'] + \
+                    pio_address = top_address
+                    pio_size = device_dict['PIOSize'] + \
                         (64 - (device_dict['PIOSize'] % 64))
-                    top_address = top_address + pioSize
-                    if ((top_address + pioSize) % 64) != 0:
-                        print("Acc Error: " + hex(pioAddress))
+                    top_address = top_address + pio_size
+                    if ((top_address + pio_size) % 64) != 0:
+                        print("Acc Error: " + hex(pio_address))
                 if 'IrPath' in device_dict:
-                    irPath = device_dict['IrPath']
+                    ir_path = device_dict['IrPath']
                 if 'HWPath' in device_dict:
-                    hw_path = device_dict['hw_path']
+                    hw_config_path = device_dict['HWPath']
                 if 'PIOMaster' in device_dict:
-                    pioMasters.extend((device_dict['PIOMaster'].split(',')))
+                    pio_masters.extend((device_dict['PIOMaster'].split(',')))
                 if 'StreamIn' in device_dict:
-                    streamIn.extend((device_dict['StreamIn'].split(',')))
+                    stream_in.extend((device_dict['StreamIn'].split(',')))
                 if 'StreamOut' in device_dict:
-                    streamOut.extend((device_dict['StreamOut'].split(',')))
+                    stream_out.extend((device_dict['StreamOut'].split(',')))
                 if 'LocalSlaves' in device_dict:
-                    localConnections.extend(
+                    local_connections.extend(
                         (device_dict['LocalSlaves'].split(',')))
                 if 'InterruptNum' in device_dict:
-                    intNum = device_dict['InterruptNum']
+                    int_num = device_dict['InterruptNum']
                 if 'Debug' in device_dict:
                     debug = device_dict['Debug']
                 if 'Var' in device_dict:
@@ -163,8 +224,24 @@ class AccCluster:
                                                + " has an invalid type named: " + self.type)
                             raise Exception(exceptionString)
             # Append accelerator to the cluster
-            acc_class.append(Accelerator(name, pioMasters, localConnections,
-                                         pioAddress, pioSize, irPath, hw_path, streamIn, streamOut, intNum, working_dir, variables, debug))
+            acc_class.append(
+                Accelerator(
+                    name=name,
+                    pio_masters=pio_masters,
+                    local_connections=local_connections,
+                    address=pio_address,
+                    size=pio_size,
+                    stream_in=stream_in,
+                    stream_out=stream_out,
+                    int_num=int_num,
+                    working_dir=working_dir,
+                    ir_path=ir_path,
+                    config_path=self.config_path,
+                    hw_config_path=hw_config_path,
+                    variables=variables,
+                    debug=debug
+                )
+            )
 
         self.accs = acc_class
         self.dmas = dma_class
@@ -197,32 +274,35 @@ class Accelerator:
     def __init__(
         self,
         name: str,
-        pioMasters: str,
-        localConnections: str,
+        pio_masters: str,
+        local_connections: str,
         address: int,
         size: int,
-        irPath: str,
-        hw_path: str,
-        streamIn: str,
-        streamOut: str,
-        intNum: int,
+        stream_in: str,
+        stream_out: str,
+        int_num: int,
         working_dir: str,
+        ir_path: str,
+        config_path: str,
+        hw_config_path: str,
         variables=None,
         debug: bool = False
     ):
 
         self.name = name.lower()
-        self.pioMasters = pioMasters
-        self.localConnections = localConnections
+        self.pio_masters = pio_masters
+        self.local_connections = local_connections
         self.address = address
         self.size = size
-        self.variables = variables
-        self.irPath = irPath
-        self.hw_path = hw_path
-        self.streamIn = streamIn
-        self.streamOut = streamOut
+        self.stream_in = stream_in
+        self.stream_out = stream_out
+        self.int_num = int_num
+
         self.working_dir = working_dir
-        self.intNum = intNum
+        self.ir_path = ir_path
+        self.config_path = config_path
+        self.hw_config_path = hw_config_path
+        self.variables = variables
         self.debug = debug
 
     def genDefinition(self):
@@ -230,18 +310,18 @@ class Accelerator:
         lines.append("# " + self.name + " Definition")
         lines.append("acc = " + "\"" + self.name + "\"")
         lines.append("ir = " + "\"" + self.working_dir +
-                     "/" + self.irPath + "\"")
-        lines.append("config = ""\"" + self.hw_path + "\"")
+                     "/" + self.ir_path + "\"")
+        lines.append("hw_config = ""\"" + self.hw_config_path + "\"")
 
         # Add interrupt number if it exists
-        if self.intNum is not None:
+        if self.int_num is not None:
             lines.append("clstr." + self.name + " = CommInterface(devicename=acc, gic=gic, pio_addr="
-                         + str(hex(self.address)) + ", pio_size=" + str(self.size) + ", int_num=" + str(self.intNum) + ")")
+                         + str(hex(self.address)) + ", pio_size=" + str(self.size) + ", int_num=" + str(self.int_num) + ")")
         else:
             lines.append("clstr." + self.name + " = CommInterface(devicename=acc, gic=gic, pio_addr="
                          + str(hex(self.address)) + ", pio_size=" + str(self.size) + ")")
 
-        lines.append("AccConfig(clstr." + self.name + ", ir, config)")
+        lines.append("AccConfig(clstr." + self.name + ", ir, hw_config)")
         lines.append("")
 
         return lines
@@ -251,7 +331,7 @@ class Accelerator:
 
         lines.append("# " + self.name + " Config")
 
-        for connection in self.localConnections:
+        for connection in self.local_connections:
             if "LocalBus" in connection:
                 lines.append("clstr." + self.name +
                              ".local = clstr.local_bus.cpu_side_ports")
@@ -260,7 +340,7 @@ class Accelerator:
                              ".local = clstr." + connection.lower() + ".pio")
 
         # Assign PIO Masters
-        for master in self.pioMasters:
+        for master in self.pio_masters:
             if "LocalBus" in master:
                 lines.append("clstr." + self.name +
                              ".pio = clstr.local_bus.mem_side_ports")
@@ -269,11 +349,11 @@ class Accelerator:
                 # lines.append("clstr." + self.name + ".pio " +
                 #              "=" " clstr." + i + ".local")
         # Add StreamIn
-        for inCon in self.streamIn:
+        for inCon in self.stream_in:
             lines.append("clstr." + self.name +
                          ".stream = clstr." + inCon.lower() + ".stream_in")
         # Add StreamOut
-        for outCon in self.streamOut:
+        for outCon in self.stream_out:
             lines.append("clstr." + self.name +
                          ".stream = clstr." + outCon.lower() + ".stream_out")
 
@@ -290,22 +370,22 @@ class Accelerator:
         return lines
 
 
-class StreamDma:
+class StreamDMA:
     def __init__(
         self,
         name: str,
         pio: int,
-        pioMasters: str,
+        pio_masters: str,
         address: int,
         statusAddress: int,
         dmaType: str,
         rd_int: int = None,
         wr_int: int = None,
-        size=64
+        size: int = 64
     ):
         self.name = name.lower()
         self.pio = pio
-        self.pioMasters = pioMasters
+        self.pio_masters = pio_masters
         self.size = size
         self.address = address
         self.statusAddress = statusAddress
@@ -313,10 +393,10 @@ class StreamDma:
         self.rd_int = rd_int
         self.wr_int = wr_int
 
-        for master in self.pioMasters:
+        for master in self.pio_masters:
             count = 0
             if "localbus" in master.lower():
-                pioMasters[count] = "local_bus"
+                pio_masters[count] = "local_bus"
                 count += 1
     # Probably could apply the style used here in other genConfigs
 
@@ -337,8 +417,8 @@ class StreamDma:
             lines.append(dmaPath + "wr_int = " + str(self.wr_int))
         lines.append("clstr." + self.name +
                      ".dma = clstr.coherency_bus.cpu_side_ports")
-        if self.pioMasters is not None:
-            for master in self.pioMasters:
+        if self.pio_masters is not None:
+            for master in self.pio_masters:
                 lines.append("clstr." + master.lower() +
                              ".mem_side_ports = clstr." + self.name + ".pio")
         lines.append("")
@@ -346,12 +426,12 @@ class StreamDma:
         return lines
 
 
-class Dma:
+class DMA:
     def __init__(
         self,
         name: str,
         pio: int,
-        pioMasters: str,
+        pio_masters: str,
         address: int,
         dmaType: str,
         int_num=None,
@@ -360,17 +440,17 @@ class Dma:
     ):
         self.name = name.lower()
         self.pio = pio
-        self.pioMasters = pioMasters
+        self.pio_masters = pio_masters
         self.size = size
         self.address = address
         self.dmaType = dmaType
         self.int_num = int_num
         self.maxReq = maxReq
 
-        for master in self.pioMasters:
+        for master in self.pio_masters:
             count = 0
             if "localbus" in master.lower():
-                pioMasters[count] = "local_bus"
+                pio_masters[count] = "local_bus"
                 count += 1
     # Probably could apply the style used here in other genConfigs
 
@@ -388,8 +468,8 @@ class Dma:
         lines.append(dmaPath + "buffer_size = " + str(self.size))
         lines.append("clstr." + self.name +
                      ".dma = clstr.coherency_bus.cpu_side_ports")
-        if self.pioMasters is not None:
-            for master in self.pioMasters:
+        if self.pio_masters is not None:
+            for master in self.pio_masters:
                 lines.append("clstr." + master.lower() +
                              ".mem_side_ports = clstr." + self.name + ".pio")
         lines.append("")

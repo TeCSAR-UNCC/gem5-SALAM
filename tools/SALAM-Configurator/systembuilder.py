@@ -38,15 +38,15 @@ def parse_cur_args():
 
 
 def parse_yaml(
-    config,
+    parent_config,
     base_address,
     working_dir: str,
-    cur_path: str,
+    parent_path: str = None,
     hw_path: str = None
 ):
     clusters = []
     # Load in each acc cluster and add it to the list
-    for cluster_dict in config:
+    for cluster_dict in parent_config:
         for list_type, params in cluster_dict.items():
             FOUND_SYS_PATH = False
             FOUND_HW_PATH = False
@@ -55,30 +55,37 @@ def parse_yaml(
                 for param in params:
                     if "SysPath" in param:
                         FOUND_SYS_PATH = True
-                        config = open_yaml(working_dir + param["SysPath"])
+                        cur_config = open_yaml(
+                            yml_path=(working_dir + param["SysPath"])
+                        )
+                        cur_path = working_dir + param["SysPath"]
                     elif "HWPath" in param:
                         FOUND_HW_PATH = True
-                        hw_path = param["HWPath"]
+                        hw_path = working_dir + param["HWPath"]
                     else:
                         FOUND_DEVICE = True
+                        cur_config = parent_config
+                        # Set the hard
+                        if not FOUND_HW_PATH and hw_path is None:
+                            hw_path = parent_path
+            if FOUND_SYS_PATH and FOUND_DEVICE:
+                raise Exception(
+                    "Found device definitions in a cluster with a path to another YAML file."
+                )
             if FOUND_SYS_PATH:
                 # Recursion Alert!
                 base_address, temp_cluster = parse_yaml(
-                    config,
-                    base_address,
-                    cur_path,
-                    hw_path
+                    parent_config=cur_config,
+                    base_address=base_address,
+                    working_dir=working_dir,
+                    parent_path=cur_path,
+                    hw_path=hw_path
                 )
                 clusters.extend(temp_cluster)
             elif FOUND_HW_PATH:
                 raise Exception(
                     "HW Path should be defined with a System Config file")
 
-        if (FOUND_HW_PATH or FOUND_SYS_PATH) and FOUND_DEVICE:
-            raise Exception(
-                "Found device definitions in a cluster with a path to another YAML file.")
-        elif FOUND_HW_PATH or FOUND_SYS_PATH:
-            continue
         cluster_name = None
         dmas = []
         accs = []
@@ -91,15 +98,17 @@ def parse_yaml(
                         dmas.append(device)
                     if "Accelerator" in device:
                         accs.append(device)
+        if cluster_name is None:
+            return base_address, clusters
         clusters.append(
             config_parser.AccCluster(
-                cluster_name,
-                dmas,
-                accs,
-                base_address,
-                working_dir,
-                hw_path,
-                cur_path
+                name=cluster_name,
+                dmas=dmas,
+                accs=accs,
+                base_address=base_address,
+                working_dir=working_dir,
+                config_path=parent_path,
+                hw_config_path=hw_path
             )
         )
         base_address = clusters[-1].top_address + \
@@ -109,8 +118,8 @@ def parse_yaml(
     return base_address, clusters
 
 
-def open_yaml(cur_path: str):
-    stream = open(cur_path, "r")
+def open_yaml(yml_path: str):
+    stream = open(yml_path, "r")
     config = yaml.load_all(stream, Loader=yaml.FullLoader)
     return config
 
@@ -256,26 +265,37 @@ def main():
         file_name = args.sys_name
     config_path = M5_Path + "/configs/SALAM/"
     working_dir = M5_Path + "/" + args.sys_path + "/"
-    cur_path = working_dir + "config.yml"
+    main_yml_path = working_dir + "config.yml"
 
     # Set base addresses
     base_address = 0x10020000
     max_address = 0x13ffffff
     # Load in the YAML file
-    config = open_yaml(cur_path)
+    config = open_yaml(yml_path=main_yml_path)
     # Parse YAML File
     base_address, clusters = parse_yaml(
-        config,
-        base_address,
-        working_dir,
-        cur_path
+        parent_config=config,
+        base_address=base_address,
+        working_dir=working_dir,
+        parent_path=main_yml_path
     )
     # Generate SALAM Config
-    gen_config(clusters, config_path, file_name)
+    gen_config(
+        clusters=clusters,
+        config_path=config_path,
+        file_name=file_name
+    )
     # Parse original header for custom code
-    header_list = load_og_header(clusters, working_dir)
+    header_list = load_og_header(
+        clusters=clusters,
+        working_dir=working_dir
+    )
     # Make the header files with custom code
-    gen_header(header_list, clusters, working_dir)
+    gen_header(
+        header_list=header_list,
+        clusters=clusters,
+        working_dir=working_dir
+    )
     # Generate full system file
     shutil.copyfile(M5_Path + "/tools/SALAM-Configurator/fs_template.py",
                     config_path + "fs_" + file_name + ".py")
