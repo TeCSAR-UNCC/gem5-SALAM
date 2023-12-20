@@ -1,4 +1,4 @@
-FOLDERS=massive naive
+FOLDERS=hw sw
 
 .PHONY: build clean all
 

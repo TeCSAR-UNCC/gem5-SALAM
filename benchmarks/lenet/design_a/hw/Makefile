@@ -1,4 +1,4 @@
-FOLDERS=hw sw
+FOLDERS=source
 
 .PHONY: build clean all
 

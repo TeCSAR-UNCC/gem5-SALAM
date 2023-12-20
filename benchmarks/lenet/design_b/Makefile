@@ -1,4 +1,4 @@
-FOLDERS=massive naive stream
+FOLDERS=hw sw
 
 .PHONY: build clean all
 
