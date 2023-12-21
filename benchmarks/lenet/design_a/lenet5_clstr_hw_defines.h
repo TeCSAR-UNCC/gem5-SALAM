@@ -7,7 +7,6 @@
 #define DEV_INTR	0x04
 #define TYPE float
 
-#define conv0UnrollFactor 1 // Should be from 1->Input Channels
 #define conv0InDim 32
 #define conv0InChan 1
 #define conv0OutDim 28
@@ -18,7 +17,6 @@
 #define conv0WeightSize conv0KSize*conv0KSize*conv0InChan*conv0KernChan*sizeof(TYPE)
 #define conv0OutputSize conv0OutDim*conv0OutDim*conv0KernChan*sizeof(TYPE)
 
-#define pool0UnrollFactor 1
 #define pool0InDim 28
 #define pool0InChan 6
 #define pool0KSize 2
@@ -26,7 +24,6 @@
 #define pool0InSize pool0InDim*pool0InDim*pool0InChan*sizeof(TYPE)
 #define pool0OutputSize pool0OutDim*pool0OutDim*pool0InChan*sizeof(TYPE)
 
-#define conv1UnrollFactor 1
 #define conv1InDim 14
 #define conv1InChan 6
 #define conv1KSize 5
@@ -37,7 +34,6 @@
 #define conv1WeightSize conv1KSize*conv1KSize*conv1InChan*conv1KernChan*sizeof(TYPE)
 #define conv1OutputSize conv1OutDim*conv1OutDim*conv1KernChan*sizeof(TYPE)
 
-#define pool1UnrollFactor 1
 #define pool1InDim 10
 #define pool1InChan 16
 #define pool1KSize 2
