@@ -219,3 +219,8 @@ hw_config:
   pool0:
   pool1:
   fc1:
+  data_mover_0:
+  data_mover_1:
+  data_mover_2:
+  data_mover_3:
+  data_mover_4:

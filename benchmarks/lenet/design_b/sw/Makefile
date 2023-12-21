@@ -1,6 +1,6 @@
-include ../../../../common/Makefile
+include ../../../common/Makefile
 
-OBJS         = boot.o ../../../../common/syscalls.o main.o isr.o
+OBJS = boot.o ../../../common/syscalls.o main.o isr.o
 
 all: clean main.elf
 
