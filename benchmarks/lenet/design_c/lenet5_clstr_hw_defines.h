@@ -92,8 +92,8 @@
 #define STREAMDMA_Status 0x10020080
 //Accelerator: TOP
 #define TOP 0x100200c0
-//Accelerator: DATA_MOVE_0
-#define DATA_MOVE_0 0x10020100
+//Accelerator: DATA_MOVER_0
+#define DATA_MOVER_0 0x10020100
 #define Conv0LineBuff 0x10020140
 //Accelerator: CONV0
 #define CONV0 0x10020400
@@ -101,15 +101,15 @@
 #define Conv0Window 0x100206c0
 #define Conv0Out 0x10020740
 #define Conv0Out_Status 0x10020780
-//Accelerator: POOL_MOVE_0
-#define POOL_MOVE_0 0x100207c0
+//Accelerator: POOL_MOVER_0
+#define POOL_MOVER_0 0x100207c0
 //Accelerator: POOL0
 #define POOL0 0x10020800
 #define Pool0Window 0x10020840
 #define Pool0Out 0x10020dc0
 #define Pool0Out_Status 0x10020e00
-//Accelerator: DATA_MOVE_1
-#define DATA_MOVE_1 0x10020e40
+//Accelerator: DATA_MOVER_1
+#define DATA_MOVER_1 0x10020e40
 #define Conv1LineBuff 0x10020e80
 //Accelerator: CONV1
 #define CONV1 0x10022100
@@ -117,15 +117,15 @@
 #define Conv1Window 0x10024700
 #define Conv1Out 0x10024980
 #define Conv1Out_Status 0x100249c0
-//Accelerator: POOL_MOVE_1
-#define POOL_MOVE_1 0x10024a00
+//Accelerator: POOL_MOVER_1
+#define POOL_MOVER_1 0x10024a00
 //Accelerator: POOL1
 #define POOL1 0x10024a40
 #define Pool1Window 0x10024a80
 #define Pool1Out 0x10024fc0
 #define Pool1Out_Status 0x10025000
-//Accelerator: DATA_MOVE_2
-#define DATA_MOVE_2 0x10025040
+//Accelerator: DATA_MOVER_2
+#define DATA_MOVER_2 0x10025040
 #define Conv2LineBuff 0x10025080
 //Accelerator: CONV2
 #define CONV2 0x10025700
@@ -133,8 +133,8 @@
 #define Conv2Window 0x10054580
 #define Conv2Out 0x10054c00
 #define Conv2Out_Status 0x10054c40
-//Accelerator: DATA_MOVE_3
-#define DATA_MOVE_3 0x10054c80
+//Accelerator: DATA_MOVER_3
+#define DATA_MOVER_3 0x10054c80
 #define FC0LineBuff 0x10054cc0
 //Accelerator: FC0
 #define FC0 0x10054ec0

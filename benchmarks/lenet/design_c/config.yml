@@ -25,8 +25,8 @@ acc_cluster:
       Debug: False
       InterruptNum: 68
   - Accelerator:
-    - Name: data_move_0
-      IrPath: hw/ir/data_move_0.ll
+    - Name: data_mover_0
+      IrPath: hw/ir/data_mover_0.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -55,17 +55,17 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_0:25
+        Connections: data_mover_0:25
     - Var:
       - Name: Conv0Out
         Type: Stream
         StreamSize: 4
         BufferSize: 16
         InCon: conv0
-        OutCon: pool_move_0
+        OutCon: pool_mover_0
   - Accelerator:
-    - Name: pool_move_0
-      IrPath: hw/ir/pool_move_0.ll
+    - Name: pool_mover_0
+      IrPath: hw/ir/pool_mover_0.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -83,17 +83,17 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: pool_move_0:4
+        Connections: pool_mover_0:4
     - Var:
       - Name: Pool0Out
         Type: Stream
         StreamSize: 4
         BufferSize: 16
         InCon: pool0
-        OutCon: data_move_1
+        OutCon: data_mover_1
   - Accelerator:
-    - Name: data_move_1
-      IrPath: hw/ir/data_move_1.ll
+    - Name: data_mover_1
+      IrPath: hw/ir/data_mover_1.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -121,17 +121,17 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_1:150
+        Connections: data_mover_1:150
     - Var:
       - Name: Conv1Out
         Type: Stream
         StreamSize: 4
         BufferSize: 16
         InCon: conv1
-        OutCon: pool_move_1
+        OutCon: pool_mover_1
   - Accelerator:
-    - Name: pool_move_1
-      IrPath: hw/ir/pool_move_1.ll
+    - Name: pool_mover_1
+      IrPath: hw/ir/pool_mover_1.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -149,17 +149,17 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: pool_move_1:4
+        Connections: pool_mover_1:4
     - Var:
       - Name: Pool1Out
         Type: Stream
         StreamSize: 4
         BufferSize: 16
         InCon: pool1
-        OutCon: data_move_2
+        OutCon: data_mover_2
   - Accelerator:
-    - Name: data_move_2
-      IrPath: hw/ir/data_move_2.ll
+    - Name: data_mover_2
+      IrPath: hw/ir/data_mover_2.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -187,17 +187,17 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_2:400
+        Connections: data_mover_2:400
     - Var:
       - Name: Conv2Out
         Type: Stream
         StreamSize: 4
         BufferSize: 16
         InCon: conv2
-        OutCon: data_move_3
+        OutCon: data_mover_3
   - Accelerator:
-    - Name: data_move_3
-      IrPath: hw/ir/data_move_3.ll
+    - Name: data_mover_3
+      IrPath: hw/ir/data_mover_3.ll
       Debug: False
       PIOSize: 1
       PIOMaster: LocalBus
@@ -226,7 +226,7 @@ acc_cluster:
         ReadyMode: True
         ResetOnRead: True
         WriteOnValid: False
-        Connections: data_move_3:12
+        Connections: data_mover_3:12
 hw_config:
   top:
   conv0:
@@ -236,3 +236,10 @@ hw_config:
   pool0:
   pool1:
   fc1:
+  data_mover_0:
+  data_mover_1:
+  data_mover_2:
+  data_mover_3:
+  data_mover_4:
+  pool_mover_0:
+  pool_mover_1:
