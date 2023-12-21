@@ -1,0 +1,15 @@
+acc_cluster:
+ - SysPath: "configs/sys_configs/per_cluster/1/head.yml"
+ - HWPath: "configs/hw_configs/head.yml"
+---
+acc_cluster:
+ - SysPath: "configs/sys_configs/per_cluster/1/body.yml"
+ - HWPath: "configs/hw_configs/body.yml"
+---
+acc_cluster:
+ - SysPath: "configs/sys_configs/per_cluster/1/tail.yml"
+ - HWPath: "configs/hw_configs/tail.yml"
+---
+acc_cluster:
+ - SysPath: "configs/sys_configs/per_cluster/1/classifier.yml"
+ - HWPath: "configs/hw_configs/classifier.yml"

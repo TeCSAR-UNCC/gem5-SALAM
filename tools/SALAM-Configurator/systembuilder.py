@@ -28,12 +28,29 @@ def __init__(self, size, options=None):
 
 def parse_cur_args():
     argparser = argparse.ArgumentParser(description="SALAM System Builder")
-    argparser.add_argument('--sys-path', help="Path to Benchmark Directory" +
-                           "Relative to M5_PATH", required=True)
     argparser.add_argument(
-        '--sys-name', help="Desired gem5 script name", required=False, default=None)
+        '--bench-path',
+        help="Path to Benchmark Directory Relative to M5_PATH. e.g. gemm's bench path will be benchmarks/sys_validation/gemm",
+        required=True
+    )
     argparser.add_argument(
-        '--m5-path', help="Path to M5 Directory", required=False, default=None)
+        '--sys-name',
+        help="Name of the generated python files. For a sys_name of gemm, the configurator will generate both fs_gemm.py & gemm.py in configs/SALAM).",
+        required=True,
+        default=None
+    )
+    argparser.add_argument(
+        '--config-name',
+        help="Name of the configuration file in the root of the bench. Defaults to config.yml",
+        required=False,
+        default="config.yml"
+    )
+    argparser.add_argument(
+        '--m5-path',
+        help="Path to M5 Directory",
+        required=False,
+        default=None
+    )
     return argparser.parse_args()
 
 
@@ -264,8 +281,8 @@ def main():
     else:
         file_name = args.sys_name
     config_path = M5_Path + "/configs/SALAM/"
-    working_dir = M5_Path + "/" + args.sys_path + "/"
-    main_yml_path = working_dir + "config.yml"
+    working_dir = M5_Path + "/" + args.bench_path + "/"
+    main_yml_path = working_dir + args.config_name
 
     # Set base addresses
     base_address = 0x10020000
