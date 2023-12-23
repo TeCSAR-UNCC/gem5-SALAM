@@ -79,7 +79,7 @@ In order to use the system validation benchmarks, it is required to have the ARM
 sudo apt-get install gcc-multilib gcc-arm-none-eabi
 ```
 
-**systemValidation.sh** requires an environment variable named **M5_PATH** to be set. You will want to point it to your gem5-SALAM path as shown below.
+**run_system.sh** requires an environment variable named **M5_PATH** to be set. You will want to point it to your gem5-SALAM path as shown below.
 
 ```bash
 export M5_PATH=/path/to/gem5-SALAM
@@ -92,10 +92,10 @@ cd $M5_PATH/benchmarks/sys_validation/[benchmark]
 make
 ```
 
-Finally, you can run any of the benchmarks you have compiled by running the system validation script.
+Finally, you can run any of the benchmarks you have compiled by running the run system script.
 
 ```bash
-./systemValidation.sh -b [benchmark]
+$M5_PATH/tools/run_system.sh --bench bfs --bench-path benchmarks/sys_validation/bfs
 ```
 
 If you would like to see the gem5-SALAM command created by the shell file you would just need to inspect the **RUN_SCRIPT** variable in the shell file.
