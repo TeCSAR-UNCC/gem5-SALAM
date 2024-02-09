@@ -85,11 +85,6 @@ else
 	BINARY="${M5_PATH}/build/ARM/gem5.opt"
 fi
 
-if [ $BUILD ]; then
-  echo "Building Bench"
-  make all -C "$M5_PATH/$BENCH_PATH"
-fi
-
 KERNEL=$M5_PATH/"$BENCH_PATH"/sw/main.elf
 
 SYS_OPTS="--mem-size=4GB \
@@ -119,6 +114,11 @@ RUN_SCRIPT="$BINARY $DEBUG_FLAGS --outdir=$OUTDIR \
 if (! "$M5_PATH"/tools/SALAM-Configurator/systembuilder.py --sys-name "$BENCH" --bench-path "$BENCH_PATH" --config-name $CONFIG_NAME) then
 	echo "Configurator failed"
 	exit 1
+fi
+
+if [ $BUILD ]; then
+  echo "Building Bench"
+  make all -C "$M5_PATH/$BENCH_PATH"
 fi
 
 if [ ${PRINT_TO_FILE} == True ]; then
